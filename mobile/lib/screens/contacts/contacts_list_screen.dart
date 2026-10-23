@@ -1,0 +1,312 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../config/api_config.dart';
+import '../../core/theme/theme.dart';
+import '../../data/models/contact.dart';
+import '../../providers/contacts_provider.dart';
+import '../../providers/csv_import_provider.dart';
+import '../../providers/saved_views_provider.dart';
+import '../../routes/app_router.dart';
+import '../../widgets/common/export_csv_button.dart';
+import '../../widgets/common/loading.dart';
+import '../../widgets/common/saved_views_button.dart';
+import '../../widgets/forms/csv_import_sheet.dart';
+
+/// The contacts list.
+class ContactsListScreen extends ConsumerStatefulWidget {
+  const ContactsListScreen({super.key});
+
+  @override
+  ConsumerState<ContactsListScreen> createState() => _ContactsListScreenState();
+}
+
+class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
+  final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 400) {
+      ref.read(contactsProvider.notifier).loadMore();
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      ref.read(contactsProvider.notifier).search(value);
+    });
+  }
+
+  /// Search is the one filter this screen has, so it is all a view saved
+  /// here holds; a web view's other filters are named by the sheet instead.
+  static const _savedViewKeys = {'search'};
+
+  void _applySavedView(Map<String, List<String>> filters) {
+    final search = filters['search']?.first ?? '';
+    _debounce?.cancel();
+    _searchController.text = search;
+    ref.read(contactsProvider.notifier).search(search);
+  }
+
+  void _import() => showCsvImportSheet(
+    context,
+    CsvImportTarget.contacts,
+    onImported: () => ref.read(contactsProvider.notifier).refresh(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(contactsProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.surfaceDim,
+      appBar: AppBar(
+        title: const Text('Contacts'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        actions: [
+          // Offered to every member, as on the web; the import views answer
+          // 403 for anyone without admin or sales access.
+          IconButton(
+            icon: const Icon(LucideIcons.upload),
+            tooltip: 'Import from a spreadsheet',
+            onPressed: _import,
+          ),
+          SavedViewsButton(
+            list: SavedViewList.contacts,
+            keys: _savedViewKeys,
+            currentQuery: () async =>
+                ref.read(contactsProvider.notifier).filterQuery,
+            onApply: _applySavedView,
+          ),
+          ExportCsvButton(
+            endpoint: ApiConfig.contactsExport,
+            filePrefix: 'contacts',
+            query: () async => ref.read(contactsProvider.notifier).filterQuery,
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.plus),
+            tooltip: 'New contact',
+            onPressed: () => context.push(AppRoutes.contactCreate),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              textInputAction: TextInputAction.search,
+              decoration: const InputDecoration(
+                hintText: 'Search contacts',
+                prefixIcon: Icon(LucideIcons.search, size: 18),
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          _countStrip(async),
+          Expanded(child: _list(async)),
+        ],
+      ),
+    );
+  }
+
+  /// Says nothing until there is something to count. "0 contacts" over a
+  /// spinner is indistinguishable from an org that has none.
+  Widget _countStrip(AsyncValue<ContactsListData> async) {
+    final data = async.value;
+    final String label;
+    if (data == null) {
+      label = async.hasError ? '' : 'Loading';
+    } else {
+      final unit = data.totalCount == 1 ? 'contact' : 'contacts';
+      label = data.contacts.length < data.totalCount
+          ? '${data.contacts.length} of ${data.totalCount} $unit'
+          : '${data.totalCount} $unit';
+    }
+    return Container(
+      width: double.infinity,
+      color: AppColors.surfaceDim,
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+      ),
+    );
+  }
+
+  Widget _list(AsyncValue<ContactsListData> async) {
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                LucideIcons.alertCircle,
+                size: 40,
+                color: AppColors.danger500,
+              ),
+              const SizedBox(height: 12),
+              Text('Could not load contacts', style: AppTypography.body),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => ref.read(contactsProvider.notifier).refresh(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (data) {
+        if (data.contacts.isEmpty) {
+          // An empty list is where a new workspace looks first, so it offers
+          // the import, as the web's does. Not for a search that matched
+          // nothing: importing is not the answer to that.
+          if (_searchController.text.isNotEmpty) {
+            return const EmptyState(
+              icon: LucideIcons.search,
+              title: 'No contacts match that search',
+            );
+          }
+          return EmptyState(
+            icon: LucideIcons.users,
+            title: 'No contacts yet',
+            actionLabel: 'Import contacts',
+            onAction: _import,
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () => ref.read(contactsProvider.notifier).refresh(),
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.only(bottom: 96),
+            itemCount: data.contacts.length + (data.hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= data.contacts.length) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              return _ContactRow(contact: data.contacts[index]);
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ContactRow extends StatelessWidget {
+  const _ContactRow({required this.contact});
+
+  final Contact contact;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = contact.subtitle;
+    return Material(
+      color: AppColors.surface,
+      child: InkWell(
+        onTap: () => context.push('${AppRoutes.contacts}/${contact.id}'),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.gray200)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.primary50,
+                child: Text(
+                  contact.initials,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.primary600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            contact.fullName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.body.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (contact.doNotCall) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            LucideIcons.phoneOff,
+                            size: 13,
+                            color: AppColors.danger500,
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                LucideIcons.chevronRight,
+                size: 18,
+                color: AppColors.gray300,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

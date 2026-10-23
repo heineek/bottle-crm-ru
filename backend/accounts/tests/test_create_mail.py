@@ -1,0 +1,388 @@
+"""`POST /api/accounts/<id>/create_mail/`.
+
+This endpoint had never succeeded once. `EmailSerializer` does not pop the
+`request_obj` kwarg the view passes it, so every call raised `TypeError` and
+answered 500 before reaching any logic. Behind that sat three more defects that
+only become observable once the first is fixed, which is why the happy path is
+not enough here: `data = {}` clobbered the request payload before the recipient
+and scheduling values were read from it, the scheduled branch never saved, and
+dispatch fired on the scheduled path anyway.
+
+Each test below pins one of the four.
+"""
+
+import json
+import uuid
+from smtplib import SMTPException
+from unittest import mock
+
+import pytest
+from django.conf import settings
+
+from accounts.models import Account, AccountEmail, AccountEmailLog
+from accounts.tasks import send_email
+from contacts.models import Contact
+
+
+@pytest.fixture
+def account(org_a):
+    return Account.objects.create(name="Acme", email="acme@example.com", org=org_a)
+
+
+@pytest.fixture
+def contact_a(org_a, account):
+    """A contact of `account`: the only kind of recipient it may mail."""
+    contact = Contact.objects.create(
+        first_name="Cee", last_name="One", email="c1@example.com", org=org_a
+    )
+    account.contacts.add(contact)
+    return contact
+
+
+@pytest.fixture
+def contact_b(org_b):
+    return Contact.objects.create(
+        first_name="Dee", last_name="Two", email="d2@example.com", org=org_b
+    )
+
+
+def _url(account_id):
+    return f"/api/accounts/{account_id}/create_mail/"
+
+
+def _payload(**overrides):
+    body = {
+        "message_subject": "Hello",
+        "message_body": "Body with no braces",
+    }
+    body.update(overrides)
+    return body
+
+
+@pytest.mark.django_db
+class TestCreateMail:
+    def test_valid_call_succeeds(self, admin_client, account):
+        """Defect 1: the whole endpoint used to 500 on `request_obj`."""
+        resp = admin_client.post(_url(account.id), _payload())
+        assert resp.status_code == 200, resp.content
+        assert AccountEmail.objects.filter(from_account=account).count() == 1
+
+    def test_recipients_are_attached(self, admin_client, account, contact_a, org_a):
+        """Defect 2: `data = {}` meant no recipient could ever be read."""
+        resp = admin_client.post(
+            _url(account.id), _payload(recipients=json.dumps([str(contact_a.id)]))
+        )
+        assert resp.status_code == 200, resp.content
+        email = AccountEmail.objects.get(from_account=account)
+        assert list(email.recipients.values_list("id", flat=True)) == [contact_a.id]
+
+    def test_recipients_accept_a_plain_list(self, admin_client, account, contact_a):
+        """A JSON body sends a real list; only multipart needs the encoded form."""
+        resp = admin_client.post(
+            _url(account.id), _payload(recipients=[str(contact_a.id)]), format="json"
+        )
+        assert resp.status_code == 200, resp.content
+        email = AccountEmail.objects.get(from_account=account)
+        assert email.recipients.count() == 1
+
+    def test_scheduled_mail_is_recorded_and_not_dispatched(self, admin_client, account):
+        """Defects 3 and 4: the flag was never saved and the mail sent anyway."""
+        with mock.patch("accounts.views.send_email.delay") as dispatch:
+            resp = admin_client.post(
+                _url(account.id),
+                _payload(
+                    scheduled_later="true", scheduled_date_time="2099-01-01T10:00:00Z"
+                ),
+            )
+        assert resp.status_code == 200, resp.content
+        email = AccountEmail.objects.get(from_account=account)
+        assert email.scheduled_later is True
+        assert email.scheduled_date_time is not None
+        dispatch.assert_not_called()
+
+    def test_unscheduled_mail_is_dispatched(self, admin_client, account):
+        with mock.patch("accounts.views.send_email.delay") as dispatch:
+            assert admin_client.post(_url(account.id), _payload()).status_code == 200
+        dispatch.assert_called_once()
+
+    def test_scheduled_without_a_time_is_rejected(self, admin_client, account):
+        resp = admin_client.post(_url(account.id), _payload(scheduled_later="true"))
+        assert resp.status_code == 400
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+
+
+@pytest.mark.django_db
+class TestCreateMailScoping:
+    def test_account_in_another_org_is_404(self, admin_client, org_b):
+        other = Account.objects.create(name="Theirs", org=org_b)
+        resp = admin_client.post(_url(other.id), _payload())
+        assert resp.status_code == 404
+        assert not AccountEmail.objects.filter(from_account=other).exists()
+
+    def test_unknown_account_is_404(self, admin_client):
+        assert admin_client.post(_url(uuid.uuid4()), _payload()).status_code == 404
+
+    def test_recipient_in_another_org_is_rejected(
+        self, admin_client, account, contact_b
+    ):
+        """And the half-built mail row must not be left behind."""
+        resp = admin_client.post(
+            _url(account.id), _payload(recipients=json.dumps([str(contact_b.id)]))
+        )
+        assert resp.status_code == 400
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+
+    def test_one_bad_recipient_rejects_the_whole_send(
+        self, admin_client, account, contact_a, contact_b
+    ):
+        """Never mail the valid subset and call it success."""
+        resp = admin_client.post(
+            _url(account.id),
+            _payload(recipients=json.dumps([str(contact_a.id), str(contact_b.id)])),
+        )
+        assert resp.status_code == 400
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+
+    def test_malformed_recipient_id_is_400_not_500(self, admin_client, account):
+        resp = admin_client.post(
+            _url(account.id), _payload(recipients=json.dumps(["not-a-uuid"]))
+        )
+        assert resp.status_code == 400
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+
+    def test_mail_is_stamped_with_the_callers_org(self, admin_client, account, org_a):
+        assert admin_client.post(_url(account.id), _payload()).status_code == 200
+        assert AccountEmail.objects.get(from_account=account).org_id == org_a.id
+
+
+@pytest.mark.django_db
+class TestCreateMailValidation:
+    def test_unbalanced_braces_rejected(self, admin_client, account):
+        """The serializer's own validator, which nothing could ever reach before."""
+        resp = admin_client.post(
+            _url(account.id), _payload(message_body="Hello {first_name")
+        )
+        assert resp.status_code == 400
+        assert "message_body" in resp.json()["errors"]
+
+    @pytest.mark.parametrize("from_email", [None, "support@bottlecrm.io"])
+    def test_sender_is_the_servers_not_the_callers(
+        self, admin_client, account, from_email
+    ):
+        """A caller-chosen `from_email` let any member send as any address the
+        mail provider would accept, such as one on the platform's own domain."""
+        body = _payload() if from_email is None else _payload(from_email=from_email)
+        with mock.patch("accounts.views.send_email.delay"):
+            resp = admin_client.post(_url(account.id), body)
+        assert resp.status_code == 200, resp.content
+        email = AccountEmail.objects.get(from_account=account)
+        assert email.from_email == settings.DEFAULT_FROM_EMAIL
+
+    def test_rendered_body_is_not_writable(self, admin_client, account):
+        with mock.patch("accounts.views.send_email.delay"):
+            resp = admin_client.post(
+                _url(account.id), _payload(rendered_message_body="<p>forged</p>")
+            )
+        assert resp.status_code == 200, resp.content
+        assert (
+            AccountEmail.objects.get(from_account=account).rendered_message_body is None
+        )
+
+
+@pytest.mark.django_db
+class TestCreateMailAccountAccess:
+    """Sending from an account needs the same access as opening it."""
+
+    @pytest.fixture
+    def admins_account(self, org_a, admin_user):
+        account = Account.objects.create(name="Not yours", org=org_a)
+        Account.objects.filter(pk=account.pk).update(created_by=admin_user)
+        return account
+
+    def test_member_who_cannot_open_the_account_is_refused(
+        self, user_client, admins_account
+    ):
+        """404, matching `GET` on the same account, and no mail row left."""
+        assert user_client.get(f"/api/accounts/{admins_account.id}/").status_code == 404
+        with mock.patch("accounts.views.send_email.delay") as dispatch:
+            resp = user_client.post(_url(admins_account.id), _payload())
+        assert resp.status_code == 404
+        missing = user_client.post(
+            _url("11111111-1111-1111-1111-111111111111"), _payload()
+        )
+        assert resp.json() == missing.json()
+        assert not AccountEmail.objects.filter(from_account=admins_account).exists()
+        dispatch.assert_not_called()
+
+    def test_assigned_member_may_send(self, user_client, admins_account, user_profile):
+        admins_account.assigned_to.add(user_profile)
+        with mock.patch("accounts.views.send_email.delay") as dispatch:
+            resp = user_client.post(_url(admins_account.id), _payload())
+        assert resp.status_code == 200, resp.content
+        assert AccountEmail.objects.filter(from_account=admins_account).count() == 1
+        dispatch.assert_called_once()
+
+    def test_creating_member_may_send(self, user_client, org_a, regular_user):
+        account = Account.objects.create(name="Mine", org=org_a)
+        Account.objects.filter(pk=account.pk).update(created_by=regular_user)
+        with mock.patch("accounts.views.send_email.delay"):
+            resp = user_client.post(_url(account.id), _payload())
+        assert resp.status_code == 200, resp.content
+        assert AccountEmail.objects.filter(from_account=account).count() == 1
+
+
+@pytest.mark.django_db
+class TestCreateMailRecipientsBelongToTheAccount:
+    """An account mails its own contacts, not anyone else in the org.
+
+    Recipients were checked against the org only, so a member who may open one
+    account could send mail from it to any contact in the org, including
+    people they cannot open, under that account's name.
+    """
+
+    @pytest.fixture
+    def stranger(self, org_a):
+        return Contact.objects.create(
+            first_name="Not", last_name="Linked", email="nl@example.com", org=org_a
+        )
+
+    def test_unlinked_contact_is_400_naming_it(self, admin_client, account, stranger):
+        with mock.patch("accounts.views.send_email.delay") as dispatch:
+            resp = admin_client.post(
+                _url(account.id), _payload(recipients=[str(stranger.id)]), format="json"
+            )
+        assert resp.status_code == 400
+        assert str(stranger.id) in str(resp.json()["errors"]["recipients"])
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+        dispatch.assert_not_called()
+
+    def test_one_unlinked_contact_refuses_the_whole_send(
+        self, admin_client, account, contact_a, stranger
+    ):
+        resp = admin_client.post(
+            _url(account.id),
+            _payload(recipients=[str(contact_a.id), str(stranger.id)]),
+            format="json",
+        )
+        assert resp.status_code == 400
+        errors = str(resp.json()["errors"]["recipients"])
+        assert str(stranger.id) in errors
+        assert str(contact_a.id) not in errors
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+
+    def test_contact_of_another_account_is_refused(
+        self, admin_client, account, org_a, stranger
+    ):
+        other = Account.objects.create(name="Elsewhere", org=org_a)
+        other.contacts.add(stranger)
+        resp = admin_client.post(
+            _url(account.id), _payload(recipients=[str(stranger.id)]), format="json"
+        )
+        assert resp.status_code == 400
+        assert not AccountEmail.objects.filter(from_account=account).exists()
+
+    def test_contact_linked_by_the_m2m_is_accepted(
+        self, admin_client, account, contact_a
+    ):
+        with mock.patch("accounts.views.send_email.delay"):
+            resp = admin_client.post(
+                _url(account.id),
+                _payload(recipients=[str(contact_a.id)]),
+                format="json",
+            )
+        assert resp.status_code == 200, resp.content
+        email = AccountEmail.objects.get(from_account=account)
+        assert list(email.recipients.values_list("id", flat=True)) == [contact_a.id]
+
+    def test_contact_linked_by_the_primary_fk_is_accepted(
+        self, admin_client, account, stranger
+    ):
+        Contact.objects.filter(pk=stranger.pk).update(account=account)
+        with mock.patch("accounts.views.send_email.delay"):
+            resp = admin_client.post(
+                _url(account.id),
+                _payload(recipients=[str(stranger.id).upper()]),
+                format="json",
+            )
+        assert resp.status_code == 200, resp.content
+        email = AccountEmail.objects.get(from_account=account)
+        assert list(email.recipients.values_list("id", flat=True)) == [stranger.id]
+
+
+@pytest.mark.django_db
+class TestMailBodyIsNotATemplate:
+    """The body is the sender's text with two placeholders, not a Django template.
+
+    `send_email` compiled it with `Template(...)` on the shared Celery worker,
+    so any member who may open an account could run template tags there: a
+    few nested `{% for %}` loops in a short body kept a worker busy for days,
+    and padding filters such as `ljust` allocated as much memory as asked
+    (issue #826).
+    """
+
+    @staticmethod
+    def _send(org, account, contact, body, from_email=None):
+        email = AccountEmail.objects.create(
+            from_account=account,
+            org=org,
+            message_subject="Hello",
+            message_body=body,
+            from_email=from_email or settings.DEFAULT_FROM_EMAIL,
+        )
+        email.recipients.add(contact)
+        send_email.run(email.id, str(org.id))
+        return email
+
+    def test_placeholders_are_filled(self, org_a, account, contact_a, mailoutbox):
+        self._send(org_a, account, contact_a, "Hi {{ name }} at {{email}}")
+        assert mailoutbox[0].body == "Hi Cee at c1@example.com"
+
+    def test_placeholder_values_are_escaped(
+        self, org_a, account, contact_a, mailoutbox
+    ):
+        Contact.objects.filter(pk=contact_a.pk).update(first_name="<b>Cee</b>")
+        self._send(org_a, account, contact_a, "Hi {{ name }}")
+        assert mailoutbox[0].body == "Hi &lt;b&gt;Cee&lt;/b&gt;"
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            "{% widthratio 7 1 7 %}",
+            '{% for c in "abc" %}x{% endfor %}',
+            '{{ name|ljust:"20" }}',
+            "{% debug %}",
+            "{% url 'admin:index' %}",
+        ],
+    )
+    def test_template_tags_are_sent_as_written(
+        self, org_a, account, contact_a, mailoutbox, body
+    ):
+        self._send(org_a, account, contact_a, body)
+        assert mailoutbox[0].body == body
+
+    def test_body_that_is_not_template_syntax_is_still_sent(
+        self, org_a, account, contact_a, mailoutbox
+    ):
+        """It raised inside the task and was swallowed, so the mail was dropped
+        after the API had already answered "Email sent successfully"."""
+        email = self._send(org_a, account, contact_a, "Use {% nope %} as is")
+        assert mailoutbox[0].body == "Use {% nope %} as is"
+        assert AccountEmailLog.objects.filter(
+            email=email, contact=contact_a, is_sent=True
+        ).exists()
+
+    def test_sent_from_the_server_address_whatever_the_row_says(
+        self, org_a, account, contact_a, mailoutbox
+    ):
+        """Rows stored before the sender became server-set still carry the
+        caller's choice, so the task must not read it."""
+        self._send(org_a, account, contact_a, "Hi", from_email="ceo@bottlecrm.io")
+        assert mailoutbox[0].from_email == settings.DEFAULT_FROM_EMAIL
+
+    def test_a_failed_send_is_logged(self, org_a, account, contact_a, caplog):
+        with mock.patch(
+            "accounts.tasks.EmailMessage.send", side_effect=SMTPException("refused")
+        ):
+            email = self._send(org_a, account, contact_a, "Hi")
+        assert f"Account mail {email.id} failed to send" in caplog.text
+        assert not AccountEmailLog.objects.filter(email=email).exists()

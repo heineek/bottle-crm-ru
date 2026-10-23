@@ -1,0 +1,2275 @@
+<script>
+  import { onMount, untrack } from 'svelte';
+  import { resolve } from '$app/paths';
+  import { enhance } from '$app/forms';
+  import PageHeader from '#lib/v2/components/PageHeader.svelte';
+  import NextAction from '#lib/v2/components/NextAction.svelte';
+  import Pill from '#lib/v2/components/Pill.svelte';
+  import Avatar from '#lib/v2/components/Avatar.svelte';
+  import MentionTextarea from '#lib/v2/components/MentionTextarea.svelte';
+  import MentionBody from '#lib/v2/components/MentionBody.svelte';
+  import {
+    relativeDays,
+    shortAge,
+    longDate,
+    relativeTime,
+    money,
+    hoursMinutes as hm
+  } from '#lib/v2/format.js';
+  import {
+    PRIORITY_TONE,
+    CASE_STATUS_TONE,
+    APPROVAL_STATE_LABEL,
+    APPROVAL_STATE_TONE
+  } from '#lib/v2/enums.js';
+  import { cascadeSummary } from './close.js';
+  import { approvalView } from './approval.js';
+  import { insertAtCaret } from './composer.js';
+  import {
+    BookOpen,
+    ChevronRight,
+    Eye,
+    EyeOff,
+    MessageSquareQuote,
+    GitBranch,
+    GitMerge,
+    Lock,
+    Paperclip,
+    Pencil,
+    Play,
+    Plus,
+    ShieldCheck,
+    Square,
+    Ticket,
+    Trash2,
+    Unlink,
+    X
+  } from '@lucide/svelte';
+  import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
+  import { relatedView } from '#lib/v2/custom-objects.js';
+  import { isOn } from '#lib/v2/modules.js';
+  import { isBilled } from '#lib/v2/time-entry.js';
+
+  /** @type {{ data: any, form: any }} */
+  let { data, form } = $props();
+  let related = $derived(relatedView(data.related));
+
+  let { ticket, conversation, articles, alsoOpen, contacts, attachments, activity, canReply } =
+    $derived(data);
+
+  /*
+   * Closing a parent takes a confirm step, because it can close other people's
+   * tickets. `data.close` is present only when the ticket has children, so an
+   * ordinary ticket keeps the one-click Close it always had.
+   *
+   * The checkbox starts where the org set it
+   * (`auto_close_children_on_parent_close`), which is the only place that
+   * setting reaches a web user, and the person closing can always move it. It
+   * is disabled when nothing linked is open, since there is nothing for a
+   * cascade to do.
+   */
+  let closePanel = $state(false);
+  let cascade = $state(false);
+  let hasOpenChildren = $derived((data.close?.descendants ?? []).length > 0);
+
+  function openClosePanel() {
+    cascade = hasOpenChildren && data.close?.cascade_default === true;
+    closePanel = true;
+  }
+
+  /*
+   * Merging and unmerging confirm in the page, the same way closing a parent
+   * does: picking a target (or pressing Unmerge on a row) only opens the
+   * confirm step, and nothing is sent until its own button is pressed. The
+   * picker itself is a GET form (`?merge=1&q=`), so searching works without
+   * scripting; the candidates are the API's `merge-targets/`, never the list.
+   */
+  let mergeTarget = $state(/** @type {any} */ (null));
+  let unmergeSource = $state(/** @type {any} */ (null));
+
+  /*
+   * Parent and child tickets, the same arrangement: the parent picker is a GET
+   * form (`?link=1&lq=`), picking a row opens the confirm step, and detaching
+   * asks in the page first. Link and detach are offered only where the API
+   * says this person may change the ticket (`canReply`, the write rule
+   * `link/` takes). The panel shows for a ticket in a tree, a problem ticket,
+   * or while the picker is open.
+   */
+  let linkTarget = $state(/** @type {any} */ (null));
+  let confirmDetach = $state(false);
+  let inTree = $derived(Boolean(ticket.parent || ticket.child_count > 0 || ticket.is_problem));
+
+  /*
+   * The composer owns its own text rather than reading it back from `data`, so
+   * a revalidation cannot wipe a half-written reply. It is cleared only on a
+   * send that actually succeeded; `update({ reset: false })` below leaves it
+   * alone otherwise, which is what makes a rejected send recoverable.
+   */
+  let body = $state(untrack(() => form?.macroText ?? ''));
+  let internal = $state(false);
+  let sending = $state(false);
+
+  // The picked file's name, mirrored out of the input so the composer can show
+  // and clear it. `fileInput` is the element itself. A file input's value can
+  // only be cleared through the DOM, not by rebinding.
+  let fileName = $state('');
+  /** @type {HTMLInputElement | undefined} */
+  let fileInput = $state();
+
+  /** @param {Event} e */
+  function pickFile(e) {
+    fileName = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0]?.name ?? '';
+  }
+  function clearFile() {
+    if (fileInput) fileInput.value = '';
+    fileName = '';
+  }
+
+  // A ticket accepts a file on its own, the API saves the attachment in a block
+  // separate from the comment, so the composer sends when there is either text
+  // or a file.
+  let canSend = $derived(Boolean(body.trim() || fileName));
+
+  /** @type {import('$app/forms').SubmitFunction} */
+  /** The reply box, so a saved reply lands at the caret. */
+  /** @type {HTMLTextAreaElement | undefined} */
+  let replyBox = $state();
+  let macroBusy = $state(false);
+  let macroError = $state('');
+
+  /*
+   * Macro actions. The macro chosen in the picker (`pickedId`) decides the
+   * button: one with text is inserted, one without is applied at once. An
+   * inserted macro that carries actions puts them on the composer as chips
+   * (`composerMacro`, with `kept` the chips still on); the reply form sends
+   * the kept ones and they apply right after the reply posts. The composer is
+   * shown only to someone who may change the ticket (`canReply`, the API's
+   * write rule), and the API checks it again on apply.
+   */
+  let pickedId = $state('');
+  let picked = $derived(data.macros?.find((/** @type {any} */ m) => m.id === pickedId) ?? null);
+
+  /** @param {string | null | undefined} id */
+  function macroWithActions(id) {
+    const m = data.macros?.find((/** @type {any} */ x) => x.id === id);
+    return m?.chips?.length ? m : null;
+  }
+  let composerMacro = $state(untrack(() => macroWithActions(form?.macroId)));
+  let kept = $state(
+    untrack(() => (macroWithActions(form?.macroId)?.chips ?? []).map((c) => c.key))
+  );
+  let keptChips = $derived(
+    (composerMacro?.chips ?? []).filter((/** @type {any} */ c) => kept.includes(c.key))
+  );
+
+  function dropMacro() {
+    composerMacro = null;
+    kept = [];
+  }
+
+  /*
+   * SvelteKit keeps this component when only `[id]` changes (a link to
+   * another ticket), and the composer's state is its own rather than read
+   * from `data`. Without this, a half-written reply, its macro chips and its
+   * file would follow the person onto the next ticket and be sent there. The
+   * id it last belonged to is kept so the first run (hydration, possibly with
+   * a no-script `form.macroText` in the box) resets nothing.
+   */
+  let composerFor = untrack(() => ticket.id);
+  $effect.pre(() => {
+    const id = ticket.id;
+    if (id === composerFor) return;
+    composerFor = id;
+    untrack(() => {
+      body = '';
+      internal = false;
+      clearFile();
+      dropMacro();
+      pickedId = '';
+      macroError = '';
+    });
+  });
+
+  /*
+   * A saved reply is expanded on the server (placeholders, the ticket's read
+   * rule, the usage count) and only ever typed into the box: the person reads
+   * it and sends it through the ordinary reply, or does not. Without script
+   * the form posts and the page comes back with `form.macroText`, which seeds
+   * the box; the picker then shows only Insert, and the server applies a
+   * macro with no text instead. Apply (a macro with no text) reloads the
+   * page, since it changed the ticket.
+   */
+  /** @type {import('$app/forms').SubmitFunction} */
+  const insertMacro = ({ formData, action }) => {
+    const id = String(formData.get('macro_id') ?? '');
+    const applying = action.search.includes('applyMacro');
+    macroBusy = true;
+    macroError = '';
+    return async ({ result, update }) => {
+      macroBusy = false;
+      if (result.type === 'failure') {
+        macroError = result.data?.macroError ?? 'Could not use this saved reply.';
+        return;
+      }
+      if (result.type !== 'success') return;
+      // Insert on a macro with no text is applied by the server (the list
+      // may have changed since this page loaded), so it reloads like Apply.
+      if (applying || result.data?.macroApplied) {
+        await update({ reset: false });
+        return;
+      }
+      if (typeof result.data?.macroText === 'string') {
+        const next = insertAtCaret(
+          body,
+          replyBox?.selectionStart ?? null,
+          replyBox?.selectionEnd ?? null,
+          result.data.macroText
+        );
+        body = next.text;
+        composerMacro = macroWithActions(id);
+        kept = (composerMacro?.chips ?? []).map((/** @type {any} */ c) => c.key);
+        requestAnimationFrame(() => {
+          replyBox?.focus();
+          replyBox?.setSelectionRange(next.caret, next.caret);
+        });
+      }
+    };
+  };
+
+  /** @type {import('$app/forms').SubmitFunction} */
+  const send = () => {
+    sending = true;
+    return async ({ result, update }) => {
+      sending = false;
+      // `sent` also rides on a failure that came after the reply went out (a
+      // refused status change or macro action), so the box clears then too
+      // rather than inviting the same reply a second time.
+      if (result.type === 'success' || (result.type === 'failure' && result.data?.sent)) {
+        body = '';
+        clearFile();
+        dropMacro();
+      }
+      await update({ reset: false });
+    };
+  };
+
+  /*
+   * ── Time ──────────────────────────────────────────────────────────────
+   *
+   * `data.time.entries` holds what THIS person may see: their own rows, or
+   * the whole team's for an admin, which is the API's decision. The totals
+   * beside the heading come from `ticket.time_summary` instead, computed
+   * across everybody, so a ticket three agents have worked does not report a
+   * third of its time to each of them. Adding up the rows on screen would.
+   *
+   * `entries` is null, not empty, when the fetch failed. The two are
+   * different answers and the panel says which.
+   */
+  let time = $derived(data.time);
+
+  /*
+   * Approval to close. Shown when a rule gates this ticket or a request was
+   * ever filed on it; every action is gated on a fact the API sent (see
+   * `approval.js`), and the API decides again on submit.
+   */
+  let approval = $derived(
+    approvalView(data.approvals, data.approvalRule, {
+      canReply,
+      isOpen: ticket.is_open === true
+    })
+  );
+  let entries = $derived(time.entries);
+  let timesheetOn = $derived(isOn(data.modules, 'timesheet'));
+  let knowledgeOn = $derived(isOn(data.modules, 'knowledge_base'));
+  let timeSummary = $derived(ticket.time_summary);
+
+  /** Minutes since this page loaded, added to the server's own measurement. */
+  let sinceLoad = $state(0);
+  onMount(() => {
+    const opened = Date.now();
+    const id = setInterval(() => {
+      sinceLoad = Math.floor((Date.now() - opened) / 60000);
+    }, 30000);
+    return () => clearInterval(id);
+  });
+
+  /**
+   * How long a running timer has been going.
+   *
+   * Measured server-side up to page load, ticked locally after that. The
+   * browser only ever contributes minutes it watched pass, so a machine with
+   * the wrong date cannot report a timer as eight hours old.
+   *
+   * @param {any} entry
+   */
+  const runningMinutes = (entry) =>
+    Math.floor((Date.parse(time.now) - Date.parse(entry.started_at)) / 60000) + sinceLoad;
+
+  /**
+   * Whose entry this is. Both sides are User ids: `user_details.id` on the
+   * row, and the JWT's `user_id` passed down by the loader. Comparing the
+   * Profile id to it would be false for everyone, silently, and the Stop
+   * button would never appear.
+   *
+   * @param {any} entry
+   */
+  const isMine = (entry) => entry.profile?.user_details?.id === time.viewerUserId;
+
+  /** This person's own running timer, if they have one on this ticket. */
+  let myTimer = $derived((entries ?? []).find((/** @type {any} */ e) => !e.ended_at && isMine(e)));
+
+  let timeBusy = $state(false);
+
+  /**
+   * The entry whose row is asking "delete?", if any.
+   *
+   * An in-page step rather than the native `confirm()`, which blocks the
+   * browser automation this app is smoke-tested with. Deleting is the one
+   * control here that needs JavaScript; it is also the only one that destroys
+   * something, so a version of this page with scripting off losing it is the
+   * right way round.
+   */
+  let confirmDelete = $state('');
+
+  /** @type {import('$app/forms').SubmitFunction} */
+  const timeSubmit = () => {
+    timeBusy = true;
+    return async ({ update }) => {
+      timeBusy = false;
+      // `reset: false` keeps a rejected "log time" form filled in. Retyping
+      // the description because the minutes were wrong is a small insult.
+      await update({ reset: false });
+    };
+  };
+
+  /**
+   * The one thing that needs a person right now, said as the state it is.
+   * Ember when the ball is in our court, rust when a target has already been
+   * missed. Only "needs you" states earn a banner: a ticket waiting on the
+   * customer is not blocked on us, so it stays a quiet line below, and a healthy
+   * open ticket gets nothing at all.
+   *
+   * The mock had a `next_action` sentence telling the agent what to do; nothing
+   * on `Case` supports inventing that, so this states the situation and stops.
+   *
+   * @type {{ tone: 'ember'|'rust', label: string, text: string } | null}
+   */
+  let alert = $derived.by(() => {
+    if (!ticket.is_open) return null;
+    if (!ticket.first_response_at) {
+      return ticket.first_response_breached
+        ? {
+            tone: 'rust',
+            label: 'First reply overdue',
+            text: 'Past its first-reply target and still unanswered. A reply below is the first response. It stops the clock.'
+          }
+        : {
+            tone: 'ember',
+            label: 'Needs a first reply',
+            text: 'Nobody has replied yet. A reply below is the first response. It is what stops the first-reply clock.'
+          };
+    }
+    // Waiting on the customer is not something we can act on, so it is not a
+    // banner. It falls through to the quiet line below.
+    if (ticket.status === 'Pending') return null;
+    if (!ticket.assignee) {
+      return {
+        tone: 'ember',
+        label: 'No owner',
+        text: 'Answered, but nobody owns it. Assign someone so it does not stall between people.'
+      };
+    }
+    return null;
+  });
+
+  let waiting = $derived(
+    ticket.is_open && ticket.status === 'Pending' && Boolean(ticket.first_response_at)
+  );
+
+  /**
+   * The three SLA states, in the palette's own terms: rust for missed, clay
+   * for the warning band ("aging_status yellow" is exactly what clay is for),
+   * and ordinary text for on track. Breached wins, because the two are
+   * exclusive server-side and a tie would mean a bug worth seeing as red.
+   */
+  function slaColor(breached, atRisk) {
+    if (breached) return 'color:var(--v2-rust)';
+    if (atRisk) return 'color:var(--v2-clay)';
+    return '';
+  }
+</script>
+
+<PageHeader title={ticket.name} record>
+  {#snippet leading()}
+    <!-- Whose ticket this is, at a glance. The account's mark where there is
+         one; a ticket glyph where nobody is attached. -->
+    {#if ticket.account}
+      <Avatar name={ticket.account.name} size={42} />
+    {:else}
+      <span class="ticket-glyph" aria-hidden="true"><Ticket size={20} /></span>
+    {/if}
+  {/snippet}
+  {#snippet crumb()}
+    <a href={resolve('tickets')}>Tickets</a>
+    {#if ticket.account}
+      <ChevronRight size={12} />
+      <a href={resolve(`accounts/${ticket.account.id}`)}>{ticket.account.name}</a>
+    {/if}
+  {/snippet}
+  {#snippet actions()}
+    <!-- Anyone who may open the ticket may watch it. The state is the API's
+         `is_current_user_watching`; hidden when that could not be loaded. -->
+    {#if data.watchers}
+      <form
+        method="POST"
+        action={data.watchers.watching ? '?/unwatch' : '?/watch'}
+        use:enhance
+        style="display:contents"
+      >
+        <button class="v2-btn" aria-pressed={data.watchers.watching}>
+          {#if data.watchers.watching}<EyeOff size={12} />Unwatch{:else}<Eye size={12} />Watch{/if}
+        </button>
+      </form>
+    {/if}
+    {#if canReply}
+      <a class="v2-btn" href={resolve(`tickets/${ticket.id}/edit`)}><Pencil size={12} />Edit</a>
+    {/if}
+    {#if data.canMerge && !data.merge.open}
+      <a class="v2-btn" href={resolve(`tickets/${ticket.id}?merge=1`)}
+        ><GitMerge size={12} />Merge into…</a
+      >
+    {/if}
+    {#if canReply && !inTree && !data.link.open}
+      <a class="v2-btn" href={resolve(`tickets/${ticket.id}?link=1`)}
+        ><GitBranch size={12} />Link parent…</a
+      >
+    {/if}
+    <!-- Status changes and the close-with-children cascade take the ticket's
+         write rule on the server (`comment_permission`); a reader who may not
+         reply is not offered them. The API refuses them anyway. -->
+    {#if canReply && ticket.is_open}
+      <form method="POST" action="?/setStatus" use:enhance style="display:contents">
+        {#if ticket.status !== 'Pending'}
+          <button class="v2-btn" name="status" value="Pending">Set to pending</button>
+        {/if}
+        {#if !data.close}
+          <button class="v2-btn v2-btn-primary" name="status" value="Closed">Close</button>
+        {/if}
+      </form>
+      <!-- A parent ticket closes through a confirm step, since the same click
+           can close tickets belonging to other people. Outside the form above
+           so this button never submits it. -->
+      {#if data.close && !closePanel}
+        <button class="v2-btn v2-btn-primary" type="button" onclick={openClosePanel}>Close</button>
+      {/if}
+    {:else if canReply}
+      <form method="POST" action="?/setStatus" use:enhance style="display:contents">
+        <button class="v2-btn" name="status" value="New">Reopen</button>
+      </form>
+    {/if}
+  {/snippet}
+</PageHeader>
+
+<div style="display:flex;flex:1;min-height:0;overflow:hidden">
+  <div class="v2-main">
+    <div
+      class="v2-pad"
+      style="padding-top:12px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;flex:none"
+    >
+      <Pill tone={PRIORITY_TONE[ticket.priority]}>{ticket.priority}</Pill>
+      <Pill tone={CASE_STATUS_TONE[ticket.status]}>{ticket.status}</Pill>
+      {#if ticket.case_type}<Pill tone="slate">{ticket.case_type}</Pill>{/if}
+      <span class="v2-sub">
+        <!-- There is no ticket number. `Case` has a UUID and a subject, so the
+             subject is the identifier and the age is the useful fact. -->
+        Opened {shortAge(ticket.opened_at)} ago
+        {#if ticket.first_response_at}
+          · first reply {relativeTime(ticket.first_response_at)}
+        {/if}
+        {#if ticket.escalation_count > 0}
+          · <span style="color:var(--v2-rust)">escalated {ticket.escalation_count}×</span>
+        {/if}
+      </span>
+    </div>
+
+    <div class="v2-scroll">
+      <div class="v2-pad" style="padding-top:14px;padding-bottom:24px">
+        {#if form?.error}
+          <p
+            class="v2-card"
+            style="padding:10px 13px;margin-bottom:16px;color:var(--v2-rust);font-size:13px"
+          >
+            {form.error}
+          </p>
+        {/if}
+
+        {#if form?.closed}
+          <p class="v2-card" style="padding:10px 13px;margin-bottom:16px;font-size:13px">
+            {form.closed}
+          </p>
+        {/if}
+
+        {#if form?.unmerged}
+          <p class="v2-card" style="padding:10px 13px;margin-bottom:16px;font-size:13px">
+            {form.unmerged}
+          </p>
+        {/if}
+
+        {#if form?.detached}
+          <p class="v2-card" style="padding:10px 13px;margin-bottom:16px;font-size:13px">
+            {form.detached}
+          </p>
+        {/if}
+
+        {#if data.merge.open}
+          <section class="v2-card merge-panel">
+            <div style="font-weight:600;font-size:13.5px">
+              Merge {ticket.name} into another ticket
+            </div>
+            <form method="GET" class="merge-search">
+              <input type="hidden" name="merge" value="1" />
+              <input
+                class="v2-input"
+                type="search"
+                name="q"
+                value={data.merge.q}
+                maxlength="200"
+                placeholder="Search by subject"
+                aria-label="Search tickets to merge into"
+              />
+              <button class="v2-btn">Search</button>
+              <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>Cancel</a>
+            </form>
+
+            {#if data.merge.error}
+              <p class="v2-error" style="margin:12px 0 0">{data.merge.error}</p>
+            {:else if data.merge.targets.length === 0}
+              <p class="v2-sub" style="font-size:12.5px;margin:12px 0 0">
+                {data.merge.q
+                  ? 'No ticket you could merge this into matches that search.'
+                  : 'There is no ticket you could merge this into.'}
+              </p>
+            {:else}
+              <ul class="merge-list">
+                {#each data.merge.targets as target (target.id)}
+                  <li>
+                    <button
+                      type="button"
+                      class="merge-option"
+                      class:picked={mergeTarget?.id === target.id}
+                      onclick={() => (mergeTarget = target)}
+                    >
+                      <span class="merge-option-name">{target.name}</span>
+                      <span class="v2-sub" style="font-size:11.5px">
+                        {target.status} · {target.priority}{target.account_name
+                          ? ` · ${target.account_name}`
+                          : ''}
+                      </span>
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+
+            {#if mergeTarget}
+              <form method="POST" action="?/merge" use:enhance class="merge-confirm">
+                <input type="hidden" name="into" value={mergeTarget.id} />
+                <p style="margin:0;font-size:12.5px;line-height:1.5">
+                  "{ticket.name}" will be marked Duplicate and its comments, attachments, and emails
+                  will move into "{mergeTarget.name}". You can undo this from the target ticket.
+                </p>
+                <div class="merge-actions">
+                  <button class="v2-btn v2-btn-primary" type="submit">Merge</button>
+                  <button class="v2-btn" type="button" onclick={() => (mergeTarget = null)}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            {/if}
+          </section>
+        {/if}
+
+        <!--
+          The confirm step for closing a parent. It names the tickets that go
+          with it before anything happens, because they may belong to someone
+          else and nobody is asked twice.
+
+          The list is the subtree the API would actually close: open, active
+          descendants of THIS ticket. Not the whole tree it sits in, which is
+          what `/tree/` returns and what the earlier unwired version of this
+          feature showed.
+        -->
+        {#if closePanel && data.close}
+          <div class="v2-card v2-close-panel">
+            <form
+              method="POST"
+              action="?/closeWithChildren"
+              use:enhance={() =>
+                async ({ update }) => {
+                  await update();
+                  closePanel = false;
+                }}
+            >
+              <div style="font-weight:600;font-size:13.5px">Close {ticket.name}</div>
+              <p class="v2-sub" style="font-size:12.5px;margin:6px 0 0;line-height:1.5">
+                {cascadeSummary({
+                  count: data.close.descendants.length,
+                  truncated: data.close.truncated
+                })}
+              </p>
+
+              {#if hasOpenChildren}
+                <ul class="v2-close-list">
+                  {#each data.close.descendants as child (child.id)}
+                    <li>
+                      <span class="v2-close-name">{child.name}</span>
+                      <Pill tone={CASE_STATUS_TONE[child.status]}>{child.status}</Pill>
+                    </li>
+                  {/each}
+                </ul>
+
+                <label class="v2-close-check">
+                  <input type="checkbox" name="cascade" bind:checked={cascade} />
+                  <span>
+                    <span style="font-weight:600">Close these as well</span>
+                    <span class="v2-sub" style="display:block;font-size:11.5px;margin-top:2px">
+                      Each one gets a note saying it was closed with this ticket. Leave it unticked
+                      to close only this one.
+                    </span>
+                  </span>
+                </label>
+
+                <div class="v2-field" style="margin-top:12px">
+                  <label for="close-comment">Why (optional)</label>
+                  <textarea
+                    id="close-comment"
+                    class="v2-input"
+                    name="resolution_comment"
+                    rows="2"
+                    maxlength="1000"
+                    placeholder="Recorded against every ticket closed with this one"></textarea>
+                </div>
+              {/if}
+
+              <div style="display:flex;gap:8px;margin-top:14px">
+                <button class="v2-btn v2-btn-primary" type="submit">
+                  {cascade ? 'Close all of them' : 'Close this ticket'}
+                </button>
+                <button class="v2-btn" type="button" onclick={() => (closePanel = false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        {/if}
+
+        {#if alert}
+          <div style="margin-bottom:18px">
+            <NextAction label={alert.label} text={alert.text} tone={alert.tone} />
+          </div>
+        {:else if waiting}
+          <p class="v2-sub" style="margin:0 0 18px;font-size:12.5px">
+            Waiting on the customer: the first-reply clock is paused while it sits in Pending.
+          </p>
+        {/if}
+
+        {#if ticket.description}
+          <div class="v2-card" style="padding:13px 15px;margin-bottom:18px">
+            <div class="v2-label" style="margin-bottom:7px">What was reported</div>
+            <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
+              {ticket.description}
+            </div>
+          </div>
+        {/if}
+
+        {#if data.mergedFrom.length}
+          <section class="v2-card merge-panel">
+            <div class="v2-label" style="display:flex;align-items:center;gap:6px">
+              <GitMerge size={12} />Merged from
+            </div>
+            <ul class="merge-list">
+              {#each data.mergedFrom as src (src.id)}
+                <li class="merged-row">
+                  <div style="min-width:0">
+                    {#if src.restricted}
+                      <span class="merge-option-name">{src.name}</span>
+                    {:else}
+                      <a class="merge-option-name" href={resolve(`tickets/${src.id}`)}>{src.name}</a
+                      >
+                    {/if}
+                    {#if src.merged_at}
+                      <div class="v2-sub" style="font-size:11.5px">
+                        merged {relativeTime(src.merged_at)}
+                      </div>
+                    {/if}
+                  </div>
+                  {#if src.can_unmerge && unmergeSource?.id !== src.id}
+                    <button class="v2-btn" type="button" onclick={() => (unmergeSource = src)}>
+                      Unmerge
+                    </button>
+                  {/if}
+                  {#if unmergeSource?.id === src.id}
+                    <form
+                      method="POST"
+                      action="?/unmerge"
+                      use:enhance={() =>
+                        async ({ update }) => {
+                          await update();
+                          unmergeSource = null;
+                        }}
+                      class="merge-confirm"
+                    >
+                      <input type="hidden" name="source_id" value={src.id} />
+                      <p style="margin:0;font-size:12.5px;line-height:1.5">
+                        "{src.name}" will be restored and its comments, attachments, and emails
+                        moved back out of this ticket.
+                      </p>
+                      <div class="merge-actions">
+                        <button class="v2-btn v2-btn-primary" type="submit">Unmerge</button>
+                        <button class="v2-btn" type="button" onclick={() => (unmergeSource = null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+
+        <!--
+          Parent and child tickets, as the phone shows them: the parent this
+          ticket sits under, then the whole tree it is part of (from the top,
+          which is what `/tree/` returns), this ticket in bold. A ticket the
+          viewer may not open keeps its place and its status but no name and no
+          link. Everything stacks, so it holds at 390px.
+        -->
+        {#if inTree || data.link.open}
+          <section class="v2-card tree-panel">
+            <div class="tree-head">
+              <div class="v2-label" style="display:flex;align-items:center;gap:6px">
+                <GitBranch size={12} />Linked tickets
+                {#if ticket.is_problem}<Pill tone="rust">Problem</Pill>{/if}
+              </div>
+              {#if canReply && !data.link.open}
+                <a class="v2-btn v2-btn-sm" href={resolve(`tickets/${ticket.id}?link=1`)}>
+                  {ticket.parent ? 'Change parent' : 'Link parent…'}
+                </a>
+              {/if}
+            </div>
+
+            {#if ticket.parent}
+              <div class="tree-parent">
+                <div style="min-width:0;flex:1">
+                  <div class="v2-sub" style="font-size:11.5px">Parent</div>
+                  {#if ticket.parent.restricted}
+                    <span class="tree-name tree-restricted">{ticket.parent.name}</span>
+                  {:else}
+                    <a class="tree-name" href={resolve(`tickets/${ticket.parent.id}`)}
+                      >{ticket.parent.name}</a
+                    >
+                  {/if}
+                </div>
+                {#if ticket.parent.status}
+                  <Pill tone={CASE_STATUS_TONE[ticket.parent.status]}>{ticket.parent.status}</Pill>
+                {/if}
+                {#if canReply && !confirmDetach}
+                  <button
+                    class="v2-btn v2-btn-sm"
+                    type="button"
+                    onclick={() => (confirmDetach = true)}
+                  >
+                    <Unlink size={11} />Detach
+                  </button>
+                {/if}
+              </div>
+              {#if confirmDetach}
+                <form
+                  method="POST"
+                  action="?/detachParent"
+                  use:enhance={() =>
+                    async ({ update }) => {
+                      await update();
+                      confirmDetach = false;
+                    }}
+                  class="merge-confirm"
+                >
+                  <p style="margin:0;font-size:12.5px;line-height:1.5">
+                    This ticket will no longer sit under {ticket.parent.restricted
+                      ? 'its parent'
+                      : `"${ticket.parent.name}"`}. Neither ticket is otherwise changed.
+                  </p>
+                  <div class="merge-actions">
+                    <button class="v2-btn v2-btn-primary" type="submit">Detach</button>
+                    <button class="v2-btn" type="button" onclick={() => (confirmDetach = false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              {/if}
+            {/if}
+
+            {#if data.tree && data.tree.rows.length > 1}
+              <ul class="tree-list" aria-label="Ticket tree">
+                {#each data.tree.rows as row (row.id)}
+                  <li class="tree-row" class:tree-focus={row.focus} style="--depth:{row.depth}">
+                    {#if row.restricted || row.focus}
+                      <span class="tree-name" class:tree-restricted={row.restricted}
+                        >{row.name}</span
+                      >
+                    {:else}
+                      <a class="tree-name" href={resolve(`tickets/${row.id}`)}>{row.name}</a>
+                    {/if}
+                    {#if row.status}
+                      <Pill tone={CASE_STATUS_TONE[row.status]}>{row.status}</Pill>
+                    {/if}
+                  </li>
+                  {#if row.truncated}
+                    <li class="v2-sub tree-row" style="--depth:{row.depth + 1};font-size:11.5px">
+                      More tickets further down are not shown.
+                    </li>
+                  {/if}
+                {/each}
+              </ul>
+            {:else if ticket.child_count > 0}
+              <p class="v2-sub" style="font-size:12.5px;margin:10px 0 0">
+                {ticket.child_count} linked {ticket.child_count === 1 ? 'ticket' : 'tickets'} under this
+                one. The tree could not be loaded.
+              </p>
+            {:else if !ticket.parent}
+              <p class="v2-sub" style="font-size:12.5px;margin:10px 0 0">
+                Not linked to another ticket yet.
+              </p>
+            {/if}
+
+            {#if data.link.open}
+              <div class="tree-picker">
+                <div style="font-weight:600;font-size:13.5px">
+                  Link {ticket.name} under a parent
+                </div>
+                <form method="GET" class="merge-search">
+                  <input type="hidden" name="link" value="1" />
+                  <input
+                    class="v2-input"
+                    type="search"
+                    name="lq"
+                    value={data.link.q}
+                    maxlength="200"
+                    placeholder="Search by subject"
+                    aria-label="Search tickets to link under"
+                  />
+                  <button class="v2-btn">Search</button>
+                  <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>Cancel</a>
+                </form>
+
+                {#if data.link.error}
+                  <p class="v2-error" style="margin:12px 0 0">{data.link.error}</p>
+                {:else if data.link.candidates.length === 0}
+                  <p class="v2-sub" style="font-size:12.5px;margin:12px 0 0">
+                    {data.link.q
+                      ? 'No ticket you could link this under matches that search.'
+                      : 'There is no ticket you could link this under.'}
+                  </p>
+                {:else}
+                  <ul class="merge-list">
+                    {#each data.link.candidates as candidate (candidate.id)}
+                      <li>
+                        <button
+                          type="button"
+                          class="merge-option"
+                          class:picked={linkTarget?.id === candidate.id}
+                          onclick={() => (linkTarget = candidate)}
+                        >
+                          <span class="merge-option-name">{candidate.name}</span>
+                          <span class="v2-sub" style="font-size:11.5px">
+                            {candidate.status} · {candidate.priority}
+                          </span>
+                        </button>
+                      </li>
+                    {/each}
+                  </ul>
+                {/if}
+
+                {#if linkTarget}
+                  <form
+                    method="POST"
+                    action="?/linkParent"
+                    use:enhance={() =>
+                      async ({ update }) => {
+                        await update();
+                        linkTarget = null;
+                      }}
+                    class="merge-confirm"
+                  >
+                    <input type="hidden" name="parent_id" value={linkTarget.id} />
+                    <p style="margin:0;font-size:12.5px;line-height:1.5">
+                      "{ticket.name}" will sit under "{linkTarget.name}"{ticket.parent
+                        ? ', instead of its current parent'
+                        : ''}. A tree is at most three levels deep.
+                    </p>
+                    <div class="merge-actions">
+                      <button class="v2-btn v2-btn-primary" type="submit">Link</button>
+                      <button class="v2-btn" type="button" onclick={() => (linkTarget = null)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                {/if}
+              </div>
+            {/if}
+          </section>
+        {/if}
+
+        {#if approval.show}
+          {@const a = approval.latest}
+          <!-- Approval to close. Above the time panel: when a rule gates the
+               ticket, this is what stands between the agent and Close. -->
+          <section class="v2-card approval-panel">
+            <div class="approval-head">
+              <ShieldCheck size={15} />
+              <div class="v2-label">Approval</div>
+              {#if a}
+                <Pill tone={APPROVAL_STATE_TONE[a.state] ?? 'slate'}>
+                  {APPROVAL_STATE_LABEL[a.state] ?? a.state}
+                </Pill>
+              {/if}
+            </div>
+
+            {#if data.approvalRule}
+              <p class="v2-sub approval-line">
+                Closing this ticket needs approval under <b>{data.approvalRule.name}</b>.
+              </p>
+            {/if}
+
+            {#if approval.failed}
+              <p class="v2-sub approval-line">
+                The approval requests could not be loaded. Nothing else on this ticket is affected.
+              </p>
+            {:else if a}
+              <p class="v2-sub approval-line">
+                Requested by {a.requested_by || 'someone'} · {shortAge(a.created_at)} ago
+              </p>
+              {#if a.state !== 'pending' && a.decided_at}
+                <p class="v2-sub approval-line">
+                  {APPROVAL_STATE_LABEL[a.state] ?? a.state}{a.approver ? ` by ${a.approver}` : ''} ·
+                  {shortAge(a.decided_at)} ago
+                </p>
+              {/if}
+              {#if a.rule.name && a.rule.id !== data.approvalRule?.id}
+                <p class="v2-sub approval-line">Rule: {a.rule.name}</p>
+              {/if}
+              {#if a.note}<p class="approval-note">{a.note}</p>{/if}
+              {#if a.state === 'rejected' && a.reason}
+                <p class="approval-reason"><b>Reason:</b> {a.reason}</p>
+              {/if}
+              {#if a.is_own_request && a.state === 'pending'}
+                <p class="v2-sub approval-line">
+                  You asked for this, so another approver must decide it.
+                </p>
+              {/if}
+            {:else}
+              <p class="v2-sub approval-line">No approval requested yet.</p>
+            {/if}
+
+            {#if approval.canDecide || approval.canWithdraw || approval.canRequest}
+              <div class="approval-actions">
+                {#if approval.canDecide}
+                  <form method="POST" action="?/approveApproval" use:enhance>
+                    <input type="hidden" name="approval_id" value={a.id} />
+                    <button class="v2-btn v2-btn-primary">Approve</button>
+                  </form>
+                  <details class="approval-more">
+                    <summary class="v2-btn">Reject</summary>
+                    <form method="POST" action="?/rejectApproval" use:enhance class="approval-form">
+                      <input type="hidden" name="approval_id" value={a.id} />
+                      <div class="v2-field">
+                        <label for="ap-reason">Reason</label>
+                        <textarea id="ap-reason" name="reason" class="v2-input" rows="2" required
+                        ></textarea>
+                      </div>
+                      <button class="v2-btn">Reject request</button>
+                    </form>
+                  </details>
+                {/if}
+                {#if approval.canWithdraw}
+                  <form method="POST" action="?/withdrawApproval" use:enhance>
+                    <input type="hidden" name="approval_id" value={a.id} />
+                    <button class="v2-btn">Withdraw request</button>
+                  </form>
+                {/if}
+                {#if approval.canRequest}
+                  <details class="approval-more">
+                    <summary class="v2-btn">{a ? 'Request again' : 'Request approval'}</summary>
+                    <form
+                      method="POST"
+                      action="?/requestApproval"
+                      use:enhance
+                      class="approval-form"
+                    >
+                      <div class="v2-field">
+                        <label for="ap-note">Note for the approver (optional)</label>
+                        <textarea id="ap-note" name="note" class="v2-input" rows="2"></textarea>
+                      </div>
+                      <button class="v2-btn v2-btn-primary">Send request</button>
+                    </form>
+                  </details>
+                {/if}
+              </div>
+            {/if}
+
+            {#if form?.approvalError}
+              <p class="v2-error approval-line">{form.approvalError}</p>
+            {/if}
+          </section>
+        {/if}
+
+        <!--
+          Time on this ticket.
+
+          Above the conversation rather than under it. The timer is what an
+          agent reaches for on arriving, and a forty-message thread would
+          otherwise sit between them and the button. Every control is a form
+          post, so the panel works by keyboard and, apart from the delete
+          confirm, without JavaScript at all; `enhance` only saves the reload.
+        -->
+        {#if timesheetOn}
+          <section class="v2-card time-panel">
+            <div class="time-head">
+              <div class="time-title">
+                <div class="v2-label">Time</div>
+                <div class="v2-sub time-total">
+                  {#if timeSummary?.total_minutes}
+                    <b class="v2-num">{hm(timeSummary.total_minutes)}</b> logged
+                    {#if timeSummary.billable_minutes}
+                      · {hm(timeSummary.billable_minutes)} billable
+                    {/if}
+                  {:else}
+                    Nothing logged yet
+                  {/if}
+                </div>
+              </div>
+
+              <!-- The person's own timer, and only theirs. An admin sees the
+                 team's rows here, and stopping someone else's clock from a
+                 button labelled "Stop" with no name on it is not something to
+                 do by accident; that one is on its row. -->
+              {#if myTimer}
+                <form
+                  method="POST"
+                  action="?/stopTimer"
+                  use:enhance={timeSubmit}
+                  class="time-timer"
+                >
+                  <input type="hidden" name="entry_id" value={myTimer.id} />
+                  <button class="v2-btn v2-btn-primary" disabled={timeBusy}>
+                    <Square size={12} />Stop {hm(runningMinutes(myTimer))}
+                  </button>
+                </form>
+              {:else if canReply}
+                <!-- Starting a timer and logging time are work on the ticket, so
+                   they take the rule replying takes (`comment_permission`);
+                   the API answers anyone else 403. Stopping stays above. -->
+                <form
+                  method="POST"
+                  action="?/startTimer"
+                  use:enhance={timeSubmit}
+                  class="time-timer"
+                >
+                  <button class="v2-btn" disabled={timeBusy}><Play size={12} />Start timer</button>
+                </form>
+              {/if}
+
+              <!-- Native disclosure, so the form opens without JavaScript. Open,
+                 it takes a row of its own rather than the button's column. -->
+              {#if canReply}
+                <details class="time-log">
+                  <summary class="v2-btn"><Plus size={12} />Log time</summary>
+                  <form
+                    method="POST"
+                    action="?/logTime"
+                    use:enhance={timeSubmit}
+                    class="time-log-form"
+                  >
+                    <div class="v2-field">
+                      <label for="time-minutes">Minutes</label>
+                      <input
+                        id="time-minutes"
+                        class="v2-input"
+                        name="minutes"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        max="1440"
+                        step="1"
+                        value="30"
+                        required
+                      />
+                    </div>
+                    <div class="v2-field">
+                      <label for="time-rate">Rate per hour</label>
+                      <input
+                        id="time-rate"
+                        class="v2-input"
+                        name="hourly_rate"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <div class="v2-field time-wide">
+                      <label for="time-what">What was done</label>
+                      <input
+                        id="time-what"
+                        class="v2-input"
+                        name="description"
+                        placeholder="Traced the failed import to the CSV encoding"
+                        required
+                      />
+                    </div>
+                    <div class="time-wide time-log-foot">
+                      <label class="time-check">
+                        <input type="checkbox" name="billable" />
+                        Billable
+                      </label>
+                      <button class="v2-btn v2-btn-primary" disabled={timeBusy}>Log time</button>
+                    </div>
+                    <p class="v2-hint time-wide">
+                      Counted back from now. To record a session from an earlier day, start and stop
+                      the timer on it.
+                    </p>
+                  </form>
+                </details>
+              {/if}
+            </div>
+
+            {#if form?.timeError}
+              <p class="v2-error time-error">
+                <span>{form.timeError}</span>
+                {#if form.runningTicketId}
+                  <a href={resolve(`tickets/${form.runningTicketId}`)}>Open that ticket</a>
+                {/if}
+              </p>
+            {/if}
+
+            {#if entries === null}
+              <p class="v2-sub time-empty">
+                The time entries could not be loaded. Nothing else on this ticket is affected.
+              </p>
+            {:else if entries.length === 0}
+              <p class="v2-sub time-empty">
+                {canReply
+                  ? 'No time logged yet. Start the timer, or log a session you have already worked.'
+                  : 'No time logged yet.'}
+              </p>
+            {:else}
+              <div class="v2-table-wrap">
+                <table class="v2-table">
+                  <thead>
+                    <tr>
+                      <th>What was done</th>
+                      <th>Who</th>
+                      <th>When</th>
+                      <th class="v2-r">Logged</th>
+                      <th class="v2-r">Billing</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each entries as e (e.id)}
+                      <tr>
+                        <td data-m="title">
+                          {e.description || 'No description'}
+                          {#if !e.ended_at}<span class="time-running">Running</span>{/if}
+                          {#if e.auto_stopped}
+                            <span
+                              class="v2-sub"
+                              title="Stopped automatically after running overnight"
+                              >auto-stopped</span
+                            >
+                          {/if}
+                        </td>
+                        <td data-m="meta">
+                          {e.profile?.user_details?.name ||
+                            e.profile?.user_details?.email ||
+                            'Someone'}
+                        </td>
+                        <td data-m="meta">{shortAge(e.started_at)} ago</td>
+                        <td class="v2-num v2-r" data-m="tag">
+                          {e.ended_at ? hm(e.duration_minutes) : hm(runningMinutes(e))}
+                        </td>
+                        <td class="v2-r time-row-actions">
+                          {#if !e.ended_at}
+                            <form method="POST" action="?/stopTimer" use:enhance={timeSubmit}>
+                              <input type="hidden" name="entry_id" value={e.id} />
+                              <button class="v2-btn v2-btn-sm" disabled={timeBusy}>
+                                <Square size={11} />Stop
+                              </button>
+                            </form>
+                          {:else if isBilled(e)}
+                            <!-- Billed. The toggle and the delete are both gone:
+                               the API refuses to delete an invoiced entry, and
+                               flipping one to non-billable after it has been
+                               charged for would leave the invoice standing. -->
+                            {#if e.invoice}
+                              <a class="v2-sub" href={resolve(`invoices/${e.invoice}`)}>Invoiced</a>
+                            {:else}
+                              <span class="v2-sub">Invoiced</span>
+                            {/if}
+                          {:else if confirmDelete === e.id}
+                            <form method="POST" action="?/deleteTime" use:enhance={timeSubmit}>
+                              <input type="hidden" name="entry_id" value={e.id} />
+                              <button class="v2-btn v2-btn-sm time-danger" disabled={timeBusy}>
+                                Delete
+                              </button>
+                            </form>
+                            <button
+                              type="button"
+                              class="v2-btn v2-btn-sm"
+                              onclick={() => (confirmDelete = '')}
+                            >
+                              Keep
+                            </button>
+                          {:else}
+                            <form method="POST" action="?/setBillable" use:enhance={timeSubmit}>
+                              <input type="hidden" name="entry_id" value={e.id} />
+                              <!-- The value to move to, decided when the row was
+                                 rendered, so two quick clicks cannot both send
+                                 "make it billable". -->
+                              <input
+                                type="hidden"
+                                name="billable"
+                                value={e.billable ? 'false' : 'true'}
+                              />
+                              <button
+                                class="v2-btn v2-btn-sm"
+                                class:time-billable={e.billable}
+                                disabled={timeBusy}
+                                title={e.billable ? 'Mark as non-billable' : 'Mark as billable'}
+                              >
+                                {#if e.billable}
+                                  {e.hourly_rate
+                                    ? money(e.hourly_rate, e.currency) + '/hr'
+                                    : 'Billable'}
+                                {:else}
+                                  Not billable
+                                {/if}
+                              </button>
+                            </form>
+                            <button
+                              type="button"
+                              class="v2-btn v2-btn-sm"
+                              aria-label="Delete this entry"
+                              title="Delete this entry"
+                              onclick={() => (confirmDelete = e.id)}
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          {/if}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          </section>
+        {/if}
+
+        {#if knowledgeOn && (articles.length || canReply)}
+          <!-- Knowledge-base articles filed against this ticket. In the main
+               column rather than the rail, which is hidden below 1180px, so a
+               phone sees them too. Linking and unlinking take the ticket's
+               write rule (`comment_permission`), as on mobile. -->
+          <section class="v2-card articles-panel" id="articles">
+            <div class="articles-head">
+              <BookOpen size={14} />
+              <div class="v2-label">Articles</div>
+              {#if articles.length}<span class="v2-sub v2-num">{articles.length}</span>{/if}
+            </div>
+
+            {#if articles.length}
+              <ul class="articles-list">
+                {#each articles as a (a.id)}
+                  <li class="articles-row">
+                    <a href={resolve(`solutions/${a.id}`)} class="articles-link">
+                      <span class="articles-title">{a.title}</span>
+                      <span class="v2-sub articles-meta">
+                        {a.is_published ? 'Published' : 'Not published'} · updated {relativeDays(
+                          a.updated_at
+                        )}
+                      </span>
+                    </a>
+                    {#if canReply}
+                      <form method="POST" action="?/unlinkArticle" use:enhance>
+                        <input type="hidden" name="article_id" value={a.id} />
+                        <button class="v2-btn v2-btn-sm" aria-label={`Unlink ${a.title}`}
+                          >Unlink</button
+                        >
+                      </form>
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+            {:else}
+              <p class="v2-sub articles-empty">No article is linked to this ticket.</p>
+            {/if}
+
+            {#if canReply}
+              <form method="GET" action="#articles" class="articles-search">
+                <input
+                  name="aq"
+                  class="v2-input"
+                  placeholder="Find an article to link"
+                  value={data.articlePicker.q}
+                  aria-label="Find an article to link"
+                />
+                <button class="v2-btn">Search</button>
+              </form>
+              {#if data.articlePicker.candidates === null}
+                <p class="v2-sub articles-empty">The articles could not be loaded.</p>
+              {:else if data.articlePicker.candidates.length}
+                <div class="v2-sub articles-sub">
+                  {data.articlePicker.q
+                    ? 'Matching published articles'
+                    : 'Suggested for this ticket'}
+                </div>
+                <ul class="articles-list">
+                  {#each data.articlePicker.q ? data.articlePicker.candidates : data.articlePicker.candidates.slice(0, 3) as c (c.id)}
+                    <li class="articles-row">
+                      <a href={resolve(`solutions/${c.id}`)} class="articles-link">
+                        <span class="articles-title">{c.title}</span>
+                        {#if c.snippet}<span class="v2-sub articles-meta">{c.snippet}</span>{/if}
+                      </a>
+                      <form method="POST" action="?/linkArticle" use:enhance>
+                        <input type="hidden" name="article_id" value={c.id} />
+                        <button class="v2-btn v2-btn-sm" aria-label={`Link ${c.title}`}>Link</button
+                        >
+                      </form>
+                    </li>
+                  {/each}
+                </ul>
+              {:else if data.articlePicker.q}
+                <p class="v2-sub articles-empty">No published article matches that.</p>
+              {/if}
+            {/if}
+
+            {#if form?.articleError}
+              <p class="v2-error articles-empty">{form.articleError}</p>
+            {/if}
+          </section>
+        {/if}
+
+        <RelatedRecords {related} error={form?.related?.error} />
+
+        {#if conversation.length === 0}
+          <p class="v2-sub" style="margin:0 0 18px;font-size:12.5px">
+            Nothing has been said on this ticket yet. A reply below is the first response. It is
+            what stops the first-reply clock.
+          </p>
+        {/if}
+
+        {#each conversation as m (m.id)}
+          {#if m.direction === 'note'}
+            <!-- An internal note is not part of the conversation with the
+                 customer, so it does not sit on either side of it. -->
+            <div
+              class="v2-card"
+              style="padding:11px 13px;margin-bottom:14px;border-style:dashed;background:transparent"
+            >
+              <div
+                class="v2-sub"
+                style="font-size:11.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px"
+              >
+                <Lock size={11} />
+                <b style="color:var(--v2-ink);font-weight:600">{m.author}</b>
+                · internal note · {shortAge(m.at)} ago
+              </div>
+              <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
+                <MentionBody body={m.body} people={data.mentionPeople} />
+              </div>
+            </div>
+          {:else}
+            <div
+              style="display:flex;gap:12px;margin-bottom:14px;{m.direction === 'out'
+                ? 'flex-direction:row-reverse'
+                : ''}"
+            >
+              <Avatar name={m.author} size={30} />
+              <div
+                class="v2-card"
+                style="padding:12px 14px;max-width:72%;{m.direction === 'out'
+                  ? 'background:var(--v2-line-soft)'
+                  : ''}"
+              >
+                <div class="v2-sub" style="font-size:11.5px;margin-bottom:5px">
+                  <b style="color:var(--v2-ink);font-weight:600">{m.author}</b>
+                  {#if m.kind === 'email'}· email{/if}
+                  · {shortAge(m.at)} ago
+                </div>
+                {#if m.subject}
+                  <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">{m.subject}</div>
+                {/if}
+                <!-- The backend reads mentions in comments and notes, never in emails. -->
+                <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
+                  {#if m.kind === 'email'}{m.body}{:else}<MentionBody
+                      body={m.body}
+                      people={data.mentionPeople}
+                    />{/if}
+                </div>
+              </div>
+            </div>
+          {/if}
+        {/each}
+
+        {#if canReply}
+          {#if data.macros?.length}
+            <!-- Its own form, outside the reply: picking a saved reply must not
+                 post the reply, its attachment or its status. -->
+            <form method="POST" action="?/renderMacro" use:enhance={insertMacro} class="macro-pick">
+              <label for="macro-id" class="v2-sub macro-label"
+                ><MessageSquareQuote size={13} />Saved reply</label
+              >
+              <select
+                id="macro-id"
+                name="macro_id"
+                class="v2-input macro-select"
+                required
+                bind:value={pickedId}
+              >
+                <option value="">Choose one…</option>
+                {#each data.macros as m (m.id)}
+                  <option value={m.id}>{m.title}</option>
+                {/each}
+              </select>
+              {#if picked && !picked.has_body}
+                <!-- Nothing to insert, so nothing to wait for: its actions
+                     are the whole macro, and they apply now. -->
+                <button class="v2-btn" formaction="?/applyMacro" disabled={macroBusy}>Apply</button>
+              {:else}
+                <button class="v2-btn" disabled={macroBusy}>Insert</button>
+              {/if}
+            </form>
+            {#if picked && !picked.has_body && picked.chips.length}
+              <p class="v2-sub macro-note">
+                Applies now: {picked.chips.map((/** @type {any} */ c) => c.label).join(' · ')}
+              </p>
+            {/if}
+            {#if macroError || form?.macroError}
+              <p class="v2-error macro-error">{macroError || form?.macroError}</p>
+            {/if}
+            {#if form?.macroApplied}
+              <p class="v2-sub macro-note">{form.macroApplied}</p>
+            {/if}
+          {/if}
+          <form method="POST" action="?/reply" enctype="multipart/form-data" use:enhance={send}>
+            <div
+              class="v2-card"
+              style="padding:13px 14px;margin-top:{data.macros?.length ? 10 : 18}px"
+            >
+              {#if composerMacro}
+                <input type="hidden" name="macro_id" value={composerMacro.id} />
+              {/if}
+              {#if keptChips.length}
+                <!-- The macro's actions, applied right after this reply posts.
+                     Each can be taken off; what is left is what applies. -->
+                <div class="macro-chips">
+                  <span class="v2-sub macro-chips-label">Also on send</span>
+                  {#each keptChips as chip (chip.key)}
+                    <span class="v2-chip">
+                      {chip.label}
+                      <input type="hidden" name="macro_action" value={chip.key} />
+                      <button
+                        type="button"
+                        aria-label="Do not apply {chip.label}"
+                        title="Do not apply this"
+                        onclick={() => (kept = kept.filter((k) => k !== chip.key))}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  {/each}
+                </div>
+              {/if}
+              <MentionTextarea
+                bind:ref={replyBox}
+                bind:value={body}
+                people={data.mentionPeople}
+                name="body"
+                rows="3"
+                placeholder={internal ? 'Note for the team…' : 'Write a reply…'}
+                style="width:100%;border:none;background:transparent;resize:vertical;font:inherit;font-size:13.5px;line-height:1.55;color:var(--v2-ink);outline:none"
+              />
+              <div
+                style="display:flex;gap:9px;align-items:center;border-top:1px solid var(--v2-line);padding-top:12px;flex-wrap:wrap"
+              >
+                <label
+                  class="v2-sub"
+                  style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"
+                >
+                  <input type="checkbox" name="internal" bind:checked={internal} />
+                  Internal note
+                </label>
+                <!-- The whole chip is the click target: a label wrapping a hidden
+                     input. A file may ride with the reply or go on its own. -->
+                <label class="attach" class:has-file={fileName}>
+                  <Paperclip size={13} />
+                  <span class="attach-label">{fileName || 'Attach'}</span>
+                  <input
+                    bind:this={fileInput}
+                    type="file"
+                    name="attachment"
+                    onchange={pickFile}
+                    hidden
+                  />
+                </label>
+                {#if fileName}
+                  <button type="button" class="clear-file" onclick={clearFile} title="Remove file">
+                    <X size={12} />
+                  </button>
+                {/if}
+                {#if kept.includes('status')}
+                  <!-- The macro's status chip sets it; two status controls
+                       on one send would contradict each other. -->
+                  <span class="v2-sub" style="margin-left:auto;font-size:11.5px"
+                    >Status set by the macro</span
+                  >
+                {:else}
+                  <span class="v2-sub" style="margin-left:auto;font-size:11.5px"
+                    >Status on send</span
+                  >
+                  <!-- Answering and moving the ticket is one decision, so it is
+                       one submit. Empty means "leave the status alone". -->
+                  <select name="status" class="v2-input" style="width:auto;font-size:12px">
+                    <option value="">Unchanged</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                {/if}
+                <button class="v2-btn v2-btn-primary" disabled={sending || !canSend}>
+                  {sending
+                    ? 'Sending…'
+                    : body.trim()
+                      ? internal
+                        ? 'Add note'
+                        : 'Send reply'
+                      : fileName
+                        ? 'Attach file'
+                        : internal
+                          ? 'Add note'
+                          : 'Send reply'}
+                </button>
+              </div>
+            </div>
+            {#if form?.macroNote}
+              <p class="v2-sub macro-note">{form.macroNote}</p>
+            {/if}
+            {#if internal}
+              <p class="v2-sub" style="margin:8px 2px 0;font-size:11.5px">
+                A note stays inside the team and does not stop the first-reply clock.
+              </p>
+            {:else}
+              <p class="v2-sub" style="margin:8px 2px 0;font-size:11.5px">
+                A reply is emailed to the contacts on this ticket and shown in their portal.
+              </p>
+            {/if}
+          </form>
+        {:else}
+          <p class="v2-sub" style="margin-top:18px;font-size:12.5px">
+            You can read this ticket but not reply to it. Ask an admin, or whoever it is assigned
+            to.
+          </p>
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  <aside class="v2-rail">
+    <div class="v2-label v2-rail-head">Ticket</div>
+    <dl class="v2-kv">
+      <dt>Priority</dt>
+      <dd><Pill tone={PRIORITY_TONE[ticket.priority]}>{ticket.priority}</Pill></dd>
+      <dt>Status</dt>
+      <dd><Pill tone={CASE_STATUS_TONE[ticket.status]}>{ticket.status}</Pill></dd>
+      <dt>Type</dt>
+      <dd>{ticket.case_type ?? 'Not set'}</dd>
+      <dt>Assignee</dt>
+      <dd>
+        {ticket.assignee ?? 'Unassigned'}
+        {#if ticket.assignee_count > 1}
+          <span class="v2-sub">+{ticket.assignee_count - 1}</span>
+        {/if}
+      </dd>
+      <dt>Opened</dt>
+      <dd>{longDate(ticket.opened_at)}</dd>
+      <dt>First reply</dt>
+      <dd>
+        {#if ticket.first_response_at}
+          {relativeTime(ticket.first_response_at)}
+        {:else if ticket.first_response_deadline}
+          <span style={slaColor(ticket.first_response_breached, ticket.first_response_at_risk)}>
+            due {relativeTime(ticket.first_response_deadline)}
+          </span>
+        {:else}
+          No target
+        {/if}
+      </dd>
+      {#if ticket.resolved_at}
+        <dt>Resolved</dt>
+        <dd>{longDate(ticket.resolved_at)}</dd>
+      {:else if ticket.resolution_deadline}
+        <dt>Resolve by</dt>
+        <dd>
+          <span style={slaColor(ticket.resolution_breached, ticket.resolution_at_risk)}>
+            {relativeTime(ticket.resolution_deadline)}
+          </span>
+        </dd>
+      {/if}
+      {#if ticket.paused_at}
+        <dt>SLA</dt>
+        <dd>Paused while pending</dd>
+      {/if}
+    </dl>
+
+    {#if ticket.account}
+      <div class="v2-label v2-rail-head">Account</div>
+      <a
+        class="v2-rail-row"
+        href={resolve(`accounts/${ticket.account.id}`)}
+        style="color:inherit;text-decoration:none"
+      >
+        <Avatar name={ticket.account.name} size={29} />
+        <div>
+          <div style="font-size:12.5px;font-weight:550">{ticket.account.name}</div>
+          <div class="v2-sub" style="font-size:11px">
+            {#if contacts.length === 1}
+              Reported by {contacts[0].name}
+            {:else if contacts.length > 1}
+              {contacts.length} people on this ticket
+            {:else}
+              Nobody named on this ticket
+            {/if}
+          </div>
+        </div>
+      </a>
+    {/if}
+
+    {#if contacts.length}
+      <div class="v2-label v2-rail-head">People</div>
+      {#each contacts as c (c.id)}
+        <a
+          class="v2-rail-row"
+          href={resolve(`contacts/${c.id}`)}
+          style="color:inherit;text-decoration:none"
+        >
+          <Avatar name={c.name} size={26} />
+          <div style="font-size:12.5px;font-weight:550">{c.name}</div>
+        </a>
+      {/each}
+    {/if}
+
+    {#if attachments.length}
+      <div class="v2-label v2-rail-head">Attachments</div>
+      {#each attachments as f (f.id)}
+        {#if f.url}
+          <!-- A download now, not dead text: the path was always in the payload
+               and the rail simply never linked it. -->
+          <a
+            class="v2-rail-row att"
+            href={f.url}
+            target="_blank"
+            rel="external noreferrer noopener"
+            style="color:inherit;text-decoration:none"
+          >
+            <Paperclip size={13} />
+            <div style="font-size:12.5px;font-weight:550;overflow-wrap:anywhere">{f.name}</div>
+          </a>
+        {:else}
+          <div class="v2-rail-row">
+            <Paperclip size={13} />
+            <div style="font-size:12.5px;font-weight:550;overflow-wrap:anywhere">{f.name}</div>
+          </div>
+        {/if}
+      {/each}
+    {/if}
+
+    {#if alsoOpen.length}
+      <div class="v2-label v2-rail-head">Also open here</div>
+      {#each alsoOpen as t (t.id)}
+        <a
+          class="v2-rail-row"
+          href={resolve(`tickets/${t.id}`)}
+          style="color:inherit;text-decoration:none"
+        >
+          <div>
+            <div style="font-size:12.5px;font-weight:550;line-height:1.35">{t.name}</div>
+            <div class="v2-sub" style="font-size:11px">
+              {t.priority} · {shortAge(t.opened_at)} old
+            </div>
+          </div>
+        </a>
+      {/each}
+    {/if}
+
+    {#if activity.length}
+      <div class="v2-label v2-rail-head">History</div>
+      {#each activity.slice(0, 8) as a (a.id)}
+        <div class="v2-rail-row">
+          <div>
+            <div style="font-size:12.5px;font-weight:550;line-height:1.35">{a.label}</div>
+            <div class="v2-sub" style="font-size:11px">
+              {a.by ?? 'System'} · {shortAge(a.at)} ago
+            </div>
+          </div>
+        </div>
+      {/each}
+    {/if}
+  </aside>
+</div>
+
+<style>
+  /* The confirm step for closing a parent. Everything in it stacks, so it
+     holds at 390px without a media query of its own. */
+  .v2-close-panel {
+    padding: 15px 16px;
+    margin-bottom: 18px;
+  }
+  .v2-close-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .v2-close-list li {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12.5px;
+  }
+  /* The name truncates and the status pill never does: which tickets these are
+     matters less than the fact that they are open. */
+  .v2-close-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .v2-close-check {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    margin-top: 13px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .v2-close-check input {
+    margin-top: 2px;
+    flex: none;
+  }
+
+  /* Merge picker, confirm steps and the "Merged from" list. Everything
+     stacks, so it holds at 390px; the 768px rule only lifts tap targets. */
+  .merge-panel {
+    padding: 13px 15px;
+    margin-bottom: 18px;
+  }
+  .merge-search {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .merge-search .v2-input {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  .merge-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .merge-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--v2-line);
+    border-radius: var(--v2-radius);
+    cursor: pointer;
+  }
+  .merge-option:hover,
+  .merge-option.picked {
+    border-color: var(--v2-slate);
+    background: var(--v2-hover);
+  }
+  .merge-option-name {
+    font-size: 12.5px;
+    font-weight: 550;
+    color: inherit;
+    overflow-wrap: anywhere;
+  }
+  .merged-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .merge-confirm {
+    flex: 1 0 100%;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--v2-line);
+  }
+  .merge-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  /* Parent and child tickets. Rows indent by depth, which `/tree/` caps at
+     three levels, so the deepest row starts 42px in and still fits 390px. */
+  .tree-panel {
+    padding: 13px 15px;
+    margin-bottom: 18px;
+  }
+  .tree-head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .tree-parent {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .tree-list {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--v2-line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .tree-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: calc(var(--depth, 0) * 14px);
+  }
+  .tree-name {
+    min-width: 0;
+    font-size: 12.5px;
+    font-weight: 550;
+    color: inherit;
+    overflow-wrap: anywhere;
+  }
+  .tree-focus .tree-name {
+    font-weight: 700;
+  }
+  .tree-restricted {
+    font-style: italic;
+    font-weight: 450;
+    color: var(--v2-slate);
+  }
+  .tree-picker {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--v2-line);
+  }
+
+  /* Identity mark for a ticket that has no account to show a face for. */
+  .ticket-glyph {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--v2-line-soft);
+    border: 1px solid var(--v2-line);
+    color: var(--v2-slate);
+  }
+
+  /* The composer's attach control, sized to sit in the action row beside the
+     Internal-note toggle. */
+  .attach {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    font-size: 12px;
+    color: var(--v2-slate);
+    border: 1px solid var(--v2-line);
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .attach:hover,
+  .attach.has-file {
+    color: var(--v2-ink);
+    border-color: var(--v2-slate);
+  }
+  .attach .attach-label {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .clear-file {
+    display: grid;
+    place-items: center;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--v2-slate);
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .clear-file:hover {
+    color: var(--v2-rust);
+    background: var(--v2-hover);
+  }
+
+  /* The whole attachment row lifts slightly on hover to read as a download. */
+  .att:hover {
+    background: var(--v2-hover);
+  }
+
+  /* ── time panel ─────────────────────────────────────────────────────── */
+  .time-panel {
+    margin-bottom: 18px;
+    padding: 13px 15px;
+  }
+
+  .articles-panel {
+    margin-bottom: 18px;
+    padding: 13px 15px;
+  }
+  .articles-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .articles-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .articles-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .articles-link {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: inherit;
+    text-decoration: none;
+    padding: 4px 0;
+  }
+  .articles-title {
+    font-size: 13px;
+    font-weight: 550;
+    overflow-wrap: anywhere;
+  }
+  .articles-meta {
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
+  }
+  .articles-empty,
+  .articles-sub {
+    font-size: 12.5px;
+    margin: 10px 0 0;
+  }
+  .articles-search {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .articles-search .v2-input {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  .macro-pick {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .macro-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+  }
+  .macro-select {
+    flex: 1 1 12rem;
+    min-width: 0;
+    width: auto;
+  }
+  .macro-error {
+    margin: 8px 2px 0;
+    font-size: 12px;
+  }
+  .macro-note {
+    margin: 8px 2px 0;
+    font-size: 11.5px;
+  }
+  .macro-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .macro-chips-label {
+    font-size: 11.5px;
+  }
+  /* A long assignee list must wrap inside the chip, not push the composer
+     wider than a phone. */
+  .macro-chips .v2-chip {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 768px) {
+    .articles-panel .v2-btn,
+    .macro-pick .v2-btn,
+    .macro-select,
+    .articles-search .v2-input {
+      min-height: 44px;
+    }
+    .articles-link {
+      min-height: 44px;
+      justify-content: center;
+    }
+  }
+
+  .approval-panel {
+    margin-bottom: 18px;
+    padding: 13px 15px;
+  }
+  .approval-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .approval-line {
+    font-size: 12.5px;
+    margin: 8px 0 0;
+    overflow-wrap: anywhere;
+  }
+  .approval-note,
+  .approval-reason {
+    font-size: 13px;
+    margin: 8px 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .approval-reason {
+    color: var(--v2-rust);
+  }
+  .approval-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-top: 12px;
+  }
+  /* The summary is the button, as on "Log time". Open, the disclosure takes
+     the whole row so its form is not squeezed beside the other buttons. */
+  .approval-more > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .approval-more > summary::-webkit-details-marker {
+    display: none;
+  }
+  .approval-more[open] {
+    flex: 1 0 100%;
+  }
+  .approval-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--v2-line);
+  }
+  .approval-form .v2-field {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  @media (max-width: 768px) {
+    .approval-panel .v2-btn {
+      min-height: 44px;
+    }
+  }
+  .time-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  /* Pushes the two controls to the right without either of them owning a
+     margin, so they stay put when the disclosure below drops to its own row. */
+  .time-title {
+    margin-right: auto;
+  }
+  .time-total {
+    font-size: 12.5px;
+    margin-top: 3px;
+  }
+  /* The summary is the button; the default triangle would sit inside it. */
+  .time-log > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .time-log > summary::-webkit-details-marker {
+    display: none;
+  }
+  .time-log[open] > summary {
+    border-color: var(--v2-slate);
+  }
+  /* Open, the disclosure claims the whole row: a two-column form inside a
+     button-width column would be two columns of nothing. Closed, it is just
+     the button and sits beside Start. */
+  .time-log[open] {
+    flex: 1 0 100%;
+  }
+  .time-log-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 13px;
+    border-top: 1px solid var(--v2-line);
+  }
+  .time-wide {
+    grid-column: 1 / -1;
+  }
+  .time-log-form .v2-field {
+    margin-bottom: 0;
+  }
+  .time-log-foot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .time-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .time-log-form .v2-hint {
+    margin: 0;
+  }
+  .time-error {
+    margin: 12px 0 0;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .time-empty {
+    font-size: 12.5px;
+    margin: 12px 0 2px;
+  }
+  .time-panel .v2-table-wrap {
+    margin: 12px -15px -13px;
+    border: 0;
+  }
+  .time-running {
+    color: var(--v2-ember);
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .time-row-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .time-billable {
+    color: var(--v2-moss);
+    border-color: color-mix(in srgb, var(--v2-moss) 40%, transparent);
+  }
+  .time-danger {
+    color: var(--v2-rust);
+    border-color: color-mix(in srgb, var(--v2-rust) 40%, transparent);
+  }
+
+  @media (max-width: 768px) {
+    .merge-panel .v2-btn,
+    .merge-search .v2-input,
+    .merge-option,
+    .tree-panel .v2-btn,
+    .tree-row {
+      min-height: 44px;
+    }
+    /* One field per line, and both controls full width: two half-width
+       buttons at the top of a 390px card are two small targets. */
+    .time-log-form {
+      grid-template-columns: 1fr;
+    }
+    .time-title,
+    .time-timer,
+    .time-log {
+      flex: 1 0 100%;
+    }
+    .time-timer .v2-btn,
+    .time-log > summary {
+      width: 100%;
+      justify-content: center;
+      min-height: 44px;
+    }
+    /* A row's controls are the smallest things on the panel and the ones
+       pressed with a thumb, so they get 44px in both directions, the delete
+       button included: it holds an icon and nothing else, and 12px of padding
+       around a 11px trash can is a 40px target. */
+    .time-row-actions {
+      justify-content: flex-start;
+      margin-top: 8px;
+    }
+    .time-row-actions .v2-btn {
+      min-height: 44px;
+      min-width: 44px;
+      padding-inline: 12px;
+    }
+    .time-log-form .v2-btn,
+    .time-check {
+      min-height: 44px;
+    }
+  }
+</style>

@@ -1,0 +1,85 @@
+name: bottle_crm
+description: "CRM for AI and People."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 1.11.0+15
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  http: ^1.6.0
+  google_sign_in: ^7.2.0
+  shared_preferences: ^2.5.5
+  # Tokens live here, never in shared_preferences. Keystore-backed on Android,
+  # Keychain on iOS. See lib/services/token_storage.dart.
+  flutter_secure_storage: ^11.2.0
+  jwt_decoder: ^2.0.1
+
+  # Firebase / Crashlytics (Android only, no iOS GoogleService-Info.plist yet)
+  firebase_core: ^4.15.0
+  firebase_crashlytics: ^5.4.0
+  # Not referenced by name anywhere in lib/, but SwitchListTile.adaptive in
+  # deals_list_screen.dart pulls in Flutter's Cupertino library, whose retained
+  # CupertinoIcons constants need this font present. Dropping it builds fine and
+  # then renders a missing-glyph box. Keep it.
+  cupertino_icons: ^1.0.9
+  # Navigation
+  go_router: ^18.0.1
+
+  # State Management
+  flutter_riverpod: ^3.4.3
+
+  # Charts
+  fl_chart: ^1.2.0
+
+  # Calendar
+  table_calendar: ^3.2.1
+
+  # Utilities
+  intl: ^0.20.3
+  url_launcher: ^6.3.2
+  # Attachment picking. Chosen over image_picker because a CRM attaches
+  # contracts and PDFs at least as often as photos, and this covers both.
+  file_picker: ^13.1.0
+
+  # Google Fonts for distinctive typography
+  google_fonts: ^8.2.1
+  lucide_icons_flutter: ^3.1.20
+
+  # The org's calendar day for form defaults (lib/services/org_date.dart).
+  # Publisher labs.dart.dev. The `all` database, because `latest` and
+  # `latest_10y` omit backward links such as US/Eastern.
+  timezone: ^0.11.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: "^0.14.4"
+  cross_file: ^0.3.5+5
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 31 # android min sdk Android 12 (API 31)
+  remove_alpha_ios: true # remove alpha channel from iOS icons, default false
+
+# The following section is specific to Flutter packages.
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/icon/
