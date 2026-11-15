@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 
 const apiRequest = vi.fn();
 vi.mock('#lib/api-helpers.js', () => ({ apiRequest: (...a) => apiRequest(...a) }));
@@ -159,6 +160,18 @@ describe('getTicketBoard', () => {
       }
     ]);
     expect(lanes[1].truncated).toBe(false);
+  });
+
+  it('names an untitled card in the current locale', async () => {
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      apiRequest.mockResolvedValueOnce(PIPELINES).mockResolvedValueOnce(STATUS_BOARD);
+      const { lanes } = await getTicketBoard(event, null);
+      expect(lanes[0].rows[1].name).toBe('Обращение без названия');
+    } finally {
+      overwriteGetLocale(base);
+    }
   });
 });
 

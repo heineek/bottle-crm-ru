@@ -12,6 +12,7 @@
     "pathPattern": [
       "./messages/{locale}.json",
       "./messages/app/{locale}.json",
+      "./messages/tickets/{locale}.json",
       "./messages/profile/{locale}.json",
       "./messages/leads/{locale}.json",
       "./messages/contacts/{locale}.json",

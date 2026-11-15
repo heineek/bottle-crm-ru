@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { treeRows, subtreeIds, parentCandidates, linkRefusal } from './tree.js';
-import { RESTRICTED_TICKET_NAME } from '#lib/v2/enums.js';
 
 /** @param {any} over */
 function node(over = {}) {
@@ -56,7 +55,7 @@ describe('treeRows', () => {
   it('names a ticket the viewer cannot open with the shared phrase, keeping its status', () => {
     const hidden = treeRows(TREE, 'focus').find((r) => r.id === 'hiddenSibling');
     expect(hidden).toMatchObject({
-      name: RESTRICTED_TICKET_NAME,
+      name: 'A ticket you cannot open',
       restricted: true,
       status: 'Pending'
     });

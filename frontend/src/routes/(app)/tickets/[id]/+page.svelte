@@ -17,10 +17,13 @@
     hoursMinutes as hm
   } from '#lib/v2/format.js';
   import {
-    PRIORITY_TONE,
-    CASE_STATUS_TONE,
     APPROVAL_STATE_LABEL,
-    APPROVAL_STATE_TONE
+    APPROVAL_STATE_TONE,
+    CASE_PRIORITY_LABEL,
+    CASE_STATUS_LABEL,
+    CASE_STATUS_TONE,
+    CASE_TYPE_LABEL,
+    PRIORITY_TONE
   } from '#lib/v2/enums.js';
   import { cascadeSummary } from './close.js';
   import { approvalView } from './approval.js';
@@ -49,6 +52,8 @@
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
   import { isBilled } from '#lib/v2/time-entry.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -147,12 +152,14 @@
    * write rule), and the API checks it again on apply.
    */
   let pickedId = $state('');
-  let picked = $derived(data.macros?.find((/** @type {any} */ m) => m.id === pickedId) ?? null);
+  let picked = $derived(
+    data.macros?.find((/** @type {any} */ macro) => macro.id === pickedId) ?? null
+  );
 
   /** @param {string | null | undefined} id */
   function macroWithActions(id) {
-    const m = data.macros?.find((/** @type {any} */ x) => x.id === id);
-    return m?.chips?.length ? m : null;
+    const macro = data.macros?.find((/** @type {any} */ x) => x.id === id);
+    return macro?.chips?.length ? macro : null;
   }
   let composerMacro = $state(untrack(() => macroWithActions(form?.macroId)));
   let kept = $state(
@@ -208,7 +215,7 @@
     return async ({ result, update }) => {
       macroBusy = false;
       if (result.type === 'failure') {
-        macroError = result.data?.macroError ?? 'Could not use this saved reply.';
+        macroError = result.data?.macroError ?? m.tickets_detail_macro_use_failed();
         return;
       }
       if (result.type !== 'success') return;
@@ -360,13 +367,13 @@
       return ticket.first_response_breached
         ? {
             tone: 'rust',
-            label: 'First reply overdue',
-            text: 'Past its first-reply target and still unanswered. A reply below is the first response. It stops the clock.'
+            label: m.tickets_detail_alert_overdue_label(),
+            text: m.tickets_detail_alert_overdue_text()
           }
         : {
             tone: 'ember',
-            label: 'Needs a first reply',
-            text: 'Nobody has replied yet. A reply below is the first response. It is what stops the first-reply clock.'
+            label: m.tickets_detail_alert_first_reply_label(),
+            text: m.tickets_detail_alert_first_reply_text()
           };
     }
     // Waiting on the customer is not something we can act on, so it is not a
@@ -375,8 +382,8 @@
     if (!ticket.assignee) {
       return {
         tone: 'ember',
-        label: 'No owner',
-        text: 'Answered, but nobody owns it. Assign someone so it does not stall between people.'
+        label: m.tickets_detail_alert_no_owner_label(),
+        text: m.tickets_detail_alert_no_owner_text()
       };
     }
     return null;
@@ -410,7 +417,7 @@
     {/if}
   {/snippet}
   {#snippet crumb()}
-    <a href={resolve('tickets')}>Tickets</a>
+    <a href={resolve('tickets')}>{m.tickets_detail_crumb_tickets()}</a>
     {#if ticket.account}
       <ChevronRight size={12} />
       <a href={resolve(`accounts/${ticket.account.id}`)}>{ticket.account.name}</a>
@@ -427,21 +434,25 @@
         style="display:contents"
       >
         <button class="v2-btn" aria-pressed={data.watchers.watching}>
-          {#if data.watchers.watching}<EyeOff size={12} />Unwatch{:else}<Eye size={12} />Watch{/if}
+          {#if data.watchers.watching}<EyeOff size={12} />{m.tickets_detail_unwatch()}{:else}<Eye
+              size={12}
+            />{m.tickets_detail_watch()}{/if}
         </button>
       </form>
     {/if}
     {#if canReply}
-      <a class="v2-btn" href={resolve(`tickets/${ticket.id}/edit`)}><Pencil size={12} />Edit</a>
+      <a class="v2-btn" href={resolve(`tickets/${ticket.id}/edit`)}
+        ><Pencil size={12} />{m.common_edit()}</a
+      >
     {/if}
     {#if data.canMerge && !data.merge.open}
       <a class="v2-btn" href={resolve(`tickets/${ticket.id}?merge=1`)}
-        ><GitMerge size={12} />Merge into…</a
+        ><GitMerge size={12} />{m.tickets_detail_merge_into()}</a
       >
     {/if}
     {#if canReply && !inTree && !data.link.open}
       <a class="v2-btn" href={resolve(`tickets/${ticket.id}?link=1`)}
-        ><GitBranch size={12} />Link parent…</a
+        ><GitBranch size={12} />{m.tickets_detail_link_parent()}</a
       >
     {/if}
     <!-- Status changes and the close-with-children cascade take the ticket's
@@ -450,21 +461,27 @@
     {#if canReply && ticket.is_open}
       <form method="POST" action="?/setStatus" use:enhance style="display:contents">
         {#if ticket.status !== 'Pending'}
-          <button class="v2-btn" name="status" value="Pending">Set to pending</button>
+          <button class="v2-btn" name="status" value="Pending"
+            >{m.tickets_detail_set_pending()}</button
+          >
         {/if}
         {#if !data.close}
-          <button class="v2-btn v2-btn-primary" name="status" value="Closed">Close</button>
+          <button class="v2-btn v2-btn-primary" name="status" value="Closed"
+            >{m.common_close()}</button
+          >
         {/if}
       </form>
       <!-- A parent ticket closes through a confirm step, since the same click
            can close tickets belonging to other people. Outside the form above
            so this button never submits it. -->
       {#if data.close && !closePanel}
-        <button class="v2-btn v2-btn-primary" type="button" onclick={openClosePanel}>Close</button>
+        <button class="v2-btn v2-btn-primary" type="button" onclick={openClosePanel}
+          >{m.common_close()}</button
+        >
       {/if}
     {:else if canReply}
       <form method="POST" action="?/setStatus" use:enhance style="display:contents">
-        <button class="v2-btn" name="status" value="New">Reopen</button>
+        <button class="v2-btn" name="status" value="New">{m.tickets_detail_reopen()}</button>
       </form>
     {/if}
   {/snippet}
@@ -476,18 +493,26 @@
       class="v2-pad"
       style="padding-top:12px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;flex:none"
     >
-      <Pill tone={PRIORITY_TONE[ticket.priority]}>{ticket.priority}</Pill>
-      <Pill tone={CASE_STATUS_TONE[ticket.status]}>{ticket.status}</Pill>
-      {#if ticket.case_type}<Pill tone="slate">{ticket.case_type}</Pill>{/if}
+      <Pill tone={PRIORITY_TONE[ticket.priority]}
+        >{CASE_PRIORITY_LABEL[ticket.priority] ?? ticket.priority}</Pill
+      >
+      <Pill tone={CASE_STATUS_TONE[ticket.status]}
+        >{CASE_STATUS_LABEL[ticket.status] ?? ticket.status}</Pill
+      >
+      {#if ticket.case_type}<Pill tone="slate"
+          >{CASE_TYPE_LABEL[ticket.case_type] ?? ticket.case_type}</Pill
+        >{/if}
       <span class="v2-sub">
         <!-- There is no ticket number. `Case` has a UUID and a subject, so the
              subject is the identifier and the age is the useful fact. -->
-        Opened {shortAge(ticket.opened_at)} ago
+        {m.tickets_detail_opened_ago({ age: shortAge(ticket.opened_at) })}
         {#if ticket.first_response_at}
-          · first reply {relativeTime(ticket.first_response_at)}
+          {m.tickets_detail_first_reply_meta({ time: relativeTime(ticket.first_response_at) })}
         {/if}
         {#if ticket.escalation_count > 0}
-          · <span style="color:var(--v2-rust)">escalated {ticket.escalation_count}×</span>
+          · <span style="color:var(--v2-rust)"
+            >{m.tickets_detail_escalated({ count: ticket.escalation_count })}</span
+          >
         {/if}
       </span>
     </div>
@@ -524,7 +549,7 @@
         {#if data.merge.open}
           <section class="v2-card merge-panel">
             <div style="font-weight:600;font-size:13.5px">
-              Merge {ticket.name} into another ticket
+              {m.tickets_detail_merge_title({ name: ticket.name })}
             </div>
             <form method="GET" class="merge-search">
               <input type="hidden" name="merge" value="1" />
@@ -534,20 +559,18 @@
                 name="q"
                 value={data.merge.q}
                 maxlength="200"
-                placeholder="Search by subject"
-                aria-label="Search tickets to merge into"
+                placeholder={m.tickets_detail_search_by_subject()}
+                aria-label={m.tickets_detail_merge_search_aria()}
               />
-              <button class="v2-btn">Search</button>
-              <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>Cancel</a>
+              <button class="v2-btn">{m.common_search()}</button>
+              <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>{m.common_cancel()}</a>
             </form>
 
             {#if data.merge.error}
               <p class="v2-error" style="margin:12px 0 0">{data.merge.error}</p>
             {:else if data.merge.targets.length === 0}
               <p class="v2-sub" style="font-size:12.5px;margin:12px 0 0">
-                {data.merge.q
-                  ? 'No ticket you could merge this into matches that search.'
-                  : 'There is no ticket you could merge this into.'}
+                {data.merge.q ? m.tickets_detail_merge_no_match() : m.tickets_detail_merge_none()}
               </p>
             {:else}
               <ul class="merge-list">
@@ -561,7 +584,9 @@
                     >
                       <span class="merge-option-name">{target.name}</span>
                       <span class="v2-sub" style="font-size:11.5px">
-                        {target.status} · {target.priority}{target.account_name
+                        {CASE_STATUS_LABEL[target.status] ?? target.status} · {CASE_PRIORITY_LABEL[
+                          target.priority
+                        ] ?? target.priority}{target.account_name
                           ? ` · ${target.account_name}`
                           : ''}
                       </span>
@@ -575,11 +600,15 @@
               <form method="POST" action="?/merge" use:enhance class="merge-confirm">
                 <input type="hidden" name="into" value={mergeTarget.id} />
                 <p style="margin:0;font-size:12.5px;line-height:1.5">
-                  "{ticket.name}" will be marked Duplicate and its comments, attachments, and emails
-                  will move into "{mergeTarget.name}". You can undo this from the target ticket.
+                  {m.tickets_detail_merge_confirm({
+                    source: ticket.name,
+                    target: mergeTarget.name
+                  })}
                 </p>
                 <div class="merge-actions">
-                  <button class="v2-btn v2-btn-primary" type="submit">Merge</button>
+                  <button class="v2-btn v2-btn-primary" type="submit"
+                    >{m.tickets_detail_merge_button()}</button
+                  >
                   <button class="v2-btn" type="button" onclick={() => (mergeTarget = null)}>
                     Cancel
                   </button>
@@ -610,7 +639,9 @@
                   closePanel = false;
                 }}
             >
-              <div style="font-weight:600;font-size:13.5px">Close {ticket.name}</div>
+              <div style="font-weight:600;font-size:13.5px">
+                {m.tickets_detail_close_title({ name: ticket.name })}
+              </div>
               <p class="v2-sub" style="font-size:12.5px;margin:6px 0 0;line-height:1.5">
                 {cascadeSummary({
                   count: data.close.descendants.length,
@@ -623,7 +654,9 @@
                   {#each data.close.descendants as child (child.id)}
                     <li>
                       <span class="v2-close-name">{child.name}</span>
-                      <Pill tone={CASE_STATUS_TONE[child.status]}>{child.status}</Pill>
+                      <Pill tone={CASE_STATUS_TONE[child.status]}
+                        >{CASE_STATUS_LABEL[child.status] ?? child.status}</Pill
+                      >
                     </li>
                   {/each}
                 </ul>
@@ -631,29 +664,28 @@
                 <label class="v2-close-check">
                   <input type="checkbox" name="cascade" bind:checked={cascade} />
                   <span>
-                    <span style="font-weight:600">Close these as well</span>
+                    <span style="font-weight:600">{m.tickets_detail_close_these()}</span>
                     <span class="v2-sub" style="display:block;font-size:11.5px;margin-top:2px">
-                      Each one gets a note saying it was closed with this ticket. Leave it unticked
-                      to close only this one.
+                      {m.tickets_detail_close_these_hint()}
                     </span>
                   </span>
                 </label>
 
                 <div class="v2-field" style="margin-top:12px">
-                  <label for="close-comment">Why (optional)</label>
+                  <label for="close-comment">{m.tickets_detail_close_why()}</label>
                   <textarea
                     id="close-comment"
                     class="v2-input"
                     name="resolution_comment"
                     rows="2"
                     maxlength="1000"
-                    placeholder="Recorded against every ticket closed with this one"></textarea>
+                    placeholder={m.tickets_detail_close_why_placeholder()}></textarea>
                 </div>
               {/if}
 
               <div style="display:flex;gap:8px;margin-top:14px">
                 <button class="v2-btn v2-btn-primary" type="submit">
-                  {cascade ? 'Close all of them' : 'Close this ticket'}
+                  {cascade ? m.tickets_detail_close_all() : m.tickets_detail_close_this()}
                 </button>
                 <button class="v2-btn" type="button" onclick={() => (closePanel = false)}>
                   Cancel
@@ -669,13 +701,13 @@
           </div>
         {:else if waiting}
           <p class="v2-sub" style="margin:0 0 18px;font-size:12.5px">
-            Waiting on the customer: the first-reply clock is paused while it sits in Pending.
+            {m.tickets_detail_waiting()}
           </p>
         {/if}
 
         {#if ticket.description}
           <div class="v2-card" style="padding:13px 15px;margin-bottom:18px">
-            <div class="v2-label" style="margin-bottom:7px">What was reported</div>
+            <div class="v2-label" style="margin-bottom:7px">{m.tickets_detail_reported()}</div>
             <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
               {ticket.description}
             </div>
@@ -685,7 +717,7 @@
         {#if data.mergedFrom.length}
           <section class="v2-card merge-panel">
             <div class="v2-label" style="display:flex;align-items:center;gap:6px">
-              <GitMerge size={12} />Merged from
+              <GitMerge size={12} />{m.tickets_detail_merged_from()}
             </div>
             <ul class="merge-list">
               {#each data.mergedFrom as src (src.id)}
@@ -699,13 +731,13 @@
                     {/if}
                     {#if src.merged_at}
                       <div class="v2-sub" style="font-size:11.5px">
-                        merged {relativeTime(src.merged_at)}
+                        {m.tickets_detail_merged_when({ time: relativeTime(src.merged_at) })}
                       </div>
                     {/if}
                   </div>
                   {#if src.can_unmerge && unmergeSource?.id !== src.id}
                     <button class="v2-btn" type="button" onclick={() => (unmergeSource = src)}>
-                      Unmerge
+                      {m.tickets_detail_unmerge()}
                     </button>
                   {/if}
                   {#if unmergeSource?.id === src.id}
@@ -721,11 +753,12 @@
                     >
                       <input type="hidden" name="source_id" value={src.id} />
                       <p style="margin:0;font-size:12.5px;line-height:1.5">
-                        "{src.name}" will be restored and its comments, attachments, and emails
-                        moved back out of this ticket.
+                        {m.tickets_detail_unmerge_confirm({ name: src.name })}
                       </p>
                       <div class="merge-actions">
-                        <button class="v2-btn v2-btn-primary" type="submit">Unmerge</button>
+                        <button class="v2-btn v2-btn-primary" type="submit"
+                          >{m.tickets_detail_unmerge()}</button
+                        >
                         <button class="v2-btn" type="button" onclick={() => (unmergeSource = null)}>
                           Cancel
                         </button>
@@ -749,12 +782,14 @@
           <section class="v2-card tree-panel">
             <div class="tree-head">
               <div class="v2-label" style="display:flex;align-items:center;gap:6px">
-                <GitBranch size={12} />Linked tickets
-                {#if ticket.is_problem}<Pill tone="rust">Problem</Pill>{/if}
+                <GitBranch size={12} />{m.tickets_detail_linked_tickets()}
+                {#if ticket.is_problem}<Pill tone="rust">{m.tickets_detail_problem()}</Pill>{/if}
               </div>
               {#if canReply && !data.link.open}
                 <a class="v2-btn v2-btn-sm" href={resolve(`tickets/${ticket.id}?link=1`)}>
-                  {ticket.parent ? 'Change parent' : 'Link parent…'}
+                  {ticket.parent
+                    ? m.tickets_detail_change_parent()
+                    : m.tickets_detail_link_parent()}
                 </a>
               {/if}
             </div>
@@ -762,7 +797,7 @@
             {#if ticket.parent}
               <div class="tree-parent">
                 <div style="min-width:0;flex:1">
-                  <div class="v2-sub" style="font-size:11.5px">Parent</div>
+                  <div class="v2-sub" style="font-size:11.5px">{m.tickets_detail_parent()}</div>
                   {#if ticket.parent.restricted}
                     <span class="tree-name tree-restricted">{ticket.parent.name}</span>
                   {:else}
@@ -780,7 +815,7 @@
                     type="button"
                     onclick={() => (confirmDetach = true)}
                   >
-                    <Unlink size={11} />Detach
+                    <Unlink size={11} />{m.tickets_detail_detach()}
                   </button>
                 {/if}
               </div>
@@ -796,12 +831,14 @@
                   class="merge-confirm"
                 >
                   <p style="margin:0;font-size:12.5px;line-height:1.5">
-                    This ticket will no longer sit under {ticket.parent.restricted
-                      ? 'its parent'
-                      : `"${ticket.parent.name}"`}. Neither ticket is otherwise changed.
+                    {ticket.parent.restricted
+                      ? m.tickets_detail_detach_confirm_restricted()
+                      : m.tickets_detail_detach_confirm_named({ parent: ticket.parent.name })}
                   </p>
                   <div class="merge-actions">
-                    <button class="v2-btn v2-btn-primary" type="submit">Detach</button>
+                    <button class="v2-btn v2-btn-primary" type="submit"
+                      >{m.tickets_detail_detach()}</button
+                    >
                     <button class="v2-btn" type="button" onclick={() => (confirmDetach = false)}>
                       Cancel
                     </button>
@@ -811,7 +848,7 @@
             {/if}
 
             {#if data.tree && data.tree.rows.length > 1}
-              <ul class="tree-list" aria-label="Ticket tree">
+              <ul class="tree-list" aria-label={m.tickets_detail_tree_aria()}>
                 {#each data.tree.rows as row (row.id)}
                   <li class="tree-row" class:tree-focus={row.focus} style="--depth:{row.depth}">
                     {#if row.restricted || row.focus}
@@ -822,31 +859,32 @@
                       <a class="tree-name" href={resolve(`tickets/${row.id}`)}>{row.name}</a>
                     {/if}
                     {#if row.status}
-                      <Pill tone={CASE_STATUS_TONE[row.status]}>{row.status}</Pill>
+                      <Pill tone={CASE_STATUS_TONE[row.status]}
+                        >{CASE_STATUS_LABEL[row.status] ?? row.status}</Pill
+                      >
                     {/if}
                   </li>
                   {#if row.truncated}
                     <li class="v2-sub tree-row" style="--depth:{row.depth + 1};font-size:11.5px">
-                      More tickets further down are not shown.
+                      {m.tickets_detail_tree_truncated()}
                     </li>
                   {/if}
                 {/each}
               </ul>
             {:else if ticket.child_count > 0}
               <p class="v2-sub" style="font-size:12.5px;margin:10px 0 0">
-                {ticket.child_count} linked {ticket.child_count === 1 ? 'ticket' : 'tickets'} under this
-                one. The tree could not be loaded.
+                {m.tickets_detail_tree_failed({ count: ticket.child_count })}
               </p>
             {:else if !ticket.parent}
               <p class="v2-sub" style="font-size:12.5px;margin:10px 0 0">
-                Not linked to another ticket yet.
+                {m.tickets_detail_not_linked()}
               </p>
             {/if}
 
             {#if data.link.open}
               <div class="tree-picker">
                 <div style="font-weight:600;font-size:13.5px">
-                  Link {ticket.name} under a parent
+                  {m.tickets_detail_link_title({ name: ticket.name })}
                 </div>
                 <form method="GET" class="merge-search">
                   <input type="hidden" name="link" value="1" />
@@ -856,20 +894,18 @@
                     name="lq"
                     value={data.link.q}
                     maxlength="200"
-                    placeholder="Search by subject"
-                    aria-label="Search tickets to link under"
+                    placeholder={m.tickets_detail_search_by_subject()}
+                    aria-label={m.tickets_detail_link_search_aria()}
                   />
-                  <button class="v2-btn">Search</button>
-                  <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>Cancel</a>
+                  <button class="v2-btn">{m.common_search()}</button>
+                  <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>{m.common_cancel()}</a>
                 </form>
 
                 {#if data.link.error}
                   <p class="v2-error" style="margin:12px 0 0">{data.link.error}</p>
                 {:else if data.link.candidates.length === 0}
                   <p class="v2-sub" style="font-size:12.5px;margin:12px 0 0">
-                    {data.link.q
-                      ? 'No ticket you could link this under matches that search.'
-                      : 'There is no ticket you could link this under.'}
+                    {data.link.q ? m.tickets_detail_link_no_match() : m.tickets_detail_link_none()}
                   </p>
                 {:else}
                   <ul class="merge-list">
@@ -883,7 +919,9 @@
                         >
                           <span class="merge-option-name">{candidate.name}</span>
                           <span class="v2-sub" style="font-size:11.5px">
-                            {candidate.status} · {candidate.priority}
+                            {CASE_STATUS_LABEL[candidate.status] ?? candidate.status} · {CASE_PRIORITY_LABEL[
+                              candidate.priority
+                            ] ?? candidate.priority}
                           </span>
                         </button>
                       </li>
@@ -904,12 +942,20 @@
                   >
                     <input type="hidden" name="parent_id" value={linkTarget.id} />
                     <p style="margin:0;font-size:12.5px;line-height:1.5">
-                      "{ticket.name}" will sit under "{linkTarget.name}"{ticket.parent
-                        ? ', instead of its current parent'
-                        : ''}. A tree is at most three levels deep.
+                      {ticket.parent
+                        ? m.tickets_detail_link_confirm_replace({
+                            ticket: ticket.name,
+                            parent: linkTarget.name
+                          })
+                        : m.tickets_detail_link_confirm({
+                            ticket: ticket.name,
+                            parent: linkTarget.name
+                          })}
                     </p>
                     <div class="merge-actions">
-                      <button class="v2-btn v2-btn-primary" type="submit">Link</button>
+                      <button class="v2-btn v2-btn-primary" type="submit"
+                        >{m.tickets_detail_link_button()}</button
+                      >
                       <button class="v2-btn" type="button" onclick={() => (linkTarget = null)}>
                         Cancel
                       </button>
@@ -928,7 +974,7 @@
           <section class="v2-card approval-panel">
             <div class="approval-head">
               <ShieldCheck size={15} />
-              <div class="v2-label">Approval</div>
+              <div class="v2-label">{m.tickets_detail_approval()}</div>
               {#if a}
                 <Pill tone={APPROVAL_STATE_TONE[a.state] ?? 'slate'}>
                   {APPROVAL_STATE_LABEL[a.state] ?? a.state}
@@ -938,38 +984,58 @@
 
             {#if data.approvalRule}
               <p class="v2-sub approval-line">
-                Closing this ticket needs approval under <b>{data.approvalRule.name}</b>.
+                {#each messageParts(m.tickets_detail_approval_rule_needed( { rule: slot('rule') } )) as p, i (i)}{#if p.key}<b
+                      >{data.approvalRule.name}</b
+                    >{:else}{p.text}{/if}{/each}
               </p>
             {/if}
 
             {#if approval.failed}
               <p class="v2-sub approval-line">
-                The approval requests could not be loaded. Nothing else on this ticket is affected.
+                {m.tickets_detail_approval_failed()}
               </p>
             {:else if a}
               <p class="v2-sub approval-line">
-                Requested by {a.requested_by || 'someone'} · {shortAge(a.created_at)} ago
+                {a.requested_by
+                  ? m.tickets_detail_approval_requested_by({
+                      name: a.requested_by,
+                      age: shortAge(a.created_at)
+                    })
+                  : m.tickets_detail_approval_requested_by_someone({ age: shortAge(a.created_at) })}
               </p>
               {#if a.state !== 'pending' && a.decided_at}
                 <p class="v2-sub approval-line">
-                  {APPROVAL_STATE_LABEL[a.state] ?? a.state}{a.approver ? ` by ${a.approver}` : ''} ·
-                  {shortAge(a.decided_at)} ago
+                  {a.approver
+                    ? m.tickets_detail_approval_decided_by({
+                        state: APPROVAL_STATE_LABEL[a.state] ?? a.state,
+                        name: a.approver,
+                        age: shortAge(a.decided_at)
+                      })
+                    : m.tickets_detail_approval_decided({
+                        state: APPROVAL_STATE_LABEL[a.state] ?? a.state,
+                        age: shortAge(a.decided_at)
+                      })}
                 </p>
               {/if}
               {#if a.rule.name && a.rule.id !== data.approvalRule?.id}
-                <p class="v2-sub approval-line">Rule: {a.rule.name}</p>
+                <p class="v2-sub approval-line">
+                  {m.tickets_detail_approval_rule({ name: a.rule.name })}
+                </p>
               {/if}
               {#if a.note}<p class="approval-note">{a.note}</p>{/if}
               {#if a.state === 'rejected' && a.reason}
-                <p class="approval-reason"><b>Reason:</b> {a.reason}</p>
+                <p class="approval-reason">
+                  <b>{m.tickets_detail_approval_reason_label()}</b>
+                  {a.reason}
+                </p>
               {/if}
               {#if a.is_own_request && a.state === 'pending'}
                 <p class="v2-sub approval-line">
-                  You asked for this, so another approver must decide it.
+                  {m.tickets_detail_approval_own()}
                 </p>
               {/if}
             {:else}
-              <p class="v2-sub approval-line">No approval requested yet.</p>
+              <p class="v2-sub approval-line">{m.tickets_detail_approval_none()}</p>
             {/if}
 
             {#if approval.canDecide || approval.canWithdraw || approval.canRequest}
@@ -977,30 +1043,34 @@
                 {#if approval.canDecide}
                   <form method="POST" action="?/approveApproval" use:enhance>
                     <input type="hidden" name="approval_id" value={a.id} />
-                    <button class="v2-btn v2-btn-primary">Approve</button>
+                    <button class="v2-btn v2-btn-primary">{m.tickets_detail_approve()}</button>
                   </form>
                   <details class="approval-more">
-                    <summary class="v2-btn">Reject</summary>
+                    <summary class="v2-btn">{m.tickets_detail_reject()}</summary>
                     <form method="POST" action="?/rejectApproval" use:enhance class="approval-form">
                       <input type="hidden" name="approval_id" value={a.id} />
                       <div class="v2-field">
-                        <label for="ap-reason">Reason</label>
+                        <label for="ap-reason">{m.tickets_detail_reason()}</label>
                         <textarea id="ap-reason" name="reason" class="v2-input" rows="2" required
                         ></textarea>
                       </div>
-                      <button class="v2-btn">Reject request</button>
+                      <button class="v2-btn">{m.tickets_detail_reject_request()}</button>
                     </form>
                   </details>
                 {/if}
                 {#if approval.canWithdraw}
                   <form method="POST" action="?/withdrawApproval" use:enhance>
                     <input type="hidden" name="approval_id" value={a.id} />
-                    <button class="v2-btn">Withdraw request</button>
+                    <button class="v2-btn">{m.tickets_detail_withdraw_request()}</button>
                   </form>
                 {/if}
                 {#if approval.canRequest}
                   <details class="approval-more">
-                    <summary class="v2-btn">{a ? 'Request again' : 'Request approval'}</summary>
+                    <summary class="v2-btn"
+                      >{a
+                        ? m.tickets_detail_request_again()
+                        : m.tickets_detail_request_approval()}</summary
+                    >
                     <form
                       method="POST"
                       action="?/requestApproval"
@@ -1008,10 +1078,12 @@
                       class="approval-form"
                     >
                       <div class="v2-field">
-                        <label for="ap-note">Note for the approver (optional)</label>
+                        <label for="ap-note">{m.tickets_detail_approver_note()}</label>
                         <textarea id="ap-note" name="note" class="v2-input" rows="2"></textarea>
                       </div>
-                      <button class="v2-btn v2-btn-primary">Send request</button>
+                      <button class="v2-btn v2-btn-primary"
+                        >{m.tickets_detail_send_request()}</button
+                      >
                     </form>
                   </details>
                 {/if}
@@ -1037,15 +1109,17 @@
           <section class="v2-card time-panel">
             <div class="time-head">
               <div class="time-title">
-                <div class="v2-label">Time</div>
+                <div class="v2-label">{m.tickets_detail_time()}</div>
                 <div class="v2-sub time-total">
                   {#if timeSummary?.total_minutes}
-                    <b class="v2-num">{hm(timeSummary.total_minutes)}</b> logged
+                    {#each messageParts(m.tickets_detail_time_logged( { time: slot('time') } )) as p, i (i)}{#if p.key}<b
+                          class="v2-num">{hm(timeSummary.total_minutes)}</b
+                        >{:else}{p.text}{/if}{/each}
                     {#if timeSummary.billable_minutes}
-                      · {hm(timeSummary.billable_minutes)} billable
+                      {m.tickets_detail_time_billable({ time: hm(timeSummary.billable_minutes) })}
                     {/if}
                   {:else}
-                    Nothing logged yet
+                    {m.tickets_detail_time_nothing()}
                   {/if}
                 </div>
               </div>
@@ -1063,7 +1137,9 @@
                 >
                   <input type="hidden" name="entry_id" value={myTimer.id} />
                   <button class="v2-btn v2-btn-primary" disabled={timeBusy}>
-                    <Square size={12} />Stop {hm(runningMinutes(myTimer))}
+                    <Square size={12} />{m.tickets_detail_timer_stop({
+                      time: hm(runningMinutes(myTimer))
+                    })}
                   </button>
                 </form>
               {:else if canReply}
@@ -1076,7 +1152,9 @@
                   use:enhance={timeSubmit}
                   class="time-timer"
                 >
-                  <button class="v2-btn" disabled={timeBusy}><Play size={12} />Start timer</button>
+                  <button class="v2-btn" disabled={timeBusy}
+                    ><Play size={12} />{m.tickets_detail_timer_start()}</button
+                  >
                 </form>
               {/if}
 
@@ -1084,7 +1162,7 @@
                  it takes a row of its own rather than the button's column. -->
               {#if canReply}
                 <details class="time-log">
-                  <summary class="v2-btn"><Plus size={12} />Log time</summary>
+                  <summary class="v2-btn"><Plus size={12} />{m.tickets_detail_log_time()}</summary>
                   <form
                     method="POST"
                     action="?/logTime"
@@ -1092,7 +1170,7 @@
                     class="time-log-form"
                   >
                     <div class="v2-field">
-                      <label for="time-minutes">Minutes</label>
+                      <label for="time-minutes">{m.tickets_detail_minutes()}</label>
                       <input
                         id="time-minutes"
                         class="v2-input"
@@ -1107,7 +1185,7 @@
                       />
                     </div>
                     <div class="v2-field">
-                      <label for="time-rate">Rate per hour</label>
+                      <label for="time-rate">{m.tickets_detail_rate()}</label>
                       <input
                         id="time-rate"
                         class="v2-input"
@@ -1116,29 +1194,30 @@
                         inputmode="decimal"
                         min="0"
                         step="0.01"
-                        placeholder="Optional"
+                        placeholder={m.common_optional()}
                       />
                     </div>
                     <div class="v2-field time-wide">
-                      <label for="time-what">What was done</label>
+                      <label for="time-what">{m.tickets_detail_what_done()}</label>
                       <input
                         id="time-what"
                         class="v2-input"
                         name="description"
-                        placeholder="Traced the failed import to the CSV encoding"
+                        placeholder={m.tickets_detail_what_done_placeholder()}
                         required
                       />
                     </div>
                     <div class="time-wide time-log-foot">
                       <label class="time-check">
                         <input type="checkbox" name="billable" />
-                        Billable
+                        {m.tickets_detail_billable()}
                       </label>
-                      <button class="v2-btn v2-btn-primary" disabled={timeBusy}>Log time</button>
+                      <button class="v2-btn v2-btn-primary" disabled={timeBusy}
+                        >{m.tickets_detail_log_time()}</button
+                      >
                     </div>
                     <p class="v2-hint time-wide">
-                      Counted back from now. To record a session from an earlier day, start and stop
-                      the timer on it.
+                      {m.tickets_detail_log_hint()}
                     </p>
                   </form>
                 </details>
@@ -1149,53 +1228,55 @@
               <p class="v2-error time-error">
                 <span>{form.timeError}</span>
                 {#if form.runningTicketId}
-                  <a href={resolve(`tickets/${form.runningTicketId}`)}>Open that ticket</a>
+                  <a href={resolve(`tickets/${form.runningTicketId}`)}
+                    >{m.tickets_detail_open_that_ticket()}</a
+                  >
                 {/if}
               </p>
             {/if}
 
             {#if entries === null}
               <p class="v2-sub time-empty">
-                The time entries could not be loaded. Nothing else on this ticket is affected.
+                {m.tickets_detail_time_failed()}
               </p>
             {:else if entries.length === 0}
               <p class="v2-sub time-empty">
-                {canReply
-                  ? 'No time logged yet. Start the timer, or log a session you have already worked.'
-                  : 'No time logged yet.'}
+                {canReply ? m.tickets_detail_time_empty_can_log() : m.tickets_detail_time_empty()}
               </p>
             {:else}
               <div class="v2-table-wrap">
                 <table class="v2-table">
                   <thead>
                     <tr>
-                      <th>What was done</th>
-                      <th>Who</th>
-                      <th>When</th>
-                      <th class="v2-r">Logged</th>
-                      <th class="v2-r">Billing</th>
+                      <th>{m.tickets_detail_what_done()}</th>
+                      <th>{m.tickets_detail_col_who()}</th>
+                      <th>{m.tickets_detail_col_when()}</th>
+                      <th class="v2-r">{m.tickets_detail_col_logged()}</th>
+                      <th class="v2-r">{m.tickets_detail_col_billing()}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {#each entries as e (e.id)}
                       <tr>
                         <td data-m="title">
-                          {e.description || 'No description'}
-                          {#if !e.ended_at}<span class="time-running">Running</span>{/if}
+                          {e.description || m.tickets_detail_no_description()}
+                          {#if !e.ended_at}<span class="time-running"
+                              >{m.tickets_detail_running()}</span
+                            >{/if}
                           {#if e.auto_stopped}
-                            <span
-                              class="v2-sub"
-                              title="Stopped automatically after running overnight"
-                              >auto-stopped</span
+                            <span class="v2-sub" title={m.tickets_detail_auto_stopped_title()}
+                              >{m.tickets_detail_auto_stopped()}</span
                             >
                           {/if}
                         </td>
                         <td data-m="meta">
                           {e.profile?.user_details?.name ||
                             e.profile?.user_details?.email ||
-                            'Someone'}
+                            m.tickets_detail_someone()}
                         </td>
-                        <td data-m="meta">{shortAge(e.started_at)} ago</td>
+                        <td data-m="meta"
+                          >{m.tickets_detail_ago({ age: shortAge(e.started_at) })}</td
+                        >
                         <td class="v2-num v2-r" data-m="tag">
                           {e.ended_at ? hm(e.duration_minutes) : hm(runningMinutes(e))}
                         </td>
@@ -1204,7 +1285,7 @@
                             <form method="POST" action="?/stopTimer" use:enhance={timeSubmit}>
                               <input type="hidden" name="entry_id" value={e.id} />
                               <button class="v2-btn v2-btn-sm" disabled={timeBusy}>
-                                <Square size={11} />Stop
+                                <Square size={11} />{m.tickets_detail_stop()}
                               </button>
                             </form>
                           {:else if isBilled(e)}
@@ -1213,15 +1294,17 @@
                                flipping one to non-billable after it has been
                                charged for would leave the invoice standing. -->
                             {#if e.invoice}
-                              <a class="v2-sub" href={resolve(`invoices/${e.invoice}`)}>Invoiced</a>
+                              <a class="v2-sub" href={resolve(`invoices/${e.invoice}`)}
+                                >{m.tickets_detail_invoiced()}</a
+                              >
                             {:else}
-                              <span class="v2-sub">Invoiced</span>
+                              <span class="v2-sub">{m.tickets_detail_invoiced()}</span>
                             {/if}
                           {:else if confirmDelete === e.id}
                             <form method="POST" action="?/deleteTime" use:enhance={timeSubmit}>
                               <input type="hidden" name="entry_id" value={e.id} />
                               <button class="v2-btn v2-btn-sm time-danger" disabled={timeBusy}>
-                                Delete
+                                {m.common_delete()}
                               </button>
                             </form>
                             <button
@@ -1229,7 +1312,7 @@
                               class="v2-btn v2-btn-sm"
                               onclick={() => (confirmDelete = '')}
                             >
-                              Keep
+                              {m.tickets_detail_keep()}
                             </button>
                           {:else}
                             <form method="POST" action="?/setBillable" use:enhance={timeSubmit}>
@@ -1246,22 +1329,26 @@
                                 class="v2-btn v2-btn-sm"
                                 class:time-billable={e.billable}
                                 disabled={timeBusy}
-                                title={e.billable ? 'Mark as non-billable' : 'Mark as billable'}
+                                title={e.billable
+                                  ? m.tickets_detail_mark_non_billable()
+                                  : m.tickets_detail_mark_billable()}
                               >
                                 {#if e.billable}
                                   {e.hourly_rate
-                                    ? money(e.hourly_rate, e.currency) + '/hr'
-                                    : 'Billable'}
+                                    ? m.tickets_detail_per_hour({
+                                        rate: money(e.hourly_rate, e.currency)
+                                      })
+                                    : m.tickets_detail_billable()}
                                 {:else}
-                                  Not billable
+                                  {m.tickets_detail_not_billable()}
                                 {/if}
                               </button>
                             </form>
                             <button
                               type="button"
                               class="v2-btn v2-btn-sm"
-                              aria-label="Delete this entry"
-                              title="Delete this entry"
+                              aria-label={m.tickets_detail_delete_entry()}
+                              title={m.tickets_detail_delete_entry()}
                               onclick={() => (confirmDelete = e.id)}
                             >
                               <Trash2 size={11} />
@@ -1285,7 +1372,7 @@
           <section class="v2-card articles-panel" id="articles">
             <div class="articles-head">
               <BookOpen size={14} />
-              <div class="v2-label">Articles</div>
+              <div class="v2-label">{m.tickets_detail_articles()}</div>
               {#if articles.length}<span class="v2-sub v2-num">{articles.length}</span>{/if}
             </div>
 
@@ -1296,16 +1383,20 @@
                     <a href={resolve(`solutions/${a.id}`)} class="articles-link">
                       <span class="articles-title">{a.title}</span>
                       <span class="v2-sub articles-meta">
-                        {a.is_published ? 'Published' : 'Not published'} · updated {relativeDays(
-                          a.updated_at
-                        )}
+                        {a.is_published
+                          ? m.tickets_detail_article_published({ when: relativeDays(a.updated_at) })
+                          : m.tickets_detail_article_unpublished({
+                              when: relativeDays(a.updated_at)
+                            })}
                       </span>
                     </a>
                     {#if canReply}
                       <form method="POST" action="?/unlinkArticle" use:enhance>
                         <input type="hidden" name="article_id" value={a.id} />
-                        <button class="v2-btn v2-btn-sm" aria-label={`Unlink ${a.title}`}
-                          >Unlink</button
+                        <button
+                          class="v2-btn v2-btn-sm"
+                          aria-label={m.tickets_detail_unlink_aria({ title: a.title })}
+                          >{m.tickets_detail_unlink()}</button
                         >
                       </form>
                     {/if}
@@ -1313,7 +1404,7 @@
                 {/each}
               </ul>
             {:else}
-              <p class="v2-sub articles-empty">No article is linked to this ticket.</p>
+              <p class="v2-sub articles-empty">{m.tickets_detail_articles_none()}</p>
             {/if}
 
             {#if canReply}
@@ -1321,19 +1412,19 @@
                 <input
                   name="aq"
                   class="v2-input"
-                  placeholder="Find an article to link"
+                  placeholder={m.tickets_detail_article_find()}
                   value={data.articlePicker.q}
-                  aria-label="Find an article to link"
+                  aria-label={m.tickets_detail_article_find()}
                 />
-                <button class="v2-btn">Search</button>
+                <button class="v2-btn">{m.common_search()}</button>
               </form>
               {#if data.articlePicker.candidates === null}
-                <p class="v2-sub articles-empty">The articles could not be loaded.</p>
+                <p class="v2-sub articles-empty">{m.tickets_detail_articles_failed()}</p>
               {:else if data.articlePicker.candidates.length}
                 <div class="v2-sub articles-sub">
                   {data.articlePicker.q
-                    ? 'Matching published articles'
-                    : 'Suggested for this ticket'}
+                    ? m.tickets_detail_articles_matching()
+                    : m.tickets_detail_articles_suggested()}
                 </div>
                 <ul class="articles-list">
                   {#each data.articlePicker.q ? data.articlePicker.candidates : data.articlePicker.candidates.slice(0, 3) as c (c.id)}
@@ -1344,14 +1435,17 @@
                       </a>
                       <form method="POST" action="?/linkArticle" use:enhance>
                         <input type="hidden" name="article_id" value={c.id} />
-                        <button class="v2-btn v2-btn-sm" aria-label={`Link ${c.title}`}>Link</button
+                        <button
+                          class="v2-btn v2-btn-sm"
+                          aria-label={m.tickets_detail_link_aria({ title: c.title })}
+                          >{m.tickets_detail_link_button()}</button
                         >
                       </form>
                     </li>
                   {/each}
                 </ul>
               {:else if data.articlePicker.q}
-                <p class="v2-sub articles-empty">No published article matches that.</p>
+                <p class="v2-sub articles-empty">{m.tickets_detail_articles_no_match()}</p>
               {/if}
             {/if}
 
@@ -1365,13 +1459,12 @@
 
         {#if conversation.length === 0}
           <p class="v2-sub" style="margin:0 0 18px;font-size:12.5px">
-            Nothing has been said on this ticket yet. A reply below is the first response. It is
-            what stops the first-reply clock.
+            {m.tickets_detail_conversation_empty()}
           </p>
         {/if}
 
-        {#each conversation as m (m.id)}
-          {#if m.direction === 'note'}
+        {#each conversation as msg (msg.id)}
+          {#if msg.direction === 'note'}
             <!-- An internal note is not part of the conversation with the
                  customer, so it does not sit on either side of it. -->
             <div
@@ -1383,38 +1476,42 @@
                 style="font-size:11.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px"
               >
                 <Lock size={11} />
-                <b style="color:var(--v2-ink);font-weight:600">{m.author}</b>
-                · internal note · {shortAge(m.at)} ago
+                <b style="color:var(--v2-ink);font-weight:600">{msg.author}</b>
+                · {m.tickets_detail_internal_note_tag()} · {m.tickets_detail_ago({
+                  age: shortAge(msg.at)
+                })}
               </div>
               <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
-                <MentionBody body={m.body} people={data.mentionPeople} />
+                <MentionBody body={msg.body} people={data.mentionPeople} />
               </div>
             </div>
           {:else}
             <div
-              style="display:flex;gap:12px;margin-bottom:14px;{m.direction === 'out'
+              style="display:flex;gap:12px;margin-bottom:14px;{msg.direction === 'out'
                 ? 'flex-direction:row-reverse'
                 : ''}"
             >
-              <Avatar name={m.author} size={30} />
+              <Avatar name={msg.author} size={30} />
               <div
                 class="v2-card"
-                style="padding:12px 14px;max-width:72%;{m.direction === 'out'
+                style="padding:12px 14px;max-width:72%;{msg.direction === 'out'
                   ? 'background:var(--v2-line-soft)'
                   : ''}"
               >
                 <div class="v2-sub" style="font-size:11.5px;margin-bottom:5px">
-                  <b style="color:var(--v2-ink);font-weight:600">{m.author}</b>
-                  {#if m.kind === 'email'}· email{/if}
-                  · {shortAge(m.at)} ago
+                  <b style="color:var(--v2-ink);font-weight:600">{msg.author}</b>
+                  {#if msg.kind === 'email'}· {m.tickets_detail_email_tag()}{/if}
+                  · {m.tickets_detail_ago({ age: shortAge(msg.at) })}
                 </div>
-                {#if m.subject}
-                  <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">{m.subject}</div>
+                {#if msg.subject}
+                  <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">
+                    {msg.subject}
+                  </div>
                 {/if}
                 <!-- The backend reads mentions in comments and notes, never in emails. -->
                 <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
-                  {#if m.kind === 'email'}{m.body}{:else}<MentionBody
-                      body={m.body}
+                  {#if msg.kind === 'email'}{msg.body}{:else}<MentionBody
+                      body={msg.body}
                       people={data.mentionPeople}
                     />{/if}
                 </div>
@@ -1429,7 +1526,7 @@
                  post the reply, its attachment or its status. -->
             <form method="POST" action="?/renderMacro" use:enhance={insertMacro} class="macro-pick">
               <label for="macro-id" class="v2-sub macro-label"
-                ><MessageSquareQuote size={13} />Saved reply</label
+                ><MessageSquareQuote size={13} />{m.tickets_detail_saved_reply()}</label
               >
               <select
                 id="macro-id"
@@ -1438,22 +1535,26 @@
                 required
                 bind:value={pickedId}
               >
-                <option value="">Choose one…</option>
-                {#each data.macros as m (m.id)}
-                  <option value={m.id}>{m.title}</option>
+                <option value="">{m.tickets_detail_choose_one()}</option>
+                {#each data.macros as macro (macro.id)}
+                  <option value={macro.id}>{macro.title}</option>
                 {/each}
               </select>
               {#if picked && !picked.has_body}
                 <!-- Nothing to insert, so nothing to wait for: its actions
                      are the whole macro, and they apply now. -->
-                <button class="v2-btn" formaction="?/applyMacro" disabled={macroBusy}>Apply</button>
+                <button class="v2-btn" formaction="?/applyMacro" disabled={macroBusy}
+                  >{m.common_apply()}</button
+                >
               {:else}
-                <button class="v2-btn" disabled={macroBusy}>Insert</button>
+                <button class="v2-btn" disabled={macroBusy}>{m.tickets_detail_insert()}</button>
               {/if}
             </form>
             {#if picked && !picked.has_body && picked.chips.length}
               <p class="v2-sub macro-note">
-                Applies now: {picked.chips.map((/** @type {any} */ c) => c.label).join(' · ')}
+                {m.tickets_detail_applies_now({
+                  actions: picked.chips.map((/** @type {any} */ c) => c.label).join(' · ')
+                })}
               </p>
             {/if}
             {#if macroError || form?.macroError}
@@ -1475,15 +1576,15 @@
                 <!-- The macro's actions, applied right after this reply posts.
                      Each can be taken off; what is left is what applies. -->
                 <div class="macro-chips">
-                  <span class="v2-sub macro-chips-label">Also on send</span>
+                  <span class="v2-sub macro-chips-label">{m.tickets_detail_also_on_send()}</span>
                   {#each keptChips as chip (chip.key)}
                     <span class="v2-chip">
                       {chip.label}
                       <input type="hidden" name="macro_action" value={chip.key} />
                       <button
                         type="button"
-                        aria-label="Do not apply {chip.label}"
-                        title="Do not apply this"
+                        aria-label={m.tickets_detail_do_not_apply_aria({ label: chip.label })}
+                        title={m.tickets_detail_do_not_apply()}
                         onclick={() => (kept = kept.filter((k) => k !== chip.key))}
                       >
                         <X size={12} />
@@ -1498,7 +1599,9 @@
                 people={data.mentionPeople}
                 name="body"
                 rows="3"
-                placeholder={internal ? 'Note for the team…' : 'Write a reply…'}
+                placeholder={internal
+                  ? m.tickets_detail_note_placeholder()
+                  : m.tickets_detail_reply_placeholder()}
                 style="width:100%;border:none;background:transparent;resize:vertical;font:inherit;font-size:13.5px;line-height:1.55;color:var(--v2-ink);outline:none"
               />
               <div
@@ -1509,13 +1612,13 @@
                   style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"
                 >
                   <input type="checkbox" name="internal" bind:checked={internal} />
-                  Internal note
+                  {m.tickets_detail_internal_note()}
                 </label>
                 <!-- The whole chip is the click target: a label wrapping a hidden
                      input. A file may ride with the reply or go on its own. -->
                 <label class="attach" class:has-file={fileName}>
                   <Paperclip size={13} />
-                  <span class="attach-label">{fileName || 'Attach'}</span>
+                  <span class="attach-label">{fileName || m.tickets_detail_attach()}</span>
                   <input
                     bind:this={fileInput}
                     type="file"
@@ -1525,7 +1628,12 @@
                   />
                 </label>
                 {#if fileName}
-                  <button type="button" class="clear-file" onclick={clearFile} title="Remove file">
+                  <button
+                    type="button"
+                    class="clear-file"
+                    onclick={clearFile}
+                    title={m.tickets_detail_remove_file()}
+                  >
                     <X size={12} />
                   </button>
                 {/if}
@@ -1533,32 +1641,32 @@
                   <!-- The macro's status chip sets it; two status controls
                        on one send would contradict each other. -->
                   <span class="v2-sub" style="margin-left:auto;font-size:11.5px"
-                    >Status set by the macro</span
+                    >{m.tickets_detail_status_by_macro()}</span
                   >
                 {:else}
                   <span class="v2-sub" style="margin-left:auto;font-size:11.5px"
-                    >Status on send</span
+                    >{m.tickets_detail_status_on_send()}</span
                   >
                   <!-- Answering and moving the ticket is one decision, so it is
                        one submit. Empty means "leave the status alone". -->
                   <select name="status" class="v2-input" style="width:auto;font-size:12px">
-                    <option value="">Unchanged</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="Pending">Pending</option>
+                    <option value="">{m.tickets_detail_status_unchanged()}</option>
+                    <option value="Assigned">{m.tickets_detail_status_assigned()}</option>
+                    <option value="Pending">{m.tickets_detail_status_pending()}</option>
                   </select>
                 {/if}
                 <button class="v2-btn v2-btn-primary" disabled={sending || !canSend}>
                   {sending
-                    ? 'Sending…'
+                    ? m.tickets_detail_sending()
                     : body.trim()
                       ? internal
-                        ? 'Add note'
-                        : 'Send reply'
+                        ? m.tickets_detail_add_note()
+                        : m.tickets_detail_send_reply()
                       : fileName
-                        ? 'Attach file'
+                        ? m.tickets_detail_attach_file()
                         : internal
-                          ? 'Add note'
-                          : 'Send reply'}
+                          ? m.tickets_detail_add_note()
+                          : m.tickets_detail_send_reply()}
                 </button>
               </div>
             </div>
@@ -1567,18 +1675,17 @@
             {/if}
             {#if internal}
               <p class="v2-sub" style="margin:8px 2px 0;font-size:11.5px">
-                A note stays inside the team and does not stop the first-reply clock.
+                {m.tickets_detail_note_hint()}
               </p>
             {:else}
               <p class="v2-sub" style="margin:8px 2px 0;font-size:11.5px">
-                A reply is emailed to the contacts on this ticket and shown in their portal.
+                {m.tickets_detail_reply_hint()}
               </p>
             {/if}
           </form>
         {:else}
           <p class="v2-sub" style="margin-top:18px;font-size:12.5px">
-            You can read this ticket but not reply to it. Ask an admin, or whoever it is assigned
-            to.
+            {m.tickets_detail_read_only()}
           </p>
         {/if}
       </div>
@@ -1586,40 +1693,52 @@
   </div>
 
   <aside class="v2-rail">
-    <div class="v2-label v2-rail-head">Ticket</div>
+    <div class="v2-label v2-rail-head">{m.tickets_detail_rail_ticket()}</div>
     <dl class="v2-kv">
-      <dt>Priority</dt>
-      <dd><Pill tone={PRIORITY_TONE[ticket.priority]}>{ticket.priority}</Pill></dd>
-      <dt>Status</dt>
-      <dd><Pill tone={CASE_STATUS_TONE[ticket.status]}>{ticket.status}</Pill></dd>
-      <dt>Type</dt>
-      <dd>{ticket.case_type ?? 'Not set'}</dd>
-      <dt>Assignee</dt>
+      <dt>{m.common_priority()}</dt>
       <dd>
-        {ticket.assignee ?? 'Unassigned'}
+        <Pill tone={PRIORITY_TONE[ticket.priority]}
+          >{CASE_PRIORITY_LABEL[ticket.priority] ?? ticket.priority}</Pill
+        >
+      </dd>
+      <dt>{m.common_status()}</dt>
+      <dd>
+        <Pill tone={CASE_STATUS_TONE[ticket.status]}
+          >{CASE_STATUS_LABEL[ticket.status] ?? ticket.status}</Pill
+        >
+      </dd>
+      <dt>{m.tickets_detail_type()}</dt>
+      <dd>
+        {ticket.case_type
+          ? (CASE_TYPE_LABEL[ticket.case_type] ?? ticket.case_type)
+          : m.tickets_detail_not_set()}
+      </dd>
+      <dt>{m.tickets_detail_assignee()}</dt>
+      <dd>
+        {ticket.assignee ?? m.tickets_detail_unassigned()}
         {#if ticket.assignee_count > 1}
           <span class="v2-sub">+{ticket.assignee_count - 1}</span>
         {/if}
       </dd>
-      <dt>Opened</dt>
+      <dt>{m.tickets_detail_opened()}</dt>
       <dd>{longDate(ticket.opened_at)}</dd>
-      <dt>First reply</dt>
+      <dt>{m.tickets_detail_first_reply()}</dt>
       <dd>
         {#if ticket.first_response_at}
           {relativeTime(ticket.first_response_at)}
         {:else if ticket.first_response_deadline}
           <span style={slaColor(ticket.first_response_breached, ticket.first_response_at_risk)}>
-            due {relativeTime(ticket.first_response_deadline)}
+            {m.tickets_detail_due({ time: relativeTime(ticket.first_response_deadline) })}
           </span>
         {:else}
-          No target
+          {m.tickets_detail_no_target()}
         {/if}
       </dd>
       {#if ticket.resolved_at}
-        <dt>Resolved</dt>
+        <dt>{m.tickets_detail_resolved()}</dt>
         <dd>{longDate(ticket.resolved_at)}</dd>
       {:else if ticket.resolution_deadline}
-        <dt>Resolve by</dt>
+        <dt>{m.tickets_detail_resolve_by()}</dt>
         <dd>
           <span style={slaColor(ticket.resolution_breached, ticket.resolution_at_risk)}>
             {relativeTime(ticket.resolution_deadline)}
@@ -1628,12 +1747,12 @@
       {/if}
       {#if ticket.paused_at}
         <dt>SLA</dt>
-        <dd>Paused while pending</dd>
+        <dd>{m.tickets_detail_sla_paused()}</dd>
       {/if}
     </dl>
 
     {#if ticket.account}
-      <div class="v2-label v2-rail-head">Account</div>
+      <div class="v2-label v2-rail-head">{m.tickets_detail_account()}</div>
       <a
         class="v2-rail-row"
         href={resolve(`accounts/${ticket.account.id}`)}
@@ -1644,11 +1763,11 @@
           <div style="font-size:12.5px;font-weight:550">{ticket.account.name}</div>
           <div class="v2-sub" style="font-size:11px">
             {#if contacts.length === 1}
-              Reported by {contacts[0].name}
+              {m.tickets_detail_reported_by({ name: contacts[0].name })}
             {:else if contacts.length > 1}
-              {contacts.length} people on this ticket
+              {m.tickets_detail_people_count({ count: contacts.length })}
             {:else}
-              Nobody named on this ticket
+              {m.tickets_detail_nobody_named()}
             {/if}
           </div>
         </div>
@@ -1656,7 +1775,7 @@
     {/if}
 
     {#if contacts.length}
-      <div class="v2-label v2-rail-head">People</div>
+      <div class="v2-label v2-rail-head">{m.tickets_detail_people()}</div>
       {#each contacts as c (c.id)}
         <a
           class="v2-rail-row"
@@ -1670,7 +1789,7 @@
     {/if}
 
     {#if attachments.length}
-      <div class="v2-label v2-rail-head">Attachments</div>
+      <div class="v2-label v2-rail-head">{m.tickets_detail_attachments()}</div>
       {#each attachments as f (f.id)}
         {#if f.url}
           <!-- A download now, not dead text: the path was always in the payload
@@ -1695,7 +1814,7 @@
     {/if}
 
     {#if alsoOpen.length}
-      <div class="v2-label v2-rail-head">Also open here</div>
+      <div class="v2-label v2-rail-head">{m.tickets_detail_also_open()}</div>
       {#each alsoOpen as t (t.id)}
         <a
           class="v2-rail-row"
@@ -1705,7 +1824,10 @@
           <div>
             <div style="font-size:12.5px;font-weight:550;line-height:1.35">{t.name}</div>
             <div class="v2-sub" style="font-size:11px">
-              {t.priority} · {shortAge(t.opened_at)} old
+              {m.tickets_detail_also_open_meta({
+                priority: t.priority,
+                age: shortAge(t.opened_at)
+              })}
             </div>
           </div>
         </a>
@@ -1713,13 +1835,13 @@
     {/if}
 
     {#if activity.length}
-      <div class="v2-label v2-rail-head">History</div>
+      <div class="v2-label v2-rail-head">{m.tickets_detail_history()}</div>
       {#each activity.slice(0, 8) as a (a.id)}
         <div class="v2-rail-row">
           <div>
             <div style="font-size:12.5px;font-weight:550;line-height:1.35">{a.label}</div>
             <div class="v2-sub" style="font-size:11px">
-              {a.by ?? 'System'} · {shortAge(a.at)} ago
+              {a.by ?? m.tickets_detail_system()} · {m.tickets_detail_ago({ age: shortAge(a.at) })}
             </div>
           </div>
         </div>

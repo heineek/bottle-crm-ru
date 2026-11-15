@@ -7,7 +7,7 @@
  * same phrase the tree uses rather than as an empty or null name.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RESTRICTED_TICKET_NAME } from '#lib/v2/enums.js';
+import { restrictedTicketName } from '#lib/v2/enums.js';
 
 const apiRequest = vi.fn();
 vi.mock('#lib/api-helpers.js', () => ({ apiRequest: (...a) => apiRequest(...a) }));
@@ -36,7 +36,7 @@ describe('a ticket parent', () => {
     const { results } = await listTickets(event);
 
     expect(results.map((t) => t.parent)).toEqual([
-      { id: 'p-hidden', name: RESTRICTED_TICKET_NAME, status: null, restricted: true },
+      { id: 'p-hidden', name: 'A ticket you cannot open', status: null, restricted: true },
       { id: 'p-open', name: 'Outage umbrella', status: 'Pending', restricted: false },
       null
     ]);
@@ -48,14 +48,14 @@ describe('a ticket parent', () => {
 
     expect(ticket.parent).toEqual({
       id: 'p-hidden',
-      name: RESTRICTED_TICKET_NAME,
+      name: 'A ticket you cannot open',
       status: null,
       restricted: true
     });
   });
 
   it('is the phrase the tree uses for a hidden node', () => {
-    expect(RESTRICTED_TICKET_NAME).toBe('A ticket you cannot open');
+    expect(restrictedTicketName()).toBe('A ticket you cannot open');
   });
 });
 

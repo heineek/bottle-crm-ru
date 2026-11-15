@@ -1,4 +1,6 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { refreshAll } from '$app/navigation';
@@ -11,7 +13,12 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import BulkActionBar from '#lib/v2/components/BulkActionBar.svelte';
   import { count, shortAge } from '#lib/v2/format.js';
-  import { PRIORITY_TONE, CASE_STATUS_TONE } from '#lib/v2/enums.js';
+  import {
+    CASE_PRIORITY_LABEL,
+    CASE_STATUS_LABEL,
+    CASE_STATUS_TONE,
+    PRIORITY_TONE
+  } from '#lib/v2/enums.js';
   import TicketImportDrawer from '#lib/components/tickets/TicketImportDrawer.svelte';
   import { Download, Plus, LifeBuoy, Upload } from '@lucide/svelte';
   import { isOn, labelOf } from '#lib/v2/modules.js';
@@ -48,12 +55,15 @@
    */
   function summaryText(kind, s) {
     const parts = [
-      `${kind === 'delete' ? s.deleted : s.updated} ${kind === 'delete' ? 'deleted' : 'updated'}`
+      kind === 'delete'
+        ? m.tickets_list_bulk_deleted({ count: s.deleted })
+        : m.tickets_list_bulk_updated({ count: s.updated })
     ];
-    if (s.no_access) parts.push(`${s.no_access} skipped (no access)`);
-    if (s.approval_required) parts.push(`${s.approval_required} need approval`);
-    if (s.merged) parts.push(`${s.merged} merged (unmerge first)`);
-    if (s.invalid) parts.push(`${s.invalid} invalid`);
+    if (s.no_access) parts.push(m.tickets_list_bulk_no_access({ count: s.no_access }));
+    if (s.approval_required)
+      parts.push(m.tickets_list_bulk_approval({ count: s.approval_required }));
+    if (s.merged) parts.push(m.tickets_list_bulk_merged({ count: s.merged }));
+    if (s.invalid) parts.push(m.tickets_list_bulk_invalid({ count: s.invalid }));
     return parts.join(' · ');
   }
 
@@ -76,32 +86,40 @@
     if (t.first_response_at) {
       const took =
         (new Date(t.first_response_at).getTime() - new Date(t.opened_at).getTime()) / 6e4;
-      return { state: 'met', label: `Met in ${fmtMins(took)}`, tone: 'moss' };
+      return {
+        state: 'met',
+        label: m.tickets_list_reply_met({ time: fmtMins(took) }),
+        tone: 'moss'
+      };
     }
     if (!t.first_response_deadline) {
-      return { state: 'none', label: 'No target', tone: 'slate' };
+      return { state: 'none', label: m.tickets_list_reply_no_target(), tone: 'slate' };
     }
     const now = Date.now();
     const opened = new Date(t.opened_at).getTime();
     const due = new Date(t.first_response_deadline).getTime();
     if (now >= due) {
-      return { state: 'breached', label: `${fmtMins((now - due) / 6e4)} over`, tone: 'rust' };
+      return {
+        state: 'breached',
+        label: m.tickets_list_reply_over({ time: fmtMins((now - due) / 6e4) }),
+        tone: 'rust'
+      };
     }
     const pct = Math.max(0, Math.min(100, Math.round(((now - opened) / (due - opened)) * 100)));
     return {
       state: 'running',
       pct,
-      label: `${fmtMins((due - now) / 6e4)} left`,
+      label: m.tickets_list_reply_left({ time: fmtMins((due - now) / 6e4) }),
       tone: pct >= 75 ? 'rust' : pct >= 50 ? 'clay' : 'slate'
     };
   }
 
-  /** @param {number} m */
-  function fmtMins(m) {
-    const n = Math.max(0, Math.round(m));
-    if (n < 60) return `${n}m`;
-    if (n < 1440) return `${Math.round(n / 60)}h`;
-    return `${Math.round(n / 1440)}d`;
+  /** @param {number} mins */
+  function fmtMins(mins) {
+    const n = Math.max(0, Math.round(mins));
+    if (n < 60) return m.tickets_duration_m({ n });
+    if (n < 1440) return m.tickets_duration_h({ n: Math.round(n / 60) });
+    return m.tickets_duration_d({ n: Math.round(n / 1440) });
   }
 
   const TONE_VAR = {
@@ -112,18 +130,22 @@
   };
 </script>
 
-<PageHeader title="Tickets">
+<PageHeader title={m.tickets_list_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.open)}</span> open ·
-    <span class="v2-num" style="color:var(--v2-rust)">{totals.urgent}</span> urgent ·
+    <span class="v2-num">{count(totals.open)}</span>
+    {m.tickets_list_sub_open({ count: totals.open })} ·
+    <span class="v2-num" style="color:var(--v2-rust)">{totals.urgent}</span>
+    {m.tickets_list_sub_urgent({ count: totals.urgent })} ·
     <!-- Not "breaching today". A breach depends on the org's business calendar
          and is a per-row calculation; nobody having replied yet is a fact the
          queue can establish, and it is the one that decides what to open. -->
-    <span class="v2-num">{count(totals.awaiting_reply)}</span> with no reply yet
+    <span class="v2-num">{count(totals.awaiting_reply)}</span>
+    {m.tickets_list_sub_no_reply()}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('tickets/board')}>Board</a>
-    <button class="v2-btn" onclick={() => (importOpen = true)}><Upload />Import</button>
+    <a class="v2-btn" href={resolve('tickets/board')}>{m.tickets_list_board()}</a>
+    <button class="v2-btn" onclick={() => (importOpen = true)}><Upload />{m.common_import()}</button
+    >
     <!-- The page's own query string: the export rebuilds the same API query
          from it, so the file holds every row this list would page through. -->
     <a
@@ -131,15 +153,17 @@
       href="{resolve('api/tickets/export')}?{page.url.searchParams}"
       data-sveltekit-reload
     >
-      <Download />Export
+      <Download />{m.common_export()}
     </a>
-    <a class="v2-btn v2-btn-primary" href={resolve('tickets/new')}><Plus />New ticket</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('tickets/new')}
+      ><Plus />{m.tickets_list_new_ticket()}</a
+    >
   {/snippet}
 </PageHeader>
 
 {#if page.url.search}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered queue.
+    {m.tickets_list_filtered_note()}
   </p>
 {/if}
 
@@ -176,23 +200,23 @@
   tags={data.tags}
   meId={data.meId}
   saved={data.savedViews}
-  meta="First-reply targets come from each ticket's SLA hours"
+  meta={m.tickets_list_filter_meta()}
 />
 
 <div class="v2-scroll">
   {#if tickets.length === 0}
     <!-- An empty queue is good news, so it does not read like a failure. -->
     <EmptyState
-      title={data.showAll ? 'No tickets here yet' : 'The queue is clear'}
-      body={data.showAll
-        ? 'Nothing has been raised in this workspace. Tickets arrive here from email, the portal, and anyone who replies to a closed one.'
-        : 'Nothing is waiting on your team right now. Closed and rejected tickets are still here. They are just not in the way.'}
+      title={data.showAll ? m.tickets_list_empty_all_title() : m.tickets_list_empty_open_title()}
+      body={data.showAll ? m.tickets_list_empty_all_body() : m.tickets_list_empty_open_body()}
     >
       {#snippet icon()}<LifeBuoy size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('tickets/new')}>New ticket</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('tickets/new')}
+          >{m.tickets_list_new_ticket()}</a
+        >
         {#if !data.showAll}
-          <a class="v2-btn" href={resolve('tickets?all=1')}>Show closed too</a>
+          <a class="v2-btn" href={resolve('tickets?all=1')}>{m.tickets_list_show_closed()}</a>
         {/if}
         {#if isOn(data.modules, 'knowledge_base')}
           <a class="v2-btn" href={resolve('solutions')}>{labelOf(data.modules, 'knowledge_base')}</a
@@ -208,19 +232,19 @@
             <th style="width:34px">
               <input
                 type="checkbox"
-                aria-label="Select all loaded"
+                aria-label={m.tickets_list_select_all()}
                 checked={tickets.length > 0 && selected.size === tickets.length}
                 onchange={toggleAll}
               />
             </th>
-            <th>Subject</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Type</th>
-            <th>Account</th>
-            <th>Assignee</th>
-            <th class="v2-r">Age</th>
-            <th style="width:130px">First reply</th>
+            <th>{m.tickets_list_col_subject()}</th>
+            <th>{m.common_priority()}</th>
+            <th>{m.common_status()}</th>
+            <th>{m.tickets_list_col_type()}</th>
+            <th>{m.tickets_list_col_account()}</th>
+            <th>{m.tickets_list_col_assignee()}</th>
+            <th class="v2-r">{m.tickets_list_col_age()}</th>
+            <th style="width:130px">{m.tickets_list_col_first_reply()}</th>
           </tr>
         </thead>
         <tbody>
@@ -230,7 +254,7 @@
               <td data-m="lead">
                 <input
                   type="checkbox"
-                  aria-label="Select ticket"
+                  aria-label={m.tickets_list_select_one()}
                   checked={selected.has(t.id)}
                   onchange={() => toggle(t.id)}
                 />
@@ -240,8 +264,16 @@
                   <span class="v2-table-primary">{t.name}</span>
                 </a>
               </td>
-              <td><Pill tone={PRIORITY_TONE[t.priority]}>{t.priority}</Pill></td>
-              <td data-m="tag"><Pill tone={CASE_STATUS_TONE[t.status]}>{t.status}</Pill></td>
+              <td
+                ><Pill tone={PRIORITY_TONE[t.priority]}
+                  >{CASE_PRIORITY_LABEL[t.priority] ?? t.priority}</Pill
+                ></td
+              >
+              <td data-m="tag"
+                ><Pill tone={CASE_STATUS_TONE[t.status]}
+                  >{CASE_STATUS_LABEL[t.status] ?? t.status}</Pill
+                ></td
+              >
               <!-- Nullable on the model and null on plenty of rows, so it says
                    so rather than printing an empty cell. -->
               <td class="v2-muted" data-m="hide" style="font-size:12.5px">
@@ -253,14 +285,16 @@
                     >{t.account.name}</a
                   >
                 {:else}
-                  No account
+                  {m.tickets_list_no_account()}
                 {/if}
               </td>
               <td data-m="hide">
                 {#if t.assignee}
                   <Avatar name={t.assignee} size={22} />
                 {:else}
-                  <span class="v2-muted" style="font-size:12.5px">Unassigned</span>
+                  <span class="v2-muted" style="font-size:12.5px"
+                    >{m.tickets_list_unassigned()}</span
+                  >
                 {/if}
               </td>
               <td class="v2-r v2-num v2-muted" data-m="meta">{shortAge(t.opened_at)}</td>
@@ -296,12 +330,16 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{tickets.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.tickets_list_showing( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{tickets.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
       {#if !data.showAll}
-        · <a href={resolve('tickets?all=1')} style="color:inherit">include closed</a>
+        · <a href={resolve('tickets?all=1')} style="color:inherit"
+          >{m.tickets_list_include_closed()}</a
+        >
       {:else}
-        · <a href={resolve('tickets')} style="color:inherit">open only</a>
+        · <a href={resolve('tickets')} style="color:inherit">{m.tickets_list_open_only()}</a>
       {/if}
     </p>
   {/if}
