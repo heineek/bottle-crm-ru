@@ -27,6 +27,10 @@
   import FilterBar from '#lib/v2/components/FilterBar.svelte';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { count, relativeDays } from '#lib/v2/format.js';
+  import { intlLocale } from '#lib/i18n/locale.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { getLocale } from '#lib/paraglide/runtime.js';
   import { FileText, FileSpreadsheet, File, Users, Upload, Lock, Pencil } from '@lucide/svelte';
 
   /** @type {{ data: any }} */
@@ -45,8 +49,14 @@
       has no size the server could read, so it shows an em dash, not "0 kB". */
   function fileSize(bytes) {
     if (bytes == null) return '—';
-    if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
-    return `${Math.round(bytes / 1000)} kB`;
+    const number = (/** @type {number} */ n, /** @type {number} */ digits) =>
+      new Intl.NumberFormat(intlLocale(getLocale(), 'number'), {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+        useGrouping: false
+      }).format(n);
+    if (bytes >= 1_000_000) return m.documents_size_mb({ size: number(bytes / 1_000_000, 1) });
+    return m.documents_size_kb({ size: number(Math.round(bytes / 1000), 0) });
   }
 
   /**
@@ -60,53 +70,57 @@
    */
   function reachLabel(d) {
     const names = d.shared_to.map((p) => p.name.split(' ')[0]);
-    if (!names.length) return d.teams.length ? '' : 'Nobody yet';
-    if (names.length <= 2) return names.join(' and ');
-    return `${names.slice(0, 2).join(', ')} and ${names.length - 2} more`;
+    if (!names.length) return d.teams.length ? '' : m.documents_reach_nobody();
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return m.documents_reach_two({ first: names[0], second: names[1] });
+    return m.documents_reach_many({ first: names[0], second: names[1], rest: names.length - 2 });
   }
 </script>
 
-<PageHeader title="Documents">
+<PageHeader title={m.documents_list_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.active)}</span> active ·
-    <span class="v2-num">{count(totals.inactive)}</span> archived
+    {#each messageParts(m.documents_list_sub( { active: slot('active'), archived: slot('archived') } )) as p, i (i)}{#if p.key === 'active'}<span
+          class="v2-num">{count(totals.active)}</span
+        >{:else if p.key === 'archived'}<span class="v2-num">{count(totals.inactive)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn v2-btn-primary" href={resolve('documents/new')}><Upload />Upload</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('documents/new')}
+      ><Upload />{m.documents_list_upload()}</a
+    >
   {/snippet}
 </PageHeader>
 
 {#if page.url.search}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered list.
+    {m.documents_list_filtered_note()}
   </p>
 {/if}
 
 <div class="v2-pad" style="padding-top:14px;flex:none">
   <div class="v2-stats">
     <StatCard
-      label="Given to nobody"
+      label={m.documents_stat_unshared()}
       value={count(totals.unshared)}
       tone={totals.unshared ? 'clay' : 'slate'}
-      detail="Only the uploader and admins"
+      detail={m.documents_stat_unshared_detail()}
     />
-    <StatCard label="Active" value={count(totals.active)} tone="ink" />
-    <StatCard label="Archived" value={count(totals.inactive)} tone="slate" />
-    <StatCard label="Total" value={count(totals.count)} tone="slate" />
+    <StatCard label={m.documents_stat_active()} value={count(totals.active)} tone="ink" />
+    <StatCard label={m.documents_stat_archived()} value={count(totals.inactive)} tone="slate" />
+    <StatCard label={m.documents_stat_total()} value={count(totals.count)} tone="slate" />
   </div>
 </div>
 
-<FilterBar page="documents" url={page.url} meta="Newest first" />
+<FilterBar page="documents" url={page.url} meta={m.documents_list_meta()} />
 
 <div class="v2-scroll">
   {#if documents.length === 0}
-    <EmptyState
-      title="No documents yet"
-      body="Contracts, runbooks, price sheets. The things you send people often enough to stop hunting for. Share each one with the people or the team who need it; an unshared upload is visible only to you and to admins."
-    >
+    <EmptyState title={m.documents_empty_title()} body={m.documents_empty_body()}>
       {#snippet icon()}<FileText size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('documents/new')}>Upload a document</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('documents/new')}
+          >{m.documents_empty_action()}</a
+        >
       {/snippet}
     </EmptyState>
   {:else}
@@ -114,11 +128,11 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Document</th>
-            <th>Who can open it</th>
-            <th>Uploaded by</th>
-            <th class="v2-r">Size</th>
-            <th class="v2-r">Added</th>
+            <th>{m.documents_col_document()}</th>
+            <th>{m.documents_col_reach()}</th>
+            <th>{m.documents_col_uploaded_by()}</th>
+            <th class="v2-r">{m.documents_col_size()}</th>
+            <th class="v2-r">{m.documents_col_added()}</th>
             <th></th>
           </tr>
         </thead>
@@ -180,7 +194,7 @@
                   <a
                     class="edit"
                     href={resolve(`documents/${d.id}/edit`)}
-                    title="Manage this document"
+                    title={m.documents_row_manage()}
                   >
                     <Pencil size={13} />
                   </a>
@@ -193,8 +207,10 @@
     </div>
 
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{documents.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.documents_list_showing( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{documents.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   {/if}
 </div>

@@ -13,6 +13,7 @@
       "./messages/{locale}.json",
       "./messages/app/{locale}.json",
       "./messages/invoices/{locale}.json",
+      "./messages/documents/{locale}.json",
       "./messages/tickets/{locale}.json",
       "./messages/tasks/{locale}.json",
       "./messages/profile/{locale}.json",

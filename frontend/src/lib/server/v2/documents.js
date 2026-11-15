@@ -50,6 +50,7 @@
  *   endpoint gated by the same `_may_read` the detail view uses.
  */
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest } from '#lib/api-helpers.js';
 import * as env from '$app/env/public';
 import { documentHref } from './files.js';
@@ -97,7 +98,7 @@ function viewerClaims(cookies) {
 /** A person's display name from a nested ProfileSerializer row. */
 function personName(profile) {
   const d = profile?.user_details ?? {};
-  return d.name || d.email || 'Unnamed';
+  return d.name || d.email || m.documents_person_unnamed();
 }
 
 /**
@@ -148,7 +149,7 @@ function toDoc(d, viewer) {
     })),
     created_by: {
       id: createdById,
-      name: d.created_by?.name || d.created_by?.email || 'Unknown'
+      name: d.created_by?.name || d.created_by?.email || m.documents_person_unknown()
     },
     created_at: d.created_at,
     can_write: viewer.isAdmin || (createdById != null && createdById === viewer.userId)
