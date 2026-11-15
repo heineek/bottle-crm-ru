@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/crm_document.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/documents_provider.dart';
 import '../../providers/lookup_provider.dart';
@@ -123,7 +124,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
       return;
     }
     if (!widget.isEditing && _file == null) {
-      setState(() => _error = 'Pick a file to upload.');
+      setState(() => _error = context.l10n.documentsFormPickFile);
       return;
     }
 
@@ -169,7 +170,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     if (!response.success) {
       setState(() {
         _saving = false;
-        _error = response.message ?? 'Could not save this document.';
+        _error = response.message ?? context.l10n.documentsFormSaveFailed;
       });
       return;
     }
@@ -179,7 +180,9 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          widget.isEditing ? 'Document updated' : 'Document uploaded',
+          widget.isEditing
+              ? context.l10n.documentsFormUpdated
+              : context.l10n.documentsFormUploaded,
         ),
       ),
     );
@@ -189,21 +192,17 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this document?'),
-        content: const Text(
-          'The file and the record of it go for good, for everybody it was '
-          'shared with. To take it out of the way without destroying it, '
-          'archive it instead.',
-        ),
+        title: Text(context.l10n.documentsDeleteTitle),
+        content: Text(context.l10n.documentsDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.documentsKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -218,7 +217,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     if (!response.success) {
       setState(() {
         _saving = false;
-        _error = response.message ?? 'Could not delete this document.';
+        _error = response.message ?? context.l10n.documentsDeleteFailed;
       });
       return;
     }
@@ -226,7 +225,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     context.pop();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Document deleted')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.documentsDeleted)));
   }
 
   @override
@@ -243,11 +242,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             if (candidate.id == widget.documentId) doc = candidate;
           }
           if (doc == null) {
-            return const _Refused(
-              message:
-                  'That document is not in your list any more. It may have '
-                  'been deleted, archived, or un-shared with you.',
-            );
+            return _Refused(message: context.l10n.documentsFormGone);
           }
           final canWrite = canWriteDocument(
             isAdmin: ref.watch(isOrgAdminProvider),
@@ -255,13 +250,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             uploaderEmail: doc.uploaderEmail,
           );
           if (!canWrite) {
-            return const _Refused(
-              message:
-                  'Only the person who uploaded a document, or an '
-                  'administrator, can change it. Being able to open a document '
-                  'is not the same as being able to rewrite it for everybody '
-                  'else.',
-            );
+            return _Refused(message: context.l10n.documentsFormForbidden);
           }
           _fill(doc);
           return _form(context);
@@ -294,7 +283,11 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surfaceDim,
         appBar: AppBar(
-          title: Text(widget.isEditing ? 'Edit document' : 'Upload document'),
+          title: Text(
+            widget.isEditing
+                ? context.l10n.documentsFormEditTitle
+                : context.l10n.documentsFormUploadTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -337,8 +330,8 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
                 _file != null
                     ? _file!.name
                     : widget.isEditing
-                    ? 'Replace the file'
-                    : 'Choose a file',
+                    ? context.l10n.documentsFormReplaceFile
+                    : context.l10n.documentsFormChooseFile,
               ),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
@@ -348,8 +341,8 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             const SizedBox(height: 8),
             Text(
               widget.isEditing && _file == null
-                  ? 'Leave this alone to keep the current file. Files must be 25 MB or smaller.'
-                  : 'Files must be 25 MB or smaller.',
+                  ? context.l10n.documentsFormKeepFileHint
+                  : context.l10n.documentsFormSizeHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -360,11 +353,11 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
               controller: _title,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 1000,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.documentsFormTitleLabel,
+                border: const OutlineInputBorder(),
                 counterText: '',
-                helperText: 'Must be unique within the organisation',
+                helperText: context.l10n.documentsFormTitleHelper,
               ),
             ),
             const SizedBox(height: 16),
@@ -378,10 +371,9 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
                       _status = value ? 'active' : 'inactive';
                       _dirty = true;
                     }),
-              title: const Text('Active'),
+              title: Text(context.l10n.documentsFormActive),
               subtitle: Text(
-                'Archiving hides a document from the default list. The file '
-                'and everyone it is shared with stay exactly as they are.',
+                context.l10n.documentsFormActiveHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -390,7 +382,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             const SizedBox(height: 8),
 
             Text(
-              'SHARE WITH',
+              context.l10n.documentsFormShareWith,
               style: AppTypography.overline.copyWith(
                 color: AppColors.textSecondary,
                 letterSpacing: 1.2,
@@ -400,8 +392,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             Text(
               // Both halves are true and neither is obvious: sharing with
               // nobody is legal and useful, and admins are not a share.
-              'Leave everything unticked to keep it to yourself. Administrators '
-              'can open every document either way.',
+              context.l10n.documentsFormShareHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -435,7 +426,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             if (teams.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                'TEAMS',
+                context.l10n.documentsFormTeams,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textSecondary,
                   letterSpacing: 1.2,
@@ -445,8 +436,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
               Text(
                 // A team share follows the team, which is the reason to prefer
                 // it over ticking its members one by one.
-                'A team share reaches whoever is in the team at the time, not '
-                'whoever is in it today.',
+                context.l10n.documentsFormTeamsHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -473,13 +463,8 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
               const SizedBox(height: 8),
               Text(
                 listsMissing
-                    ? 'The people and teams list is not available, so sharing '
-                          'cannot be changed right now. Saving keeps everyone '
-                          'this document is shared with.'
-                    : 'Also shared with '
-                          '${inactiveShares == 1 ? 'one person' : '$inactiveShares people'} '
-                          'no longer active. Saving keeps '
-                          '${inactiveShares == 1 ? 'that share' : 'those shares'}.',
+                    ? context.l10n.documentsFormListsMissing
+                    : context.l10n.documentsFormInactiveShares(inactiveShares),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -497,7 +482,11 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(widget.isEditing ? 'Save changes' : 'Upload'),
+                    : Text(
+                        widget.isEditing
+                            ? context.l10n.documentsFormSaveChanges
+                            : context.l10n.documentsFormUpload,
+                      ),
               ),
             ),
 
@@ -511,7 +500,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
                     foregroundColor: AppColors.danger600,
                     side: BorderSide(color: AppColors.danger200),
                   ),
-                  child: const Text('Delete document'),
+                  child: Text(context.l10n.documentsFormDelete),
                 ),
               ),
             ],
@@ -530,7 +519,7 @@ class _Refused extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Document')),
+      appBar: AppBar(title: Text(context.l10n.documentsFormFallbackTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
