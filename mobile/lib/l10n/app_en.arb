@@ -4354,6 +4354,81 @@
   "solutionsDetailUnpublish": "Unpublish",
   "solutionsDetailPublish": "Publish",
   "solutionsDetailSaveChanges": "Save changes",
+  "supportListTitle": "Help",
+  "supportListNewTicket": "New ticket",
+  "supportListMessageCount": "{count, plural, other{{count} messages}}",
+  "@supportListMessageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportListUpdated": "Updated {date}",
+  "@supportListUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "supportListEmptyTitle": "No support tickets",
+  "supportListEmptyBody": "Open a ticket when you need help with BottleCRM. Replies and status changes stay attached to it.",
+  "supportListCouldNotOpenUrl": "Could not open {url} on this device.",
+  "@supportListCouldNotOpenUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "supportListStartHere": "Start here",
+  "supportListKnowledgeBase": "Knowledge base",
+  "supportListKnowledgeBaseHint": "The answers your team has already written down",
+  "supportListYourTickets": "Your tickets",
+  "supportListYourTicketsHint": "Everything open, and who it is waiting on",
+  "supportListSettings": "Settings",
+  "supportListSettingsHint": "Routing, escalation, business hours and inbound email",
+  "supportListIfNotSolved": "If that did not do it",
+  "supportListReportBug": "Report a bug",
+  "supportListReportBugHint": "Public issue tracker, fastest route for anything reproducible",
+  "supportListEmailSupport": "Email support@bottlecrm.io",
+  "supportListEmailSupportHint": "For anything involving your data, billing or an account you cannot get into",
+  "supportListWhatToInclude": "What to include when you write",
+  "supportListWhatToIncludeIntro": "Two things turn a two-day exchange into one message.",
+  "supportListExpected": "What you expected",
+  "supportListExpectedHint": "The thing you were trying to do, in one sentence.",
+  "supportListHappened": "What happened instead",
+  "supportListHappenedHint": "The exact wording of any error. \"It did not work\" and \"Something went wrong\" are the same message to us.",
+  "supportListScreenshotWarning": "Please do not attach screenshots containing an invoice link, an API token or a survey URL. Each of those is a working credential for whoever ends up holding it.",
+  "supportTryAgain": "Try again",
+  "supportCreateTitle": "New support ticket",
+  "supportCreateSubject": "Subject",
+  "supportCreateSubjectHint": "A short summary of the problem",
+  "supportCreateSubjectRequired": "Add a subject.",
+  "supportCreateCategory": "Category",
+  "supportCreateCategoryRequired": "Choose a category.",
+  "supportCreateBody": "What do you need help with?",
+  "supportCreateBodyHint": "Include what you tried, what you expected, and the exact error you saw.",
+  "supportCreateBodyRequired": "Describe what happened.",
+  "supportCreateAttach": "Attach a file (optional)",
+  "supportCreateAttachHint": "Up to 25 MB. Remove secrets and personal data before uploading.",
+  "supportCreateOpening": "Opening…",
+  "supportCreateSubmit": "Open ticket",
+  "supportCreateFailed": "Could not open this ticket.",
+  "supportDetailTitle": "Support ticket",
+  "supportDetailAssigned": "A support agent is assigned.",
+  "supportDetailUnassigned": "Waiting for assignment.",
+  "supportDetailConversation": "CONVERSATION",
+  "supportDetailReply": "Reply",
+  "supportDetailReplyHint": "Add any details that will help us investigate.",
+  "supportDetailAttach": "Attach file",
+  "supportDetailSending": "Sending…",
+  "supportDetailSend": "Send reply",
+  "supportDetailClosed": "This ticket is closed. Open a new ticket if you still need help.",
+  "supportDetailReplyEmpty": "Write a reply or attach a file before sending.",
+  "supportDetailReplyFailed": "Could not send this reply.",
+  "supportDetailDownloadFailed": "Could not download that file.",
   "tasksToday": "Today",
   "tasksTomorrow": "Tomorrow",
   "tasksYesterday": "Yesterday",

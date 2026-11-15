@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/support_ticket.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/support_provider.dart';
 import '../../services/attachment_upload.dart';
 
@@ -35,7 +36,7 @@ class _SupportCreateScreenState extends ConsumerState<SupportCreateScreen> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.surfaceDim,
     appBar: AppBar(
-      title: const Text('New support ticket'),
+      title: Text(context.l10n.supportCreateTitle),
       backgroundColor: AppColors.surface,
       elevation: 0,
     ),
@@ -49,17 +50,20 @@ class _SupportCreateScreenState extends ConsumerState<SupportCreateScreen> {
               controller: _subject,
               maxLength: 200,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Subject',
-                hintText: 'A short summary of the problem',
+              decoration: InputDecoration(
+                labelText: context.l10n.supportCreateSubject,
+                hintText: context.l10n.supportCreateSubjectHint,
               ),
-              validator: (value) =>
-                  (value ?? '').trim().isEmpty ? 'Add a subject.' : null,
+              validator: (value) => (value ?? '').trim().isEmpty
+                  ? context.l10n.supportCreateSubjectRequired
+                  : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<SupportCategory>(
               initialValue: _category,
-              decoration: const InputDecoration(labelText: 'Category'),
+              decoration: InputDecoration(
+                labelText: context.l10n.supportCreateCategory,
+              ),
               items: SupportCategory.values
                   .map(
                     (category) => DropdownMenuItem(
@@ -69,7 +73,9 @@ class _SupportCreateScreenState extends ConsumerState<SupportCreateScreen> {
                   )
                   .toList(),
               onChanged: (value) => setState(() => _category = value),
-              validator: (value) => value == null ? 'Choose a category.' : null,
+              validator: (value) => value == null
+                  ? context.l10n.supportCreateCategoryRequired
+                  : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -77,25 +83,26 @@ class _SupportCreateScreenState extends ConsumerState<SupportCreateScreen> {
               minLines: 7,
               maxLines: 12,
               maxLength: 10000,
-              decoration: const InputDecoration(
-                labelText: 'What do you need help with?',
+              decoration: InputDecoration(
+                labelText: context.l10n.supportCreateBody,
                 alignLabelWithHint: true,
-                hintText:
-                    'Include what you tried, what you expected, and the exact error you saw.',
+                hintText: context.l10n.supportCreateBodyHint,
               ),
               validator: (value) => (value ?? '').trim().isEmpty
-                  ? 'Describe what happened.'
+                  ? context.l10n.supportCreateBodyRequired
                   : null,
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _submitting ? null : _pickAttachment,
               icon: const Icon(LucideIcons.paperclip),
-              label: Text(_attachment?.name ?? 'Attach a file (optional)'),
+              label: Text(
+                _attachment?.name ?? context.l10n.supportCreateAttach,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
-              'Up to 25 MB. Remove secrets and personal data before uploading.',
+              context.l10n.supportCreateAttachHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -103,7 +110,11 @@ class _SupportCreateScreenState extends ConsumerState<SupportCreateScreen> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _submitting ? null : _submit,
-              child: Text(_submitting ? 'Opening…' : 'Open ticket'),
+              child: Text(
+                _submitting
+                    ? context.l10n.supportCreateOpening
+                    : context.l10n.supportCreateSubmit,
+              ),
             ),
           ],
         ),
@@ -136,7 +147,7 @@ class _SupportCreateScreenState extends ConsumerState<SupportCreateScreen> {
     if (!mounted) return;
     setState(() => _submitting = false);
     if (!result.success) {
-      _snack(result.error ?? 'Could not open this ticket.');
+      _snack(result.error ?? context.l10n.supportCreateFailed);
       return;
     }
     Navigator.of(context).pop(true);
