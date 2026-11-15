@@ -117,6 +117,12 @@ nav:
       - Security rules: contributing/security-rules.md
       - Pull requests: contributing/pull-requests.md
       - Releasing: contributing/releasing.md
+  - Localization:
+      - Overview: localization/index.md
+      - Adding a string: localization/adding-strings.md
+      - Adding a language: localization/adding-a-language.md
+      - Right-to-left languages: localization/right-to-left.md
+      - Russian glossary: localization/glossary-ru.md
   - Reference:
       - Environment variables: reference/environment-variables.md
       - Management commands: reference/management-commands.md

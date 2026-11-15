@@ -35,10 +35,12 @@ Backend:
 - RLS: `common.tasks.set_rls_context` and `clear_rls_context` (pair them in `finally`); `get_enable_policy_sql` and `ORG_SCOPED_TABLES` in `common/rls/__init__.py`.
 - Uploads: `common.utils.validate_attachment` before the first write, then `create_attachment`.
 - Money: `common.money` (`org_currency`, `currency_block`, which never adds two currencies). Time: `common.org_time` (`org_timezone`, `activate_org_timezone`). Links in emails: `common.links.frontend_url` and `api_url`. Audit: `common.audit_log.audit_log`. Custom fields: `common.custom_fields.validate_payload`.
+- Strings: `gettext`/`gettext_lazy` with named placeholders, `pgettext_lazy` where a word needs a different form by entity; the language comes from `common.locale` (`language_for_user`, `language_for_org` for mail and Celery). Catalogs: `manage.py update_messages [--compile]`. See `docs/localization/`.
 - Test fixtures: `common.testing` (`org_a`, `org_b`, `admin_client`, `user_client`, `set_rls_context`, ...), re-exported by `conftest.py`.
 
 Frontend:
 
+- Strings: `m` from `#lib/paraglide/messages.js`, keys in `messages/<module>/{en,ru}.json`, never called at module load; part of a sentence styled with `slot()`/`messageParts()` from `#lib/utils/message-parts.js`. Russian terms: `docs/localization/glossary-ru.md`.
 - Formatting: `#lib/v2/format.js` (`money(n, currency)`, which defaults to USD, so pass `data.org.currency`; `shortDate`, `longDate`, `relativeTime`). The org's "today": `todayIn(tz)` from `#lib/v2/dates.js` with `data.org.timezone`.
 - Admin: `isOrgAdmin` from `#lib/admin.js`. Labels and tones: `#lib/v2/enums.js`. Classes: `cn` from `#lib/utils.js`. DRF errors to a sentence: `readableError` from `#lib/server/v2/form-errors.js`.
 - Lists and filters: `#lib/v2/filters.js`, `#lib/server/v2/filter-params.js`, `#lib/server/v2/list-queries.js`, `#lib/server/v2/saved-views.js`. Custom fields: `#lib/server/v2/custom-fields.js`. @mentions: `MentionTextarea` and `MentionBody` in `#lib/v2/components/`, fed by `mentionPeople()` from `#lib/v2/mentions.js`.
