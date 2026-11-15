@@ -11,6 +11,7 @@ import '../../providers/duplicates_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../widgets/duplicates/duplicate_notice.dart';
 import '../../widgets/forms/unsaved_changes.dart';
+import '../../l10n/l10n.dart';
 
 /// Create or edit a contact.
 class ContactFormScreen extends ConsumerStatefulWidget {
@@ -96,7 +97,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
     setState(() {
       _fetching = false;
       if (contact == null) {
-        _fetchError = 'Could not load this contact';
+        _fetchError = context.l10n.contactsFormLoadFailed;
       } else {
         _existing = contact;
         _populate(contact);
@@ -190,7 +191,11 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text(widget.isEditMode ? 'Edit Contact' : 'New Contact'),
+          title: Text(
+            widget.isEditMode
+                ? context.l10n.contactsFormEditTitle
+                : context.l10n.contactsFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -218,13 +223,17 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
             const SizedBox(height: 12),
             Text(_fetchError!, style: AppTypography.body),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _fetch, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _fetch,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
     }
 
     final accounts = ref.watch(accountOptionsProvider);
+    final l10n = context.l10n;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -235,22 +244,22 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
           children: [
             _field(
               _firstName,
-              'First name',
+              l10n.contactsFormFirstName,
               autofocus: !widget.isEditMode,
               validator: (v) => (v?.trim().isEmpty ?? true)
-                  ? 'A contact needs a first name'
+                  ? l10n.contactsFormFirstNameRequired
                   : null,
             ),
             _field(
               _lastName,
-              'Last name',
+              l10n.contactsFormLastName,
               validator: (v) => (v?.trim().isEmpty ?? true)
-                  ? 'A contact needs a last name'
+                  ? l10n.contactsFormLastNameRequired
                   : null,
             ),
             _field(
               _email,
-              'Email',
+              l10n.commonEmail,
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 final email = value?.trim() ?? '';
@@ -259,10 +268,10 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                 // this cannot know. That message is surfaced from the response.
                 return email.contains('@')
                     ? null
-                    : 'That does not look like an email address';
+                    : l10n.contactsFormEmailInvalid;
               },
             ),
-            _field(_phone, 'Phone', keyboardType: TextInputType.phone),
+            _field(_phone, l10n.commonPhone, keyboardType: TextInputType.phone),
             if (!widget.isEditMode)
               DuplicateNotice(
                 module: DuplicateModule.contacts,
@@ -274,19 +283,23 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                 },
               ),
             _accountPicker(accounts),
-            _field(_title, 'Job title'),
-            _field(_department, 'Department'),
-            _field(_organization, 'Company'),
-            _field(_linkedin, 'LinkedIn URL', keyboardType: TextInputType.url),
+            _field(_title, l10n.contactsFormJobTitle),
+            _field(_department, l10n.contactsFormDepartment),
+            _field(_organization, l10n.contactsFormCompany),
+            _field(
+              _linkedin,
+              l10n.contactsFormLinkedin,
+              keyboardType: TextInputType.url,
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: _doNotCall,
               onChanged: _saving
                   ? null
                   : (value) => setState(() => _doNotCall = value),
-              title: const Text('Do not call'),
+              title: Text(l10n.contactsFormDoNotCall),
               subtitle: Text(
-                'Shown as a warning on the contact',
+                l10n.contactsFormDoNotCallHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -294,29 +307,29 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Address',
+              l10n.contactsFormAddress,
               style: AppTypography.label.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
-            _field(_addressLine, 'Street'),
-            _field(_city, 'City'),
-            _field(_state, 'State'),
-            _field(_postcode, 'Postcode'),
+            _field(_addressLine, l10n.contactsFormStreet),
+            _field(_city, l10n.contactsFormCity),
+            _field(_state, l10n.contactsFormState),
+            _field(_postcode, l10n.contactsFormPostcode),
             _field(
               _country,
-              'Country code',
-              hint: 'Two letters, e.g. IN',
+              l10n.contactsFormCountryCode,
+              hint: l10n.contactsFormCountryHint,
               validator: (value) {
                 final code = value?.trim() ?? '';
                 if (code.isEmpty) return null;
                 return RegExp(r'^[A-Za-z]{2}$').hasMatch(code)
                     ? null
-                    : 'Use the two-letter code, e.g. IN';
+                    : l10n.contactsFormCountryInvalid;
               },
             ),
-            _field(_description, 'Notes', maxLines: 4),
+            _field(_description, l10n.commonNotes, maxLines: 4),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -329,7 +342,9 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        widget.isEditMode ? 'Save changes' : 'Create contact',
+                        widget.isEditMode
+                            ? l10n.contactsFormSaveChanges
+                            : l10n.contactsFormCreate,
                       ),
               ),
             ),
@@ -360,7 +375,9 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
         : [
             AccountLookup(
               id: storedId,
-              name: _existing?.accountName ?? 'Current account',
+              name:
+                  _existing?.accountName ??
+                  context.l10n.contactsFormCurrentAccount,
             ),
             ...lookup,
           ];
@@ -371,14 +388,14 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
       child: DropdownButtonFormField<String?>(
         initialValue: value,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Account',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.contactsFormAccount,
+          border: const OutlineInputBorder(),
         ),
         items: [
-          const DropdownMenuItem<String?>(
+          DropdownMenuItem<String?>(
             value: null,
-            child: Text('No account'),
+            child: Text(context.l10n.contactsFormNoAccount),
           ),
           ...accounts.map(
             (a) => DropdownMenuItem<String?>(

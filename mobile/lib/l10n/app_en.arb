@@ -2415,6 +2415,86 @@
   },
   "appNotificationsHintTickets": "Notifications arrive for CRM ticket activity, automation rules, and updates from BottleCRM Support.",
   "appNotificationsHint": "Notifications arrive for automation rules and updates from BottleCRM Support.",
+  "contactsListTitle": "Contacts",
+  "contactsListImportTooltip": "Import from a spreadsheet",
+  "contactsListNewTooltip": "New contact",
+  "contactsListSearchHint": "Search contacts",
+  "contactsListLoading": "Loading",
+  "contactsListCount": "{count, plural, =1{1 contact} other{{count} contacts}}",
+  "@contactsListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contactsListCountOf": "{shown} of {count, plural, =1{{count} contact} other{{count} contacts}}",
+  "@contactsListCountOf": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contactsListLoadFailed": "Could not load contacts",
+  "contactsListEmptySearch": "No contacts match that search",
+  "contactsListEmpty": "No contacts yet",
+  "contactsListImportAction": "Import contacts",
+  "contactsFormLoadFailed": "Could not load this contact",
+  "contactsFormEditTitle": "Edit Contact",
+  "contactsFormNewTitle": "New Contact",
+  "contactsFormFirstName": "First name",
+  "contactsFormFirstNameRequired": "A contact needs a first name",
+  "contactsFormLastName": "Last name",
+  "contactsFormLastNameRequired": "A contact needs a last name",
+  "contactsFormEmailInvalid": "That does not look like an email address",
+  "contactsFormJobTitle": "Job title",
+  "contactsFormDepartment": "Department",
+  "contactsFormCompany": "Company",
+  "contactsFormLinkedin": "LinkedIn URL",
+  "contactsFormDoNotCall": "Do not call",
+  "contactsFormDoNotCallHint": "Shown as a warning on the contact",
+  "contactsFormAddress": "Address",
+  "contactsFormStreet": "Street",
+  "contactsFormCity": "City",
+  "contactsFormState": "State",
+  "contactsFormPostcode": "Postcode",
+  "contactsFormCountryCode": "Country code",
+  "contactsFormCountryHint": "Two letters, e.g. IN",
+  "contactsFormCountryInvalid": "Use the two-letter code, e.g. IN",
+  "contactsFormSaveChanges": "Save changes",
+  "contactsFormCreate": "Create contact",
+  "contactsFormCurrentAccount": "Current account",
+  "contactsFormAccount": "Account",
+  "contactsFormNoAccount": "No account",
+  "contactsDetailNotFound": "This contact does not exist, or you do not have access to them",
+  "contactsDetailDeleteTitle": "Delete this contact?",
+  "contactsDetailDeleteBody": "Deleting {name} cannot be undone.",
+  "@contactsDetailDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contactsDetailTitleFallback": "Contact",
+  "contactsDetailEditTooltip": "Edit contact",
+  "contactsDetailDeleteTooltip": "Delete contact",
+  "contactsDetailDoNotCall": "Do not call. This person asked not to be phoned.",
+  "contactsDetailTitle": "Title",
+  "contactsDetailLinkedin": "LinkedIn",
+  "contactsDetailNoDetails": "No details recorded yet.",
+  "contactsDetailAccounts": "Accounts ({count})",
+  "@contactsDetailAccounts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "commonSave": "Save",
   "commonCancel": "Cancel",
   "commonDelete": "Delete",
