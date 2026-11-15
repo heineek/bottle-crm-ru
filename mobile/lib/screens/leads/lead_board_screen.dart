@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../data/models/lead.dart' show LeadRating;
 import '../../data/models/lead_board.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lead_board_provider.dart';
 
 /// Leads grouped by the stages of one lead pipeline, including a pipeline a
@@ -54,7 +56,7 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
         title: _title(data),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: context.l10n.leadsBoardRefresh,
             icon: const Icon(LucideIcons.refreshCw, size: 20),
             onPressed: _busy
                 ? null
@@ -66,21 +68,18 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _Message(
           icon: LucideIcons.circleAlert,
-          title: 'Could not load the board',
+          title: context.l10n.leadsBoardLoadFailed,
           body: '$error',
           action: FilledButton(
             onPressed: () => ref.read(leadBoardProvider.notifier).refresh(),
-            child: const Text('Try again'),
+            child: Text(context.l10n.leadsBoardTryAgain),
           ),
         ),
         data: (data) => data.hasNoPipelines
-            ? const _Message(
+            ? _Message(
                 icon: LucideIcons.squareKanban,
-                title: 'No pipelines yet',
-                body:
-                    'A pipeline sorts leads into stages you move them '
-                    'through. Applying an industry pack in organization '
-                    'settings creates one.',
+                title: context.l10n.leadsBoardEmptyTitle,
+                body: context.l10n.leadsBoardEmptyBody,
               )
             : _board(data, lanes, laneIndex),
       ),
@@ -88,7 +87,7 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
   }
 
   Widget _title(LeadBoardData? data) {
-    final name = data?.active?.name ?? 'Lead board';
+    final name = data?.active?.name ?? context.l10n.leadsBoardTitle;
     final canPick = (data?.pipelines.length ?? 0) > 1;
     final text = Text(
       name,
@@ -125,8 +124,7 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Text(
-              'This pipeline has no stages yet, so there is nowhere to move '
-              'a lead.',
+              context.l10n.leadsBoardNoStages,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -224,8 +222,8 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
           padding: const EdgeInsets.all(32),
           child: Text(
             lane.isUnstaged
-                ? 'Every lead you can see is already in a stage.'
-                : 'Nothing in ${lane.name}.',
+                ? context.l10n.leadsBoardAllStaged
+                : context.l10n.leadsBoardEmptyLane(lane.name),
             textAlign: TextAlign.center,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
@@ -241,7 +239,10 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'Showing the first ${lane.cards.length} of ${lane.count}.',
+              context.l10n.leadsBoardShowingFirst(
+                lane.cards.length,
+                lane.count,
+              ),
               textAlign: TextAlign.center,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
@@ -302,9 +303,13 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    if (card.rating.isNotEmpty) _pill(card.rating, ratingColor),
+                    if (card.rating.isNotEmpty)
+                      _pill(_ratingLabel(card.rating), ratingColor),
                     if (card.followUpOverdue)
-                      _pill('Follow-up due', AppColors.danger600),
+                      _pill(
+                        context.l10n.leadsBoardFollowUpDue,
+                        AppColors.danger600,
+                      ),
                     if (card.owner.isNotEmpty)
                       Text(
                         card.owner,
@@ -320,6 +325,15 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
         ),
       ),
     );
+  }
+
+  /// The rating's own label, upper-cased as the code was; an unknown code
+  /// is shown as sent.
+  String _ratingLabel(String code) {
+    for (final r in LeadRating.values) {
+      if (r.value == code) return r.displayName.toUpperCase();
+    }
+    return code;
   }
 
   Widget _pill(String text, Color color) {
@@ -379,7 +393,7 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
                   size: 20,
                   color: AppColors.textSecondary,
                 ),
-                title: const Text('Open lead'),
+                title: Text(context.l10n.leadsBoardOpenLead),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   context.push('/leads/${card.id}');
@@ -388,7 +402,10 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
               if (targets.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Text('Move to', style: AppTypography.labelSmall),
+                  child: Text(
+                    context.l10n.leadsBoardMoveTo,
+                    style: AppTypography.labelSmall,
+                  ),
                 ),
                 for (final stage in targets)
                   ListTile(
@@ -402,7 +419,7 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
                     ),
                     title: Text(stage.name),
                     subtitle: stage.isUnstaged
-                        ? const Text('Takes the lead out of this pipeline')
+                        ? Text(context.l10n.leadsBoardLeavePipeline)
                         : null,
                     onTap: () {
                       Navigator.pop(sheetContext);
@@ -429,10 +446,10 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (!response.success) {
-      _snack(response.message ?? 'Could not move that lead.');
+      _snack(response.message ?? context.l10n.leadsBoardMoveFailed);
       return;
     }
-    _snack('Moved to ${target.name}.');
+    _snack(context.l10n.leadsBoardMoved(target.name));
     final lanes = ref.read(leadBoardProvider).value?.lanes ?? const [];
     final index = lanes.indexWhere((lane) => lane.id == target.id);
     if (index >= 0) _goTo(index);
@@ -455,7 +472,10 @@ class _LeadBoardScreenState extends ConsumerState<LeadBoardScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Pipelines', style: AppTypography.h3),
+                child: Text(
+                  context.l10n.leadsBoardPipelines,
+                  style: AppTypography.h3,
+                ),
               ),
               for (final pipeline in pipelines)
                 ListTile(

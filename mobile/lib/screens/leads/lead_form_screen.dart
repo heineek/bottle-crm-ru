@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/models.dart';
+import '../../data/models/org_locales.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/duplicates_provider.dart';
 import '../../providers/leads_provider.dart';
 import '../../providers/lookup_provider.dart';
@@ -15,6 +17,8 @@ import '../../services/org_date.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/duplicates/duplicate_notice.dart';
 import '../../widgets/forms/unsaved_changes.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 // Salutation choices match the web form's hard-coded list and the backend's
 // LEAD_SALUTATION column (free-text, but the UI restricts to these values).
@@ -22,22 +26,39 @@ const List<String> _kSalutations = ['Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.'];
 
 // Currencies match the frontend's CURRENCY_CODES constant; backend column is
 // a 3-letter ISO code with the same `choices`.
-const List<({String code, String label})> _kCurrencies = [
-  (code: 'USD', label: 'USD - Dollar'),
-  (code: 'EUR', label: 'EUR - Euro'),
-  (code: 'GBP', label: 'GBP - Pound'),
-  (code: 'INR', label: 'INR - Rupee'),
-  (code: 'CAD', label: 'CAD - Dollar'),
-  (code: 'AUD', label: 'AUD - Dollar'),
-  (code: 'JPY', label: 'JPY - Yen'),
-  (code: 'CNY', label: 'CNY - Yuan'),
-  (code: 'CHF', label: 'CHF - Franc'),
-  (code: 'SGD', label: 'SGD - Dollar'),
-  (code: 'AED', label: 'AED - Dirham'),
-  (code: 'BRL', label: 'BRL - Real'),
-  (code: 'MXN', label: 'MXN - Peso'),
-  (code: 'ZAR', label: 'ZAR - Rand'),
+const List<String> _kCurrencies = [
+  'USD',
+  'EUR',
+  'GBP',
+  'INR',
+  'CAD',
+  'AUD',
+  'JPY',
+  'CNY',
+  'CHF',
+  'SGD',
+  'AED',
+  'BRL',
+  'MXN',
+  'ZAR',
 ];
+
+String _currencyLabel(AppLocalizations l10n, String code) {
+  final name = switch (code) {
+    'EUR' => l10n.leadsCurrencyEuro,
+    'GBP' => l10n.leadsCurrencyPound,
+    'INR' => l10n.leadsCurrencyRupee,
+    'JPY' => l10n.leadsCurrencyYen,
+    'CNY' => l10n.leadsCurrencyYuan,
+    'CHF' => l10n.leadsCurrencyFranc,
+    'AED' => l10n.leadsCurrencyDirham,
+    'BRL' => l10n.leadsCurrencyReal,
+    'MXN' => l10n.leadsCurrencyPeso,
+    'ZAR' => l10n.leadsCurrencyRand,
+    _ => l10n.leadsCurrencyDollar,
+  };
+  return '$code - $name';
+}
 
 // Industries mirror the backend's INDCHOICES (common/utils.py). Keeping these
 // in sync prevents free-text drift (Tech / Technology / tech) across orgs.
@@ -73,14 +94,6 @@ const List<String> _kIndustries = [
   'TRANSPORTATION',
   'VENTURE CAPITAL',
 ];
-
-String? _countryLabel(String? code) {
-  if (code == null || code.isEmpty) return null;
-  for (final c in kCountries) {
-    if (c.code == code) return c.label;
-  }
-  return code;
-}
 
 // Status → default probability % that gets pre-filled when the user picks a
 // status and hasn't typed one yet. Matches the web's auto-suggest behavior.
@@ -133,6 +146,11 @@ class LeadFormScreen extends ConsumerStatefulWidget {
 }
 
 class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
+  /// Country names from the API, in the current language; the bundled
+  /// English list until it arrives.
+  OrgLocales get _countries =>
+      ref.read(orgLocalesProvider).value ?? OrgLocales.fallback;
+
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
 
@@ -334,7 +352,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         _seedCustomFieldControllers();
         _baseline = _snapshot();
       } else {
-        _fetchError = 'Failed to load lead';
+        _fetchError = context.l10n.leadsFormLoadFailed;
       }
     });
   }
@@ -542,7 +560,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       _scrollToFirstError();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please fix the errors in the form'),
+          content: Text(context.l10n.leadsFormFixErrors),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -559,7 +577,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       if (missing) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${def.label} is required'),
+            content: Text(context.l10n.leadsFormFieldRequired(def.label)),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -584,8 +602,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         SnackBar(
           content: Text(
             widget.isEditMode
-                ? 'Lead updated successfully'
-                : 'Lead created successfully',
+                ? context.l10n.leadsFormUpdated
+                : context.l10n.leadsFormCreated,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -598,7 +616,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to save lead'),
+          content: Text(response.message ?? context.l10n.leadsFormSaveFailed),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -699,13 +717,19 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild with translated names once the API answers.
+    ref.watch(orgLocalesProvider);
     return UnsavedChangesGuard(
       hasUnsavedChanges: () => _hasUnsavedChanges,
       isSaving: _isLoading,
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text(widget.isEditMode ? 'Edit Lead' : 'New Lead'),
+          title: Text(
+            widget.isEditMode
+                ? context.l10n.leadsFormEditTitle
+                : context.l10n.leadsFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -744,7 +768,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TextButton(onPressed: _fetchLead, child: const Text('Retry')),
+            TextButton(
+              onPressed: _fetchLead,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -762,36 +789,40 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('Identity'),
+                  _buildSectionTitle(context.l10n.leadsFormSectionIdentity),
                   const SizedBox(height: 16),
                   _buildIdentitySection(),
                   const SizedBox(height: 32),
-                  _buildSectionTitle('Contact'),
+                  _buildSectionTitle(context.l10n.leadsFormSectionContact),
                   const SizedBox(height: 16),
                   _buildContactSection(),
                   const SizedBox(height: 32),
-                  _buildSectionTitle('Company'),
+                  _buildSectionTitle(context.l10n.leadsFormSectionCompany),
                   const SizedBox(height: 16),
                   _buildCompanySection(),
                   const SizedBox(height: 32),
-                  _buildSectionTitle('Pipeline & Deal'),
+                  _buildSectionTitle(context.l10n.leadsFormSectionPipeline),
                   const SizedBox(height: 16),
                   _buildPipelineSection(),
                   const SizedBox(height: 32),
-                  _buildSectionTitle('Address'),
+                  _buildSectionTitle(context.l10n.leadsFormSectionAddress),
                   const SizedBox(height: 16),
                   _buildAddressSection(),
                   const SizedBox(height: 32),
-                  _buildSectionTitle('Activity Dates'),
+                  _buildSectionTitle(context.l10n.leadsFormSectionActivity),
                   const SizedBox(height: 16),
                   _buildActivitySection(),
                   const SizedBox(height: 32),
-                  _buildSectionTitle('Relationships'),
+                  _buildSectionTitle(
+                    context.l10n.leadsFormSectionRelationships,
+                  ),
                   const SizedBox(height: 16),
                   _buildRelationshipsSection(),
                   if (_customFieldDefs.isNotEmpty) ...[
                     const SizedBox(height: 32),
-                    _buildSectionTitle('Custom Fields'),
+                    _buildSectionTitle(
+                      context.l10n.leadsFormSectionCustomFields,
+                    ),
                     const SizedBox(height: 16),
                     _buildCustomFieldsSection(),
                   ],
@@ -801,11 +832,11 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionTitle('Notes'),
+                        _buildSectionTitle(context.l10n.commonNotes),
                         const SizedBox(height: 16),
                         TextAreaField(
-                          label: 'Description',
-                          hint: 'Add any additional notes about this lead...',
+                          label: context.l10n.commonDescription,
+                          hint: context.l10n.leadsFormNotesHint,
                           controller: _notesController,
                           maxLines: 4,
                         ),
@@ -827,24 +858,52 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   /// Custom Fields, and Relationships are otherwise a long scroll away.
   Widget _buildSectionChipsBar() {
     final chips = <({String label, GlobalKey key, IconData icon})>[
-      (label: 'Identity', key: _identitySectionKey, icon: LucideIcons.user),
-      (label: 'Contact', key: _contactSectionKey, icon: LucideIcons.mail),
-      (label: 'Company', key: _companySectionKey, icon: LucideIcons.building2),
-      (label: 'Pipeline', key: _pipelineSectionKey, icon: LucideIcons.activity),
-      (label: 'Address', key: _addressSectionKey, icon: LucideIcons.mapPin),
-      (label: 'Activity', key: _activitySectionKey, icon: LucideIcons.calendar),
       (
-        label: 'Relations',
+        label: context.l10n.leadsFormSectionIdentity,
+        key: _identitySectionKey,
+        icon: LucideIcons.user,
+      ),
+      (
+        label: context.l10n.leadsFormSectionContact,
+        key: _contactSectionKey,
+        icon: LucideIcons.mail,
+      ),
+      (
+        label: context.l10n.leadsFormSectionCompany,
+        key: _companySectionKey,
+        icon: LucideIcons.building2,
+      ),
+      (
+        label: context.l10n.leadsFormChipPipeline,
+        key: _pipelineSectionKey,
+        icon: LucideIcons.activity,
+      ),
+      (
+        label: context.l10n.leadsFormSectionAddress,
+        key: _addressSectionKey,
+        icon: LucideIcons.mapPin,
+      ),
+      (
+        label: context.l10n.leadsFormChipActivity,
+        key: _activitySectionKey,
+        icon: LucideIcons.calendar,
+      ),
+      (
+        label: context.l10n.leadsFormChipRelations,
         key: _relationshipsSectionKey,
         icon: LucideIcons.users,
       ),
       if (_customFieldDefs.isNotEmpty)
         (
-          label: 'Custom',
+          label: context.l10n.leadsFormChipCustom,
           key: _customFieldsSectionKey,
           icon: LucideIcons.settings2,
         ),
-      (label: 'Notes', key: _notesSectionKey, icon: LucideIcons.fileText),
+      (
+        label: context.l10n.commonNotes,
+        key: _notesSectionKey,
+        icon: LucideIcons.fileText,
+      ),
     ];
 
     return Container(
@@ -905,7 +964,9 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               PrimaryButton(
-                label: widget.isEditMode ? 'Update Lead' : 'Create Lead',
+                label: widget.isEditMode
+                    ? context.l10n.leadsFormUpdateLead
+                    : context.l10n.leadsFormCreateLead,
                 onPressed: _isLoading
                     ? null
                     : () {
@@ -930,7 +991,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                           child: CircularProgressIndicator(strokeWidth: 1.5),
                         )
                       : Icon(LucideIcons.plus, size: 16),
-                  label: const Text('Save & Add Another'),
+                  label: Text(context.l10n.leadsFormSaveAndAddAnother),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary600,
                   ),
@@ -963,14 +1024,15 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       children: [
         FloatingLabelInput(
           key: _titleKey,
-          label: 'Lead Title *',
-          hint: 'e.g. Website Inquiry, Q4 Demo',
+          label: context.l10n.leadsFormTitleLabel,
+          hint: context.l10n.leadsFormTitleHint,
           controller: _titleController,
           prefixIcon: LucideIcons.tag,
           maxLength: 200,
           textInputAction: TextInputAction.next,
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Lead title is required' : null,
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? context.l10n.leadsFormTitleRequired
+              : null,
         ),
         const SizedBox(height: 16),
         // Salutation + First name on one row mirrors the web layout.
@@ -980,7 +1042,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             SizedBox(
               width: 110,
               child: _PickerField(
-                label: 'Salutation',
+                label: context.l10n.leadsFormSalutation,
                 value: _salutation ?? '—',
                 onTap: _isLoading ? null : _showSalutationPicker,
               ),
@@ -989,15 +1051,15 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             Expanded(
               child: FloatingLabelInput(
                 key: _firstNameKey,
-                label: 'First Name *',
-                hint: 'John',
+                label: context.l10n.leadsFormFirstName,
+                hint: context.l10n.leadsFormFirstNameHint,
                 controller: _firstNameController,
                 prefixIcon: LucideIcons.user,
                 maxLength: 50,
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.next,
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'First name is required'
+                    ? context.l10n.leadsFormFirstNameRequired
                     : null,
               ),
             ),
@@ -1006,15 +1068,16 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         const SizedBox(height: 16),
         FloatingLabelInput(
           key: _lastNameKey,
-          label: 'Last Name *',
-          hint: 'Doe',
+          label: context.l10n.leadsFormLastName,
+          hint: context.l10n.leadsFormLastNameHint,
           controller: _lastNameController,
           prefixIcon: LucideIcons.user,
           maxLength: 50,
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.next,
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Last name is required' : null,
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? context.l10n.leadsFormLastNameRequired
+              : null,
         ),
       ],
     );
@@ -1031,7 +1094,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       children: [
         FloatingLabelInput(
           key: _emailKey,
-          label: 'Email *',
+          label: context.l10n.leadsFormEmail,
           hint: 'john@acme.com',
           controller: _emailController,
           prefixIcon: LucideIcons.mail,
@@ -1040,8 +1103,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           textInputAction: TextInputAction.next,
           validator: (value) {
             final v = (value ?? '').trim();
-            if (v.isEmpty) return 'Email is required';
-            if (!_emailRegex.hasMatch(v)) return 'Enter a valid email';
+            if (v.isEmpty) return context.l10n.leadsFormEmailRequired;
+            if (!_emailRegex.hasMatch(v)) {
+              return context.l10n.leadsFormEmailInvalid;
+            }
             return null;
           },
         ),
@@ -1059,7 +1124,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         const SizedBox(height: 16),
         FloatingLabelInput(
           key: _phoneKey,
-          label: 'Phone (Optional)',
+          label: context.l10n.leadsFormPhone,
           hint: '+1 (555) 123-4567',
           controller: _phoneController,
           prefixIcon: LucideIcons.phone,
@@ -1073,14 +1138,14 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             if (v.isEmpty) return null;
             // Backend's flexible_phone_validator wants at least a few digits.
             final digits = v.replaceAll(RegExp(r'\D'), '');
-            if (digits.length < 6) return 'Enter a valid phone';
+            if (digits.length < 6) return context.l10n.leadsFormPhoneInvalid;
             return null;
           },
         ),
         const SizedBox(height: 16),
         FloatingLabelInput(
           key: _linkedinKey,
-          label: 'LinkedIn (Optional)',
+          label: context.l10n.leadsFormLinkedin,
           hint: 'https://linkedin.com/in/...',
           controller: _linkedinController,
           prefixIcon: LucideIcons.link,
@@ -1118,7 +1183,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     if (uri == null ||
         !(uri.hasScheme && uri.hasAuthority) ||
         (uri.scheme != 'http' && uri.scheme != 'https')) {
-      return 'Enter a valid URL (https://...)';
+      return context.l10n.leadsFormUrlInvalid;
     }
     return null;
   }
@@ -1134,8 +1199,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       children: [
         FloatingLabelInput(
           key: _companyKey,
-          label: 'Company *',
-          hint: 'Acme Inc.',
+          label: context.l10n.leadsFormCompany,
+          hint: context.l10n.leadsFormCompanyHint,
           controller: _companyController,
           prefixIcon: LucideIcons.building2,
           maxLength: 255,
@@ -1143,15 +1208,15 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           textInputAction: TextInputAction.next,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Company is required';
+              return context.l10n.leadsFormCompanyRequired;
             }
             return null;
           },
         ),
         const SizedBox(height: 16),
         FloatingLabelInput(
-          label: 'Job Title (Optional)',
-          hint: 'e.g. Marketing Manager',
+          label: context.l10n.leadsFormJobTitle,
+          hint: context.l10n.leadsFormJobTitleHint,
           controller: _jobTitleController,
           prefixIcon: LucideIcons.briefcase,
           maxLength: 100,
@@ -1160,7 +1225,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         const SizedBox(height: 16),
         FloatingLabelInput(
           key: _websiteKey,
-          label: 'Website (Optional)',
+          label: context.l10n.leadsFormWebsite,
           hint: 'https://acme.com',
           controller: _websiteController,
           prefixIcon: LucideIcons.globe,
@@ -1176,10 +1241,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           key: _industryKey,
           padding: EdgeInsets.zero,
           child: _PickerField(
-            label: 'Industry (Optional)',
+            label: context.l10n.leadsFormIndustry,
             value: _industryController.text.isEmpty
-                ? 'Select industry'
-                : _industryController.text,
+                ? context.l10n.leadsFormSelectIndustry
+                : industryLabel(_industryController.text),
             leading: Icon(
               LucideIcons.factory,
               size: 20,
@@ -1202,15 +1267,15 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PickerField(
-          label: 'Status',
+          label: context.l10n.commonStatus,
           value: _status.displayName,
           leading: Icon(_statusIcon(_status), size: 20, color: _status.color),
           onTap: _isLoading ? null : _showStatusPicker,
         ),
         const SizedBox(height: 16),
         _PickerField(
-          label: 'Source',
-          value: _source?.displayName ?? 'None',
+          label: context.l10n.leadsFieldSource,
+          value: _source?.displayName ?? context.l10n.leadsFieldNone,
           leading: Icon(
             _source?.icon ?? LucideIcons.helpCircle,
             size: 20,
@@ -1220,7 +1285,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Rating',
+          context.l10n.leadsFieldRating,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 8),
@@ -1233,7 +1298,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
               flex: 3,
               child: FloatingLabelInput(
                 key: _opportunityAmountKey,
-                label: 'Estimated Value',
+                label: context.l10n.leadsFormEstimatedValue,
                 hint: '0.00',
                 controller: _opportunityAmountController,
                 prefixIcon: LucideIcons.dollarSign,
@@ -1248,8 +1313,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                   final v = (value ?? '').trim();
                   if (v.isEmpty) return null;
                   final parsed = double.tryParse(v);
-                  if (parsed == null) return 'Enter a number';
-                  if (parsed < 0) return 'Must be ≥ 0';
+                  if (parsed == null) return context.l10n.leadsFormEnterNumber;
+                  if (parsed < 0) return context.l10n.leadsFormNotNegative;
                   return null;
                 },
               ),
@@ -1258,8 +1323,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             Expanded(
               flex: 2,
               child: _PickerField(
-                label: 'Currency',
-                value: _currency ?? 'Select',
+                label: context.l10n.leadsFormCurrency,
+                value: _currency ?? context.l10n.leadsFieldSelect,
                 onTap: _isLoading ? null : _showCurrencyPicker,
               ),
             ),
@@ -1272,7 +1337,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             Expanded(
               child: FloatingLabelInput(
                 key: _probabilityKey,
-                label: 'Probability %',
+                label: context.l10n.leadsFormProbability,
                 hint: '0-100',
                 controller: _probabilityController,
                 prefixIcon: LucideIcons.percent,
@@ -1284,7 +1349,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                   final v = (value ?? '').trim();
                   if (v.isEmpty) return null;
                   final parsed = int.tryParse(v);
-                  if (parsed == null) return 'Enter a number';
+                  if (parsed == null) return context.l10n.leadsFormEnterNumber;
                   if (parsed < 0 || parsed > 100) return '0-100';
                   return null;
                 },
@@ -1293,7 +1358,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _DateField(
-                label: 'Close Date',
+                label: context.l10n.leadsFormCloseDate,
                 value: _closeDate,
                 onTap: _isLoading
                     ? null
@@ -1321,8 +1386,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       key: _addressSectionKey,
       children: [
         FloatingLabelInput(
-          label: 'Street (Optional)',
-          hint: '123 Market St',
+          label: context.l10n.leadsFormStreet,
+          hint: context.l10n.leadsFormStreetHint,
           controller: _addressLineController,
           prefixIcon: LucideIcons.mapPin,
           maxLength: 255,
@@ -1334,8 +1399,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           children: [
             Expanded(
               child: FloatingLabelInput(
-                label: 'City',
-                hint: 'San Francisco',
+                label: context.l10n.leadsFormCity,
+                hint: context.l10n.leadsFormCityHint,
                 controller: _cityController,
                 prefixIcon: LucideIcons.building,
                 maxLength: 100,
@@ -1346,8 +1411,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FloatingLabelInput(
-                label: 'State',
-                hint: 'CA',
+                label: context.l10n.leadsFormState,
+                hint: context.l10n.leadsFormStateHint,
                 controller: _stateController,
                 maxLength: 100,
                 textCapitalization: TextCapitalization.words,
@@ -1362,7 +1427,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           children: [
             Expanded(
               child: FloatingLabelInput(
-                label: 'Postcode',
+                label: context.l10n.leadsFormPostcode,
                 hint: '94105',
                 controller: _postcodeController,
                 maxLength: 20,
@@ -1372,8 +1437,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _PickerField(
-                label: 'Country',
-                value: _countryLabel(_countryController.text) ?? 'Select',
+                label: context.l10n.leadsFormCountry,
+                value:
+                    _countries.countryName(_countryController.text) ??
+                    context.l10n.leadsFieldSelect,
                 leading: Icon(
                   LucideIcons.globe2,
                   size: 20,
@@ -1399,7 +1466,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       children: [
         Expanded(
           child: _DateField(
-            label: 'Last Contacted',
+            label: context.l10n.leadsFormLastContacted,
             value: _lastContacted,
             onTap: _isLoading
                 ? null
@@ -1416,7 +1483,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: _DateField(
-            label: 'Next Follow-up',
+            label: context.l10n.leadsFormNextFollowUp,
             value: _nextFollowUp,
             onTap: _isLoading
                 ? null
@@ -1445,7 +1512,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       key: _relationshipsSectionKey,
       children: [
         _buildMultiSelectField(
-          label: 'Assigned To',
+          label: context.l10n.leadsFormAssignedTo,
           icon: LucideIcons.users,
           selectedCount: _assignedToIds.length,
           selectedLabel: _selectedUsersLabel(users),
@@ -1453,7 +1520,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         ),
         const SizedBox(height: 16),
         _buildMultiSelectField(
-          label: 'Tags',
+          label: context.l10n.commonTags,
           icon: LucideIcons.tag,
           selectedCount: _tagIds.length,
           selectedLabel: _selectedTagsLabel(tags),
@@ -1464,19 +1531,23 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   }
 
   String _selectedUsersLabel(List<UserLookup> users) {
-    if (_assignedToIds.isEmpty) return 'Select users';
+    if (_assignedToIds.isEmpty) return context.l10n.leadsFormSelectUsers;
     final selected = users.where((u) => _assignedToIds.contains(u.id)).toList();
-    if (selected.isEmpty) return '${_assignedToIds.length} selected';
+    if (selected.isEmpty) {
+      return context.l10n.leadsFormSelectedCount(_assignedToIds.length);
+    }
     if (selected.length == 1) return selected.first.displayName;
-    return '${selected.length} users selected';
+    return context.l10n.leadsFormUsersSelected(selected.length);
   }
 
   String _selectedTagsLabel(List<TagLookup> tags) {
-    if (_tagIds.isEmpty) return 'Select tags';
+    if (_tagIds.isEmpty) return context.l10n.leadsFormSelectTagsLower;
     final selected = tags.where((t) => _tagIds.contains(t.id)).toList();
-    if (selected.isEmpty) return '${_tagIds.length} selected';
+    if (selected.isEmpty) {
+      return context.l10n.leadsFormSelectedCount(_tagIds.length);
+    }
     if (selected.length == 1) return selected.first.name;
-    return '${selected.length} tags selected';
+    return context.l10n.leadsFormTagsSelected(selected.length);
   }
 
   // ---------------------------------------------------------------------
@@ -1565,7 +1636,9 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         );
         return _PickerField(
           label: label,
-          value: selected.value.isEmpty ? 'Select' : selected.label,
+          value: selected.value.isEmpty
+              ? context.l10n.leadsFieldSelect
+              : selected.label,
           onTap: _isLoading ? null : () => _showCustomDropdownPicker(def),
         );
       case CustomFieldType.checkbox:
@@ -1603,7 +1676,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         title: def.label,
         options: [
           _PickerOption(
-            label: 'None',
+            label: context.l10n.leadsFieldNone,
             isSelected: (_customFieldValues[def.key]?.toString() ?? '').isEmpty,
             onTap: () {
               setState(() => _customFieldValues[def.key] = null);
@@ -1757,7 +1830,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
-              'Clear rating',
+              context.l10n.leadsFormClearRating,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -1779,10 +1852,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Salutation',
+        title: context.l10n.leadsFormSalutation,
         options: [
           _PickerOption(
-            label: 'None',
+            label: context.l10n.leadsFieldNone,
             isSelected: _salutation == null,
             onTap: () {
               setState(() => _salutation = null);
@@ -1811,7 +1884,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Status',
+        title: context.l10n.leadsFormSelectStatus,
         options: LeadStatus.values
             .map(
               (status) => _PickerOption(
@@ -1850,10 +1923,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Source',
+        title: context.l10n.leadsFormSelectSource,
         options: [
           _PickerOption(
-            label: 'None',
+            label: context.l10n.leadsFieldNone,
             isSelected: _source == null,
             onTap: () {
               setState(() => _source = null);
@@ -1884,10 +1957,11 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _SearchablePickerSheet(
-        title: 'Industry',
+        title: context.l10n.leadsFormIndustryTitle,
         options: [
-          (value: '', label: 'None'),
-          for (final ind in _kIndustries) (value: ind, label: ind),
+          (value: '', label: context.l10n.leadsFieldNone),
+          for (final ind in _kIndustries)
+            (value: ind, label: industryLabel(ind)),
         ],
         selectedValue: _industryController.text,
         onSelected: (value) {
@@ -1906,10 +1980,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _SearchablePickerSheet(
-        title: 'Country',
+        title: context.l10n.leadsFormCountry,
         options: [
-          (value: '', label: 'None'),
-          for (final c in kCountries) (value: c.code, label: c.label),
+          (value: '', label: context.l10n.leadsFieldNone),
+          ..._countries.countries,
         ],
         selectedValue: _countryController.text,
         onSelected: (value) {
@@ -1927,10 +2001,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Currency',
+        title: context.l10n.leadsFormSelectCurrency,
         options: [
           _PickerOption(
-            label: 'None',
+            label: context.l10n.leadsFieldNone,
             isSelected: _currency == null || _currency!.isEmpty,
             onTap: () {
               setState(() => _currency = null);
@@ -1939,10 +2013,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           ),
           for (final c in _kCurrencies)
             _PickerOption(
-              label: c.label,
-              isSelected: _currency == c.code,
+              label: _currencyLabel(context.l10n, c),
+              isSelected: _currency == c,
               onTap: () {
-                setState(() => _currency = c.code);
+                setState(() => _currency = c);
                 Navigator.pop(context);
               },
             ),
@@ -1962,7 +2036,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _MultiSelectPickerSheet<UserLookup>(
-        title: 'Assign To',
+        title: context.l10n.leadsFormAssignTo,
         items: users,
         selectedIds: _assignedToIds,
         getItemId: (user) => user.id,
@@ -1986,7 +2060,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _MultiSelectPickerSheet<TagLookup>(
-        title: 'Select Tags',
+        title: context.l10n.leadsFormSelectTags,
         items: tags,
         selectedIds: _tagIds,
         getItemId: (tag) => tag.id,
@@ -2121,8 +2195,8 @@ class _DateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatted = value == null
-        ? 'Select date'
-        : DateFormat('MMM d, yyyy').format(value!);
+        ? context.l10n.leadsFormSelectDate
+        : localDateFormat('MMM d, yyyy', 'yMMMd').format(value!);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2232,7 +2306,7 @@ class _SearchablePickerSheetState extends State<_SearchablePickerSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search...',
+                hintText: context.l10n.leadsSearchDots,
                 prefixIcon: const Icon(LucideIcons.search, size: 20),
                 filled: true,
                 fillColor: AppColors.gray50,
@@ -2450,7 +2524,7 @@ class _MultiSelectPickerSheetState<T>
                     widget.onSelectionChanged(_selectedIds);
                     Navigator.pop(context);
                   },
-                  child: const Text('Done'),
+                  child: Text(context.l10n.commonDone),
                 ),
               ],
             ),
@@ -2459,7 +2533,7 @@ class _MultiSelectPickerSheetState<T>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search...',
+                hintText: context.l10n.leadsSearchDots,
                 prefixIcon: const Icon(LucideIcons.search, size: 20),
                 filled: true,
                 fillColor: AppColors.gray50,

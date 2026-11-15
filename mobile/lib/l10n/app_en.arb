@@ -2467,5 +2467,432 @@
         "type": "int"
       }
     }
-  }
+  },
+  "leadsListTitle": "Leads",
+  "leadsListBoardTooltip": "Pipeline board",
+  "leadsListImportTooltip": "Import from a spreadsheet",
+  "leadsListLoadFailed": "Failed to load leads",
+  "leadsListSearchHint": "Search name, company, or email",
+  "leadsListHotLeads": "Hot leads",
+  "leadsListFollowUpsToday": "Follow-ups today",
+  "leadsListStatusesCount": "{count, plural, other{{count} statuses}}",
+  "@leadsListStatusesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsListTagChip": "Tag: {tag}",
+  "@leadsListTagChip": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsListClear": "Clear",
+  "leadsListLoading": "Loading",
+  "leadsListCount": "{count, plural, =1{1 lead} other{{count} leads}}",
+  "@leadsListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsListCountFiltered": "{count, plural, =1{{loaded} of 1 lead (filtered)} other{{loaded} of {count} leads (filtered)}}",
+  "@leadsListCountFiltered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "loaded": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsListEmptyFilteredTitle": "No leads match",
+  "leadsListEmptyTitle": "No leads yet",
+  "leadsListEmptyFilteredBody": "Try adjusting your search or filters",
+  "leadsListEmptyBody": "Start by adding your first lead",
+  "leadsListClearFilters": "Clear filters",
+  "leadsListAddLead": "Add Lead",
+  "leadsListImport": "Import",
+  "leadsListFilterOwnerTitle": "Filter by Owner",
+  "leadsListFilterAnyone": "Anyone",
+  "leadsListFilterMyLeads": "My leads",
+  "leadsListMe": "Me",
+  "leadsListSelectedTag": "selected",
+  "leadsListFilterStatusTitle": "Filter by Status",
+  "leadsListFilterAllStatuses": "All statuses",
+  "leadsListFilterRatingTitle": "Filter by Rating",
+  "leadsListFilterAnyRating": "Any rating",
+  "leadsListFilterSourceTitle": "Filter by Source",
+  "leadsListFilterAllSources": "All sources",
+  "leadsFieldSource": "Source",
+  "leadsFieldRating": "Rating",
+  "leadsFieldNone": "None",
+  "leadsFieldSelect": "Select",
+  "leadsSearchEllipsis": "Search…",
+  "leadsSearchDots": "Search...",
+  "leadsBoardRefresh": "Refresh",
+  "leadsBoardLoadFailed": "Could not load the board",
+  "leadsBoardTryAgain": "Try again",
+  "leadsBoardEmptyTitle": "No pipelines yet",
+  "leadsBoardEmptyBody": "A pipeline sorts leads into stages you move them through. Applying an industry pack in organization settings creates one.",
+  "leadsBoardTitle": "Lead board",
+  "leadsBoardNoStages": "This pipeline has no stages yet, so there is nowhere to move a lead.",
+  "leadsBoardAllStaged": "Every lead you can see is already in a stage.",
+  "leadsBoardEmptyLane": "Nothing in {stage}.",
+  "@leadsBoardEmptyLane": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsBoardShowingFirst": "Showing the first {shown} of {count}.",
+  "@leadsBoardShowingFirst": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsBoardFollowUpDue": "Follow-up due",
+  "leadsBoardOpenLead": "Open lead",
+  "leadsBoardMoveTo": "Move to",
+  "leadsBoardLeavePipeline": "Takes the lead out of this pipeline",
+  "leadsBoardMoveFailed": "Could not move that lead.",
+  "leadsBoardMoved": "Moved to {stage}.",
+  "@leadsBoardMoved": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsBoardPipelines": "Pipelines",
+  "leadsDetailNotFoundBody": "It may have been deleted, or you may not have access to it",
+  "leadsDetailCheckConnection": "Check your connection and try again",
+  "leadsDetailNotFound": "Lead not found",
+  "leadsDetailLoadFailed": "Could not load this lead",
+  "leadsDetailTabOverview": "Overview",
+  "leadsDetailTabTimeline": "Timeline",
+  "leadsDetailTabNotes": "Notes",
+  "leadsDetailTabFiles": "Files",
+  "leadsDetailTabFilesCount": "Files ({count})",
+  "@leadsDetailTabFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsDetailCall": "Call",
+  "leadsDetailEmail": "Email",
+  "leadsDetailMessage": "Message",
+  "leadsDetailCardDeal": "Deal",
+  "leadsDetailCardContact": "Contact Information",
+  "leadsDetailCardAddress": "Address",
+  "leadsDetailLocation": "LOCATION",
+  "leadsDetailCardDates": "Dates",
+  "leadsDetailCardAssigned": "Assigned To",
+  "leadsDetailCardCustomFields": "Custom Fields",
+  "leadsDetailDealValue": "DEAL VALUE",
+  "leadsDetailCloseDate": "CLOSE DATE",
+  "leadsDetailProbability": "PROBABILITY",
+  "leadsDetailEmailLabel": "EMAIL",
+  "leadsDetailNotProvided": "Not provided",
+  "leadsDetailPhoneLabel": "PHONE",
+  "leadsDetailJobTitle": "JOB TITLE",
+  "leadsDetailWebsite": "WEBSITE",
+  "leadsDetailLinkedin": "LINKEDIN",
+  "leadsDetailSource": "SOURCE",
+  "leadsDetailIndustry": "INDUSTRY",
+  "leadsDetailCreated": "CREATED",
+  "leadsDetailLastContact": "LAST CONTACT",
+  "leadsDetailNextFollowUp": "NEXT FOLLOW-UP",
+  "leadsDetailUpdated": "UPDATED",
+  "leadsDetailUnassigned": "Unassigned",
+  "leadsDetailUnknownUser": "Unknown",
+  "leadsDetailNoFiles": "No files attached",
+  "leadsDetailNoFilesBody": "Attach a document, a business card, or a photo.",
+  "leadsDetailAttachmentNoFile": "That attachment has no file.",
+  "leadsDetailDownloadFailed": "Could not download that file.",
+  "leadsDetailNoActivity": "No activity yet",
+  "leadsDetailNoActivityBody": "Activity will appear here as it happens",
+  "leadsDetailEventCommented": "commented",
+  "leadsDetailEventUploaded": "uploaded {file}",
+  "@leadsDetailEventUploaded": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsDetailEventCreated": "Lead created",
+  "leadsDetailNoNotes": "No notes yet",
+  "leadsDetailNoNotesBody": "Add a note to keep track of important details",
+  "leadsDetailNoteHint": "Add a note...",
+  "leadsDetailNoteAddFailed": "Failed to add note",
+  "leadsDetailNoteAdded": "Note added",
+  "leadsDetailNoteUpdateFailed": "Failed to update note",
+  "leadsDetailNoteUpdated": "Note updated",
+  "leadsDetailNoteDeleteFailed": "Failed to delete note",
+  "leadsDetailNoteDeleted": "Note deleted",
+  "leadsDetailAssignUsers": "Assign Users",
+  "leadsDetailEditTags": "Edit Tags",
+  "leadsDetailSetFollowUp": "Set Follow-up",
+  "leadsDetailShare": "Share",
+  "leadsDetailConvertLead": "Convert Lead",
+  "leadsDetailDeleteLead": "Delete Lead",
+  "leadsDetailNoAssignable": "No assignable users available",
+  "leadsDetailAssigneesUpdated": "Assignees updated",
+  "leadsDetailNoTags": "No tags defined for this org",
+  "leadsDetailTagsUpdated": "Tags updated",
+  "leadsDetailFollowUpHelp": "Set next follow-up",
+  "leadsDetailFollowUpSet": "Follow-up set for {date}",
+  "@leadsDetailFollowUpSet": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsDetailCopied": "Lead details copied to clipboard",
+  "leadsDetailConvertTitle": "Convert Lead?",
+  "leadsDetailConvertBodyDeals": "This creates an Account, Contact, and Opportunity from this lead, then marks the lead as converted. This cannot be undone from the app.",
+  "leadsDetailConvertBody": "This creates an Account and a Contact from this lead, then marks the lead as converted. This cannot be undone from the app.",
+  "leadsDetailConvert": "Convert",
+  "leadsDetailConverted": "Lead converted",
+  "leadsDetailConvertFailed": "Failed to convert lead",
+  "leadsDetailUpdateFailed": "Update failed",
+  "leadsDetailChangeStatus": "Change Status",
+  "leadsDetailStatusChanged": "Status changed to {status}",
+  "@leadsDetailStatusChanged": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsDetailStatusFailed": "Failed to update status",
+  "leadsDetailDeleteTitle": "Delete Lead?",
+  "leadsDetailDeleteBody": "This action cannot be undone. Are you sure you want to delete this lead?",
+  "leadsDetailDeleted": "Lead deleted",
+  "leadsDetailDeleteFailed": "Failed to delete lead",
+  "leadsDetailOpenFailed": "Could not open {scheme}",
+  "@leadsDetailOpenFailed": {
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsDetailEditNote": "Edit Note",
+  "leadsDetailEditNoteHint": "Update your note...",
+  "leadsDetailDeleteNote": "Delete Note",
+  "leadsDetailDeleteNoteTitle": "Delete Note?",
+  "leadsDetailCannotUndo": "This action cannot be undone.",
+  "leadsDetailNoteOptions": "Note options",
+  "leadsDetailStageInPipeline": "{stage} in {pipeline}",
+  "@leadsDetailStageInPipeline": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      },
+      "pipeline": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsTimeMonthsAgo": "{count}mo ago",
+  "@leadsTimeMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeDaysAgo": "{count}d ago",
+  "@leadsTimeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeHoursAgo": "{count}h ago",
+  "@leadsTimeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeMinutesAgo": "{count}m ago",
+  "@leadsTimeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeJustNow": "Just now",
+  "leadsTimeMonths": "{count}mo",
+  "@leadsTimeMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeDays": "{count}d",
+  "@leadsTimeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeHours": "{count}h",
+  "@leadsTimeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeMinutes": "{count}m",
+  "@leadsTimeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsTimeNow": "now",
+  "leadsFormLoadFailed": "Failed to load lead",
+  "leadsFormFixErrors": "Please fix the errors in the form",
+  "leadsFormFieldRequired": "{label} is required",
+  "@leadsFormFieldRequired": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsFormUpdated": "Lead updated successfully",
+  "leadsFormCreated": "Lead created successfully",
+  "leadsFormSaveFailed": "Failed to save lead",
+  "leadsFormEditTitle": "Edit Lead",
+  "leadsFormNewTitle": "New Lead",
+  "leadsFormSectionIdentity": "Identity",
+  "leadsFormSectionContact": "Contact",
+  "leadsFormSectionCompany": "Company",
+  "leadsFormSectionPipeline": "Pipeline & Deal",
+  "leadsFormSectionAddress": "Address",
+  "leadsFormSectionActivity": "Activity Dates",
+  "leadsFormSectionRelationships": "Relationships",
+  "leadsFormSectionCustomFields": "Custom Fields",
+  "leadsFormChipPipeline": "Pipeline",
+  "leadsFormChipActivity": "Activity",
+  "leadsFormChipRelations": "Relations",
+  "leadsFormChipCustom": "Custom",
+  "leadsFormNotesHint": "Add any additional notes about this lead...",
+  "leadsFormUpdateLead": "Update Lead",
+  "leadsFormCreateLead": "Create Lead",
+  "leadsFormSaveAndAddAnother": "Save & Add Another",
+  "leadsFormTitleLabel": "Lead Title *",
+  "leadsFormTitleHint": "e.g. Website Inquiry, Q4 Demo",
+  "leadsFormTitleRequired": "Lead title is required",
+  "leadsFormSalutation": "Salutation",
+  "leadsFormFirstName": "First Name *",
+  "leadsFormFirstNameHint": "John",
+  "leadsFormFirstNameRequired": "First name is required",
+  "leadsFormLastName": "Last Name *",
+  "leadsFormLastNameHint": "Doe",
+  "leadsFormLastNameRequired": "Last name is required",
+  "leadsFormEmail": "Email *",
+  "leadsFormEmailRequired": "Email is required",
+  "leadsFormEmailInvalid": "Enter a valid email",
+  "leadsFormPhone": "Phone (Optional)",
+  "leadsFormPhoneInvalid": "Enter a valid phone",
+  "leadsFormLinkedin": "LinkedIn (Optional)",
+  "leadsFormUrlInvalid": "Enter a valid URL (https://...)",
+  "leadsFormCompany": "Company *",
+  "leadsFormCompanyHint": "Acme Inc.",
+  "leadsFormCompanyRequired": "Company is required",
+  "leadsFormJobTitle": "Job Title (Optional)",
+  "leadsFormJobTitleHint": "e.g. Marketing Manager",
+  "leadsFormWebsite": "Website (Optional)",
+  "leadsFormIndustry": "Industry (Optional)",
+  "leadsFormSelectIndustry": "Select industry",
+  "leadsFormEnterNumber": "Enter a number",
+  "leadsFormNotNegative": "Must be ≥ 0",
+  "leadsFormEstimatedValue": "Estimated Value",
+  "leadsFormCurrency": "Currency",
+  "leadsFormProbability": "Probability %",
+  "leadsFormCloseDate": "Close Date",
+  "leadsFormStreet": "Street (Optional)",
+  "leadsFormStreetHint": "123 Market St",
+  "leadsFormCity": "City",
+  "leadsFormCityHint": "San Francisco",
+  "leadsFormState": "State",
+  "leadsFormStateHint": "CA",
+  "leadsFormPostcode": "Postcode",
+  "leadsFormCountry": "Country",
+  "leadsFormLastContacted": "Last Contacted",
+  "leadsFormNextFollowUp": "Next Follow-up",
+  "leadsFormAssignedTo": "Assigned To",
+  "leadsFormSelectUsers": "Select users",
+  "leadsFormSelectedCount": "{count} selected",
+  "@leadsFormSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsFormUsersSelected": "{count} users selected",
+  "@leadsFormUsersSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsFormSelectTagsLower": "Select tags",
+  "leadsFormTagsSelected": "{count} tags selected",
+  "@leadsFormTagsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsFormClearRating": "Clear rating",
+  "leadsFormSelectStatus": "Select Status",
+  "leadsFormSelectSource": "Select Source",
+  "leadsFormIndustryTitle": "Industry",
+  "leadsFormSelectCurrency": "Select Currency",
+  "leadsFormAssignTo": "Assign To",
+  "leadsFormSelectTags": "Select Tags",
+  "leadsFormSelectDate": "Select date",
+  "leadsCurrencyDollar": "Dollar",
+  "leadsCurrencyEuro": "Euro",
+  "leadsCurrencyPound": "Pound",
+  "leadsCurrencyRupee": "Rupee",
+  "leadsCurrencyYen": "Yen",
+  "leadsCurrencyYuan": "Yuan",
+  "leadsCurrencyFranc": "Franc",
+  "leadsCurrencyDirham": "Dirham",
+  "leadsCurrencyReal": "Real",
+  "leadsCurrencyPeso": "Peso",
+  "leadsCurrencyRand": "Rand"
 }

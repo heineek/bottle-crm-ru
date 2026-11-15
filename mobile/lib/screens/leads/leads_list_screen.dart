@@ -19,6 +19,7 @@ import '../../widgets/common/common.dart';
 import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/saved_views_button.dart';
 import '../../widgets/forms/csv_import_sheet.dart';
+import '../../l10n/l10n.dart';
 
 /// Leads list screen: searchable, filterable, paginated against the server.
 class LeadsListScreen extends ConsumerStatefulWidget {
@@ -137,8 +138,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     if (!mounted) return;
     final next = LeadFilters.fromQuery(
       filters,
-      assignedToLabel: assignee != null && assignee == me ? 'Me' : null,
-      tagLabel: tagName ?? 'selected',
+      assignedToLabel: assignee != null && assignee == me
+          ? context.l10n.leadsListMe
+          : null,
+      tagLabel: tagName ?? context.l10n.leadsListSelectedTag,
     );
     _searchDebounce?.cancel();
     _searchController.text = next.search ?? '';
@@ -158,7 +161,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Leads'),
+        title: Text(context.l10n.leadsListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -166,14 +169,14 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
           // The pipeline board groups these same leads by stage, so it is a
           // place to go, like the tasks board, rather than a list mode.
           IconButton(
-            tooltip: 'Pipeline board',
+            tooltip: context.l10n.leadsListBoardTooltip,
             icon: const Icon(LucideIcons.squareKanban),
             onPressed: () => context.push(AppRoutes.leadBoard),
           ),
           // Offered to every member, as on the web; the import views answer
           // 403 for anyone without admin or sales access.
           IconButton(
-            tooltip: 'Import from a spreadsheet',
+            tooltip: context.l10n.leadsListImportTooltip,
             icon: const Icon(LucideIcons.upload),
             onPressed: _import,
           ),
@@ -222,7 +225,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
             Icon(LucideIcons.alertCircle, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Failed to load leads',
+              context.l10n.leadsListLoadFailed,
               style: AppTypography.label.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
@@ -234,7 +237,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => ref.read(leadsProvider.notifier).refresh(),
-              child: const Text('Retry'),
+              child: Text(context.l10n.commonRetry),
             ),
           ],
         ),
@@ -281,7 +284,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
         style: AppTypography.body,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search name, company, or email',
+          hintText: context.l10n.leadsListSearchHint,
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -336,8 +339,8 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
             if (_activeView != null) ...[
               _FilterChip(
                 label: _activeView == AppRoutes.viewHot
-                    ? 'Hot leads'
-                    : 'Follow-ups today',
+                    ? context.l10n.leadsListHotLeads
+                    : context.l10n.leadsListFollowUpsToday,
                 isActive: true,
                 icon: _activeView == AppRoutes.viewHot
                     ? LucideIcons.flame
@@ -347,7 +350,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
               const SizedBox(width: 6),
             ],
             _FilterChip(
-              label: _filters.assignedToLabel ?? 'Owner',
+              label: _filters.assignedToLabel ?? context.l10n.commonOwner,
               isActive: _filters.assignedToId != null,
               icon: LucideIcons.user,
               onTap: _showAssigneeFilter,
@@ -358,16 +361,17 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
               // show, and printing one of them would name a filter narrower
               // than the list actually is.
               label: switch (_filters.statuses.length) {
-                0 => 'Status',
+                0 => context.l10n.commonStatus,
                 1 => _filters.statuses.first.displayName,
-                final n => '$n statuses',
+                final n => context.l10n.leadsListStatusesCount(n),
               },
               isActive: _filters.statuses.isNotEmpty,
               onTap: _showStatusFilter,
             ),
             const SizedBox(width: 6),
             _FilterChip(
-              label: _filters.rating?.displayName ?? 'Rating',
+              label:
+                  _filters.rating?.displayName ?? context.l10n.leadsFieldRating,
               isActive: _filters.rating != null,
               icon: _filters.rating == LeadRating.hot
                   ? LucideIcons.flame
@@ -376,14 +380,15 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
             ),
             const SizedBox(width: 6),
             _FilterChip(
-              label: _filters.source?.displayName ?? 'Source',
+              label:
+                  _filters.source?.displayName ?? context.l10n.leadsFieldSource,
               isActive: _filters.source != null,
               onTap: _showSourceFilter,
             ),
             if (_filters.tagId != null) ...[
               const SizedBox(width: 6),
               _FilterChip(
-                label: 'Tag: ${_filters.tagLabel ?? ''}',
+                label: context.l10n.leadsListTagChip(_filters.tagLabel ?? ''),
                 isActive: true,
                 icon: LucideIcons.tag,
                 onClear: () => _applyFilters(_filters.cleared(tag: true)),
@@ -409,7 +414,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
                       Icon(LucideIcons.x, size: 12, color: AppColors.danger600),
                       const SizedBox(width: 3),
                       Text(
-                        'Clear',
+                        context.l10n.leadsListClear,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.danger600,
                           fontWeight: FontWeight.w600,
@@ -435,12 +440,12 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     // "0 leads" over a spinner reads as an empty org, which is what made a
     // failed load take a minute to tell apart from an empty list.
     if (async.value == null) {
-      return _countStrip(async.hasError ? '' : 'Loading');
+      return _countStrip(async.hasError ? '' : context.l10n.leadsListLoading);
     }
     final isFiltered = _filters.isActive;
     final label = isFiltered
-        ? '$loadedCount of $totalCount lead${totalCount == 1 ? '' : 's'} (filtered)'
-        : '$totalCount lead${totalCount == 1 ? '' : 's'}';
+        ? context.l10n.leadsListCountFiltered(totalCount, loadedCount)
+        : context.l10n.leadsListCount(totalCount);
     return _countStrip(label);
   }
 
@@ -466,17 +471,21 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     final isFiltered = _filters.isActive;
     return EmptyState(
       icon: isFiltered ? LucideIcons.search : LucideIcons.users,
-      title: isFiltered ? 'No leads match' : 'No leads yet',
+      title: isFiltered
+          ? context.l10n.leadsListEmptyFilteredTitle
+          : context.l10n.leadsListEmptyTitle,
       description: isFiltered
-          ? 'Try adjusting your search or filters'
-          : 'Start by adding your first lead',
-      actionLabel: isFiltered ? 'Clear filters' : 'Add Lead',
+          ? context.l10n.leadsListEmptyFilteredBody
+          : context.l10n.leadsListEmptyBody,
+      actionLabel: isFiltered
+          ? context.l10n.leadsListClearFilters
+          : context.l10n.leadsListAddLead,
       onAction: isFiltered
           ? _clearAll
           : () => context.push(AppRoutes.leadCreate),
       // As on the web's empty leads list. Not for a filter that matched
       // nothing: importing is not the answer to that.
-      secondaryActionLabel: isFiltered ? null : 'Import',
+      secondaryActionLabel: isFiltered ? null : context.l10n.leadsListImport,
       onSecondaryAction: isFiltered ? null : _import,
     );
   }
@@ -492,10 +501,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _FilterBottomSheet(
-        title: 'Filter by Owner',
+        title: context.l10n.leadsListFilterOwnerTitle,
         options: [
           _FilterOption(
-            label: 'Anyone',
+            label: context.l10n.leadsListFilterAnyone,
             isSelected: _filters.assignedToId == null,
             onTap: () {
               _applyFilters(_filters.cleared(assignedTo: true));
@@ -504,13 +513,16 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
           ),
           if (profileId != null && profileId.isNotEmpty)
             _FilterOption(
-              label: 'My leads',
+              label: context.l10n.leadsListFilterMyLeads,
               icon: LucideIcons.user,
               iconColor: AppColors.primary600,
               isSelected: _filters.assignedToId == profileId,
               onTap: () {
                 _applyFilters(
-                  _filters.withAssignee(id: profileId, label: 'Me'),
+                  _filters.withAssignee(
+                    id: profileId,
+                    label: context.l10n.leadsListMe,
+                  ),
                 );
                 Navigator.pop(context);
               },
@@ -528,10 +540,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _FilterBottomSheet(
-        title: 'Filter by Status',
+        title: context.l10n.leadsListFilterStatusTitle,
         options: [
           _FilterOption(
-            label: 'All statuses',
+            label: context.l10n.leadsListFilterAllStatuses,
             isSelected: _filters.status == null,
             onTap: () {
               _applyFilters(_filters.cleared(status: true));
@@ -562,10 +574,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _FilterBottomSheet(
-        title: 'Filter by Rating',
+        title: context.l10n.leadsListFilterRatingTitle,
         options: [
           _FilterOption(
-            label: 'Any rating',
+            label: context.l10n.leadsListFilterAnyRating,
             isSelected: _filters.rating == null,
             onTap: () {
               _applyFilters(_filters.cleared(rating: true));
@@ -598,10 +610,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _FilterBottomSheet(
-        title: 'Filter by Source',
+        title: context.l10n.leadsListFilterSourceTitle,
         options: [
           _FilterOption(
-            label: 'All sources',
+            label: context.l10n.leadsListFilterAllSources,
             isSelected: _filters.source == null,
             onTap: () {
               _applyFilters(_filters.cleared(source: true));
