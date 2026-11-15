@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html>
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <style>
@@ -18,46 +18,46 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Payment Reminder</h1>
+            <h1>{% translate "Payment Reminder" %}</h1>
         </div>
         <div class="content">
-            <p>Dear {{ invoice.client_name }},</p>
+            <p>{% blocktranslate with name=invoice.client_name %}Dear {{ name }},{% endblocktranslate %}</p>
 
             {% if days_overdue > 0 %}
-            <p>This is a friendly reminder that invoice <strong>#{{ invoice.invoice_number }}</strong> is now <span class="overdue">{{ days_overdue }} days overdue</span>.</p>
+            <p>{% blocktranslate trimmed with number=invoice.invoice_number count days=days_overdue %}This is a friendly reminder that invoice <strong>#{{ number }}</strong> is now <span class="overdue">{{ days }} day overdue</span>.{% plural %}This is a friendly reminder that invoice <strong>#{{ number }}</strong> is now <span class="overdue">{{ days }} days overdue</span>.{% endblocktranslate %}</p>
             {% else %}
-            <p>This is a friendly reminder that invoice <strong>#{{ invoice.invoice_number }}</strong> is due soon.</p>
+            <p>{% blocktranslate with number=invoice.invoice_number %}This is a friendly reminder that invoice <strong>#{{ number }}</strong> is due soon.{% endblocktranslate %}</p>
             {% endif %}
 
             <div class="details">
                 <div class="details-row">
-                    <span>Invoice Number:</span>
+                    <span>{% translate "Invoice Number" %}:</span>
                     <span>#{{ invoice.invoice_number }}</span>
                 </div>
                 {% if invoice.invoice_title %}
                 <div class="details-row">
-                    <span>Description:</span>
+                    <span>{% translate "Description" %}:</span>
                     <span>{{ invoice.invoice_title }}</span>
                 </div>
                 {% endif %}
                 <div class="details-row">
-                    <span>Due Date:</span>
-                    <span{% if days_overdue > 0 %} class="overdue"{% endif %}>{{ invoice.due_date|date:"F d, Y" }}</span>
+                    <span>{% translate "Due Date" %}:</span>
+                    <span{% if days_overdue > 0 %} class="overdue"{% endif %}>{{ invoice.due_date|date:_("F d, Y") }}</span>
                 </div>
                 <div class="details-row total">
-                    <span>Amount Due:</span>
+                    <span>{% translate "Amount Due" %}:</span>
                     <span>{{ invoice.currency }} {{ invoice.amount_due }}</span>
                 </div>
             </div>
 
             {% if public_url %}
             <p style="text-align: center; margin: 30px 0;">
-                <a href="{{ public_url }}" class="button">View & Pay Invoice</a>
+                <a href="{{ public_url }}" class="button">{% translate "View & Pay Invoice" %}</a>
             </p>
             {% endif %}
 
-            <p>If you have already made payment, please disregard this reminder. If you have any questions about this invoice, please don't hesitate to contact us.</p>
-            <p>Thank you!</p>
+            <p>{% translate "If you have already made payment, please disregard this reminder. If you have any questions about this invoice, please don't hesitate to contact us." %}</p>
+            <p>{% translate "Thank you!" %}</p>
         </div>
         <div class="footer">
             <p>{{ org.name }}</p>

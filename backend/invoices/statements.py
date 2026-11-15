@@ -27,6 +27,8 @@ from decimal import Decimal
 from django.db.models import Exists, F, OuterRef, Q, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from rest_framework.exceptions import ValidationError
 
 from common.money import group_by_currency
@@ -54,11 +56,20 @@ def statement_period(params):
     end = date_param(params, "end_date") or today
     if end < start:
         raise ValidationError(
-            {"end_date": ["The end date must be on or after the start date."]}
+            {"end_date": [_("The end date must be on or after the start date.")]}
         )
     if (end - start).days + 1 > MAX_STATEMENT_DAYS:
         raise ValidationError(
-            {"end_date": [f"A statement can cover at most {MAX_STATEMENT_DAYS} days."]}
+            {
+                "end_date": [
+                    ngettext(
+                        "A statement can cover at most %(count)d day.",
+                        "A statement can cover at most %(count)d days.",
+                        MAX_STATEMENT_DAYS,
+                    )
+                    % {"count": MAX_STATEMENT_DAYS}
+                ]
+            }
         )
     return start, end
 
@@ -76,8 +87,11 @@ def billed_invoices(account):
 def _payment_description(payment):
     detail = payment.get_payment_method_display()
     if payment.reference_number:
-        detail = f"{detail}, ref {payment.reference_number}"
-    return f"Payment ({detail})"
+        detail = _("%(method)s, ref %(reference)s") % {
+            "method": detail,
+            "reference": payment.reference_number,
+        }
+    return _("Payment (%(detail)s)") % {"detail": detail}
 
 
 def build_statement(account, start, end):
@@ -132,7 +146,7 @@ def build_statement(account, start, end):
             {
                 "date": invoice.cancelled_on,
                 "kind": "cancellation",
-                "description": "Invoice cancelled",
+                "description": _("Invoice cancelled"),
                 "amount": -invoice.total_amount,
             },
         )
@@ -172,7 +186,7 @@ def build_statement(account, start, end):
         entries = []
         totals = {"invoice": ZERO, "payment": ZERO, "cancellation": ZERO}
         balance = opening
-        for _, currency, invoice, entry in dated:
+        for _key, currency, invoice, entry in dated:
             if currency != code:
                 continue
             balance += entry["amount"]

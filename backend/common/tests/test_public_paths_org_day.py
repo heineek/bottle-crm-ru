@@ -248,5 +248,5 @@ class TestPaymentReminderTask:
 
         kolkata_mail, utc_mail = mail.outbox
         assert "2 days overdue" in kolkata_mail.body
-        assert "1 days overdue" in utc_mail.body
+        assert "1 day overdue" in utc_mail.body
         assert timezone.get_current_timezone_name() == "UTC"

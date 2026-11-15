@@ -9,6 +9,7 @@ from django.db.models.functions import Cast, Substr
 from django.utils import timezone
 from django.utils.timesince import timesince
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from accounts.models import Account
 from common.base import AssignableMixin, BaseModel
@@ -22,14 +23,14 @@ from opportunity.models import Opportunity
 # =============================================================================
 
 INVOICE_STATUS = (
-    ("Draft", "Draft"),
-    ("Sent", "Sent"),
-    ("Viewed", "Viewed"),
-    ("Paid", "Paid"),
-    ("Partially_Paid", "Partially Paid"),
-    ("Overdue", "Overdue"),
-    ("Pending", "Pending"),
-    ("Cancelled", "Cancelled"),
+    ("Draft", pgettext_lazy("invoice status", "Draft")),
+    ("Sent", pgettext_lazy("invoice status", "Sent")),
+    ("Viewed", pgettext_lazy("invoice status", "Viewed")),
+    ("Paid", pgettext_lazy("invoice status", "Paid")),
+    ("Partially_Paid", pgettext_lazy("invoice status", "Partially Paid")),
+    ("Overdue", pgettext_lazy("invoice status", "Overdue")),
+    ("Pending", pgettext_lazy("invoice status", "Pending")),
+    ("Cancelled", pgettext_lazy("invoice status", "Cancelled")),
 )
 
 # Statuses where the money is still owed: billed to the customer, not yet
@@ -44,37 +45,37 @@ INVOICE_STATUS = (
 UNPAID_STATUSES = ("Sent", "Viewed", "Partially_Paid", "Overdue")
 
 PAYMENT_TERMS = (
-    ("DUE_ON_RECEIPT", "Due on Receipt"),
-    ("NET_15", "Net 15"),
-    ("NET_30", "Net 30"),
-    ("NET_45", "Net 45"),
-    ("NET_60", "Net 60"),
-    ("CUSTOM", "Custom"),
+    ("DUE_ON_RECEIPT", _("Due on Receipt")),
+    ("NET_15", _("Net 15")),
+    ("NET_30", _("Net 30")),
+    ("NET_45", _("Net 45")),
+    ("NET_60", _("Net 60")),
+    ("CUSTOM", pgettext_lazy("payment terms", "Custom")),
 )
 
 PAYMENT_METHODS = (
-    ("CASH", "Cash"),
-    ("CHECK", "Check"),
-    ("CREDIT_CARD", "Credit Card"),
-    ("BANK_TRANSFER", "Bank Transfer"),
-    ("PAYPAL", "PayPal"),
-    ("STRIPE", "Stripe"),
-    ("OTHER", "Other"),
+    ("CASH", _("Cash")),
+    ("CHECK", _("Check")),
+    ("CREDIT_CARD", _("Credit Card")),
+    ("BANK_TRANSFER", _("Bank Transfer")),
+    ("PAYPAL", _("PayPal")),
+    ("STRIPE", _("Stripe")),
+    ("OTHER", _("Other")),
 )
 
 RECURRING_FREQUENCIES = (
-    ("WEEKLY", "Weekly"),
-    ("BIWEEKLY", "Bi-weekly"),
-    ("MONTHLY", "Monthly"),
-    ("QUARTERLY", "Quarterly"),
-    ("SEMI_ANNUALLY", "Semi-annually"),
-    ("YEARLY", "Yearly"),
-    ("CUSTOM", "Custom"),
+    ("WEEKLY", _("Weekly")),
+    ("BIWEEKLY", _("Bi-weekly")),
+    ("MONTHLY", _("Monthly")),
+    ("QUARTERLY", _("Quarterly")),
+    ("SEMI_ANNUALLY", _("Semi-annually")),
+    ("YEARLY", _("Yearly")),
+    ("CUSTOM", pgettext_lazy("frequency", "Custom")),
 )
 
 DISCOUNT_TYPES = (
-    ("PERCENTAGE", "Percentage (%)"),
-    ("FIXED", "Fixed Amount"),
+    ("PERCENTAGE", _("Percentage (%)")),
+    ("FIXED", _("Fixed Amount")),
 )
 
 CENT = Decimal("0.01")
@@ -90,15 +91,15 @@ def validate_tax_rate(value):
     which DRF swaps for its own bounds and generic messages.
     """
     if value < 0:
-        raise ValidationError("Tax rate cannot be negative.")
+        raise ValidationError(_("Tax rate cannot be negative."))
     if value > 100:
-        raise ValidationError("Tax rate cannot exceed 100.")
+        raise ValidationError(_("Tax rate cannot exceed 100."))
 
 
 def validate_shipping_amount(value):
     """Shipping is never negative: a negative one would lower the bill."""
     if value < 0:
-        raise ValidationError("Shipping cannot be negative.")
+        raise ValidationError(_("Shipping cannot be negative."))
 
 
 def line_gross(quantity, unit_price):
@@ -164,18 +165,18 @@ def totals_follow_lines(document, update_fields):
 
 
 ESTIMATE_STATUS = (
-    ("Draft", "Draft"),
-    ("Sent", "Sent"),
-    ("Viewed", "Viewed"),
-    ("Accepted", "Accepted"),
-    ("Declined", "Declined"),
-    ("Expired", "Expired"),
+    ("Draft", pgettext_lazy("estimate status", "Draft")),
+    ("Sent", pgettext_lazy("estimate status", "Sent")),
+    ("Viewed", pgettext_lazy("estimate status", "Viewed")),
+    ("Accepted", pgettext_lazy("estimate status", "Accepted")),
+    ("Declined", pgettext_lazy("estimate status", "Declined")),
+    ("Expired", pgettext_lazy("estimate status", "Expired")),
 )
 
 REMINDER_FREQUENCIES = (
-    ("ONCE", "Once"),
-    ("WEEKLY", "Weekly until paid"),
-    ("CUSTOM", "Custom schedule"),
+    ("ONCE", _("Once")),
+    ("WEEKLY", _("Weekly until paid")),
+    ("CUSTOM", _("Custom schedule")),
 )
 
 
@@ -653,7 +654,7 @@ class Invoice(AssignableMixin, BaseModel):
 
     @property
     def created_on_arrow(self):
-        return timesince(self.created_at) + " ago"
+        return _("%(time)s ago") % {"time": timesince(self.created_at)}
 
 
 # =============================================================================
@@ -1468,4 +1469,4 @@ class InvoiceHistory(BaseModel):
 
     @property
     def created_on_arrow(self):
-        return timesince(self.created_at) + " ago"
+        return _("%(time)s ago") % {"time": timesince(self.created_at)}

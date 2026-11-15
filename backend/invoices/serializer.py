@@ -2,6 +2,7 @@ import re
 from decimal import Decimal
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from accounts.access import visible_accounts_qs
@@ -257,7 +258,7 @@ def _validate_hex_color(value):
     value = (value or "").strip()
     if not HEX_COLOR.match(value):
         raise serializers.ValidationError(
-            "Use a six digit hex colour, for example #3B82F6."
+            _("Use a six digit hex colour, for example #3B82F6.")
         )
     return value
 
@@ -361,12 +362,12 @@ class LineAmountsMixin:
 
     def validate_quantity(self, value):
         if value <= 0:
-            raise serializers.ValidationError("Quantity must be more than zero.")
+            raise serializers.ValidationError(_("Quantity must be more than zero."))
         return value
 
     def validate_unit_price(self, value):
         if value < 0:
-            raise serializers.ValidationError("Unit price cannot be negative.")
+            raise serializers.ValidationError(_("Unit price cannot be negative."))
         return value
 
     def validate(self, attrs):
@@ -388,18 +389,18 @@ class LineAmountsMixin:
         value = value_of("discount_value", Decimal("0")) or Decimal("0")
         if value < 0:
             raise serializers.ValidationError(
-                {"discount_value": "A discount cannot be negative."}
+                {"discount_value": _("A discount cannot be negative.")}
             )
         if kind == "PERCENTAGE":
             if value > 100:
                 raise serializers.ValidationError(
-                    {"discount_value": "A percentage discount cannot exceed 100."}
+                    {"discount_value": _("A percentage discount cannot exceed 100.")}
                 )
         elif value > value_of("quantity", Decimal("1")) * value_of(
             "unit_price", Decimal("0")
         ):
             raise serializers.ValidationError(
-                {"discount_value": "A discount cannot exceed the line's amount."}
+                {"discount_value": _("A discount cannot exceed the line's amount.")}
             )
         return attrs
 
@@ -439,7 +440,7 @@ class InvoiceLineItemCreateSerializer(LineAmountsMixin, serializers.ModelSeriali
         """
         if value is not None and self.org and value.org_id != self.org.id:
             raise serializers.ValidationError(
-                "Product not found or does not belong to your organization"
+                _("Product not found or does not belong to your organization")
             )
         return value
 
@@ -503,7 +504,7 @@ def validate_line_item_products(line_items, org):
         if product is not None and product.org_id != org.id:
             raise serializers.ValidationError(
                 {
-                    "line_items": (
+                    "line_items": _(
                         "A line item references a product from another organization."
                     )
                 }
@@ -536,11 +537,16 @@ def issued_lock_message(document):
     """
     if document is None or document.status == "Draft":
         return None
-    kind = document._meta.verbose_name.lower()
-    return (
-        f"This {kind} is {document.get_status_display()}. Its lines and "
-        "amounts can only be changed while it is a Draft."
-    )
+    status = document.get_status_display()
+    if isinstance(document, Estimate):
+        return _(
+            "This estimate is %(status)s. Its lines and amounts can only be "
+            "changed while it is a Draft."
+        ) % {"status": status}
+    return _(
+        "This invoice is %(status)s. Its lines and amounts can only be "
+        "changed while it is a Draft."
+    ) % {"status": status}
 
 
 def refuse_issued_amount_changes(attrs, instance):
@@ -585,12 +591,12 @@ def validate_document_discount(attrs, instance):
     value = value_of("discount_value", Decimal("0")) or Decimal("0")
     if value < 0:
         raise serializers.ValidationError(
-            {"discount_value": "A discount cannot be negative."}
+            {"discount_value": _("A discount cannot be negative.")}
         )
     if kind == "PERCENTAGE":
         if value > 100:
             raise serializers.ValidationError(
-                {"discount_value": "A percentage discount cannot exceed 100."}
+                {"discount_value": _("A percentage discount cannot exceed 100.")}
             )
         return
     if "line_items" in attrs:
@@ -608,11 +614,11 @@ def validate_document_discount(attrs, instance):
         subtotal = Decimal("0")
     if value > subtotal:
         raise serializers.ValidationError(
-            {"discount_value": "A discount cannot exceed the subtotal."}
+            {"discount_value": _("A discount cannot exceed the subtotal.")}
         )
 
 
-def _validate_document_link(value, visible, stored_id, label):
+def _validate_document_link(value, visible, stored_id, message):
     """Shared by the contact, account and deal checks below.
 
     The caller must be able to open the record: ``visible`` is the module's
@@ -634,9 +640,7 @@ def _validate_document_link(value, visible, stored_id, label):
     if stored_id is not None and stored_id == value:
         return value
     if not visible.filter(id=value).exists():
-        raise serializers.ValidationError(
-            f"{label} not found, or you do not have access to it."
-        )
+        raise serializers.ValidationError(message)
     return value
 
 
@@ -646,7 +650,7 @@ def validate_document_contact(contact_id, profile, instance):
         contact_id,
         visible_contacts_qs(profile),
         instance.contact_id if instance is not None else None,
-        "Contact",
+        _("Contact not found, or you do not have access to it."),
     )
 
 
@@ -656,7 +660,7 @@ def validate_document_account(account_id, profile, instance):
         account_id,
         visible_accounts_qs(profile),
         instance.account_id if instance is not None else None,
-        "Account",
+        _("Account not found, or you do not have access to it."),
     )
 
 
@@ -688,7 +692,7 @@ def validate_document_opportunity(opportunity_id, profile, instance):
         opportunity_id,
         visible_deals_qs(profile),
         instance.opportunity_id if instance is not None else None,
-        "Opportunity",
+        _("Opportunity not found, or you do not have access to it."),
     )
 
 
@@ -752,7 +756,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         invoice = self.context.get("invoice")
         if invoice is not None and invoice.status == "Cancelled":
             raise serializers.ValidationError(
-                "Cannot record a payment against a cancelled invoice."
+                _("Cannot record a payment against a cancelled invoice.")
             )
         return attrs
 
@@ -761,13 +765,14 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         # negative amount would silently walk amount_paid back down.
         if value <= Decimal("0"):
             raise serializers.ValidationError(
-                "Payment amount must be greater than zero."
+                _("Payment amount must be greater than zero.")
             )
 
         invoice = self.context.get("invoice")
         if invoice is not None and value > invoice.amount_due:
             raise serializers.ValidationError(
-                f"Payment amount exceeds the amount due ({invoice.amount_due})."
+                _("Payment amount exceeds the amount due (%(amount)s).")
+                % {"amount": invoice.amount_due}
             )
 
         return value
@@ -1009,13 +1014,13 @@ class InvoiceCreateSerializer(serializers.ModelSerializer):
     def validate_account_id(self, value):
         """Validate account exists, belongs to org, and the caller may open it"""
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_account(value, self.profile, self.instance)
 
     def validate_contact_id(self, value):
         """Validate contact exists, belongs to org, and the caller may open it"""
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_contact(value, self.profile, self.instance)
 
     def validate_opportunity_id(self, value):
@@ -1023,7 +1028,7 @@ class InvoiceCreateSerializer(serializers.ModelSerializer):
         if value is None:
             return keep_hidden_deal(value, self.org, self.instance)
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_opportunity(value, self.profile, self.instance)
 
     def validate_template_id(self, value):
@@ -1036,10 +1041,10 @@ class InvoiceCreateSerializer(serializers.ModelSerializer):
         if value is None:
             return value
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         if not InvoiceTemplate.objects.filter(id=value, org=self.org).exists():
             raise serializers.ValidationError(
-                "Template not found or does not belong to your organization"
+                _("Template not found or does not belong to your organization")
             )
         return value
 
@@ -1054,7 +1059,7 @@ class InvoiceCreateSerializer(serializers.ModelSerializer):
             contact = Contact.objects.filter(id=contact_id, org=self.org).first()
             if contact and contact.account_id and contact.account_id != account_id:
                 raise serializers.ValidationError(
-                    {"contact_id": "Contact does not belong to the selected account"}
+                    {"contact_id": _("Contact does not belong to the selected account")}
                 )
 
         validate_line_item_products(attrs.get("line_items"), self.org)
@@ -1319,13 +1324,13 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
     def validate_account_id(self, value):
         """Validate account exists, belongs to org, and the caller may open it"""
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_account(value, self.profile, self.instance)
 
     def validate_contact_id(self, value):
         """Validate contact exists, belongs to org, and the caller may open it"""
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_contact(value, self.profile, self.instance)
 
     def validate_opportunity_id(self, value):
@@ -1333,7 +1338,7 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
         if value is None:
             return keep_hidden_deal(value, self.org, self.instance)
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_opportunity(value, self.profile, self.instance)
 
     def validate(self, attrs):
@@ -1346,7 +1351,7 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
             contact = Contact.objects.filter(id=contact_id, org=self.org).first()
             if contact and contact.account_id and contact.account_id != account_id:
                 raise serializers.ValidationError(
-                    {"contact_id": "Contact does not belong to the selected account"}
+                    {"contact_id": _("Contact does not belong to the selected account")}
                 )
 
         # On a partial edit the side not sent is the stored one, so moving
@@ -1355,7 +1360,7 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
         expiry = attrs.get("expiry_date", getattr(self.instance, "expiry_date", None))
         if issue and expiry and expiry < issue:
             raise serializers.ValidationError(
-                {"expiry_date": "An estimate cannot expire before it is issued."}
+                {"expiry_date": _("An estimate cannot expire before it is issued.")}
             )
 
         validate_line_item_products(attrs.get("line_items"), self.org)
@@ -1542,13 +1547,13 @@ class RecurringInvoiceCreateSerializer(serializers.ModelSerializer):
     def validate_account_id(self, value):
         """Validate account exists, belongs to org, and the caller may open it"""
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_account(value, self.profile, self.instance)
 
     def validate_contact_id(self, value):
         """Validate contact exists, belongs to org, and the caller may open it"""
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_contact(value, self.profile, self.instance)
 
     def validate_opportunity_id(self, value):
@@ -1556,7 +1561,7 @@ class RecurringInvoiceCreateSerializer(serializers.ModelSerializer):
         if value is None:
             return keep_hidden_deal(value, self.org, self.instance)
         if not self.org:
-            raise serializers.ValidationError("Organization context required")
+            raise serializers.ValidationError(_("Organization context required"))
         return validate_document_opportunity(value, self.profile, self.instance)
 
     def validate(self, attrs):
@@ -1568,7 +1573,7 @@ class RecurringInvoiceCreateSerializer(serializers.ModelSerializer):
             contact = Contact.objects.filter(id=contact_id, org=self.org).first()
             if contact and contact.account_id and contact.account_id != account_id:
                 raise serializers.ValidationError(
-                    {"contact_id": "Contact does not belong to the selected account"}
+                    {"contact_id": _("Contact does not belong to the selected account")}
                 )
 
         # A CUSTOM cadence is meaningless without its interval.
@@ -1594,7 +1599,7 @@ class RecurringInvoiceCreateSerializer(serializers.ModelSerializer):
             if not custom_days:
                 raise serializers.ValidationError(
                     {
-                        "custom_days": (
+                        "custom_days": _(
                             "A custom frequency needs an interval in days. "
                             "Without one the schedule would bill monthly."
                         )
@@ -1620,7 +1625,7 @@ class RecurringInvoiceCreateSerializer(serializers.ModelSerializer):
             if first_run < start:
                 raise serializers.ValidationError(
                     {
-                        "next_generation_date": (
+                        "next_generation_date": _(
                             "The next generation date cannot be before the start date."
                         )
                     }
@@ -1642,7 +1647,11 @@ class RecurringInvoiceCreateSerializer(serializers.ModelSerializer):
                 )
             if auto_send and not has_lines:
                 raise serializers.ValidationError(
-                    {"auto_send": "Add at least one line before turning on auto-send."}
+                    {
+                        "auto_send": _(
+                            "Add at least one line before turning on auto-send."
+                        )
+                    }
                 )
 
         validate_line_item_products(attrs.get("line_items"), self.org)

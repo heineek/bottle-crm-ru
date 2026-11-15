@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html>
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <style>
@@ -17,45 +17,45 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Invoice from {{ org.name }}</h1>
+            <h1>{% blocktranslate with org=org.name %}Invoice from {{ org }}{% endblocktranslate %}</h1>
         </div>
         <div class="content">
-            <p>Dear {{ invoice.client_name }},</p>
-            <p>Please find attached your invoice <strong>#{{ invoice.invoice_number }}</strong>.</p>
+            <p>{% blocktranslate with name=invoice.client_name %}Dear {{ name }},{% endblocktranslate %}</p>
+            <p>{% blocktranslate with number=invoice.invoice_number %}Please find attached your invoice <strong>#{{ number }}</strong>.{% endblocktranslate %}</p>
 
             <div class="details">
                 <div class="details-row">
-                    <span>Invoice Number:</span>
+                    <span>{% translate "Invoice Number" %}:</span>
                     <span>#{{ invoice.invoice_number }}</span>
                 </div>
                 {% if invoice.invoice_title %}
                 <div class="details-row">
-                    <span>Description:</span>
+                    <span>{% translate "Description" %}:</span>
                     <span>{{ invoice.invoice_title }}</span>
                 </div>
                 {% endif %}
                 <div class="details-row">
-                    <span>Issue Date:</span>
-                    <span>{{ invoice.issue_date|date:"F d, Y" }}</span>
+                    <span>{% translate "Issue Date" %}:</span>
+                    <span>{{ invoice.issue_date|date:_("F d, Y") }}</span>
                 </div>
                 <div class="details-row">
-                    <span>Due Date:</span>
-                    <span>{{ invoice.due_date|date:"F d, Y" }}</span>
+                    <span>{% translate "Due Date" %}:</span>
+                    <span>{{ invoice.due_date|date:_("F d, Y") }}</span>
                 </div>
                 <div class="details-row total">
-                    <span>Amount Due:</span>
+                    <span>{% translate "Amount Due" %}:</span>
                     <span>{{ invoice.currency }} {{ invoice.amount_due }}</span>
                 </div>
             </div>
 
             {% if public_url %}
             <p style="text-align: center; margin: 30px 0;">
-                <a href="{{ public_url }}" class="button">View Invoice Online</a>
+                <a href="{{ public_url }}" class="button">{% translate "View Invoice Online" %}</a>
             </p>
             {% endif %}
 
-            <p>If you have any questions, please don't hesitate to contact us.</p>
-            <p>Thank you for your business!</p>
+            <p>{% translate "If you have any questions, please don't hesitate to contact us." %}</p>
+            <p>{% translate "Thank you for your business!" %}</p>
         </div>
         <div class="footer">
             <p>{{ org.name }}</p>

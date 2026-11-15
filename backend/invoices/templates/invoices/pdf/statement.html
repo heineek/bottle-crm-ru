@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
-    <title>Statement for {{ account.name }}</title>
+    <title>{% blocktranslate with name=account.name %}Statement for {{ name }}{% endblocktranslate %}</title>
     <style>
         .statement-currency { margin: 24px 0 8px; font-size: 15px; font-weight: 700; color: #222; }
         /* A wrapped amount strands its minus sign on a line of its own. */
@@ -33,15 +33,15 @@
                 </p>
                 {% endif %}
                 {% if org.phone %}
-                <p>Tel: {{ org.phone }}</p>
+                <p>{% translate "Tel" %}: {{ org.phone }}</p>
                 {% endif %}
                 {% if org.email %}
-                <p>Email: {{ org.email }}</p>
+                <p>{% translate "Email" %}: {{ org.email }}</p>
                 {% endif %}
             </div>
 
             <div class="invoice-branding">
-                <div class="invoice-title">Statement</div>
+                <div class="invoice-title">{% translate "Statement" %}</div>
                 {% if org.logo %}
                 <div class="logo-container">
                     <img src="{{ org.logo.url }}" alt="{{ org.name }}" class="logo">
@@ -73,15 +73,15 @@
 
             <div class="invoice-meta">
                 <div class="meta-row">
-                    <span class="meta-label">From:</span>
-                    <span class="meta-value">{{ start_date|date:"F d, Y" }}</span>
+                    <span class="meta-label">{% translate "From" context "period start" %}:</span>
+                    <span class="meta-value">{{ start_date|date:_("F d, Y") }}</span>
                 </div>
                 <div class="meta-row">
-                    <span class="meta-label">To:</span>
-                    <span class="meta-value">{{ end_date|date:"F d, Y" }}</span>
+                    <span class="meta-label">{% translate "To" context "period end" %}:</span>
+                    <span class="meta-value">{{ end_date|date:_("F d, Y") }}</span>
                 </div>
                 <div class="meta-row">
-                    <span class="meta-label">Issued:</span>
+                    <span class="meta-label">{% translate "Issued" %}:</span>
                     <span class="meta-value">{% now "F d, Y" %}</span>
                 </div>
             </div>
@@ -89,29 +89,29 @@
 
         {% for section in sections %}
         {% if sections|length > 1 %}
-        <div class="statement-currency">Amounts in {{ section.currency }}</div>
+        <div class="statement-currency">{% blocktranslate with currency=section.currency %}Amounts in {{ currency }}{% endblocktranslate %}</div>
         {% endif %}
         <table class="line-items-table statement-table">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Invoice</th>
-                    <th class="desc-col">Details</th>
-                    <th class="price-col">Amount</th>
-                    <th class="total-col">Balance</th>
+                    <th>{% translate "Date" %}</th>
+                    <th>{% translate "Invoice" %}</th>
+                    <th class="desc-col">{% translate "Details" %}</th>
+                    <th class="price-col">{% translate "Amount" %}</th>
+                    <th class="total-col">{% translate "Balance" %}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr class="opening">
-                    <td class="date-col">{{ start_date|date:"M d, Y" }}</td>
+                    <td class="date-col">{{ start_date|date:_("M d, Y") }}</td>
                     <td></td>
-                    <td class="desc-col">Opening balance</td>
+                    <td class="desc-col">{% translate "Opening balance" %}</td>
                     <td class="price-col"></td>
                     <td class="total-col">{{ section.opening_balance }}</td>
                 </tr>
                 {% for entry in section.entries %}
                 <tr>
-                    <td class="date-col">{{ entry.date|date:"M d, Y" }}</td>
+                    <td class="date-col">{{ entry.date|date:_("M d, Y") }}</td>
                     <td>{{ entry.invoice_number }}</td>
                     <td class="desc-col">{{ entry.description }}</td>
                     <td class="price-col">{{ entry.amount }}</td>
@@ -125,37 +125,37 @@
             <table class="totals-table">
                 <tbody>
                     <tr>
-                        <td class="totals-label">Opening balance</td>
+                        <td class="totals-label">{% translate "Opening balance" %}</td>
                         <td class="totals-value">{{ section.opening_balance }}</td>
                     </tr>
                     <tr>
-                        <td class="totals-label">Invoiced</td>
+                        <td class="totals-label">{% translate "Invoiced" %}</td>
                         <td class="totals-value">{{ section.invoiced }}</td>
                     </tr>
                     <tr>
-                        <td class="totals-label">Payments</td>
+                        <td class="totals-label">{% translate "Payments" %}</td>
                         <td class="totals-value paid">{{ section.paid }}</td>
                     </tr>
                     {% if section.has_cancelled %}
                     <tr>
-                        <td class="totals-label">Cancelled</td>
+                        <td class="totals-label">{% translate "Cancelled" %}</td>
                         <td class="totals-value">{{ section.cancelled }}</td>
                     </tr>
                     {% endif %}
                     <tr class="amount-due{% if section.in_credit %} credit{% endif %}">
-                        <td class="totals-label">{% if section.in_credit %}In credit{% else %}Balance due{% endif %}</td>
+                        <td class="totals-label">{% if section.in_credit %}{% translate "In credit" %}{% else %}{% translate "Balance due" %}{% endif %}</td>
                         <td class="totals-value">{{ section.closing_balance }}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
         {% empty %}
-        <p class="no-items">Nothing was billed or paid in this period, and nothing is owed.</p>
+        <p class="no-items">{% translate "Nothing was billed or paid in this period, and nothing is owed." %}</p>
         {% endfor %}
 
         <div class="copyright">
             {% if org.tax_id %}
-            <p>Tax ID: {{ org.tax_id }}</p>
+            <p>{% translate "Tax ID" %}: {{ org.tax_id }}</p>
             {% endif %}
             <p>{{ org.company_name|default:org.name }}</p>
         </div>
