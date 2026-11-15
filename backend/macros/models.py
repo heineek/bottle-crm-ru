@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from common.base import BaseModel
 from common.models import Org, Profile, Tags
@@ -31,8 +32,8 @@ class Macro(BaseModel):
     SCOPE_ORG = "org"
     SCOPE_PERSONAL = "personal"
     SCOPE_CHOICES = [
-        (SCOPE_ORG, "Org"),
-        (SCOPE_PERSONAL, "Personal"),
+        (SCOPE_ORG, _("Org")),
+        (SCOPE_PERSONAL, _("Personal")),
     ]
 
     title = models.CharField(max_length=255)

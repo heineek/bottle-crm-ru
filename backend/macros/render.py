@@ -10,6 +10,8 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
+from django.utils.translation import gettext_lazy as _
+
 # Match `%token%` where token is letters/digits/underscores. Greedy enough
 # to handle adjacent placeholders without eating intermediate text.
 _PLACEHOLDER_RE = re.compile(r"%([a-zA-Z_][a-zA-Z0-9_]*)%")
@@ -87,13 +89,13 @@ def _supported_values(case, profile) -> dict[str, str]:
 # drift from the tokens the server actually expands. Tokens carry their `%...%`
 # wrapping so consumers can show them exactly as they appear in a macro body.
 SUPPORTED_PLACEHOLDERS: tuple[dict[str, str], ...] = (
-    {"token": "%customer_name%", "resolves": "The case's first contact"},
-    {"token": "%customer_email%", "resolves": "That contact's email"},
-    {"token": "%case_id%", "resolves": "The case number"},
-    {"token": "%case_subject%", "resolves": "The case title"},
-    {"token": "%agent_name%", "resolves": "You: the local part of your email"},
-    {"token": "%agent_email%", "resolves": "Your email"},
-    {"token": "%org_name%", "resolves": "The organisation name"},
+    {"token": "%customer_name%", "resolves": _("The case's first contact")},
+    {"token": "%customer_email%", "resolves": _("That contact's email")},
+    {"token": "%case_id%", "resolves": _("The case number")},
+    {"token": "%case_subject%", "resolves": _("The case title")},
+    {"token": "%agent_name%", "resolves": _("You: the local part of your email")},
+    {"token": "%agent_email%", "resolves": _("Your email")},
+    {"token": "%org_name%", "resolves": _("The organisation name")},
 )
 
 SUPPORTED_TOKENS: Iterable[str] = frozenset(
