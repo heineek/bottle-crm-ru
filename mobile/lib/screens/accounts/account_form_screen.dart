@@ -9,6 +9,7 @@ import '../../providers/accounts_provider.dart';
 import '../../providers/duplicates_provider.dart';
 import '../../widgets/duplicates/duplicate_notice.dart';
 import '../../widgets/forms/unsaved_changes.dart';
+import '../../l10n/l10n.dart';
 
 /// Create or edit an account.
 ///
@@ -92,7 +93,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     setState(() {
       _fetching = false;
       if (account == null) {
-        _fetchError = 'Could not load this account';
+        _fetchError = context.l10n.accountsFormLoadFailed;
       } else {
         _existing = account;
         _populate(account);
@@ -181,7 +182,11 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text(widget.isEditMode ? 'Edit Account' : 'New Account'),
+          title: Text(
+            widget.isEditMode
+                ? context.l10n.accountsFormEditTitle
+                : context.l10n.accountsFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -209,12 +214,16 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
             const SizedBox(height: 12),
             Text(_fetchError!, style: AppTypography.body),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _fetch, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _fetch,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
     }
 
+    final l10n = context.l10n;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -224,33 +233,37 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           children: [
             _field(
               _name,
-              'Account name',
+              l10n.accountsFormName,
               autofocus: !widget.isEditMode,
               validator: (value) {
                 final name = value?.trim() ?? '';
-                if (name.isEmpty) return 'Give the account a name';
+                if (name.isEmpty) return l10n.accountsFormNameRequired;
                 // `Account.name` is max_length=64 on the model. The server is
                 // what refuses; this saves the round trip and the lost typing.
                 if (name.length > 64) {
-                  return 'Keep the name under 65 characters';
+                  return l10n.accountsFormNameTooLong;
                 }
                 return null;
               },
             ),
             _field(
               _email,
-              'Email',
+              l10n.commonEmail,
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 final email = value?.trim() ?? '';
                 if (email.isEmpty) return null;
                 return email.contains('@')
                     ? null
-                    : 'That does not look like an email address';
+                    : l10n.accountsFormEmailInvalid;
               },
             ),
-            _field(_phone, 'Phone', keyboardType: TextInputType.phone),
-            _field(_website, 'Website', keyboardType: TextInputType.url),
+            _field(_phone, l10n.commonPhone, keyboardType: TextInputType.phone),
+            _field(
+              _website,
+              l10n.accountsFormWebsite,
+              keyboardType: TextInputType.url,
+            ),
             if (!widget.isEditMode)
               DuplicateNotice(
                 module: DuplicateModule.accounts,
@@ -261,36 +274,36 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                   'website': _website,
                 },
               ),
-            _field(_industry, 'Industry'),
+            _field(_industry, l10n.accountsFormIndustry),
             _field(
               _employees,
-              'Number of employees',
+              l10n.accountsFormEmployees,
               keyboardType: TextInputType.number,
               validator: (value) {
                 final raw = value?.trim() ?? '';
                 if (raw.isEmpty) return null;
                 final parsed = int.tryParse(raw);
-                if (parsed == null) return 'Whole numbers only';
-                if (parsed < 0) return 'That cannot be negative';
+                if (parsed == null) return l10n.accountsFormWholeNumbers;
+                if (parsed < 0) return l10n.accountsFormNotNegative;
                 return null;
               },
             ),
             const SizedBox(height: 8),
             Text(
-              'Address',
+              l10n.accountsFormAddress,
               style: AppTypography.label.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
-            _field(_addressLine, 'Street'),
-            _field(_city, 'City'),
-            _field(_state, 'State'),
-            _field(_postcode, 'Postcode'),
+            _field(_addressLine, l10n.accountsFormStreet),
+            _field(_city, l10n.accountsFormCity),
+            _field(_state, l10n.accountsFormState),
+            _field(_postcode, l10n.accountsFormPostcode),
             _field(
               _country,
-              'Country code',
-              hint: 'Two letters, e.g. IN',
+              l10n.accountsFormCountryCode,
+              hint: l10n.accountsFormCountryHint,
               validator: (value) {
                 final code = value?.trim() ?? '';
                 if (code.isEmpty) return null;
@@ -298,10 +311,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 // country name is a 400 the user cannot act on.
                 return RegExp(r'^[A-Za-z]{2}$').hasMatch(code)
                     ? null
-                    : 'Use the two-letter code, e.g. IN';
+                    : l10n.accountsFormCountryInvalid;
               },
             ),
-            _field(_description, 'Notes', maxLines: 4),
+            _field(_description, l10n.commonNotes, maxLines: 4),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -314,7 +327,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        widget.isEditMode ? 'Save changes' : 'Create account',
+                        widget.isEditMode
+                            ? l10n.accountsFormSaveChanges
+                            : l10n.accountsFormCreate,
                       ),
               ),
             ),

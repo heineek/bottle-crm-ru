@@ -13,6 +13,7 @@ import '../../providers/saved_views_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/saved_views_button.dart';
+import '../../l10n/l10n.dart';
 
 /// The accounts list.
 ///
@@ -92,7 +93,7 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Accounts'),
+        title: Text(context.l10n.accountsListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -110,7 +111,7 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
           ),
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New account',
+            tooltip: context.l10n.accountsListNewTooltip,
             onPressed: () => context.push(AppRoutes.accountCreate),
           ),
         ],
@@ -135,7 +136,7 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
         onChanged: _onSearchChanged,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search accounts',
+          hintText: context.l10n.accountsListSearchHint,
           prefixIcon: const Icon(LucideIcons.search, size: 18),
           isDense: true,
           border: const OutlineInputBorder(),
@@ -162,9 +163,17 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: Row(
         children: [
-          _toggleChip('Open', !_showClosed, () => _setClosed(false)),
+          _toggleChip(
+            context.l10n.accountsListOpen,
+            !_showClosed,
+            () => _setClosed(false),
+          ),
           const SizedBox(width: 8),
-          _toggleChip('Closed', _showClosed, () => _setClosed(true)),
+          _toggleChip(
+            context.l10n.accountsListClosed,
+            _showClosed,
+            () => _setClosed(true),
+          ),
         ],
       ),
     );
@@ -202,12 +211,14 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
     final data = async.value;
     final String label;
     if (data == null) {
-      label = async.hasError ? '' : 'Loading';
+      label = async.hasError ? '' : context.l10n.accountsListLoading;
     } else {
-      final unit = data.totalCount == 1 ? 'account' : 'accounts';
       label = data.accounts.length < data.totalCount
-          ? '${data.accounts.length} of ${data.totalCount} $unit'
-          : '${data.totalCount} $unit';
+          ? context.l10n.accountsListCountOf(
+              data.accounts.length,
+              data.totalCount,
+            )
+          : context.l10n.accountsListCount(data.totalCount);
     }
     return Container(
       width: double.infinity,
@@ -258,10 +269,10 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
             const SizedBox(height: 12),
             Text(
               _searchController.text.isNotEmpty
-                  ? 'No accounts match that search'
+                  ? context.l10n.accountsListEmptySearch
                   : _showClosed
-                  ? 'No closed accounts'
-                  : 'No accounts yet',
+                  ? context.l10n.accountsListEmptyClosed
+                  : context.l10n.accountsListEmpty,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -282,13 +293,13 @@ class _AccountsListScreenState extends ConsumerState<AccountsListScreen> {
             Icon(LucideIcons.alertCircle, size: 40, color: AppColors.danger500),
             const SizedBox(height: 12),
             Text(
-              'Could not load accounts',
+              context.l10n.accountsListLoadFailed,
               style: AppTypography.body.copyWith(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => ref.read(accountsProvider.notifier).refresh(),
-              child: const Text('Retry'),
+              child: Text(context.l10n.commonRetry),
             ),
           ],
         ),

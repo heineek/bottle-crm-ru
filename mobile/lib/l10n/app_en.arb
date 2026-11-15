@@ -1,5 +1,122 @@
 {
   "@@locale": "en",
+  "accountsListTitle": "Accounts",
+  "accountsListNewTooltip": "New account",
+  "accountsListSearchHint": "Search accounts",
+  "accountsListOpen": "Open",
+  "accountsListClosed": "Closed",
+  "accountsListLoading": "Loading",
+  "accountsListCount": "{count, plural, =1{1 account} other{{count} accounts}}",
+  "@accountsListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountsListCountOf": "{shown} of {count, plural, =1{{count} account} other{{count} accounts}}",
+  "@accountsListCountOf": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountsListEmptySearch": "No accounts match that search",
+  "accountsListEmptyClosed": "No closed accounts",
+  "accountsListEmpty": "No accounts yet",
+  "accountsListLoadFailed": "Could not load accounts",
+  "accountsFormLoadFailed": "Could not load this account",
+  "accountsFormEditTitle": "Edit Account",
+  "accountsFormNewTitle": "New Account",
+  "accountsFormName": "Account name",
+  "accountsFormNameRequired": "Give the account a name",
+  "accountsFormNameTooLong": "Keep the name under 65 characters",
+  "accountsFormEmailInvalid": "That does not look like an email address",
+  "accountsFormWebsite": "Website",
+  "accountsFormIndustry": "Industry",
+  "accountsFormEmployees": "Number of employees",
+  "accountsFormWholeNumbers": "Whole numbers only",
+  "accountsFormNotNegative": "That cannot be negative",
+  "accountsFormAddress": "Address",
+  "accountsFormStreet": "Street",
+  "accountsFormCity": "City",
+  "accountsFormState": "State",
+  "accountsFormPostcode": "Postcode",
+  "accountsFormCountryCode": "Country code",
+  "accountsFormCountryHint": "Two letters, e.g. IN",
+  "accountsFormCountryInvalid": "Use the two-letter code, e.g. IN",
+  "accountsFormSaveChanges": "Save changes",
+  "accountsFormCreate": "Create account",
+  "accountsDetailNotFound": "This account does not exist, or you do not have access to it",
+  "accountsDetailDeleteTitle": "Delete this account?",
+  "accountsDetailDeleteBody": "Deleting {name} cannot be undone. Its deals and tickets are deleted with it, and its contacts lose the link.",
+  "@accountsDetailDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsDetailTitleFallback": "Account",
+  "accountsDetailStatementTooltip": "Statement",
+  "accountsDetailEditTooltip": "Edit account",
+  "accountsDetailDeleteTooltip": "Delete account",
+  "accountsDetailContacts": "Contacts",
+  "accountsDetailDeals": "Deals",
+  "accountsDetailTickets": "Tickets",
+  "accountsDetailTasks": "Tasks",
+  "accountsDetailOpenPipeline": "Open pipeline",
+  "accountsDetailWon": "Won",
+  "accountsDetailOpenTickets": "Open tickets",
+  "accountsDetailEmployees": "Employees",
+  "accountsDetailAnnualRevenue": "Annual revenue",
+  "accountsDetailNoDetails": "No details recorded yet.",
+  "accountsStatementTitle": "Statement",
+  "accountsStatementSavePdf": "Save PDF",
+  "accountsStatementSaveFailed": "Could not save the statement",
+  "accountsStatementAdminsOnly": "Statements are for administrators",
+  "accountsStatementLoadFailed": "Could not load the statement",
+  "accountsStatementNothing": "Nothing was billed or paid in this period, and nothing is owed.",
+  "accountsStatementPeriod": "{start} to {end}",
+  "@accountsStatementPeriod": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsStatementChangePeriod": "Change period",
+  "accountsStatementPreviousMonth": "Previous month",
+  "accountsStatementThisMonth": "This month",
+  "accountsStatementInCurrency": "In {currency}",
+  "@accountsStatementInCurrency": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsStatementOpeningBalance": "Opening balance",
+  "accountsStatementInvoiced": "Invoiced",
+  "accountsStatementPaid": "Paid",
+  "accountsStatementCancelled": "Cancelled",
+  "accountsStatementInCredit": "In credit",
+  "accountsStatementBalanceDue": "Balance due",
+  "accountsStatementEntryBalance": "Balance {amount}",
+  "@accountsStatementEntryBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "appDealTypeNewBusiness": "New business",
   "appDealTypeExistingBusiness": "Existing business",
   "appDealTypeRenewal": "Renewal",
