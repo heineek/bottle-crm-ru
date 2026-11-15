@@ -7,8 +7,11 @@ from django.core.mail import EmailMessage
 from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from common.links import frontend_url
+from common.locale import language_for_user
 from common.models import Org, Profile
 from common.modules import module_is_available, module_on_since
 from common.org_time import activate_org_timezone, org_timezone
@@ -41,10 +44,11 @@ def send_email_to_assigned_user(recipients, opportunity_id, org_id):
             context["user"] = profile.user
             context["opportunity"] = opportunity
             context["created_by"] = created_by
-            subject = "Assigned an opportunity for you."
-            html_content = render_to_string(
-                "assigned_to/opportunity_assigned.html", context=context
-            )
+            with language_for_user(profile.user, opportunity.org):
+                subject = _("Assigned an opportunity for you.")
+                html_content = render_to_string(
+                    "assigned_to/opportunity_assigned.html", context=context
+                )
 
             msg = EmailMessage(subject, html_content, to=recipients_list)
             msg.content_subtype = "html"
@@ -120,10 +124,15 @@ def send_stale_deals_alert(org, stale_opps):
             "url": frontend_url("/pipeline?rotten=true"),
             "deal_count": len(deals),
         }
-        subject = f"[BottleCRM] {len(deals)} stale deal{'s' if len(deals) > 1 else ''} need attention"
-        html_content = render_to_string(
-            "opportunity/stale_deals_alert.html", context=context
-        )
+        with language_for_user(profile.user, org):
+            subject = ngettext(
+                "[BottleCRM] %(count)d stale deal need attention",
+                "[BottleCRM] %(count)d stale deals need attention",
+                len(deals),
+            ) % {"count": len(deals)}
+            html_content = render_to_string(
+                "opportunity/stale_deals_alert.html", context=context
+            )
         msg = EmailMessage(
             subject,
             html_content,
@@ -247,8 +256,14 @@ def _send_goal_milestone_email(profile, goal, milestone_label, percent, achieved
         "achieved": achieved,
         "url": frontend_url("/goals"),
     }
-    subject = f"[BottleCRM] Goal '{goal.name}' reached {milestone_label}!"
-    html_content = render_to_string("opportunity/goal_milestone.html", context=context)
+    with language_for_user(profile.user, goal.org):
+        subject = _("[BottleCRM] Goal '%(name)s' reached %(milestone)s!") % {
+            "name": goal.name,
+            "milestone": milestone_label,
+        }
+        html_content = render_to_string(
+            "opportunity/goal_milestone.html", context=context
+        )
     msg = EmailMessage(
         subject,
         html_content,

@@ -9,6 +9,8 @@ with and the arithmetic every reader of those rows shares.
 
 import math
 
+from django.utils.translation import pgettext_lazy
+
 from common.utils import STAGES
 
 # What a stage means, as opposed to what it is called. Won and lost are the
@@ -17,7 +19,11 @@ from common.utils import STAGES
 OPEN = "open"
 WON = "won"
 LOST = "lost"
-STAGE_KINDS = ((OPEN, "Open"), (WON, "Won"), (LOST, "Lost"))
+STAGE_KINDS = (
+    (OPEN, pgettext_lazy("deal stage kind", "Open")),
+    (WON, pgettext_lazy("deal stage kind", "Won")),
+    (LOST, pgettext_lazy("deal stage kind", "Lost")),
+)
 CLOSED_KINDS = (WON, LOST)
 
 # Default probability for the seeded open stages (applied when a deal enters a

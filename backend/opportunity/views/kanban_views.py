@@ -9,6 +9,7 @@ same code.
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -194,7 +195,7 @@ class OpportunityMoveView(APIView):
                 {
                     "error": True,
                     "errors": {
-                        "column_id": "That is not a stage of this deal's pipeline."
+                        "column_id": _("That is not a stage of this deal's pipeline.")
                     },
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -211,7 +212,9 @@ class OpportunityMoveView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": {"amount": "A won deal has to record what it was worth."},
+                    "errors": {
+                        "amount": _("A won deal has to record what it was worth.")
+                    },
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -252,7 +255,7 @@ class OpportunityMoveView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Opportunity moved successfully",
+                "message": _("Opportunity moved successfully"),
                 "opportunity": OpportunityKanbanCardSerializer(
                     attach_next_activity([opportunity], request.profile)[0],
                     context={"request": request},

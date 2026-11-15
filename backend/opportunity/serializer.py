@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db.models import Sum
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -126,7 +127,7 @@ class OpportunityLineItemCreateSerializer(
         ).first()
         if product is None:
             raise serializers.ValidationError(
-                "Product not found or does not belong to your organization"
+                _("Product not found or does not belong to your organization")
             )
         return product
 
@@ -316,7 +317,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         self.closing = False
         # An id that matches no account at all reads the same as one the
         # caller may not open; see `validate_account`.
-        self.fields["account"].error_messages["does_not_exist"] = "No such account."
+        self.fields["account"].error_messages["does_not_exist"] = _("No such account.")
         if request_obj:
             self.org = request_obj.profile.org
             self.profile = request_obj.profile
@@ -332,12 +333,12 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 .exists()
             ):
                 raise serializers.ValidationError(
-                    "Opportunity already exists with this name"
+                    _("Opportunity already exists with this name")
                 )
         else:
             if Opportunity.objects.filter(name__iexact=name, org=self.org).exists():
                 raise serializers.ValidationError(
-                    "Opportunity already exists with this name"
+                    _("Opportunity already exists with this name")
                 )
         return name
 
@@ -355,7 +356,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             or account.org_id != self.org.id
             or not has_account_access(self.profile, account)
         ):
-            raise serializers.ValidationError("No such account.")
+            raise serializers.ValidationError(_("No such account."))
         return account
 
     def _resolved(self, data, field):
@@ -393,12 +394,12 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             stage = next((s for s in stages if s.code == data["stage"]), None)
             if stage is None:
                 raise serializers.ValidationError(
-                    {"stage": "That is not a stage of this deal's pipeline."}
+                    {"stage": _("That is not a stage of this deal's pipeline.")}
                 )
             return stage
         if moving:
             raise serializers.ValidationError(
-                {"stage": "Choose a stage of the pipeline the deal is moving to."}
+                {"stage": _("Choose a stage of the pipeline the deal is moving to.")}
             )
         if self.instance is not None:
             return next((s for s in stages if s.code == self.instance.stage), None)
@@ -427,11 +428,11 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         errors = {}
 
         if kind in CLOSED_KINDS and not self._resolved(data, "closed_on"):
-            errors["closed_on"] = (
+            errors["closed_on"] = _(
                 "A deal cannot be closed without the date it closed on."
             )
         if kind == WON and not self._resolved(data, "amount"):
-            errors["amount"] = "A won deal has to record what it was worth."
+            errors["amount"] = _("A won deal has to record what it was worth.")
 
         # `amount` stops being the client's field once the deal has line items.
         # `OpportunityLineItem.save()` calls `recalculate_amount()`, which sets
@@ -450,7 +451,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             if line_items.exists():
                 line_total = line_items.aggregate(total=Sum("total"))["total"] or 0
                 if data["amount"] != line_total:
-                    errors["amount"] = (
+                    errors["amount"] = _(
                         "This deal's amount is the sum of its line items. "
                         "Edit the line items to change it."
                     )
@@ -685,7 +686,7 @@ class DealStageSerializer(serializers.ModelSerializer):
     def validate_label(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("A stage needs a name.")
+            raise serializers.ValidationError(_("A stage needs a name."))
         # Two columns with one name on a board are two columns nobody can
         # tell apart.
         clash = self.context["pipeline"].stages.filter(label__iexact=value)
@@ -693,7 +694,7 @@ class DealStageSerializer(serializers.ModelSerializer):
             clash = clash.exclude(pk=self.instance.pk)
         if clash.exists():
             raise serializers.ValidationError(
-                "This pipeline already has a stage with this name."
+                _("This pipeline already has a stage with this name.")
             )
         return value
 
@@ -721,13 +722,13 @@ class DealPipelineSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("A pipeline needs a name.")
+            raise serializers.ValidationError(_("A pipeline needs a name."))
         org = self.context["org"]
         clash = DealPipeline.objects.filter(org=org, name__iexact=value)
         if self.instance is not None:
             clash = clash.exclude(pk=self.instance.pk)
         if clash.exists():
-            raise serializers.ValidationError("A pipeline with this name exists.")
+            raise serializers.ValidationError(_("A pipeline with this name exists."))
         return value
 
 
@@ -830,7 +831,7 @@ class SalesGoalCreateSerializer(serializers.ModelSerializer):
         org = self._caller_org()
         if org is None or value.org_id != org.id:
             raise serializers.ValidationError(
-                "Selected assignee is not a member of this organization."
+                _("Selected assignee is not a member of this organization.")
             )
         return value
 
@@ -840,7 +841,7 @@ class SalesGoalCreateSerializer(serializers.ModelSerializer):
         org = self._caller_org()
         if org is None or value.org_id != org.id:
             raise serializers.ValidationError(
-                "Selected team does not belong to this organization."
+                _("Selected team does not belong to this organization.")
             )
         return value
 
@@ -857,30 +858,34 @@ class SalesGoalCreateSerializer(serializers.ModelSerializer):
             return {}
         if not isinstance(value, dict):
             raise serializers.ValidationError(
-                "Deal type weights must be an object mapping a deal type to a number."
+                _(
+                    "Deal type weights must be an object mapping a deal type to a number."
+                )
             )
         known = {choice[0] for choice in OPPORTUNITY_TYPES}
         cleaned = {}
         for deal_type, weight in value.items():
             if deal_type not in known:
                 raise serializers.ValidationError(
-                    f"'{deal_type}' is not a deal type. Choose from: "
-                    f"{', '.join(sorted(known))}."
+                    _("'%(type)s' is not a deal type. Choose from: %(types)s.")
+                    % {"type": deal_type, "types": ", ".join(sorted(known))}
                 )
             # bool is an int in Python, and True would quietly become a weight
             # of 1, so it is excluded rather than coerced.
             if isinstance(weight, bool) or not isinstance(weight, (int, float)):
                 raise serializers.ValidationError(
-                    f"The weight for '{deal_type}' must be a number."
+                    _("The weight for '%(type)s' must be a number.")
+                    % {"type": deal_type}
                 )
             if weight < 0:
                 raise serializers.ValidationError(
-                    f"The weight for '{deal_type}' cannot be negative."
+                    _("The weight for '%(type)s' cannot be negative.")
+                    % {"type": deal_type}
                 )
             if weight > MAX_DEAL_TYPE_WEIGHT:
                 raise serializers.ValidationError(
-                    f"The weight for '{deal_type}' cannot be above "
-                    f"{MAX_DEAL_TYPE_WEIGHT}."
+                    _("The weight for '%(type)s' cannot be above %(max)s.")
+                    % {"type": deal_type, "max": MAX_DEAL_TYPE_WEIGHT}
                 )
             cleaned[deal_type] = weight
         return cleaned
@@ -892,14 +897,14 @@ class SalesGoalCreateSerializer(serializers.ModelSerializer):
         period_end = data.get("period_end", getattr(self.instance, "period_end", None))
         if period_start and period_end and period_end <= period_start:
             raise serializers.ValidationError(
-                {"period_end": "Period end must be after period start."}
+                {"period_end": _("Period end must be after period start.")}
             )
         target_value = data.get(
             "target_value", getattr(self.instance, "target_value", None)
         )
         if target_value is not None and target_value <= 0:
             raise serializers.ValidationError(
-                {"target_value": "Target value must be greater than 0."}
+                {"target_value": _("Target value must be greater than 0.")}
             )
 
         # A goal counts one person's work or one team's, never both. The model
@@ -912,7 +917,7 @@ class SalesGoalCreateSerializer(serializers.ModelSerializer):
         team = data.get("team", getattr(self.instance, "team", None))
         if assigned_to and team:
             raise serializers.ValidationError(
-                {"team": "A goal belongs to a person or to a team, not to both."}
+                {"team": _("A goal belongs to a person or to a team, not to both.")}
             )
 
         goal_type = data.get("goal_type", getattr(self.instance, "goal_type", None))
@@ -922,7 +927,7 @@ class SalesGoalCreateSerializer(serializers.ModelSerializer):
         if goal_type == "ACTIVITIES" and type_weights:
             raise serializers.ValidationError(
                 {
-                    "type_weights": (
+                    "type_weights": _(
                         "An activities goal counts logged activity, which has no "
                         "deal type to weigh."
                     )

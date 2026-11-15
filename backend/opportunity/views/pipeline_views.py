@@ -11,6 +11,8 @@ import re
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy, ngettext
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied
@@ -21,9 +23,9 @@ from rest_framework.views import APIView
 from common.permissions import HasOrgContext, is_org_admin
 from opportunity.models import DealPipeline, DealStage, Opportunity
 from opportunity.serializer import DealPipelineSerializer, DealStageSerializer
-from opportunity.workflow import STAGE_KINDS
+from opportunity.workflow import LOST, OPEN, WON
 
-_ADMIN_ONLY = "Only admins can change deal pipelines."
+_ADMIN_ONLY = gettext_lazy("Only admins can change deal pipelines.")
 
 
 def _require_admin(request):
@@ -60,8 +62,16 @@ def _last_of_kind(stage):
     )
 
 
-def _kind_label(kind):
-    return dict(STAGE_KINDS)[kind].lower()
+# One sentence per kind, so a translation can name the stage naturally.
+_LAST_OF_KIND = {
+    OPEN: gettext_lazy(
+        "A pipeline needs at least one open stage, and this is its last."
+    ),
+    WON: gettext_lazy("A pipeline needs at least one won stage, and this is its last."),
+    LOST: gettext_lazy(
+        "A pipeline needs at least one lost stage, and this is its last."
+    ),
+}
 
 
 def _new_code(label, taken):
@@ -179,14 +189,22 @@ class DealPipelineDetailView(APIView):
         pipeline = _locked_pipeline(org, pk)
         if pipeline.is_default:
             return _refuse(
-                "The default pipeline cannot be deleted: deals that name no "
-                "pipeline land in it."
+                _(
+                    "The default pipeline cannot be deleted: deals that name no "
+                    "pipeline land in it."
+                )
             )
         deal_count = Opportunity.objects.filter(pipeline=pipeline).count()
         if deal_count:
             return _refuse(
-                f"This pipeline still holds {deal_count} deal(s). Move them to "
-                "another pipeline first."
+                ngettext(
+                    "This pipeline still holds %(count)d deal(s). Move them to "
+                    "another pipeline first.",
+                    "This pipeline still holds %(count)d deal(s). Move them to "
+                    "another pipeline first.",
+                    deal_count,
+                )
+                % {"count": deal_count}
             )
         pipeline.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -261,7 +279,7 @@ class DealStageReorderView(APIView):
         # from elsewhere (another pipeline, another org) is simply not here.
         if len(stage_ids) != len(set(stage_ids)) or set(stage_ids) != set(stages):
             return _refuse(
-                "Send every stage of this pipeline exactly once, in the new order."
+                _("Send every stage of this pipeline exactly once, in the new order.")
             )
         for position, stage_id in enumerate(stage_ids, start=1):
             stage = stages[stage_id]
@@ -307,15 +325,12 @@ class DealStageDetailView(APIView):
         new_kind = serializer.validated_data.get("kind", stage.kind)
         if new_kind != stage.kind:
             if _last_of_kind(stage):
-                return _refuse(
-                    f"A pipeline needs at least one {_kind_label(stage.kind)} "
-                    "stage, and this is its last."
-                )
+                return _refuse(_LAST_OF_KIND[stage.kind])
             # Changing what a stage means would silently win, lose or reopen
             # every deal in it, with no close date, amount or closer recorded.
             if _deals_in(stage).exists():
                 return _refuse(
-                    "Move the deals out of this stage before changing its kind."
+                    _("Move the deals out of this stage before changing its kind.")
                 )
         serializer.save()
         return _pipeline_response(stage.pipeline, request.profile.org)
@@ -332,13 +347,16 @@ class DealStageDetailView(APIView):
         deal_count = _deals_in(stage).count()
         if deal_count:
             return _refuse(
-                f"This stage still holds {deal_count} deal(s). Move them to "
-                "another stage first."
+                ngettext(
+                    "This stage still holds %(count)d deal(s). Move them to "
+                    "another stage first.",
+                    "This stage still holds %(count)d deal(s). Move them to "
+                    "another stage first.",
+                    deal_count,
+                )
+                % {"count": deal_count}
             )
         if _last_of_kind(stage):
-            return _refuse(
-                f"A pipeline needs at least one {_kind_label(stage.kind)} "
-                "stage, and this is its last."
-            )
+            return _refuse(_LAST_OF_KIND[stage.kind])
         stage.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
