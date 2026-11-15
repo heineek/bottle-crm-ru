@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from common.base import SAMPLE_DATA_HELP_TEXT, AssignableMixin, BaseModel
 from common.models import Org, Profile, Tags, Teams
@@ -82,7 +83,7 @@ class Lead(AssignableMixin, BaseModel):
         max_length=10,
         blank=True,
         null=True,
-        choices=[("HOT", "Hot"), ("WARM", "Warm"), ("COLD", "Cold")],
+        choices=[("HOT", _("Hot")), ("WARM", _("Warm")), ("COLD", _("Cold"))],
     )
     opportunity_amount = models.DecimalField(
         _("Deal Value"), decimal_places=2, max_digits=12, blank=True, null=True
@@ -275,9 +276,9 @@ class LeadStage(BaseModel):
     """
 
     STAGE_TYPE_CHOICES = [
-        ("open", "Open"),  # Active stages (assigned, in process)
-        ("won", "Won"),  # Converted/closed-won
-        ("lost", "Lost"),  # Recycled/closed-lost
+        ("open", pgettext_lazy("lead stage type", "Open")),
+        ("won", pgettext_lazy("lead stage type", "Won")),  # Converted/closed-won
+        ("lost", pgettext_lazy("lead stage type", "Lost")),  # Recycled/closed-lost
     ]
 
     pipeline = models.ForeignKey(

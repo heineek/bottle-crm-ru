@@ -3,6 +3,7 @@ Lead conversion service functions
 """
 
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import gettext_lazy
 from rest_framework.exceptions import ValidationError
 
 from accounts.access import has_account_access
@@ -13,8 +14,8 @@ from contacts.access import has_contact_access, visible_contacts_qs
 from contacts.models import Contact
 from opportunity.models import Opportunity
 
-CONVERSION_REFUSED = (
-    "An account named '{name}' already exists and you don't have access to it. "
+CONVERSION_REFUSED = gettext_lazy(
+    "An account named '%(name)s' already exists and you don't have access to it. "
     "Ask an admin to convert this lead or give you access."
 )
 
@@ -43,7 +44,7 @@ def conversion_refusal(request, lead):
     ).prefetch_related("assigned_to")
     for account in matches:
         if not has_account_access(request.profile, account):
-            return CONVERSION_REFUSED.format(name=account.name)
+            return CONVERSION_REFUSED % {"name": account.name}
     return None
 
 

@@ -13,6 +13,7 @@ up through `leads.access.visible_leads_qs`.
 import json
 
 from django.db import transaction
+from django.utils.translation import gettext_lazy
 
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.models import Profile, Tags, Teams
@@ -21,7 +22,7 @@ from contacts.access import replace_visible_contacts
 from leads.serializer import LeadCreateSerializer
 from leads.tasks import send_email_to_assigned_user
 
-CONVERSION_REFUSED = "A lead is converted from its page, not by an edit."
+CONVERSION_REFUSED = gettext_lazy("A lead is converted from its page, not by an edit.")
 
 
 def converts(data):

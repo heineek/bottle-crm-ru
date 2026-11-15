@@ -13,6 +13,7 @@ column index to field name) takes the column-matching path: any column names,
 file. Without `mapping`, both endpoints keep the template-only behaviour.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.parsers import MultiPartParser
@@ -52,12 +53,14 @@ def _read_upload(request, field="file", csv_name=True):
     """
     upload = request.FILES.get(field)
     if not upload:
-        return None, f"No file uploaded (expected field '{field}')"
+        return None, _("No file uploaded (expected field '%(field)s')") % {
+            "field": field
+        }
     if csv_name and not (upload.name or "").lower().endswith(".csv"):
-        return None, "File must have a .csv extension"
+        return None, _("File must have a .csv extension")
     file_bytes = upload.read(MAX_UPLOAD_BYTES + 1)
     if len(file_bytes) > MAX_UPLOAD_BYTES:
-        return None, "File exceeds the 5 MB upload limit"
+        return None, _("File exceeds the 5 MB upload limit")
     return file_bytes, None
 
 
@@ -80,7 +83,7 @@ def _bad_upload(problem):
 
 def _forbidden():
     return Response(
-        {"error": True, "message": "Permission denied"},
+        {"error": True, "message": _("Permission denied")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -224,7 +227,7 @@ class LeadUploadView(APIView):
     def post(self, request, *args, **kwargs):
         if not can_mass_import(request.profile):
             return Response(
-                {"error": True, "errors": "Admin access required"},
+                {"error": True, "errors": _("Admin access required")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         file_bytes, problem = _read_upload(request, "leads_file", csv_name=False)
@@ -244,6 +247,6 @@ class LeadUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            {"error": False, "message": "Leads created Successfully"},
+            {"error": False, "message": _("Leads created Successfully")},
             status=status.HTTP_200_OK,
         )
