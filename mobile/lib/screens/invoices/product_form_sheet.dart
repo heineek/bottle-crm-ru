@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/product.dart';
+import '../../l10n/l10n.dart';
 
 /// Add or edit a catalogue product.
 ///
@@ -70,14 +71,16 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
     final price = double.tryParse(_price.text.trim());
 
     setState(() {
-      _nameError = name.isEmpty ? 'A product needs a name' : null;
+      _nameError = name.isEmpty
+          ? context.l10n.invoicesProductNameRequired
+          : null;
       // The model defaults price to 0 and does not forbid a negative one, but
       // a negative list price would put a negative line on an invoice, so it
       // is refused here and worth refusing on the serializer too.
       _priceError = price == null
-          ? 'Enter a price'
+          ? context.l10n.invoicesProductEnterPrice
           : price < 0
-          ? 'A price cannot be negative'
+          ? context.l10n.invoicesProductPriceNegative
           : null;
     });
     if (_nameError != null || _priceError != null) return;
@@ -114,7 +117,9 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.existing == null ? 'New product' : 'Edit product',
+              widget.existing == null
+                  ? context.l10n.invoicesProductNewTitle
+                  : context.l10n.invoicesProductEditTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -122,7 +127,7 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
               controller: _name,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                labelText: 'Name',
+                labelText: context.l10n.invoicesProductName,
                 border: const OutlineInputBorder(),
                 errorText: _nameError,
               ),
@@ -144,7 +149,7 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
                       ),
                     ],
                     decoration: InputDecoration(
-                      labelText: 'Price',
+                      labelText: context.l10n.invoicesProductPrice,
                       border: const OutlineInputBorder(),
                       errorText: _priceError,
                     ),
@@ -156,9 +161,9 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
                   child: DropdownButtonFormField<String>(
                     initialValue: _currency,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Currency',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesCurrency,
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
                       for (final c in Currency.values)
@@ -173,19 +178,19 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: _sku,
-              decoration: const InputDecoration(
-                labelText: 'SKU (optional)',
-                helperText: 'Has to be unique across the catalogue',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.invoicesProductSku,
+                helperText: context.l10n.invoicesProductSkuHelper,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _category,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Category (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.invoicesProductCategory,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 4),
@@ -193,11 +198,8 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
               contentPadding: EdgeInsets.zero,
               value: _isActive,
               onChanged: (v) => setState(() => _isActive = v),
-              title: const Text('Available for new invoices'),
-              subtitle: const Text(
-                'Turning this off keeps it off new line items. Invoices '
-                'already billed are untouched.',
-              ),
+              title: Text(context.l10n.invoicesProductAvailable),
+              subtitle: Text(context.l10n.invoicesProductAvailableHint),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -205,7 +207,11 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
               height: 46,
               child: FilledButton(
                 onPressed: _submit,
-                child: Text(widget.existing == null ? 'Add product' : 'Save'),
+                child: Text(
+                  widget.existing == null
+                      ? context.l10n.invoicesProductAddSubmit
+                      : context.l10n.commonSave,
+                ),
               ),
             ),
             const SizedBox(height: 8),

@@ -6,10 +6,12 @@ import 'package:intl/intl.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/lookup_models.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoices_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 import '../../services/org_date.dart';
 import 'document_adjustments.dart';
 import 'invoice_format.dart';
@@ -51,14 +53,9 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
   bool _saving = false;
   String? _error;
 
-  /// `invoices.models.PAYMENT_TERMS`.
-  static const _terms = {
-    'DUE_ON_RECEIPT': 'Due on receipt',
-    'NET_15': 'Net 15',
-    'NET_30': 'Net 30',
-    'NET_45': 'Net 45',
-    'NET_60': 'Net 60',
-    'CUSTOM': 'Pick a date',
+  Map<String, String> _terms(BuildContext context) => {
+    ...paymentTermLabels(),
+    'CUSTOM': context.l10n.invoicesFormPickDate,
   };
 
   @override
@@ -104,7 +101,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('New invoice'),
+        title: Text(context.l10n.invoicesNewTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -129,7 +126,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
                   ),
                 _whoAndWhen(accounts, contacts),
                 _lineItems(),
-                _card('Discount, tax and shipping', [
+                _card(context.l10n.invoicesFormAdjustmentsShipping, [
                   AdjustmentsSection(
                     value: _adjustments,
                     subtotal: _subtotal,
@@ -158,13 +155,13 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
   ) {
     final options = _contactOptions(contacts.value ?? const []);
 
-    return _card('Who and when', [
+    return _card(context.l10n.invoicesFormWhoAndWhen, [
       DropdownButtonFormField<String>(
         initialValue: _accountId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Account',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesDetailAccount,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final a in accounts.value ?? const <AccountLookup>[])
@@ -187,9 +184,11 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
         initialValue: _contactId,
         isExpanded: true,
         decoration: InputDecoration(
-          labelText: 'Bill to',
+          labelText: context.l10n.invoicesDetailBillTo,
           border: const OutlineInputBorder(),
-          helperText: _accountId == null ? 'Pick an account first' : null,
+          helperText: _accountId == null
+              ? context.l10n.invoicesFormPickAccountFirst
+              : null,
         ),
         items: [
           for (final c in options)
@@ -212,10 +211,10 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
         controller: _title,
         textCapitalization: TextCapitalization.sentences,
         onChanged: (_) => setState(() {}),
-        decoration: const InputDecoration(
-          labelText: 'What it is for',
-          hintText: 'March retainer',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesFormWhatFor,
+          hintText: context.l10n.invoicesNewTitleHint,
+          border: const OutlineInputBorder(),
         ),
       ),
       const SizedBox(height: 12),
@@ -223,7 +222,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
         children: [
           Expanded(
             child: _dateField(
-              label: 'Issued',
+              label: context.l10n.invoicesDetailIssued,
               value: _issueDate,
               onPick: (d) => setState(() => _issueDate = d),
             ),
@@ -233,12 +232,12 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
             child: DropdownButtonFormField<String>(
               initialValue: _paymentTerms,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Terms',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.invoicesFormTerms,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                for (final entry in _terms.entries)
+                for (final entry in _terms(context).entries)
                   DropdownMenuItem(value: entry.key, child: Text(entry.value)),
               ],
               onChanged: (value) =>
@@ -252,7 +251,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
       if (_paymentTerms == 'CUSTOM') ...[
         const SizedBox(height: 12),
         _dateField(
-          label: 'Due',
+          label: context.l10n.invoicesFormDue,
           value: _customDueDate,
           onPick: (d) => setState(() => _customDueDate = d),
         ),
@@ -295,8 +294,8 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
         ),
         child: Text(
           value == null
-              ? 'Pick a date'
-              : DateFormat('d MMM yyyy').format(value),
+              ? context.l10n.invoicesFormPickDate
+              : localDateFormat('d MMM yyyy', 'yMMMd').format(value),
           style: AppTypography.body.copyWith(
             color: value == null
                 ? AppColors.textSecondary
@@ -312,11 +311,11 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
   // -------------------------------------------------------------------------
 
   Widget _lineItems() {
-    return _card('What you are billing', [
+    return _card(context.l10n.invoicesNewLinesCard, [
       LineItemsSection(
         items: _items,
         symbol: _symbol,
-        emptyHint: 'An invoice needs at least one line.',
+        emptyHint: context.l10n.invoicesNewLinesEmpty,
         onChanged: (items) => setState(() {
           _items
             ..clear()
@@ -331,13 +330,13 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
   // -------------------------------------------------------------------------
 
   Widget _extras() {
-    return _card('Anything else', [
+    return _card(context.l10n.invoicesFormAnythingElse, [
       DropdownButtonFormField<String>(
         initialValue: _currency,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Currency',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesCurrency,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final c in Currency.values)
@@ -350,9 +349,9 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
         controller: _notes,
         maxLines: 3,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(
-          labelText: 'Notes for the client (optional)',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesFormNotes,
+          border: const OutlineInputBorder(),
         ),
       ),
     ]);
@@ -392,7 +391,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
                   Text(
                     // The server's ladder, previewed; its figure is the one
                     // that ends up on the invoice.
-                    'with discount, tax and shipping',
+                    context.l10n.invoicesNewTotalCaption,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption.copyWith(
@@ -403,17 +402,25 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            SizedBox(
-              height: 46,
-              child: FilledButton(
-                onPressed: _ready ? _submit : null,
-                child: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Create draft'),
+            // Flexible: a longer translation ellipsizes before it pushes
+            // the total off screen.
+            Flexible(
+              child: SizedBox(
+                height: 46,
+                child: FilledButton(
+                  onPressed: _ready ? _submit : null,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          context.l10n.invoicesFormCreateDraft,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
               ),
             ),
           ],
@@ -457,7 +464,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Draft invoice created')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.invoicesNewCreated)));
     final id = result.invoiceId;
     if (id != null && id.isNotEmpty) {
       // Replace rather than push: going back to a form that has already been

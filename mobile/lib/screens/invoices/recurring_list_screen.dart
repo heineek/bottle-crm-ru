@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/recurring_invoice.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
 import 'invoice_format.dart';
 import 'invoice_shell.dart';
@@ -18,7 +19,6 @@ class RecurringListScreen extends ConsumerWidget {
   const RecurringListScreen({super.key});
 
   static const _filters = <bool?>[null, true, false];
-  static const _labels = ['All', 'Running', 'Paused'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,14 +28,14 @@ class RecurringListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Recurring'),
+        title: Text(context.l10n.invoicesRecurringTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New schedule',
+            tooltip: context.l10n.invoicesRecurringNewTooltip,
             onPressed: () => context.push(AppRoutes.recurringNew),
           ),
         ],
@@ -43,7 +43,11 @@ class RecurringListScreen extends ConsumerWidget {
       body: Column(
         children: [
           InvoiceFilterChips(
-            labels: _labels,
+            labels: [
+              context.l10n.invoicesFilterAll,
+              context.l10n.invoicesRecurringRunning,
+              context.l10n.invoicesRecurringPaused,
+            ],
             selected: _filters.indexOf(active),
             onSelected: (i) => ref
                 .read(recurringProvider.notifier)
@@ -53,17 +57,15 @@ class RecurringListScreen extends ConsumerWidget {
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => InvoiceErrorState(
-                message: 'Could not load schedules',
+                message: context.l10n.invoicesRecurringLoadError,
                 onRetry: () => ref.read(recurringProvider.notifier).refresh(),
               ),
               data: (schedules) {
                 if (schedules.isEmpty) {
-                  return const InvoiceEmptyState(
+                  return InvoiceEmptyState(
                     icon: LucideIcons.repeat,
-                    message: 'No recurring schedules',
-                    detail:
-                        'Set one up on the web to bill the same client '
-                        'on a cadence.',
+                    message: context.l10n.invoicesRecurringEmpty,
+                    detail: context.l10n.invoicesRecurringEmptyDetail,
                   );
                 }
                 return RefreshIndicator(
@@ -106,22 +108,28 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(pausing ? 'Pause this schedule?' : 'Resume this schedule?'),
+        title: Text(
+          pausing
+              ? context.l10n.invoicesRecurringPauseTitle
+              : context.l10n.invoicesRecurringResumeTitle,
+        ),
         content: Text(
           pausing
-              ? 'No invoice will be generated for ${schedule.title} until it is '
-                    'resumed.'
-              : 'Invoices for ${schedule.title} will start generating again on '
-                    'its cadence.',
+              ? context.l10n.invoicesRecurringPauseBody(schedule.title)
+              : context.l10n.invoicesRecurringResumeBody(schedule.title),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Leave it'),
+            child: Text(context.l10n.invoicesRecurringLeaveIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(pausing ? 'Pause' : 'Resume'),
+            child: Text(
+              pausing
+                  ? context.l10n.invoicesRecurringPause
+                  : context.l10n.invoicesRecurringResume,
+            ),
           ),
         ],
       ),
@@ -137,7 +145,10 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (pausing ? 'Schedule paused' : 'Schedule resumed'),
+          error ??
+              (pausing
+                  ? context.l10n.invoicesRecurringPausedSnack
+                  : context.l10n.invoicesRecurringResumedSnack),
         ),
       ),
     );
@@ -174,7 +185,7 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
                     Text(
                       schedule.accountName ??
                           (schedule.clientName.isEmpty
-                              ? 'No account'
+                              ? context.l10n.invoicesNoAccount
                               : schedule.clientName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -199,7 +210,9 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StatusBadge(
-                label: schedule.isActive ? 'Running' : 'Paused',
+                label: schedule.isActive
+                    ? context.l10n.invoicesRecurringRunning
+                    : context.l10n.invoicesRecurringPaused,
                 color: schedule.isActive
                     ? AppColors.success600
                     : AppColors.gray500,
@@ -215,13 +228,18 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
               // invoice that is not coming.
               if (nextRun != null)
                 Text(
-                  'next ${DateFormat('d MMM').format(nextRun)}',
+                  context.l10n.invoicesRecurringNext(
+                    localDateFormat('d MMM', 'MMMd').format(nextRun),
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
               if (schedule.autoSend)
-                StatusBadge(label: 'auto-sends', color: AppColors.warning600),
+                StatusBadge(
+                  label: context.l10n.invoicesRecurringAutoSends,
+                  color: AppColors.warning600,
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -229,7 +247,11 @@ class _ScheduleCardState extends ConsumerState<_ScheduleCard> {
             height: 40,
             child: OutlinedButton(
               onPressed: _busy ? null : _toggle,
-              child: Text(schedule.isActive ? 'Pause' : 'Resume'),
+              child: Text(
+                schedule.isActive
+                    ? context.l10n.invoicesRecurringPause
+                    : context.l10n.invoicesRecurringResume,
+              ),
             ),
           ),
         ],

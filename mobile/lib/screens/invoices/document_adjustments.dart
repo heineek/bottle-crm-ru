@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 
 /// The server's bounds on a discount, in its wording (`LineAmountsMixin` for a
 /// line, `validate_document_discount` for a document): a percentage not over
@@ -16,7 +17,7 @@ String? discountBoundError(
   String capMessage,
 ) {
   if (type == 'PERCENTAGE') {
-    return value > 100 ? 'A percentage discount cannot exceed 100.' : null;
+    return value > 100 ? appL10n.invoicesDiscountPercentMax : null;
   }
   // Compared in cents, as the server stores money, so a float sum does not
   // refuse a discount that exactly matches it.
@@ -62,12 +63,12 @@ class DocumentAdjustments {
           discountType,
           discountValue,
           subtotal,
-          'A discount cannot exceed the subtotal.',
+          appL10n.invoicesDiscountOverSubtotal,
         );
 
   /// The API's refusal for this tax rate, or null. The field takes digits
   /// only, so only the top of the 0 to 100 range can be crossed.
-  String? get taxError => taxRate > 100 ? 'Tax rate cannot exceed 100.' : null;
+  String? get taxError => taxRate > 100 ? appL10n.invoicesTaxRateMax : null;
 
   /// Whether the API would take these adjustments on [subtotal]. Shipping
   /// needs no check: its field cannot go negative.
@@ -117,10 +118,10 @@ class _AdjustmentsSectionState extends State<AdjustmentsSection> {
     text: _text(widget.value.shipping),
   );
 
-  static const _types = {
-    '': 'No discount',
-    'PERCENTAGE': 'Percentage',
-    'FIXED': 'Fixed amount',
+  Map<String, String> _types(BuildContext context) => {
+    '': context.l10n.invoicesDiscountNone,
+    'PERCENTAGE': context.l10n.invoicesDiscountPercentage,
+    'FIXED': context.l10n.invoicesDiscountFixed,
   };
 
   static final _decimal = [
@@ -182,12 +183,12 @@ class _AdjustmentsSectionState extends State<AdjustmentsSection> {
         DropdownButtonFormField<String>(
           initialValue: type,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Discount',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.invoicesDiscount,
+            border: const OutlineInputBorder(),
           ),
           items: [
-            for (final entry in _types.entries)
+            for (final entry in _types(context).entries)
               DropdownMenuItem(value: entry.key, child: Text(entry.value)),
           ],
           onChanged: (value) => _emit(discountType: value ?? ''),
@@ -196,24 +197,34 @@ class _AdjustmentsSectionState extends State<AdjustmentsSection> {
           const SizedBox(height: 12),
           _number(
             _discount,
-            type == 'PERCENTAGE' ? 'Percent off' : 'Amount off',
+            type == 'PERCENTAGE'
+                ? context.l10n.invoicesPercentOff
+                : context.l10n.invoicesAmountOff,
             prefix: type == 'FIXED' ? widget.symbol : null,
             suffix: type == 'PERCENTAGE' ? '%' : null,
             error: widget.value.discountError(widget.subtotal),
           ),
         ],
         const SizedBox(height: 12),
-        _number(_tax, 'Tax rate', suffix: '%', error: widget.value.taxError),
+        _number(
+          _tax,
+          context.l10n.invoicesTaxRate,
+          suffix: '%',
+          error: widget.value.taxError,
+        ),
         if (widget.showShipping) ...[
           const SizedBox(height: 12),
-          _number(_shipping, 'Shipping', prefix: widget.symbol),
+          _number(
+            _shipping,
+            context.l10n.invoicesShipping,
+            prefix: widget.symbol,
+          ),
         ],
         const SizedBox(height: 8),
         Text(
           widget.showShipping
-              ? 'Tax applies to the subtotal after the discount. Shipping is '
-                    'added afterwards and is not taxed.'
-              : 'Tax applies to the subtotal after the discount.',
+              ? context.l10n.invoicesTaxHintShipping
+              : context.l10n.invoicesTaxHint,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
       ],

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/product.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/invoice_extras_provider.dart';
+import '../../services/app_language.dart';
 import 'document_adjustments.dart';
 import 'invoice_format.dart';
 
@@ -62,17 +65,22 @@ class LineItemDraft {
           discountType,
           discountValue,
           quantity * unitPrice,
-          "A discount cannot exceed the line's amount.",
+          appL10n.invoicesLineDiscountOverLine,
         );
 
   /// "less 10%" or "less €5.00", or null for a line with no discount.
   String? discountLabel(String symbol) {
     if (discountValue == 0) return null;
     if (discountType != 'PERCENTAGE') {
-      return 'less ${money(discountValue, symbol)}';
+      return appL10n.invoicesDetailLineLess(money(discountValue, symbol));
     }
     final whole = discountValue.truncateToDouble() == discountValue;
-    return 'less ${whole ? discountValue.toStringAsFixed(0) : discountValue}%';
+    final percent = currentLanguage != baseLanguage
+        ? NumberFormat.decimalPattern(currentLanguage).format(discountValue)
+        : whole
+        ? discountValue.toStringAsFixed(0)
+        : '$discountValue';
+    return appL10n.invoicesLineLessPercent(percent);
   }
 
   String get quantityLabel {
@@ -156,7 +164,7 @@ class LineItemsSection extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () => _edit(context, null),
             icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add a line'),
+            label: Text(context.l10n.invoicesLineAddButton),
           ),
         ),
       ],
@@ -180,7 +188,9 @@ class LineItemsSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name.isEmpty ? 'Untitled line' : item.name,
+                    item.name.isEmpty
+                        ? context.l10n.invoicesDetailUntitledLine
+                        : item.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption.copyWith(
@@ -191,7 +201,10 @@ class LineItemsSection extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     [
-                      '${item.quantityLabel} x ${money(item.unitPrice, symbol)}',
+                      context.l10n.invoicesDetailLineQuantity(
+                        item.quantityLabel,
+                        money(item.unitPrice, symbol),
+                      ),
                       ?item.discountLabel(symbol),
                     ].join(', '),
                     style: AppTypography.caption.copyWith(
@@ -217,7 +230,7 @@ class LineItemsSection extends StatelessWidget {
             ),
             IconButton(
               icon: const Icon(LucideIcons.x, size: 16),
-              tooltip: 'Remove this line',
+              tooltip: context.l10n.invoicesLineRemoveTooltip,
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               onPressed: () => onChanged([...items]..removeAt(index)),
             ),
@@ -305,13 +318,13 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
     final quantity = double.tryParse(_quantity.text.trim());
 
     setState(() {
-      _nameError = name.isEmpty ? 'Every line needs a description' : null;
+      _nameError = name.isEmpty ? context.l10n.invoicesLineNameRequired : null;
       _quantityError = quantity == null
-          ? 'Enter a quantity'
+          ? context.l10n.invoicesLineEnterQuantity
           : quantity <= 0
           // A zero or negative quantity contributes nothing or subtracts, and
           // an invoice line that reduces the bill is a credit note, not this.
-          ? 'A quantity has to be more than zero'
+          ? context.l10n.invoicesLineQuantityPositive
           : null;
     });
     if (_nameError != null || _quantityError != null) return;
@@ -357,7 +370,9 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.existing == null ? 'Add a line' : 'Edit the line',
+              widget.existing == null
+                  ? context.l10n.invoicesLineAddButton
+                  : context.l10n.invoicesLineEditTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
@@ -368,9 +383,9 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
               DropdownButtonFormField<String>(
                 initialValue: null,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Start from the catalogue (optional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.invoicesLineFromCatalogue,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final p in products.where((p) => p.isActive))
@@ -393,7 +408,7 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
               controller: _name,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                labelText: 'Description',
+                labelText: context.l10n.invoicesLineDescription,
                 border: const OutlineInputBorder(),
                 errorText: _nameError,
               ),
@@ -415,7 +430,7 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
                     ],
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'Quantity',
+                      labelText: context.l10n.invoicesLineQuantity,
                       border: const OutlineInputBorder(),
                       errorText: _quantityError,
                     ),
@@ -435,7 +450,7 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
                     ],
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'Unit price',
+                      labelText: context.l10n.invoicesLineUnitPrice,
                       prefixText: widget.symbol,
                       border: const OutlineInputBorder(),
                       errorText: _priceError,
@@ -450,7 +465,9 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
               alignment: Alignment.centerRight,
               child: Text(
                 [
-                  'Line total ${money(preview.netAmount, widget.symbol)}',
+                  context.l10n.invoicesLineTotal(
+                    money(preview.netAmount, widget.symbol),
+                  ),
                   ?preview.discountLabel(widget.symbol),
                 ].join(', '),
                 style: AppTypography.caption.copyWith(
@@ -464,7 +481,11 @@ class _LineItemSheetState extends ConsumerState<_LineItemSheet> {
               height: 46,
               child: FilledButton(
                 onPressed: _submit,
-                child: Text(widget.existing == null ? 'Add line' : 'Save line'),
+                child: Text(
+                  widget.existing == null
+                      ? context.l10n.invoicesLineAddSubmit
+                      : context.l10n.invoicesLineSaveSubmit,
+                ),
               ),
             ),
             const SizedBox(height: 8),

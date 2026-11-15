@@ -3143,6 +3143,522 @@
       }
     }
   },
+  "invoicesCompactThousands": "{symbol}{amount}k",
+  "@invoicesCompactThousands": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesCompactMillions": "{symbol}{amount}M",
+  "@invoicesCompactMillions": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesAgeLate": "{days}d late",
+  "@invoicesAgeLate": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesAgeDueToday": "due today",
+  "invoicesAgeLeft": "{days}d left",
+  "@invoicesAgeLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesListTitle": "Invoices",
+  "invoicesListNewTooltip": "New invoice",
+  "invoicesListMoreTooltip": "More invoice pages",
+  "invoicesMenuEstimates": "Estimates",
+  "invoicesMenuRecurring": "Recurring",
+  "invoicesMenuProducts": "Products",
+  "invoicesMenuTemplates": "Templates",
+  "invoicesMenuReports": "Reports",
+  "invoicesListSearchHint": "Search invoices",
+  "invoicesFilterAll": "All",
+  "invoicesStatOutstanding": "Outstanding",
+  "invoicesStatOverdue": "Overdue",
+  "invoicesStatDraft": "Draft",
+  "invoicesListCurrencyNote": "Each currency is totalled on its own; there are no exchange rates to combine them.",
+  "invoicesListShownOf": "{shown} of {total} invoices",
+  "@invoicesListShownOf": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesListCount": "{count, plural, =1{1 invoice} other{{count} invoices}}",
+  "@invoicesListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesListSentSnack": "Invoice {number} sent to the client",
+  "@invoicesListSentSnack": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesListEmptySearch": "No invoices match that search",
+  "invoicesListEmptyStatus": "No {status} invoices",
+  "@invoicesListEmptyStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesListEmpty": "Nothing billed yet",
+  "invoicesListLoadError": "Could not load invoices",
+  "invoicesNoAccount": "No account",
+  "invoicesSendReminder": "Send a reminder",
+  "invoicesSend": "Send",
+  "invoicesSendAgain": "Send again",
+  "invoicesDueOn": "due {date}",
+  "@invoicesDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimatesTitle": "Estimates",
+  "invoicesEstimatesNewTooltip": "New estimate",
+  "invoicesEstimatesLoadError": "Could not load estimates",
+  "invoicesEstimatesEmpty": "No estimates here",
+  "invoicesEstimateInvoiceRaised": "Invoice raised",
+  "invoicesEstimateSent": "Estimate sent",
+  "invoicesEstimateBilled": "billed {number}",
+  "@invoicesEstimateBilled": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateExpired": "expired",
+  "invoicesEstimateExpires": "expires {date}",
+  "@invoicesEstimateExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateRaiseInvoice": "Raise an invoice",
+  "invoicesEstimateOpenInvoice": "Open the invoice",
+  "invoicesRecurringTitle": "Recurring",
+  "invoicesRecurringRunning": "Running",
+  "invoicesRecurringPaused": "Paused",
+  "invoicesRecurringNewTooltip": "New schedule",
+  "invoicesRecurringLoadError": "Could not load schedules",
+  "invoicesRecurringEmpty": "No recurring schedules",
+  "invoicesRecurringEmptyDetail": "Set one up on the web to bill the same client on a cadence.",
+  "invoicesRecurringPauseTitle": "Pause this schedule?",
+  "invoicesRecurringResumeTitle": "Resume this schedule?",
+  "invoicesRecurringPauseBody": "No invoice will be generated for {title} until it is resumed.",
+  "@invoicesRecurringPauseBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringResumeBody": "Invoices for {title} will start generating again on its cadence.",
+  "@invoicesRecurringResumeBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringLeaveIt": "Leave it",
+  "invoicesRecurringPause": "Pause",
+  "invoicesRecurringResume": "Resume",
+  "invoicesRecurringPausedSnack": "Schedule paused",
+  "invoicesRecurringResumedSnack": "Schedule resumed",
+  "invoicesRecurringNext": "next {date}",
+  "@invoicesRecurringNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringAutoSends": "auto-sends",
+  "invoicesProductsTitle": "Products",
+  "invoicesProductsNewTooltip": "New product",
+  "invoicesProductsSearchHint": "Search the catalogue",
+  "invoicesProductsLoadError": "Could not load the catalogue",
+  "invoicesProductsEmpty": "Nothing in the catalogue yet",
+  "invoicesProductsEmptySearch": "No products match that search",
+  "invoicesProductsEmptyDetail": "An administrator adds these.",
+  "invoicesProductAdded": "Product added",
+  "invoicesProductSaved": "Product saved",
+  "invoicesProductDeleted": "Product deleted",
+  "invoicesProductDeleteTitle": "Delete {name}?",
+  "@invoicesProductDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesProductDeleteFinal": "Deleting it cannot be undone.",
+  "invoicesProductDeleteUsed": "{count, plural, =1{It is on 1 invoice. Those keep the name and price they were billed at. Deactivating it instead keeps it out of new invoices.} other{It is on {count} invoices. Those keep the name and price they were billed at. Deactivating it instead keeps it out of new invoices.}}",
+  "@invoicesProductDeleteUsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesProductDeleteUnused": "It is not on any invoice yet.",
+  "invoicesKeepIt": "Keep it",
+  "invoicesProductRetired": "Retired",
+  "invoicesProductNotBilled": "not billed yet",
+  "invoicesProductUsedOn": "{count, plural, =1{on 1 invoice} other{on {count} invoices}}",
+  "@invoicesProductUsedOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesTemplatesTitle": "Templates",
+  "invoicesTemplatesDefaultSnack": "{name} is now the default for new invoices",
+  "@invoicesTemplatesDefaultSnack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesTemplatesNewTooltip": "New template",
+  "invoicesTemplatesLoadError": "Could not load templates",
+  "invoicesTemplatesEmpty": "No templates yet",
+  "invoicesTemplatesEmptyAdmin": "Invoices use the built-in layout until one is added.",
+  "invoicesTemplatesEmptyMember": "Invoices use the built-in layout. An administrator adds these.",
+  "invoicesTemplatesWebNote": "A template's PDF layout is HTML and CSS, and it is edited on the web. The name, colours, logo and boilerplate are editable here.",
+  "invoicesTemplatesEditTooltip": "Edit template",
+  "invoicesTemplatesDefault": "Default",
+  "invoicesTemplatesLogo": "logo",
+  "invoicesTemplatesCustomLayout": "custom layout",
+  "invoicesTemplatesUnused": "unused",
+  "invoicesTemplatesUseForNew": "Use for new invoices",
+  "invoicesReportsTitle": "Reports",
+  "invoicesReportsForbidden": "Reports are for administrators",
+  "invoicesReportsLoadError": "Could not load the reports",
+  "invoicesReportsMoney": "Money",
+  "invoicesReportsInvoicedAllTime": "Invoiced, all time",
+  "invoicesReportsPaid": "Paid",
+  "invoicesReportsStillOwed": "Still owed",
+  "invoicesReportsInvoicesRaised": "Invoices raised",
+  "invoicesReportsAverageDays": "Average days to pay",
+  "invoicesReportsOverdue": "Overdue",
+  "invoicesReportsPastDue": "Invoices past due",
+  "invoicesReportsAmount": "Amount",
+  "invoicesReportsLast30": "Last 30 days",
+  "invoicesReportsCollected": "Collected",
+  "invoicesReportsInvoiced": "Invoiced",
+  "invoicesReportsAgeing": "Receivables ageing",
+  "invoicesReportsOutstandingTotal": "Outstanding in total",
+  "invoicesReportsEstimates": "Estimates",
+  "invoicesReportsWaiting": "Waiting on the client",
+  "invoicesReportsAccepted": "Accepted",
+  "invoicesReportsDeclined": "Declined",
+  "invoicesReportsScopeMulti": "Figures cover the whole organisation, one currency at a time. There are no exchange rates to combine them.",
+  "invoicesReportsScope": "Figures cover the whole organisation.",
+  "invoicesDetailFallbackTitle": "Invoice",
+  "invoicesDetailLoadError": "Could not load this invoice",
+  "invoicesDetailLoadErrorDetail": "It may have been deleted, or it may belong to someone else.",
+  "invoicesDetailAccount": "Account",
+  "invoicesDetailBillTo": "Bill to",
+  "invoicesDetailEmail": "Email",
+  "invoicesDetailIssued": "Issued",
+  "invoicesDetailPoNumber": "PO number",
+  "invoicesSubtotal": "Subtotal",
+  "invoicesDiscount": "Discount",
+  "invoicesTax": "Tax",
+  "invoicesShipping": "Shipping",
+  "invoicesTotal": "Total",
+  "invoicesDetailPaid": "Paid",
+  "invoicesDetailDue": "Due",
+  "invoicesDetailLineItems": "What this is for",
+  "invoicesDetailUntitledLine": "Untitled line",
+  "invoicesDetailLineQuantity": "{quantity} x {price}",
+  "@invoicesDetailLineQuantity": {
+    "placeholders": {
+      "quantity": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailLineLess": "less {amount}",
+  "@invoicesDetailLineLess": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailPayments": "Payments",
+  "invoicesDetailPaymentRef": "ref {reference}",
+  "@invoicesDetailPaymentRef": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailSentTo": "Sent to {recipient}",
+  "@invoicesDetailSentTo": {
+    "placeholders": {
+      "recipient": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailSentToClient": "Sent to the client",
+  "invoicesDetailRecordPayment": "Record a payment",
+  "invoicesDetailCancelInvoice": "Cancel invoice",
+  "invoicesDetailPaymentRecorded": "Payment recorded",
+  "invoicesDetailCancelTitle": "Cancel this invoice?",
+  "invoicesDetailCancelBody": "Invoice {number} will be marked cancelled. It cannot be sent or paid afterwards, and this cannot be undone from the app.",
+  "@invoicesDetailCancelBody": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailCancelled": "Invoice cancelled",
+  "invoicesPaymentEnterAmount": "Enter an amount",
+  "invoicesPaymentAmountPositive": "The amount has to be more than zero",
+  "invoicesPaymentAmountTooHigh": "That is more than the {amount} still owed",
+  "@invoicesPaymentAmountTooHigh": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesPaymentOutstandingOn": "{amount} outstanding on {number}",
+  "@invoicesPaymentOutstandingOn": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesPaymentAmount": "Amount",
+  "invoicesPaymentMethod": "How it was paid",
+  "invoicesPaymentReference": "Reference (optional)",
+  "invoicesPaymentSubmit": "Record payment",
+  "invoicesDiscountPercentMax": "A percentage discount cannot exceed 100.",
+  "invoicesDiscountOverSubtotal": "A discount cannot exceed the subtotal.",
+  "invoicesTaxRateMax": "Tax rate cannot exceed 100.",
+  "invoicesDiscountNone": "No discount",
+  "invoicesDiscountPercentage": "Percentage",
+  "invoicesDiscountFixed": "Fixed amount",
+  "invoicesPercentOff": "Percent off",
+  "invoicesAmountOff": "Amount off",
+  "invoicesTaxRate": "Tax rate",
+  "invoicesTaxHintShipping": "Tax applies to the subtotal after the discount. Shipping is added afterwards and is not taxed.",
+  "invoicesTaxHint": "Tax applies to the subtotal after the discount.",
+  "invoicesLineDiscountOverLine": "A discount cannot exceed the line's amount.",
+  "invoicesLineAddButton": "Add a line",
+  "invoicesLineRemoveTooltip": "Remove this line",
+  "invoicesLineNameRequired": "Every line needs a description",
+  "invoicesLineEnterQuantity": "Enter a quantity",
+  "invoicesLineQuantityPositive": "A quantity has to be more than zero",
+  "invoicesLineEditTitle": "Edit the line",
+  "invoicesLineFromCatalogue": "Start from the catalogue (optional)",
+  "invoicesLineDescription": "Description",
+  "invoicesLineQuantity": "Quantity",
+  "invoicesLineUnitPrice": "Unit price",
+  "invoicesLineTotal": "Line total {amount}",
+  "@invoicesLineTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesLineAddSubmit": "Add line",
+  "invoicesLineSaveSubmit": "Save line",
+  "invoicesLineLessPercent": "less {percent}%",
+  "@invoicesLineLessPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesProductNameRequired": "A product needs a name",
+  "invoicesProductEnterPrice": "Enter a price",
+  "invoicesProductPriceNegative": "A price cannot be negative",
+  "invoicesProductNewTitle": "New product",
+  "invoicesProductEditTitle": "Edit product",
+  "invoicesProductName": "Name",
+  "invoicesProductPrice": "Price",
+  "invoicesCurrency": "Currency",
+  "invoicesProductSku": "SKU (optional)",
+  "invoicesProductSkuHelper": "Has to be unique across the catalogue",
+  "invoicesProductCategory": "Category (optional)",
+  "invoicesProductAvailable": "Available for new invoices",
+  "invoicesProductAvailableHint": "Turning this off keeps it off new line items. Invoices already billed are untouched.",
+  "invoicesProductAddSubmit": "Add product",
+  "invoicesTermsDueOnReceipt": "Due on receipt",
+  "invoicesTermsNet": "Net {days}",
+  "@invoicesTermsNet": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesFormPickDate": "Pick a date",
+  "invoicesNewTitle": "New invoice",
+  "invoicesFormAdjustmentsShipping": "Discount, tax and shipping",
+  "invoicesFormWhoAndWhen": "Who and when",
+  "invoicesFormPickAccountFirst": "Pick an account first",
+  "invoicesFormWhatFor": "What it is for",
+  "invoicesNewTitleHint": "March retainer",
+  "invoicesFormTerms": "Terms",
+  "invoicesFormDue": "Due",
+  "invoicesNewLinesCard": "What you are billing",
+  "invoicesNewLinesEmpty": "An invoice needs at least one line.",
+  "invoicesFormAnythingElse": "Anything else",
+  "invoicesFormNotes": "Notes for the client (optional)",
+  "invoicesNewTotalCaption": "with discount, tax and shipping",
+  "invoicesFormCreateDraft": "Create draft",
+  "invoicesNewCreated": "Draft invoice created",
+  "invoicesEstimateNewDefaultTitle": "Estimate for {deal}",
+  "@invoicesEstimateNewDefaultTitle": {
+    "placeholders": {
+      "deal": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateNewTitle": "New estimate",
+  "invoicesEstimateQuoteTo": "Quote to",
+  "invoicesEstimateDeal": "Deal (optional)",
+  "invoicesEstimateNoDeal": "No deal",
+  "invoicesEstimateTitleHint": "Website rebuild",
+  "invoicesEstimateValidUntil": "Valid until",
+  "invoicesEstimateBeforeIssued": "Before it is issued",
+  "invoicesEstimateLinesCard": "What you are quoting",
+  "invoicesEstimateLinesEmpty": "An estimate needs at least one line.",
+  "invoicesFormAdjustments": "Discount and tax",
+  "invoicesEstimateTermsField": "Terms (optional)",
+  "invoicesEstimateTotalCaption": "with discounts and tax",
+  "invoicesEstimateCreated": "Draft estimate created",
+  "invoicesRecurringNewTitle": "New schedule",
+  "invoicesRecurringLinesCard": "What to bill each time",
+  "invoicesRecurringLinesEmpty": "Lines are optional unless each invoice is emailed automatically.",
+  "invoicesRecurringWhoCard": "Who to bill",
+  "invoicesRecurringTitleHint": "Managed hosting retainer",
+  "invoicesRecurringHowOften": "How often",
+  "invoicesRecurringFrequency": "Frequency",
+  "invoicesRecurringCustomDays": "Every how many days",
+  "invoicesRecurringCustomDaysError": "Enter a number of days, at least 1",
+  "invoicesRecurringFirstOn": "First invoice on",
+  "invoicesRecurringStopAfter": "Stop after (optional)",
+  "invoicesRecurringPaymentTerms": "Payment terms on each invoice",
+  "invoicesRecurringAutoSend": "Email each invoice automatically",
+  "invoicesRecurringAutoSendHint": "Off means each generated invoice waits as a draft for you to send.",
+  "invoicesRecurringNeedsLine": "Add at least one line before turning on auto-send.",
+  "invoicesClearTooltip": "Clear",
+  "invoicesRecurringTotalCustom": "every {days} days, with discounts and tax",
+  "@invoicesRecurringTotalCustom": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesRecurringTotalCaption": "{frequency}, with discounts and tax",
+  "@invoicesRecurringTotalCaption": {
+    "placeholders": {
+      "frequency": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringStart": "Start schedule",
+  "invoicesRecurringCreated": "Schedule created",
+  "invoicesTemplateNameRequired": "Give the template a name",
+  "invoicesTemplateHexError": "Use a six digit hex colour, for example {example}",
+  "@invoicesTemplateHexError": {
+    "placeholders": {
+      "example": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesTemplateCheckFields": "Check the highlighted fields above.",
+  "invoicesTemplateSaved": "Template saved",
+  "invoicesTemplateCreated": "Template created",
+  "invoicesTemplateGone": "That template is no longer in the catalogue.",
+  "invoicesTemplateNameCard": "Name",
+  "invoicesTemplateNameField": "Template name",
+  "invoicesTemplateColours": "Brand colours",
+  "invoicesTemplatePrimary": "Primary",
+  "invoicesTemplateSecondary": "Secondary",
+  "invoicesTemplateLogo": "Logo",
+  "invoicesTemplateBoilerplate": "Boilerplate",
+  "invoicesTemplateDefaultNotes": "Default notes",
+  "invoicesTemplateNotesHint": "Thanks for your business.",
+  "invoicesTemplateDefaultTerms": "Default terms",
+  "invoicesTemplateTermsHint": "Payment due within 30 days.",
+  "invoicesTemplateFooter": "Footer text",
+  "invoicesTemplateBoilerplateNote": "New invoices start from these. Changing them here does not rewrite invoices already raised.",
+  "invoicesTemplateDefaultCard": "Default template",
+  "invoicesTemplateUseForNew": "Use this for new invoices",
+  "invoicesTemplateUseForNewHint": "Only one template can be the default. Turning this on replaces whichever holds it now.",
+  "invoicesTemplateLayout": "Layout",
+  "invoicesTemplateLayoutNote": "The PDF layout is HTML and CSS, and it is edited on the web. Saving here changes the fields above and leaves the layout as it is.",
+  "invoicesTemplateSaving": "Saving...",
+  "invoicesTemplateSave": "Save template",
+  "invoicesTemplateCreate": "Create template",
+  "invoicesTemplateEditTitle": "Edit template",
+  "invoicesTemplateNewTitle": "New template",
+  "invoicesTemplateLogoSet": "A logo is already set. Choosing one replaces it.",
+  "invoicesTemplateNoLogo": "No logo. Invoices print with the org name instead.",
+  "invoicesTemplateReplaceLogo": "Replace logo",
+  "invoicesTemplateAddLogo": "Add logo",
   "leadsListTitle": "Leads",
   "leadsListBoardTooltip": "Pipeline board",
   "leadsListImportTooltip": "Import from a spreadsheet",
