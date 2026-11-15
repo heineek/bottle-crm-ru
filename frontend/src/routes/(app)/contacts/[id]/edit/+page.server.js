@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, getContactForEdit, updateContact } from '#lib/server/v2/contacts.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** Fields the form submits as checkboxes: absent means false, not "unchanged". */
 const FLAGS = ['do_not_call', 'is_active'];
@@ -51,7 +52,7 @@ export const actions = {
     try {
       await updateContact({ cookies }, params.id, values);
     } catch (/** @type {any} */ err) {
-      return fail(400, { values, error: readableError(err, 'Could not save this contact.') });
+      return fail(400, { values, error: readableError(err, m.contacts_edit_failed()) });
     }
 
     redirect(303, `/contacts/${params.id}`);
