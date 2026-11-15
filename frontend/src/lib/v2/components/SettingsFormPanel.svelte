@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * The chrome around a settings form.
    *
@@ -30,7 +31,15 @@
    *   ondone?: () => void,
    *   fields: import('svelte').Snippet
    * }} */
-  let { title, action, error = null, submitLabel = 'Save', oncancel, ondone, fields } = $props();
+  let {
+    title,
+    action,
+    error = null,
+    submitLabel = m.common_save(),
+    oncancel,
+    ondone,
+    fields
+  } = $props();
 
   // Disables submit while a request is in flight so a double-click cannot
   // fire two writes.
@@ -65,7 +74,9 @@
 
     <div class="v2-sfp-foot">
       <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>{submitLabel}</button>
-      <button class="v2-btn" type="button" disabled={busy} onclick={oncancel}>Cancel</button>
+      <button class="v2-btn" type="button" disabled={busy} onclick={oncancel}
+        >{m.common_cancel()}</button
+      >
     </div>
   </form>
 </div>

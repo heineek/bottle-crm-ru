@@ -1,8 +1,11 @@
+import { intlLocale } from '#lib/i18n/locale.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+
 /**
  * Country codes and names for dropdown selection
  * Matches Django backend COUNTRIES in common/utils.py
  */
-export const COUNTRIES = [
+const ENGLISH_COUNTRIES = [
   { code: 'GB', name: 'United Kingdom' },
   { code: 'AF', name: 'Afghanistan' },
   { code: 'AX', name: 'Aland Islands' },
@@ -250,6 +253,44 @@ export const COUNTRIES = [
   { code: 'ZM', name: 'Zambia' },
   { code: 'ZW', name: 'Zimbabwe' }
 ];
+
+/** @type {Map<string, Intl.DisplayNames>} */
+const regionNames = new Map();
+
+/**
+ * The backend's English name in English, so stored data and exports read the
+ * same; the CLDR name from `Intl` in any other locale.
+ *
+ * @param {string} code
+ * @param {string} english
+ */
+function localName(code, english) {
+  const locale = getLocale();
+  if (locale === 'en') return english;
+  let names = regionNames.get(locale);
+  if (!names) {
+    names = new Intl.DisplayNames([intlLocale(locale, 'date')], { type: 'region' });
+    regionNames.set(locale, names);
+  }
+  const name = names.of(code);
+  return name && name !== code ? name : english;
+}
+
+/** @type {{ code: string, readonly name: string }[]} */
+export const COUNTRIES = ENGLISH_COUNTRIES.map(({ code, name }) => ({
+  code,
+  get name() {
+    return localName(code, name);
+  }
+}));
+
+/** COUNTRIES as plain `{ code, name }` objects, sorted by the current locale's name. */
+export function sortedCountries() {
+  const locale = intlLocale(getLocale(), 'date');
+  return COUNTRIES.map(({ code, name }) => ({ code, name })).sort((a, b) =>
+    a.name.localeCompare(b.name, locale)
+  );
+}
 
 /**
  * Get country name by code

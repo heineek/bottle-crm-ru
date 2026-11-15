@@ -4,6 +4,7 @@
   import XIcon from '@lucide/svelte/icons/x';
   import * as Dialog from './index.js';
   import { cn } from '#lib/utils.js';
+  import { m } from '#lib/paraglide/messages.js';
   let {
     ref = $bindable(null),
     class: className = undefined,
@@ -31,7 +32,7 @@
         class="ring-offset-background focus:ring-ring absolute end-4 top-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       >
         <XIcon />
-        <span class="sr-only">Close</span>
+        <span class="sr-only">{m.common_close()}</span>
       </DialogPrimitive.Close>
     {/if}
   </DialogPrimitive.Content>

@@ -26,6 +26,7 @@
     LogOut
   } from '@lucide/svelte';
   import { sidebarGroups } from '#lib/v2/nav.js';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * One flat tree, grouped by what the person is doing rather than by which
@@ -98,7 +99,12 @@
       }))
       .concat(
         objects.length
-          ? [{ label: 'Objects', items: objects.map((o) => ({ ...o, icon: Boxes })) }]
+          ? [
+              {
+                label: m.app_nav_group_objects(),
+                items: objects.map((o) => ({ ...o, icon: Boxes }))
+              }
+            ]
           : []
       )
   );
@@ -107,7 +113,7 @@
     exact ? page.url.pathname === href : page.url.pathname.startsWith(href);
 </script>
 
-<nav class="v2-nav" aria-label="Main">
+<nav class="v2-nav" aria-label={m.app_nav_main_aria()}>
   <div class="v2-org">
     <span class="v2-mark">{org.name.slice(0, 1)}</span>
     <b>{org.name}</b>
@@ -138,7 +144,7 @@
   <div class="v2-nav-foot">
     <button class="v2-link v2-nav-search" type="button" onclick={onsearch}>
       <Search />
-      Search
+      {m.common_search()}
       <span class="v2-count">⌘K</span>
     </button>
     <!-- Personal, not work: your own feed sits with your own profile rather
@@ -149,18 +155,18 @@
       aria-current={isActive('/notifications', false) ? 'page' : undefined}
     >
       <Bell />
-      Notifications
+      {m.app_nav_notifications()}
       {#if counts.notifications}
         <span class="v2-count">{counts.notifications}</span>
       {/if}
     </a>
     <a class="v2-link" href={resolve('profile')}>
       <CircleUser />
-      Your profile
+      {m.app_nav_profile()}
     </a>
     <a class="v2-link" href={resolve('help')}>
       <CircleHelp />
-      Help
+      {m.app_nav_help()}
     </a>
     <!-- The phone app for people on the hosted service. No pulsing dot. A
          download link is not something that needs you right now, and v2 keeps
@@ -172,14 +178,14 @@
       rel="noopener noreferrer"
     >
       <Smartphone />
-      Download app
+      {m.app_nav_download_app()}
     </a>
     <!-- Leaving the app. Last in the list, and a plain link. /logout is a
          server load that clears the auth cookies and redirects to /login, so a
          GET navigation is all it takes and no data-fetching component follows. -->
     <a class="v2-link" href={resolve('logout')} data-sveltekit-reload>
       <LogOut />
-      Sign out
+      {m.app_nav_sign_out()}
     </a>
   </div>
 </nav>

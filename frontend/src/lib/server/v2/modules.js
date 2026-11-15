@@ -10,6 +10,7 @@ import { error } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { refusalFor, requirementFor } from '#lib/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @typedef {import('#lib/v2/modules.js').ModuleRow} ModuleRow */
 
@@ -137,7 +138,7 @@ export function moduleErrors(err) {
     const text = body?.errors ?? body?.detail;
     if (typeof text === 'string' && text.trim()) return [text];
   }
-  return [readableError(err, 'Could not save the modules.')];
+  return [readableError(err, m.app_srv_modules_save_failed())];
 }
 
 /**

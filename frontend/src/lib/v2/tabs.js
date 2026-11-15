@@ -1,4 +1,5 @@
 import { isOn } from '#lib/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Section tab sets, defined once so a destination shows the same tabs from
@@ -16,9 +17,31 @@ import { isOn } from '#lib/v2/modules.js';
  */
 export const TAB_SETS = {
   tickets: [
-    { href: '/tickets', label: 'Queue', exact: true, count: 'tickets', module: 'tickets' },
-    { href: '/tickets/approvals', label: 'Approvals', count: 'approvals', module: 'tickets' },
-    { href: '/tickets/analytics', label: 'Analytics', admin: true, module: 'tickets' }
+    {
+      href: '/tickets',
+      get label() {
+        return m.app_tabs_queue();
+      },
+      exact: true,
+      count: 'tickets',
+      module: 'tickets'
+    },
+    {
+      href: '/tickets/approvals',
+      get label() {
+        return m.app_tabs_approvals();
+      },
+      count: 'approvals',
+      module: 'tickets'
+    },
+    {
+      href: '/tickets/analytics',
+      get label() {
+        return m.app_tabs_analytics();
+      },
+      admin: true,
+      module: 'tickets'
+    }
   ],
   /**
    * These two are NOT two views of one list. `tasks.Task` and
@@ -28,17 +51,76 @@ export const TAB_SETS = {
    * says the rest out loud, because nothing about the word suggests it.
    */
   tasks: [
-    { href: '/tasks', label: 'Task list', exact: true, count: 'tasks', module: 'tasks' },
-    { href: '/tasks/board', label: 'Boards', module: 'tasks' },
-    { href: '/tasks/calendar', label: 'Calendar', module: 'tasks' }
+    {
+      href: '/tasks',
+      get label() {
+        return m.app_tabs_task_list();
+      },
+      exact: true,
+      count: 'tasks',
+      module: 'tasks'
+    },
+    {
+      href: '/tasks/board',
+      get label() {
+        return m.app_tabs_boards();
+      },
+      module: 'tasks'
+    },
+    {
+      href: '/tasks/calendar',
+      get label() {
+        return m.app_tabs_calendar();
+      },
+      module: 'tasks'
+    }
   ],
   invoices: [
-    { href: '/invoices', label: 'Invoices', exact: true, count: 'invoices', module: 'invoices' },
-    { href: '/invoices/estimates', label: 'Estimates', module: 'invoices' },
-    { href: '/invoices/recurring', label: 'Recurring', module: 'invoices' },
-    { href: '/invoices/products', label: 'Products', anyOf: ['invoices', 'deals'] },
-    { href: '/invoices/reports', label: 'Reports', admin: true, module: 'invoices' },
-    { href: '/invoices/templates', label: 'Templates', module: 'invoices' }
+    {
+      href: '/invoices',
+      get label() {
+        return m.app_tabs_invoices();
+      },
+      exact: true,
+      count: 'invoices',
+      module: 'invoices'
+    },
+    {
+      href: '/invoices/estimates',
+      get label() {
+        return m.app_tabs_estimates();
+      },
+      module: 'invoices'
+    },
+    {
+      href: '/invoices/recurring',
+      get label() {
+        return m.app_tabs_recurring();
+      },
+      module: 'invoices'
+    },
+    {
+      href: '/invoices/products',
+      get label() {
+        return m.app_tabs_products();
+      },
+      anyOf: ['invoices', 'deals']
+    },
+    {
+      href: '/invoices/reports',
+      get label() {
+        return m.app_tabs_reports();
+      },
+      admin: true,
+      module: 'invoices'
+    },
+    {
+      href: '/invoices/templates',
+      get label() {
+        return m.app_tabs_templates();
+      },
+      module: 'invoices'
+    }
   ]
 };
 

@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -13,7 +14,7 @@
    * @type {{ label?: string, text: string, action?: string, href?: string|null, secondary?: string, tone?: 'ember'|'rust' }}
    */
   let {
-    label = 'Next action',
+    label = m.app_next_action_label(),
     text,
     action = null,
     href = null,

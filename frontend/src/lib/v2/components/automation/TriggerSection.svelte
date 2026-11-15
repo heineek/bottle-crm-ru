@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { untrack } from 'svelte';
   import {
     OBJECT_LABELS,
@@ -32,7 +33,10 @@
     )
   );
   let noun = $derived(
-    object?.label ?? `${OBJECT_LABELS[draft.object_key] ?? draft.object_key} (no longer available)`
+    object?.label ??
+      m.app_automation_no_longer_available({
+        label: OBJECT_LABELS[draft.object_key] ?? draft.object_key
+      })
   );
   let hint = $derived(changeHint(field, draft.trigger.to));
   // The box can be ticked before a value is chosen; the draft holds `to` only once there is one.
@@ -76,7 +80,7 @@
   {:else}
     <select
       class="v2-input tr-ctl"
-      aria-label="Record type"
+      aria-label={m.app_automation_record_type()}
       value={draft.object_key}
       onchange={(e) => chooseObject(e.currentTarget.value)}
     >
@@ -85,38 +89,38 @@
   {/if}
   <select
     class="v2-input tr-ctl"
-    aria-label="When it runs"
+    aria-label={m.app_automation_when_runs()}
     value={draft.trigger.event}
     onchange={(e) => chooseEvent(e.currentTarget.value)}
     aria-invalid={error ? 'true' : undefined}
     aria-describedby={error ? 'trigger-error' : undefined}
   >
-    <option value="created">is created</option>
-    <option value="updated">is updated</option>
+    <option value="created">{m.app_automation_is_created()}</option>
+    <option value="updated">{m.app_automation_is_updated()}</option>
   </select>
 </div>
 
 {#if draft.trigger.event === 'updated'}
   <div class="tr-line">
-    <span>and</span>
+    <span>{m.app_automation_and()}</span>
     <select
       class="v2-input tr-ctl"
-      aria-label="Which field changes"
+      aria-label={m.app_automation_which_field()}
       value={draft.trigger.field ?? ''}
       onchange={(e) => chooseField(e.currentTarget.value)}
       aria-invalid={error ? 'true' : undefined}
       aria-describedby={error ? 'trigger-error' : undefined}
     >
-      <option value="">any field</option>
+      <option value="">{m.app_automation_any_field()}</option>
       {#each fields as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
     </select>
-    <span>changes</span>
+    <span>{m.app_automation_changes()}</span>
   </div>
 
   {#if draft.trigger.field}
     <label class="tr-check">
       <input type="checkbox" checked={limited} onchange={(e) => limit(e.currentTarget.checked)} />
-      only when it changes to
+      {m.app_automation_only_when_changes_to()}
     </label>
     {#if limited}
       <div class="tr-to">
@@ -127,7 +131,7 @@
             bind:value={() => draft.trigger.to ?? null, setTo}
             people={catalogue?.people ?? []}
             id="trigger-to"
-            label="Changes to"
+            label={m.app_automation_changes_to()}
             invalid={Boolean(error)}
             describedby={error ? 'trigger-error' : undefined}
           />

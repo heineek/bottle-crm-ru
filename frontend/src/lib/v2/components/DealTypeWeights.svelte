@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * Optional per-deal-type multipliers for a revenue or deals-closed goal.
    *
@@ -41,14 +42,14 @@
 {#if goalType !== 'ACTIVITIES'}
   <div class="v2-field">
     <button type="button" class="toggle" onclick={() => (open = !open)} aria-expanded={open}>
-      <span>Weight by deal type</span>
+      <span>{m.app_deal_type_weights_toggle()}</span>
       <span class="v2-sub" style="font-size:11.5px">
         {#if weighted}
-          {weighted} adjusted
+          {m.app_deal_type_weights_adjusted({ count: weighted })}
         {:else}
-          Optional
+          {m.common_optional()}
         {/if}
-        · {open ? 'Hide' : 'Show'}
+        · {open ? m.app_deal_type_weights_hide() : m.app_deal_type_weights_show()}
       </span>
     </button>
 
@@ -74,8 +75,7 @@
     </div>
     {#if open}
       <p class="v2-hint">
-        A multiplier on each closed-won deal of that type. Leave a box empty to count that type in
-        full. At 0.5 a 20,000 renewal counts as 10,000; at 0 it does not count at all.
+        {m.app_deal_type_weights_hint()}
       </p>
     {/if}
   </div>

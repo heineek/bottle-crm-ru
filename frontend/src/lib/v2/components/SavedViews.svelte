@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * Saved views (G29): save the list's current filters under a name, open one
    * with a tap, rename or delete it. One menu, the same on all six lists that
@@ -48,7 +49,7 @@
 <details class="v2-saved">
   <summary class="v2-view">
     <Bookmark size={13} style="color:var(--v2-slate)" />
-    <span class="v2-saved-label">{active ? active.name : 'Saved views'}</span>
+    <span class="v2-saved-label">{active ? active.name : m.app_saved_views_menu()}</span>
     <ChevronDown size={13} style="color:var(--v2-slate)" />
   </summary>
   <div class="v2-saved-menu">
@@ -57,7 +58,7 @@
     {/if}
 
     {#if views.length === 0}
-      <p class="v2-sub v2-saved-empty">No saved views yet. Filter the list, then save it here.</p>
+      <p class="v2-sub v2-saved-empty">{m.app_saved_views_empty()}</p>
     {:else}
       <ul class="v2-saved-list">
         {#each views as view (view.id)}
@@ -73,14 +74,14 @@
                   value={view.name}
                   maxlength="100"
                   required
-                  aria-label="New name for {view.name}"
+                  aria-label={m.app_saved_views_new_name({ name: view.name })}
                 />
                 <span class="v2-saved-actions">
                   <button class="v2-btn v2-btn-sm v2-btn-primary" type="submit" disabled={busy}>
-                    Rename
+                    {m.app_saved_views_rename()}
                   </button>
                   <button class="v2-btn v2-btn-sm" type="button" onclick={() => (renaming = null)}>
-                    Cancel
+                    {m.common_cancel()}
                   </button>
                 </span>
               </form>
@@ -95,7 +96,7 @@
                   <!-- Counted in values, not keys: three statuses where this
                        page reads one is two it leaves out. -->
                   <span class="v2-sub v2-saved-note">
-                    {dropped === 1 ? '1 filter value' : `${dropped} filter values`} this page cannot apply
+                    {m.app_saved_views_dropped({ count: dropped })}
                   </span>
                 {/if}
               </a>
@@ -103,15 +104,15 @@
                 <button
                   class="v2-btn v2-btn-sm"
                   type="button"
-                  aria-label="Rename {view.name}"
+                  aria-label={m.app_saved_views_rename_named({ name: view.name })}
                   onclick={() => (renaming = view.id)}
                 >
                   <Pencil size={13} />
                 </button>
                 <ConfirmAction
                   action="?/deleteView"
-                  label="Delete"
-                  confirmLabel="Delete view"
+                  label={m.common_delete()}
+                  confirmLabel={m.app_saved_views_delete_view()}
                   hidden={{ id: view.id, query }}
                 />
               </span>
@@ -123,17 +124,23 @@
 
     {#if full}
       <p class="v2-sub v2-saved-empty">
-        This list keeps at most {saved.limit} saved views. Delete one to save another.
+        {m.app_saved_views_limit({ limit: saved.limit ?? 0 })}
       </p>
     {:else}
       <form class="v2-saved-form" method="POST" action="?/saveView" use:enhance={submit}>
         <label class="v2-saved-field">
-          <span class="v2-label">Save the current filters as</span>
-          <input class="v2-input" name="name" maxlength="100" required placeholder="View name" />
+          <span class="v2-label">{m.app_saved_views_save_as()}</span>
+          <input
+            class="v2-input"
+            name="name"
+            maxlength="100"
+            required
+            placeholder={m.app_saved_views_name_placeholder()}
+          />
         </label>
         <input type="hidden" name="query" value={query} />
         <button class="v2-btn v2-btn-sm v2-btn-primary" type="submit" disabled={busy}>
-          Save view
+          {m.app_saved_views_save()}
         </button>
       </form>
     {/if}

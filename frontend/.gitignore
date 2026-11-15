@@ -28,3 +28,6 @@ src/generated/*
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Paraglide output, compiled from messages/*.json by the vite plugin and `pnpm i18n`
+src/lib/paraglide/

@@ -6,6 +6,7 @@
  * does not serve the list changes nothing. The server refuses an off module
  * regardless; this only decides what to show.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * One row of `GET /org/modules/`.
@@ -38,15 +39,33 @@ export const MODULE_KEYS = [
 
 /** @type {Record<string, string>} */
 export const DEFAULT_LABELS = {
-  deals: 'Pipeline',
-  leads: 'Leads',
-  goals: 'Goals',
-  tasks: 'Tasks',
-  tickets: 'Tickets',
-  knowledge_base: 'Knowledge base',
-  documents: 'Documents',
-  invoices: 'Invoices',
-  timesheet: 'Timesheet'
+  get deals() {
+    return m.app_modules_label_deals();
+  },
+  get leads() {
+    return m.app_modules_label_leads();
+  },
+  get goals() {
+    return m.app_modules_label_goals();
+  },
+  get tasks() {
+    return m.app_modules_label_tasks();
+  },
+  get tickets() {
+    return m.app_modules_label_tickets();
+  },
+  get knowledge_base() {
+    return m.app_modules_label_knowledge_base();
+  },
+  get documents() {
+    return m.app_modules_label_documents();
+  },
+  get invoices() {
+    return m.app_modules_label_invoices();
+  },
+  get timesheet() {
+    return m.app_modules_label_timesheet();
+  }
 };
 
 /** Record kinds a page can show, by the module that serves them. */
@@ -166,22 +185,26 @@ export function refusalFor(routeId, modules) {
  * @returns {string}
  */
 export function todayClearText(modules) {
-  const parts = [
-    ['tickets', 'tickets'],
-    ['invoices', 'invoices'],
-    ['deals', 'quiet deals'],
-    ['tasks', 'tasks']
-  ]
-    .filter(([key]) => isOn(modules, key))
-    .map(([, noun]) => noun);
-  if (!parts.length) return 'Nothing is waiting on you.';
-  const first = parts.findIndex((p) => p !== 'quiet deals');
-  if (first >= 0) parts[first] = `overdue ${parts[first]}`;
+  // The first noun that can be late carries "overdue"; quiet deals are never late.
+  /** @type {[string, () => string, (() => string) | null][]} */
+  const nouns = [
+    ['tickets', m.app_modules_clear_tickets, m.app_modules_clear_overdue_tickets],
+    ['invoices', m.app_modules_clear_invoices, m.app_modules_clear_overdue_invoices],
+    ['deals', m.app_modules_clear_quiet_deals, null],
+    ['tasks', m.app_modules_clear_tasks, m.app_modules_clear_overdue_tasks]
+  ];
+  const on = nouns.filter(([key]) => isOn(modules, key));
+  if (!on.length) return m.app_modules_clear_nothing();
+  const first = on.findIndex(([, , overdue]) => overdue !== null);
+  const parts = on.map(([, plain, overdue], i) => (i === first && overdue ? overdue() : plain()));
   const list =
     parts.length === 1
       ? parts[0]
-      : `${parts.slice(0, -1).join(', ')} or ${parts[parts.length - 1]}`;
-  return `No ${list}.`;
+      : m.app_modules_list_or({
+          rest: parts.slice(0, -1).join(', '),
+          last: parts[parts.length - 1]
+        });
+  return m.app_modules_clear_none_of({ list });
 }
 
 /**
@@ -192,8 +215,8 @@ export function todayClearText(modules) {
  */
 export function notificationsEmptyText(modules) {
   return isOn(modules, 'tickets')
-    ? 'Notifications arrive for CRM ticket activity, automation rules, and updates from BottleCRM Support.'
-    : 'Notifications arrive for automation rules and updates from BottleCRM Support.';
+    ? m.app_modules_notifications_empty_tickets()
+    : m.app_modules_notifications_empty();
 }
 
 /**
@@ -205,7 +228,7 @@ export function notificationsEmptyText(modules) {
  * @param {string} [last] what joins the final two
  * @returns {string} '' when every word's module is off
  */
-export function wordsOn(modules, words, last = 'and') {
+export function wordsOn(modules, words, last = m.app_modules_list_and()) {
   const kept = words.filter(([key]) => key === null || isOn(modules, key)).map(([, word]) => word);
   if (kept.length < 2) return kept[0] ?? '';
   return `${kept.slice(0, -1).join(', ')} ${last} ${kept[kept.length - 1]}`;

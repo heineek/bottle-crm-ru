@@ -14,13 +14,14 @@
 
 import * as env from '$app/env/public';
 import { moduleOffDetail } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 const API_BASE_URL = `${env.PUBLIC_DJANGO_API_URL}/api`;
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ cookies, request, url }) {
   const accessToken = cookies.get('jwt_access');
-  if (!accessToken) return new Response('Unauthorized', { status: 401 });
+  if (!accessToken) return new Response(m.app_api_unauthorized(), { status: 401 });
 
   const qs = url.searchParams.toString();
   const upstream = await fetch(`${API_BASE_URL}/time-entries/report/export/${qs ? `?${qs}` : ''}`, {
@@ -33,9 +34,12 @@ export async function GET({ cookies, request, url }) {
   });
 
   if (!upstream.ok || !upstream.body) {
-    return new Response((await moduleOffDetail(upstream)) ?? `Upstream error: ${upstream.status}`, {
-      status: upstream.status || 502
-    });
+    return new Response(
+      (await moduleOffDetail(upstream)) ?? m.app_api_upstream_error({ status: upstream.status }),
+      {
+        status: upstream.status || 502
+      }
+    );
   }
 
   return new Response(upstream.body, {

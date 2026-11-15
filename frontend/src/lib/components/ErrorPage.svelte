@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { Button } from '#lib/components/ui/button/index.js';
   import { ArrowLeft, Home, Compass, Users, Building2, BarChart3 } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * @typedef {Object} Props
@@ -19,28 +20,27 @@
   let showLinks = $derived(showQuickLinks ?? isNotFound);
 
   let title = $derived.by(() => {
-    if (isNotFound) return 'Page not found';
-    if (status === 403) return "You don't have access to this page";
-    if (status === 401) return 'Please sign in to continue';
-    if (status >= 500) return 'Something went wrong';
-    return 'Unable to open this page';
+    if (isNotFound) return m.app_error_page_not_found();
+    if (status === 403) return m.app_error_page_forbidden();
+    if (status === 401) return m.app_error_page_sign_in();
+    if (status >= 500) return m.app_error_page_server();
+    return m.app_error_page_other();
   });
 
   let description = $derived.by(() => {
     if (message) return message;
-    if (isNotFound) return "The page you're looking for doesn't exist or may have been moved.";
-    if (status === 403) return 'Your account does not have permission to view this resource.';
-    if (status === 401) return 'Your session may have expired. Sign in again to continue.';
-    if (status >= 500)
-      return "An unexpected error occurred on our end. We've been notified. Please try again in a moment.";
-    return 'Please check the URL or try going back to where you came from.';
+    if (isNotFound) return m.app_error_page_not_found_body();
+    if (status === 403) return m.app_error_page_forbidden_body();
+    if (status === 401) return m.app_error_page_sign_in_body();
+    if (status >= 500) return m.app_error_page_server_body();
+    return m.app_error_page_other_body();
   });
 
-  const quickLinks = [
-    { href: '/', label: 'Dashboard', icon: BarChart3 },
-    { href: '/accounts', label: 'Accounts', icon: Building2 },
-    { href: '/contacts', label: 'Contacts', icon: Users }
-  ];
+  let quickLinks = $derived([
+    { href: '/', label: m.app_error_link_dashboard(), icon: BarChart3 },
+    { href: '/accounts', label: m.app_error_link_accounts(), icon: Building2 },
+    { href: '/contacts', label: m.app_error_link_contacts(), icon: Users }
+  ]);
 
   function goBack() {
     if (typeof history !== 'undefined' && history.length > 1) history.back();
@@ -78,11 +78,11 @@
     <div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
       <Button onclick={() => goto(resolve(''))} class="gap-2">
         <Home class="h-4 w-4" />
-        Go to dashboard
+        {m.app_error_go_dashboard()}
       </Button>
       <Button variant="outline" onclick={goBack} class="gap-2">
         <ArrowLeft class="h-4 w-4" />
-        Go back
+        {m.app_error_go_back()}
       </Button>
     </div>
 
@@ -92,7 +92,7 @@
         <div class="mb-4 flex items-center justify-center gap-2">
           <Compass class="text-muted-foreground h-4 w-4" />
           <span class="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-            Try one of these
+            {m.app_error_try_these()}
           </span>
         </div>
         <div class="flex flex-wrap items-center justify-center gap-2">

@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { tick } from 'svelte';
   import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte';
   import { actionOptions, actionTypes, blankAction, moveItem } from '#lib/v2/automation.js';
@@ -21,7 +22,6 @@
   let addButton = $state();
 
   let limit = $derived(catalogue?.limits?.actions ?? Infinity);
-  const EMPTY = 'Add at least one action.';
 
   /** @param {number} at @param {string} type */
   async function retype(at, type) {
@@ -57,7 +57,7 @@
 </script>
 
 {#if !actions.length && !errors.list}
-  <p class="v2-hint ar-none">{EMPTY}</p>
+  <p class="v2-hint ar-none">{m.app_automation_actions_empty()}</p>
 {/if}
 {#if errors.list}
   <p class="v2-error" role="alert">{errors.list}</p>
@@ -71,7 +71,7 @@
       <select
         id="act-{i}-type"
         class="v2-input ar-type"
-        aria-label="Action {i + 1} type"
+        aria-label={m.app_automation_action_type({ n: i + 1 })}
         value={action.type}
         onchange={(e) => retype(i, e.currentTarget.value)}
         aria-invalid={error ? 'true' : undefined}
@@ -86,7 +86,7 @@
           type="button"
           id="act-{i}-up"
           class="v2-btn ar-btn"
-          aria-label="Move action {i + 1} up"
+          aria-label={m.app_automation_action_up({ n: i + 1 })}
           disabled={i === 0}
           onclick={() => move(i, -1)}
         >
@@ -96,7 +96,7 @@
           type="button"
           id="act-{i}-down"
           class="v2-btn ar-btn"
-          aria-label="Move action {i + 1} down"
+          aria-label={m.app_automation_action_down({ n: i + 1 })}
           disabled={i === actions.length - 1}
           onclick={() => move(i, 1)}
         >
@@ -105,7 +105,7 @@
         <button
           type="button"
           class="v2-btn ar-btn"
-          aria-label="Remove action {i + 1}"
+          aria-label={m.app_automation_action_remove({ n: i + 1 })}
           onclick={() => remove(i)}
         >
           <X />
@@ -132,10 +132,10 @@
     onclick={add}
     disabled={actions.length >= limit}
   >
-    <Plus />Add action
+    <Plus />{m.app_automation_add_action()}
   </button>
   {#if actions.length >= limit}
-    <p class="v2-hint">A rule can have at most {limit} actions.</p>
+    <p class="v2-hint">{m.app_automation_actions_limit({ limit })}</p>
   {/if}
 </div>
 

@@ -12,6 +12,7 @@
  */
 import { fail } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * @param {{ request: Request, cookies: import('@sveltejs/kit').Cookies }} event
@@ -22,7 +23,7 @@ export async function forwardCsvImport({ request, cookies }, path, key) {
   const form = await request.formData();
   const file = form.get('file');
   if (!(file instanceof File) || file.size === 0) {
-    return fail(400, { importError: 'Choose a file.' });
+    return fail(400, { importError: m.app_csv_choose_file() });
   }
   const body = new FormData();
   body.set('file', file, file.name || 'upload.csv');
@@ -41,10 +42,10 @@ export async function forwardCsvImport({ request, cookies }, path, key) {
     return fail(failure.status, {
       importError:
         failure.status === 403
-          ? 'Importing needs an admin, or a member with sales access.'
+          ? m.app_csv_import_forbidden()
           : failure.status === 429
-            ? 'Too many tries in a minute. Wait a moment, then try again.'
-            : data.message || data.header_error || 'Import failed',
+            ? m.app_csv_import_throttled()
+            : data.message || data.header_error || m.app_csv_import_failed(),
       importErrors: Array.isArray(data.errors) ? data.errors : [],
       // A mapped commit with nothing importable answers 400 with the rows it
       // skipped, so the client can still say why.

@@ -6,6 +6,7 @@
  */
 
 import * as env from '$app/env/public';
+import { getLocale } from '#lib/paraglide/runtime.js';
 
 const API_BASE_URL = `${env.PUBLIC_DJANGO_API_URL}/api`;
 
@@ -55,10 +56,12 @@ export async function apiRequest(endpoint, options = {}, locals) {
   // existing caller is unaffected.
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
-  // Build request headers
+  // Build request headers. The page's locale goes along, so API errors read
+  // in the same language as the page around them.
   /** @type {Record<string, string>} */
   const requestHeaders = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    'Accept-Language': getLocale(),
     ...headers
   };
 

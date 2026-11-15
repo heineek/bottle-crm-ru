@@ -14,6 +14,7 @@
  */
 import * as env from '$app/env/public';
 import { moduleOffDetail } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * @param {{ cookies: import('@sveltejs/kit').Cookies, request: Request }} event
@@ -22,7 +23,7 @@ import { moduleOffDetail } from '#lib/server/v2/modules.js';
  */
 export async function forwardCsvExport({ cookies, request }, path, params) {
   const accessToken = cookies.get('jwt_access');
-  if (!accessToken) return new Response('Unauthorized', { status: 401 });
+  if (!accessToken) return new Response(m.app_api_unauthorized(), { status: 401 });
 
   // Every row, not a page of them: the export endpoint ignores paging, and a
   // stray `limit` would only suggest otherwise.
@@ -38,9 +39,12 @@ export async function forwardCsvExport({ cookies, request }, path, params) {
   });
 
   if (!upstream.ok || !upstream.body) {
-    return new Response((await moduleOffDetail(upstream)) ?? `Upstream error: ${upstream.status}`, {
-      status: upstream.status || 502
-    });
+    return new Response(
+      (await moduleOffDetail(upstream)) ?? m.app_api_upstream_error({ status: upstream.status }),
+      {
+        status: upstream.status || 502
+      }
+    );
   }
 
   return new Response(upstream.body, {

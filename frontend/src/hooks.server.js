@@ -17,13 +17,31 @@ import { isOrgAdmin } from '#lib/admin.js';
 import { describeError } from '#lib/server/log-safe.js';
 import { moduleOffError } from '#lib/server/v2/modules.js';
 import { relayHeaders } from '#lib/server/relay.js';
+import { resolveLocale, textDirection } from '#lib/i18n/locale.js';
+import {
+  baseLocale,
+  cookieName,
+  defineCustomServerStrategy,
+  locales
+} from '#lib/paraglide/runtime.js';
+import { paraglideMiddleware } from '#lib/paraglide/server.js';
 
 const API_BASE_URL = `${env.PUBLIC_DJANGO_API_URL}/api`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * @typedef {{ default_currency?: string, currency_symbol?: string, default_country?: string|null, timezone?: string }} OrgSettingsPayload
- * @typedef {{ org_id?: string, org_name?: string, role?: string, is_organization_admin?: boolean, user_id?: string, user_name?: string, user_email?: string, user_profile_pic?: string, exp?: number, iat?: number, org_settings?: OrgSettingsPayload }} JWTPayload
+ * The locale `_handle` decided for each request, read back by Paraglide's
+ * `custom-crm` strategy. Keyed by the Request object, so it dies with it.
+ * @type {WeakMap<Request, string>}
+ */
+const requestLocales = new WeakMap();
+defineCustomServerStrategy('custom-crm', {
+  getLocale: (request) => (request ? requestLocales.get(request) : undefined)
+});
+
+/**
+ * @typedef {{ default_currency?: string, currency_symbol?: string, default_country?: string|null, timezone?: string, default_language?: string }} OrgSettingsPayload
+ * @typedef {{ org_id?: string, org_name?: string, role?: string, is_organization_admin?: boolean, user_id?: string, user_name?: string, user_email?: string, user_profile_pic?: string, language?: string, exp?: number, iat?: number, org_settings?: OrgSettingsPayload }} JWTPayload
  * @typedef {{ id: string, name: string }} OrgInfo
  * @typedef {{ org: OrgInfo, role?: string, is_organization_admin?: boolean }} ProfileInfo
  * @typedef {{ id?: string, organizations?: Array<{ id: string, name: string }> }} UserInfo
@@ -324,6 +342,7 @@ export const handle = sequence(Sentry.sentryHandle(), async function _handle({ e
           // read both from it. Assuming 'USER' here would drop an admin's
           // admin-only nav for the one navigation right after an org switch.
           const newPayload = decodeJwtPayload(switchResult.access_token);
+          if (newPayload) jwtPayload = newPayload;
           /** @type {any} */ (event.locals).profile = {
             org: switchResult.current_org,
             role: newPayload?.role || 'USER',
@@ -392,5 +411,33 @@ export const handle = sequence(Sentry.sentryHandle(), async function _handle({ e
     }
   }
 
-  return resolve(event);
+  const locale = resolveLocale(
+    {
+      userLanguage: jwtPayload?.language,
+      acceptLanguage: event.request.headers.get('accept-language'),
+      orgLanguage: event.locals.org_settings?.default_language
+    },
+    locales,
+    baseLocale
+  );
+  event.locals.locale = locale;
+  requestLocales.set(event.request, locale);
+  // Read by the browser's Paraglide runtime (the `cookie` strategy), so the
+  // hydrated page renders in the language the server chose. Not a preference
+  // store: it is rewritten on every response from the order above.
+  if (event.cookies.get(cookieName) !== locale) {
+    event.cookies.set(cookieName, locale, {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 365
+    });
+  }
+  return paraglideMiddleware(event.request, () =>
+    resolve(event, {
+      transformPageChunk: ({ html }) =>
+        html.replace('%lang%', locale).replace('%dir%', textDirection(locale))
+    })
+  );
 });

@@ -33,15 +33,21 @@ import * as env from '$app/env/private';
  * @returns {Record<string, string>}
  */
 export function relayHeaders(event) {
+  // The visitor's languages, so API errors match the page. Unsigned: it only
+  // picks a translation (see backend/common/locale.py).
+  const acceptLanguage = event.request.headers.get('accept-language');
+  /** @type {Record<string, string>} */
+  const language = acceptLanguage ? { 'Accept-Language': acceptLanguage } : {};
   let address;
   try {
     address = event.getClientAddress();
   } catch {
-    return {};
+    return language;
   }
-  if (!address) return {};
+  if (!address) return language;
   const secret = env.RELAY_SECRET;
   return {
+    ...language,
     'X-Forwarded-For': address,
     ...(secret
       ? {

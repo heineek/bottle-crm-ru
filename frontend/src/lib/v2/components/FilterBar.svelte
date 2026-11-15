@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -82,7 +83,8 @@
   // it, filtering by a colleague would light up "Mine".
   let activeKey = $derived(activePresetKey(page, url, meId));
   let activeLabel = $derived(
-    descriptor.presets.find((/** @type {any} */ p) => p.key === activeKey)?.label ?? 'All'
+    descriptor.presets.find((/** @type {any} */ p) => p.key === activeKey)?.label ??
+      m.app_filter_all()
   );
 
   /**
@@ -154,8 +156,9 @@
     <span class="v2-chip">
       <b>{chip.label}</b>
       {chip.value}
-      <a href={resolve(asInternalPath(chip.href))} aria-label="Remove the {chip.label} filter"
-        ><X size={12} /></a
+      <a
+        href={resolve(asInternalPath(chip.href))}
+        aria-label={m.app_filter_remove_chip({ label: chip.label })}><X size={12} /></a
       >
     </span>
   {/each}
@@ -164,7 +167,7 @@
     <details class="v2-filter-menu">
       <summary class="v2-chip v2-chip-add">
         <Plus size={12} />
-        Filter
+        {m.common_filter()}
       </summary>
       <form class="v2-menu v2-filter-form" method="GET">
         <!-- Params the form does not own (the preset's own, plus paging) would
@@ -209,7 +212,7 @@
                   min="0"
                   name={field.gteKey}
                   value={url.searchParams.get(field.gteKey) ?? ''}
-                  placeholder="Min"
+                  placeholder={m.app_filter_min()}
                 />
                 <input
                   class="v2-input"
@@ -217,17 +220,17 @@
                   min="0"
                   name={field.lteKey}
                   value={url.searchParams.get(field.lteKey) ?? ''}
-                  placeholder="Max"
+                  placeholder={m.app_filter_max()}
                 />
               </span>
             {:else if field.type === 'boolean'}
               <select class="v2-input" name={field.key}>
-                <option value="">Any</option>
+                <option value="">{m.app_filter_any()}</option>
                 <option value="true" selected={url.searchParams.get(field.key) === 'true'}
-                  >Yes</option
+                  >{m.common_yes()}</option
                 >
                 <option value="false" selected={url.searchParams.get(field.key) === 'false'}
-                  >No</option
+                  >{m.common_no()}</option
                 >
               </select>
             {:else if field.type === 'text'}
@@ -236,7 +239,7 @@
                 type="text"
                 name={field.key}
                 value={url.searchParams.get(field.key) ?? ''}
-                placeholder="Any"
+                placeholder={m.app_filter_any_text()}
               />
             {:else if field.multi && url.searchParams.getAll(field.key).length > 1}
               <!-- Several values (a saved view, or the phone's multi-select)
@@ -246,11 +249,13 @@
                 <input type="hidden" name={field.key} {value} />
               {/each}
               <span class="v2-sub"
-                >{url.searchParams.getAll(field.key).length} selected. Remove the chip to choose again.</span
+                >{m.app_filter_multi_selected({
+                  count: url.searchParams.getAll(field.key).length
+                })}</span
               >
             {:else}
               <select class="v2-input" name={field.key}>
-                <option value="">Any</option>
+                <option value="">{m.app_filter_any()}</option>
                 {#each optionsFor(field) as option (option.id)}
                   <option
                     value={option.id}
@@ -265,8 +270,10 @@
         {/each}
 
         <div class="v2-filter-actions">
-          <button class="v2-btn v2-btn-primary v2-btn-sm" type="submit">Apply</button>
-          <a class="v2-btn v2-btn-sm" href={resolve(asInternalPath(url.pathname))}>Clear all</a>
+          <button class="v2-btn v2-btn-primary v2-btn-sm" type="submit">{m.common_apply()}</button>
+          <a class="v2-btn v2-btn-sm" href={resolve(asInternalPath(url.pathname))}
+            >{m.app_filter_clear_all()}</a
+          >
         </div>
       </form>
     </details>

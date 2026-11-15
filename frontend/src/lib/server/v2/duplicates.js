@@ -15,12 +15,13 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The modules that have duplicates, the query fields each one's create form
  * may send, and what the compare page shows side by side.
  *
- * @type {Record<string, { singular: string, record: string, query: string[], compare: Array<[string, (o: any) => any]> }>}
+ * @type {Record<string, { singular: string, record: string, query: string[], compare: Array<[() => string, (o: any) => any]> }>}
  */
 export const DUPLICATE_MODULES = {
   leads: {
@@ -28,13 +29,13 @@ export const DUPLICATE_MODULES = {
     record: 'lead_obj',
     query: ['email', 'phone', 'first_name', 'last_name', 'company_name'],
     compare: [
-      ['Name', (o) => personName(o)],
-      ['Company', (o) => o.company_name],
-      ['Email', (o) => o.email],
-      ['Phone', (o) => o.phone],
-      ['Website', (o) => o.website],
-      ['Status', (o) => o.status],
-      ['Created', (o) => o.created_at?.slice(0, 10)]
+      [m.common_name, (o) => personName(o)],
+      [m.app_srv_dup_company, (o) => o.company_name],
+      [m.common_email, (o) => o.email],
+      [m.common_phone, (o) => o.phone],
+      [m.app_srv_dup_website, (o) => o.website],
+      [m.common_status, (o) => o.status],
+      [m.common_created, (o) => o.created_at?.slice(0, 10)]
     ]
   },
   contacts: {
@@ -42,13 +43,13 @@ export const DUPLICATE_MODULES = {
     record: 'contact_obj',
     query: ['email', 'phone', 'first_name', 'last_name'],
     compare: [
-      ['Name', (o) => personName(o)],
-      ['Job title', (o) => o.title],
-      ['Company', (o) => o.organization],
-      ['Email', (o) => o.email],
-      ['Phone', (o) => o.phone],
-      ['City', (o) => o.city],
-      ['Created', (o) => o.created_at?.slice(0, 10)]
+      [m.common_name, (o) => personName(o)],
+      [m.app_srv_dup_job_title, (o) => o.title],
+      [m.app_srv_dup_company, (o) => o.organization],
+      [m.common_email, (o) => o.email],
+      [m.common_phone, (o) => o.phone],
+      [m.app_srv_dup_city, (o) => o.city],
+      [m.common_created, (o) => o.created_at?.slice(0, 10)]
     ]
   },
   accounts: {
@@ -56,15 +57,29 @@ export const DUPLICATE_MODULES = {
     record: 'account_obj',
     query: ['name', 'email', 'phone', 'website'],
     compare: [
-      ['Name', (o) => o.name],
-      ['Website', (o) => o.website],
-      ['Email', (o) => o.email],
-      ['Phone', (o) => o.phone],
-      ['Industry', (o) => o.industry],
-      ['City', (o) => o.city],
-      ['Created', (o) => o.created_at?.slice(0, 10)]
+      [m.common_name, (o) => o.name],
+      [m.app_srv_dup_website, (o) => o.website],
+      [m.common_email, (o) => o.email],
+      [m.common_phone, (o) => o.phone],
+      [m.app_srv_dup_industry, (o) => o.industry],
+      [m.app_srv_dup_city, (o) => o.city],
+      [m.common_created, (o) => o.created_at?.slice(0, 10)]
     ]
   }
+};
+
+/** @type {Record<string, () => string>} */
+const PICK_OTHER = {
+  lead: m.app_srv_dup_pick_lead,
+  contact: m.app_srv_dup_pick_contact,
+  account: m.app_srv_dup_pick_account
+};
+
+/** @type {Record<string, () => string>} */
+const NO_ACCESS = {
+  lead: m.app_srv_dup_no_access_lead,
+  contact: m.app_srv_dup_no_access_contact,
+  account: m.app_srv_dup_no_access_account
 };
 
 /** @param {any} o */
@@ -75,7 +90,7 @@ function personName(o) {
 /** @param {string} module */
 function spec(module) {
   // `Object.hasOwn`, so `__proto__` or `constructor` is not a module.
-  if (!Object.hasOwn(DUPLICATE_MODULES, module)) error(404, 'Not found');
+  if (!Object.hasOwn(DUPLICATE_MODULES, module)) error(404, m.app_srv_dup_not_found());
   return DUPLICATE_MODULES[module];
 }
 
@@ -92,7 +107,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * @returns {string}
  */
 function recordId(value) {
-  if (typeof value !== 'string' || !UUID.test(value)) error(404, 'Not found');
+  if (typeof value !== 'string' || !UUID.test(value)) error(404, m.app_srv_dup_not_found());
   return value;
 }
 
@@ -181,7 +196,7 @@ export async function recordDuplicates({ cookies }, module, id) {
 export async function getMergePair({ cookies }, module, id, otherId) {
   const { singular, record, compare } = spec(module);
   recordId(id);
-  if (!otherId || otherId === id) error(404, `Pick the ${singular} to compare this one with.`);
+  if (!otherId || otherId === id) error(404, PICK_OTHER[singular]());
   recordId(otherId);
 
   const load = async (/** @type {string} */ pk) => {
@@ -197,11 +212,11 @@ export async function getMergePair({ cookies }, module, id, otherId) {
         id: obj.id,
         name: record === 'account_obj' ? obj.name : personName(obj) || obj.email || singular,
         can_delete: Boolean(dups?.can_delete),
-        fields: compare.map(([label, read]) => ({ label, value: read(obj) || '' }))
+        fields: compare.map(([label, read]) => ({ label: label(), value: read(obj) || '' }))
       };
     } catch (/** @type {any} */ err) {
       if (err?.status === 404) {
-        error(404, `That ${singular} does not exist, or you do not have access to it.`);
+        error(404, NO_ACCESS[singular]());
       }
       throw err;
     }
@@ -257,20 +272,20 @@ export function mergeRoute(module) {
         const keep = form.get('keep')?.toString() ?? '';
         const pair = [params.id, other];
         if (!UUID.test(params.id) || !UUID.test(other) || other === params.id) {
-          return fail(404, { error: 'Not found' });
+          return fail(404, { error: m.app_srv_dup_not_found() });
         }
         if (!pair.includes(keep)) {
-          return fail(400, { error: 'Choose which record to keep.' });
+          return fail(400, { error: m.app_srv_dup_choose_keeper() });
         }
         if (form.get('confirm') !== 'on') {
-          return fail(400, { error: 'Tick the box to confirm the other record will be deleted.' });
+          return fail(400, { error: m.app_srv_dup_confirm_delete() });
         }
         const loser = keep === params.id ? other : params.id;
         try {
           await mergeRecords({ cookies }, module, keep, loser);
         } catch (/** @type {any} */ err) {
           return fail(err?.status === 404 || err?.status === 403 ? err.status : 400, {
-            error: readableError(err, 'Could not merge these records.')
+            error: readableError(err, m.app_srv_dup_merge_failed())
           });
         }
         redirect(303, `/${module}/${keep}`);
