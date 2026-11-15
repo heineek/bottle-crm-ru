@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext, pgettext_lazy
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import Account
@@ -43,9 +44,9 @@ class BoardMember(BaseModel):
     """Board membership with roles"""
 
     ROLE_CHOICES = (
-        ("owner", "Owner"),
-        ("admin", "Admin"),
-        ("member", "Member"),
+        ("owner", _("Owner")),
+        ("admin", _("Admin")),
+        ("member", _("Member")),
     )
 
     board = models.ForeignKey(
@@ -116,10 +117,10 @@ class BoardTask(BaseModel):
     """Task/Card in a board column"""
 
     PRIORITY_CHOICES = (
-        ("low", "Low"),
-        ("medium", "Medium"),
-        ("high", "High"),
-        ("urgent", "Urgent"),
+        ("low", _("Low")),
+        ("medium", _("Medium")),
+        ("high", _("High")),
+        ("urgent", _("Urgent")),
     )
 
     column = models.ForeignKey(
@@ -242,9 +243,9 @@ class TaskStage(BaseModel):
     """
 
     STAGE_TYPE_CHOICES = [
-        ("open", "Open"),  # New tasks
-        ("in_progress", "In Progress"),  # Active work
-        ("completed", "Completed"),  # Done
+        ("open", pgettext_lazy("task stage type", "Open")),  # New tasks
+        ("in_progress", pgettext_lazy("task stage type", "In Progress")),  # Active work
+        ("completed", pgettext_lazy("task stage type", "Completed")),  # Done
     ]
 
     pipeline = models.ForeignKey(
@@ -298,12 +299,12 @@ class TaskStage(BaseModel):
 
 class Task(AssignableMixin, BaseModel):
     STATUS_CHOICES = (
-        ("New", "New"),
-        ("In Progress", "In Progress"),
-        ("Completed", "Completed"),
+        ("New", pgettext_lazy("task status", "New")),
+        ("In Progress", pgettext_lazy("task status", "In Progress")),
+        ("Completed", pgettext_lazy("task status", "Completed")),
     )
 
-    PRIORITY_CHOICES = (("Low", "Low"), ("Medium", "Medium"), ("High", "High"))
+    PRIORITY_CHOICES = (("Low", _("Low")), ("Medium", _("Medium")), ("High", _("High")))
 
     title = models.CharField(_("title"), max_length=200)
     status = models.CharField(_("status"), max_length=50, choices=STATUS_CHOICES)
@@ -395,11 +396,12 @@ class Task(AssignableMixin, BaseModel):
         if len(set_parents) > 1:
             raise ValidationError(
                 {
-                    "account": _(
+                    "account": gettext(
                         "A task can only be linked to one parent entity "
                         "(Account, Opportunity, Case, or Lead). "
-                        f"Currently linked to: {', '.join(set_parents)}"
+                        "Currently linked to: %(parents)s"
                     )
+                    % {"parents": ", ".join(set_parents)}
                 }
             )
 

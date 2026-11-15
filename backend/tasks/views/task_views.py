@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.pagination import LimitOffsetPagination
@@ -267,7 +268,7 @@ class TaskListView(APIView, LimitOffsetPagination):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            {"error": False, "message": "Task Created Successfully"},
+            {"error": False, "message": _("Task Created Successfully")},
             status=status.HTTP_200_OK,
         )
 
@@ -539,7 +540,7 @@ class TaskDetailView(APIView):
             # instead of a silent `None`. A form that says "link this to Acme"
             # and gets a 200 back should not have unlinked it.
             return Response(
-                {"error": False, "message": "Task updated Successfully"},
+                {"error": False, "message": _("Task updated Successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -577,7 +578,7 @@ class TaskDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            {"error": False, "message": "Task updated Successfully"},
+            {"error": False, "message": _("Task updated Successfully")},
             status=status.HTTP_200_OK,
         )
 
@@ -601,7 +602,7 @@ class TaskDetailView(APIView):
         assert_task_delete_access(request.profile, self.object)
         self.object.delete()
         return Response(
-            {"error": False, "message": "Task deleted Successfully"},
+            {"error": False, "message": _("Task deleted Successfully")},
             status=status.HTTP_200_OK,
         )
 
@@ -653,7 +654,7 @@ class TaskCommentView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    {"error": False, "message": "Comment Submitted"},
+                    {"error": False, "message": _("Comment Submitted")},
                     status=status.HTTP_200_OK,
                 )
             return Response(
@@ -664,7 +665,7 @@ class TaskCommentView(APIView):
         return Response(
             {
                 "error": True,
-                "errors": "You don't have Permission to perform this action",
+                "errors": _("You don't have Permission to perform this action"),
             },
             status=status.HTTP_403_FORBIDDEN,
         )
@@ -693,7 +694,7 @@ class TaskCommentView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    {"error": False, "message": "Comment Updated"},
+                    {"error": False, "message": _("Comment Updated")},
                     status=status.HTTP_200_OK,
                 )
             return Response(
@@ -703,7 +704,7 @@ class TaskCommentView(APIView):
         return Response(
             {
                 "error": True,
-                "errors": "You don't have Permission to perform this action",
+                "errors": _("You don't have Permission to perform this action"),
             },
             status=status.HTTP_403_FORBIDDEN,
         )
@@ -726,13 +727,13 @@ class TaskCommentView(APIView):
         if is_org_admin(request.profile) or request.profile == self.object.commented_by:
             self.object.delete()
             return Response(
-                {"error": False, "message": "Comment Deleted Successfully"},
+                {"error": False, "message": _("Comment Deleted Successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
             {
                 "error": True,
-                "errors": "You don't have Permission to perform this action",
+                "errors": _("You don't have Permission to perform this action"),
             },
             status=status.HTTP_403_FORBIDDEN,
         )
@@ -778,12 +779,12 @@ class TaskAttachmentView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have Permission to perform this action",
+                    "errors": _("You don't have Permission to perform this action"),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
         self.object.delete()
         return Response(
-            {"error": False, "message": "Attachment Deleted Successfully"},
+            {"error": False, "message": _("Attachment Deleted Successfully")},
             status=status.HTTP_200_OK,
         )
