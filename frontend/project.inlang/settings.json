@@ -11,7 +11,8 @@
   "plugin.inlang.messageFormat": {
     "pathPattern": [
       "./messages/{locale}.json",
-      "./messages/app/{locale}.json"
+      "./messages/app/{locale}.json",
+      "./messages/profile/{locale}.json"
     ]
   }
 }
