@@ -4310,6 +4310,50 @@
   "leadsCurrencyReal": "Real",
   "leadsCurrencyPeso": "Peso",
   "leadsCurrencyRand": "Rand",
+  "solutionsListTitle": "Solutions",
+  "solutionsListSearchHint": "Search the knowledge base…",
+  "solutionsListFilterAll": "All",
+  "solutionsListPublishedOnly": "Published only",
+  "solutionsListEmptyTitle": "No solutions yet",
+  "solutionsListEmptyBody": "Reusable answers for common issues live here.",
+  "solutionsListCreate": "Create solution",
+  "solutionsListPublishedBadge": "Published",
+  "solutionsListLinkedCount": "{count, plural, other{{count} linked}}",
+  "@solutionsListLinkedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "solutionsDetailTitleRequired": "Title is required",
+  "solutionsDetailCreated": "Solution created",
+  "solutionsDetailUpdated": "Solution updated",
+  "solutionsDetailSaveFailed": "Failed to save",
+  "solutionsDetailPublishFailed": "Failed",
+  "solutionsDetailDeleteTitle": "Delete solution?",
+  "solutionsDetailDeleteBody": "Permanently delete \"{title}\"?",
+  "@solutionsDetailDeleteBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "solutionsDetailDeleteFailed": "Delete failed",
+  "solutionsDetailNewTitle": "New solution",
+  "solutionsDetailTitle": "Solution",
+  "solutionsDetailTitleField": "Title",
+  "solutionsDetailStatusHeading": "STATUS",
+  "solutionsDetailTagsHeading": "TAGS",
+  "solutionsDetailTagsHelp": "Internal filing. Customers never see these names, but articles sharing one are shown to each other in the portal.",
+  "solutionsDetailPublished": "Published",
+  "solutionsDetailNotPublished": "Not published",
+  "solutionsDetailPublishedHint": "Live to customers, and suggested to agents.",
+  "solutionsDetailNotPublishedHint": "Only approved solutions can be published.",
+  "solutionsDetailUnpublish": "Unpublish",
+  "solutionsDetailPublish": "Publish",
+  "solutionsDetailSaveChanges": "Save changes",
   "tasksToday": "Today",
   "tasksTomorrow": "Tomorrow",
   "tasksYesterday": "Yesterday",
