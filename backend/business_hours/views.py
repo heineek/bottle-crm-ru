@@ -15,6 +15,7 @@ Routes (all under /api/business-hours/):
 from datetime import time
 
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -74,7 +75,7 @@ class BusinessCalendarView(APIView):
     def put(self, request, pk=None, *args, **kwargs):
         if not is_org_admin(request.profile):
             return Response(
-                {"error": "Only admins can update business hours."},
+                {"error": _("Only admins can update business hours.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if pk is None:
@@ -97,7 +98,7 @@ class BusinessHolidayListView(APIView):
     def post(self, request, pk, *args, **kwargs):
         if not is_org_admin(request.profile):
             return Response(
-                {"error": "Only admins can update business hours."},
+                {"error": _("Only admins can update business hours.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         cal = get_object_or_404(BusinessCalendar, pk=pk, org=request.profile.org)
@@ -131,7 +132,7 @@ class BusinessHolidayDetailView(APIView):
     def delete(self, request, pk, hid, *args, **kwargs):
         if not is_org_admin(request.profile):
             return Response(
-                {"error": "Only admins can update business hours."},
+                {"error": _("Only admins can update business hours.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         holiday = get_object_or_404(
