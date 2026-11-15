@@ -1,0 +1,102 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "team_err_email": "Enter an email address.",
+  "team_err_role": "Pick a valid role.",
+  "team_err_invite_forbidden": "Only an admin can invite people.",
+  "team_err_invite_failed": "Could not send that invite.",
+  "team_err_which_role": "Which person, and to what role?",
+  "team_err_role_forbidden": "That is not yours to change.",
+  "team_err_role_failed": "Could not change that role.",
+  "team_err_which_status": "Which person, and active or not?",
+  "team_err_status_forbidden": "Only an admin can change who is active.",
+  "team_err_status_failed": "Could not change that status.",
+  "team_unnamed": "Unnamed",
+  "team_title": "Team and access",
+  "team_forbidden_label": "Admins only",
+  "team_forbidden_text": "Managing people, roles and access is limited to organization admins. Ask an admin on your team if you need someone added or a role changed.",
+  "team_sub_people": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} people",
+        "countPlural=other": "{shown} people"
+      }
+    }
+  ],
+  "team_sub_admins": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} admins",
+        "countPlural=other": "{shown} admins"
+      }
+    }
+  ],
+  "team_invite_button": "Invite",
+  "team_stat_active": "Active people",
+  "team_stat_admins": "Admins",
+  "team_stat_admins_detail": "Can change roles and org settings",
+  "team_stat_never": "Never signed in",
+  "team_stat_never_some": "Invited, seat unclaimed",
+  "team_stat_never_none": "Everyone has signed in",
+  "team_stat_deactivated": "Deactivated",
+  "team_invite_label": "Invite by email",
+  "team_invite_placeholder": "name@company.com",
+  "team_role_label": "Role",
+  "team_role_member": "Member",
+  "team_role_admin": "Admin",
+  "team_send_invite": "Send invite",
+  "team_invited": "{email} is a member now. They show below as “never” signed in until they log in with that email.",
+  "team_error_label": "That did not work",
+  "team_loose_end_label": "Loose end",
+  "team_loose_end_text": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} API token belongs to a deactivated account. Deactivating already stops them at login, but they are not revoked. Reactivating the account would bring them back. Revoke to close that off.",
+        "countPlural=other": "{countShown} API tokens belong to a deactivated account. Deactivating already stops them at login, but they are not revoked. Reactivating the account would bring them back. Revoke to close that off."
+      }
+    }
+  ],
+  "team_review_tokens": "Review tokens",
+  "team_people": "People",
+  "team_col_person": "Person",
+  "team_col_role": "Role",
+  "team_col_teams": "Teams",
+  "team_col_tokens": "Tokens",
+  "team_col_last_login": "Last signed in",
+  "team_col_manage": "Manage",
+  "team_you_suffix": ", you",
+  "team_deactivated": "Deactivated",
+  "team_never": "never",
+  "team_last_admin_hint": "The org must keep at least one admin",
+  "team_make_member": "Make member",
+  "team_make_admin": "Make admin",
+  "team_last_active_admin_hint": "The org must keep at least one active admin",
+  "team_deactivate": "Deactivate",
+  "team_reactivate": "Reactivate",
+  "team_teams": "Teams",
+  "team_member_count": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} member",
+        "countPlural=other": "{countShown} members"
+      }
+    }
+  ],
+  "team_no_teams": "No teams yet.",
+  "team_footer": "Roles are Admin and Member, the only two the API recognises. Admins can invite people, change roles and edit org settings; the server refuses to let anyone change their own role or deactivate the last admin. Editing team membership is not available here yet."
+}

@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { listTeam, inviteUser, setRole, setStatus, ROLES } from '#lib/server/v2/team.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Team and access.
@@ -27,8 +28,8 @@ export const actions = {
     const form = await request.formData();
     const email = form.get('email')?.toString().trim();
     const role = form.get('role')?.toString() || 'USER';
-    if (!email) return fail(400, { invite: { error: 'Enter an email address.' } });
-    if (!ROLES.includes(role)) return fail(400, { invite: { error: 'Pick a valid role.' } });
+    if (!email) return fail(400, { invite: { error: m.team_err_email() } });
+    if (!ROLES.includes(role)) return fail(400, { invite: { error: m.team_err_role() } });
 
     try {
       await inviteUser({ cookies }, { email, role });
@@ -37,8 +38,8 @@ export const actions = {
         invite: {
           error:
             err?.status === 403
-              ? 'Only an admin can invite people.'
-              : readableError(err, 'Could not send that invite.')
+              ? m.team_err_invite_forbidden()
+              : readableError(err, m.team_err_invite_failed())
         }
       });
     }
@@ -56,7 +57,7 @@ export const actions = {
     const userId = form.get('userId')?.toString();
     const role = form.get('role')?.toString();
     if (!userId || !role || !ROLES.includes(role)) {
-      return fail(400, { error: 'Which person, and to what role?' });
+      return fail(400, { error: m.team_err_which_role() });
     }
     try {
       await setRole({ cookies }, userId, role);
@@ -64,8 +65,8 @@ export const actions = {
       return fail(err?.status === 403 ? 403 : 400, {
         error:
           err?.status === 403
-            ? 'That is not yours to change.'
-            : readableError(err, 'Could not change that role.')
+            ? m.team_err_role_forbidden()
+            : readableError(err, m.team_err_role_failed())
       });
     }
     return { roleChanged: userId };
@@ -80,7 +81,7 @@ export const actions = {
     const userId = form.get('userId')?.toString();
     const status = form.get('status')?.toString();
     if (!userId || (status !== 'Active' && status !== 'Inactive')) {
-      return fail(400, { error: 'Which person, and active or not?' });
+      return fail(400, { error: m.team_err_which_status() });
     }
     try {
       await setStatus({ cookies }, userId, status);
@@ -88,8 +89,8 @@ export const actions = {
       return fail(err?.status === 403 ? 403 : 400, {
         error:
           err?.status === 403
-            ? 'Only an admin can change who is active.'
-            : readableError(err, 'Could not change that status.')
+            ? m.team_err_status_forbidden()
+            : readableError(err, m.team_err_status_failed())
       });
     }
     return { statusChanged: userId };
