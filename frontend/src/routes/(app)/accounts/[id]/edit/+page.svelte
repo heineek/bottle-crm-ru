@@ -25,6 +25,8 @@
   import { enhance } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form: result } = $props();
@@ -39,25 +41,25 @@
   let errors = $derived.by(() => {
     /** @type {Record<string, string>} */
     const e = {};
-    if (!form.name.trim()) e.name = 'Give the account the name you would search for.';
+    if (!form.name.trim()) e.name = m.accounts_form_error_name();
 
     if (form.annual_revenue !== '') {
       const n = Number(form.annual_revenue);
-      if (!Number.isFinite(n)) e.annual_revenue = 'Annual revenue has to be a number.';
+      if (!Number.isFinite(n)) e.annual_revenue = m.accounts_form_error_revenue_number();
       // Mirrors the `account_revenue_non_negative` check constraint. Until
       // recently a negative value reached the database and came back as a 500
       // naming no field at all.
-      else if (n < 0) e.annual_revenue = 'Annual revenue cannot be negative.';
+      else if (n < 0) e.annual_revenue = m.accounts_form_error_revenue_negative();
     }
 
     if (form.number_of_employees !== '') {
       const n = Number(form.number_of_employees);
-      if (!Number.isInteger(n)) e.number_of_employees = 'Headcount is a whole number.';
-      else if (n < 0) e.number_of_employees = 'Headcount cannot be negative.';
+      if (!Number.isInteger(n)) e.number_of_employees = m.accounts_form_error_headcount_whole();
+      else if (n < 0) e.number_of_employees = m.accounts_form_error_headcount_negative();
     }
 
     if (form.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email))
-      e.email = 'That does not look like an email address.';
+      e.email = m.accounts_form_error_email();
 
     // The exact regex from `flexible_phone_validator` in
     // `common/validators.py`, which Account, Contact and Lead all use.
@@ -65,7 +67,7 @@
     // "x123" extension rejects the entire save without naming a field: see
     // the same guard on the leads form.
     if (form.phone && !/^[\d\s\-()+.]{7,25}$/.test(form.phone))
-      e.phone = '7 to 25 characters: digits, spaces, brackets, dots, dashes. No extensions.';
+      e.phone = m.accounts_form_error_phone();
 
     return e;
   });
@@ -98,30 +100,27 @@
 
   let untouchedRelations = $derived(
     [
-      server.contact_count &&
-        `${server.contact_count} contact${server.contact_count === 1 ? '' : 's'}`,
-      server.team_count && `${server.team_count} team${server.team_count === 1 ? '' : 's'}`,
-      server.tag_count && `${server.tag_count} tag${server.tag_count === 1 ? '' : 's'}`
+      server.contact_count && m.accounts_edit_rel_contacts({ count: server.contact_count }),
+      server.team_count && m.accounts_edit_rel_teams({ count: server.team_count }),
+      server.tag_count && m.accounts_edit_rel_tags({ count: server.tag_count })
     ].filter(Boolean)
   );
 </script>
 
-<PageHeader title="Edit {account.name}" center>
+<PageHeader title={m.accounts_edit_title({ name: account.name })} center>
   {#snippet crumb()}
-    <a href={resolve('accounts')}>Accounts</a>
+    <a href={resolve('accounts')}>{m.accounts_list_title()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`accounts/${account.id}`)}>{account.name}</a>
   {/snippet}
   {#snippet sub()}
     {[
       account.industry,
-      server.deal_count ? `${server.deal_count} deal${server.deal_count === 1 ? '' : 's'}` : null,
-      server.invoice_count
-        ? `${server.invoice_count} invoice${server.invoice_count === 1 ? '' : 's'}`
-        : null
+      server.deal_count ? m.accounts_edit_sub_deals({ count: server.deal_count }) : null,
+      server.invoice_count ? m.accounts_edit_sub_invoices({ count: server.invoice_count }) : null
     ]
       .filter(Boolean)
-      .join(' · ') || 'No related records yet'}
+      .join(' · ') || m.accounts_edit_sub_none()}
   {/snippet}
 </PageHeader>
 
@@ -130,10 +129,12 @@
     {#if saved}
       <div class="v2-next" style="margin-bottom:18px" role="status">
         <div class="v2-next-body">
-          <div class="v2-next-text">Saved.</div>
-          <div class="v2-sub" style="margin-top:3px">“{account.name}” has been updated.</div>
+          <div class="v2-next-text">{m.accounts_edit_saved()}</div>
+          <div class="v2-sub" style="margin-top:3px">
+            {m.accounts_edit_saved_body({ name: account.name })}
+          </div>
         </div>
-        <a class="v2-btn" href={resolve(`accounts/${account.id}`)}>Back to the account</a>
+        <a class="v2-btn" href={resolve(`accounts/${account.id}`)}>{m.accounts_edit_back()}</a>
       </div>
     {/if}
 
@@ -145,7 +146,7 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this change</div>
+          <div style="font-weight:600">{m.accounts_edit_server_refused()}</div>
           <div class="v2-sub" style="margin-top:2px">{result.error}</div>
         </div>
       </div>
@@ -160,19 +161,15 @@
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
           <div style="font-weight:600">
-            {Object.keys(errors).length} field{Object.keys(errors).length === 1 ? '' : 's'} still need{Object.keys(
-              errors
-            ).length === 1
-              ? 's'
-              : ''} you
+            {m.accounts_edit_fields_need_you({ count: Object.keys(errors).length })}
           </div>
-          <div class="v2-sub" style="margin-top:2px">Nothing has been saved.</div>
+          <div class="v2-sub" style="margin-top:2px">{m.accounts_edit_nothing_saved()}</div>
         </div>
       </div>
     {/if}
 
     <div class="v2-field">
-      <label for="f-name">Account name</label>
+      <label for="f-name">{m.accounts_form_name_label()}</label>
       <input
         id="f-name"
         name="name"
@@ -184,37 +181,38 @@
       {#if show('name')}
         <p class="v2-error">{errors.name}</p>
       {:else}
-        <p class="v2-hint">Has to be unique in this organisation, ignoring capitals.</p>
+        <p class="v2-hint">{m.accounts_form_name_hint()}</p>
       {/if}
     </div>
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-industry">Industry</label>
+        <label for="f-industry">{m.accounts_form_industry_label()}</label>
         <select id="f-industry" name="industry" class="v2-input" bind:value={form.industry}>
-          <option value="">Not recorded</option>
+          <option value="">{m.accounts_form_not_recorded()}</option>
           {#each data.industries as i (i.value)}
             <option value={i.value}>{i.label}</option>
           {/each}
         </select>
       </div>
       <div class="v2-field">
-        <label for="f-owner">Owner</label>
+        <label for="f-owner">{m.common_owner()}</label>
         <!-- What the select was rendered with. The action compares against it
              so an untouched owner is not sent at all; `assigned_to` is a
              many-to-many and this select is single, so sending it always would
              cut a two-person account down to one on every save. -->
         <input type="hidden" name="assigned_to_original" value={data.form.assigned_to} />
         <select id="f-owner" name="assigned_to" class="v2-input" bind:value={form.assigned_to}>
-          <option value="">Nobody</option>
+          <option value="">{m.accounts_form_owner_nobody()}</option>
           {#each data.owners as o (o.id)}
             <option value={o.id}>{o.name}</option>
           {/each}
         </select>
         {#if server.owner_count > 1}
           <p class="v2-hint">
-            <span class="v2-num">{server.owner_count}</span> people are on this account. This select shows
-            the first; changing it replaces all of them, and leaving it alone keeps them.
+            {#each messageParts(m.accounts_edit_owner_many_hint( { count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+                  class="v2-num">{server.owner_count}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
       </div>
@@ -222,7 +220,7 @@
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-email">Email</label>
+        <label for="f-email">{m.common_email()}</label>
         <input
           id="f-email"
           name="email"
@@ -235,7 +233,7 @@
         {#if show('email')}<p class="v2-error">{errors.email}</p>{/if}
       </div>
       <div class="v2-field">
-        <label for="f-phone">Phone</label>
+        <label for="f-phone">{m.common_phone()}</label>
         <input
           id="f-phone"
           name="phone"
@@ -249,13 +247,13 @@
     </div>
 
     <div class="v2-field">
-      <label for="f-website">Website</label>
+      <label for="f-website">{m.accounts_form_website_label()}</label>
       <input id="f-website" name="website" class="v2-input" type="url" bind:value={form.website} />
     </div>
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-staff">Headcount</label>
+        <label for="f-staff">{m.accounts_form_headcount_label()}</label>
         <input
           id="f-staff"
           name="number_of_employees"
@@ -269,7 +267,7 @@
         {#if show('number_of_employees')}<p class="v2-error">{errors.number_of_employees}</p>{/if}
       </div>
       <div class="v2-field">
-        <label for="f-revenue">Annual revenue</label>
+        <label for="f-revenue">{m.accounts_form_revenue_label()}</label>
         <input
           id="f-revenue"
           name="annual_revenue"
@@ -284,37 +282,36 @@
           <p class="v2-error">{errors.annual_revenue}</p>
         {:else}
           <p class="v2-hint">
-            What this company turns over. Not what you have sold them. That is Revenue won, and it
-            is counted from the deals.
+            {m.accounts_edit_revenue_hint()}
           </p>
         {/if}
       </div>
     </div>
 
     <div class="v2-field">
-      <label for="f-address">Address</label>
+      <label for="f-address">{m.accounts_edit_address_label()}</label>
       <input id="f-address" name="address_line" class="v2-input" bind:value={form.address_line} />
     </div>
 
     <div class="triple">
       <div class="v2-field">
-        <label for="f-city">City</label>
+        <label for="f-city">{m.accounts_form_city_label()}</label>
         <input id="f-city" name="city" class="v2-input" bind:value={form.city} />
       </div>
       <div class="v2-field">
-        <label for="f-state">State</label>
+        <label for="f-state">{m.accounts_edit_state_label()}</label>
         <input id="f-state" name="state" class="v2-input" bind:value={form.state} />
       </div>
       <div class="v2-field">
-        <label for="f-postcode">Postcode</label>
+        <label for="f-postcode">{m.accounts_edit_postcode_label()}</label>
         <input id="f-postcode" name="postcode" class="v2-input" bind:value={form.postcode} />
       </div>
     </div>
 
     <div class="v2-field">
-      <label for="f-country">Country</label>
+      <label for="f-country">{m.accounts_form_country_label()}</label>
       <select id="f-country" name="country" class="v2-input" bind:value={form.country}>
-        <option value="">Not recorded</option>
+        <option value="">{m.accounts_form_not_recorded()}</option>
         {#each data.countries as c (c.value)}
           <option value={c.value}>{c.label}</option>
         {/each}
@@ -322,7 +319,7 @@
     </div>
 
     <div class="v2-field">
-      <label for="f-notes">Notes</label>
+      <label for="f-notes">{m.common_notes()}</label>
       <textarea
         id="f-notes"
         name="description"
@@ -333,14 +330,13 @@
 
     {#if untouchedRelations.length}
       <p class="v2-hint" style="margin-bottom:14px">
-        This form does not touch the {untouchedRelations.join(', ')} on this account. They are edited
-        where they live.
+        {m.accounts_edit_untouched({ list: untouchedRelations.join(', ') })}
       </p>
     {/if}
 
     <div class="actions">
-      <button class="v2-btn v2-btn-primary" type="submit">Save changes</button>
-      <a class="v2-btn" href={resolve(`accounts/${account.id}`)}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit">{m.accounts_edit_submit()}</button>
+      <a class="v2-btn" href={resolve(`accounts/${account.id}`)}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>
