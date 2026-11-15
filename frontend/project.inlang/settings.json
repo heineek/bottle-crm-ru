@@ -20,7 +20,8 @@
       "./messages/leads/{locale}.json",
       "./messages/contacts/{locale}.json",
       "./messages/accounts/{locale}.json",
-      "./messages/pipeline/{locale}.json"
+      "./messages/pipeline/{locale}.json",
+      "./messages/goals/{locale}.json"
     ]
   }
 }

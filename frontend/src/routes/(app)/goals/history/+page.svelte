@@ -21,6 +21,8 @@
   import { money, count, shortDate } from '#lib/v2/format.js';
   import { GOAL_TYPE_LABEL, PERIOD_TYPE_LABEL } from '#lib/v2/enums.js';
   import { History } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any }} */
   let { data } = $props();
@@ -49,14 +51,17 @@
 
   /** The owner of a goal, in the words the list page uses. */
   const owner = (g) =>
-    g.assigned_to ? g.assigned_to.name : g.team ? `${g.team.name} (team)` : 'Whole org';
+    g.assigned_to
+      ? g.assigned_to.name
+      : g.team
+        ? m.goals_owner_team({ team: g.team.name })
+        : m.goals_owner_whole_org();
 </script>
 
-<PageHeader title="Goal history">
-  {#snippet crumb()}<a href={resolve('goals')}>Goals</a> ›{/snippet}
+<PageHeader title={m.goals_history_title()}>
+  {#snippet crumb()}<a href={resolve('goals')}>{m.goals_title()}</a> ›{/snippet}
   {#snippet sub()}
-    Finished periods, newest first. A closed period is settled, so these are results rather than
-    pace.
+    {m.goals_history_sub()}
   {/snippet}
 </PageHeader>
 
@@ -66,13 +71,10 @@
       <!-- Says which set is empty. The endpoint narrows a member to their own
            goals and their teams', so "nothing has finished yet" would be a
            claim about the org that a member cannot actually see. -->
-      <EmptyState
-        title="No finished periods yet"
-        body="Once a goal's period ends it moves here with what it attained. Goals still running are on the goals page."
-      >
+      <EmptyState title={m.goals_history_empty_title()} body={m.goals_history_empty_body()}>
         {#snippet icon()}<History size={21} />{/snippet}
         {#snippet actions()}
-          <a class="v2-btn" href={resolve('goals')}>Back to goals</a>
+          <a class="v2-btn" href={resolve('goals')}>{m.goals_history_back()}</a>
         {/snippet}
       </EmptyState>
     {:else}
@@ -88,12 +90,15 @@
                   {PERIOD_TYPE_LABEL[period.period_type]} · {GOAL_TYPE_LABEL[
                     period.goal_type
                   ]}{period.currency ? ` (${period.currency})` : ''} ·
-                  <span class="v2-num">{period.attained_count}</span>
-                  of <span class="v2-num">{period.goals_count}</span>
-                  {period.goals_count === 1 ? 'goal' : 'goals'} met
+                  {#each messageParts(m.goals_history_met_count( { attained: slot('attained'), count: period.goals_count, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'attained'}<span
+                        class="v2-num">{period.attained_count}</span
+                      >{:else if p.key === 'shown'}<span class="v2-num">{period.goals_count}</span
+                      >{:else}{p.text}{/if}{/each}
                 </div>
               </div>
-              <Pill tone={tone(period.percent)}>{period.percent}% of target</Pill>
+              <Pill tone={tone(period.percent)}
+                >{m.goals_history_percent_of_target({ percent: period.percent })}</Pill
+              >
             </header>
 
             <div class="v2-bar" style="margin-top:11px">
@@ -106,7 +111,11 @@
             </div>
             <div class="v2-bar-legend">
               <span class="v2-num">{unit(period, period.achieved)}</span>
-              <span>of <span class="v2-num">{unit(period, period.target)}</span></span>
+              <span
+                >{#each messageParts(m.goals_card_of_target( { target: slot('target') } )) as p, i (i)}{#if p.key === 'target'}<span
+                      class="v2-num">{unit(period, period.target)}</span
+                    >{:else}{p.text}{/if}{/each}</span
+              >
             </div>
 
             <ul class="goals">
@@ -117,7 +126,9 @@
                   <span class="v2-num figures">
                     {unit(g, g.progress_value)} / {unit(g, g.target_value)}
                   </span>
-                  <Pill tone={met(g) ? 'moss' : 'slate'}>{met(g) ? 'Met' : 'Missed'}</Pill>
+                  <Pill tone={met(g) ? 'moss' : 'slate'}
+                    >{met(g) ? m.goals_history_met() : m.goals_status_missed()}</Pill
+                  >
                 </li>
               {/each}
             </ul>
@@ -126,8 +137,7 @@
       </div>
 
       <p class="v2-sub" style="font-size:11.5px;margin-top:14px">
-        The twelve most recent periods you can see. Attainment is recomputed from the closed-won
-        deals of each period, so it matches what the goals page showed while the period was running.
+        {m.goals_history_note()}
       </p>
     {/if}
   </div>

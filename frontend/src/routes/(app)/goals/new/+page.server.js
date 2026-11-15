@@ -6,6 +6,7 @@ import {
   EDITABLE_FIELDS
 } from '#lib/server/v2/goals.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Creating a goal.
@@ -42,11 +43,11 @@ export const actions = {
       await createGoal(event, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { values, error: 'Only an admin can create goals.' });
+        return fail(403, { values, error: m.goals_error_create_forbidden() });
       }
       return fail(400, {
         values,
-        error: readableError(err, 'Could not create this goal.')
+        error: readableError(err, m.goals_error_create_failed())
       });
     }
 
