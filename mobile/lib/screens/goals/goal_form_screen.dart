@@ -13,6 +13,7 @@ import '../../providers/goals_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../services/org_date.dart';
 import '../../widgets/forms/unsaved_changes.dart';
+import '../../l10n/l10n.dart';
 
 /// Create or edit a sales goal.
 ///
@@ -212,39 +213,34 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
     if (!response.success) {
       setState(() {
         _saving = false;
-        _error = response.message ?? 'Could not save this goal.';
+        _error = response.message ?? context.l10n.goalsFormSaveFailed;
       });
       return;
     }
 
     _dirty = false;
+    final saved = widget.isEditing
+        ? context.l10n.goalsFormUpdated
+        : context.l10n.goalsFormCreated;
     context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(widget.isEditing ? 'Goal updated' : 'Goal created'),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(saved)));
   }
 
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this goal?'),
-        content: const Text(
-          'The goal and its record of the period go for good. Nothing that was '
-          'closed against it changes: those deals stay exactly as they are. '
-          'To stop tracking a goal without losing it, retire it instead.',
-        ),
+        title: Text(context.l10n.goalsFormDeleteTitle),
+        content: Text(context.l10n.goalsFormDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.goalsFormKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -259,15 +255,16 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
     if (!response.success) {
       setState(() {
         _saving = false;
-        _error = response.message ?? 'Could not delete this goal.';
+        _error = response.message ?? context.l10n.goalsFormDeleteFailed;
       });
       return;
     }
     _dirty = false;
+    final deleted = context.l10n.goalsFormDeleted;
     context.pop();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Goal deleted')));
+    ).showSnackBar(SnackBar(content: Text(deleted)));
   }
 
   @override
@@ -292,6 +289,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
   Widget _form(BuildContext context) {
     final people = ref.watch(usersProvider);
     final teams = ref.watch(teamsProvider);
+    final l10n = context.l10n;
 
     return UnsavedChangesGuard(
       hasUnsavedChanges: () => _dirty,
@@ -299,7 +297,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surfaceDim,
         appBar: AppBar(
-          title: Text(widget.isEditing ? 'Edit goal' : 'New goal'),
+          title: Text(
+            widget.isEditing ? l10n.goalsFormEditTitle : l10n.goalsFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -336,9 +336,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
               controller: _name,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 255,
-              decoration: const InputDecoration(
-                labelText: 'Goal name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalsFormName,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -346,9 +346,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
 
             DropdownButtonFormField<String>(
               initialValue: _goalType,
-              decoration: const InputDecoration(
-                labelText: 'Measured in',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalsFormMeasuredIn,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final type in goalTypes)
@@ -373,11 +373,11 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _currency,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Currency',
-                  helperText: 'Only won deals in this currency count',
+                decoration: InputDecoration(
+                  labelText: l10n.goalsFormCurrency,
+                  helperText: l10n.goalsFormCurrencyHelper,
                   helperMaxLines: 2,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final c in Currency.values)
@@ -402,13 +402,12 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               decoration: InputDecoration(
-                labelText: 'Target',
+                labelText: l10n.goalsFormTarget,
                 border: const OutlineInputBorder(),
                 helperText: switch (_goalType) {
-                  'DEALS_CLOSED' => 'How many deals must close in the period',
-                  'ACTIVITIES' =>
-                    'How many activities must be logged in the period',
-                  _ => 'Total revenue that must close in the period',
+                  'DEALS_CLOSED' => l10n.goalsFormTargetDeals,
+                  'ACTIVITIES' => l10n.goalsFormTargetActivities,
+                  _ => l10n.goalsFormTargetRevenue,
                 },
                 helperMaxLines: 2,
               ),
@@ -428,16 +427,16 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Weight by deal type',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          l10n.goalsFormWeightTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
                       Text(
                         _weightedCount == 0
-                            ? 'Optional'
-                            : '$_weightedCount adjusted',
+                            ? l10n.goalsFormWeightOptional
+                            : l10n.goalsFormWeightAdjusted(_weightedCount),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -494,9 +493,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                     ),
                   ),
                 Text(
-                  'A multiplier on each closed-won deal of that type. Leave a '
-                  'box empty to count that type in full. At 0.5 a 20,000 '
-                  'renewal counts as 10,000; at 0 it does not count at all.',
+                  l10n.goalsFormWeightHint,
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
@@ -505,9 +502,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
 
             DropdownButtonFormField<String>(
               initialValue: _periodType,
-              decoration: const InputDecoration(
-                labelText: 'Period',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalsFormPeriod,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final period in goalPeriodTypes)
@@ -529,8 +526,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
               // period type is only a label on the board's filter. Saying so
               // stops somebody choosing Monthly and expecting the dates to
               // follow.
-              'The period type groups goals on the leaderboard. The dates below '
-              'are what progress is counted against.',
+              l10n.goalsFormPeriodHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -541,7 +537,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
               children: [
                 Expanded(
                   child: _DateField(
-                    label: 'Starts',
+                    label: l10n.goalsFormStarts,
                     value: _periodStart,
                     onTap: _saving ? null : () => _pickDate(isStart: true),
                   ),
@@ -549,7 +545,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _DateField(
-                    label: 'Ends',
+                    label: l10n.goalsFormEnds,
                     value: _periodEnd,
                     onTap: _saving ? null : () => _pickDate(isStart: false),
                   ),
@@ -561,14 +557,14 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
             DropdownButtonFormField<String>(
               initialValue: _ownerValue(people, teams),
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Goal for',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalsFormGoalFor,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(
+                DropdownMenuItem(
                   value: 'org',
-                  child: Text('The whole organisation'),
+                  child: Text(l10n.goalsFormWholeOrg),
                 ),
                 for (final person in people)
                   DropdownMenuItem(
@@ -582,7 +578,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                   DropdownMenuItem(
                     value: 'team:${team.id}',
                     child: Text(
-                      '${team.name} (team)',
+                      l10n.goalsFormTeam(team.name),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -605,10 +601,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                       _isActive = value;
                       _dirty = true;
                     }),
-              title: const Text('Active'),
+              title: Text(l10n.goalsFormActive),
               subtitle: Text(
-                'A retired goal stays on the list and stops counting towards '
-                'the totals and the leaderboard.',
+                l10n.goalsFormActiveHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -626,7 +621,11 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(widget.isEditing ? 'Save changes' : 'Create goal'),
+                    : Text(
+                        widget.isEditing
+                            ? l10n.goalsFormSaveChanges
+                            : l10n.goalsFormCreate,
+                      ),
               ),
             ),
 
@@ -640,7 +639,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                     foregroundColor: AppColors.danger600,
                     side: BorderSide(color: AppColors.danger200),
                   ),
-                  child: const Text('Delete goal'),
+                  child: Text(l10n.goalsFormDelete),
                 ),
               ),
             ],
@@ -691,7 +690,7 @@ class _DateField extends StatelessWidget {
           height: 24,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(value.isEmpty ? 'Pick a date' : value),
+            child: Text(value.isEmpty ? context.l10n.goalsFormPickDate : value),
           ),
         ),
       ),
@@ -715,7 +714,7 @@ class _LoadFailed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Goal')),
+      appBar: AppBar(title: Text(context.l10n.goalsFormGoalTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -736,13 +735,12 @@ class _AdminsOnly extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Goal')),
+      appBar: AppBar(title: Text(context.l10n.goalsFormGoalTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'Only an administrator can add or change a goal. You can see the '
-            'ones set for you and your teams on the goals list.',
+            context.l10n.goalsFormAdminsOnly,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
