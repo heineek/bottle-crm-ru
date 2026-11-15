@@ -24,6 +24,7 @@ from typing import Iterable
 import re2
 from django.db import transaction
 from django.db.models import Count, Q
+from django.utils.translation import gettext as _
 
 from cases.models import RoutingRule, RoutingRuleState
 from cases.workflow import TERMINAL_STATUSES
@@ -57,16 +58,20 @@ def compile_pattern(value):
     """Compile a `regex` condition's pattern, or raise ValueError saying why
     it cannot be used. Shared by the matcher and `RoutingRuleSerializer`."""
     if not isinstance(value, str):
-        raise ValueError("must be text")
+        raise ValueError(_("must be text"))
     if len(value) > MAX_PATTERN_LENGTH:
-        raise ValueError(f"must be at most {MAX_PATTERN_LENGTH} characters")
+        raise ValueError(
+            _("must be at most %(max)s characters") % {"max": MAX_PATTERN_LENGTH}
+        )
     try:
         return re2.compile(value, _RE2_OPTIONS)
     except re2.error as exc:
         detail = exc.args[0] if exc.args else b""
         if isinstance(detail, bytes):
             detail = detail.decode("utf-8", "replace")
-        raise ValueError(f"is not a supported pattern: {detail}") from None
+        raise ValueError(
+            _("is not a supported pattern: %(detail)s") % {"detail": detail}
+        ) from None
 
 
 @dataclass

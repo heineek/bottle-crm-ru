@@ -28,6 +28,7 @@ from django.db.models import (
     Value,
 )
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import status
 
 GROUPINGS = ("agent", "ticket", "account")
@@ -111,7 +112,8 @@ def build_report(entries, group_by):
     """
     if group_by not in _GROUP_FIELDS:
         raise TimeReportParamError(
-            f"group_by must be one of {', '.join(GROUPINGS)}, not {group_by!r}."
+            _("group_by must be one of %(groupings)s, not %(value)s.")
+            % {"groupings": ", ".join(GROUPINGS), "value": repr(group_by)}
         )
 
     fields = _GROUP_FIELDS[group_by]

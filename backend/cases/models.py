@@ -394,10 +394,10 @@ class CaseWatcher(BaseModel):
     """
 
     SUBSCRIBED_VIA_CHOICES = (
-        ("manual", "Manual"),
-        ("mention", "Mention"),
-        ("auto_assignee", "Auto (Assignee)"),
-        ("auto_team", "Auto (Team)"),
+        ("manual", _("Manual")),
+        ("mention", _("Mention")),
+        ("auto_assignee", _("Auto (Assignee)")),
+        ("auto_team", _("Auto (Team)")),
     )
 
     case = models.ForeignKey(
@@ -493,9 +493,9 @@ class Solution(BaseModel):
     description = models.TextField()
 
     STATUS_CHOICES = [
-        ("draft", "Draft"),
-        ("reviewed", "Reviewed"),
-        ("approved", "Approved"),
+        ("draft", pgettext_lazy("solution status", "Draft")),
+        ("reviewed", pgettext_lazy("solution status", "Reviewed")),
+        ("approved", pgettext_lazy("solution status", "Approved")),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     is_published = models.BooleanField(default=False)
@@ -585,9 +585,9 @@ class CaseStage(BaseModel):
     """
 
     STAGE_TYPE_CHOICES = [
-        ("open", "Open"),
-        ("closed", "Closed"),
-        ("rejected", "Rejected"),
+        ("open", pgettext_lazy("case stage type", "Open")),
+        ("closed", pgettext_lazy("case stage type", "Closed")),
+        ("rejected", pgettext_lazy("case stage type", "Rejected")),
     ]
 
     pipeline = models.ForeignKey(
@@ -678,9 +678,9 @@ class EscalationPolicy(BaseModel):
     """
 
     ACTION_CHOICES = [
-        ("notify", "Notify"),
-        ("reassign", "Reassign"),
-        ("notify_and_reassign", "Notify and reassign"),
+        ("notify", _("Notify")),
+        ("reassign", _("Reassign")),
+        ("notify_and_reassign", _("Notify and reassign")),
     ]
 
     org = models.ForeignKey(
@@ -773,7 +773,7 @@ class InboundMailbox(BaseModel):
     """
 
     PROVIDER_CHOICES = [
-        ("ses", "AWS SES (SNS direct delivery)"),
+        ("ses", _("AWS SES (SNS direct delivery)")),
         ("mailgun", "Mailgun"),
         ("postmark", "Postmark"),
         ("imap", "IMAP"),
@@ -862,7 +862,10 @@ class EmailMessage(BaseModel):
     inbound message of a thread has already been turned into a Case.
     """
 
-    DIRECTION_CHOICES = [("inbound", "Inbound"), ("outbound", "Outbound")]
+    DIRECTION_CHOICES = [
+        ("inbound", pgettext_lazy("email direction", "Inbound")),
+        ("outbound", pgettext_lazy("email direction", "Outbound")),
+    ]
 
     org = models.ForeignKey(
         Org, on_delete=models.CASCADE, related_name="email_messages"
@@ -949,10 +952,10 @@ class RoutingRule(BaseModel):
     """
 
     STRATEGY_CHOICES = [
-        ("round_robin", "Round-robin within target_assignees"),
-        ("least_busy", "Least busy in target_assignees"),
-        ("direct", "Single profile in target_assignees"),
-        ("by_team", "Assign to target_team"),
+        ("round_robin", _("Round-robin within target_assignees")),
+        ("least_busy", _("Least busy in target_assignees")),
+        ("direct", _("Single profile in target_assignees")),
+        ("by_team", _("Assign to target_team")),
     ]
 
     org = models.ForeignKey(Org, on_delete=models.CASCADE, related_name="routing_rules")

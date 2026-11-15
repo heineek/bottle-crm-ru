@@ -20,6 +20,7 @@ nothing here reads `request.user`, `request.profile` or `request.org`, so a
 staff JWT sent along with the request changes nothing about the answer.
 """
 
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
@@ -47,7 +48,7 @@ SEARCH_MAX = 200
 # or another org's.
 # Telling any two of those apart would let a stranger probe which orgs use the
 # product and which article ids exist behind the published set.
-NOT_FOUND = {"error": "Not found"}
+NOT_FOUND = {"error": _("Not found")}
 
 
 class HelpCenterIPThrottle(SimpleRateThrottle):

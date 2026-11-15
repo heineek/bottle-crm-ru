@@ -42,6 +42,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.db.models import Count, Max
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -113,7 +114,7 @@ def _mailbox_analytics(org):
 
 def _admin_required():
     return Response(
-        {"error": True, "errors": "Admin access required"},
+        {"error": True, "errors": _("Admin access required")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -450,7 +451,7 @@ class InboundMailboxDetailView(APIView):
         obj = self._get_object(pk, request.profile.org)
         if not obj:
             return Response(
-                {"error": True, "errors": "Mailbox not found"},
+                {"error": True, "errors": _("Mailbox not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(
@@ -469,7 +470,7 @@ class InboundMailboxDetailView(APIView):
         obj = self._get_object(pk, org)
         if not obj:
             return Response(
-                {"error": True, "errors": "Mailbox not found"},
+                {"error": True, "errors": _("Mailbox not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         serializer = InboundMailboxSerializer(
@@ -504,8 +505,8 @@ class InboundMailboxDetailView(APIView):
         obj = self._get_object(pk, request.profile.org)
         if not obj:
             return Response(
-                {"error": True, "errors": "Mailbox not found"},
+                {"error": True, "errors": _("Mailbox not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         obj.delete()
-        return Response({"error": False, "message": "Mailbox deleted"})
+        return Response({"error": False, "message": _("Mailbox deleted")})

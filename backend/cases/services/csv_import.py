@@ -26,6 +26,7 @@ from typing import Any, Iterable
 
 from django.db import transaction
 from django.db.models.functions import Lower
+from django.utils.translation import gettext as _
 
 from accounts.access import visible_accounts_qs
 from automation.capture import suppress_rules
@@ -33,6 +34,7 @@ from cases.access import visible_cases_qs
 from cases.models import Case
 from cases.signals import route_after_relations
 from cases.workflow import DUPLICATE_BY_MERGE_ONLY
+from common.import_mapping import choice_lookup
 from common.models import Profile, Tags, Teams
 from common.utils import CASE_TYPE, PRIORITY_CHOICE, STATUS_CHOICE
 from contacts.access import replace_visible_contacts, visible_contacts_qs
@@ -160,14 +162,10 @@ def _normalize_headers(raw_headers: Iterable[str]) -> list[str]:
 
 
 def _coerce_choice(raw: str, choices: tuple[tuple[str, str], ...]) -> str | None:
-    """Match against choice values case-insensitively; return canonical value or None."""
+    """The stored value for a cell holding a value or a label in any language, or None."""
     if not raw:
         return None
-    needle = raw.strip().lower()
-    for value, _label in choices:
-        if value.lower() == needle:
-            return value
-    return None
+    return choice_lookup(choices).get(raw.strip().lower())
 
 
 def _split_multi(raw: str) -> list[str]:
@@ -187,7 +185,9 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error="File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again.",
+            header_error=_(
+                "File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+            ),
         )
     # Python's csv module accepts NUL since 3.11, and Postgres refuses it in
     # any string parameter, so one would 500 the insert.
@@ -195,7 +195,7 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error="CSV could not be read: it contains NUL characters",
+            header_error=_("CSV could not be read: it contains NUL characters"),
         )
     try:
         rows = list(csv.reader(io.StringIO(text)))
@@ -203,10 +203,12 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         # A single field over the csv module's 128 KB limit raises here, which
         # used to reach the view as a 500.
         return ImportResult(
-            valid=[], errors=[], header_error=f"CSV could not be read: {exc}"
+            valid=[],
+            errors=[],
+            header_error=_("CSV could not be read: %(error)s") % {"error": exc},
         )
     if not rows:
-        return ImportResult(valid=[], errors=[], header_error="CSV is empty")
+        return ImportResult(valid=[], errors=[], header_error=_("CSV is empty"))
 
     headers = _normalize_headers(rows[0])
     missing = [h for h in REQUIRED_HEADERS if h not in headers]
@@ -214,14 +216,16 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error=f"Missing required header(s): {', '.join(missing)}",
+            header_error=_("Missing required header(s): %(headers)s")
+            % {"headers": ", ".join(missing)},
         )
     unknown = [h for h in headers if h and h not in KNOWN_HEADERS]
     if unknown:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error=f"Unknown header(s): {', '.join(unknown)}",
+            header_error=_("Unknown header(s): %(headers)s")
+            % {"headers": ", ".join(unknown)},
         )
 
     data_rows = rows[1:]
@@ -229,7 +233,8 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error=f"Too many rows ({len(data_rows)}); limit is {MAX_ROWS}",
+            header_error=_("Too many rows (%(count)s); limit is %(max)s")
+            % {"count": len(data_rows), "max": MAX_ROWS},
         )
 
     # First pass: parse each row into a dict and skip blanks.
@@ -375,33 +380,53 @@ def _validate_and_build(
 
     name = record.get("name", "")
     if not name:
-        errors.append(RowError(idx, "name", "Name is required"))
+        errors.append(RowError(idx, "name", _("Name is required")))
     elif len(name) > NAME_MAX_LEN:
-        errors.append(RowError(idx, "name", f"Name exceeds {NAME_MAX_LEN} characters"))
+        errors.append(
+            RowError(
+                idx,
+                "name",
+                _("Name exceeds %(max)s characters") % {"max": NAME_MAX_LEN},
+            )
+        )
     else:
         lowered = name.lower()
         prior = seen_names.get(lowered)
         if prior:
             errors.append(
-                RowError(idx, "name", f"Duplicate of row {prior} within this file")
+                RowError(
+                    idx,
+                    "name",
+                    _("Duplicate of row %(row)s within this file") % {"row": prior},
+                )
             )
         elif lowered in refs.existing_case_names:
             errors.append(
-                RowError(idx, "name", "A ticket with this name already exists")
+                RowError(idx, "name", _("A ticket with this name already exists"))
             )
 
     status = _coerce_choice(record.get("status", ""), STATUS_CHOICE)
     if status == "Duplicate":
-        errors.append(RowError(idx, "status", DUPLICATE_BY_MERGE_ONLY))
+        errors.append(RowError(idx, "status", _(DUPLICATE_BY_MERGE_ONLY)))
     elif not status:
         valid_values = ", ".join(v for v, _ in STATUS_CHOICE if v != "Duplicate")
-        errors.append(RowError(idx, "status", f"Status must be one of: {valid_values}"))
+        errors.append(
+            RowError(
+                idx,
+                "status",
+                _("Status must be one of: %(values)s") % {"values": valid_values},
+            )
+        )
 
     priority = _coerce_choice(record.get("priority", ""), PRIORITY_CHOICE)
     if not priority:
         valid_values = ", ".join(v for v, _ in PRIORITY_CHOICE)
         errors.append(
-            RowError(idx, "priority", f"Priority must be one of: {valid_values}")
+            RowError(
+                idx,
+                "priority",
+                _("Priority must be one of: %(values)s") % {"values": valid_values},
+            )
         )
 
     case_type_raw = record.get("case_type", "")
@@ -411,7 +436,12 @@ def _validate_and_build(
         if case_type is None:
             valid_values = ", ".join(v for v, _ in CASE_TYPE)
             errors.append(
-                RowError(idx, "case_type", f"Case type must be one of: {valid_values}")
+                RowError(
+                    idx,
+                    "case_type",
+                    _("Case type must be one of: %(values)s")
+                    % {"values": valid_values},
+                )
             )
 
     closed_on = record.get("closed_on", "")
@@ -425,7 +455,9 @@ def _validate_and_build(
         except ValueError:
             errors.append(
                 RowError(
-                    idx, "closed_on", "Date must be a real date in YYYY-MM-DD format"
+                    idx,
+                    "closed_on",
+                    _("Date must be a real date in YYYY-MM-DD format"),
                 )
             )
 
@@ -438,7 +470,8 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "account_name",
-                    f"No account you can open is named '{account_name}'",
+                    _("No account you can open is named '%(name)s'")
+                    % {"name": account_name},
                 )
             )
 
@@ -446,7 +479,11 @@ def _validate_and_build(
     for email in _split_multi(record.get("contact_emails", "")):
         if not EMAIL_RE.match(email):
             errors.append(
-                RowError(idx, "contact_emails", f"'{email}' is not a valid email")
+                RowError(
+                    idx,
+                    "contact_emails",
+                    _("'%(email)s' is not a valid email") % {"email": email},
+                )
             )
             continue
         resolved = refs.contacts.get(email.lower())
@@ -455,7 +492,8 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "contact_emails",
-                    f"No contact you can open has the email '{email}'",
+                    _("No contact you can open has the email '%(email)s'")
+                    % {"email": email},
                 )
             )
         else:
@@ -465,7 +503,11 @@ def _validate_and_build(
     for email in _split_multi(record.get("assigned_emails", "")):
         if not EMAIL_RE.match(email):
             errors.append(
-                RowError(idx, "assigned_emails", f"'{email}' is not a valid email")
+                RowError(
+                    idx,
+                    "assigned_emails",
+                    _("'%(email)s' is not a valid email") % {"email": email},
+                )
             )
             continue
         resolved = refs.profiles.get(email.lower())
@@ -474,7 +516,7 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "assigned_emails",
-                    f"No active member with email '{email}'",
+                    _("No active member with email '%(email)s'") % {"email": email},
                 )
             )
         else:
@@ -484,7 +526,13 @@ def _validate_and_build(
     for team_name in _split_multi(record.get("team_names", "")):
         resolved = refs.teams.get(team_name.lower())
         if resolved is None:
-            errors.append(RowError(idx, "team_names", f"No team named '{team_name}'"))
+            errors.append(
+                RowError(
+                    idx,
+                    "team_names",
+                    _("No team named '%(name)s'") % {"name": team_name},
+                )
+            )
         else:
             team_ids.append(resolved)
 
@@ -492,7 +540,14 @@ def _validate_and_build(
     for tag_name in tag_names:
         name_error = Tags.name_error(tag_name)
         if name_error:
-            errors.append(RowError(idx, "tags", f"Tag '{tag_name}': {name_error}"))
+            errors.append(
+                RowError(
+                    idx,
+                    "tags",
+                    _("Tag '%(name)s': %(error)s")
+                    % {"name": tag_name, "error": name_error},
+                )
+            )
         elif archived_error := refs.archived_tags.get(Tags.slug_for(tag_name)):
             errors.append(RowError(idx, "tags", archived_error))
 
@@ -534,7 +589,7 @@ def commit_rows(file_bytes: bytes, org, profile) -> dict[str, Any]:
         # Don't write anything if any row failed; users must fix the file first.
         return {
             "error": True,
-            "message": "Fix the invalid rows before importing",
+            "message": _("Fix the invalid rows before importing"),
             "errors": [e.to_dict() for e in result.errors],
             "created": 0,
         }
@@ -584,7 +639,7 @@ def _get_or_create_tag(name: str, org, cache: dict[str, Tags]) -> Tags:
     slug = Tags.slug_for(name)
     if slug in cache:
         return cache[slug]
-    tag, _ = Tags.objects.get_or_create(
+    tag, _created = Tags.objects.get_or_create(
         slug=slug,
         org=org,
         defaults={"name": name},

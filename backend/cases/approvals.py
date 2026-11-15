@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext, pgettext_lazy
+from django.utils.translation import gettext_lazy as _
 
 from common.base import BaseModel
 from common.models import Org, Profile, Teams
@@ -29,17 +31,17 @@ from common.utils import CASE_TYPE, PRIORITY_CHOICE
 # ``MANAGER`` as a reserved value avoids a future schema change when the role
 # model expands. Today, MANAGER simply matches no profiles.
 APPROVER_ROLE_CHOICES = (
-    ("ADMIN", "Admin"),
-    ("MANAGER", "Manager"),
+    ("ADMIN", _("Admin")),
+    ("MANAGER", _("Manager")),
 )
 
-TRIGGER_EVENT_CHOICES = (("pre_close", "Pre-Close"),)
+TRIGGER_EVENT_CHOICES = (("pre_close", _("Pre-Close")),)
 
 APPROVAL_STATE_CHOICES = (
-    ("pending", "Pending"),
-    ("approved", "Approved"),
-    ("rejected", "Rejected"),
-    ("cancelled", "Cancelled"),
+    ("pending", pgettext_lazy("approval state", "Pending")),
+    ("approved", pgettext_lazy("approval state", "Approved")),
+    ("rejected", pgettext_lazy("approval state", "Rejected")),
+    ("cancelled", pgettext_lazy("approval state", "Cancelled")),
 )
 
 
@@ -203,9 +205,10 @@ def close_refusal(case, *, status, priority, case_type):
     if Approval.objects.filter(case_id=case.pk, rule=rule, state="approved").exists():
         return None
     return {
-        "status": (
-            f"An approval is required before this case can be closed (rule: {rule.name})."
+        "status": gettext(
+            "An approval is required before this case can be closed (rule: %(rule)s)."
         )
+        % {"rule": rule.name}
     }
 
 

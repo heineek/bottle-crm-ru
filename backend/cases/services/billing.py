@@ -12,6 +12,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Iterable, List, Tuple
 
+from django.utils.translation import gettext as _
+
 
 class TimeEntryInvoicingError(ValueError):
     """Raised when a set of time entries cannot be converted into invoice lines."""
@@ -33,27 +35,29 @@ def build_invoice_lines_from_entries(entries) -> Tuple[str, List[dict]]:
     """
     entries = list(entries)
     if not entries:
-        raise TimeEntryInvoicingError("No time entries supplied.")
+        raise TimeEntryInvoicingError(_("No time entries supplied."))
 
     currencies = {e.currency for e in entries}
     if len(currencies) > 1:
         raise TimeEntryInvoicingError(
-            f"Cannot invoice entries in multiple currencies: {sorted(currencies)}."
+            _("Cannot invoice entries in multiple currencies: %(currencies)s.")
+            % {"currencies": sorted(currencies)}
         )
     currency = next(iter(currencies))
 
     for entry in entries:
         if entry.invoice_id is not None:
             raise TimeEntryInvoicingError(
-                f"Time entry {entry.id} has already been invoiced."
+                _("Time entry %(id)s has already been invoiced.") % {"id": entry.id}
             )
         if entry.ended_at is None:
             raise TimeEntryInvoicingError(
-                f"Time entry {entry.id} is still running and cannot be invoiced."
+                _("Time entry %(id)s is still running and cannot be invoiced.")
+                % {"id": entry.id}
             )
         if not entry.billable:
             raise TimeEntryInvoicingError(
-                f"Time entry {entry.id} is not marked billable."
+                _("Time entry %(id)s is not marked billable.") % {"id": entry.id}
             )
 
     lines: List[dict] = []

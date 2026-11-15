@@ -14,6 +14,8 @@ in the serializer would have set up the same drift again, which is why they
 live here instead.
 """
 
+from django.utils.translation import gettext as _
+
 from cases.models import Case
 
 MAX_DEPTH = Case.PARENT_MAX_DEPTH
@@ -49,11 +51,11 @@ def check_parent_link(parent, *, case=None, case_status=None):
         return None
 
     if case is not None and parent.id == case.id:
-        return "A case cannot be its own parent."
+        return _("A case cannot be its own parent.")
 
     status = case_status if case_status is not None else getattr(case, "status", None)
     if parent.status == "Duplicate" or status == "Duplicate":
-        return "Cannot link to or from a merged case."
+        return _("Cannot link to or from a merged case.")
 
     # Walk up from the proposed parent. `seen` is not redundant with the
     # `case.id` test: a cycle that does not pass through `case` still makes
@@ -64,9 +66,9 @@ def check_parent_link(parent, *, case=None, case_status=None):
     depth_above = 0
     while cursor is not None:
         if case is not None and cursor.id == case.id:
-            return "Linking would create a cycle."
+            return _("Linking would create a cycle.")
         if cursor.id in seen:
-            return (
+            return _(
                 "This case's parent chain already contains a cycle, so nothing "
                 "can be linked under it."
             )
@@ -79,6 +81,6 @@ def check_parent_link(parent, *, case=None, case_status=None):
     # its own does not fit everywhere a leaf would.
     subtree_below = max_subtree_depth(case) if case is not None else 0
     if depth_above + 1 + subtree_below > MAX_DEPTH:
-        return f"Case tree is limited to {MAX_DEPTH} levels."
+        return _("Case tree is limited to %(max)s levels.") % {"max": MAX_DEPTH}
 
     return None
