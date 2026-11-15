@@ -24,8 +24,9 @@ import logging
 from django.db.models import F
 from django.http import HttpResponse, HttpResponseNotFound
 from django.template.loader import render_to_string
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext
 from django.views.decorators.clickjacking import xframe_options_exempt
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -33,6 +34,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.links import api_url
+from common.locale import language_from_header, resolve_language
 from common.modules import module_is_available
 from common.org_time import activate_org_timezone
 from common.request_meta import client_ip, referer
@@ -79,14 +81,24 @@ class PublicWebFormMixin:
 
         A found form's org timezone is activated, so the daily view counter and
         anything the submission writes use the org's day rather than the UTC
-        one an anonymous request starts with. `GetProfileAndOrg` deactivates it
-        when the request ends.
+        one an anonymous request starts with. So is the visitor's language:
+        their `Accept-Language` when it names one we ship, else the org's
+        default. `GetProfileAndOrg` deactivates both when the request ends.
         """
         set_rls_context(org_id)
         form = live_form(org_id, form_id)
         if form is not None:
             activate_org_timezone(form.org)
+            translation.activate(
+                language_from_header(self.request.headers.get("Accept-Language"))
+                or resolve_language(org=form.org)
+            )
         return form
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Content-Language"] = translation.get_language()
+        return response
 
     def origin_allowed(self, request, form):
         """Whether this request's origin may use this form.
@@ -150,12 +162,13 @@ class WebFormSubmitView(FirstRefusalThrottleMixin, PublicWebFormMixin, APIView):
         form = self.load_form(org_id, form_id)
         if form is None:
             return Response(
-                {"detail": "Form not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": gettext("Form not found.")},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         if not self.origin_allowed(request, form):
             return Response(
-                {"detail": "This form cannot be submitted from this site."},
+                {"detail": gettext("This form cannot be submitted from this site.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -198,7 +211,11 @@ class WebFormSubmitView(FirstRefusalThrottleMixin, PublicWebFormMixin, APIView):
                 reason="captcha verification failed",
             )
             return Response(
-                {"detail": "Could not verify that you are human. Please try again."},
+                {
+                    "detail": gettext(
+                        "Could not verify that you are human. Please try again."
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -264,7 +281,7 @@ class WebFormEmbedView(EmbedViewMixin, APIView):
     def get(self, request, org_id, form_id):
         form = self.load_form(org_id, form_id)
         if form is None:
-            return HttpResponseNotFound("Form not found.")
+            return HttpResponseNotFound(gettext("Form not found."))
 
         self.count_view(form)
         html = render_to_string("webforms/form.html", self.render_context(form))
@@ -333,6 +350,14 @@ class WebFormEmbedJsView(EmbedViewMixin, APIView):
                 }
                 for field in context["fields"]
             ],
+            "messages": {
+                "thanks": gettext("Thanks."),
+                "failed": gettext("Sorry, that could not be sent. Please try again."),
+                "offline": gettext(
+                    "Could not reach the server. Please check your connection "
+                    "and try again."
+                ),
+            },
         }
         # Written as escapes rather than literal characters: these are
         # invisible in an editor and an accidental strip would be silent.
