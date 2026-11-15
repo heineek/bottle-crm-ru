@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/escalation_policy.dart';
 import '../../data/models/ticket.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
@@ -44,7 +45,10 @@ class EscalationScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Policy added' : 'Policy saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsEscalationPolicyAdded
+                  : context.l10n.settingsEscalationPolicySaved),
         ),
       ),
     );
@@ -64,7 +68,10 @@ class EscalationScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (active ? 'Policy turned on' : 'Policy turned off'),
+          error ??
+              (active
+                  ? context.l10n.settingsEscalationPolicyTurnedOn
+                  : context.l10n.settingsEscalationPolicyTurnedOff),
         ),
       ),
     );
@@ -79,17 +86,21 @@ class EscalationScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         // "Delete", not "Turn off". This one really does delete.
-        title: Text('Delete the ${policy.priority} policy?'),
-        content: const Text(escalationRemovalExplanation),
+        title: Text(
+          context.l10n.settingsEscalationDeleteTitle(
+            escalationPriorityName(policy.priority),
+          ),
+        ),
+        content: Text(escalationRemovalExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsEscalationKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -99,9 +110,11 @@ class EscalationScreen extends ConsumerWidget {
         .read(escalationProvider.notifier)
         .deletePolicy(policy.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Policy deleted')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsEscalationPolicyDeleted),
+      ),
+    );
   }
 
   @override
@@ -112,7 +125,7 @@ class EscalationScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Escalation'),
+        title: Text(context.l10n.settingsEscalationTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -123,7 +136,7 @@ class EscalationScreen extends ConsumerWidget {
           if (isAdmin && (async.value?.unconfigured ?? const []).isNotEmpty)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New policy',
+              tooltip: context.l10n.settingsEscalationNewPolicy,
               onPressed: () =>
                   _edit(context, ref, null, async.value!.unconfigured),
             ),
@@ -169,7 +182,10 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unconfigured = state.unconfigured;
+    final l10n = context.l10n;
+    final unconfigured = [
+      for (final p in state.unconfigured) escalationPriorityName(p),
+    ];
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -181,28 +197,32 @@ class _Summary extends StatelessWidget {
             spacing: 20,
             runSpacing: 10,
             children: [
-              _Stat(value: '${state.policies.length}', label: 'of 4 set up'),
-              _Stat(value: '${state.dead}', label: 'that never fire'),
+              _Stat(
+                value: '${state.policies.length}',
+                label: l10n.settingsEscalationStatSetUp,
+              ),
+              _Stat(
+                value: '${state.dead}',
+                label: l10n.settingsEscalationStatNeverFire,
+              ),
             ],
           ),
           if (state.breachesGoingNowhere > 0) ...[
             const SizedBox(height: 14),
             _Warning(
-              text:
-                  '${state.breachesGoingNowhere} breaches in the last 30 days '
-                  'told nobody. A policy that exists is not the same as a '
-                  'policy that fires.',
+              text: l10n.settingsEscalationUnheardWarning(
+                state.breachesGoingNowhere,
+              ),
             ),
           ],
           if (unconfigured.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
               unconfigured.length == 1
-                  ? '${unconfigured.first} has no policy, so breaches at that '
-                        'priority escalate to nobody and are not counted here.'
-                  : '${joinWithAnd(unconfigured)} have no policy, so breaches '
-                        'at those priorities escalate to nobody and are not '
-                        'counted here.',
+                  ? l10n.settingsEscalationUnconfiguredOne(unconfigured.first)
+                  : l10n.settingsEscalationUnconfiguredMany(
+                      _joinWithAnd(l10n, unconfigured),
+                    ),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -212,6 +232,15 @@ class _Summary extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "A, B and C" in the current language.
+String _joinWithAnd(AppLocalizations l10n, List<String> parts) {
+  if (parts.length < 2) return parts.join();
+  return l10n.settingsEscalationJoinAnd(
+    parts.sublist(0, parts.length - 1).join(', '),
+    parts.last,
+  );
 }
 
 class _Warning extends StatelessWidget {
@@ -291,6 +320,7 @@ class _PolicyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final priority = TicketPriority.fromString(policy.priority);
     return Container(
       color: AppColors.surface,
@@ -304,15 +334,23 @@ class _PolicyCard extends StatelessWidget {
             runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              StatusBadge(label: policy.priority, color: priority.color),
+              StatusBadge(
+                label: escalationPriorityName(policy.priority),
+                color: priority.color,
+              ),
               if (!policy.isActive)
-                StatusBadge(label: 'Turned off', color: AppColors.gray500),
+                StatusBadge(
+                  label: l10n.settingsEscalationBadgeTurnedOff,
+                  color: AppColors.gray500,
+                ),
               // The promise itself. Each number says whether it is this org's
               // choice or the built-in default, because an unlabelled "4h"
               // reads as a decision somebody made.
               Text(
-                '${policy.firstResponseTargetLabel} reply · '
-                '${policy.resolutionTargetLabel} resolve',
+                l10n.settingsEscalationTargetsLine(
+                  policy.firstResponseTargetLabel,
+                  policy.resolutionTargetLabel,
+                ),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -323,8 +361,9 @@ class _PolicyCard extends StatelessWidget {
           // Its own line rather than a third entry above: this target belongs
           // to neither half and escalates nothing, which the line has to say.
           Text(
-            '${policy.nextResponseTargetLabel} next reply, measured in '
-            'analytics only. Missing it triggers no escalation.',
+            l10n.settingsEscalationNextReplyLine(
+              policy.nextResponseTargetLabel,
+            ),
             style: AppTypography.caption.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -347,7 +386,7 @@ class _PolicyCard extends StatelessWidget {
                   height: 40,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -355,11 +394,11 @@ class _PolicyCard extends StatelessWidget {
                   child: policy.isActive
                       ? OutlinedButton(
                           onPressed: onTurnOff,
-                          child: const Text('Turn off'),
+                          child: Text(l10n.settingsEscalationTurnOff),
                         )
                       : OutlinedButton(
                           onPressed: onTurnOn,
-                          child: const Text('Turn on'),
+                          child: Text(l10n.settingsEscalationTurnOn),
                         ),
                 ),
                 SizedBox(
@@ -369,7 +408,7 @@ class _PolicyCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger600,
                     ),
-                    child: const Text('Delete'),
+                    child: Text(l10n.commonDelete),
                   ),
                 ),
               ],
@@ -441,8 +480,8 @@ class _Half extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           fires || breaches == 0
-              ? '$breaches in the last 30 days'
-              : '$breaches in the last 30 days, none of them acted on',
+              ? context.l10n.settingsEscalationHalfBreaches(breaches)
+              : context.l10n.settingsEscalationHalfBreachesIgnored(breaches),
           style: AppTypography.caption.copyWith(
             color: fires || breaches == 0
                 ? AppColors.textTertiary
@@ -462,12 +501,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
-        'First response and resolution targets are measured on business '
-        'hours, so a breach counts working time only, and time spent waiting '
-        'on the customer does not count at all. Editing a policy sets both the '
-        'target and who hears about a breach. The next reply target escalates '
-        'nothing: it is counted around the clock and reported in ticket '
-        'analytics. The counts cover tickets opened in the last 30 days.',
+        context.l10n.settingsEscalationFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -490,20 +524,15 @@ class _EmptyState extends StatelessWidget {
             Icon(LucideIcons.bellOff, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'No escalation policies',
+              context.l10n.settingsEscalationEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'A policy decides what happens when a ticket misses its '
-                        'first response or its resolution target. None are set, '
-                        'so a breach escalates to nobody.'
-                  : 'A policy decides what happens when a ticket misses its '
-                        'first response or its resolution target. None are set, '
-                        'so a breach escalates to nobody. An administrator sets '
-                        'these up.',
+                  ? context.l10n.settingsEscalationEmptyAdmin
+                  : context.l10n.settingsEscalationEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -536,12 +565,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the escalation policies',
+              context.l10n.settingsEscalationLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsEscalationTryAgain),
+            ),
           ],
         ),
       ),

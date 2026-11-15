@@ -16,7 +16,6 @@
 library;
 
 import '../../l10n/l10n.dart';
-import 'countries.dart';
 
 /// Text, select and number fields the edit form may submit.
 ///
@@ -480,9 +479,3 @@ String sampleDataResult({required int deleted, required int retained}) {
   if (retained == 0) return head;
   return '$head ${l10n.appSampleDataKept(retained)}';
 }
-
-/// The built-in country list, kept until the org edit screen reads
-/// `GET /api/org/locales/`; removed with the Settings strings.
-final List<PickerOption> orgCountryOptions = [
-  for (final c in kCountries) (value: c.code, label: c.label),
-];

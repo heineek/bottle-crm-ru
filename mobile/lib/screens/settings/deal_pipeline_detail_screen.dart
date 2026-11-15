@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/deal_pipeline.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/deal_pipelines_provider.dart';
 import 'deal_pipeline_sheets.dart';
@@ -50,7 +51,9 @@ class _DealPipelineDetailScreenState
       () => existing == null
           ? _notifier.createStage(widget.pipelineId, payload)
           : _notifier.updateStage(existing.id, payload),
-      existing == null ? 'Stage added' : 'Stage saved',
+      existing == null
+          ? context.l10n.settingsPipelineStageAdded
+          : context.l10n.settingsPipelineStageSaved,
     );
   }
 
@@ -58,32 +61,31 @@ class _DealPipelineDetailScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${stage.label}?'),
-        content: const Text(
-          'Its column disappears from the board. A stage that still holds '
-          'deals cannot be deleted, and neither can the last open, won or '
-          'lost stage.',
-        ),
+        title: Text(context.l10n.settingsPipelineDeleteTitle(stage.label)),
+        content: Text(context.l10n.settingsDealPipelineDetailDeleteStageBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsPipelineKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    await _run(() => _notifier.deleteStage(stage.id), 'Stage deleted');
+    await _run(
+      () => _notifier.deleteStage(stage.id),
+      context.l10n.settingsPipelineStageDeleted,
+    );
   }
 
   Future<void> _move(int from, int to) => _run(
     () => _notifier.moveStage(widget.pipelineId, from, to),
-    'Order saved',
+    context.l10n.settingsPipelineOrderSaved,
   );
 
   @override
@@ -99,7 +101,9 @@ class _DealPipelineDetailScreenState
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(pipeline?.name ?? 'Pipeline'),
+        title: Text(
+          pipeline?.name ?? context.l10n.settingsPipelineTitleFallback,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -107,7 +111,7 @@ class _DealPipelineDetailScreenState
           if (isAdmin && pipeline != null)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'Add stage',
+              tooltip: context.l10n.settingsPipelineAddStage,
               onPressed: canEdit ? () => _edit(null) : null,
             ),
         ],
@@ -136,8 +140,7 @@ class _DealPipelineDetailScreenState
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Text(
-                  'Stages are columns on the deals board, in this order. Won '
-                  'and lost stages close a deal; only open stages age.',
+                  context.l10n.settingsDealPipelineDetailFooter,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -150,11 +153,11 @@ class _DealPipelineDetailScreenState
           child: CircularProgressIndicator(),
         ),
         (AsyncValue(hasError: true), _) => _Message(
-          message: 'Could not load the pipeline.',
+          message: context.l10n.settingsDealPipelineDetailLoadFailed,
           onRetry: _notifier.refresh,
         ),
         _ => _Message(
-          message: 'This pipeline no longer exists.',
+          message: context.l10n.settingsDealPipelineDetailGone,
           onRetry: _notifier.refresh,
         ),
       },
@@ -169,15 +172,18 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final n = pipeline.stages.length;
+    final count = context.l10n.settingsPipelineStageCount(
+      pipeline.stages.length,
+    );
     return Container(
       color: AppColors.surface,
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 1),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Text(
-        '$n ${n == 1 ? 'stage' : 'stages'}'
-        '${pipeline.isDefault ? ', the default pipeline' : ''}',
+        pipeline.isDefault
+            ? context.l10n.settingsPipelineIsDefault(count)
+            : count,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -189,10 +195,11 @@ String dealStageSummary(DealPipelineStage stage) {
   final kind = dealStageKinds[stage.kind] ?? stage.kind;
   final thresholds = stage.agingThresholds;
   if (stage.isClosed) return kind;
-  if (thresholds == null) return '$kind. Never ages.';
+  if (thresholds == null) {
+    return appL10n.settingsDealPipelineDetailNeverAges(kind);
+  }
   final (yellow, red) = thresholds;
-  return '$kind. Past expected at $yellow ${yellow == 1 ? 'day' : 'days'}, '
-      'stalled at $red.';
+  return appL10n.settingsDealPipelineDetailAging(kind, yellow, red);
 }
 
 class _StageRow extends StatelessWidget {
@@ -269,17 +276,17 @@ class _StageRow extends StatelessWidget {
           if (isAdmin) ...[
             _IconAction(
               icon: LucideIcons.chevronUp,
-              tooltip: 'Move ${stage.label} up',
+              tooltip: context.l10n.settingsPipelineMoveStageUp(stage.label),
               onPressed: onMoveUp,
             ),
             _IconAction(
               icon: LucideIcons.chevronDown,
-              tooltip: 'Move ${stage.label} down',
+              tooltip: context.l10n.settingsPipelineMoveStageDown(stage.label),
               onPressed: onMoveDown,
             ),
             _IconAction(
               icon: LucideIcons.trash2,
-              tooltip: 'Delete ${stage.label}',
+              tooltip: context.l10n.settingsPipelineDeleteStage(stage.label),
               color: AppColors.danger600,
               onPressed: onDelete,
             ),
@@ -342,7 +349,10 @@ class _Message extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsPipelineTryAgain),
+            ),
           ],
         ),
       ),

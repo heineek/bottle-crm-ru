@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/webhook.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/webhooks_provider.dart';
@@ -30,7 +31,7 @@ class WebhooksScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Webhooks'),
+        title: Text(context.l10n.settingsWebhooksTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -40,7 +41,7 @@ class WebhooksScreen extends ConsumerWidget {
           ? FloatingActionButton.extended(
               onPressed: () => _create(context, ref),
               icon: const Icon(LucideIcons.plus),
-              label: const Text('New webhook'),
+              label: Text(context.l10n.settingsWebhooksNewButton),
             )
           : null,
     );
@@ -61,7 +62,7 @@ class WebhooksScreen extends ConsumerWidget {
     if (result.secret != null) {
       await showWebhookSecret(
         context,
-        title: 'Webhook added, copy its signing secret now',
+        title: context.l10n.settingsWebhooksCreatedTitle,
         secret: result.secret!,
       );
     }
@@ -86,8 +87,7 @@ Future<void> showWebhookSecret(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'This is the only time the signing secret is shown. Store it '
-              'where your receiver can read it; rotate it if it is lost.',
+              ctx.l10n.settingsWebhooksSecretOnce,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -117,16 +117,16 @@ Future<void> showWebhookSecret(
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: secret));
             if (!ctx.mounted) return;
-            ScaffoldMessenger.of(
-              ctx,
-            ).showSnackBar(const SnackBar(content: Text('Secret copied')));
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(content: Text(ctx.l10n.settingsWebhooksSecretCopied)),
+            );
           },
           icon: const Icon(LucideIcons.copy, size: 16),
-          label: const Text('Copy'),
+          label: Text(ctx.l10n.settingsWebhookCopy),
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Done'),
+          child: Text(ctx.l10n.commonDone),
         ),
       ],
     ),
@@ -147,15 +147,13 @@ class WebhooksMemberNotice extends StatelessWidget {
             Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'Administrators only',
+              context.l10n.settingsWebhooksAdminsOnly,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Webhooks send copies of this organization\'s records to other '
-              'services, and a hook URL is often a secret of its own, so only '
-              'administrators can see or change them.',
+              context.l10n.settingsWebhooksMemberBody,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -177,7 +175,7 @@ class _AdminBody extends ConsumerWidget {
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, _) => WebhookErrorState(
-        message: 'Could not load webhooks',
+        message: context.l10n.settingsWebhooksLoadError,
         onRetry: () => ref.read(webhooksProvider.notifier).refresh(),
       ),
       data: (state) => RefreshIndicator(
@@ -194,8 +192,7 @@ class _AdminBody extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                 child: Text(
-                  'An organization can have at most ${state.limit} webhooks. '
-                  'Remove one to add another.',
+                  context.l10n.settingsWebhooksAtLimit(state.limit),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -251,15 +248,15 @@ class _EndpointRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${endpoint.formatLabel} · ${endpoint.events.length} '
-                      '${endpoint.events.length == 1 ? 'event' : 'events'}',
+                      '${endpoint.formatLabel} · '
+                      '${context.l10n.settingsWebhooksEventCount(endpoint.events.length)}',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'By ${endpoint.creatorLabel}',
+                      context.l10n.settingsWebhooksBy(endpoint.creatorLabel),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.caption.copyWith(
@@ -287,10 +284,10 @@ class WebhookStatePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = endpoint.isActive
-        ? ('Sending', AppColors.success600)
+        ? (context.l10n.settingsWebhooksStateSending, AppColors.success600)
         : endpoint.disabledReason.isNotEmpty
-        ? ('Paused', AppColors.warning600)
-        : ('Off', AppColors.textSecondary);
+        ? (context.l10n.settingsWebhooksStatePaused, AppColors.warning600)
+        : (context.l10n.settingsWebhooksStateOff, AppColors.textSecondary);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -312,24 +309,29 @@ class _Empty extends ConsumerWidget {
   const _Empty();
 
   /// "a lead, deal, ticket or other record", naming only modules that are on.
-  static String changed({
+  static String changed(
+    AppLocalizations l10n, {
     required bool leads,
     required bool deals,
     required bool tickets,
   }) {
     final kinds = [
-      if (leads) 'lead',
-      if (deals) 'deal',
-      if (tickets) 'ticket',
-      'other record',
+      if (leads) l10n.settingsWebhooksKindLead,
+      if (deals) l10n.settingsWebhooksKindDeal,
+      if (tickets) l10n.settingsWebhooksKindTicket,
+      l10n.settingsWebhooksKindOther,
     ];
-    if (kinds.length == 1) return 'record';
-    return '${kinds.sublist(0, kinds.length - 1).join(', ')} or ${kinds.last}';
+    if (kinds.length == 1) return l10n.settingsWebhooksKindRecord;
+    return l10n.settingsWebhooksKindsJoin(
+      kinds.sublist(0, kinds.length - 1).join(', '),
+      kinds.last,
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final kinds = changed(
+      context.l10n,
       leads: ref.watch(moduleOnProvider('leads')),
       deals: ref.watch(moduleOnProvider('deals')),
       tickets: ref.watch(moduleOnProvider('tickets')),
@@ -341,14 +343,13 @@ class _Empty extends ConsumerWidget {
           Icon(LucideIcons.webhook, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: 14),
           Text(
-            'No webhooks yet',
+            context.l10n.settingsWebhooksEmptyTitle,
             style: AppTypography.h3,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'A webhook posts to a URL whenever a $kinds changes. Point one at '
-            'Zapier, n8n, Slack or your own code.',
+            context.l10n.settingsWebhooksEmptyBody(kinds),
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -366,13 +367,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Text(
-        'Every JSON delivery carries an X-BottleCRM-Signature header: an '
-        'HMAC-SHA256 of the timestamp and the raw body, keyed with the '
-        'webhook\'s secret. A failed delivery is retried five times over about '
-        'eight and a half hours, and an endpoint that answers 410 Gone is '
-        'paused. So is every webhook whose creator stops being an admin, is '
-        'deactivated or leaves; any admin can turn it back on and then '
-        'answers for it.',
+        context.l10n.settingsWebhooksFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -409,7 +404,10 @@ class WebhookErrorState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsWebhookTryAgain),
+            ),
           ],
         ),
       ),

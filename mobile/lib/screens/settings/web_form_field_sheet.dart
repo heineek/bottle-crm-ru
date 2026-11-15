@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
 import '../../data/models/web_form.dart';
+import '../../l10n/l10n.dart';
 
 /// Add or edit one question on a web form.
 ///
@@ -128,8 +129,8 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
     if (!field.isComplete) {
       setState(() {
         _error = field.label.isEmpty
-            ? 'Give the field a label. It is what the visitor reads.'
-            : 'Choose what this field writes into.';
+            ? context.l10n.settingsWebFormFieldLabelRequired
+            : context.l10n.settingsWebFormFieldTargetRequired;
       });
       return;
     }
@@ -139,6 +140,7 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
   @override
   Widget build(BuildContext context) {
     final hasCustomFields = widget.customFields.isNotEmpty;
+    final l10n = context.l10n;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -153,7 +155,9 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'Add a field' : 'Edit field',
+              _isCreate
+                  ? l10n.settingsWebFormFieldAddTitle
+                  : l10n.settingsWebFormFieldEditTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -163,11 +167,15 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
                 segments: [
                   ButtonSegment(
                     value: _builtinSource,
-                    label: Text(_isTicket ? 'Ticket field' : 'Lead field'),
+                    label: Text(
+                      _isTicket
+                          ? l10n.settingsWebFormFieldTicketField
+                          : l10n.settingsWebFormFieldLeadField,
+                    ),
                   ),
-                  const ButtonSegment(
+                  ButtonSegment(
                     value: WebFormField.sourceCustom,
-                    label: Text('Custom field'),
+                    label: Text(l10n.settingsWebFormCustomField),
                   ),
                 ],
                 selected: {_source},
@@ -187,9 +195,9 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
               DropdownButtonFormField<String>(
                 initialValue: _customField,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Custom field',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.settingsWebFormCustomField,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final definition in widget.customFields)
@@ -216,11 +224,11 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
                 initialValue: _builtinField.isEmpty ? null : _builtinField,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  labelText: 'Writes into',
+                  labelText: l10n.settingsWebFormFieldWritesInto,
                   border: const OutlineInputBorder(),
                   helperText: _isTicket
-                      ? 'Where on the ticket or its contact this answer lands'
-                      : 'The field on the lead this answer lands in',
+                      ? l10n.settingsWebFormFieldWritesIntoTicket
+                      : l10n.settingsWebFormFieldWritesIntoLead,
                   helperMaxLines: 2,
                 ),
                 items: [
@@ -230,7 +238,9 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
                       enabled: !_taken(field.value),
                       child: Text(
                         _taken(field.value)
-                            ? '${field.label} (already on this form)'
+                            ? l10n.settingsWebFormFieldAlreadyOnForm(
+                                field.label,
+                              )
                             : field.label,
                         style: _taken(field.value)
                             ? AppTypography.body.copyWith(
@@ -252,10 +262,10 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
               controller: _label,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 255,
-              decoration: const InputDecoration(
-                labelText: 'Label',
-                helperText: 'What the visitor sees above the box',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsWebFormFieldLabel,
+                helperText: l10n.settingsWebFormFieldLabelHelper,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -264,10 +274,10 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
               controller: _placeholder,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 255,
-              decoration: const InputDecoration(
-                labelText: 'Placeholder',
-                helperText: 'Optional. Shown inside the empty box',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsWebFormFieldPlaceholder,
+                helperText: l10n.settingsWebFormFieldPlaceholderHelper,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -276,10 +286,8 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
               value: _isRequired,
               onChanged: (value) => setState(() => _isRequired = value),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Required'),
-              subtitle: const Text(
-                'The visitor cannot submit without answering',
-              ),
+              title: Text(l10n.settingsWebFormFieldRequired),
+              subtitle: Text(l10n.settingsWebFormFieldRequiredSub),
             ),
 
             if (_error != null) ...[
@@ -300,7 +308,7 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -310,7 +318,11 @@ class _WebFormFieldSheetState extends State<_WebFormFieldSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add field' : 'Save field'),
+                      child: Text(
+                        _isCreate
+                            ? l10n.settingsWebFormFieldAddButton
+                            : l10n.settingsWebFormFieldSaveButton,
+                      ),
                     ),
                   ),
                 ),

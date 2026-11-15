@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/team_member.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/team_provider.dart';
@@ -40,7 +41,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Team'),
+        title: Text(context.l10n.settingsTeamTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -49,7 +50,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           ? FloatingActionButton.extended(
               onPressed: _busy ? null : _showInviteSheet,
               icon: const Icon(LucideIcons.userPlus, size: 18),
-              label: const Text('Invite'),
+              label: Text(context.l10n.settingsTeamInvite),
             )
           : null,
       body: teamAsync.when(
@@ -71,12 +72,15 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         padding: const EdgeInsets.only(bottom: 96),
         children: [
           _summary(data),
-          _header('Active', data.active.length),
+          _header(context.l10n.settingsTeamActiveHeader, data.active.length),
           if (data.active.isEmpty)
-            const _EmptyRow(text: 'Nobody is active in this org.'),
+            _EmptyRow(text: context.l10n.settingsTeamNobodyActive),
           ...data.active.map((m) => _memberRow(m, data, myProfileId)),
           if (data.inactive.isNotEmpty) ...[
-            _header('Deactivated', data.inactive.length),
+            _header(
+              context.l10n.settingsTeamDeactivatedHeader,
+              data.inactive.length,
+            ),
             ...data.inactive.map((m) => _memberRow(m, data, myProfileId)),
           ],
         ],
@@ -88,6 +92,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     // A live token on a deactivated account is the one number here worth
     // acting on: the login is gone, the token still authenticates.
     final orphanTokens = data.tokensOnDeactivated;
+    final l10n = context.l10n;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       padding: const EdgeInsets.all(12),
@@ -105,12 +110,18 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             spacing: 16,
             runSpacing: 6,
             children: [
-              _stat('${data.active.length}', 'active'),
-              _stat('${data.adminCount}', 'admin'),
+              _stat('${data.active.length}', l10n.settingsTeamStatActive),
+              _stat('${data.adminCount}', l10n.settingsTeamStatAdmin),
               if (data.neverSignedInCount > 0)
-                _stat('${data.neverSignedInCount}', 'never signed in'),
+                _stat(
+                  '${data.neverSignedInCount}',
+                  l10n.settingsTeamStatNeverSignedIn,
+                ),
               if (data.inactive.isNotEmpty)
-                _stat('${data.inactive.length}', 'deactivated'),
+                _stat(
+                  '${data.inactive.length}',
+                  l10n.settingsTeamStatDeactivated,
+                ),
             ],
           ),
           if (orphanTokens > 0) ...[
@@ -126,9 +137,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '$orphanTokens API '
-                    '${orphanTokens == 1 ? 'token' : 'tokens'} still work for '
-                    'someone who has been deactivated.',
+                    l10n.settingsTeamOrphanTokens(orphanTokens),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.warning700,
                     ),
@@ -181,10 +190,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final isYou = myProfileId != null && member.id == myProfileId;
     final subtitle = [
       if (member.email.isNotEmpty && member.email != member.name) member.email,
-      if (member.hasNeverSignedIn) 'never signed in',
+      if (member.hasNeverSignedIn) context.l10n.settingsTeamNeverSignedIn,
       if (member.activeTokenCount > 0)
-        '${member.activeTokenCount} API '
-            '${member.activeTokenCount == 1 ? 'token' : 'tokens'}',
+        context.l10n.settingsTeamMemberTokens(member.activeTokenCount),
     ].join(' · ');
 
     return Container(
@@ -248,13 +256,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   void _showActions(TeamMember member, bool isLastAdmin, bool isYou) {
     final nextRole = member.isAdmin ? 'USER' : 'ADMIN';
+    final l10n = context.l10n;
     final withheld = isYou
-        ? 'This is you. Your own role is not yours to change, and deactivating '
-              'yourself would lock you out with no way back in. Ask another '
-              'admin.'
+        ? l10n.settingsTeamWithheldYou
         : isLastAdmin
-        ? 'This is the only admin. An org has to keep one, so their role and '
-              'status cannot be changed here.'
+        ? l10n.settingsTeamWithheldLastAdmin
         : null;
     showModalBottomSheet(
       context: context,
@@ -269,7 +275,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                isYou ? '${member.name} (you)' : member.name,
+                isYou ? l10n.settingsTeamNameYou(member.name) : member.name,
                 style: AppTypography.h3,
               ),
             ),
@@ -287,7 +293,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               ListTile(
                 leading: Icon(LucideIcons.shield, size: 20),
                 title: Text(
-                  nextRole == 'ADMIN' ? 'Make an admin' : 'Make a member',
+                  nextRole == 'ADMIN'
+                      ? l10n.settingsTeamMakeAdmin
+                      : l10n.settingsTeamMakeMember,
                 ),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -300,11 +308,13 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   size: 20,
                   color: member.isActive ? AppColors.danger600 : null,
                 ),
-                title: Text(member.isActive ? 'Deactivate' : 'Reactivate'),
+                title: Text(
+                  member.isActive
+                      ? l10n.settingsTeamDeactivate
+                      : l10n.settingsTeamReactivate,
+                ),
                 subtitle: member.isActive && member.activeTokenCount > 0
-                    ? const Text(
-                        'Their API tokens stop working at the same time.',
-                      )
+                    ? Text(l10n.settingsTeamTokensStop)
                     : null,
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -328,8 +338,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     setState(() => _busy = false);
     _snack(
       response.success
-          ? '${member.name} is now ${role == 'ADMIN' ? 'an admin' : 'a member'}.'
-          : response.message ?? 'Could not change that role.',
+          ? (role == 'ADMIN'
+                ? context.l10n.settingsTeamNowAdmin(member.name)
+                : context.l10n.settingsTeamNowMember(member.name))
+          : response.message ?? context.l10n.settingsTeamRoleError,
     );
   }
 
@@ -342,8 +354,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     setState(() => _busy = false);
     _snack(
       response.success
-          ? '${member.name} is ${isActive ? 'active again' : 'deactivated'}.'
-          : response.message ?? 'Could not change that status.',
+          ? (isActive
+                ? context.l10n.settingsTeamActiveAgain(member.name)
+                : context.l10n.settingsTeamDeactivated(member.name))
+          : response.message ?? context.l10n.settingsTeamStatusError,
     );
   }
 
@@ -369,26 +383,36 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Invite someone', style: AppTypography.h3),
+                  Text(
+                    builderContext.l10n.settingsTeamInviteTitle,
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
                     autocorrect: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
+                    decoration: InputDecoration(
+                      labelText: builderContext.l10n.commonEmail,
                       hintText: 'them@company.com',
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Role', style: AppTypography.labelSmall),
+                  Text(
+                    builderContext.l10n.settingsTeamRole,
+                    style: AppTypography.labelSmall,
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     children: teamRoles
                         .map(
                           (r) => ChoiceChip(
-                            label: Text(r == 'ADMIN' ? 'Admin' : 'Member'),
+                            label: Text(
+                              r == 'ADMIN'
+                                  ? builderContext.l10n.settingsTeamRoleAdmin
+                                  : builderContext.l10n.settingsTeamRoleMember,
+                            ),
                             selected: role == r,
                             onSelected: (_) => setSheetState(() => role = r),
                           ),
@@ -404,7 +428,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         Navigator.pop(sheetContext);
                         _invite(email, role);
                       },
-                      child: const Text('Send invite'),
+                      child: Text(builderContext.l10n.settingsTeamSendInvite),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -419,7 +443,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   Future<void> _invite(String email, String role) async {
     if (email.isEmpty) {
-      _snack('Enter an email address.');
+      _snack(context.l10n.settingsTeamEnterEmail);
       return;
     }
     setState(() => _busy = true);
@@ -432,8 +456,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     // is already in this org, or already an account somewhere else.
     _snack(
       response.success
-          ? 'Invited $email.'
-          : response.message ?? 'Could not send that invite.',
+          ? context.l10n.settingsTeamInvited(email)
+          : response.message ?? context.l10n.settingsTeamInviteError,
     );
   }
 
@@ -459,7 +483,9 @@ class _RolePill extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        isAdmin ? 'Admin' : 'Member',
+        isAdmin
+            ? context.l10n.settingsTeamRoleAdmin
+            : context.l10n.settingsTeamRoleMember,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -485,11 +511,10 @@ class _AdminsOnly extends StatelessWidget {
           children: [
             Icon(LucideIcons.lock, size: 36, color: AppColors.textTertiary),
             const SizedBox(height: 12),
-            Text('Admins only', style: AppTypography.h3),
+            Text(context.l10n.settingsTeamAdminsOnly, style: AppTypography.h3),
             const SizedBox(height: 6),
             Text(
-              'Managing people and roles is an admin job. Ask an admin in your '
-              'organization if you need a change here.',
+              context.l10n.settingsTeamAdminsOnlyBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
@@ -530,7 +555,10 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsObjectsTryAgain),
+            ),
           ],
         ),
       ),

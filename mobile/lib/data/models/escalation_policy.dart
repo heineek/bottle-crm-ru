@@ -8,6 +8,7 @@
 /// while the row still looks configured.
 library;
 
+import '../../l10n/l10n.dart';
 import 'lookup_models.dart';
 
 /// `EscalationPolicy.ACTION_CHOICES`.
@@ -15,11 +16,15 @@ const String escalationActionNotify = 'notify';
 const String escalationActionReassign = 'reassign';
 const String escalationActionNotifyAndReassign = 'notify_and_reassign';
 
-const Map<String, String> escalationActionLabels = {
-  escalationActionNotify: 'Notify',
-  escalationActionReassign: 'Reassign to',
-  escalationActionNotifyAndReassign: 'Notify and reassign to',
-};
+Map<String, String> get escalationActionLabels {
+  final l10n = appL10n;
+  return {
+    escalationActionNotify: l10n.appEscalationActionNotify,
+    escalationActionReassign: l10n.appEscalationActionReassign,
+    escalationActionNotifyAndReassign:
+        l10n.appEscalationActionNotifyAndReassign,
+  };
+}
 
 String escalationActionLabel(String action) =>
     escalationActionLabels[action] ?? action;
@@ -43,12 +48,13 @@ const List<String> escalationPriorities = ['Urgent', 'High', 'Normal', 'Low'];
 /// The two halves of an SLA, which are configured separately and fail
 /// separately.
 enum EscalationHalf {
-  firstResponse('Missed first response'),
-  resolution('Missed resolution');
+  firstResponse,
+  resolution;
 
-  const EscalationHalf(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    firstResponse => appL10n.appEscalationHalfFirstResponse,
+    resolution => appL10n.appEscalationHalfResolution,
+  };
 }
 
 /// Breaches per half among tickets opened in the last 30 days.
@@ -146,8 +152,8 @@ class EscalationPolicy {
   /// The distinction is the point: an unlabelled number reads as a decision.
   String targetLabelFor(EscalationHalf half) {
     final configured = hoursFor(half);
-    if (configured != null) return '${configured}h';
-    return '${defaultSlaHours(priority, half)}h default';
+    if (configured != null) return appL10n.appSlaHours(configured);
+    return appL10n.appSlaHoursDefault(defaultSlaHours(priority, half));
   }
 
   String get firstResponseTargetLabel =>
@@ -156,8 +162,8 @@ class EscalationPolicy {
 
   /// Same wording as [targetLabelFor], for the target that is not a half.
   String get nextResponseTargetLabel => nextResponseHours != null
-      ? '${nextResponseHours}h'
-      : '${defaultNextResponseHours(priority)}h default';
+      ? appL10n.appSlaHours(nextResponseHours!)
+      : appL10n.appSlaHoursDefault(defaultNextResponseHours(priority));
 
   /// Whether this half does anything at all when a ticket breaches.
   ///
@@ -266,12 +272,7 @@ const int maxSlaHours = 8760;
   if (trimmed.isEmpty) return (hours: null, error: null);
   final parsed = int.tryParse(trimmed);
   if (parsed == null || parsed < 1 || parsed > maxSlaHours) {
-    return (
-      hours: null,
-      error:
-          'Enter a whole number of hours from 1 to $maxSlaHours, '
-          'or leave it blank for the default.',
-    );
+    return (hours: null, error: appL10n.appSlaHoursInvalid(maxSlaHours));
   }
   return (hours: parsed, error: null);
 }
@@ -318,36 +319,44 @@ String teamPhrase(String name) {
       lower == 'teams' ||
       lower.endsWith(' team') ||
       lower.endsWith(' teams');
-  return saysSo ? 'the $trimmed' : 'the $trimmed team';
+  return saysSo
+      ? appL10n.appTeamPhraseNamed(trimmed)
+      : appL10n.appTeamPhrase(trimmed);
 }
 
 /// "Urgent and High", "Urgent, High and Normal".
 String joinWithAnd(List<String> parts) {
   if (parts.isEmpty) return '';
   if (parts.length == 1) return parts.first;
-  return '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+  return appL10n.appJoinAnd(
+    parts.sublist(0, parts.length - 1).join(', '),
+    parts.last,
+  );
 }
 
 /// What one half of a policy does, in a sentence, including when that is
 /// nothing.
 String escalationOutcomeSentence(EscalationPolicy policy, EscalationHalf half) {
-  if (!policy.isActive) return 'Nothing. The policy is turned off.';
+  final l10n = appL10n;
+  if (!policy.isActive) return l10n.appEscalationOutcomeOff;
   final target = policy.targetFor(half);
   if (target == null) {
     final team = policy.notifyTeam;
     // Naming the team here is the correction, not decoration. A team set with
     // no target reads as "somebody is told" and is the case where nobody is.
     return team == null
-        ? 'Nothing. No target is set.'
-        : 'Nothing. No target is set, and ${teamPhrase(team.name)} is not '
-              'notified on its own.';
+        ? l10n.appEscalationOutcomeNoTarget
+        : l10n.appEscalationOutcomeNoTargetTeam(teamPhrase(team.name));
   }
   final label = escalationActionLabel(policy.actionFor(half));
   if (policy.notifiesTeamFor(half)) {
-    return '$label ${target.displayName} and '
-        '${teamPhrase(policy.notifyTeam!.name)}.';
+    return l10n.appEscalationOutcomeWithTeam(
+      label,
+      target.displayName,
+      teamPhrase(policy.notifyTeam!.name),
+    );
   }
-  return '$label ${target.displayName}.';
+  return l10n.appEscalationOutcome(label, target.displayName);
 }
 
 /// A team configured on a half that will never notify it, or `null`.
@@ -362,8 +371,9 @@ String? escalationTeamIgnoredNote(
   if (team == null || !policy.firesFor(half)) return null;
   if (escalationActionNotifies(policy.actionFor(half))) return null;
   final phrase = teamPhrase(team.name);
-  return '${phrase[0].toUpperCase()}${phrase.substring(1)} is not notified '
-      'here: this half only reassigns.';
+  return appL10n.appEscalationTeamIgnored(
+    '${phrase[0].toUpperCase()}${phrase.substring(1)}',
+  );
 }
 
 /// The warning a form shows for a half with no target picked yet.
@@ -371,9 +381,7 @@ String? escalationTeamIgnoredNote(
 /// Not tied to the action. Picking Notify and leaving the target empty is the
 /// same dead half as picking Reassign and leaving it empty, and the action
 /// select is the control an admin is most likely to believe fixed it.
-const String escalationNoTargetHint =
-    'Nothing happens on this half until a target is picked. A team on its own '
-    'is not notified.';
+String get escalationNoTargetHint => appL10n.appEscalationNoTargetHint;
 
 /// `''` means "Nobody" in the pickers, and the API wants `null` for that.
 String? _orNull(String? id) {
@@ -458,7 +466,5 @@ Map<String, dynamic> escalationActivePayload(bool isActive) => {
 /// delete behind this verb, unlike custom fields and tags, so the control that
 /// calls it says so and offers turning the policy off as the reversible
 /// alternative.
-const String escalationRemovalExplanation =
-    'The policy is gone for good. Breaches at this priority will escalate to '
-    'nobody, and the priority goes back to having no policy at all. If you only '
-    'want it to stop firing, turn it off instead: that is reversible.';
+String get escalationRemovalExplanation =>
+    appL10n.appEscalationRemovalExplanation;

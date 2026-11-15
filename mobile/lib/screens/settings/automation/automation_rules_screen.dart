@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/automation_provider.dart';
 import '../../../providers/org_modules_provider.dart';
@@ -44,14 +45,14 @@ class _AutomationRulesScreenState extends ConsumerState<AutomationRulesScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Automation'),
+        title: Text(context.l10n.settingsAutomationRulesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         actions: [
           if (isAdmin)
             IconButton(
-              tooltip: 'New rule',
+              tooltip: context.l10n.settingsAutomationRulesNewRule,
               icon: const Icon(LucideIcons.plus),
               onPressed: () => context.push(AppRoutes.settingsAutomationNew),
             ),
@@ -79,12 +80,12 @@ class _Body extends ConsumerWidget {
     if (answer == null) {
       if (async.hasError && !async.isLoading) {
         if (automationNotOffered(async)) {
-          return const _ErrorState(
-            message: 'Automation rules are not available here.',
+          return _ErrorState(
+            message: context.l10n.settingsAutomationRulesNotOffered,
           );
         }
         return _ErrorState(
-          message: 'Could not load automation rules',
+          message: context.l10n.settingsAutomationRulesLoadFailed,
           onRetry: () => ref.read(automationRulesProvider.notifier).refresh(),
         );
       }
@@ -139,7 +140,7 @@ class _PausedNote extends StatelessWidget {
       child: Text(
         byModule
             ? modulePausedNote(row)
-            : '"${row.name}": $why Switch it on again to take it over.',
+            : context.l10n.settingsAutomationRulesPausedNote(row.name, why),
         style: AppTypography.caption.copyWith(color: AppColors.textPrimary),
       ),
     );
@@ -167,7 +168,9 @@ class _RuleCard extends StatelessWidget {
     final object = c == null ? null : objectOf(c, row.objectKey);
     final trigger = c != null
         ? triggerSentence(row, c)
-        : (row.trigger.event == 'created' ? 'Created' : 'Updated');
+        : (row.trigger.event == 'created'
+              ? context.l10n.settingsAutomationRulesTriggerCreated
+              : context.l10n.settingsAutomationRulesTriggerUpdated);
     final note = row.status == 'paused' ? null : statusText(row);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -201,7 +204,10 @@ class _RuleCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${object?.label ?? row.objectKey}, $trigger',
+                        context.l10n.settingsAutomationRulesCardSubtitle(
+                          object?.label ?? row.objectKey,
+                          trigger,
+                        ),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -241,12 +247,12 @@ class _RuleCard extends StatelessWidget {
                 Column(
                   children: [
                     _MoveButton(
-                      tooltip: 'Move up',
+                      tooltip: context.l10n.settingsAutomationRulesMoveUp,
                       icon: LucideIcons.chevronUp,
                       onPressed: canUp ? () => onMove('up') : null,
                     ),
                     _MoveButton(
-                      tooltip: 'Move down',
+                      tooltip: context.l10n.settingsAutomationRulesMoveDown,
                       icon: LucideIcons.chevronDown,
                       onPressed: canDown ? () => onMove('down') : null,
                     ),
@@ -292,11 +298,13 @@ class _Empty extends StatelessWidget {
       children: [
         Icon(LucideIcons.zap, size: 40, color: AppColors.textTertiary),
         const SizedBox(height: 14),
-        Text('No rules yet', style: AppTypography.h3),
+        Text(
+          context.l10n.settingsAutomationRulesEmptyTitle,
+          style: AppTypography.h3,
+        ),
         const SizedBox(height: 8),
         Text(
-          'A rule does something when a record is created or changes: assign '
-          'it, create a task, notify people, or set a field.',
+          context.l10n.settingsAutomationRulesEmptyBody,
           style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -318,7 +326,7 @@ class _MemberNotice extends StatelessWidget {
           Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: 16),
           Text(
-            'Only an organization admin can see automation rules.',
+            context.l10n.settingsAutomationAdminOnly,
             style: AppTypography.body,
             textAlign: TextAlign.center,
           ),
@@ -350,7 +358,10 @@ class _ErrorState extends StatelessWidget {
           Text(message, style: AppTypography.body, textAlign: TextAlign.center),
           if (onRetry != null) ...[
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsAutomationTryAgain),
+            ),
           ],
         ],
       ),

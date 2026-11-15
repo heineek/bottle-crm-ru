@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../services/automation_text.dart';
 import 'rule_sheet.dart';
 import 'rule_value_field.dart';
@@ -75,7 +76,7 @@ class _TriggerSheetState extends State<_TriggerSheet> {
     final field = fieldOf(widget.object, _field);
     final hint = _onlyWhen ? changeHint(field, _to) : null;
     return RuleSheetFrame(
-      title: 'When',
+      title: context.l10n.settingsAutomationTriggerTitle,
       controller: widget.controller,
       onDone: _done,
       children: [
@@ -86,9 +87,15 @@ class _TriggerSheetState extends State<_TriggerSheet> {
         const SizedBox(height: 8),
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: 'created', label: Text('is created')),
-            ButtonSegment(value: 'updated', label: Text('is updated')),
+          segments: [
+            ButtonSegment(
+              value: 'created',
+              label: Text(context.l10n.settingsAutomationTriggerIsCreated),
+            ),
+            ButtonSegment(
+              value: 'updated',
+              label: Text(context.l10n.settingsAutomationTriggerIsUpdated),
+            ),
           ],
           selected: {_event},
           onSelectionChanged: (s) => setState(() => _event = s.first),
@@ -98,12 +105,15 @@ class _TriggerSheetState extends State<_TriggerSheet> {
           DropdownButtonFormField<String>(
             initialValue: _field,
             isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Field',
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsAutomationField,
               border: OutlineInputBorder(),
             ),
             items: [
-              const DropdownMenuItem(value: '', child: Text('Any field')),
+              DropdownMenuItem(
+                value: '',
+                child: Text(context.l10n.settingsAutomationTriggerAnyField),
+              ),
               for (final o in fields)
                 DropdownMenuItem(
                   value: o.value,
@@ -119,7 +129,7 @@ class _TriggerSheetState extends State<_TriggerSheet> {
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Only when it changes to'),
+              title: Text(context.l10n.settingsAutomationTriggerOnlyWhen),
               value: _onlyWhen,
               onChanged: (v) => setState(() => _onlyWhen = v),
             ),
@@ -134,7 +144,7 @@ class _TriggerSheetState extends State<_TriggerSheet> {
               )
             else if (_onlyWhen)
               Text(
-                'This field is no longer available. Choose another.',
+                context.l10n.settingsAutomationFieldGone,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textSecondary,
                 ),

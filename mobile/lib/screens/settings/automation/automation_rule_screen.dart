@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/automation_provider.dart';
 import '../../../providers/org_modules_provider.dart';
@@ -123,19 +124,24 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     if (id != null) ref.invalidate(automationRuleProvider(id));
   }
 
-  String get _loadFailed =>
-      _isNew ? 'Could not load the rule editor.' : 'Could not load the rule';
+  String get _loadFailed => _isNew
+      ? context.l10n.settingsAutomationRuleEditorLoadFailed
+      : context.l10n.settingsAutomationRuleLoadFailed;
 
   String get _title {
-    if (_isNew) return 'New rule';
+    if (_isNew) return context.l10n.settingsAutomationRuleNewTitle;
     final name = _saved?.name ?? '';
-    return name.isEmpty ? 'Rule' : name;
+    return name.isEmpty ? context.l10n.settingsAutomationRuleTitle : name;
   }
 
   Widget _shell(Widget body) => Scaffold(
     backgroundColor: AppColors.surfaceDim,
     appBar: AppBar(
-      title: Text(_isNew ? 'New rule' : 'Rule'),
+      title: Text(
+        _isNew
+            ? context.l10n.settingsAutomationRuleNewTitle
+            : context.l10n.settingsAutomationRuleTitle,
+      ),
       backgroundColor: AppColors.surface,
       elevation: 0,
       scrolledUnderElevation: 1,
@@ -242,7 +248,8 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
       setState(() {
         _saving = false;
         _errors =
-            result.errors ?? RuleErrors(general: 'Could not save the rule.');
+            result.errors ??
+            RuleErrors(general: context.l10n.settingsAutomationRuleSaveFailed);
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final at = _firstError.currentContext;
@@ -258,9 +265,9 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     }
     ref.invalidate(automationRulesProvider);
     ref.invalidate(automationRuleProvider(saved.id));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Saved.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.settingsAutomationRuleSaved)),
+    );
     if (id == null) {
       context.replace(AppRoutes.settingsAutomationRule(saved.id));
       return;
@@ -274,11 +281,12 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
 
   /// The second button: switching on a rule that is off or new, or taking
   /// over a paused one. A rule that is already on has nothing to switch.
-  static String? _switchLabel(String? status) => switch (status) {
-    'new' || 'off' => 'Save and switch on',
-    'paused' => 'Save and take over',
-    _ => null,
-  };
+  static String? _switchLabel(AppLocalizations l10n, String? status) =>
+      switch (status) {
+        'new' || 'off' => l10n.settingsAutomationRuleSaveSwitchOn,
+        'paused' => l10n.settingsAutomationRuleSaveTakeOver,
+        _ => null,
+      };
 
   Widget _errorLine(String? message) {
     if (message == null || message.isEmpty) return const SizedBox.shrink();
@@ -304,7 +312,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     final object = _objectOf(catalogue, d.objectKey);
     final held =
         row != null && pausedByModule(row, ref.watch(shownModulesProvider));
-    final switchLabel = held ? null : _switchLabel(status);
+    final switchLabel = held ? null : _switchLabel(context.l10n, status);
     return UnsavedChangesGuard(
       hasUnsavedChanges: () => _dirty,
       isSaving: _saving || _busy,
@@ -317,7 +325,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
           scrolledUnderElevation: 1,
           leading: IconButton(
             icon: const Icon(LucideIcons.chevronLeft),
-            tooltip: 'Back',
+            tooltip: context.l10n.commonBack,
             onPressed: _saving || _busy
                 ? null
                 : () => leaveForm(context, hasUnsavedChanges: _dirty),
@@ -347,8 +355,8 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
                         readOnly: _saving,
                         maxLength: 120,
                         textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.commonName,
                           border: OutlineInputBorder(),
                           filled: true,
                           fillColor: AppColors.surface,
@@ -395,13 +403,13 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
                             onPressed: _saving
                                 ? null
                                 : () => _save(switchOn: false),
-                            child: const Text('Save'),
+                            child: Text(context.l10n.commonSave),
                           )
                         : OutlinedButton(
                             onPressed: _saving
                                 ? null
                                 : () => _save(switchOn: false),
-                            child: const Text('Save'),
+                            child: Text(context.l10n.commonSave),
                           ),
                   ),
                 if (switchLabel != null) ...[
@@ -423,7 +431,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
                         foregroundColor: AppColors.danger600,
                       ),
                       onPressed: _saving || _busy ? null : _delete,
-                      child: const Text('Delete rule'),
+                      child: Text(context.l10n.settingsAutomationRuleDelete),
                     ),
                   ),
                 ],
@@ -449,7 +457,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     final owner = saved?.owner;
     final ownerName = owner?.name.trim() ?? '';
     return _Section(
-      label: 'STATUS',
+      label: context.l10n.settingsAutomationRuleSectionStatus,
       children: [
         Align(
           alignment: Alignment.centerLeft,
@@ -462,7 +470,9 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
         if (owner != null) ...[
           const SizedBox(height: 6),
           Text(
-            ownerName.isEmpty ? 'Switched on' : 'Switched on by $ownerName',
+            ownerName.isEmpty
+                ? context.l10n.settingsAutomationRuleSwitchedOn
+                : context.l10n.settingsAutomationRuleSwitchedOnBy(ownerName),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -475,7 +485,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
             onPressed: _saving || _busy
                 ? null
                 : () => context.push(AppRoutes.settingsAutomationRuns(id)),
-            child: const Text('Run history'),
+            child: Text(context.l10n.settingsAutomationRuleRunHistory),
           ),
         ),
         if (saved?.isActive == true) ...[
@@ -484,7 +494,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
             height: 48,
             child: OutlinedButton(
               onPressed: _saving || _busy ? null : _switchOff,
-              child: const Text('Switch off'),
+              child: Text(context.l10n.settingsAutomationRuleSwitchOff),
             ),
           ),
         ],
@@ -494,18 +504,18 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
 
   Widget _tryCard(AutomationObject object) {
     final String? hint = _isNew
-        ? 'Save the rule to try it on a record.'
+        ? context.l10n.settingsAutomationRuleSaveToTry
         : _dirty
-        ? 'Save first: Try uses the saved rule.'
+        ? context.l10n.settingsAutomationRuleSaveFirst
         : null;
     return _Section(
-      label: 'TRY IT',
+      label: context.l10n.settingsAutomationRuleSectionTry,
       children: [
         SizedBox(
           height: 48,
           child: OutlinedButton(
             onPressed: hint != null || _saving || _busy ? null : _try,
-            child: const Text('Try it on a record'),
+            child: Text(context.l10n.settingsAutomationTryTitle),
           ),
         ),
         if (hint != null) ...[
@@ -536,7 +546,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     if (id == null || saved == null || _busy) return;
     final picked = await showLinkSearchSheet(
       context,
-      title: 'Try it on a record',
+      title: context.l10n.settingsAutomationTryTitle,
       target: saved.objectKey,
     );
     if (picked == null || !mounted) return;
@@ -564,7 +574,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
       return;
     }
     _refresh(id);
-    _toast('Switched off.');
+    _toast(context.l10n.settingsAutomationRuleSwitchedOff);
   }
 
   Future<void> _delete() async {
@@ -573,17 +583,17 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     final sure = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete this rule?'),
-        content: const Text('Its run history goes too.'),
+        title: Text(ctx.l10n.settingsAutomationRuleDeleteTitle),
+        content: Text(ctx.l10n.settingsAutomationRuleDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep it'),
+            child: Text(ctx.l10n.settingsAutomationRuleKeepIt),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete permanently'),
+            child: Text(ctx.l10n.settingsAutomationRuleDeletePermanently),
           ),
         ],
       ),
@@ -611,25 +621,28 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     final field = t.field;
     final String text;
     if (t.event == 'created') {
-      text = '${object.label} created';
+      text = context.l10n.settingsAutomationRuleWhenCreated(object.label);
     } else if (field == null || field.isEmpty) {
-      text = '${object.label} updated';
+      text = context.l10n.settingsAutomationRuleWhenUpdated(object.label);
     } else {
       final sentence = triggerSentence(
         AutomationRule(id: '', objectKey: d.objectKey, trigger: t),
         catalogue,
       );
-      text = '${object.label} updated: $sentence';
+      text = context.l10n.settingsAutomationRuleWhenUpdatedField(
+        object.label,
+        sentence,
+      );
     }
     return _Section(
-      label: 'WHEN',
+      label: context.l10n.settingsAutomationRuleSectionWhen,
       children: [
         if (_isNew) ...[
           DropdownButtonFormField<String>(
             initialValue: d.objectKey,
             isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Object',
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsAutomationRuleObject,
               border: OutlineInputBorder(),
             ),
             items: [
@@ -652,7 +665,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
               Expanded(child: Text(text, style: AppTypography.body)),
               const SizedBox(width: 8),
               Text(
-                'Edit',
+                context.l10n.commonEdit,
                 style: AppTypography.label.copyWith(
                   color: AppColors.primary600,
                 ),
@@ -668,13 +681,19 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     final d = _draft!;
     final atLimit = d.conditions.length >= catalogue.maxConditions;
     return _Section(
-      label: 'ONLY IF',
+      label: context.l10n.settingsAutomationRuleSectionOnlyIf,
       children: [
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('All of these')),
-            ButtonSegment(value: 'any', label: Text('Any of these')),
+          segments: [
+            ButtonSegment(
+              value: 'all',
+              label: Text(context.l10n.settingsAutomationRuleMatchAll),
+            ),
+            ButtonSegment(
+              value: 'any',
+              label: Text(context.l10n.settingsAutomationRuleMatchAny),
+            ),
           ],
           selected: {d.match},
           onSelectionChanged: (s) => setState(() {
@@ -696,7 +715,9 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Remove condition ${i + 1}',
+                  tooltip: context.l10n.settingsAutomationRuleRemoveCondition(
+                    i + 1,
+                  ),
                   icon: const Icon(LucideIcons.x, size: 18),
                   constraints: const BoxConstraints(
                     minWidth: 44,
@@ -717,12 +738,14 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
             style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
             onPressed: atLimit ? null : () => _editCondition(catalogue, object),
             icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add condition'),
+            label: Text(context.l10n.settingsAutomationAddCondition),
           ),
         ),
         if (atLimit)
           Text(
-            'A rule can have at most ${catalogue.maxConditions} conditions.',
+            context.l10n.settingsAutomationRuleConditionsLimit(
+              catalogue.maxConditions,
+            ),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -736,7 +759,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
     final atLimit = d.actions.length >= catalogue.maxActions;
     final canAdd = actionTypes(catalogue, object).isNotEmpty;
     return _Section(
-      label: 'THEN',
+      label: context.l10n.settingsAutomationRuleSectionThen,
       children: [
         for (var i = 0; i < d.actions.length; i++) ...[
           if (i > 0) const SizedBox(height: 8),
@@ -752,17 +775,17 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
                   ),
                 ),
                 _iconButton(
-                  'Move action ${i + 1} up',
+                  context.l10n.settingsAutomationRuleMoveActionUp(i + 1),
                   LucideIcons.arrowUp,
                   i == 0 ? null : () => _moveAction(i, -1),
                 ),
                 _iconButton(
-                  'Move action ${i + 1} down',
+                  context.l10n.settingsAutomationRuleMoveActionDown(i + 1),
                   LucideIcons.arrowDown,
                   i == d.actions.length - 1 ? null : () => _moveAction(i, 1),
                 ),
                 _iconButton(
-                  'Remove action ${i + 1}',
+                  context.l10n.settingsAutomationRuleRemoveAction(i + 1),
                   LucideIcons.x,
                   () => _removeAction(i),
                 ),
@@ -773,7 +796,7 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
         ],
         if (d.actions.isEmpty)
           Text(
-            'Add at least one action.',
+            context.l10n.settingsAutomationRuleActionsEmpty,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -787,12 +810,14 @@ class _AutomationRuleScreenState extends ConsumerState<AutomationRuleScreen> {
                 ? null
                 : () => _editAction(catalogue, object),
             icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add action'),
+            label: Text(context.l10n.settingsAutomationAddAction),
           ),
         ),
         if (atLimit)
           Text(
-            'A rule can have at most ${catalogue.maxActions} actions.',
+            context.l10n.settingsAutomationRuleActionsLimit(
+              catalogue.maxActions,
+            ),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -942,7 +967,7 @@ class _MemberNotice extends StatelessWidget {
           Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: 16),
           Text(
-            'Only an organization admin can see automation rules.',
+            context.l10n.settingsAutomationAdminOnly,
             style: AppTypography.body,
             textAlign: TextAlign.center,
           ),
@@ -973,7 +998,10 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(message, style: AppTypography.body, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          OutlinedButton(
+            onPressed: onRetry,
+            child: Text(context.l10n.settingsAutomationTryAgain),
+          ),
         ],
       ),
     ),

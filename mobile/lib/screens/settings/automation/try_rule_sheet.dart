@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 
 /// What a rule would do to one record. Nothing was changed; step texts and the
 /// record name come from the server and render as plain text.
@@ -26,7 +27,7 @@ Future<void> showTryResults(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        Text('Try it on a record', style: AppTypography.h3),
+        Text(sheet.l10n.settingsAutomationTryTitle, style: AppTypography.h3),
         const SizedBox(height: 12),
         if (error != null)
           Text(
@@ -35,13 +36,12 @@ Future<void> showTryResults(
           )
         else ...[
           Text(
-            'Tried on "$recordName". Nothing was changed.',
+            sheet.l10n.settingsAutomationTriedOn(recordName),
             style: AppTypography.body,
           ),
           const SizedBox(height: 4),
           Text(
-            'The trigger and conditions are not checked: this is what the '
-            'actions would do.',
+            sheet.l10n.settingsAutomationTryHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -54,7 +54,7 @@ Future<void> showTryResults(
           height: 48,
           child: OutlinedButton(
             onPressed: () => Navigator.pop(sheet),
-            child: const Text('Close'),
+            child: Text(sheet.l10n.commonClose),
           ),
         ),
       ],
@@ -77,9 +77,9 @@ class _Step extends StatelessWidget {
         ? AppColors.textSecondary
         : AppColors.textPrimary;
     final mark = failed
-        ? 'Would fail'
+        ? context.l10n.settingsAutomationTryWouldFail
         : skipped
-        ? 'Skipped'
+        ? context.l10n.settingsAutomationTrySkipped
         : null;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

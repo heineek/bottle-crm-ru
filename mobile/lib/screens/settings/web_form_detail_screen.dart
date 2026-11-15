@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
 import '../../data/models/web_form.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -210,9 +211,11 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
       _captchaSecret.clear();
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Changes saved')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsWebFormDetailChangesSaved),
+      ),
+    );
   }
 
   Future<void> _togglePublished(WebForm form) async {
@@ -222,20 +225,17 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Unpublish this form?'),
-          content: const Text(
-            'It stops accepting submissions immediately. The embed stays on '
-            'your site and starts refusing people.',
-          ),
+          title: Text(context.l10n.settingsWebFormDetailUnpublishTitle),
+          content: Text(context.l10n.settingsWebFormDetailUnpublishBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Keep it live'),
+              child: Text(context.l10n.settingsWebFormDetailKeepLive),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-              child: const Text('Unpublish it'),
+              child: Text(context.l10n.settingsWebFormDetailUnpublishConfirm),
             ),
           ],
         ),
@@ -243,13 +243,21 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
       if (confirmed != true) return;
       final error = await notifier.unpublish(form.id);
       if (!mounted) return;
-      _afterStateChange(form.id, error, 'Form unpublished');
+      _afterStateChange(
+        form.id,
+        error,
+        context.l10n.settingsWebFormDetailUnpublishedSnack,
+      );
       return;
     }
 
     final error = await notifier.publish(form.id);
     if (!mounted) return;
-    _afterStateChange(form.id, error, 'Form published');
+    _afterStateChange(
+      form.id,
+      error,
+      context.l10n.settingsWebFormDetailPublishedSnack,
+    );
   }
 
   void _afterStateChange(String id, String? error, String success) {
@@ -266,21 +274,17 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this form?'),
-        content: const Text(
-          'The form and its submission history go for good. Leads and tickets '
-          'it already created stay where they are. Any embed still on your '
-          'site will stop working.',
-        ),
+        title: Text(context.l10n.settingsWebFormDetailDeleteTitle),
+        content: Text(context.l10n.settingsWebFormDetailDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsWebFormDetailKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete permanently'),
+            child: Text(context.l10n.settingsWebFormDetailDeletePermanently),
           ),
         ],
       ),
@@ -298,12 +302,13 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
   }
 
-  Future<void> _copy(String text, String what) async {
+  /// [copied] is the whole confirmation, e.g. "iframe snippet copied".
+  Future<void> _copy(String text, String Function() copied) async {
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('$what copied')));
+    ).showSnackBar(SnackBar(content: Text(copied())));
   }
 
   @override
@@ -320,7 +325,7 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Web form')),
+        appBar: AppBar(title: Text(context.l10n.settingsWebFormDetailTitle)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -336,7 +341,8 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
         _seed(detail.form);
         final draft = _draft!;
         final blocker = draft.publishBlocker;
-        final noun = draft.isTicket ? 'ticket' : 'lead';
+        final l10n = context.l10n;
+        final isTicket = draft.isTicket;
         // Only the target model's active definitions. The server refuses any
         // other, so offering one would only buy a 400 on save.
         final model = customFieldModelFor(draft.target);
@@ -369,7 +375,7 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
               if (isAdmin)
                 IconButton(
                   icon: const Icon(LucideIcons.trash2),
-                  tooltip: 'Delete form',
+                  tooltip: l10n.settingsWebFormDetailDeleteTooltip,
                   onPressed: () => _delete(detail.form),
                 ),
             ],
@@ -382,7 +388,11 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                       height: 48,
                       child: FilledButton(
                         onPressed: _saving ? null : _save,
-                        child: Text(_saving ? 'Saving…' : 'Save changes'),
+                        child: Text(
+                          _saving
+                              ? l10n.settingsWebFormDetailSaving
+                              : l10n.settingsWebFormDetailSaveChanges,
+                        ),
                       ),
                     ),
                   ),
@@ -399,11 +409,8 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
               ),
 
               _SectionHeader(
-                'Fields',
-                subtitle:
-                    'What a visitor is asked, in the order they are asked it. '
-                    'An email field is required before the form can be '
-                    'published.',
+                l10n.settingsWebFormDetailFields,
+                subtitle: l10n.settingsWebFormDetailFieldsSub,
               ),
               _FieldList(
                 fields: draft.fields,
@@ -420,46 +427,46 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _editField(null, customFields),
                       icon: const Icon(LucideIcons.plus, size: 16),
-                      label: const Text('Add a field'),
+                      label: Text(l10n.settingsWebFormDetailAddField),
                     ),
                   ),
                 ),
 
               _SectionHeader(
-                'Behaviour',
-                subtitle:
-                    'What the visitor sees after they submit, and where the '
-                    '$noun lands.',
+                l10n.settingsWebFormDetailBehaviour,
+                subtitle: isTicket
+                    ? l10n.settingsWebFormDetailBehaviourSubTicket
+                    : l10n.settingsWebFormDetailBehaviourSubLead,
               ),
               _Panel(
                 children: [
                   _Text(
                     controller: _name,
-                    label: 'Name',
-                    helper: 'Internal only. The visitor never sees it',
+                    label: l10n.commonName,
+                    helper: l10n.settingsWebFormNameHelper,
                     enabled: isAdmin,
                   ),
                   _Text(
                     controller: _submitLabel,
-                    label: 'Submit button',
+                    label: l10n.settingsWebFormDetailSubmitButton,
                     enabled: isAdmin,
                     maxLength: 64,
                   ),
                   DropdownButtonFormField<String>(
                     initialValue: draft.successMode,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'After a successful submission',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.settingsWebFormDetailAfterSuccess,
+                      border: const OutlineInputBorder(),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: WebForm.successMessage,
-                        child: Text('Show a message'),
+                        child: Text(l10n.settingsWebFormDetailShowMessage),
                       ),
                       DropdownMenuItem(
                         value: WebForm.successRedirect,
-                        child: Text('Redirect to a URL'),
+                        child: Text(l10n.settingsWebFormDetailRedirectToUrl),
                       ),
                     ],
                     onChanged: isAdmin
@@ -471,17 +478,15 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                   if (draft.redirectsOnSuccess)
                     _Text(
                       controller: _redirectUrl,
-                      label: 'Redirect URL',
-                      helper:
-                          'http or https only. The embed navigates the '
-                          'visitor here',
+                      label: l10n.settingsWebFormDetailRedirectUrl,
+                      helper: l10n.settingsWebFormDetailRedirectHelper,
                       enabled: isAdmin,
                       keyboardType: TextInputType.url,
                     )
                   else
                     _Text(
                       controller: _successMessage,
-                      label: 'Success message',
+                      label: l10n.settingsWebFormDetailSuccessMessage,
                       enabled: isAdmin,
                       minLines: 2,
                       maxLines: 4,
@@ -490,22 +495,20 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: draft.assignmentMode,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Assign new leads',
-                        helperText:
-                            'A repeat submission from the same email updates '
-                            'the existing lead and keeps its owner',
+                      decoration: InputDecoration(
+                        labelText: l10n.settingsWebFormDetailAssignNewLeads,
+                        helperText: l10n.settingsWebFormDetailAssignHelper,
                         helperMaxLines: 3,
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: WebForm.assignPerson,
-                          child: Text('To one person'),
+                          child: Text(l10n.settingsWebFormDetailToOnePerson),
                         ),
                         DropdownMenuItem(
                           value: WebForm.assignRotation,
-                          child: Text('Rotate between members'),
+                          child: Text(l10n.settingsWebFormDetailRotateMembers),
                         ),
                       ],
                       onChanged: isAdmin
@@ -518,15 +521,17 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     ),
                   if (!draft.isTicket && draft.isRotation) ...[
                     _MultiPick(
-                      label: 'Rotate between',
-                      empty: 'Nobody to rotate between yet',
+                      label: l10n.settingsWebFormDetailRotateBetween,
+                      empty: l10n.settingsWebFormDetailRotateEmpty,
                       options: [
                         for (final member in offListMembers)
                           (
                             id: member.id,
                             name: member.isActive
                                 ? member.displayName
-                                : '${member.displayName} (deactivated)',
+                                : l10n.settingsWebFormDetailDeactivated(
+                                    member.displayName,
+                                  ),
                           ),
                         for (final profile in profiles)
                           (id: profile.id, name: profile.displayName),
@@ -538,22 +543,24 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                       ),
                     ),
                     Text(
-                      'Each new lead goes to the next member in turn. '
-                      'Deactivated members are skipped.'
-                      '${detail.form.isRotation ? ' Last assigned: ${lastAssigned?.displayName ?? 'nobody yet'}.' : ''}',
+                      [
+                        l10n.settingsWebFormDetailRotationHint,
+                        if (detail.form.isRotation)
+                          lastAssigned == null
+                              ? l10n.settingsWebFormDetailLastAssignedNobody
+                              : l10n.settingsWebFormDetailLastAssigned(
+                                  lastAssigned.displayName,
+                                ),
+                      ].join(' '),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
                     ),
                     _Text(
                       controller: _rotationCap,
-                      label: 'Most open leads per member',
-                      hint: 'No limit',
-                      helper:
-                          'Optional. A member holding this many open leads '
-                          'is passed over until one is converted or closed. '
-                          'When everyone is passed over, the lead stays '
-                          'unassigned',
+                      label: l10n.settingsWebFormDetailCapLabel,
+                      hint: l10n.settingsWebFormDetailCapHint,
+                      helper: l10n.settingsWebFormDetailCapHelper,
                       enabled: isAdmin,
                       keyboardType: TextInputType.number,
                       maxLength: 6,
@@ -564,27 +571,24 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                       initialValue: draft.assignTo,
                       isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: 'Assign new ${noun}s to',
+                        labelText: isTicket
+                            ? l10n.settingsWebFormDetailAssignTicketsTo
+                            : l10n.settingsWebFormDetailAssignLeadsTo,
                         helperText:
                             offList != null &&
                                 !offList.isActive &&
                                 draft.assignTo == offList.id
-                            ? draft.isTicket
-                                  ? 'Deactivated users are not assigned. New '
-                                        'tickets from this form are left to your '
-                                        'routing rules until you choose someone '
-                                        'else.'
-                                  : 'Deactivated users are not assigned. New '
-                                        'leads from this form stay unassigned '
-                                        'until you choose someone else.'
+                            ? isTicket
+                                  ? l10n.settingsWebFormDetailDeactivatedTicketHelper
+                                  : l10n.settingsWebFormDetailDeactivatedLeadHelper
                             : null,
                         helperMaxLines: 3,
                         border: const OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem(
+                        DropdownMenuItem(
                           value: null,
-                          child: Text('Nobody'),
+                          child: Text(l10n.settingsWebFormDetailNobody),
                         ),
                         if (offList != null)
                           DropdownMenuItem(
@@ -592,7 +596,9 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                             child: Text(
                               offList.isActive
                                   ? offList.displayName
-                                  : '${offList.displayName} (deactivated)',
+                                  : l10n.settingsWebFormDetailDeactivated(
+                                      offList.displayName,
+                                    ),
                             ),
                           ),
                         for (final profile in profiles)
@@ -613,14 +619,17 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: draft.ticketPriority,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Ticket priority',
-                        helperText: 'Set by the form, never by the visitor',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.settingsWebFormDetailTicketPriority,
+                        helperText: l10n.settingsWebFormDetailPriorityHelper,
+                        border: const OutlineInputBorder(),
                       ),
                       items: [
                         for (final p in ticketPriorities)
-                          DropdownMenuItem(value: p, child: Text(p)),
+                          DropdownMenuItem(
+                            value: p,
+                            child: Text(_priorityLabel(l10n, p)),
+                          ),
                       ],
                       onChanged: isAdmin
                           ? (value) => setState(
@@ -633,17 +642,20 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: draft.ticketType,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Ticket type',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.settingsWebFormDetailTicketType,
+                        border: const OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem(
+                        DropdownMenuItem(
                           value: '',
-                          child: Text('No type'),
+                          child: Text(l10n.settingsWebFormDetailNoType),
                         ),
                         for (final t in ticketTypes)
-                          DropdownMenuItem(value: t, child: Text(t)),
+                          DropdownMenuItem(
+                            value: t,
+                            child: Text(_ticketTypeLabel(l10n, t)),
+                          ),
                       ],
                       onChanged: isAdmin
                           ? (value) => setState(
@@ -655,8 +667,10 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     ),
                   ],
                   _MultiPick(
-                    label: 'Email these people on each $noun',
-                    empty: 'Nobody else',
+                    label: isTicket
+                        ? l10n.settingsWebFormDetailNotifyTicket
+                        : l10n.settingsWebFormDetailNotifyLead,
+                    empty: l10n.settingsWebFormDetailNobodyElse,
                     options: [
                       for (final profile in profiles)
                         (id: profile.id, name: profile.displayName),
@@ -668,8 +682,10 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                     ),
                   ),
                   _MultiPick(
-                    label: 'Tag every $noun with',
-                    empty: 'No tags',
+                    label: isTicket
+                        ? l10n.settingsWebFormDetailTagTicket
+                        : l10n.settingsWebFormDetailTagLead,
+                    empty: l10n.settingsWebFormDetailNoTags,
                     options: [
                       for (final tag in tags) (id: tag.id, name: tag.name),
                     ],
@@ -682,21 +698,15 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
               ),
 
               _SectionHeader(
-                'Spam',
-                subtitle:
-                    'A hidden honeypot field, a per-address rate limit and a '
-                    'per-form one are always on and are not configurable. '
-                    'These are the parts you choose.',
+                l10n.settingsWebFormDetailSpam,
+                subtitle: l10n.settingsWebFormDetailSpamSub,
               ),
               _Panel(
                 children: [
                   _Text(
                     controller: _origins,
-                    label: 'Allowed origins',
-                    helper:
-                        'One per line, scheme and host only. Leave empty and '
-                        'the iframe embed works anywhere. The script embed '
-                        'needs the site listed here',
+                    label: l10n.settingsWebFormDetailOrigins,
+                    helper: l10n.settingsWebFormDetailOriginsHelper,
                     enabled: isAdmin,
                     minLines: 2,
                     maxLines: 5,
@@ -717,22 +727,22 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                             )
                           : null,
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Reject throwaway email addresses'),
+                      title: Text(l10n.settingsWebFormDetailRejectDisposable),
                     ),
                   ),
                   DropdownButtonFormField<String>(
                     initialValue: draft.captchaProvider,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Challenge',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.settingsWebFormDetailChallenge,
+                      border: const OutlineInputBorder(),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: WebForm.captchaNone,
-                        child: Text('None'),
+                        child: Text(l10n.settingsWebFormDetailChallengeNone),
                       ),
-                      DropdownMenuItem(
+                      const DropdownMenuItem(
                         value: WebForm.captchaTurnstile,
                         child: Text('Cloudflare Turnstile'),
                       ),
@@ -747,21 +757,18 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
                   if (draft.usesTurnstile) ...[
                     _Text(
                       controller: _captchaSiteKey,
-                      label: 'Turnstile site key',
+                      label: l10n.settingsWebFormDetailSiteKey,
                       enabled: isAdmin,
                     ),
                     _Text(
                       controller: _captchaSecret,
-                      label: 'Turnstile secret',
+                      label: l10n.settingsWebFormDetailSecret,
                       hint: detail.form.hasCaptchaSecret
-                          ? 'Stored. Leave blank to keep it'
-                          : 'Paste the secret from Cloudflare',
+                          ? l10n.settingsWebFormDetailSecretStoredHint
+                          : l10n.settingsWebFormDetailSecretPasteHint,
                       helper: detail.form.hasCaptchaSecret
-                          ? 'Never shown again once saved. Leaving this blank '
-                                'keeps what is stored'
-                          : 'No secret stored yet. Verification fails closed, '
-                                'so publishing with Turnstile on and no secret '
-                                'would refuse every submission',
+                          ? l10n.settingsWebFormDetailSecretStoredHelper
+                          : l10n.settingsWebFormDetailSecretMissingHelper,
                       enabled: isAdmin,
                       obscure: true,
                     ),
@@ -770,38 +777,42 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
               ),
 
               _SectionHeader(
-                'Embed',
-                subtitle:
-                    'Paste one of these into your own site. Both are built by '
-                    'the server, because they need the API address.',
+                l10n.settingsWebFormDetailEmbed,
+                subtitle: l10n.settingsWebFormDetailEmbedSub,
               ),
               _Snippet(
                 title: 'iframe',
-                note: 'Works anywhere, no origin list needed.',
+                note: l10n.settingsWebFormDetailIframeNote,
                 code: detail.form.embedHtml,
-                onCopy: () => _copy(detail.form.embedHtml, 'iframe snippet'),
+                onCopy: () => _copy(
+                  detail.form.embedHtml,
+                  () => context.l10n.settingsWebFormDetailIframeCopied,
+                ),
               ),
               _Snippet(
                 title: 'script',
-                note: 'Inherits your site styling.',
+                note: l10n.settingsWebFormDetailScriptNote,
                 code: detail.form.embedJs,
                 warning: detail.form.allowedOrigins.isEmpty
-                    ? 'This one will not work yet. Add the site origin under '
-                          'Spam first: the browser blocks a cross-origin POST '
-                          'unless we permit that origin, and this form permits '
-                          'none.'
+                    ? l10n.settingsWebFormDetailScriptWarning
                     : null,
-                onCopy: () => _copy(detail.form.embedJs, 'script snippet'),
+                onCopy: () => _copy(
+                  detail.form.embedJs,
+                  () => context.l10n.settingsWebFormDetailScriptCopied,
+                ),
               ),
 
               _SectionHeader(
-                'Activity',
-                subtitle:
-                    'The last 30 days. A view is counted when the embed '
-                    'loads, whether or not anyone fills it in.',
+                l10n.settingsWebFormDetailActivity,
+                subtitle: l10n.settingsWebFormDetailActivitySub,
               ),
               if (detail.analytics != null)
-                _AnalyticsRow(analytics: detail.analytics!, noun: '${noun}s'),
+                _AnalyticsRow(
+                  analytics: detail.analytics!,
+                  noun: isTicket
+                      ? l10n.settingsWebFormDetailStatTickets
+                      : l10n.settingsWebFormDetailStatLeads,
+                ),
               _Submissions(
                 submissions: detail.submissions,
                 total: detail.submissionCount,
@@ -813,6 +824,22 @@ class _WebFormDetailScreenState extends ConsumerState<WebFormDetailScreen> {
     );
   }
 }
+
+/// [ticketPriorities] are API codes; only what the dropdown shows is translated.
+String _priorityLabel(AppLocalizations l10n, String code) => switch (code) {
+  'Low' => l10n.settingsWebFormDetailPriorityLow,
+  'Normal' => l10n.settingsWebFormDetailPriorityNormal,
+  'High' => l10n.settingsWebFormDetailPriorityHigh,
+  'Urgent' => l10n.settingsWebFormDetailPriorityUrgent,
+  _ => code,
+};
+
+String _ticketTypeLabel(AppLocalizations l10n, String code) => switch (code) {
+  'Question' => l10n.settingsWebFormDetailTypeQuestion,
+  'Incident' => l10n.settingsWebFormDetailTypeIncident,
+  'Problem' => l10n.settingsWebFormDetailTypeProblem,
+  _ => code,
+};
 
 class _StatusCard extends StatelessWidget {
   const _StatusCard({
@@ -838,7 +865,9 @@ class _StatusCard extends StatelessWidget {
           Row(
             children: [
               StatusBadge(
-                label: form.isPublished ? 'Published' : 'Draft',
+                label: form.isPublished
+                    ? context.l10n.settingsWebFormPublished
+                    : context.l10n.settingsWebFormDraft,
                 color: form.isPublished
                     ? AppColors.success600
                     : AppColors.gray500,
@@ -846,8 +875,8 @@ class _StatusCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '${form.isTicket ? 'Creates tickets' : 'Creates leads'}. '
-                  '${form.isPublished ? 'Accepting submissions from anyone with the embed.' : 'Collecting nothing until it is published.'}',
+                  '${form.isTicket ? context.l10n.settingsWebFormDetailCreatesTickets : context.l10n.settingsWebFormDetailCreatesLeads} '
+                  '${form.isPublished ? context.l10n.settingsWebFormDetailAccepting : context.l10n.settingsWebFormDetailCollectingNothing}',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -871,7 +900,11 @@ class _StatusCard extends StatelessWidget {
                         foregroundColor: AppColors.danger600,
                       )
                     : null,
-                child: Text(form.isPublished ? 'Unpublish' : 'Publish'),
+                child: Text(
+                  form.isPublished
+                      ? context.l10n.settingsWebFormDetailUnpublish
+                      : context.l10n.settingsWebFormDetailPublish,
+                ),
               ),
             ),
             if (!form.isPublished && blocker != null) ...[
@@ -912,7 +945,7 @@ class _FieldList extends StatelessWidget {
         color: AppColors.surface,
         padding: const EdgeInsets.all(16),
         child: Text(
-          'No fields yet. A form with no fields collects nothing.',
+          context.l10n.settingsWebFormDetailFieldsEmpty,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
       );
@@ -976,7 +1009,10 @@ class _FieldRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final target = field.isCustom ? 'Custom field' : field.builtinLabel;
+    final l10n = context.l10n;
+    final target = field.isCustom
+        ? l10n.settingsWebFormCustomField
+        : field.builtinLabel;
 
     return Container(
       color: AppColors.surface,
@@ -1017,7 +1053,9 @@ class _FieldRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      field.isRequired ? '$target · required' : target,
+                      field.isRequired
+                          ? l10n.settingsWebFormDetailFieldRequired(target)
+                          : target,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -1025,7 +1063,7 @@ class _FieldRow extends StatelessWidget {
                     if (!field.isComplete) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'Incomplete. It needs a label and a target.',
+                        l10n.settingsWebFormDetailFieldIncomplete,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.warning600,
                         ),
@@ -1041,17 +1079,19 @@ class _FieldRow extends StatelessWidget {
             // Both call `onReorder`, so there is one implementation.
             _IconAction(
               icon: LucideIcons.chevronUp,
-              tooltip: 'Move ${field.displayLabel} up',
+              tooltip: l10n.settingsWebFormDetailMoveUp(field.displayLabel),
               onPressed: onMoveUp,
             ),
             _IconAction(
               icon: LucideIcons.chevronDown,
-              tooltip: 'Move ${field.displayLabel} down',
+              tooltip: l10n.settingsWebFormDetailMoveDown(field.displayLabel),
               onPressed: onMoveDown,
             ),
             _IconAction(
               icon: LucideIcons.trash2,
-              tooltip: 'Remove ${field.displayLabel}',
+              tooltip: l10n.settingsWebFormDetailRemoveField(
+                field.displayLabel,
+              ),
               onPressed: onRemove,
             ),
           ],
@@ -1315,7 +1355,7 @@ class _Snippet extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onCopy,
                   icon: const Icon(LucideIcons.copy, size: 15),
-                  label: const Text('Copy'),
+                  label: Text(context.l10n.settingsWebFormDetailCopy),
                 ),
               ),
             ],
@@ -1376,7 +1416,10 @@ class _AnalyticsRow extends StatelessWidget {
         spacing: 20,
         runSpacing: 10,
         children: [
-          _Stat(value: '${analytics.views}', label: 'views'),
+          _Stat(
+            value: '${analytics.views}',
+            label: context.l10n.settingsWebFormDetailStatViews,
+          ),
           _Stat(value: '${analytics.submissions}', label: noun),
           _Stat(
             // Guarded rather than computed blind: a brand new form has zero
@@ -1384,9 +1427,12 @@ class _AnalyticsRow extends StatelessWidget {
             value: analytics.views == 0
                 ? '-'
                 : '${(analytics.conversionRate * 100).round()}%',
-            label: 'conversion',
+            label: context.l10n.settingsWebFormDetailStatConversion,
           ),
-          _Stat(value: '${analytics.spam}', label: 'spam blocked'),
+          _Stat(
+            value: '${analytics.spam}',
+            label: context.l10n.settingsWebFormStatSpam,
+          ),
         ],
       ),
     );
@@ -1431,8 +1477,7 @@ class _Submissions extends StatelessWidget {
         color: AppColors.surface,
         padding: const EdgeInsets.all(16),
         child: Text(
-          'Nothing submitted yet. Rejected attempts would be listed here too, '
-          'so an empty list means nobody has reached the form at all.',
+          context.l10n.settingsWebFormDetailSubmissionsEmpty,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
       );
@@ -1484,10 +1529,10 @@ class _Submissions extends StatelessWidget {
                   ),
                   StatusBadge(
                     label: !submission.isAccepted
-                        ? 'Refused'
+                        ? context.l10n.settingsWebFormDetailBadgeRefused
                         : submission.caseId != null
-                        ? 'Ticket'
-                        : 'Lead',
+                        ? context.l10n.settingsWebFormDetailBadgeTicket
+                        : context.l10n.settingsWebFormDetailBadgeLead,
                     color: submission.isAccepted
                         ? AppColors.success600
                         : AppColors.gray500,
@@ -1502,7 +1547,10 @@ class _Submissions extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Showing the ${submissions.length} most recent of $total.',
+                context.l10n.settingsWebFormShowingRecent(
+                  submissions.length,
+                  total,
+                ),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),

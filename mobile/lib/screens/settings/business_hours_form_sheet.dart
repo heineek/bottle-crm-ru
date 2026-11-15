@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/business_calendar.dart';
+import '../../l10n/l10n.dart';
 
 /// What the week form hands back.
 typedef BusinessHoursDraft = ({
@@ -123,6 +124,7 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
     // Live, not on submit: closing the last open day is a change of meaning,
     // not a mistake, so it is announced while it is still being made.
     final wouldBeAlwaysOn = _days.every((d) => d.hours == 0);
+    final l10n = context.l10n;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -137,7 +139,7 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Edit business hours',
+              l10n.settingsBusinessHoursFormTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -145,9 +147,9 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
               controller: _name,
               maxLength: 100,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Calendar name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsBusinessHoursFormCalendarName,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -156,15 +158,15 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
               controller: _timezone,
               maxLength: 64,
               autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'Timezone',
-                helperText: 'An IANA name, like Asia/Kolkata',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsBusinessHoursFormTimezone,
+                helperText: l10n.settingsBusinessHoursFormTimezoneHelper,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
             const SizedBox(height: 16),
-            const _SectionLabel('The week'),
+            _SectionLabel(l10n.settingsBusinessHoursFormWeek),
             for (final (index, row) in _rows.indexed)
               _DayEditor(
                 label: row.day.day,
@@ -185,9 +187,7 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
             if (wouldBeAlwaysOn) ...[
               const SizedBox(height: 4),
               Text(
-                'With no day open, targets run around the clock. The engine '
-                'drops a calendar that never opens rather than treating it as '
-                'permanently shut.',
+                l10n.settingsBusinessHoursFormAlwaysOn,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.warning600,
                 ),
@@ -210,7 +210,7 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -220,7 +220,7 @@ class _BusinessHoursFormSheetState extends State<_BusinessHoursFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: const Text('Save hours'),
+                      child: Text(l10n.settingsBusinessHoursFormSave),
                     ),
                   ),
                 ),
@@ -295,7 +295,9 @@ class _DayEditor extends StatelessWidget {
                 ),
               ),
               Text(
-                closed ? 'Closed' : 'Open',
+                closed
+                    ? context.l10n.settingsBusinessHoursFormClosed
+                    : context.l10n.settingsBusinessHoursFormOpen,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -311,7 +313,9 @@ class _DayEditor extends StatelessWidget {
                     height: 44,
                     child: OutlinedButton(
                       onPressed: onOpenTap,
-                      child: Text('From $open'),
+                      child: Text(
+                        context.l10n.settingsBusinessHoursFormFrom(open),
+                      ),
                     ),
                   ),
                 ),
@@ -321,7 +325,9 @@ class _DayEditor extends StatelessWidget {
                     height: 44,
                     child: OutlinedButton(
                       onPressed: onCloseTap,
-                      child: Text('To $close'),
+                      child: Text(
+                        context.l10n.settingsBusinessHoursFormTo(close),
+                      ),
                     ),
                   ),
                 ),
@@ -392,11 +398,13 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
   void _submit() {
     final iso = _iso;
     if (iso == null) {
-      setState(() => _error = 'Pick a date.');
+      setState(
+        () => _error = context.l10n.settingsBusinessHoursFormPickDateError,
+      );
       return;
     }
     if (_name.text.trim().isEmpty) {
-      setState(() => _error = 'Give the day a name, so the list reads.');
+      setState(() => _error = context.l10n.settingsBusinessHoursFormNameError);
       return;
     }
     Navigator.of(context).pop((date: iso, name: _name.text));
@@ -408,6 +416,7 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
     final duplicate = iso == null
         ? null
         : holidayDuplicateWarning(widget.calendar, iso);
+    final l10n = context.l10n;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -422,13 +431,14 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Add a holiday',
+              l10n.settingsBusinessHoursFormHolidayTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
-              'A full day off in ${widget.calendar.timezone}. Targets stop for '
-              'the whole of it.',
+              l10n.settingsBusinessHoursFormHolidayIntro(
+                widget.calendar.timezone,
+              ),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -441,7 +451,9 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                 onPressed: _pickDate,
                 icon: const Icon(LucideIcons.calendar, size: 18),
                 label: Text(
-                  iso == null ? 'Pick a date' : humanHolidayDate(iso),
+                  iso == null
+                      ? l10n.settingsBusinessHoursFormPickDate
+                      : humanHolidayDate(iso),
                 ),
               ),
             ),
@@ -459,10 +471,10 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
               controller: _name,
               maxLength: 100,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'Christmas Day',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.commonName,
+                hintText: l10n.settingsBusinessHoursFormHolidayHint,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -483,7 +495,7 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -493,7 +505,7 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: const Text('Add holiday'),
+                      child: Text(l10n.settingsBusinessHoursFormAddHoliday),
                     ),
                   ),
                 ),

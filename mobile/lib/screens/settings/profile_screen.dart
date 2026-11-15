@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
+import '../../providers/language_provider.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/profile.dart';
 import '../../providers/org_modules_provider.dart';
@@ -83,7 +85,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Profile updated' : 'Could not update profile'),
+        content: Text(
+          ok
+              ? context.l10n.settingsProfileUpdated
+              : context.l10n.settingsProfileUpdateFailed,
+        ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: ok ? AppColors.success600 : AppColors.danger600,
       ),
@@ -99,7 +105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surfaceDim,
         appBar: AppBar(
-          title: const Text('Profile'),
+          title: Text(context.l10n.settingsProfileTitle),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -117,7 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: IconButton(
                   onPressed: () => _enterEdit(async.value!),
                   icon: const Icon(LucideIcons.edit3, size: 20),
-                  tooltip: 'Edit profile',
+                  tooltip: context.l10n.settingsProfileEditProfile,
                   color: AppColors.primary600,
                 ),
               ),
@@ -139,7 +145,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           Icon(LucideIcons.alertCircle, size: 40, color: AppColors.gray400),
           const SizedBox(height: 12),
-          Text('Could not load profile', style: AppTypography.label),
+          Text(
+            context.l10n.settingsProfileLoadFailed,
+            style: AppTypography.label,
+          ),
           const SizedBox(height: 4),
           Text(
             '$e',
@@ -151,7 +160,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 12),
           TextButton(
             onPressed: () => ref.read(profileProvider.notifier).refresh(),
-            child: const Text('Retry'),
+            child: Text(context.l10n.commonRetry),
           ),
         ],
       ),
@@ -233,7 +242,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             OutlinedButton.icon(
               onPressed: () => _enterEdit(profile),
               icon: const Icon(LucideIcons.edit3, size: 16),
-              label: const Text('Edit profile'),
+              label: Text(context.l10n.settingsProfileEditProfile),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary700,
                 backgroundColor: AppColors.surface,
@@ -262,110 +271,123 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader('Personal'),
+        _sectionHeader(context.l10n.settingsProfileSectionPersonal),
         _InfoRow(
           icon: LucideIcons.user,
-          label: 'Name',
+          label: context.l10n.commonName,
           value: profile.user.name?.trim().isNotEmpty == true
               ? profile.user.name!
               : '—',
         ),
         _InfoRow(
           icon: LucideIcons.mail,
-          label: 'Email',
+          label: context.l10n.commonEmail,
           value: profile.user.email,
         ),
         _InfoRow(
           icon: LucideIcons.phone,
-          label: 'Phone',
+          label: context.l10n.commonPhone,
           value: profile.phone?.trim().isNotEmpty == true
               ? profile.phone!
               : '—',
         ),
-        _sectionHeader('Organization'),
+        _sectionHeader(context.l10n.settingsProfileSectionOrganization),
         if (profile.org != null)
           _InfoRow(
             icon: LucideIcons.building2,
-            label: 'Organization',
+            label: context.l10n.settingsProfileOrganization,
             value: profile.org!.name,
           ),
         if (profile.role != null)
           _InfoRow(
             icon: LucideIcons.shield,
-            label: 'Role',
+            label: context.l10n.settingsProfileRole,
             value: profile.role!,
           ),
         if (profile.dateOfJoining != null)
           _InfoRow(
             icon: LucideIcons.calendar,
-            label: 'Joined',
+            label: context.l10n.settingsProfileJoined,
             value: DateFormat.yMMMMd().format(profile.dateOfJoining!),
           ),
         // The web profile page shows these two; this screen did not, so the
         // same person read differently depending on which client they opened.
         _InfoRow(
           icon: LucideIcons.users,
-          label: 'Teams',
-          value: profile.teams.isEmpty ? 'None' : profile.teams.join(', '),
+          label: context.l10n.settingsProfileTeams,
+          value: profile.teams.isEmpty
+              ? context.l10n.settingsProfileTeamsNone
+              : profile.teams.join(', '),
         ),
         _InfoRow(
           icon: LucideIcons.logIn,
-          label: 'Last signed in',
+          label: context.l10n.settingsProfileLastSignedIn,
           value: profile.lastLogin == null
-              ? 'Not recorded'
+              ? context.l10n.settingsProfileNotRecorded
               : DateFormat.yMMMMd().add_jm().format(
                   profile.lastLogin!.toLocal(),
                 ),
         ),
-        _sectionHeader('Access'),
+        _sectionHeader(context.l10n.settingsProfileSectionAccess),
         _InfoRow(
           icon: LucideIcons.target,
-          label: 'Sales',
-          value: profile.hasSalesAccess ? 'Enabled' : 'Disabled',
+          label: context.l10n.settingsProfileSales,
+          value: profile.hasSalesAccess
+              ? context.l10n.settingsProfileEnabled
+              : context.l10n.settingsProfileDisabled,
         ),
         _InfoRow(
           icon: LucideIcons.megaphone,
-          label: 'Marketing',
-          value: profile.hasMarketingAccess ? 'Enabled' : 'Disabled',
+          label: context.l10n.settingsProfileMarketing,
+          value: profile.hasMarketingAccess
+              ? context.l10n.settingsProfileEnabled
+              : context.l10n.settingsProfileDisabled,
         ),
-        _sectionHeader('Your account'),
+        _sectionHeader(context.l10n.settingsProfileSectionYourAccount),
         // Your OWN tokens, not the settings screen: that one is the admin's
         // org-wide oversight list and answers a member 403.
         _LinkRow(
           icon: LucideIcons.keyRound,
-          label: 'API tokens',
-          detail: 'Each one signs in as you, with your role',
+          label: context.l10n.settingsProfileApiTokens,
+          detail: context.l10n.settingsProfileApiTokensDetail,
           trailing: _tokenCount(),
           onTap: () => context.push(AppRoutes.profileTokens),
+        ),
+        _LinkRow(
+          icon: LucideIcons.languages,
+          label: context.l10n.profileLanguageRow,
+          detail: lookupAppLocalizations(
+            Locale(ref.watch(languageProvider)),
+          ).languageName,
+          onTap: () => context.push(AppRoutes.profileLanguage),
         ),
         if (ref.watch(moduleOnProvider('tasks')))
           _LinkRow(
             icon: LucideIcons.calendarDays,
-            label: 'Calendar feed',
-            detail:
-                'Your open tasks in Google Calendar, Outlook or Apple Calendar',
+            label: context.l10n.settingsProfileCalendarFeed,
+            detail: context.l10n.settingsProfileCalendarFeedDetail,
             onTap: () => context.push(AppRoutes.profileCalendarFeed),
           ),
-        if (workLinks) _sectionHeader('Where your work shows up'),
+        if (workLinks) _sectionHeader(context.l10n.settingsProfileSectionWork),
         if (ref.watch(moduleOnProvider('goals')))
           _LinkRow(
             icon: LucideIcons.target,
-            label: 'Goals',
-            detail: 'Your quota and how it is pacing',
+            label: context.l10n.settingsProfileGoals,
+            detail: context.l10n.settingsProfileGoalsDetail,
             onTap: () => context.push(AppRoutes.goals),
           ),
         if (ref.watch(moduleOnProvider('timesheet')))
           _LinkRow(
             icon: LucideIcons.clock,
-            label: 'Timesheet',
-            detail: 'Hours you have logged this week',
+            label: context.l10n.settingsProfileTimesheet,
+            detail: context.l10n.settingsProfileTimesheetDetail,
             onTap: () => context.push(AppRoutes.timesheet),
           ),
         if (ref.watch(moduleOnProvider('tasks')))
           _LinkRow(
             icon: LucideIcons.circleCheck,
-            label: 'Tasks',
-            detail: 'What is assigned to you',
+            label: context.l10n.settingsProfileTasks,
+            detail: context.l10n.settingsProfileTasksDetail,
             onTap: () => context.push(AppRoutes.tasks),
           ),
       ],
@@ -388,10 +410,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Editable fields', padding: false),
+          _sectionHeader(
+            context.l10n.settingsProfileSectionEditable,
+            padding: false,
+          ),
           const SizedBox(height: 8),
           Text(
-            'Name and phone are editable. Email and access flags are managed by your administrator.',
+            context.l10n.settingsProfileEditableHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -401,11 +426,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             controller: _nameController,
             textInputAction: TextInputAction.next,
             maxLength: 255,
-            decoration: const InputDecoration(
-              labelText: 'Full name',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsProfileFullName,
+              border: const OutlineInputBorder(),
               counterText: '',
-              prefixIcon: Icon(LucideIcons.user, size: 18),
+              prefixIcon: const Icon(LucideIcons.user, size: 18),
             ),
           ),
           const SizedBox(height: 12),
@@ -413,10 +438,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Phone',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(LucideIcons.phone, size: 18),
+            decoration: InputDecoration(
+              labelText: context.l10n.commonPhone,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(LucideIcons.phone, size: 18),
             ),
           ),
           const SizedBox(height: 20),
@@ -431,7 +456,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.commonCancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -456,7 +481,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                           ),
                         )
-                      : const Text('Save changes'),
+                      : Text(context.l10n.settingsProfileSaveChanges),
                 ),
               ),
             ],

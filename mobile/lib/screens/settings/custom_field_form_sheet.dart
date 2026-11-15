@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/org_modules_provider.dart';
 import 'options_editor.dart';
 
@@ -191,7 +192,11 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New custom field' : 'Edit ${widget.existing!.label}',
+              _isCreate
+                  ? context.l10n.settingsCustomFieldsNewField
+                  : context.l10n.settingsCustomFieldFormEditTitle(
+                      widget.existing!.label,
+                    ),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -200,10 +205,10 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
               onChanged: _onLabelChanged,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 128,
-              decoration: const InputDecoration(
-                labelText: 'Label',
-                helperText: 'What the field is called on the record',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsCustomFieldFormLabel,
+                helperText: context.l10n.settingsCustomFieldFormLabelHint,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -216,32 +221,28 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
                 ],
-                decoration: const InputDecoration(
-                  labelText: 'Key',
-                  helperText:
-                      'Lowercase letters, numbers and underscores. '
-                      'Cannot be changed later.',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsCustomFieldFormKey,
+                  helperText: context.l10n.settingsCustomFieldFormKeyHint,
                   helperMaxLines: 2,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   counterText: '',
                 ),
               )
             else
               _Frozen(
-                label: 'Key',
+                label: context.l10n.settingsCustomFieldFormKey,
                 value: widget.existing!.key,
-                note:
-                    'Fixed after creation. Every value already stored is filed '
-                    'under this key, and changing it would leave them behind.',
+                note: context.l10n.settingsCustomFieldFormKeyFixed,
               ),
             const SizedBox(height: 12),
             if (_isCreate)
               DropdownButtonFormField<String>(
                 initialValue: _target(),
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'On record type',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsCustomFieldFormTarget,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final entry in customFieldTargets.entries)
@@ -256,18 +257,18 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
               )
             else
               _Frozen(
-                label: 'On record type',
+                label: context.l10n.settingsCustomFieldFormTarget,
                 value: customFieldTargetLabel(widget.existing!.targetModel),
-                note: 'Fixed after creation.',
+                note: context.l10n.settingsCustomFieldFormFixed,
               ),
             const SizedBox(height: 12),
             if (_isCreate)
               DropdownButtonFormField<CustomFieldType>(
                 initialValue: _fieldType,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Type',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsCustomFieldFormType,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final type in CustomFieldType.values)
@@ -277,11 +278,9 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
               )
             else
               _Frozen(
-                label: 'Type',
+                label: context.l10n.settingsCustomFieldFormType,
                 value: widget.existing!.fieldType.label,
-                note:
-                    'Fixed after creation. Values already stored were written '
-                    'as this type and a new one would reinterpret them.',
+                note: context.l10n.settingsCustomFieldFormTypeFixed,
               ),
             if (_fieldType == CustomFieldType.dropdown) ...[
               const SizedBox(height: 16),
@@ -296,10 +295,10 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
               controller: _order,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Position',
-                helperText: 'Lower numbers come first on the record',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsCustomFieldFormPosition,
+                helperText: context.l10n.settingsCustomFieldFormPositionHint,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 4),
@@ -314,17 +313,16 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
                     contentPadding: EdgeInsets.zero,
                     value: _isRequired,
                     onChanged: (v) => setState(() => _isRequired = v),
-                    title: const Text('Required'),
-                    subtitle: const Text(
-                      'Binds new saves only. Records saved before this keep '
-                      'their gap.',
+                    title: Text(context.l10n.settingsCustomFieldsRequired),
+                    subtitle: Text(
+                      context.l10n.settingsCustomFieldFormRequiredHint,
                     ),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _isFilterable,
                     onChanged: (v) => setState(() => _isFilterable = v),
-                    title: const Text('Offer as a filter'),
+                    title: Text(context.l10n.settingsCustomFieldFormFilterable),
                   ),
                 ],
               ),
@@ -346,7 +344,7 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -356,7 +354,11 @@ class _CustomFieldFormSheetState extends ConsumerState<_CustomFieldFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add field' : 'Save field'),
+                      child: Text(
+                        _isCreate
+                            ? context.l10n.settingsCustomFieldFormAdd
+                            : context.l10n.settingsCustomFieldFormSave,
+                      ),
                     ),
                   ),
                 ),

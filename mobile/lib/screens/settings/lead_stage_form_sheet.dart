@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/lead_pipeline.dart';
+import '../../l10n/l10n.dart';
 
 /// Add or edit a stage of a lead pipeline.
 ///
@@ -94,7 +95,9 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New stage' : 'Edit stage',
+              _isCreate
+                  ? context.l10n.settingsPipelineNewStage
+                  : context.l10n.settingsPipelineEditStage,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
@@ -103,9 +106,9 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
               autofocus: _isCreate,
               maxLength: leadStageNameMax,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.commonName,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -113,11 +116,11 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
             DropdownButtonFormField<String>(
               initialValue: _stageType,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Stage type',
-                helperText: 'Whether leads here are still open, won or lost',
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsLeadStageFormType,
+                helperText: context.l10n.settingsLeadStageFormTypeHint,
                 helperMaxLines: 2,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final entry in _typeOptions.entries)
@@ -129,11 +132,11 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
             DropdownButtonFormField<String?>(
               initialValue: _mapsToStatus,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Sets the lead status to',
-                helperText: 'Applied when a lead is moved into this stage',
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsLeadStageFormStatus,
+                helperText: context.l10n.settingsLeadStageFormStatusHint,
                 helperMaxLines: 2,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final entry in _statusOptions.entries)
@@ -146,11 +149,11 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
               controller: _probability,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Win probability, in percent',
-                helperText: '0 to 100. Given to a lead moved in with none set.',
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsLeadStageFormProbability,
+                helperText: context.l10n.settingsLeadStageFormProbabilityHint,
                 helperMaxLines: 2,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             if (_error != null) ...[
@@ -170,7 +173,7 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -180,7 +183,11 @@ class _LeadStageFormSheetState extends State<_LeadStageFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add stage' : 'Save'),
+                      child: Text(
+                        _isCreate
+                            ? context.l10n.settingsPipelineAddStage
+                            : context.l10n.commonSave,
+                      ),
                     ),
                   ),
                 ),

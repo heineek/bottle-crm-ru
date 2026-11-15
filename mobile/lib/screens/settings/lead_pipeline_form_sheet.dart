@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/lead_pipeline.dart';
+import '../../l10n/l10n.dart';
 
 /// Create or rename a lead pipeline.
 ///
@@ -82,7 +83,9 @@ class _LeadPipelineFormSheetState extends State<_LeadPipelineFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New pipeline' : 'Rename pipeline',
+              _isCreate
+                  ? context.l10n.settingsPipelineNew
+                  : context.l10n.settingsPipelineRenameTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
@@ -91,9 +94,9 @@ class _LeadPipelineFormSheetState extends State<_LeadPipelineFormSheet> {
               autofocus: true,
               maxLength: leadPipelineNameMax,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.commonName,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -103,9 +106,9 @@ class _LeadPipelineFormSheetState extends State<_LeadPipelineFormSheet> {
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsLeadPipelineFormDescription,
+                border: const OutlineInputBorder(),
               ),
             ),
             if (_isCreate) ...[
@@ -114,13 +117,11 @@ class _LeadPipelineFormSheetState extends State<_LeadPipelineFormSheet> {
                 contentPadding: EdgeInsets.zero,
                 value: _defaultStages,
                 onChanged: (v) => setState(() => _defaultStages = v),
-                title: const Text('Start with the default stages'),
+                title: Text(context.l10n.settingsLeadPipelineFormDefaultStages),
                 subtitle: Text(
                   _defaultStages
-                      ? 'New, Contacted, Qualified, Proposal, Won and Lost. '
-                            'You can rename or remove any of them.'
-                      : 'The pipeline starts empty. Add stages before moving '
-                            'leads into it.',
+                      ? context.l10n.settingsLeadPipelineFormDefaultStagesOn
+                      : context.l10n.settingsLeadPipelineFormDefaultStagesOff,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -144,7 +145,7 @@ class _LeadPipelineFormSheetState extends State<_LeadPipelineFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -154,7 +155,11 @@ class _LeadPipelineFormSheetState extends State<_LeadPipelineFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Create' : 'Save'),
+                      child: Text(
+                        _isCreate
+                            ? context.l10n.commonCreate
+                            : context.l10n.commonSave,
+                      ),
                     ),
                   ),
                 ),

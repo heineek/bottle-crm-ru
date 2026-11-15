@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/tag.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -37,8 +38,8 @@ class TagsScreen extends ConsumerWidget {
               // revived tag comes back with its old colour and description, and
               // every record that carried it before still carries it.
               (result.revived
-                  ? 'That tag already existed and was turned back on'
-                  : 'Tag added'),
+                  ? context.l10n.settingsTagsRevived
+                  : context.l10n.settingsTagsAdded),
         ),
       ),
     );
@@ -48,17 +49,17 @@ class TagsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Turn off ${tag.name}?'),
+        title: Text(context.l10n.settingsTagsTurnOffTitle(tag.name)),
         content: Text(tagArchiveExplanation(tag)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Leave it on'),
+            child: Text(context.l10n.settingsTagsLeaveOn),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Turn off'),
+            child: Text(context.l10n.settingsTagsTurnOff),
           ),
         ],
       ),
@@ -68,9 +69,9 @@ class TagsScreen extends ConsumerWidget {
         .read(tagSettingsProvider.notifier)
         .archiveTag(tag.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Tag turned off')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.settingsTagsTurnedOffDone)),
+    );
   }
 
   /// No confirm. Turning a tag back on restores nothing that was destroyed and
@@ -80,9 +81,11 @@ class TagsScreen extends ConsumerWidget {
         .read(tagSettingsProvider.notifier)
         .restoreTag(tag.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Tag turned back on')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsTagsTurnedBackOnDone),
+      ),
+    );
   }
 
   Future<void> _merge(
@@ -94,17 +97,17 @@ class TagsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Merge ${from.name} into ${into.name}?'),
+        title: Text(context.l10n.settingsTagsMergeTitle(from.name, into.name)),
         content: Text(tagMergeExplanation(from: from, into: into)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep both'),
+            child: Text(context.l10n.settingsTagsKeepBoth),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Merge'),
+            child: Text(context.l10n.settingsTagsMerge),
           ),
         ],
       ),
@@ -118,8 +121,7 @@ class TagsScreen extends ConsumerWidget {
       SnackBar(
         content: Text(
           result.error ??
-              '${result.moved} ${result.moved == 1 ? 'record' : 'records'} '
-                  'moved to ${into.name}',
+              context.l10n.settingsTagsMoved(result.moved, into.name),
         ),
       ),
     );
@@ -133,7 +135,7 @@ class TagsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Tags'),
+        title: Text(context.l10n.commonTags),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -141,7 +143,7 @@ class TagsScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New tag',
+              tooltip: context.l10n.settingsTagsNewTag,
               onPressed: () => _create(context, ref),
             ),
         ],
@@ -221,7 +223,7 @@ class _NewTagDialogState extends State<_NewTagDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('New tag'),
+      title: Text(context.l10n.settingsTagsNewTagTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +235,7 @@ class _NewTagDialogState extends State<_NewTagDialog> {
             maxLength: 50,
             onSubmitted: (_) => _submit(),
             decoration: InputDecoration(
-              labelText: 'Tag name',
+              labelText: context.l10n.settingsTagsNameLabel,
               border: const OutlineInputBorder(),
               counterText: '',
               errorText: _error,
@@ -241,8 +243,7 @@ class _NewTagDialogState extends State<_NewTagDialog> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tags are shared across every record type, so the first ones are '
-            'worth naming carefully.',
+            context.l10n.settingsTagsNewTagHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -252,9 +253,9 @@ class _NewTagDialogState extends State<_NewTagDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
-        TextButton(onPressed: _submit, child: const Text('Create')),
+        TextButton(onPressed: _submit, child: Text(context.l10n.commonCreate)),
       ],
     );
   }
@@ -267,6 +268,7 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -277,9 +279,18 @@ class _Summary extends StatelessWidget {
         spacing: 20,
         runSpacing: 10,
         children: [
-          _Stat(value: '${state.active}', label: 'in use'),
-          _Stat(value: '${state.unused}', label: 'applied to nothing'),
-          _Stat(value: '${state.archived}', label: 'turned off'),
+          _Stat(
+            value: '${state.active}',
+            label: l10n.settingsTagsStatInUse(state.active),
+          ),
+          _Stat(
+            value: '${state.unused}',
+            label: l10n.settingsTagsStatUnused(state.unused),
+          ),
+          _Stat(
+            value: '${state.archived}',
+            label: l10n.settingsTagsStatOff(state.archived),
+          ),
         ],
       ),
     );
@@ -325,6 +336,7 @@ class _DuplicateBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 1),
@@ -339,8 +351,11 @@ class _DuplicateBanner extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '${group.all.map((t) => t.name).join(' and ')} look like the '
-                  'same tag',
+                  l10n.settingsTagsDuplicateTitle(
+                    group.all
+                        .map((t) => t.name)
+                        .join(l10n.settingsTagsNamesAnd),
+                  ),
                   style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -350,9 +365,11 @@ class _DuplicateBanner extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '${group.all.map((t) => '${t.name} is on ${t.used} '
-                '${t.used == 1 ? 'record' : 'records'}').join('; ')}. '
-            'Anyone filtering by one of them misses the other.',
+            l10n.settingsTagsDuplicateBody(
+              group.all
+                  .map((t) => l10n.settingsTagsDuplicateUsage(t.used, t.name))
+                  .join('; '),
+            ),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -373,8 +390,8 @@ class _DuplicateBanner extends StatelessWidget {
                       onPressed: () => onMerge(loser),
                       child: Text(
                         group.merge.length > 1
-                            ? 'Merge ${loser.name}'
-                            : 'Merge into ${group.keep.name}',
+                            ? l10n.settingsTagsMergeNamed(loser.name)
+                            : l10n.settingsTagsMergeInto(group.keep.name),
                       ),
                     ),
                   ),
@@ -395,7 +412,7 @@ class _ListHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 22, 16, 8),
       child: Text(
-        'ALL TAGS',
+        context.l10n.settingsTagsAllHeader,
         style: AppTypography.overline.copyWith(
           color: AppColors.textSecondary,
           letterSpacing: 1.2,
@@ -479,11 +496,17 @@ class _TagRow extends StatelessWidget {
               runSpacing: 6,
               children: [
                 if (!tag.isActive)
-                  StatusBadge(label: 'Turned off', color: AppColors.gray500),
+                  StatusBadge(
+                    label: context.l10n.settingsTagsTurnedOff,
+                    color: AppColors.gray500,
+                  ),
                 // Only meaningful while a tag is still being offered. On a
                 // turned-off one "Unused" is not news.
                 if (tag.isActive && used == 0)
-                  StatusBadge(label: 'Unused', color: AppColors.warning600),
+                  StatusBadge(
+                    label: context.l10n.settingsTagsUnused,
+                    color: AppColors.warning600,
+                  ),
               ],
             ),
           ],
@@ -497,11 +520,11 @@ class _TagRow extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.danger600,
                       ),
-                      child: const Text('Turn off'),
+                      child: Text(context.l10n.settingsTagsTurnOff),
                     )
                   : OutlinedButton(
                       onPressed: onTurnOn,
-                      child: const Text('Turn back on'),
+                      child: Text(context.l10n.settingsTagsTurnBackOn),
                     ),
             ),
           ],
@@ -519,9 +542,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
-        'Turning a tag off hides it from the pickers and leaves it on the '
-        'records that already carry it. Nothing is removed, and you can turn a '
-        'tag back on at any time.',
+        context.l10n.settingsTagsFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -544,16 +565,15 @@ class _EmptyState extends StatelessWidget {
             Icon(LucideIcons.tags, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'No tags yet',
+              context.l10n.settingsTagsEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'Tags are shared across every record type, so the first '
-                        'one is worth naming carefully.'
-                  : 'An administrator adds these.',
+                  ? context.l10n.settingsTagsEmptyAdmin
+                  : context.l10n.settingsTagsEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -586,12 +606,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the tags',
+              context.l10n.settingsTagsLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsObjectsTryAgain),
+            ),
           ],
         ),
       ),

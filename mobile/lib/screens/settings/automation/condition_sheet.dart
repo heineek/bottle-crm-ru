@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../services/automation_text.dart';
 import 'rule_sheet.dart';
 import 'rule_value_field.dart';
@@ -102,23 +103,25 @@ class _ConditionSheetState extends State<_ConditionSheet> {
         op.gone
             ? RuleOption(
                 value: op.value,
-                label:
-                    '${operatorLabel(op.value, field?.type)} '
-                    '(no longer available)',
+                label: context.l10n.settingsAutomationNoLongerAvailable(
+                  operatorLabel(op.value, field?.type),
+                ),
               )
             : op,
     ];
     final kind = field == null || _op.isEmpty ? null : valueKind(field, _op);
     return RuleSheetFrame(
-      title: widget.draft == null ? 'Add condition' : 'Edit condition',
+      title: widget.draft == null
+          ? context.l10n.settingsAutomationAddCondition
+          : context.l10n.settingsAutomationConditionEditTitle,
       controller: widget.controller,
       onDone: _field.isEmpty || _op.isEmpty ? null : _done,
       children: [
         DropdownButtonFormField<String>(
           initialValue: _field.isEmpty ? null : _field,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Field',
+          decoration: InputDecoration(
+            labelText: context.l10n.settingsAutomationField,
             border: OutlineInputBorder(),
           ),
           items: [
@@ -138,8 +141,8 @@ class _ConditionSheetState extends State<_ConditionSheet> {
             key: ValueKey('op-$_field'),
             initialValue: _op.isEmpty ? null : _op,
             isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Operator',
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsAutomationConditionOperator,
               border: OutlineInputBorder(),
             ),
             items: [
@@ -157,7 +160,7 @@ class _ConditionSheetState extends State<_ConditionSheet> {
         if (field == null && _field.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
-            'This field is no longer available. Choose another.',
+            context.l10n.settingsAutomationFieldGone,
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),

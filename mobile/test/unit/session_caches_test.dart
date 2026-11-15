@@ -134,6 +134,10 @@ const Map<String, String> _notSessionScoped = {
   'timesheetRangeProvider': 'which week is on screen, no records',
   'orgPacksProvider': 'the global pack catalogue, served without an org',
   'orgTimezonesProvider': 'the IANA zone list, the same for everyone',
+  'orgLocalesProvider':
+      'country names, the same for everyone; refetched when the language changes',
+  'languageProvider':
+      'derived from the token on every auth change, never cached across sessions',
   'customObjectsProvider':
       'derived from the selected org id, which sign-out and every org switch '
       'change, so it rebuilds with them (pinned by its own test below)',

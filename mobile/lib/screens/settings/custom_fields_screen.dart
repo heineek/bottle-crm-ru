@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
@@ -41,7 +42,10 @@ class CustomFieldsScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Field added' : 'Field saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsCustomFieldsAdded
+                  : context.l10n.settingsCustomFieldsSaved),
         ),
       ),
     );
@@ -55,24 +59,21 @@ class CustomFieldsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Turn off ${field.label}?'),
+        title: Text(context.l10n.settingsCustomFieldsTurnOffTitle(field.label)),
         // Deliberately not "delete". The server soft-deletes: it flips
         // is_active and every value already stored stays readable on the
         // records that carry it. Saying Delete would promise a removal that
         // does not happen.
-        content: const Text(
-          'It stops appearing on new records and stops accepting new values. '
-          'Values already stored are kept, and you can turn it back on.',
-        ),
+        content: Text(context.l10n.settingsCustomFieldsTurnOffBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Leave it on'),
+            child: Text(context.l10n.settingsCustomFieldsLeaveOn),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Turn off'),
+            child: Text(context.l10n.settingsCustomFieldsTurnOff),
           ),
         ],
       ),
@@ -82,9 +83,11 @@ class CustomFieldsScreen extends ConsumerWidget {
         .read(customFieldsProvider.notifier)
         .deactivateField(field.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Field turned off')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsCustomFieldsTurnedOffSnack),
+      ),
+    );
   }
 
   Future<void> _turnOn(
@@ -96,9 +99,11 @@ class CustomFieldsScreen extends ConsumerWidget {
         .read(customFieldsProvider.notifier)
         .activateField(field.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Field turned on')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsCustomFieldsTurnedOnSnack),
+      ),
+    );
   }
 
   @override
@@ -109,7 +114,7 @@ class CustomFieldsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Custom fields'),
+        title: Text(context.l10n.settingsCustomFieldsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -117,7 +122,7 @@ class CustomFieldsScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New custom field',
+              tooltip: context.l10n.settingsCustomFieldsNewField,
               onPressed: () => _edit(context, ref, null),
             ),
         ],
@@ -182,16 +187,19 @@ class _Summary extends StatelessWidget {
             spacing: 20,
             runSpacing: 10,
             children: [
-              _Stat(value: '${state.active}', label: 'in use'),
+              _Stat(
+                value: '${state.active}',
+                label: context.l10n.settingsCustomFieldsStatInUse,
+              ),
               _Stat(
                 value: '${state.count - state.active}',
-                label: 'turned off',
+                label: context.l10n.settingsCustomFieldsStatTurnedOff,
               ),
               _Stat(
                 value: '${state.modelsExtended}',
-                label: state.modelsExtended == 1
-                    ? 'record type'
-                    : 'record types',
+                label: context.l10n.settingsCustomFieldsStatRecordTypes(
+                  state.modelsExtended,
+                ),
               ),
             ],
           ),
@@ -215,14 +223,9 @@ class _Summary extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      state.requiredWithGaps == 1
-                          ? 'One required field has records with no value for '
-                                'it. Marking a field required only binds new '
-                                'saves, so older records keep the gap.'
-                          : '${state.requiredWithGaps} required fields have '
-                                'records with no value for them. Marking a '
-                                'field required only binds new saves, so older '
-                                'records keep the gap.',
+                      context.l10n.settingsCustomFieldsGapsBanner(
+                        state.requiredWithGaps,
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textPrimary,
                       ),
@@ -349,15 +352,25 @@ class _FieldRow extends StatelessWidget {
                 color: AppColors.gray500,
               ),
               if (!field.isActive)
-                StatusBadge(label: 'Turned off', color: AppColors.gray500),
+                StatusBadge(
+                  label: context.l10n.settingsCustomFieldsBadgeOff,
+                  color: AppColors.gray500,
+                ),
               if (field.isRequired)
-                StatusBadge(label: 'Required', color: AppColors.primary600),
+                StatusBadge(
+                  label: context.l10n.settingsCustomFieldsRequired,
+                  color: AppColors.primary600,
+                ),
               if (field.isFilterable)
-                StatusBadge(label: 'Filter', color: AppColors.gray500),
+                StatusBadge(
+                  label: context.l10n.settingsCustomFieldsBadgeFilter,
+                  color: AppColors.gray500,
+                ),
               if (field.fieldType == CustomFieldType.dropdown)
                 Text(
-                  '${field.options.length} option'
-                  '${field.options.length == 1 ? '' : 's'}',
+                  context.l10n.settingsCustomFieldsOptionCount(
+                    field.options.length,
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -370,8 +383,7 @@ class _FieldRow extends StatelessWidget {
           if (field.isRequired && missing > 0) ...[
             const SizedBox(height: 8),
             Text(
-              '$missing record${missing == 1 ? '' : 's'} '
-              '${missing == 1 ? 'has' : 'have'} no value for this',
+              context.l10n.settingsCustomFieldsMissing(missing),
               style: AppTypography.caption.copyWith(
                 color: AppColors.warning600,
               ),
@@ -387,7 +399,7 @@ class _FieldRow extends StatelessWidget {
                   height: 40,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(context.l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -398,11 +410,11 @@ class _FieldRow extends StatelessWidget {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.danger600,
                           ),
-                          child: const Text('Turn off'),
+                          child: Text(context.l10n.settingsCustomFieldsTurnOff),
                         )
                       : OutlinedButton(
                           onPressed: onTurnOn,
-                          child: const Text('Turn on'),
+                          child: Text(context.l10n.settingsCustomFieldsTurnOn),
                         ),
                 ),
               ],
@@ -430,16 +442,15 @@ class _EmptyState extends StatelessWidget {
             Icon(LucideIcons.listPlus, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'No custom fields yet',
+              context.l10n.settingsCustomFieldsEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'Add one to collect something the built-in fields do not '
-                        'cover, on any record type.'
-                  : 'An administrator adds these.',
+                  ? context.l10n.settingsCustomFieldsEmptyAdmin
+                  : context.l10n.settingsCustomFieldsEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -472,12 +483,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the custom fields',
+              context.l10n.settingsCustomFieldsLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsPipelineTryAgain),
+            ),
           ],
         ),
       ),

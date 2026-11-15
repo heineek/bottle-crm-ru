@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/automation_provider.dart';
 import '../../providers/custom_objects_provider.dart';
@@ -35,7 +36,7 @@ class SettingsHubScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Organization settings'),
+        title: Text(context.l10n.settingsHubTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -44,11 +45,11 @@ class SettingsHubScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeader('Records'),
+            _SectionHeader(context.l10n.settingsHubSectionRecords),
             MenuRow(
               icon: LucideIcons.listPlus,
-              label: 'Custom fields',
-              description: 'Extra fields on leads, deals, tickets and the rest',
+              label: context.l10n.settingsHubCustomFields,
+              description: context.l10n.settingsHubCustomFieldsBody,
               onTap: () => context.push(AppRoutes.settingsCustomFields),
             ),
             Consumer(
@@ -64,24 +65,24 @@ class SettingsHubScreen extends StatelessWidget {
                 if (!show) return const SizedBox.shrink();
                 return MenuRow(
                   icon: LucideIcons.boxes,
-                  label: 'Objects',
-                  description: 'Your own record types, with their fields',
+                  label: context.l10n.settingsHubObjects,
+                  description: context.l10n.settingsHubObjectsBody,
                   onTap: () => context.push(AppRoutes.settingsObjects),
                 );
               },
             ),
             MenuRow(
               icon: LucideIcons.tags,
-              label: 'Tags',
-              description: 'The labels shared across every record type',
+              label: context.l10n.settingsHubTags,
+              description: context.l10n.settingsHubTagsBody,
               onTap: () => context.push(AppRoutes.settingsTags),
             ),
             _ModuleGate(
               module: 'leads',
               child: MenuRow(
                 icon: LucideIcons.squareKanban,
-                label: 'Lead pipelines',
-                description: 'The stages leads move through on the board',
+                label: context.l10n.settingsHubLeadPipelines,
+                description: context.l10n.settingsHubLeadPipelinesBody,
                 onTap: () => context.push(AppRoutes.settingsLeadPipelines),
               ),
             ),
@@ -89,9 +90,8 @@ class SettingsHubScreen extends StatelessWidget {
               module: 'deals',
               child: MenuRow(
                 icon: LucideIcons.chartNoAxesColumn,
-                label: 'Deal pipelines',
-                description:
-                    'The stages deals move through, and when they stall',
+                label: context.l10n.settingsHubDealPipelines,
+                description: context.l10n.settingsHubDealPipelinesBody,
                 onTap: () => context.push(AppRoutes.settingsDealPipelines),
               ),
             ),
@@ -99,9 +99,8 @@ class SettingsHubScreen extends StatelessWidget {
               builder: (context, ref, _) => ref.watch(productsOnProvider)
                   ? MenuRow(
                       icon: LucideIcons.package,
-                      label: 'Products',
-                      description:
-                          'The products and prices invoices and estimates use',
+                      label: context.l10n.settingsHubProducts,
+                      description: context.l10n.settingsHubProductsBody,
                       onTap: () => context.push(AppRoutes.products),
                     )
                   : const SizedBox.shrink(),
@@ -111,61 +110,58 @@ class SettingsHubScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionHeader('Tickets'),
+                  _SectionHeader(context.l10n.settingsHubSectionTickets),
                   MenuRow(
                     icon: LucideIcons.gitBranch,
-                    label: 'Routing',
-                    description: 'Who a new ticket is assigned to',
+                    label: context.l10n.settingsHubRouting,
+                    description: context.l10n.settingsHubRoutingBody,
                     onTap: () => context.push(AppRoutes.settingsRouting),
                   ),
                   MenuRow(
                     icon: LucideIcons.bellOff,
-                    label: 'Escalation',
-                    description:
-                        'What happens when a ticket misses its SLA target',
+                    label: context.l10n.settingsHubEscalation,
+                    description: context.l10n.settingsHubEscalationBody,
                     onTap: () => context.push(AppRoutes.settingsEscalation),
                   ),
                   MenuRow(
                     icon: LucideIcons.clock,
-                    label: 'Business hours',
-                    description:
-                        'The week every response target is measured against',
+                    label: context.l10n.settingsHubBusinessHours,
+                    description: context.l10n.settingsHubBusinessHoursBody,
                     onTap: () => context.push(AppRoutes.settingsBusinessHours),
                   ),
                   MenuRow(
                     icon: LucideIcons.rotateCcw,
-                    label: 'Reopen policy',
-                    description: 'Whether a reply brings a closed ticket back',
+                    label: context.l10n.settingsHubReopen,
+                    description: context.l10n.settingsHubReopenBody,
                     onTap: () => context.push(AppRoutes.settingsReopen),
                   ),
                   MenuRow(
                     icon: LucideIcons.messageSquareQuote,
-                    label: 'Saved replies',
-                    description: 'Canned answers to insert into a ticket reply',
+                    label: context.l10n.settingsHubSavedReplies,
+                    description: context.l10n.settingsHubSavedRepliesBody,
                     onTap: () => context.push(AppRoutes.settingsMacros),
                   ),
                   MenuRow(
                     icon: LucideIcons.mail,
-                    label: 'Inbound email',
-                    description: 'The addresses that turn mail into tickets',
+                    label: context.l10n.settingsHubInboundEmail,
+                    description: context.l10n.settingsHubInboundEmailBody,
                     onTap: () => context.push(AppRoutes.settingsInboundEmail),
                   ),
                   MenuRow(
                     icon: LucideIcons.circleCheckBig,
-                    label: 'Approval rules',
-                    description:
-                        'What gates a ticket close, and who can clear it',
+                    label: context.l10n.settingsHubApprovals,
+                    description: context.l10n.settingsHubApprovalsBody,
                     onTap: () =>
                         context.push(AppRoutes.settingsTicketApprovals),
                   ),
                 ],
               ),
             ),
-            const _SectionHeader('Organization'),
+            _SectionHeader(context.l10n.settingsHubSectionOrganization),
             MenuRow(
               icon: LucideIcons.building2,
-              label: 'Organization',
-              description: 'Company details printed on documents, and defaults',
+              label: context.l10n.settingsHubOrganization,
+              description: context.l10n.settingsHubOrganizationBody,
               onTap: () => context.push(AppRoutes.settingsOrganization),
             ),
             Consumer(
@@ -174,18 +170,16 @@ class SettingsHubScreen extends StatelessWidget {
                       ref.watch(shownModulesProvider) != null
                   ? MenuRow(
                       icon: LucideIcons.layoutGrid,
-                      label: 'Modules',
-                      description:
-                          'Switch off the parts of BottleCRM this '
-                          'organization does not use',
+                      label: context.l10n.settingsHubModules,
+                      description: context.l10n.settingsHubModulesBody,
                       onTap: () => context.push(AppRoutes.settingsModules),
                     )
                   : const SizedBox.shrink(),
             ),
             MenuRow(
               icon: LucideIcons.keyRound,
-              label: 'API tokens',
-              description: 'Programmatic access, and what to revoke',
+              label: context.l10n.settingsHubApiTokens,
+              description: context.l10n.settingsHubApiTokensBody,
               onTap: () => context.push(AppRoutes.settingsApiTokens),
             ),
             // Admins only, as on the web: every webhooks route answers a
@@ -195,10 +189,8 @@ class SettingsHubScreen extends StatelessWidget {
               builder: (context, ref, _) => ref.watch(isOrgAdminProvider)
                   ? MenuRow(
                       icon: LucideIcons.webhook,
-                      label: 'Webhooks',
-                      description:
-                          'Send record changes to Zapier, n8n, Slack or '
-                          'your own code',
+                      label: context.l10n.settingsHubWebhooks,
+                      description: context.l10n.settingsHubWebhooksBody,
                       onTap: () => context.push(AppRoutes.settingsWebhooks),
                     )
                   : const SizedBox.shrink(),
@@ -212,9 +204,8 @@ class SettingsHubScreen extends StatelessWidget {
                 }
                 return MenuRow(
                   icon: LucideIcons.zap,
-                  label: 'Automation',
-                  description:
-                      'Rules that act when a record is created or changes',
+                  label: context.l10n.settingsHubAutomation,
+                  description: context.l10n.settingsHubAutomationBody,
                   onTap: () => context.push(AppRoutes.settingsAutomation),
                 );
               },
@@ -224,10 +215,8 @@ class SettingsHubScreen extends StatelessWidget {
               builder: (context, ref, _) => ref.watch(isOrgAdminProvider)
                   ? MenuRow(
                       icon: LucideIcons.scrollText,
-                      label: 'Audit log',
-                      description:
-                          'Sign-ins, API tokens, calendar feeds, merges, '
-                          'refused requests and paused webhooks',
+                      label: context.l10n.settingsHubAuditLog,
+                      description: context.l10n.settingsHubAuditLogBody,
                       onTap: () => context.push(AppRoutes.settingsAuditLog),
                     )
                   : const SizedBox.shrink(),
@@ -239,10 +228,8 @@ class SettingsHubScreen extends StatelessWidget {
             // half.
             MenuRow(
               icon: LucideIcons.clipboardList,
-              label: 'Web forms',
-              description:
-                  'Forms you embed on your own site, and the leads '
-                  'they bring in',
+              label: context.l10n.settingsHubWebForms,
+              description: context.l10n.settingsHubWebFormsBody,
               onTap: () => context.push(AppRoutes.settingsWebForms),
             ),
             // Beside web forms for the same reason: it is what a stranger with
@@ -252,10 +239,8 @@ class SettingsHubScreen extends StatelessWidget {
               module: 'knowledge_base',
               child: MenuRow(
                 icon: LucideIcons.globe,
-                label: 'Help center',
-                description:
-                    'Your published articles, public for customers and '
-                    'search engines',
+                label: context.l10n.settingsHubHelpCenter,
+                description: context.l10n.settingsHubHelpCenterBody,
                 onTap: () => context.push(AppRoutes.settingsHelpCenter),
               ),
             ),

@@ -3,6 +3,17 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/reopen_policy.dart';
+import '../../data/models/ticket.dart';
+import '../../l10n/l10n.dart';
+
+/// A ticket status code ("Pending") as the ticket screens name it, or the
+/// code itself for one this build does not know.
+String reopenStatusName(String code) {
+  for (final s in TicketStatus.values) {
+    if (s.value == code) return s.displayName;
+  }
+  return code;
+}
 
 /// Edit the org's reopen policy.
 ///
@@ -73,6 +84,7 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -86,7 +98,7 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Reopen policy',
+              l10n.settingsReopenTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
@@ -94,15 +106,11 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
               contentPadding: EdgeInsets.zero,
               value: _isEnabled,
               onChanged: (v) => setState(() => _isEnabled = v),
-              title: const Text('Reopen on customer reply'),
+              title: Text(l10n.settingsReopenEnabledLabel),
               subtitle: Text(
                 _isEnabled
-                    ? 'A reply inside the window puts the ticket back in the '
-                          'queue.'
-                    : 'A reply is filed on the closed ticket and nothing else '
-                          'happens. Nothing counts those replies either, so '
-                          'the missed-window figure reads zero while it is '
-                          'off.',
+                    ? l10n.settingsReopenFormEnabledOn
+                    : l10n.settingsReopenFormEnabledOff,
                 style: AppTypography.caption.copyWith(
                   color: _isEnabled
                       ? AppColors.textSecondary
@@ -116,10 +124,11 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(
-                labelText: 'Window, in days',
-                helperText:
-                    'Calendar days from when the ticket closed, '
-                    '$reopenWindowMin to $reopenWindowMax',
+                labelText: l10n.settingsReopenFormWindowLabel,
+                helperText: l10n.settingsReopenFormWindowHelper(
+                  reopenWindowMin,
+                  reopenWindowMax,
+                ),
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -127,14 +136,17 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
             DropdownButtonFormField<String>(
               initialValue: _status,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Comes back as',
-                helperText: 'Only a status that counts as open',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsReopenStatusLabel,
+                helperText: l10n.settingsReopenFormStatusHelper,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final status in reopenToStatuses)
-                  DropdownMenuItem(value: status, child: Text(status)),
+                  DropdownMenuItem(
+                    value: status,
+                    child: Text(reopenStatusName(status)),
+                  ),
               ],
               onChanged: (v) => setState(() => _status = v ?? _status),
             ),
@@ -143,9 +155,9 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
               contentPadding: EdgeInsets.zero,
               value: _notifyAssigned,
               onChanged: (v) => setState(() => _notifyAssigned = v),
-              title: const Text('Tell the assignee'),
+              title: Text(l10n.settingsReopenNotifyLabel),
               subtitle: Text(
-                'The person the ticket was assigned to when it closed.',
+                l10n.settingsReopenNotifyDetail,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -168,7 +180,7 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -178,7 +190,7 @@ class _ReopenFormSheetState extends State<_ReopenFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: const Text('Save policy'),
+                      child: Text(l10n.settingsReopenFormSave),
                     ),
                   ),
                 ),
