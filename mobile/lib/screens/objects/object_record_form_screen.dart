@@ -14,10 +14,7 @@ import '../../widgets/forms/custom_fields_form.dart';
 import '../../widgets/forms/multi_select_sheet.dart';
 import '../../widgets/forms/unsaved_changes.dart';
 import '../../widgets/objects/link_field_picker.dart';
-
-const _cannotEdit = 'You cannot edit this record.';
-const _missingRecord =
-    'This record does not exist, or you do not have access to it.';
+import '../../l10n/l10n.dart';
 
 /// Creates a custom object record, or edits one when [recordId] is given.
 class ObjectRecordFormScreen extends ConsumerStatefulWidget {
@@ -87,7 +84,7 @@ class _ObjectRecordFormScreenState
         if (response.success && data != null) {
           _original = ObjectRecord.fromJson(data);
         } else if (!_notFound) {
-          _loadError = response.message ?? 'Could not load this record';
+          _loadError = response.message ?? context.l10n.objectsLoadRecordFailed;
         }
       });
     } on ArgumentError {
@@ -125,7 +122,7 @@ class _ObjectRecordFormScreenState
           UserLookup(
             id: e.key,
             email: '',
-            name: '${e.value} (inactive)',
+            name: context.l10n.objectsInactiveMember(e.value),
             role: 'USER',
             isActive: false,
           ),
@@ -135,7 +132,7 @@ class _ObjectRecordFormScreenState
   Future<void> _pickAssignees(List<UserLookup> people) async {
     final picked = await MultiSelectSheet.show<UserLookup>(
       context: context,
-      title: 'Assigned to',
+      title: context.l10n.objectsAssignedTo,
       items: people,
       initialSelection: [
         for (final u in people)
@@ -143,7 +140,7 @@ class _ObjectRecordFormScreenState
       ],
       labelOf: (u) => u.displayName,
       searchText: (u) => '${u.displayName} ${u.email}',
-      emptyMessage: 'No members',
+      emptyMessage: context.l10n.objectsNoMembers,
     );
     if (picked == null) return;
     setState(() {
@@ -241,7 +238,7 @@ class _ObjectRecordFormScreenState
             TextButton(
               onPressed: onRetry,
               style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
-              child: const Text('Retry'),
+              child: Text(context.l10n.commonRetry),
             ),
           ],
         ],
@@ -255,22 +252,28 @@ class _ObjectRecordFormScreenState
     final answerState = ref.watch(customObjectsProvider);
     final answer = shownCustomObjects(answerState);
     const loading = Center(child: CircularProgressIndicator());
+    final l10n = context.l10n;
 
     return definition.when(
-      loading: () => _shell('Record', loading),
+      loading: () => _shell(l10n.objectsRecordTitle, loading),
       error: (_, _) => _shell(
-        'Record',
+        l10n.objectsRecordTitle,
         _message(
-          'Could not load this record',
+          l10n.objectsLoadRecordFailed,
           onRetry: () =>
               ref.invalidate(objectDefinitionProvider(widget.objectKey)),
         ),
       ),
       data: (def) {
-        if (def == null) return _shell('Record', _message(_missingRecord));
+        if (def == null) {
+          return _shell(
+            l10n.objectsRecordTitle,
+            _message(l10n.objectsMissingRecord),
+          );
+        }
         final title = _editing
-            ? 'Edit ${def.summary.label}'
-            : 'New ${def.summary.label}';
+            ? l10n.objectsEditRecord(def.summary.label)
+            : l10n.objectsNewRecord(def.summary.label);
         if (answerState.isLoading) return _shell(title, loading);
         if (customObjectsFailed(answerState)) {
           return _shell(
@@ -286,18 +289,22 @@ class _ObjectRecordFormScreenState
         }
         if (_editing) {
           if (_loadingRecord) return _shell(title, loading);
-          if (_notFound) return _shell(title, _message(_missingRecord));
+          if (_notFound) {
+            return _shell(title, _message(l10n.objectsMissingRecord));
+          }
           final original = _original;
           if (original == null) {
             return _shell(
               title,
               _message(
-                _loadError ?? 'Could not load this record',
+                _loadError ?? l10n.objectsLoadRecordFailed,
                 onRetry: _loadRecord,
               ),
             );
           }
-          if (!original.canEdit) return _shell(title, _message(_cannotEdit));
+          if (!original.canEdit) {
+            return _shell(title, _message(l10n.objectsCannotEdit));
+          }
         }
         _seed(def);
         return _form(def, title);
@@ -309,6 +316,7 @@ class _ObjectRecordFormScreenState
     final people = _people(ref.watch(usersProvider));
     final byId = {for (final u in people) u.id: u};
     final original = _original;
+    final l10n = context.l10n;
     return UnsavedChangesGuard(
       hasUnsavedChanges: () => _dirty,
       isSaving: _saving,
@@ -321,7 +329,7 @@ class _ObjectRecordFormScreenState
           scrolledUnderElevation: 1,
           leading: IconButton(
             icon: const Icon(LucideIcons.chevronLeft),
-            tooltip: 'Back',
+            tooltip: l10n.commonBack,
             onPressed: _saving
                 ? null
                 : () => leaveForm(context, hasUnsavedChanges: _dirty),
@@ -341,7 +349,7 @@ class _ObjectRecordFormScreenState
                   maxLength: 255,
                   textCapitalization: TextCapitalization.sentences,
                   validator: (v) => (v == null || v.trim().isEmpty)
-                      ? '${def.summary.nameLabel} is required'
+                      ? l10n.objectsNameRequired(def.summary.nameLabel)
                       : null,
                 ),
                 const SizedBox(height: 16),
@@ -371,7 +379,7 @@ class _ObjectRecordFormScreenState
                   const SizedBox(height: 16),
                 ],
                 Text(
-                  'Assigned to',
+                  l10n.objectsAssignedTo,
                   style: AppTypography.label.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -393,7 +401,7 @@ class _ObjectRecordFormScreenState
                   ),
                   onPressed: () => _pickAssignees(people),
                   icon: const Icon(LucideIcons.userPlus, size: 16),
-                  label: const Text('Choose'),
+                  label: Text(l10n.objectsChoose),
                 ),
                 if (_saveError != null) ...[
                   const SizedBox(height: 16),
@@ -428,7 +436,7 @@ class _ObjectRecordFormScreenState
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: PrimaryButton(
-                label: 'Save',
+                label: l10n.commonSave,
                 onPressed: _saving ? null : () => _save(def),
                 isLoading: _saving,
               ),

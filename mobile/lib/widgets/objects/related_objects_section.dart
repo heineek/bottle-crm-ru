@@ -8,6 +8,7 @@ import '../../data/models/custom_object.dart';
 import '../../providers/custom_objects_provider.dart';
 import '../../routes/app_router.dart';
 import 'link_field_picker.dart';
+import '../../l10n/l10n.dart';
 
 /// The custom records that link to a built-in record, on its detail screen.
 /// Hidden unless the org has custom objects; the server decides what each
@@ -25,7 +26,7 @@ class RelatedObjectsSection extends ConsumerWidget {
   void _refusal(BuildContext context, String? message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message ?? 'Could not change this link'),
+        content: Text(message ?? context.l10n.objectsLinkChangeFailed),
         backgroundColor: AppColors.danger600,
       ),
     );
@@ -49,7 +50,7 @@ class RelatedObjectsSection extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text('Add to', style: AppTypography.h3),
+              child: Text(sheet.l10n.objectsAddTo, style: AppTypography.h3),
             ),
             for (final f in answer.linkFields)
               ListTile(
@@ -88,19 +89,25 @@ class RelatedObjectsSection extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: Text('Remove from ${group.objectLabel}: ${group.fieldLabel}?'),
+        title: Text(
+          dialog.l10n.objectsRemoveFromTitle(
+            group.objectLabel,
+            group.fieldLabel,
+          ),
+        ),
         content: Text(
-          '${record.name.isEmpty ? 'This record' : record.name} will no '
-          'longer link here.',
+          record.name.isEmpty
+              ? dialog.l10n.objectsRemoveBodyUnnamed
+              : dialog.l10n.objectsRemoveBody(record.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('Cancel'),
+            child: Text(dialog.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('Remove'),
+            child: Text(dialog.l10n.commonRemove),
           ),
         ],
       ),
@@ -133,7 +140,7 @@ class RelatedObjectsSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Related', style: AppTypography.h3),
+          Text(context.l10n.objectsRelated, style: AppTypography.h3),
           for (final group in answer.groups) ...[
             const SizedBox(height: 12),
             Text(
@@ -155,7 +162,7 @@ class RelatedObjectsSection extends ConsumerWidget {
                 ),
                 onPressed: () => _add(context, ref, answer),
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('Add to'),
+                label: Text(context.l10n.objectsAddTo),
               ),
             ),
         ],
@@ -170,7 +177,9 @@ class RelatedObjectsSection extends ConsumerWidget {
     RelatedGroup group,
     RelatedRecordRef record,
   ) {
-    final name = record.name.isEmpty ? 'Untitled' : record.name;
+    final name = record.name.isEmpty
+        ? context.l10n.objectsUntitled
+        : record.name;
     return Row(
       children: [
         Expanded(
@@ -194,7 +203,7 @@ class RelatedObjectsSection extends ConsumerWidget {
         ),
         if (answer.removable(group))
           IconButton(
-            tooltip: 'Remove ${record.name}',
+            tooltip: context.l10n.objectsRemoveNamed(record.name),
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             icon: const Icon(LucideIcons.x, size: 18),
             onPressed: () => _remove(context, ref, group, record),
