@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/ticket_board.dart';
 import '../../providers/ticket_board_provider.dart';
+import '../../l10n/l10n.dart';
 
 /// Tickets grouped by status, or by the stages of one ticket pipeline.
 ///
@@ -50,7 +51,7 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
         title: _title(data),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: context.l10n.ticketsBoardRefresh,
             icon: const Icon(LucideIcons.refreshCw, size: 20),
             onPressed: _busy
                 ? null
@@ -62,20 +63,18 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _Message(
           icon: LucideIcons.circleAlert,
-          title: 'Could not load the board',
+          title: context.l10n.ticketsBoardLoadError,
           body: '$error',
           action: FilledButton(
             onPressed: () => ref.read(ticketBoardProvider.notifier).refresh(),
-            child: const Text('Try again'),
+            child: Text(context.l10n.ticketsBoardTryAgain),
           ),
         ),
         data: (data) => data.lanes.isEmpty
-            ? const _Message(
+            ? _Message(
                 icon: LucideIcons.squareKanban,
-                title: 'No stages yet',
-                body:
-                    'This pipeline has no stages, so there is nowhere to '
-                    'show a ticket.',
+                title: context.l10n.ticketsBoardNoStagesTitle,
+                body: context.l10n.ticketsBoardNoStagesBody,
               )
             : _board(lanes, laneIndex),
       ),
@@ -83,7 +82,7 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
   }
 
   Widget _title(TicketBoardData? data) {
-    final name = data?.active?.name ?? 'Ticket board';
+    final name = data?.active?.name ?? context.l10n.ticketsBoardTitle;
     final text = Text(
       name,
       maxLines: 1,
@@ -206,7 +205,7 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'Nothing in ${lane.name}.',
+            context.l10n.ticketsBoardLaneEmpty(lane.name),
             textAlign: TextAlign.center,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
@@ -222,7 +221,10 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'Showing the first ${lane.cards.length} of ${lane.count}.',
+              context.l10n.ticketsBoardLaneTruncated(
+                lane.cards.length,
+                lane.count,
+              ),
               textAlign: TextAlign.center,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
@@ -277,11 +279,19 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
                 children: [
                   _pill(card.priority.label, card.priority.color),
                   if (card.slaBreached)
-                    _pill('SLA breached', AppColors.danger600)
+                    _pill(
+                      context.l10n.ticketsBoardSlaBreached,
+                      AppColors.danger600,
+                    )
                   else if (card.slaAtRisk)
-                    _pill('SLA at risk', AppColors.warning600),
+                    _pill(
+                      context.l10n.ticketsBoardSlaAtRisk,
+                      AppColors.warning600,
+                    ),
                   Text(
-                    card.assignee.isEmpty ? 'Unassigned' : card.assignee,
+                    card.assignee.isEmpty
+                        ? context.l10n.ticketsBoardUnassigned
+                        : card.assignee,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -354,7 +364,7 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
                   size: 20,
                   color: AppColors.textSecondary,
                 ),
-                title: const Text('Open ticket'),
+                title: Text(context.l10n.ticketsBoardOpenTicket),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   context.push('/tickets/${card.id}');
@@ -363,7 +373,10 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
               if (targets.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Text('Move to', style: AppTypography.labelSmall),
+                  child: Text(
+                    context.l10n.ticketsBoardMoveTo,
+                    style: AppTypography.labelSmall,
+                  ),
                 ),
                 for (final target in targets)
                   ListTile(
@@ -400,10 +413,10 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (!response.success) {
-      _snack(response.message ?? 'Could not move that ticket.');
+      _snack(response.message ?? context.l10n.ticketsBoardMoveFailed);
       return;
     }
-    _snack('Moved to ${target.name}.');
+    _snack(context.l10n.ticketsBoardMoved(target.name));
     final lanes = ref.read(ticketBoardProvider).value?.lanes ?? const [];
     final index = lanes.indexWhere((lane) => lane.id == target.id);
     if (index >= 0) _goTo(index);
@@ -452,9 +465,17 @@ class _TicketBoardScreenState extends ConsumerState<TicketBoardScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Board', style: AppTypography.h3),
+                child: Text(
+                  context.l10n.ticketsBoardPickerTitle,
+                  style: AppTypography.h3,
+                ),
               ),
-              option(sheetContext, null, 'By status', LucideIcons.circleDot),
+              option(
+                sheetContext,
+                null,
+                context.l10n.ticketsBoardByStatus,
+                LucideIcons.circleDot,
+              ),
               for (final pipeline in pipelines)
                 option(
                   sheetContext,

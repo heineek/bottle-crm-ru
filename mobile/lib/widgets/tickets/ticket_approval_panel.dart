@@ -5,8 +5,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/approval.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/approvals_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/app_language.dart';
 import '../common/common.dart';
 
 /// What the ticket's approval panel shows and offers, mirroring the web's
@@ -128,9 +130,9 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
 
   Future<void> _request() async {
     final note = await _promptText(
-      title: 'Request approval',
-      hint: 'Optional note for the approver',
-      okLabel: 'Send request',
+      title: context.l10n.ticketsPanelApprovalRequestTitle,
+      hint: context.l10n.ticketsPanelApprovalRequestHint,
+      okLabel: context.l10n.ticketsPanelApprovalSendRequest,
     );
     if (note == null) return;
     setState(() => _isBusy = true);
@@ -142,7 +144,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
     if (res.success) {
       await _load();
     } else {
-      _showError(res.message ?? 'Failed to request approval');
+      _showError(res.message ?? context.l10n.ticketsPanelApprovalRequestFailed);
     }
   }
 
@@ -154,15 +156,15 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
     if (res.success) {
       await _load();
     } else {
-      _showError(res.message ?? 'Failed to approve');
+      _showError(res.message ?? context.l10n.ticketsPanelApprovalApproveFailed);
     }
   }
 
   Future<void> _reject(Approval a) async {
     final reason = await _promptText(
-      title: 'Reject approval',
-      hint: 'Reason (required)',
-      okLabel: 'Reject',
+      title: context.l10n.ticketsPanelApprovalRejectTitle,
+      hint: context.l10n.ticketsPanelApprovalRejectHint,
+      okLabel: context.l10n.ticketsPanelApprovalReject,
       required: true,
     );
     if (reason == null || reason.isEmpty) return;
@@ -173,7 +175,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
     if (res.success) {
       await _load();
     } else {
-      _showError(res.message ?? 'Failed to reject');
+      _showError(res.message ?? context.l10n.ticketsPanelApprovalRejectFailed);
     }
   }
 
@@ -181,18 +183,16 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel approval request?'),
-        content: const Text(
-          'The approval request will be cancelled. You can request a new one later.',
-        ),
+        title: Text(ctx.l10n.ticketsPanelApprovalCancelTitle),
+        content: Text(ctx.l10n.ticketsPanelApprovalCancelBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep'),
+            child: Text(ctx.l10n.ticketsPanelApprovalKeep),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cancel request'),
+            child: Text(ctx.l10n.ticketsPanelApprovalCancelRequest),
           ),
         ],
       ),
@@ -205,7 +205,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
     if (res.success) {
       await _load();
     } else {
-      _showError(res.message ?? 'Failed to cancel');
+      _showError(res.message ?? context.l10n.ticketsPanelApprovalCancelFailed);
     }
   }
 
@@ -229,7 +229,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
@@ -279,19 +279,15 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
       children: [
         if (rule != null) ...[
           Text(
-            'Closing this ticket needs approval under ${rule.name}.',
+            context.l10n.ticketsPanelApprovalRuleNeeded(rule.name),
             style: secondary,
           ),
           const SizedBox(height: 8),
         ],
         if (view.failed)
-          Text(
-            'The approval requests could not be loaded. Nothing else on this '
-            'ticket is affected.',
-            style: secondary,
-          )
+          Text(context.l10n.ticketsPanelApprovalLoadFailed, style: secondary)
         else if (latest == null)
-          Text('No approval requested yet.', style: secondary)
+          Text(context.l10n.ticketsPanelApprovalNone, style: secondary)
         else ...[
           Wrap(
             spacing: 8,
@@ -310,19 +306,30 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
           ),
           if (latest.requestedBy != null) ...[
             const SizedBox(height: 8),
-            Text('Requested by ${latest.requestedBy!.email}', style: caption),
+            Text(
+              context.l10n.ticketsPanelApprovalRequestedBy(
+                latest.requestedBy!.email,
+              ),
+              style: caption,
+            ),
           ],
           if (latest.approver != null && !latest.isPending) ...[
             const SizedBox(height: 4),
             Text(
-              '${latest.state.label} by ${latest.approver!.email}',
+              context.l10n.ticketsPanelApprovalDecidedBy(
+                latest.state.label,
+                latest.approver!.email,
+              ),
               style: caption,
             ),
           ],
           if (latest.ruleSummary != null &&
               latest.ruleSummary!.id != rule?.id) ...[
             const SizedBox(height: 4),
-            Text('Rule: ${latest.ruleSummary!.name}', style: caption),
+            Text(
+              context.l10n.ticketsPanelApprovalRule(latest.ruleSummary!.name),
+              style: caption,
+            ),
           ],
           if (latest.note != null && latest.note!.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -344,7 +351,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Rejection reason',
+                    context.l10n.ticketsPanelApprovalRejectionReason,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.danger700,
                       fontWeight: FontWeight.w600,
@@ -358,10 +365,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
           ],
           if (latest.isPending && latest.isOwnRequest) ...[
             const SizedBox(height: 8),
-            Text(
-              'You asked for this, so another approver must decide it.',
-              style: caption,
-            ),
+            Text(context.l10n.ticketsPanelApprovalOwnRequest, style: caption),
           ],
         ],
         if (view.canDecide || view.canWithdraw || view.canRequest) ...[
@@ -374,7 +378,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
                 FilledButton.icon(
                   onPressed: _isBusy ? null : () => _approve(latest!),
                   icon: const Icon(LucideIcons.check, size: 16),
-                  label: const Text('Approve'),
+                  label: Text(context.l10n.ticketsPanelApprovalApprove),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.success600,
                     minimumSize: const Size(0, 44),
@@ -383,7 +387,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
                 OutlinedButton.icon(
                   onPressed: _isBusy ? null : () => _reject(latest!),
                   icon: const Icon(LucideIcons.x, size: 16),
-                  label: const Text('Reject'),
+                  label: Text(context.l10n.ticketsPanelApprovalReject),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.danger600,
                     minimumSize: const Size(0, 44),
@@ -394,7 +398,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
                 OutlinedButton.icon(
                   onPressed: _isBusy ? null : () => _cancel(latest!),
                   icon: const Icon(LucideIcons.circleMinus, size: 16),
-                  label: const Text('Withdraw request'),
+                  label: Text(context.l10n.ticketsPanelApprovalWithdraw),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 44),
                   ),
@@ -409,7 +413,9 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
                     size: 16,
                   ),
                   label: Text(
-                    latest == null ? 'Request approval' : 'Request again',
+                    latest == null
+                        ? context.l10n.ticketsPanelApprovalRequestTitle
+                        : context.l10n.ticketsPanelApprovalRequestAgain,
                   ),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 44),
@@ -439,7 +445,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
               Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.gray600),
               const SizedBox(width: 8),
               Text(
-                'APPROVAL',
+                context.l10n.ticketsPanelApprovalHeading,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -454,23 +460,7 @@ class _TicketApprovalPanelState extends ConsumerState<TicketApprovalPanel> {
     return Padding(padding: const EdgeInsets.only(top: 16), child: card);
   }
 
-  String _formatDate(DateTime t) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hh = t.hour.toString().padLeft(2, '0');
-    final mm = t.minute.toString().padLeft(2, '0');
-    return '${months[t.month - 1]} ${t.day}, $hh:$mm';
-  }
+  String _formatDate(DateTime t) =>
+      '${localDateFormat('MMM d', 'MMMd').format(t)}, '
+      '${localDateFormat('HH:mm', 'Hm').format(t)}';
 }

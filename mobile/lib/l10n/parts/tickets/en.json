@@ -1,0 +1,883 @@
+{
+  "ticketsBoardRefresh": "Refresh",
+  "ticketsBoardLoadError": "Could not load the board",
+  "ticketsBoardTryAgain": "Try again",
+  "ticketsBoardNoStagesTitle": "No stages yet",
+  "ticketsBoardNoStagesBody": "This pipeline has no stages, so there is nowhere to show a ticket.",
+  "ticketsBoardTitle": "Ticket board",
+  "ticketsBoardLaneEmpty": "Nothing in {lane}.",
+  "@ticketsBoardLaneEmpty": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsBoardLaneTruncated": "Showing the first {shown} of {total}.",
+  "@ticketsBoardLaneTruncated": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsBoardSlaBreached": "SLA breached",
+  "ticketsBoardSlaAtRisk": "SLA at risk",
+  "ticketsBoardUnassigned": "Unassigned",
+  "ticketsBoardOpenTicket": "Open ticket",
+  "ticketsBoardMoveTo": "Move to",
+  "ticketsBoardMoveFailed": "Could not move that ticket.",
+  "ticketsBoardMoved": "Moved to {lane}.",
+  "@ticketsBoardMoved": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsBoardPickerTitle": "Board",
+  "ticketsBoardByStatus": "By status",
+  "ticketsDetailNotFound": "Ticket not found",
+  "ticketsDetailLoadFailed": "Could not load this ticket",
+  "ticketsDetailNotFoundBody": "It does not exist, or you do not have access to it.",
+  "ticketsDetailWatch": "Watch",
+  "ticketsDetailUnwatch": "Unwatch",
+  "ticketsDetailMore": "More",
+  "ticketsDetailTabOverview": "Overview",
+  "ticketsDetailTabComments": "Comments",
+  "ticketsDetailTabFiles": "Files",
+  "ticketsDetailTabActivity": "Activity",
+  "ticketsDetailSlaBreached": "SLA breached",
+  "ticketsDetailInfoTitle": "Ticket Information",
+  "ticketsDetailInfoName": "NAME",
+  "ticketsDetailInfoAccount": "ACCOUNT",
+  "ticketsDetailInfoNoAccount": "No account linked",
+  "ticketsDetailInfoCreated": "CREATED",
+  "ticketsDetailInfoClosed": "CLOSED",
+  "ticketsDetailAssignedTo": "Assigned To",
+  "ticketsDetailReportedBy": "Reported by",
+  "ticketsDetailPeopleCount": "{count, plural, other{{count} people on this ticket}}",
+  "@ticketsDetailPeopleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAlsoOpenOn": "Also open on {account}",
+  "@ticketsDetailAlsoOpenOn": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailAlsoOpenOnThisAccount": "Also open on this account",
+  "ticketsDetailThreadPublic": "Public",
+  "ticketsDetailThreadInternal": "Internal",
+  "ticketsDetailThreadEmails": "Emails",
+  "ticketsDetailNoInternalNotes": "No internal notes",
+  "ticketsDetailNoComments": "No comments yet",
+  "ticketsDetailInternalNotesHint": "Internal notes are visible only to your team.",
+  "ticketsDetailFirstCommentHint": "Add the first comment to get started.",
+  "ticketsDetailNoEmails": "No emails",
+  "ticketsDetailNoEmailsHint": "Inbound and outbound emails for this ticket will appear here.",
+  "ticketsDetailAlsoOnSend": "Also on send",
+  "ticketsDetailMention": "Mention",
+  "ticketsDetailSavedReply": "Saved reply",
+  "ticketsDetailHintInternalNote": "Add an internal note…",
+  "ticketsDetailHintEmailCustomer": "Email the customer…",
+  "ticketsDetailAddCommentFailed": "Failed to add comment",
+  "ticketsDetailNoFiles": "No files attached",
+  "ticketsDetailAttachHint": "Attach a screenshot, a log, or a document.",
+  "ticketsDetailNothingAttached": "Nothing has been attached to this ticket.",
+  "ticketsDetailAttachmentNoFile": "That attachment has no file.",
+  "ticketsDetailDownloadFailed": "Could not download that file.",
+  "ticketsDetailNoActivity": "No activity yet",
+  "ticketsDetailNoActivityHint": "Status changes and assignments will appear here",
+  "ticketsDetailMentionSomeone": "Mention someone",
+  "ticketsDetailMacroNotApplied": "Reply posted, but the macro's actions were not applied: {error}",
+  "@ticketsDetailMacroNotApplied": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailWatchFailed": "Failed to watch",
+  "ticketsDetailUnwatchFailed": "Failed to unwatch",
+  "ticketsDetailActionReassign": "Reassign",
+  "ticketsDetailActionChangeStatus": "Change status",
+  "ticketsDetailActionChangePriority": "Change priority",
+  "ticketsDetailActionClose": "Close ticket",
+  "ticketsDetailActionMerge": "Merge into another ticket",
+  "ticketsDetailActionLinkParent": "Link to parent ticket",
+  "ticketsDetailActionChangeParent": "Change / detach parent",
+  "ticketsDetailActionCloseWithChildren": "Close with children",
+  "ticketsDetailActionDelete": "Delete ticket",
+  "ticketsDetailReassignTitle": "Reassign ticket",
+  "ticketsDetailReassigned": "Reassigned",
+  "ticketsDetailStatusUpdated": "Status updated",
+  "ticketsDetailPriorityUpdated": "Priority updated",
+  "ticketsDetailCloseConfirmTitle": "Close ticket?",
+  "ticketsDetailCloseConfirmBody": "The ticket will be marked Closed with today's date as the closed-on date.",
+  "ticketsDetailTicketClosed": "Ticket closed",
+  "ticketsDetailMergeIntoTitle": "Merge into…",
+  "ticketsDetailMergeConfirmTitle": "Merge ticket?",
+  "ticketsDetailMergeConfirmBody": "\"{source}\" will be marked Duplicate and its comments, attachments, and emails will move into \"{target}\". You can undo this from the target ticket.",
+  "@ticketsDetailMergeConfirmBody": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailMergeButton": "Merge",
+  "ticketsDetailMergedInto": "Merged into \"{target}\"",
+  "@ticketsDetailMergedInto": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailMergeFailed": "Failed to merge",
+  "ticketsDetailUnmergeConfirmTitle": "Unmerge ticket?",
+  "ticketsDetailUnmergeConfirmBody": "\"{source}\" will be restored and its comments, attachments, and emails moved back out of this ticket.",
+  "@ticketsDetailUnmergeConfirmBody": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailUnmergeButton": "Unmerge",
+  "ticketsDetailUnmerged": "Unmerged \"{source}\"",
+  "@ticketsDetailUnmerged": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailUnmergeFailed": "Failed to unmerge",
+  "ticketsDetailDeleteConfirmTitle": "Delete ticket?",
+  "ticketsDetailDeleteConfirmBody": "This will soft-delete \"{name}\". You can restore it from the web admin.",
+  "@ticketsDetailDeleteConfirmBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailTicketDeleted": "Ticket deleted",
+  "ticketsDetailDeleteFailed": "Failed to delete ticket",
+  "ticketsDetailUpdateFailed": "Failed to update ticket",
+  "ticketsDetailLinkedTickets": "LINKED TICKETS",
+  "ticketsDetailProblem": "PROBLEM",
+  "ticketsDetailParent": "Parent",
+  "ticketsDetailTreeTruncated": "Tree truncated (max depth reached)",
+  "ticketsDetailLinkedCount": "{count, plural, =1{1 linked ticket} other{{count} linked tickets}}",
+  "@ticketsDetailLinkedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailParentTicket": "Parent ticket",
+  "ticketsDetailPickDifferentParent": "Pick a different parent",
+  "ticketsDetailDetachFromParentTicket": "Detach from parent ticket",
+  "ticketsDetailDetachFrom": "Detach from \"{name}\"",
+  "@ticketsDetailDetachFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailDetachedFromParent": "Detached from parent",
+  "ticketsDetailNoLinkCandidates": "No other tickets to link to. Load more from the list first.",
+  "ticketsDetailLinkToParentTitle": "Link to parent…",
+  "ticketsDetailLinkedTo": "Linked to \"{name}\"",
+  "@ticketsDetailLinkedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailLinkFailed": "Failed to link parent",
+  "ticketsDetailCloseFailed": "Failed to close",
+  "ticketsDetailMergedFrom": "MERGED FROM",
+  "ticketsDetailCommentInternal": "Internal",
+  "ticketsDetailAgoMonths": "{n}mo ago",
+  "@ticketsDetailAgoMonths": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAgoDays": "{n}d ago",
+  "@ticketsDetailAgoDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAgoHours": "{n}h ago",
+  "@ticketsDetailAgoHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAgoMinutes": "{n}m ago",
+  "@ticketsDetailAgoMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailJustNow": "Just now",
+  "ticketsDetailNoMatchingTickets": "No matching tickets",
+  "ticketsDetailSearchTicketsHint": "Search tickets…",
+  "ticketsDetailEmailInbound": "Inbound",
+  "ticketsDetailEmailOutbound": "Outbound",
+  "ticketsDetailEmailFrom": "From: {address}",
+  "@ticketsDetailEmailFrom": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailEmailTo": "To: {addresses}",
+  "@ticketsDetailEmailTo": {
+    "placeholders": {
+      "addresses": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailActCreated": "Created the ticket",
+  "ticketsDetailActUpdatedFields": "Updated {fields}",
+  "@ticketsDetailActUpdatedFields": {
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailActUpdated": "Updated the ticket",
+  "ticketsDetailActStatusChanged": "Status changed",
+  "ticketsDetailActPriorityChanged": "Priority changed",
+  "ticketsDetailActComment": "Added a comment",
+  "ticketsDetailActAssign": "Updated assignees",
+  "ticketsDetailActLinkedSolution": "Linked a solution",
+  "ticketsDetailActUnlinkedSolution": "Unlinked a solution",
+  "ticketsDetailActLinkedParent": "Linked to a parent ticket",
+  "ticketsDetailActWatched": "Started watching",
+  "ticketsDetailActUnwatched": "Stopped watching",
+  "ticketsDetailActMentioned": "Mentioned a user",
+  "ticketsDetailActApprovalRequested": "Requested approval",
+  "ticketsDetailActApproved": "Approval granted",
+  "ticketsDetailActRejected": "Approval rejected",
+  "ticketsDetailActApprovalCancelled": "Approval cancelled",
+  "ticketsDetailActEscalated": "Escalated",
+  "ticketsDetailActReopened": "Reopened",
+  "ticketsDetailActMerged": "Merged into another ticket",
+  "ticketsDetailActMergeTarget": "Received a merge",
+  "ticketsDetailActUnmerged": "Unmerged",
+  "ticketsDetailActRouted": "Routed by auto-assignment",
+  "ticketsDetailActTimeLoggedMinutes": "Logged {minutes}m",
+  "@ticketsDetailActTimeLoggedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailActTimeLogged": "Logged time",
+  "ticketsDetailActParentCascade": "Closed via parent cascade",
+  "ticketsDetailDoNotApply": "Do not apply this",
+  "ticketsAnalyticsTitle": "Analytics",
+  "ticketsAnalyticsRange": "{start} to {end}",
+  "@ticketsAnalyticsRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsAllPriorities": "All priorities",
+  "ticketsAnalyticsFirstResponse": "First Response",
+  "ticketsAnalyticsNextResponse": "Next Response",
+  "ticketsAnalyticsResolution": "Resolution",
+  "ticketsAnalyticsBacklog": "Backlog (today)",
+  "ticketsAnalyticsSlaBreachRate": "SLA breach rate",
+  "ticketsAnalyticsFrtSubtitle": "{count, plural, other{p90 {p90} · {count} tickets}}",
+  "@ticketsAnalyticsFrtSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "p90": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsNrtSubtitle": "p90 {p90} · {count} answered",
+  "@ticketsAnalyticsNrtSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "p90": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsMttrSubtitle": "p90 {p90} · {count} resolved",
+  "@ticketsAnalyticsMttrSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "p90": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsBreached": "{count} breached",
+  "@ticketsAnalyticsBreached": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsAnalyticsBacklogPeak": "Peak urgent {count} in window",
+  "@ticketsAnalyticsBacklogPeak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsAnalyticsSlaSubtitle": "First response above · Resolution {resolution} · Next response {next}",
+  "@ticketsAnalyticsSlaSubtitle": {
+    "placeholders": {
+      "resolution": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsMinutes": "{value}m",
+  "@ticketsAnalyticsMinutes": {
+    "description": "A duration in minutes, short form.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsHours": "{value}h",
+  "@ticketsAnalyticsHours": {
+    "description": "A duration in hours, short form.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsCsatHeading": "CUSTOMER SATISFACTION",
+  "ticketsAnalyticsCsatEmpty": "No ratings in this window. Scores appear once customers answer the satisfaction survey sent when a ticket closes.",
+  "ticketsAnalyticsCsatOutOf5": "{count, plural, =1{out of 5 · 1 rating} other{out of 5 · {count} ratings}}",
+  "@ticketsAnalyticsCsatOutOf5": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsAnalyticsAgentsHeading": "PER-AGENT",
+  "ticketsAnalyticsAgentCases": "cases",
+  "ticketsAnalyticsAgentFrt": "FRT",
+  "ticketsAnalyticsAgentBreach": "breach",
+  "ticketsInboxApproveFailed": "Failed to approve",
+  "ticketsInboxRejectTitle": "Reject approval",
+  "ticketsInboxRejectReason": "Reason (required)",
+  "ticketsInboxReject": "Reject",
+  "ticketsInboxRejectFailed": "Failed to reject",
+  "ticketsInboxCancelTitle": "Cancel approval request?",
+  "ticketsInboxCancelBody": "This will withdraw the approval request.",
+  "ticketsInboxKeep": "Keep",
+  "ticketsInboxCancelRequest": "Cancel request",
+  "ticketsInboxCancelFailed": "Failed to cancel",
+  "ticketsInboxTitle": "Approvals",
+  "ticketsInboxTabMine": "Mine",
+  "ticketsInboxTabAll": "All",
+  "ticketsInboxStateAll": "All",
+  "ticketsInboxEmptyTitle": "No approvals",
+  "ticketsInboxEmptyMine": "You don't have any pending approvals to act on.",
+  "ticketsInboxEmptyFiltered": "No approvals match the current filter.",
+  "ticketsInboxTicketFallback": "Ticket",
+  "ticketsInboxRule": "Rule: {name}",
+  "@ticketsInboxRule": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxRejection": "Rejection: {reason}",
+  "@ticketsInboxRejection": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxRequestedBy": "Requested by {email}",
+  "@ticketsInboxRequestedBy": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxApprover": "Approver {email}",
+  "@ticketsInboxApprover": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxApprove": "Approve",
+  "ticketsInboxWithdraw": "Withdraw request",
+  "ticketsMacroTitle": "Saved replies",
+  "ticketsMacroSearchHint": "Search saved replies",
+  "ticketsMacroLoadError": "Could not load the saved replies",
+  "ticketsMacroEmpty": "No saved replies yet. You can write one under More, Organization settings.",
+  "ticketsMacroNoMatch": "No saved reply matches that search",
+  "ticketsMacroApply": "Apply",
+  "ticketsCloseChildrenTitle": "Close ticket",
+  "ticketsCloseChildrenPrompt": "Close \"{name}\"?",
+  "@ticketsCloseChildrenPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsCloseChildrenAlso": "Close these as well",
+  "ticketsCloseChildrenWhy": "Why (optional)",
+  "ticketsCloseChildrenWhyHelper": "Recorded against every ticket closed with this one",
+  "ticketsCloseChildrenCloseAll": "Close all of them",
+  "ticketsPanelPropsHeading": "PROPERTIES",
+  "ticketsPanelPropsFirstResponse": "First response",
+  "ticketsPanelPropsResolution": "Resolution",
+  "ticketsPanelPropsEscalated": "Escalated",
+  "ticketsPanelPropsEscalationCount": "{count}x",
+  "@ticketsPanelPropsEscalationCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelPropsWatching": "You are watching",
+  "ticketsPanelPropsWatchers": "Watchers",
+  "ticketsPanelPropsMet": "Met",
+  "ticketsPanelPropsBreached": "Breached",
+  "ticketsPanelPropsOverdue": "Overdue",
+  "ticketsPanelPropsPaused": "Paused",
+  "ticketsPanelPropsIn": "in {duration}",
+  "@ticketsPanelPropsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelPropsNotSet": "Not set",
+  "ticketsPanelPropsReplied": "Replied {date}",
+  "@ticketsPanelPropsReplied": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelPropsDue": "Due {date}",
+  "@ticketsPanelPropsDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelPropsNoSla": "No SLA configured",
+  "ticketsPanelPropsDaysHours": "{days}d {hours}h",
+  "@ticketsPanelPropsDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelPropsHoursMinutes": "{hours}h {minutes}m",
+  "@ticketsPanelPropsHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelPropsMinutes": "{minutes}m",
+  "@ticketsPanelPropsMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelSolutionsLinkFailed": "Failed to link solution",
+  "ticketsPanelSolutionsUnlinkFailed": "Failed to unlink solution",
+  "ticketsPanelSolutionsHeading": "SOLUTIONS",
+  "ticketsPanelSolutionsLinkTooltip": "Link a solution",
+  "ticketsPanelSolutionsEmpty": "No solutions linked yet.",
+  "ticketsPanelSolutionsSuggested": "Suggested",
+  "ticketsPanelSolutionsUnlink": "Unlink",
+  "ticketsPanelSolutionsLink": "Link",
+  "ticketsPanelSolutionsPickerTitle": "Link solution",
+  "ticketsPanelSolutionsPickerSearch": "Search solutions…",
+  "ticketsPanelSolutionsPickerEmpty": "No matching solutions",
+  "ticketsPanelTimeOtherRunning": "You already have a running timer on another ticket.",
+  "ticketsPanelTimeView": "View",
+  "ticketsPanelTimeStartFailed": "Failed to start timer",
+  "ticketsPanelTimeStopFailed": "Failed to stop timer",
+  "ticketsPanelTimeAddFailed": "Failed to add entry",
+  "ticketsPanelTimeHeading": "TIME TRACKING",
+  "ticketsPanelTimeAddTooltip": "Add manual entry",
+  "ticketsPanelTimeTotal": "Total",
+  "ticketsPanelTimeBillable": "Billable",
+  "ticketsPanelTimeStart": "Start timer",
+  "ticketsPanelTimeMore": "+ {count} more",
+  "@ticketsPanelTimeMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelTimeRunning": "Running",
+  "ticketsPanelTimeStop": "Stop",
+  "ticketsPanelTimeEntry": "Time entry",
+  "ticketsPanelTimeSheetTitle": "Add time entry",
+  "ticketsPanelTimeDuration": "Duration",
+  "ticketsPanelTimeDescriptionHint": "What did you work on?",
+  "ticketsPanelTimeAddEntry": "Add entry",
+  "ticketsPanelTimeZero": "0m",
+  "ticketsPanelTimeHours": "{hours}h",
+  "@ticketsPanelTimeHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelApprovalRequestTitle": "Request approval",
+  "ticketsPanelApprovalRequestHint": "Optional note for the approver",
+  "ticketsPanelApprovalSendRequest": "Send request",
+  "ticketsPanelApprovalRequestFailed": "Failed to request approval",
+  "ticketsPanelApprovalApproveFailed": "Failed to approve",
+  "ticketsPanelApprovalRejectTitle": "Reject approval",
+  "ticketsPanelApprovalRejectHint": "Reason (required)",
+  "ticketsPanelApprovalReject": "Reject",
+  "ticketsPanelApprovalRejectFailed": "Failed to reject",
+  "ticketsPanelApprovalCancelTitle": "Cancel approval request?",
+  "ticketsPanelApprovalCancelBody": "The approval request will be cancelled. You can request a new one later.",
+  "ticketsPanelApprovalKeep": "Keep",
+  "ticketsPanelApprovalCancelRequest": "Cancel request",
+  "ticketsPanelApprovalCancelFailed": "Failed to cancel",
+  "ticketsPanelApprovalRuleNeeded": "Closing this ticket needs approval under {rule}.",
+  "@ticketsPanelApprovalRuleNeeded": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalLoadFailed": "The approval requests could not be loaded. Nothing else on this ticket is affected.",
+  "ticketsPanelApprovalNone": "No approval requested yet.",
+  "ticketsPanelApprovalRequestedBy": "Requested by {email}",
+  "@ticketsPanelApprovalRequestedBy": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalDecidedBy": "{state} by {email}",
+  "@ticketsPanelApprovalDecidedBy": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalRule": "Rule: {name}",
+  "@ticketsPanelApprovalRule": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalRejectionReason": "Rejection reason",
+  "ticketsPanelApprovalOwnRequest": "You asked for this, so another approver must decide it.",
+  "ticketsPanelApprovalApprove": "Approve",
+  "ticketsPanelApprovalWithdraw": "Withdraw request",
+  "ticketsPanelApprovalRequestAgain": "Request again",
+  "ticketsPanelApprovalHeading": "APPROVAL",
+  "ticketsFormLoadFailed": "Failed to load ticket",
+  "ticketsFormSelectAccountError": "Please select an account.",
+  "ticketsFormUpdated": "Ticket updated successfully",
+  "ticketsFormCreated": "Ticket created successfully",
+  "ticketsFormSaveFailed": "Failed to save ticket",
+  "ticketsFormEditTitle": "Edit Ticket",
+  "ticketsFormNewTitle": "New Ticket",
+  "ticketsFormSectionBasic": "Basic Information",
+  "ticketsFormNameLabel": "Ticket name",
+  "ticketsFormNameHint": "e.g. Login fails on Safari",
+  "ticketsFormNameRequired": "Ticket name is required",
+  "ticketsFormSectionClassification": "Classification",
+  "ticketsFormTypeLabel": "Type",
+  "ticketsFormClosedOnLabel": "Closed on (optional)",
+  "ticketsFormClosedOnToday": "Today",
+  "ticketsFormClosedOnChangeHint": "Pick a date to change when it was closed.",
+  "ticketsFormClosedOnEmptyHint": "Left empty, the close is dated today in your organization's timezone.",
+  "ticketsFormClear": "Clear",
+  "ticketsFormSectionPeople": "People",
+  "ticketsFormNoAssignee": "No one assigned",
+  "ticketsFormNoTags": "No tags",
+  "ticketsFormContactsLabel": "Contacts",
+  "ticketsFormNoContacts": "Nobody linked",
+  "ticketsFormDescriptionHint": "What is happening? Include reproduction steps if known.",
+  "ticketsFormUpdateButton": "Update Ticket",
+  "ticketsFormCreateButton": "Create Ticket",
+  "ticketsFormSectionCustomFields": "Custom Fields",
+  "ticketsFormAccountLocked": "Account (cannot change)",
+  "ticketsFormAccountLabel": "Account",
+  "ticketsFormSelectAccount": "Select an account",
+  "ticketsFormPickStatus": "Select Status",
+  "ticketsFormPickPriority": "Select Priority",
+  "ticketsFormPickType": "Select Type",
+  "ticketsFormNoContactsFound": "No contacts found",
+  "ticketsFormNoUsersFound": "No users found",
+  "ticketsFormNoTagsFound": "No tags found",
+  "ticketsFormPickAccount": "Select Account",
+  "ticketsFormNoAccounts": "No accounts",
+  "ticketsFormNoAccountsBody": "Create an account on the web to link tickets to it.",
+  "ticketsListBulkReassign": "Reassign",
+  "ticketsListBulkSetPriority": "Set priority",
+  "ticketsListBulkSetStatus": "Set status",
+  "ticketsListBulkSetType": "Set type",
+  "ticketsListBulkAddTags": "Add tags",
+  "ticketsListTitle": "Tickets",
+  "ticketsListCancelSelection": "Cancel selection",
+  "ticketsListSelect": "Select tickets",
+  "ticketsListMorePages": "More ticket pages",
+  "ticketsListMenuBoard": "Board",
+  "ticketsListMenuAnalytics": "Analytics",
+  "ticketsListMenuApprovals": "Approvals",
+  "ticketsListMenuKnowledgeBase": "Knowledge base",
+  "ticketsListImportCsv": "Import from CSV",
+  "ticketsListNewTicket": "New ticket",
+  "ticketsListQuickAll": "All",
+  "ticketsListQuickOpen": "Open",
+  "ticketsListQuickClosed": "Closed",
+  "ticketsListLoadFailed": "Failed to load tickets",
+  "ticketsListSelectedCount": "{count} selected",
+  "@ticketsListSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListClear": "Clear",
+  "ticketsListActions": "Actions",
+  "ticketsListClosedOnTitle": "Closed on",
+  "ticketsListClosedOnToday": "Today, in your organization's timezone",
+  "ticketsListClosedOnPick": "Pick a date",
+  "ticketsListReassignTo": "Reassign to",
+  "ticketsListDeleteTitle": "Delete tickets?",
+  "ticketsListDeleteBody": "{count, plural, =1{Permanently delete 1 ticket. This cannot be undone.} other{Permanently delete {count} tickets. This cannot be undone.}}",
+  "@ticketsListDeleteBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkDeleteFailed": "Bulk delete failed",
+  "ticketsListBulkUpdateFailed": "Bulk update failed",
+  "ticketsListBulkDeleted": "{count} deleted",
+  "@ticketsListBulkDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkUpdated": "{count} updated",
+  "@ticketsListBulkUpdated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkNoAccess": "{count} skipped (no access)",
+  "@ticketsListBulkNoAccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkNeedApproval": "{count} need approval",
+  "@ticketsListBulkNeedApproval": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkMerged": "{count} merged (unmerge first)",
+  "@ticketsListBulkMerged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkInvalid": "{count} invalid",
+  "@ticketsListBulkInvalid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListSearchHint": "Search tickets...",
+  "ticketsListFilterType": "Type",
+  "ticketsListFilterAccount": "Account",
+  "ticketsListFilterAssignees": "Assignees",
+  "ticketsListFilterAssigneesCount": "Assignees · {count}",
+  "@ticketsListFilterAssigneesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListFilterTagsCount": "Tags · {count}",
+  "@ticketsListFilterTagsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListFilterWatching": "Watching",
+  "ticketsListFilterBreaching": "Breaching SLA",
+  "ticketsListFilterDate": "Date",
+  "ticketsListFilterAfter": "After {date}",
+  "@ticketsListFilterAfter": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsListFilterBefore": "Before {date}",
+  "@ticketsListFilterBefore": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsListLoading": "Loading",
+  "ticketsListCountOf": "{total, plural, =1{{loaded} of 1 ticket} other{{loaded} of {total} tickets}}",
+  "@ticketsListCountOf": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListCount": "{count, plural, =1{1 ticket} other{{count} tickets}}",
+  "@ticketsListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListCountFiltered": "{text} (filtered)",
+  "@ticketsListCountFiltered": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsListEmptyFilteredTitle": "No results found",
+  "ticketsListEmptyTitle": "No tickets yet",
+  "ticketsListEmptyFilteredBody": "Try adjusting your filters",
+  "ticketsListEmptyBody": "Customer-reported issues will appear here",
+  "ticketsListClearFilters": "Clear filters",
+  "ticketsListCreateTicket": "Create ticket",
+  "ticketsListFilterByType": "Filter by Type",
+  "ticketsListAllTypes": "All Types",
+  "ticketsListFilterByPriority": "Filter by Priority",
+  "ticketsListAllPriorities": "All Priorities",
+  "ticketsListFilterByAccount": "Filter by Account",
+  "ticketsListAllAccounts": "All Accounts",
+  "ticketsListFilterByAssignee": "Filter by Assignee",
+  "ticketsListFilterByTag": "Filter by Tag"
+}

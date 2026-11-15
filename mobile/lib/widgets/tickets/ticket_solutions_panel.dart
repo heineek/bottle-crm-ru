@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/solution.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/solutions_provider.dart';
 import '../common/common.dart';
 
@@ -62,8 +63,8 @@ class _TicketSolutionsPanelState extends ConsumerState<TicketSolutionsPanel> {
       await _loadSuggestions();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to link solution'),
+        SnackBar(
+          content: Text(context.l10n.ticketsPanelSolutionsLinkFailed),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -82,8 +83,8 @@ class _TicketSolutionsPanelState extends ConsumerState<TicketSolutionsPanel> {
       await _loadSuggestions();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to unlink solution'),
+        SnackBar(
+          content: Text(context.l10n.ticketsPanelSolutionsUnlinkFailed),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -140,7 +141,7 @@ class _TicketSolutionsPanelState extends ConsumerState<TicketSolutionsPanel> {
               Icon(LucideIcons.bookOpen, size: 16, color: AppColors.gray600),
               const SizedBox(width: 8),
               Text(
-                'SOLUTIONS',
+                context.l10n.ticketsPanelSolutionsHeading,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -148,7 +149,7 @@ class _TicketSolutionsPanelState extends ConsumerState<TicketSolutionsPanel> {
               const Spacer(),
               if (widget.canEdit)
                 IconButton(
-                  tooltip: 'Link a solution',
+                  tooltip: context.l10n.ticketsPanelSolutionsLinkTooltip,
                   icon: const Icon(LucideIcons.plus, size: 18),
                   onPressed: _isBusy ? null : _openPicker,
                 ),
@@ -158,7 +159,7 @@ class _TicketSolutionsPanelState extends ConsumerState<TicketSolutionsPanel> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'No solutions linked yet.',
+                context.l10n.ticketsPanelSolutionsEmpty,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -175,7 +176,7 @@ class _TicketSolutionsPanelState extends ConsumerState<TicketSolutionsPanel> {
           if (widget.canEdit && _suggestions.isNotEmpty) ...[
             const Divider(height: 24),
             Text(
-              'Suggested',
+              context.l10n.ticketsPanelSolutionsSuggested,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
@@ -236,7 +237,7 @@ class _LinkedSolutionRow extends StatelessWidget {
             ),
             if (onUnlink != null)
               IconButton(
-                tooltip: 'Unlink',
+                tooltip: context.l10n.ticketsPanelSolutionsUnlink,
                 icon: const Icon(LucideIcons.x, size: 16),
                 color: AppColors.gray500,
                 onPressed: isBusy ? null : onUnlink,
@@ -283,7 +284,7 @@ class _SuggestionRow extends StatelessWidget {
               minimumSize: AppLayout.buttonMinSizeInRow,
             ),
             onPressed: isBusy ? null : onLink,
-            child: const Text('Link'),
+            child: Text(context.l10n.ticketsPanelSolutionsLink),
           ),
         ],
       ),
@@ -330,13 +331,16 @@ class _SolutionPickerSheetState extends State<_SolutionPickerSheet> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Link solution', style: AppTypography.h3),
+          child: Text(
+            context.l10n.ticketsPanelSolutionsPickerTitle,
+            style: AppTypography.h3,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: TextField(
             decoration: InputDecoration(
-              hintText: 'Search solutions…',
+              hintText: context.l10n.ticketsPanelSolutionsPickerSearch,
               prefixIcon: const Icon(LucideIcons.search, size: 18),
               filled: true,
               fillColor: AppColors.gray50,
@@ -353,7 +357,7 @@ class _SolutionPickerSheetState extends State<_SolutionPickerSheet> {
           child: filtered.isEmpty
               ? Center(
                   child: Text(
-                    'No matching solutions',
+                    context.l10n.ticketsPanelSolutionsPickerEmpty,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),

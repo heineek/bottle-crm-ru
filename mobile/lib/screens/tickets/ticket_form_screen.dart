@@ -11,6 +11,7 @@ import '../../widgets/common/common.dart';
 import '../../widgets/forms/custom_fields_form.dart';
 import '../../widgets/forms/multi_select_sheet.dart';
 import '../../widgets/forms/unsaved_changes.dart';
+import '../../l10n/l10n.dart';
 
 /// Shared create / edit form for tickets.
 class TicketFormScreen extends ConsumerStatefulWidget {
@@ -101,7 +102,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
         _closedOn = c.closedOn;
         _savedClosedOn = c.closedOn;
       } else {
-        _fetchError = 'Failed to load ticket';
+        _fetchError = context.l10n.ticketsFormLoadFailed;
       }
     });
     // After the fields hold the saved values, so an untouched edit form is
@@ -147,7 +148,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
     if (!widget.isEditMode && (_accountId == null || _accountId!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select an account.'),
+          content: Text(context.l10n.ticketsFormSelectAccountError),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -168,8 +169,8 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
         SnackBar(
           content: Text(
             widget.isEditMode
-                ? 'Ticket updated successfully'
-                : 'Ticket created successfully',
+                ? context.l10n.ticketsFormUpdated
+                : context.l10n.ticketsFormCreated,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -178,7 +179,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to save ticket'),
+          content: Text(res.message ?? context.l10n.ticketsFormSaveFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -194,7 +195,11 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text(widget.isEditMode ? 'Edit Ticket' : 'New Ticket'),
+          title: Text(
+            widget.isEditMode
+                ? context.l10n.ticketsFormEditTitle
+                : context.l10n.ticketsFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -227,7 +232,10 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TextButton(onPressed: _fetchTicket, child: const Text('Retry')),
+            TextButton(
+              onPressed: _fetchTicket,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -244,17 +252,17 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _section('Basic Information'),
+            _section(context.l10n.ticketsFormSectionBasic),
             const SizedBox(height: 16),
             FloatingLabelInput(
-              label: 'Ticket name',
-              hint: 'e.g. Login fails on Safari',
+              label: context.l10n.ticketsFormNameLabel,
+              hint: context.l10n.ticketsFormNameHint,
               controller: _nameController,
               prefixIcon: LucideIcons.fileText,
               textInputAction: TextInputAction.next,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
-                  return 'Ticket name is required';
+                  return context.l10n.ticketsFormNameRequired;
                 }
                 return null;
               },
@@ -262,31 +270,31 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
             const SizedBox(height: 16),
             _accountField(accounts),
             const SizedBox(height: 32),
-            _section('Classification'),
+            _section(context.l10n.ticketsFormSectionClassification),
             const SizedBox(height: 16),
             _dropdown(
-              label: 'Status',
+              label: context.l10n.commonStatus,
               value: _status.label,
               onTap: () => _pickStatus(),
             ),
             const SizedBox(height: 16),
             _dropdown(
-              label: 'Priority',
+              label: context.l10n.commonPriority,
               value: _priority.label,
               onTap: () => _pickPriority(),
             ),
             const SizedBox(height: 16),
             _dropdown(
-              label: 'Type',
+              label: context.l10n.ticketsFormTypeLabel,
               value: _ticketType.label,
               onTap: () => _pickType(),
             ),
             if (_status == TicketStatus.closed) ...[
               const SizedBox(height: 16),
               _dropdown(
-                label: 'Closed on (optional)',
+                label: context.l10n.ticketsFormClosedOnLabel,
                 value: _closedOn == null
-                    ? 'Today'
+                    ? context.l10n.ticketsFormClosedOnToday
                     : '${_closedOn!.year.toString().padLeft(4, '0')}-'
                           '${_closedOn!.month.toString().padLeft(2, '0')}-'
                           '${_closedOn!.day.toString().padLeft(2, '0')}',
@@ -299,9 +307,8 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
                   Expanded(
                     child: Text(
                       _savedClosedOn != null
-                          ? 'Pick a date to change when it was closed.'
-                          : "Left empty, the close is dated today in your "
-                                "organization's timezone.",
+                          ? context.l10n.ticketsFormClosedOnChangeHint
+                          : context.l10n.ticketsFormClosedOnEmptyHint,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -313,18 +320,18 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
                       style: TextButton.styleFrom(
                         minimumSize: const Size(44, 44),
                       ),
-                      child: const Text('Clear'),
+                      child: Text(context.l10n.ticketsFormClear),
                     ),
                 ],
               ),
             ],
             const SizedBox(height: 32),
-            _section('People'),
+            _section(context.l10n.ticketsFormSectionPeople),
             const SizedBox(height: 16),
             _multiSelectField(
-              label: 'Assigned to',
+              label: context.l10n.commonAssignedTo,
               icon: LucideIcons.users,
-              placeholder: 'No one assigned',
+              placeholder: context.l10n.ticketsFormNoAssignee,
               selectedLabels: users
                   .where((u) => _assigneeIds.contains(u.id))
                   .map((u) => u.displayName)
@@ -333,9 +340,9 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
             ),
             const SizedBox(height: 16),
             _multiSelectField(
-              label: 'Tags',
+              label: context.l10n.commonTags,
               icon: LucideIcons.tag,
-              placeholder: 'No tags',
+              placeholder: context.l10n.ticketsFormNoTags,
               selectedLabels: tags
                   .where((t) => _tagIds.contains(t.id))
                   .map((t) => t.name)
@@ -346,9 +353,9 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
             // Who reported this, or who else is on it. The web form has had
             // this field all along.
             _multiSelectField(
-              label: 'Contacts',
+              label: context.l10n.ticketsFormContactsLabel,
               icon: LucideIcons.userRound,
-              placeholder: 'Nobody linked',
+              placeholder: context.l10n.ticketsFormNoContacts,
               selectedLabels: contacts
                   .where((c) => _contactIds.contains(c.id))
                   .map((c) => c.fullName)
@@ -356,18 +363,20 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
               onTap: () => _pickContacts(contacts),
             ),
             const SizedBox(height: 32),
-            _section('Description'),
+            _section(context.l10n.commonDescription),
             const SizedBox(height: 16),
             TextAreaField(
-              label: 'Description',
-              hint: 'What is happening? Include reproduction steps if known.',
+              label: context.l10n.commonDescription,
+              hint: context.l10n.ticketsFormDescriptionHint,
               controller: _descriptionController,
               maxLines: 5,
             ),
             _customFieldsSection(),
             const SizedBox(height: 32),
             PrimaryButton(
-              label: widget.isEditMode ? 'Update Ticket' : 'Create Ticket',
+              label: widget.isEditMode
+                  ? context.l10n.ticketsFormUpdateButton
+                  : context.l10n.ticketsFormCreateButton,
               onPressed: _isLoading ? null : _submit,
               isLoading: _isLoading,
             ),
@@ -377,7 +386,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
                 onTap: () =>
                     leaveForm(context, hasUnsavedChanges: _hasUnsavedChanges),
                 child: Text(
-                  'Cancel',
+                  context.l10n.commonCancel,
                   style: AppTypography.label.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -402,7 +411,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 32),
-            _section('Custom Fields'),
+            _section(context.l10n.ticketsFormSectionCustomFields),
             const SizedBox(height: 16),
             CustomFieldsForm(
               targetModel: 'Case',
@@ -432,7 +441,9 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          readOnly ? 'Account (cannot change)' : 'Account',
+          readOnly
+              ? context.l10n.ticketsFormAccountLocked
+              : context.l10n.ticketsFormAccountLabel,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 8),
@@ -456,7 +467,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    selected?.name ?? 'Select an account',
+                    selected?.name ?? context.l10n.ticketsFormSelectAccount,
                     style: AppTypography.body.copyWith(
                       color: selected != null
                           ? AppColors.textPrimary
@@ -588,7 +599,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _PickerSheet(
-        title: 'Select Status',
+        title: context.l10n.ticketsFormPickStatus,
         options: TicketStatus.settable
             .map(
               (s) => _PickerOption(
@@ -614,7 +625,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _PickerSheet(
-        title: 'Select Priority',
+        title: context.l10n.ticketsFormPickPriority,
         options: TicketPriority.values
             .map(
               (p) => _PickerOption(
@@ -640,7 +651,7 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _PickerSheet(
-        title: 'Select Type',
+        title: context.l10n.ticketsFormPickType,
         options: TicketType.values
             .map(
               (t) => _PickerOption(
@@ -672,13 +683,13 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
     final initial = contacts.where((c) => _contactIds.contains(c.id)).toList();
     final result = await MultiSelectSheet.show<ContactLookup>(
       context: context,
-      title: 'Contacts',
+      title: context.l10n.ticketsFormContactsLabel,
       items: contacts,
       initialSelection: initial,
       labelOf: (c) => c.fullName,
       searchText: (c) => '${c.email ?? ''} ${c.fullName}',
       leadingOf: (c) => UserAvatar(name: c.fullName, size: AvatarSize.xs),
-      emptyMessage: 'No contacts found',
+      emptyMessage: context.l10n.ticketsFormNoContactsFound,
     );
     if (result != null) {
       setState(() => _contactIds = result.map((c) => c.id).toList());
@@ -689,13 +700,13 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
     final initial = users.where((u) => _assigneeIds.contains(u.id)).toList();
     final result = await MultiSelectSheet.show<UserLookup>(
       context: context,
-      title: 'Assigned to',
+      title: context.l10n.commonAssignedTo,
       items: users,
       initialSelection: initial,
       labelOf: (u) => u.displayName,
       searchText: (u) => '${u.email} ${u.displayName}',
       leadingOf: (u) => UserAvatar(name: u.displayName, size: AvatarSize.xs),
-      emptyMessage: 'No users found',
+      emptyMessage: context.l10n.ticketsFormNoUsersFound,
     );
     if (result != null) {
       setState(() => _assigneeIds = result.map((u) => u.id).toList());
@@ -706,12 +717,12 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
     final initial = tags.where((t) => _tagIds.contains(t.id)).toList();
     final result = await MultiSelectSheet.show<TagLookup>(
       context: context,
-      title: 'Tags',
+      title: context.l10n.commonTags,
       items: tags,
       initialSelection: initial,
       labelOf: (t) => t.name,
       searchText: (t) => t.name,
-      emptyMessage: 'No tags found',
+      emptyMessage: context.l10n.ticketsFormNoTagsFound,
     );
     if (result != null) {
       setState(() => _tagIds = result.map((t) => t.id).toList());
@@ -744,16 +755,18 @@ class _TicketFormScreenState extends ConsumerState<TicketFormScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Select Account', style: AppTypography.h3),
+              child: Text(
+                context.l10n.ticketsFormPickAccount,
+                style: AppTypography.h3,
+              ),
             ),
             Expanded(
               child: accounts.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: EmptyState(
                         icon: LucideIcons.building2,
-                        title: 'No accounts',
-                        description:
-                            'Create an account on the web to link tickets to it.',
+                        title: context.l10n.ticketsFormNoAccounts,
+                        description: context.l10n.ticketsFormNoAccountsBody,
                       ),
                     )
                   : ListView.builder(
