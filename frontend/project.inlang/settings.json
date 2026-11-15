@@ -15,7 +15,8 @@
       "./messages/profile/{locale}.json",
       "./messages/leads/{locale}.json",
       "./messages/contacts/{locale}.json",
-      "./messages/accounts/{locale}.json"
+      "./messages/accounts/{locale}.json",
+      "./messages/pipeline/{locale}.json"
     ]
   }
 }

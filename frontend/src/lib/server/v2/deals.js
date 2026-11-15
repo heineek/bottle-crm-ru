@@ -28,6 +28,7 @@ import { apiRequest } from '#lib/api-helpers.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { sumByCurrency } from '#lib/v2/format.js';
 import { canMoveCard } from '#lib/v2/board-drag.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** DRF decimals are strings. `null` stays `null`. It means "not priced". */
 function num(value) {
@@ -79,7 +80,7 @@ function toRow(deal) {
     name: deal.name ?? '',
     account: {
       id: deal.account?.id ?? null,
-      name: deal.account?.name ?? 'No account'
+      name: deal.account?.name ?? m.pipeline_no_account()
     },
     pipeline: deal.pipeline ?? null,
     stage: deal.stage,
@@ -387,7 +388,7 @@ function buildActivity(response) {
       by: null,
       // Deliberately not "moved from X to Y". The previous stage is not
       // recorded anywhere, and inventing it would be inventing history.
-      body: 'Moved into this stage'
+      body: m.pipeline_timeline_moved_into_stage()
     });
   }
 
@@ -396,7 +397,7 @@ function buildActivity(response) {
     type: 'stage',
     at: deal.created_at,
     by: deal.created_by?.email ?? null,
-    body: 'Deal created'
+    body: m.pipeline_timeline_deal_created()
   });
 
   return events.sort(
@@ -456,7 +457,7 @@ async function listOwners(cookies) {
     const response = await apiRequest('/users/get-teams-and-users/', {}, { cookies });
     return (response.profiles ?? []).map((/** @type {any} */ profile) => ({
       id: profile.id,
-      name: profile.user_details?.email || profile.user?.email || 'Unknown'
+      name: profile.user_details?.email || profile.user?.email || m.pipeline_owner_unknown()
     }));
   } catch {
     return [];
@@ -686,7 +687,7 @@ async function fetchDetail(cookies, id) {
     rethrowModuleOff(err);
     // On the status, not on the wording. See `api-helpers.js`.
     if (err?.status === 404) {
-      error(404, 'That deal does not exist, or you do not have access to it.');
+      error(404, m.pipeline_detail_not_found());
     }
     throw err;
   }

@@ -3,6 +3,7 @@ import { deleteDeal, getDeal } from '#lib/server/v2/deals.js';
 import { invoiceFromDeal } from '#lib/server/v2/invoices.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { loadRelated, relatedActions } from '#lib/server/v2/related-records.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load(event) {
@@ -28,8 +29,7 @@ export const actions = {
       created = await invoiceFromDeal({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error:
-          err?.body?.message || readableError(err, 'Could not raise an invoice from this deal.')
+        error: err?.body?.message || readableError(err, m.pipeline_detail_invoice_failed())
       });
     }
     redirect(303, created?.id ? `/invoices/${created.id}` : '/invoices');
@@ -44,7 +44,7 @@ export const actions = {
       await deleteDeal({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       const code = err?.status >= 400 && err?.status < 500 ? err.status : 400;
-      return fail(code, { error: readableError(err, 'Could not delete this deal.') });
+      return fail(code, { error: readableError(err, m.pipeline_detail_delete_failed()) });
     }
     redirect(303, '/pipeline');
   }
