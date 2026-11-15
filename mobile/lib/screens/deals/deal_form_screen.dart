@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/deal_pipelines_provider.dart';
 import '../../providers/deals_provider.dart';
 import '../../providers/lookup_provider.dart';
+import '../../services/app_language.dart';
 import '../../services/org_date.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/forms/unsaved_changes.dart';
@@ -112,7 +114,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       _stage?.label ??
       (_stageCode == _existingDeal?.stage ? _existingDeal?.stageLabel : null) ??
       (_stageCode.isEmpty
-          ? 'First open stage'
+          ? appL10n.dealsFormFirstOpenStage
           : legacyDealStageLabel(_stageCode));
 
   Color get _stageColor {
@@ -252,7 +254,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         _populateFromDeal(deal);
         _baseline = _snapshot();
       } else {
-        _fetchError = 'Failed to load deal';
+        _fetchError = context.l10n.dealsFormLoadFailed;
       }
     });
   }
@@ -346,7 +348,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       _scrollToFirstError();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please fix the errors in the form'),
+          content: Text(context.l10n.dealsFormFixErrors),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -391,7 +393,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       if (missing) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${def.label} is required'),
+            content: Text(context.l10n.dealsFormFieldRequired(def.label)),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -417,8 +419,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         SnackBar(
           content: Text(
             widget.isEditMode
-                ? 'Deal updated successfully'
-                : 'Deal created successfully',
+                ? context.l10n.dealsFormUpdated
+                : context.l10n.dealsFormCreated,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -429,12 +431,12 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         context.pop(true);
       }
     } else {
-      final err = response.error ?? 'Failed to save deal';
-      // Backend rejects duplicate names with this exact phrase. Attach it as
-      // a Name-field error so the user sees it inline next to the offending
-      // input; revalidate so the form picks it up.
-      if (err.toLowerCase().contains('already exists')) {
-        setState(() => _serverNameError = err);
+      final err = response.error ?? context.l10n.dealsFormSaveFailed;
+      // A refusal on `name` (a duplicate, in the server's language) is shown
+      // inline next to the Name input; revalidate so the form picks it up.
+      final nameError = response.nameError;
+      if (nameError != null) {
+        setState(() => _serverNameError = nameError);
         _formKey.currentState?.validate();
         _scrollToFirstError();
       }
@@ -517,7 +519,11 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text(widget.isEditMode ? 'Edit Deal' : 'New Deal'),
+          title: Text(
+            widget.isEditMode
+                ? context.l10n.dealsFormEditTitle
+                : context.l10n.dealsFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -551,7 +557,9 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               PrimaryButton(
-                label: widget.isEditMode ? 'Update Deal' : 'Create Deal',
+                label: widget.isEditMode
+                    ? context.l10n.dealsFormUpdateButton
+                    : context.l10n.dealsFormCreateButton,
                 onPressed: _isLoading
                     ? null
                     : () {
@@ -576,7 +584,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                           child: CircularProgressIndicator(strokeWidth: 1.5),
                         )
                       : Icon(LucideIcons.plus, size: 16),
-                  label: const Text('Save & Add Another'),
+                  label: Text(context.l10n.dealsFormSaveAndAddAnother),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary600,
                   ),
@@ -608,7 +616,10 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TextButton(onPressed: _fetchDeal, child: const Text('Retry')),
+            TextButton(
+              onPressed: _fetchDeal,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -623,34 +634,34 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Basic Information Section
-            _buildSectionTitle('Basic Information'),
+            _buildSectionTitle(context.l10n.dealsFormSectionBasic),
             const SizedBox(height: 16),
             _buildBasicFields(),
 
             const SizedBox(height: 32),
 
             // Deal Details Section
-            _buildSectionTitle('Deal Details'),
+            _buildSectionTitle(context.l10n.dealsFormSectionDetails),
             const SizedBox(height: 16),
             _buildDealDetailsFields(),
 
             const SizedBox(height: 32),
 
             // Relationships Section
-            _buildSectionTitle('Relationships'),
+            _buildSectionTitle(context.l10n.dealsFormSectionRelationships),
             const SizedBox(height: 16),
             _buildRelationshipFields(),
 
             const SizedBox(height: 32),
 
             // Classification Section
-            _buildSectionTitle('Classification'),
+            _buildSectionTitle(context.l10n.dealsFormSectionClassification),
             const SizedBox(height: 16),
             _buildClassificationFields(),
 
             if (_customFieldDefs.isNotEmpty) ...[
               const SizedBox(height: 32),
-              _buildSectionTitle('Custom Fields'),
+              _buildSectionTitle(context.l10n.dealsFormSectionCustomFields),
               const SizedBox(height: 16),
               CustomFieldsForm(
                 targetModel: 'Opportunity',
@@ -662,11 +673,11 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
             const SizedBox(height: 32),
 
             // Notes Section
-            _buildSectionTitle('Notes'),
+            _buildSectionTitle(context.l10n.dealsFormSectionNotes),
             const SizedBox(height: 16),
             TextAreaField(
-              label: 'Notes',
-              hint: 'Add any additional notes about this deal...',
+              label: context.l10n.dealsFormNotesLabel,
+              hint: context.l10n.dealsFormNotesHint,
               controller: _notesController,
               maxLines: 4,
             ),
@@ -692,8 +703,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         // Deal Name
         FloatingLabelInput(
           key: _nameKey,
-          label: 'Deal Name *',
-          hint: 'Enterprise Contract',
+          label: context.l10n.dealsFormNameLabel,
+          hint: context.l10n.dealsFormNameHint,
           controller: _nameController,
           prefixIcon: LucideIcons.briefcase,
           maxLength: 255,
@@ -708,10 +719,10 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
           validator: (value) {
             if (_serverNameError != null) return _serverNameError;
             if (value == null || value.trim().isEmpty) {
-              return 'Deal name is required';
+              return context.l10n.dealsFormNameRequired;
             }
             if (value.trim().length > 255) {
-              return 'Deal name must be 255 characters or fewer';
+              return context.l10n.dealsFormNameTooLong;
             }
             return null;
           },
@@ -791,12 +802,14 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   final raw = value?.trim() ?? '';
                   if (raw.isEmpty) return null; // amount is optional
                   final n = double.tryParse(raw);
-                  if (n == null) return 'Enter a valid number';
-                  if (n < 0) return 'Amount must be ≥ 0';
+                  if (n == null) return context.l10n.dealsFormInvalidNumber;
+                  if (n < 0) return context.l10n.dealsFormAmountNegative;
                   // Backend: DecimalField(max_digits=12, decimal_places=2) →
                   // up to 10 digits before the decimal.
                   final intPart = n.truncate().toString();
-                  if (intPart.length > 10) return 'Amount is too large';
+                  if (intPart.length > 10) {
+                    return context.l10n.dealsFormAmountTooLarge;
+                  }
                   return null;
                 },
                 decoration: InputDecoration(
@@ -851,8 +864,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         if (ref.watch(dealPipelinesProvider).value case final pipelines?
             when pipelines.length > 1) ...[
           _buildDropdownField(
-            label: 'Pipeline',
-            value: _pipeline?.name ?? 'Default pipeline',
+            label: context.l10n.dealsFormPipelineLabel,
+            value: _pipeline?.name ?? context.l10n.dealsFormDefaultPipeline,
             onTap: () => _showPipelinePicker(pipelines),
           ),
           const SizedBox(height: 16),
@@ -860,7 +873,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Stage Dropdown
         _buildDropdownField(
-          label: 'Stage',
+          label: context.l10n.dealsFormStageLabel,
           value: _stageLabel,
           color: _stageColor,
           onTap: _showStagePicker,
@@ -871,7 +884,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         // Probability
         FloatingLabelInput(
           key: _probabilityKey,
-          label: 'Probability (%)',
+          label: context.l10n.dealsFormProbabilityLabel,
           hint: '50',
           controller: _probabilityController,
           prefixIcon: LucideIcons.percent,
@@ -893,7 +906,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
             if (value != null && value.isNotEmpty) {
               final prob = int.tryParse(value);
               if (prob == null || prob < 0 || prob > 100) {
-                return 'Probability must be 0-100';
+                return context.l10n.dealsFormProbabilityRange;
               }
             }
             return null;
@@ -904,7 +917,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Close Date
         _buildDateField(
-          label: 'Expected Close Date',
+          label: context.l10n.dealsFormCloseDateLabel,
           value: _closeDate,
           onTap: _selectCloseDate,
         ),
@@ -930,14 +943,14 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       children: [
         // Account Selector
         _buildSingleSelectField(
-          label: 'Account',
+          label: context.l10n.dealsFormAccountLabel,
           value: _selectedAccountId != null
               ? accounts
                     .where((a) => a.id == _selectedAccountId)
                     .firstOrNull
                     ?.name
               : null,
-          placeholder: 'Select account',
+          placeholder: context.l10n.dealsFormAccountPlaceholder,
           icon: LucideIcons.building2,
           isLoading: accountsAsync.isLoading,
           onTap: _showAccountPicker,
@@ -950,7 +963,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Contacts Multi-Select
         _buildMultiSelectField(
-          label: 'Contacts',
+          label: context.l10n.dealsFormContactsLabel,
           selectedCount: _selectedContactIds.length,
           selectedItems: _selectedContactIds
               .map(
@@ -960,7 +973,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               )
               .where((name) => name.isNotEmpty)
               .toList(),
-          placeholder: 'Select contacts',
+          placeholder: context.l10n.dealsFormContactsPlaceholder,
           icon: LucideIcons.users,
           isLoading: contactsAsync.isLoading,
           onTap: _showContactsPicker,
@@ -970,7 +983,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Assigned To Multi-Select
         _buildMultiSelectField(
-          label: 'Assigned To',
+          label: context.l10n.dealsFormAssignedToLabel,
           selectedCount: _selectedAssignedToIds.length,
           selectedItems: _selectedAssignedToIds
               .map(
@@ -980,7 +993,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               )
               .where((name) => name.isNotEmpty)
               .toList(),
-          placeholder: 'Select assignees',
+          placeholder: context.l10n.dealsFormAssigneesPlaceholder,
           icon: LucideIcons.userCheck,
           isLoading: usersAsync.isLoading,
           onTap: _showAssignedToPicker,
@@ -990,7 +1003,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Teams Multi-Select
         _buildMultiSelectField(
-          label: 'Teams',
+          label: context.l10n.dealsFormTeamsLabel,
           selectedCount: _selectedTeamIds.length,
           selectedItems: _selectedTeamIds
               .map(
@@ -998,7 +1011,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               )
               .where((name) => name.isNotEmpty)
               .toList(),
-          placeholder: 'Select teams',
+          placeholder: context.l10n.dealsFormTeamsPlaceholder,
           icon: LucideIcons.users2,
           isLoading: teamsAsync.isLoading,
           onTap: _showTeamsPicker,
@@ -1008,7 +1021,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Tags Multi-Select
         _buildMultiSelectField(
-          label: 'Tags',
+          label: context.l10n.dealsFormTagsLabel,
           selectedCount: _selectedTagIds.length,
           selectedItems: _selectedTagIds
               .map(
@@ -1016,7 +1029,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               )
               .where((name) => name.isNotEmpty)
               .toList(),
-          placeholder: 'Select tags',
+          placeholder: context.l10n.dealsFormTagsPlaceholder,
           icon: LucideIcons.tag,
           isLoading: tagsAsync.isLoading,
           onTap: _showTagsPicker,
@@ -1031,7 +1044,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       children: [
         // Opportunity Type Dropdown
         _buildDropdownField(
-          label: 'Opportunity Type',
+          label: context.l10n.dealsFormTypeLabel,
           value: _opportunityType.label,
           onTap: _showOpportunityTypePicker,
         ),
@@ -1040,7 +1053,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
         // Lead Source Dropdown
         _buildDropdownField(
-          label: 'Lead Source',
+          label: context.l10n.dealsFormSourceLabel,
           value: _leadSource.label,
           onTap: _showLeadSourcePicker,
         ),
@@ -1143,10 +1156,14 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'Loading...',
-                              style: AppTypography.body.copyWith(
-                                color: AppColors.gray400,
+                            Flexible(
+                              child: Text(
+                                context.l10n.dealsFormLoading,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.body.copyWith(
+                                  color: AppColors.gray400,
+                                ),
                               ),
                             ),
                           ],
@@ -1228,10 +1245,14 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'Loading...',
-                              style: AppTypography.body.copyWith(
-                                color: AppColors.gray400,
+                            Flexible(
+                              child: Text(
+                                context.l10n.dealsFormLoading,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.body.copyWith(
+                                  color: AppColors.gray400,
+                                ),
                               ),
                             ),
                           ],
@@ -1246,7 +1267,9 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                                 .map((item) => _buildChip(item)),
                             if (selectedCount > 2)
                               _buildChip(
-                                '+${selectedCount - 2} more',
+                                context.l10n.dealsFormMoreCount(
+                                  selectedCount - 2,
+                                ),
                                 isMore: true,
                               ),
                           ],
@@ -1319,15 +1342,18 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   color: AppColors.textSecondary,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  value != null ? _formatDate(value) : 'Select date',
-                  style: AppTypography.body.copyWith(
-                    color: value != null
-                        ? AppColors.textPrimary
-                        : AppColors.gray400,
+                Expanded(
+                  child: Text(
+                    value != null
+                        ? _formatDate(value)
+                        : context.l10n.dealsFormSelectDate,
+                    style: AppTypography.body.copyWith(
+                      color: value != null
+                          ? AppColors.textPrimary
+                          : AppColors.gray400,
+                    ),
                   ),
                 ),
-                const Spacer(),
                 if (value != null)
                   GestureDetector(
                     onTap: () => setState(() {
@@ -1348,23 +1374,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
+  String _formatDate(DateTime date) =>
+      localDateFormat('MMM d, yyyy', 'yMMMd').format(date);
 
   Future<void> _selectCloseDate() async {
     // The org's day, the same one the suggested close date counts from.
@@ -1407,12 +1418,14 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Pipeline',
+        title: context.l10n.dealsFormSelectPipeline,
         options: [
           for (final pipeline in pipelines)
             _PickerOption(
               label: pipeline.name,
-              subtitle: pipeline.isDefault ? 'Default' : null,
+              subtitle: pipeline.isDefault
+                  ? context.l10n.dealsFormPipelineDefault
+                  : null,
               isSelected: _pipeline?.id == pipeline.id,
               onTap: () {
                 if (_pipeline?.id != pipeline.id) {
@@ -1436,8 +1449,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
       // list of stages this deal's pipeline may not have.
       ref.read(dealPipelinesProvider.notifier).refresh();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('The stages are still loading. Try again shortly.'),
+        SnackBar(
+          content: Text(context.l10n.dealsFormStagesLoading),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1451,7 +1464,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Stage',
+        title: context.l10n.dealsFormSelectStage,
         options: [
           for (final stage in pipeline.stages)
             _PickerOption(
@@ -1477,7 +1490,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Opportunity Type',
+        title: context.l10n.dealsFormSelectType,
         options: OpportunityType.values
             .map(
               (type) => _PickerOption(
@@ -1502,7 +1515,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Lead Source',
+        title: context.l10n.dealsFormSelectSource,
         options: OpportunitySource.values
             .map(
               (source) => _PickerOption(
@@ -1527,7 +1540,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _PickerBottomSheet(
-        title: 'Select Currency',
+        title: context.l10n.dealsFormSelectCurrency,
         options: Currency.values
             .map(
               (curr) => _PickerOption(
@@ -1559,8 +1572,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         maxChildSize: 0.9,
         expand: false,
         builder: (context, scrollController) => _SearchablePickerSheet(
-          title: 'Select Account',
-          searchHint: 'Search accounts...',
+          title: context.l10n.dealsFormSelectAccount,
+          searchHint: context.l10n.dealsFormSearchAccounts,
           items: accounts,
           itemBuilder: (account) => _PickerOption(
             label: account.name,
@@ -1574,7 +1587,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
           searchMatcher: (account, query) =>
               account.name.toLowerCase().contains(query.toLowerCase()),
           scrollController: scrollController,
-          emptyMessage: 'No accounts found',
+          emptyMessage: context.l10n.dealsFormNoAccounts,
         ),
       ),
     );
@@ -1596,8 +1609,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         expand: false,
         builder: (context, scrollController) =>
             _MultiSelectPickerSheet<ContactLookup>(
-              title: 'Select Contacts',
-              searchHint: 'Search contacts...',
+              title: context.l10n.dealsFormSelectContacts,
+              searchHint: context.l10n.dealsFormSearchContacts,
               items: contacts,
               selectedIds: _selectedContactIds,
               getId: (c) => c.id,
@@ -1610,7 +1623,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   (contact.email?.toLowerCase().contains(query.toLowerCase()) ??
                       false),
               scrollController: scrollController,
-              emptyMessage: 'No contacts found',
+              emptyMessage: context.l10n.dealsFormNoContacts,
               onDone: (selectedIds) {
                 setState(() => _selectedContactIds = selectedIds);
               },
@@ -1635,8 +1648,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         expand: false,
         builder: (context, scrollController) =>
             _MultiSelectPickerSheet<UserLookup>(
-              title: 'Assign To',
-              searchHint: 'Search users...',
+              title: context.l10n.dealsFormAssignTo,
+              searchHint: context.l10n.dealsFormSearchUsers,
               items: users,
               selectedIds: _selectedAssignedToIds,
               getId: (u) => u.id,
@@ -1648,7 +1661,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   ) ||
                   user.email.toLowerCase().contains(query.toLowerCase()),
               scrollController: scrollController,
-              emptyMessage: 'No users found',
+              emptyMessage: context.l10n.dealsFormNoUsers,
               onDone: (selectedIds) {
                 setState(() => _selectedAssignedToIds = selectedIds);
               },
@@ -1673,8 +1686,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         expand: false,
         builder: (context, scrollController) =>
             _MultiSelectPickerSheet<TeamLookup>(
-              title: 'Select Teams',
-              searchHint: 'Search teams...',
+              title: context.l10n.dealsFormSelectTeams,
+              searchHint: context.l10n.dealsFormSearchTeams,
               items: teams,
               selectedIds: _selectedTeamIds,
               getId: (t) => t.id,
@@ -1683,7 +1696,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               searchMatcher: (team, query) =>
                   team.name.toLowerCase().contains(query.toLowerCase()),
               scrollController: scrollController,
-              emptyMessage: 'No teams found',
+              emptyMessage: context.l10n.dealsFormNoTeams,
               onDone: (selectedIds) {
                 setState(() => _selectedTeamIds = selectedIds);
               },
@@ -1708,8 +1721,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         expand: false,
         builder: (context, scrollController) =>
             _MultiSelectPickerSheet<TagLookup>(
-              title: 'Select Tags',
-              searchHint: 'Search tags...',
+              title: context.l10n.dealsFormSelectTags,
+              searchHint: context.l10n.dealsFormSearchTags,
               items: tags,
               selectedIds: _selectedTagIds,
               getId: (t) => t.id,
@@ -1718,7 +1731,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               searchMatcher: (tag, query) =>
                   tag.name.toLowerCase().contains(query.toLowerCase()),
               scrollController: scrollController,
-              emptyMessage: 'No tags found',
+              emptyMessage: context.l10n.dealsFormNoTags,
               onDone: (selectedIds) {
                 setState(() => _selectedTagIds = selectedIds);
               },
@@ -2083,7 +2096,7 @@ class _MultiSelectPickerSheetState<T>
                   Navigator.pop(context);
                 },
                 child: Text(
-                  'Done (${_selectedIds.length})',
+                  context.l10n.dealsFormDoneCount(_selectedIds.length),
                   style: AppTypography.label.copyWith(
                     color: AppColors.primary600,
                     fontWeight: FontWeight.w600,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/deal_pipelines_provider.dart';
@@ -11,6 +12,7 @@ import '../../providers/invoices_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
 import '../../config/api_config.dart';
+import '../../services/app_language.dart';
 import '../../services/attachment_upload.dart';
 import '../../widgets/cards/deal_aging_badge.dart';
 import '../../widgets/common/common.dart';
@@ -90,8 +92,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
         } else if (isInitialLoad) {
           _notFound = notFound;
           _error = notFound
-              ? 'It may have been deleted, or you may not have access to it'
-              : 'Check your connection and try again';
+              ? context.l10n.dealsDetailNotFoundBody
+              : context.l10n.dealsDetailCheckConnection;
         }
       });
     }
@@ -148,12 +150,15 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
               EmptyState(
                 icon: LucideIcons.briefcase,
                 title: _notFound
-                    ? 'Deal not found'
-                    : 'Could not load this deal',
-                description: _error ?? 'Check your connection and try again',
+                    ? context.l10n.dealsDetailNotFoundTitle
+                    : context.l10n.dealsDetailLoadFailed,
+                description: _error ?? context.l10n.dealsDetailCheckConnection,
               ),
               const SizedBox(height: 16),
-              TextButton(onPressed: _fetchDeal, child: const Text('Retry')),
+              TextButton(
+                onPressed: _fetchDeal,
+                child: Text(context.l10n.commonRetry),
+              ),
             ],
           ),
         ),
@@ -216,17 +221,21 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   tabs: [
-                    const Tab(text: 'Overview'),
-                    const Tab(text: 'Activity'),
+                    Tab(text: context.l10n.dealsDetailTabOverview),
+                    Tab(text: context.l10n.dealsDetailTabActivity),
                     Tab(
                       text: _deal!.comments.isEmpty
-                          ? 'Notes'
-                          : 'Notes (${_deal!.comments.length})',
+                          ? context.l10n.dealsDetailTabNotes
+                          : context.l10n.dealsDetailTabNotesCount(
+                              _deal!.comments.length,
+                            ),
                     ),
                     Tab(
                       text: _deal!.attachments.isEmpty
-                          ? 'Files'
-                          : 'Files (${_deal!.attachments.length})',
+                          ? context.l10n.dealsDetailTabFiles
+                          : context.l10n.dealsDetailTabFilesCount(
+                              _deal!.attachments.length,
+                            ),
                     ),
                   ],
                 ),
@@ -354,7 +363,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       if (deal.isOverdue) {
         chips.add(
           _Chip(
-            label: 'Overdue',
+            label: context.l10n.dealsDetailOverdue,
             bg: AppColors.danger100,
             fg: AppColors.danger600,
             icon: LucideIcons.alertTriangle,
@@ -363,7 +372,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       } else if (deal.isClosingSoon) {
         chips.add(
           _Chip(
-            label: 'Closes in ${deal.daysUntilClose}d',
+            label: context.l10n.dealsDetailClosesIn(deal.daysUntilClose ?? 0),
             bg: AppColors.warning100,
             fg: AppColors.warning600,
             icon: LucideIcons.alarmClock,
@@ -438,14 +447,14 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
 
           // Probability bar. Gives stage-aware copy below the percentage.
           _buildCard(
-            title: 'Win Probability',
+            title: context.l10n.dealsDetailWinProbability,
             child: _buildProbabilityContent(deal),
           ),
           const SizedBox(height: 16),
 
           // Deal information grid.
           _buildCard(
-            title: 'Deal Information',
+            title: context.l10n.dealsDetailInfo,
             child: _buildDealInfoContent(deal),
           ),
           const SizedBox(height: 16),
@@ -453,7 +462,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           // Notes (description), formerly "Description" on the old screen.
           if (hasNotes) ...[
             _buildCard(
-              title: 'Notes',
+              title: context.l10n.dealsDetailNotes,
               child: Text(
                 deal.notes!,
                 style: AppTypography.body.copyWith(
@@ -468,7 +477,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           // Line items / Products with backend total when available.
           if (hasProducts) ...[
             _buildCard(
-              title: 'Products',
+              title: context.l10n.dealsDetailProducts,
               action: _Chip(
                 label: '${deal.products.length}',
                 bg: AppColors.gray100,
@@ -482,7 +491,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           // Contacts list. Backend returns full records.
           if (hasContacts) ...[
             _buildCard(
-              title: 'Contacts',
+              title: context.l10n.dealsDetailContacts,
               action: _Chip(
                 label: '${deal.contactsList.length}',
                 bg: AppColors.gray100,
@@ -497,20 +506,23 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           // least one value populated.
           if (hasCustomFields) ...[
             _buildCard(
-              title: 'Custom Fields',
+              title: context.l10n.dealsDetailCustomFields,
               child: _buildCustomFieldsContent(deal),
             ),
             const SizedBox(height: 16),
           ],
 
           // Assigned to: every assignee, not just the first.
-          _buildCard(title: 'Assigned To', child: _buildAssigneesContent(deal)),
+          _buildCard(
+            title: context.l10n.dealsDetailAssignedTo,
+            child: _buildAssigneesContent(deal),
+          ),
           const SizedBox(height: 16),
 
           // Teams, backend exposes teams on Opportunity; render names only.
           if (hasTeams) ...[
             _buildCard(
-              title: 'Teams',
+              title: context.l10n.dealsDetailTeams,
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -530,7 +542,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           // Tags
           if (hasTags) ...[
             _buildCard(
-              title: 'Tags',
+              title: context.l10n.dealsDetailTags,
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -541,7 +553,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           ],
 
           // Metadata footer: created by / closed by.
-          _buildCard(title: 'Metadata', child: _buildMetadataContent(deal)),
+          _buildCard(
+            title: context.l10n.dealsDetailMetadata,
+            child: _buildMetadataContent(deal),
+          ),
           const SizedBox(height: 16),
           RelatedObjectsSection(to: 'deal', recordId: deal.id),
           const SizedBox(height: 8),
@@ -588,29 +603,29 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     final rows = <Widget>[
       _InfoRow(
         icon: LucideIcons.wallet,
-        label: 'AMOUNT',
+        label: context.l10n.dealsDetailAmountLabel,
         value: _formatDealAmount(deal),
       ),
       _InfoRow(
         icon: LucideIcons.calendar,
-        label: 'EXPECTED CLOSE',
+        label: context.l10n.dealsDetailExpectedCloseLabel,
         value: deal.closeDate != null
             ? _formatDate(deal.closeDate!)
-            : 'Not set',
+            : context.l10n.dealsDetailNotSet,
       ),
       _InfoRow(
         icon: LucideIcons.tag,
-        label: 'TYPE',
+        label: context.l10n.dealsDetailTypeLabel,
         value: deal.opportunityType.label,
       ),
       _InfoRow(
         icon: LucideIcons.compass,
-        label: 'SOURCE',
+        label: context.l10n.dealsDetailSourceLabel,
         value: deal.leadSource.label,
       ),
       _InfoRow(
         icon: LucideIcons.coins,
-        label: 'CURRENCY',
+        label: context.l10n.dealsDetailCurrencyLabel,
         value: '${deal.currency.label} (${deal.currency.symbol})',
       ),
     ];
@@ -659,7 +674,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                     children: [
                       Text(product.name, style: AppTypography.label),
                       Text(
-                        'Qty: ${product.quantityLabel}',
+                        context.l10n.dealsDetailQty(product.quantityLabel),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -681,7 +696,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'TOTAL',
+              context.l10n.dealsDetailTotalLabel,
               style: AppTypography.overline.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -715,7 +730,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                   children: [
                     Text(
                       deal.contactsList[i].fullName.isEmpty
-                          ? (deal.contactsList[i].email ?? 'Contact')
+                          ? (deal.contactsList[i].email ??
+                                context.l10n.dealsDetailContactFallback)
                           : deal.contactsList[i].fullName,
                       style: AppTypography.label,
                     ),
@@ -782,7 +798,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     if (raw == null) return '';
     switch (def.fieldType) {
       case CustomFieldType.checkbox:
-        return raw == true ? 'Yes' : 'No';
+        return raw == true ? appL10n.commonYes : appL10n.commonNo;
       case CustomFieldType.dropdown:
         final value = raw.toString();
         final match = def.options
@@ -809,7 +825,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           Icon(LucideIcons.userX, size: 20, color: AppColors.gray400),
           const SizedBox(width: 12),
           Text(
-            'Unassigned',
+            context.l10n.dealsDetailUnassigned,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
         ],
@@ -829,12 +845,12 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     final rows = <Widget>[
       _InfoRow(
         icon: LucideIcons.userPlus,
-        label: 'CREATED BY',
+        label: context.l10n.dealsDetailCreatedByLabel,
         value: deal.createdByName ?? deal.createdByEmail ?? '—',
       ),
       _InfoRow(
         icon: LucideIcons.clock,
-        label: 'CREATED ON',
+        label: context.l10n.dealsDetailCreatedOnLabel,
         value: _formatDate(deal.createdAt),
       ),
     ];
@@ -842,7 +858,9 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       rows.add(
         _InfoRow(
           icon: deal.isWon ? LucideIcons.trophy : LucideIcons.xCircle,
-          label: deal.isWon ? 'WON BY' : 'CLOSED BY',
+          label: deal.isWon
+              ? context.l10n.dealsDetailWonByLabel
+              : context.l10n.dealsDetailClosedByLabel,
           value: deal.closedByName ?? deal.closedByEmail ?? '—',
         ),
       );
@@ -850,7 +868,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
         rows.add(
           _InfoRow(
             icon: LucideIcons.calendar,
-            label: 'CLOSED ON',
+            label: context.l10n.dealsDetailClosedOnLabel,
             value: _formatDate(deal.closeDate!),
           ),
         );
@@ -883,10 +901,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                 children: [
                   Icon(LucideIcons.clock, size: 48, color: AppColors.gray400),
                   const SizedBox(height: 16),
-                  Text('No activity yet', style: AppTypography.h3),
+                  Text(
+                    context.l10n.dealsDetailNoActivity,
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Activity will appear here as it happens',
+                    context.l10n.dealsDetailNoActivityBody,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -921,23 +942,23 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
           kind: _TimelineKind.comment,
           ts: c.commentedOn,
           actor: c.authorName,
-          summary: 'commented',
+          summary: context.l10n.dealsDetailTimelineCommented,
           body: c.comment,
         ),
       for (final a in deal.attachments)
         _TimelineEvent(
           kind: _TimelineKind.attachment,
           ts: a.createdAt ?? deal.createdAt,
-          actor: a.createdBy ?? 'Someone',
-          summary: 'uploaded ${a.fileName}',
+          actor: a.createdBy ?? context.l10n.dealsDetailTimelineSomeone,
+          summary: context.l10n.dealsDetailTimelineUploaded(a.fileName),
         ),
       _TimelineEvent(
         kind: _TimelineKind.created,
         ts: deal.createdAt,
         actor: deal.createdByName ?? deal.createdByEmail ?? '',
         summary: deal.createdByName != null || deal.createdByEmail != null
-            ? 'created the deal'
-            : 'Deal created',
+            ? context.l10n.dealsDetailTimelineCreatedBy
+            : context.l10n.dealsDetailTimelineCreated,
       ),
     ];
     events.sort((a, b) => b.ts.compareTo(a.ts));
@@ -954,10 +975,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       children: [
         Expanded(
           child: comments.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.fileText,
-                  title: 'No notes yet',
-                  description: 'Add a note to keep track of important details',
+                  title: context.l10n.dealsDetailNoNotes,
+                  description: context.l10n.dealsDetailNoNotesBody,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -1003,7 +1024,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                     controller: _noteController,
                     enabled: !_isAddingNote,
                     decoration: InputDecoration(
-                      hintText: 'Add a note...',
+                      hintText: context.l10n.dealsDetailAddNoteHint,
                       hintStyle: AppTypography.body.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -1067,9 +1088,12 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     if (result.success) {
       _noteController.clear();
       await _fetchDeal();
-      if (mounted) _snack('Note added');
+      if (mounted) _snack(context.l10n.dealsDetailNoteAdded);
     } else {
-      _snack(result.error ?? 'Failed to add note', danger: true);
+      _snack(
+        result.error ?? context.l10n.dealsDetailNoteAddFailed,
+        danger: true,
+      );
     }
   }
 
@@ -1087,9 +1111,12 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     if (!mounted) return;
     if (result.success) {
       await _fetchDeal();
-      if (mounted) _snack('Note updated');
+      if (mounted) _snack(context.l10n.dealsDetailNoteUpdated);
     } else {
-      _snack(result.error ?? 'Failed to update note', danger: true);
+      _snack(
+        result.error ?? context.l10n.dealsDetailNoteUpdateFailed,
+        danger: true,
+      );
     }
   }
 
@@ -1100,9 +1127,12 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     if (!mounted) return;
     if (result.success) {
       await _fetchDeal();
-      if (mounted) _snack('Note deleted');
+      if (mounted) _snack(context.l10n.dealsDetailNoteDeleted);
     } else {
-      _snack(result.error ?? 'Failed to delete note', danger: true);
+      _snack(
+        result.error ?? context.l10n.dealsDetailNoteDeleteFailed,
+        danger: true,
+      );
     }
   }
 
@@ -1129,12 +1159,15 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                     color: AppColors.gray400,
                   ),
                   const SizedBox(height: 16),
-                  Text('No files attached', style: AppTypography.h3),
+                  Text(
+                    context.l10n.dealsDetailNoFiles,
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 8),
                   // This used to read "Attachments uploaded from the web appear
                   // here", which was true and was the whole problem.
                   Text(
-                    'Attach a contract, a quote, or a photo.',
+                    context.l10n.dealsDetailNoFilesBody,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -1215,7 +1248,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
   /// per-file authorization anyway.
   Future<void> _openFile(Attachment a) async {
     if (!a.hasFile) {
-      _snack('That attachment has no file.');
+      _snack(context.l10n.dealsDetailAttachmentNoFile);
       return;
     }
     final result = await downloadAttachment(
@@ -1223,7 +1256,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       fileName: a.fileName,
     );
     if (!mounted || result.success) return;
-    _snack(result.error ?? 'Could not download that file.');
+    _snack(result.error ?? context.l10n.dealsDetailDownloadFailed);
   }
 
   // ===========================================================================
@@ -1247,7 +1280,9 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       final bg = isWon ? AppColors.success100 : AppColors.danger100;
       final fg = isWon ? AppColors.success600 : AppColors.danger600;
       final icon = isWon ? LucideIcons.trophy : LucideIcons.xCircle;
-      final label = isWon ? 'Deal Won!' : 'Deal Lost';
+      final label = isWon
+          ? context.l10n.dealsDetailWonBanner
+          : context.l10n.dealsDetailLostBanner;
       return Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -1284,7 +1319,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                 if (isWon && ref.watch(moduleOnProvider('invoices'))) ...[
                   const SizedBox(height: 12),
                   PrimaryButton(
-                    label: 'Create invoice',
+                    label: context.l10n.dealsDetailCreateInvoice,
                     icon: LucideIcons.fileText,
                     isLoading: _isInvoicing,
                     onPressed: _isInvoicing ? null : _createInvoice,
@@ -1311,8 +1346,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
               if (next != null)
                 PrimaryButton(
                   label: _isUpdatingStage
-                      ? 'Updating...'
-                      : 'Move to ${next.label}',
+                      ? context.l10n.dealsDetailUpdating
+                      : context.l10n.dealsDetailMoveTo(next.label),
                   icon: LucideIcons.arrowRight,
                   iconRight: true,
                   onPressed: _isUpdatingStage
@@ -1322,7 +1357,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
               if (next != null && lost != null) const SizedBox(height: 12),
               if (lost != null)
                 GhostButton(
-                  label: 'Mark as Lost',
+                  label: context.l10n.dealsDetailMarkAsLost,
                   icon: LucideIcons.xCircle,
                   color: AppColors.danger600,
                   onPressed: _isUpdatingStage
@@ -1352,7 +1387,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       _snack(result.error!, danger: true);
       return;
     }
-    _snack('Draft invoice created');
+    _snack(context.l10n.dealsDetailInvoiceCreated);
     final id = result.invoiceId;
     if (id != null && id.isNotEmpty) {
       context.push('${AppRoutes.invoices}/$id');
@@ -1377,11 +1412,11 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     if (newStage.code == _deal!.stage) return;
     final isReopen = _deal!.isLost && newStage.isOpen;
     final dialogTitle = isReopen
-        ? 'Reopen as ${newStage.label}?'
-        : 'Move to ${newStage.label}?';
+        ? context.l10n.dealsDetailReopenTitle(newStage.label)
+        : context.l10n.dealsDetailMoveTitle(newStage.label);
     final dialogBody = isReopen
-        ? 'This deal is lost. Reopening will move it back into the pipeline.'
-        : 'This will update the deal stage.';
+        ? context.l10n.dealsDetailReopenBody
+        : context.l10n.dealsDetailMoveBody;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1391,11 +1426,15 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(isReopen ? 'Reopen' : 'Move'),
+            child: Text(
+              isReopen
+                  ? context.l10n.dealsDetailReopen
+                  : context.l10n.dealsDetailMove,
+            ),
           ),
         ],
       ),
@@ -1408,17 +1447,17 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mark as Lost?'),
-        content: const Text('Are you sure you want to mark this deal as lost?'),
+        title: Text(context.l10n.dealsMarkLostTitle),
+        content: Text(context.l10n.dealsDetailMarkLostBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Mark Lost',
+              context.l10n.dealsMarkLost,
               style: TextStyle(color: AppColors.danger600),
             ),
           ),
@@ -1438,10 +1477,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     if (!mounted) return;
     setState(() => _isUpdatingStage = false);
     if (result.success) {
-      _snack('Deal moved to ${newStage.label}');
+      _snack(context.l10n.dealsDetailMovedTo(newStage.label));
       await _fetchDeal();
     } else {
-      _snack(result.error ?? 'Failed to update stage', danger: true);
+      _snack(
+        result.error ?? context.l10n.dealsDetailStageUpdateFailed,
+        danger: true,
+      );
     }
   }
 
@@ -1472,7 +1514,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
             ),
             ListTile(
               leading: Icon(LucideIcons.pencil, color: AppColors.primary600),
-              title: const Text('Edit Deal'),
+              title: Text(context.l10n.dealsDetailEditDeal),
               onTap: () {
                 Navigator.pop(context);
                 _navigateToEdit();
@@ -1484,7 +1526,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                   LucideIcons.fileText,
                   color: AppColors.primary600,
                 ),
-                title: const Text('Create estimate'),
+                title: Text(context.l10n.dealsDetailCreateEstimate),
                 onTap: () {
                   Navigator.pop(context);
                   _createEstimate();
@@ -1493,7 +1535,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
             if (invoicesOn && (_deal?.isWon ?? false))
               ListTile(
                 leading: Icon(LucideIcons.receipt, color: AppColors.primary600),
-                title: const Text('Create invoice'),
+                title: Text(context.l10n.dealsDetailCreateInvoice),
                 onTap: () {
                   Navigator.pop(context);
                   _createInvoice();
@@ -1503,7 +1545,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
               ListTile(
                 leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
                 title: Text(
-                  'Delete Deal',
+                  context.l10n.dealsDetailDeleteDeal,
                   style: TextStyle(color: AppColors.danger600),
                 ),
                 onTap: () {
@@ -1522,16 +1564,19 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Deal?'),
-        content: const Text('This action cannot be undone.'),
+        title: Text(context.l10n.dealsDetailDeleteTitle),
+        content: Text(context.l10n.dealsDetailCannotUndo),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1542,10 +1587,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
         .deleteDeal(widget.dealId);
     if (!mounted) return;
     if (result.success) {
-      _snack('Deal deleted');
+      _snack(context.l10n.dealsDetailDeleted);
       context.pop();
     } else {
-      _snack(result.error ?? 'Failed to delete deal', danger: true);
+      _snack(
+        result.error ?? context.l10n.dealsDetailDeleteFailed,
+        danger: true,
+      );
     }
   }
 
@@ -1613,18 +1661,19 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
   /// Prospecting deal at probability=10 read "Low probability, consider
   /// next steps". The default IS 10, that's not a warning.
   String _probabilityHint(Deal deal) {
-    if (deal.isWon) return 'Deal won';
-    if (deal.isLost) return 'Deal lost';
+    final l10n = context.l10n;
+    if (deal.isWon) return l10n.dealsDetailHintWon;
+    if (deal.isLost) return l10n.dealsDetailHintLost;
     final p = deal.probability;
     // If the value still equals the default for the current stage, treat
     // it as "as expected" rather than rating it on the absolute scale.
     if (p > 0 && p == dealStageProbability(deal.stage, deal.stageKind)) {
-      return 'Default for ${deal.stageLabel}';
+      return l10n.dealsDetailHintDefault(deal.stageLabel);
     }
-    if (p >= 75) return 'High chance of winning';
-    if (p >= 50) return 'Good progress, keep pushing';
-    if (p >= 25) return 'Still early stage';
-    return 'Low probability';
+    if (p >= 75) return l10n.dealsDetailHintHigh;
+    if (p >= 50) return l10n.dealsDetailHintGood;
+    if (p >= 25) return l10n.dealsDetailHintEarly;
+    return l10n.dealsDetailHintLow;
   }
 
   /// Format the deal's main amount using the deal's own currency (not the
@@ -1643,30 +1692,14 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     return '$symbol${value.toStringAsFixed(0)}';
   }
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
+  String _formatDate(DateTime date) =>
+      localDateFormat('MMM d, yyyy', 'yMMMd').format(date);
 
   String _formatDaysInStage(Deal deal) {
     final days = deal.daysInStageServer ?? deal.daysInCurrentStage;
     if (days == null) return '';
-    if (days == 0) return 'Moved into this stage today';
-    if (days == 1) return '1 day in this stage';
-    return '$days days in this stage';
+    if (days == 0) return context.l10n.dealsDetailMovedToday;
+    return context.l10n.dealsDetailDaysInStage(days);
   }
 }
 
@@ -1759,7 +1792,7 @@ class _AssigneeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final details = profile['user_details'];
-    String name = 'Unknown';
+    String name = context.l10n.dealsDetailUnknown;
     String? email;
     String? pic;
     if (details is Map<String, dynamic>) {
@@ -1827,25 +1860,25 @@ class _EditNoteDialogState extends State<_EditNoteDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Note'),
+      title: Text(context.l10n.dealsDetailEditNote),
       content: TextField(
         controller: _controller,
         autofocus: true,
         maxLines: null,
         minLines: 3,
-        decoration: const InputDecoration(
-          hintText: 'Update your note...',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          hintText: context.l10n.dealsDetailUpdateNoteHint,
+          border: const OutlineInputBorder(),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, _controller.text.trim()),
-          child: const Text('Save'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );
@@ -1891,7 +1924,7 @@ class _NoteCard extends StatelessWidget {
             if (onEdit != null)
               ListTile(
                 leading: Icon(LucideIcons.pencil, color: AppColors.primary600),
-                title: const Text('Edit Note'),
+                title: Text(context.l10n.dealsDetailEditNote),
                 onTap: () {
                   Navigator.pop(context);
                   onEdit!();
@@ -1901,7 +1934,7 @@ class _NoteCard extends StatelessWidget {
               ListTile(
                 leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
                 title: Text(
-                  'Delete Note',
+                  context.l10n.dealsDetailDeleteNote,
                   style: TextStyle(color: AppColors.danger600),
                 ),
                 onTap: () {
@@ -1920,16 +1953,19 @@ class _NoteCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Note?'),
-        content: const Text('This action cannot be undone.'),
+        title: Text(context.l10n.dealsDetailDeleteNoteTitle),
+        content: Text(context.l10n.dealsDetailCannotUndo),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1976,7 +2012,7 @@ class _NoteCard extends StatelessWidget {
                         LucideIcons.moreVertical,
                         color: AppColors.textTertiary,
                       ),
-                      tooltip: 'Note options',
+                      tooltip: context.l10n.dealsDetailNoteOptions,
                       onPressed: () => _showOptions(context),
                     ),
                   ),
@@ -2010,11 +2046,12 @@ class _NoteCard extends StatelessWidget {
 
   String _relTime(DateTime dt) {
     final d = DateTime.now().difference(dt);
-    if (d.inDays > 30) return '${(d.inDays / 30).floor()}mo ago';
-    if (d.inDays > 0) return '${d.inDays}d ago';
-    if (d.inHours > 0) return '${d.inHours}h ago';
-    if (d.inMinutes > 0) return '${d.inMinutes}m ago';
-    return 'just now';
+    final l10n = appL10n;
+    if (d.inDays > 30) return l10n.dealsAgoMonths((d.inDays / 30).floor());
+    if (d.inDays > 0) return l10n.dealsAgoDays(d.inDays);
+    if (d.inHours > 0) return l10n.dealsAgoHours(d.inHours);
+    if (d.inMinutes > 0) return l10n.dealsAgoMinutes(d.inMinutes);
+    return l10n.dealsAgoJustNow;
   }
 }
 
@@ -2091,7 +2128,11 @@ class _TimelineRow extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const TextSpan(text: ' '),
+                                TextSpan(
+                                  text: context
+                                      .l10n
+                                      .dealsDetailTimelineActorSeparator,
+                                ),
                               ],
                               TextSpan(text: event.summary),
                             ],
@@ -2135,10 +2176,11 @@ class _TimelineRow extends StatelessWidget {
 
   String _relTime(DateTime dt) {
     final d = DateTime.now().difference(dt);
-    if (d.inDays > 30) return '${(d.inDays / 30).floor()}mo';
-    if (d.inDays > 0) return '${d.inDays}d';
-    if (d.inHours > 0) return '${d.inHours}h';
-    if (d.inMinutes > 0) return '${d.inMinutes}m';
-    return 'now';
+    final l10n = appL10n;
+    if (d.inDays > 30) return l10n.dealsShortMonths((d.inDays / 30).floor());
+    if (d.inDays > 0) return l10n.dealsShortDays(d.inDays);
+    if (d.inHours > 0) return l10n.dealsShortHours(d.inHours);
+    if (d.inMinutes > 0) return l10n.dealsShortMinutes(d.inMinutes);
+    return l10n.dealsShortNow;
   }
 }
