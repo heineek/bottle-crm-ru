@@ -1,0 +1,106 @@
+{
+  "timesheetDurationHm": "{hours}h {minutes}m",
+  "@timesheetDurationHm": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetDurationM": "{minutes}m",
+  "@timesheetDurationM": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetDateRange": "{start} - {end}",
+  "@timesheetDateRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetTitle": "Timesheet",
+  "timesheetReportTooltip": "Time report",
+  "timesheetPrevWeek": "Previous week",
+  "timesheetNextWeek": "Next week",
+  "timesheetBackToThisWeek": "Back to this week",
+  "timesheetFooterNote": "Time is logged against a ticket, so every hour here is attached to something a customer can be shown. Start and stop a timer on the ticket itself. Rates are saved on each entry when it is logged, so changing your rate does not rewrite what past weeks were worth.",
+  "timesheetLoggedThisWeek": "logged this week",
+  "timesheetLoggedThisWeekBy": "logged this week by {name}",
+  "@timesheetLoggedThisWeekBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetBillableShare": "billable ({percent}%)",
+  "@timesheetBillableShare": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetAtSavedRates": "at the saved rates",
+  "timesheetNotInvoiced": "not invoiced",
+  "timesheetTimerRunning": "Timer running",
+  "timesheetATicket": "a ticket",
+  "timesheetStopTimer": "Stop timer",
+  "timesheetNothingLogged": "Nothing logged",
+  "timesheetTagRunning": "running",
+  "timesheetTagInternal": "internal",
+  "timesheetTagBilled": "billed",
+  "timesheetTagBilledNumber": "billed {number}",
+  "@timesheetTagBilledNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetTimerStopped": "Timer stopped.",
+  "timesheetStopFailed": "Could not stop that timer.",
+  "timesheetTryAgain": "Try again",
+  "timesheetReportTitle": "Time report",
+  "timesheetGroupAgent": "Agent",
+  "timesheetGroupTicket": "Ticket",
+  "timesheetGroupAccount": "Account",
+  "timesheetFilterAllTime": "All time",
+  "timesheetFilterBillable": "Billable",
+  "timesheetFilterNonBillable": "Non-billable",
+  "timesheetReportEmpty": "No time logged in this window. Widen the dates, or clear the billable filter.",
+  "timesheetReportFooter": "Value is what the billable time is worth at the rate saved on each entry, so changing a rate does not rewrite what past months were worth. To export these entries as a spreadsheet, open the report on the web.",
+  "timesheetReportLoggedByAgent": "logged, by agent",
+  "timesheetReportLoggedByTicket": "logged, by ticket",
+  "timesheetReportLoggedByAccount": "logged, by account",
+  "timesheetReportLoggedBy": "logged, by {group}",
+  "@timesheetReportLoggedBy": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetMixedCurrencies": "mixed currencies",
+  "timesheetEntries": "{count, plural, other{entries}}",
+  "@timesheetEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetBillable": "billable",
+  "timesheetWorth": "worth"
+}

@@ -10,8 +10,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/time_entry.dart';
 import '../../data/models/timesheet.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/timesheet_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 
 /// A week of your own logged time.
 ///
@@ -79,7 +81,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Timesheet'),
+        title: Text(context.l10n.timesheetTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -89,7 +91,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
           IconButton(
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             icon: const Icon(LucideIcons.chartColumn, size: 20),
-            tooltip: 'Time report',
+            tooltip: context.l10n.timesheetReportTooltip,
             onPressed: () => context.push(AppRoutes.timeReport),
           ),
         ],
@@ -116,9 +118,11 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
   /// plus a date range do not fit beside a title at 390px, and the range is
   /// the label that tells you where you are.
   Widget _weekBar(TimesheetRange range) {
-    final label =
-        '${DateFormat('d MMM').format(range.start)} - '
-        '${DateFormat('d MMM').format(range.end)}';
+    final day = localDateFormat('d MMM', 'MMMd');
+    final label = context.l10n.timesheetDateRange(
+      day.format(range.start),
+      day.format(range.end),
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
@@ -131,7 +135,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
             // 44px minimum, which is the smallest a thumb reliably hits.
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             icon: const Icon(LucideIcons.chevronLeft, size: 20),
-            tooltip: 'Previous week',
+            tooltip: context.l10n.timesheetPrevWeek,
             onPressed: () => _shift(-7),
           ),
           Expanded(
@@ -150,7 +154,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        'Back to this week',
+                        context.l10n.timesheetBackToThisWeek,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.primary600,
                         ),
@@ -163,7 +167,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
           IconButton(
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             icon: const Icon(LucideIcons.chevronRight, size: 20),
-            tooltip: 'Next week',
+            tooltip: context.l10n.timesheetNextWeek,
             onPressed: () => _shift(7),
           ),
         ],
@@ -186,11 +190,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Text(
-              'Time is logged against a ticket, so every hour here is attached '
-              'to something a customer can be shown. Start and stop a timer on '
-              'the ticket itself. Rates are saved on each entry when it is '
-              'logged, so changing your rate does not rewrite what past weeks '
-              'were worth.',
+              context.l10n.timesheetFooterNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
                 height: 1.5,
@@ -224,8 +224,8 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
           const SizedBox(height: 2),
           Text(
             week.profileName.isEmpty
-                ? 'logged this week'
-                : 'logged this week by ${week.profileName}',
+                ? context.l10n.timesheetLoggedThisWeek
+                : context.l10n.timesheetLoggedThisWeekBy(week.profileName),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -235,15 +235,20 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
             spacing: 16,
             runSpacing: 6,
             children: [
-              _stat(_hm(billable), 'billable ($percent%)'),
+              _stat(
+                _hm(billable),
+                context.l10n.timesheetBillableShare(percent),
+              ),
               if (value != null)
                 _stat(
                   NumberFormat.simpleCurrency(
+                    locale: currentLanguage,
                     name: value.currency,
                   ).format(value.amount),
-                  'at the saved rates',
+                  context.l10n.timesheetAtSavedRates,
                 ),
-              if (unbilled > 0) _stat('$unbilled', 'not invoiced'),
+              if (unbilled > 0)
+                _stat('$unbilled', context.l10n.timesheetNotInvoiced),
             ],
           ),
         ],
@@ -293,7 +298,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Timer running',
+                  context.l10n.timesheetTimerRunning,
                   style: AppTypography.labelSmall.copyWith(
                     color: AppColors.warning700,
                   ),
@@ -314,7 +319,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
           GestureDetector(
             onTap: () => _openTicket(entry),
             child: Text(
-              entry.caseName ?? 'a ticket',
+              entry.caseName ?? context.l10n.timesheetATicket,
               style: AppTypography.body.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
@@ -328,7 +333,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
               // so a successful stop would read as a failure.
               onPressed: _busy ? null : () => _stop(entry),
               icon: const Icon(LucideIcons.square, size: 16),
-              label: const Text('Stop timer'),
+              label: Text(context.l10n.timesheetStopTimer),
             ),
           ),
         ],
@@ -363,7 +368,10 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: DateFormat('EEEE').format(day.date),
+                          text: localDateFormat(
+                            'EEEE',
+                            'EEEE',
+                          ).format(day.date),
                           style: AppTypography.labelSmall.copyWith(
                             color: isToday
                                 ? AppColors.primary600
@@ -371,7 +379,8 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
                           ),
                         ),
                         TextSpan(
-                          text: '  ${DateFormat('d MMM').format(day.date)}',
+                          text:
+                              '  ${localDateFormat('d MMM', 'MMMd').format(day.date)}',
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -393,7 +402,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Text(
-                'Nothing logged',
+                context.l10n.timesheetNothingLogged,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -431,16 +440,26 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
                   style: AppTypography.labelSmall,
                 ),
                 if (entry.isRunning)
-                  _tag('running', AppColors.warning700, AppColors.warning50)
+                  _tag(
+                    context.l10n.timesheetTagRunning,
+                    AppColors.warning700,
+                    AppColors.warning50,
+                  )
                 else if (!entry.billable)
-                  _tag('internal', AppColors.textSecondary, AppColors.gray100)
+                  _tag(
+                    context.l10n.timesheetTagInternal,
+                    AppColors.textSecondary,
+                    AppColors.gray100,
+                  )
                 else if (entry.isBilled)
                   // Already on an invoice. Said plainly rather than offered
                   // for billing again: double-billing an hour is a refund.
                   _tag(
                     entry.invoiceNumber == null
-                        ? 'billed'
-                        : 'billed ${entry.invoiceNumber}',
+                        ? context.l10n.timesheetTagBilled
+                        : context.l10n.timesheetTagBilledNumber(
+                            entry.invoiceNumber!,
+                          ),
                     AppColors.success700,
                     AppColors.success50,
                   ),
@@ -448,7 +467,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
             ),
             const SizedBox(height: 3),
             Text(
-              entry.caseName ?? 'a ticket',
+              entry.caseName ?? context.l10n.timesheetATicket,
               style: AppTypography.body,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -507,8 +526,8 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
       SnackBar(
         content: Text(
           response.success
-              ? 'Timer stopped.'
-              : response.message ?? 'Could not stop that timer.',
+              ? context.l10n.timesheetTimerStopped
+              : response.message ?? context.l10n.timesheetStopFailed,
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -519,7 +538,9 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
   String _hm(int minutes) {
     final m = minutes < 0 ? 0 : minutes;
     final h = m ~/ 60;
-    return h > 0 ? '${h}h ${m % 60}m' : '${m}m';
+    return h > 0
+        ? context.l10n.timesheetDurationHm(h, m % 60)
+        : context.l10n.timesheetDurationM(m);
   }
 }
 
@@ -551,7 +572,10 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.timesheetTryAgain),
+            ),
           ],
         ),
       ),
