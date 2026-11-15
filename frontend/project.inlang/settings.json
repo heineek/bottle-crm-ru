@@ -18,6 +18,7 @@
       "./messages/tickets/{locale}.json",
       "./messages/tasks/{locale}.json",
       "./messages/solutions/{locale}.json",
+      "./messages/help/{locale}.json",
       "./messages/team/{locale}.json",
       "./messages/profile/{locale}.json",
       "./messages/leads/{locale}.json",
