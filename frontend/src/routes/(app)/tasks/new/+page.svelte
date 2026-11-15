@@ -13,29 +13,30 @@
   import { untrack } from 'svelte';
   import { ChevronRight } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import {
+    parentKinds,
+    taskPriorityLabel,
+    taskStatusLabel,
+    TASK_PRIORITY_CODES,
+    TASK_STATUS_CODES
+  } from '../labels.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
 
-  const KINDS = [
-    { key: '', label: 'Nothing' },
-    { key: 'account', label: 'An account' },
-    { key: 'opportunity', label: 'A deal', module: 'deals' },
-    { key: 'case', label: 'A ticket', module: 'tickets' },
-    { key: 'lead', label: 'A lead', module: 'leads' }
-  ];
-  let kinds = $derived(KINDS.filter((k) => !k.module || isOn(data.modules, k.module)));
+  let kinds = $derived(parentKinds().filter((k) => !k.module || isOn(data.modules, k.module)));
 
   let values = $derived(form?.values ?? {});
   let kind = $state(untrack(() => form?.values?.parent_kind ?? ''));
   let options = $derived(kind ? (data.parents[kind] ?? []) : []);
 </script>
 
-<PageHeader title="New task" record center width="62ch">
+<PageHeader title={m.tasks_new_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('tasks')}>Tasks</a>
+    <a href={resolve('tasks')}>{m.tasks_title()}</a>
     <ChevronRight size={12} />
-    <span>New</span>
+    <span>{m.tasks_new_crumb()}</span>
   {/snippet}
 </PageHeader>
 
@@ -52,46 +53,45 @@
     {/if}
 
     <label class="v2-field">
-      <span class="v2-label">Task</span>
+      <span class="v2-label">{m.tasks_field_task()}</span>
       <input
         class="v2-input"
         name="title"
         required
         maxlength="200"
         value={values.title ?? ''}
-        placeholder="Send the security addendum to Northwind"
+        placeholder={m.tasks_form_title_placeholder()}
       />
     </label>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <label class="v2-field" style="flex:1;min-width:150px">
-        <span class="v2-label">Priority</span>
+        <span class="v2-label">{m.common_priority()}</span>
         <select class="v2-input" name="priority" value={values.priority ?? 'Medium'}>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
+          {#each TASK_PRIORITY_CODES as code (code)}
+            <option value={code}>{taskPriorityLabel(code)}</option>
+          {/each}
         </select>
       </label>
       <label class="v2-field" style="flex:1;min-width:150px">
-        <span class="v2-label">Status</span>
+        <span class="v2-label">{m.common_status()}</span>
         <select class="v2-input" name="status" value={values.status ?? 'New'}>
-          <option value="New">New</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
+          {#each TASK_STATUS_CODES as code (code)}
+            <option value={code}>{taskStatusLabel(code)}</option>
+          {/each}
         </select>
       </label>
       <label class="v2-field" style="flex:1;min-width:150px">
-        <span class="v2-label">Due</span>
+        <span class="v2-label">{m.tasks_field_due()}</span>
         <input class="v2-input" type="date" name="due_date" value={values.due_date ?? ''} />
       </label>
     </div>
     <p class="v2-sub" style="font-size:11.5px;margin:-6px 0 16px">
-      A task with no due date never becomes overdue and never appears in "due this week". It is a
-      real choice, not a blank you forgot.
+      {m.tasks_form_no_due_hint()}
     </p>
 
     <label class="v2-field">
-      <span class="v2-label">Attached to</span>
+      <span class="v2-label">{m.tasks_field_attached()}</span>
       <select class="v2-input" name="parent_kind" bind:value={kind}>
         {#each kinds as k (k.key)}
           <option value={k.key}>{k.label}</option>
@@ -101,23 +101,21 @@
 
     {#if kind}
       <label class="v2-field">
-        <span class="v2-label">Which one</span>
+        <span class="v2-label">{m.tasks_field_which()}</span>
         <select class="v2-input" name="parent_{kind}" required>
-          <option value="">Choose…</option>
+          <option value="">{m.tasks_form_choose()}</option>
           {#each options as option (option.id)}
             <option value={option.id} selected={values[kind] === option.id}>{option.name}</option>
           {/each}
         </select>
         {#if options.length === 0}
-          <span class="v2-sub" style="font-size:11.5px"
-            >Nothing to pick. Either there are none, or that list did not load.</span
-          >
+          <span class="v2-sub" style="font-size:11.5px">{m.tasks_form_no_options()}</span>
         {/if}
       </label>
     {/if}
 
     <label class="v2-field">
-      <span class="v2-label">Assign to</span>
+      <span class="v2-label">{m.tasks_field_assign()}</span>
       <select
         class="v2-input"
         name="assigned_to"
@@ -129,24 +127,23 @@
         {/each}
       </select>
       <span class="v2-sub" style="font-size:11.5px">
-        Optional, and more than one is allowed. Leave it empty and the task is yours to pick up.
+        {m.tasks_form_assign_hint_new()}
       </span>
     </label>
 
     <label class="v2-field">
-      <span class="v2-label">Note</span>
+      <span class="v2-label">{m.tasks_field_note()}</span>
       <textarea
         class="v2-input"
         name="description"
         rows="4"
-        placeholder="Context anyone picking this up would need."
-        >{values.description ?? ''}</textarea
+        placeholder={m.tasks_form_note_placeholder()}>{values.description ?? ''}</textarea
       >
     </label>
 
     <div style="display:flex;gap:9px;margin-top:6px">
-      <button class="v2-btn v2-btn-primary" type="submit">Create task</button>
-      <a class="v2-btn" href={resolve('tasks')}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit">{m.tasks_form_create()}</button>
+      <a class="v2-btn" href={resolve('tasks')}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>

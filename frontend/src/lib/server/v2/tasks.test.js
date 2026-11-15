@@ -45,3 +45,26 @@ describe('task contacts', () => {
     expect(contacts[0].name).toBe('pat@example.com');
   });
 });
+
+describe('task activity in Russian', () => {
+  beforeEach(() => apiRequest.mockReset());
+
+  it('labels the creation event and an unnamed file in the request locale', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      apiRequest.mockResolvedValue({
+        task_obj: { id: 't1', title: 'Call', created_at: '2026-01-01T00:00:00Z' },
+        attachments: [{ id: 'a1', file_name: '', created_at: '2026-01-02T00:00:00Z' }]
+      });
+      const { activity } = await getTask(event, 't1');
+      expect(activity.map((/** @type {any} */ e) => e.body)).toEqual([
+        'Вложение',
+        'Задача создана'
+      ]);
+    } finally {
+      overwriteGetLocale(base);
+    }
+  });
+});

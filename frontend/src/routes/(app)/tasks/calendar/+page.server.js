@@ -1,4 +1,5 @@
 import { listTasks } from '#lib/server/v2/tasks.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The task calendar: the third face of Tasks, after the list and the boards.
@@ -15,28 +16,37 @@ import { listTasks } from '#lib/server/v2/tasks.js';
  * appear here at all. The page says so, and points at the list where they live.
  */
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// Functions, not strings: the labels follow the locale of the request.
+const WEEKDAYS = [
+  m.tasks_weekday_mon,
+  m.tasks_weekday_tue,
+  m.tasks_weekday_wed,
+  m.tasks_weekday_thu,
+  m.tasks_weekday_fri,
+  m.tasks_weekday_sat,
+  m.tasks_weekday_sun
+];
 const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
+  m.tasks_month_1,
+  m.tasks_month_2,
+  m.tasks_month_3,
+  m.tasks_month_4,
+  m.tasks_month_5,
+  m.tasks_month_6,
+  m.tasks_month_7,
+  m.tasks_month_8,
+  m.tasks_month_9,
+  m.tasks_month_10,
+  m.tasks_month_11,
+  m.tasks_month_12
 ];
 
 /** Local-time `YYYY-MM-DD`. Built from date parts, never `toISOString()`, so a
  *  day never slips across midnight UTC into the wrong cell. */
 function ymd(/** @type {Date} */ d) {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
+  return `${d.getFullYear()}-${mm}-${day}`;
 }
 
 /** `?month=YYYY-MM` → `{ year, month }` (month 0-based), or the current month
@@ -128,8 +138,8 @@ export async function load(event) {
   return {
     year,
     month,
-    monthLabel: `${MONTHS[month]} ${year}`,
-    weekdays: WEEKDAYS,
+    monthLabel: m.tasks_calendar_month_label({ month: MONTHS[month](), year: String(year) }),
+    weekdays: WEEKDAYS.map((label) => label()),
     weeks,
     agenda,
     today: todayStr,

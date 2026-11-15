@@ -3,6 +3,7 @@ import { listTasks, setTaskDone, FILTER_FIELDS } from '#lib/server/v2/tasks.js';
 import { readFilters, buildFilterQuery } from '#lib/server/v2/filter-params.js';
 import { getOrgPeopleAndTeams, resolveMe } from '#lib/server/v2/org-people.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The task queue.
@@ -60,7 +61,7 @@ export const actions = {
     const form = await event.request.formData();
     const id = form.get('id')?.toString();
     const done = form.get('done')?.toString() === 'true';
-    if (!id) return fail(400, { error: 'Which task?' });
+    if (!id) return fail(400, { error: m.tasks_error_which() });
 
     try {
       await setTaskDone(event, id, done);
@@ -70,8 +71,8 @@ export const actions = {
       return fail(err?.status === 403 ? 403 : 400, {
         error:
           err?.status === 403
-            ? 'That task is not yours to change.'
-            : (err?.body?.errors ?? 'That did not save. Try again.')
+            ? m.tasks_error_not_yours()
+            : (err?.body?.errors ?? m.tasks_error_not_saved())
       });
     }
     return { done };

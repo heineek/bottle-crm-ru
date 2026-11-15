@@ -36,6 +36,8 @@
   } from '@lucide/svelte';
   import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
   import { relatedView } from '#lib/v2/custom-objects.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { taskKindLabel, taskPriorityLabel, taskStatusLabel } from '../labels.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -60,14 +62,14 @@
     if (task.is_done) return null;
     if (late) {
       return {
-        label: `${late} ${late === 1 ? 'day' : 'days'} late`,
-        text: `This was due ${longDate(task.due_date)}. Finish it or move the date. Leaving it late does neither.`
+        label: m.tasks_detail_late_label({ count: late }),
+        text: m.tasks_detail_late_text({ date: longDate(task.due_date) })
       };
     }
     if (!task.due_date) {
       return {
-        label: 'No due date',
-        text: 'Nothing will bring this back to your attention. Give it a date, or close it if it is not really a task.'
+        label: m.tasks_stat_no_due(),
+        text: m.tasks_detail_no_due_text()
       };
     }
     return null;
@@ -119,7 +121,7 @@
    */
   function metaFor(e) {
     const parts = [];
-    if (e.type === 'file') parts.push('Attached');
+    if (e.type === 'file') parts.push(m.tasks_activity_attached());
     if (e.by) parts.push(e.by);
     parts.push(relativeDays(e.at));
     return parts.join(' · ');
@@ -128,8 +130,8 @@
   /** @param {string} iso */
   function dayGroup(iso) {
     const n = daysSince(iso);
-    if (n === 0) return 'Today';
-    if (n === 1) return 'Yesterday';
+    if (n === 0) return m.tasks_day_today();
+    if (n === 1) return m.tasks_day_yesterday();
     return shortDate(iso);
   }
 
@@ -161,30 +163,34 @@
         class="done-toggle"
         class:done={task.is_done}
         type="submit"
-        aria-label={task.is_done ? 'Reopen task' : 'Mark task done'}
-        title={task.is_done ? 'Reopen task' : 'Mark done'}
+        aria-label={task.is_done ? m.tasks_detail_reopen() : m.tasks_detail_mark_done_aria()}
+        title={task.is_done ? m.tasks_detail_reopen() : m.tasks_detail_mark_done()}
       >
         {#if task.is_done}<CircleCheck size={24} />{:else}<Circle size={24} />{/if}
       </button>
     </form>
   {/snippet}
   {#snippet crumb()}
-    <a href={resolve('tasks')}>Tasks</a>
+    <a href={resolve('tasks')}>{m.tasks_title()}</a>
     <ChevronRight size={12} />
-    <span>{task.status}</span>
+    <span>{taskStatusLabel(task.status)}</span>
   {/snippet}
   {#snippet sub()}
     {[
-      task.related ? `on ${task.related.name}` : 'not attached to a record',
-      task.due_date ? `due ${relativeDays(task.due_date)}` : 'no due date',
-      task.assigned_names.length ? task.assigned_names.join(', ') : 'nobody assigned'
+      task.related
+        ? m.tasks_detail_sub_on({ name: task.related.name })
+        : m.tasks_detail_sub_unattached(),
+      task.due_date
+        ? m.tasks_detail_sub_due({ when: relativeDays(task.due_date) })
+        : m.tasks_no_due_date(),
+      task.assigned_names.length ? task.assigned_names.join(', ') : m.tasks_detail_sub_nobody()
     ].join(' · ')}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve(`tasks/${task.id}/edit`)}>Edit</a>
+    <a class="v2-btn" href={resolve(`tasks/${task.id}/edit`)}>{m.common_edit()}</a>
     {#if canDelete}
       <form method="POST" action="?/delete" use:enhance>
-        <button class="v2-btn" type="submit">Delete</button>
+        <button class="v2-btn" type="submit">{m.common_delete()}</button>
       </form>
     {/if}
   {/snippet}
@@ -207,7 +213,7 @@
         {/if}
 
         {#if task.description}
-          <div class="v2-label" style="margin-bottom:10px">Note</div>
+          <div class="v2-label" style="margin-bottom:10px">{m.tasks_field_note()}</div>
           <article
             class="v2-card"
             style="padding:16px 18px;max-width:70ch;font-size:13.5px;line-height:1.65;white-space:pre-wrap"
@@ -216,23 +222,26 @@
           </article>
         {:else}
           <p class="v2-sub" style="font-size:12.5px;max-width:70ch;margin:0">
-            No note on this task. The title is all anyone else has to go on.
+            {m.tasks_detail_no_note()}
           </p>
         {/if}
 
         <RelatedRecords {related} error={form?.related?.error} />
 
         <div class="act-head">
-          <div class="v2-label">Activity</div>
+          <div class="v2-label">{m.tasks_detail_activity()}</div>
           {#if hasFiles}
             <!-- Only real kinds. There is no status/started/moved split because
                  a Task has no history table to draw one from. -->
-            <div class="seg" role="tablist" aria-label="Filter activity">
-              <button class:on={filter === 'all'} onclick={() => (filter = 'all')}>All</button>
-              <button class:on={filter === 'comments'} onclick={() => (filter = 'comments')}
-                >Comments</button
+            <div class="seg" role="tablist" aria-label={m.tasks_detail_filter_activity()}>
+              <button class:on={filter === 'all'} onclick={() => (filter = 'all')}
+                >{m.tasks_detail_filter_all()}</button
               >
-              <button class:on={filter === 'files'} onclick={() => (filter = 'files')}>Files</button
+              <button class:on={filter === 'comments'} onclick={() => (filter = 'comments')}
+                >{m.tasks_detail_filter_comments()}</button
+              >
+              <button class:on={filter === 'files'} onclick={() => (filter = 'files')}
+                >{m.tasks_detail_filter_files()}</button
               >
             </div>
           {/if}
@@ -258,27 +267,27 @@
             };
           }}
         >
-          <label class="v2-sr-only" for="comment">Add a comment</label>
+          <label class="v2-sr-only" for="comment">{m.tasks_detail_add_comment()}</label>
           <textarea
             id="comment"
             name="comment"
             rows="3"
             bind:value={comment}
             class="note-input"
-            placeholder="What happened? Anyone on this task will see it."></textarea>
+            placeholder={m.tasks_detail_comment_placeholder()}></textarea>
           <div class="note-actions">
             <button class="v2-btn v2-btn-primary" type="submit" disabled={saving || !canSubmit}>
               {saving
-                ? 'Saving…'
+                ? m.tasks_detail_saving()
                 : comment.trim()
-                  ? 'Comment'
+                  ? m.tasks_detail_comment()
                   : fileName
-                    ? 'Attach file'
-                    : 'Comment'}
+                    ? m.tasks_detail_attach_file()
+                    : m.tasks_detail_comment()}
             </button>
             <label class="v2-btn" class:has-file={fileName}>
               <Paperclip size={14} />
-              <span class="attach-label">{fileName || 'Attach file'}</span>
+              <span class="attach-label">{fileName || m.tasks_detail_attach_file()}</span>
               <input
                 bind:this={fileInput}
                 type="file"
@@ -292,7 +301,7 @@
                 type="button"
                 class="v2-btn-quiet clear-file"
                 onclick={clearFile}
-                title="Remove file"
+                title={m.tasks_detail_remove_file()}
               >
                 <X size={13} />
               </button>
@@ -331,7 +340,7 @@
             {/if}
           {:else}
             <p class="v2-sub" style="font-size:12.5px">
-              Nothing logged yet. The first comment you add shows up here.
+              {m.tasks_detail_feed_empty()}
             </p>
           {/each}
         </div>
@@ -340,42 +349,46 @@
   </div>
 
   <aside class="v2-rail">
-    <div class="v2-label v2-rail-head">Task</div>
+    <div class="v2-label v2-rail-head">{m.tasks_field_task()}</div>
     <dl class="v2-kv">
-      <dt>Status</dt>
-      <dd><Pill tone={TASK_STATUS_TONE[task.status]}>{task.status}</Pill></dd>
-      <dt>Priority</dt>
-      <dd><Pill tone={TASK_PRIORITY_TONE[task.priority]}>{task.priority}</Pill></dd>
-      <dt>Due</dt>
+      <dt>{m.common_status()}</dt>
+      <dd><Pill tone={TASK_STATUS_TONE[task.status]}>{taskStatusLabel(task.status)}</Pill></dd>
+      <dt>{m.common_priority()}</dt>
+      <dd>
+        <Pill tone={TASK_PRIORITY_TONE[task.priority]}>{taskPriorityLabel(task.priority)}</Pill>
+      </dd>
+      <dt>{m.tasks_field_due()}</dt>
       <dd style={late ? 'color:var(--v2-rust);font-weight:600' : ''}>
         {#if !task.due_date}
-          <span class="v2-muted">not set</span>
+          <span class="v2-muted">{m.tasks_detail_not_set()}</span>
         {:else if late}
-          {longDate(task.due_date)} · {late}d late
+          {longDate(task.due_date)} · {m.tasks_days_late({ days: late })}
         {:else}
           {longDate(task.due_date)}
         {/if}
       </dd>
-      <dt>Attached to</dt>
+      <dt>{m.tasks_field_attached()}</dt>
       <dd>
         {#if task.related}
           <a href={resolve(asInternalPath(task.related.href))}>{task.related.name}</a>
-          <span class="v2-sub" style="display:block;font-size:11.5px">{task.related.kind}</span>
+          <span class="v2-sub" style="display:block;font-size:11.5px"
+            >{taskKindLabel(task.related.kind)}</span
+          >
         {:else}
-          <span class="v2-muted">nothing</span>
+          <span class="v2-muted">{m.tasks_detail_attached_none()}</span>
         {/if}
       </dd>
-      <dt>Created</dt>
+      <dt>{m.common_created()}</dt>
       <dd>{longDate(task.created_at)}</dd>
     </dl>
 
-    <div class="v2-label v2-rail-head">Assigned to</div>
+    <div class="v2-label v2-rail-head">{m.common_assigned_to()}</div>
     <!-- A multi-select, not a single one. `assigned_to` is many-to-many and
          the API rewrites the whole list on every save, so a one-owner picker
          would silently drop co-assignees, and the seeded org has tasks with
          two. -->
     <form method="POST" action="?/assign" use:enhance style="padding:0 16px 16px">
-      <label class="v2-sr-only" for="assigned_to">Assigned to</label>
+      <label class="v2-sr-only" for="assigned_to">{m.common_assigned_to()}</label>
       <select
         id="assigned_to"
         name="assigned_to"
@@ -390,13 +403,13 @@
         {/each}
       </select>
       <p class="v2-sub" style="font-size:11px;margin:6px 0 8px">
-        Hold ⌘ or Ctrl to pick more than one. Clearing the list leaves the task with nobody on it.
+        {m.tasks_detail_assign_hint()}
       </p>
-      <button class="v2-btn" type="submit">Save</button>
+      <button class="v2-btn" type="submit">{m.common_save()}</button>
     </form>
 
     {#if contacts.length}
-      <div class="v2-label v2-rail-head">People</div>
+      <div class="v2-label v2-rail-head">{m.tasks_detail_people()}</div>
       <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px">
         {#each contacts as person (person.id)}
           <a
