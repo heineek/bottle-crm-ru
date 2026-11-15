@@ -5,6 +5,7 @@ import { listAccountsPicker } from '#lib/server/v2/accounts.js';
 import { getOrgPeopleAndTeams, resolveMe } from '#lib/server/v2/org-people.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { loadSavedViews, savedViewActions } from '#lib/server/v2/saved-views.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The invoice list.
@@ -59,13 +60,13 @@ export const actions = {
   send: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which invoice?' });
+    if (!id) return fail(400, { error: m.invoices_which_invoice() });
 
     try {
       await sendInvoice({ cookies }, id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not send that invoice.')
+        error: readableError(err, m.invoices_send_that_failed())
       });
     }
     return { sent: id };

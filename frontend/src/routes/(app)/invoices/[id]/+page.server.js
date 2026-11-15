@@ -7,6 +7,7 @@ import {
   duplicateInvoice
 } from '#lib/server/v2/invoices.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * One invoice, with its line items.
@@ -25,7 +26,7 @@ export const actions = {
       await sendInvoice({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not send this invoice.')
+        error: readableError(err, m.invoices_send_failed())
       });
     }
     return { sent: true };
@@ -47,7 +48,7 @@ export const actions = {
       );
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not record that payment.')
+        error: readableError(err, m.invoices_payment_failed())
       });
     }
     return { paid: true };
@@ -59,7 +60,7 @@ export const actions = {
       await cancelInvoice({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not cancel this invoice.')
+        error: readableError(err, m.invoices_cancel_failed())
       });
     }
     return { cancelled: true };
@@ -75,7 +76,7 @@ export const actions = {
       created = await duplicateInvoice({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not duplicate this invoice.')
+        error: readableError(err, m.invoices_duplicate_failed())
       });
     }
     const newId = created?.invoice?.id;

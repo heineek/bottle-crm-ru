@@ -8,6 +8,7 @@ import {
 import { listAccountsPicker } from '#lib/server/v2/accounts.js';
 import { readFilters, buildFilterQuery } from '#lib/server/v2/filter-params.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The estimates worklist. `load` returns `{ estimates, totals, accounts }`.
@@ -45,14 +46,14 @@ export const actions = {
   convert: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which estimate? None was given.' });
+    if (!id) return fail(400, { error: m.invoices_which_estimate() });
 
     let created;
     try {
       created = await convertEstimate({ cookies }, id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not raise an invoice from this estimate.')
+        error: readableError(err, m.invoices_estimate_convert_failed())
       });
     }
 
@@ -68,13 +69,13 @@ export const actions = {
   send: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which estimate? None was given.' });
+    if (!id) return fail(400, { error: m.invoices_which_estimate() });
 
     try {
       await sendEstimate({ cookies }, id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not send this estimate.')
+        error: readableError(err, m.invoices_estimate_send_failed())
       });
     }
     return { sent: true };

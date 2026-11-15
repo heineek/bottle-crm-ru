@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { createInvoiceTemplate } from '#lib/server/v2/templates.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Creating a template.
@@ -52,8 +53,8 @@ export const actions = {
         values,
         error:
           err?.status === 403
-            ? 'Only an admin can create an invoice template.'
-            : readableError(err, 'Could not create the template.')
+            ? m.invoices_template_create_admin_only()
+            : readableError(err, m.invoices_template_create_failed())
       });
     }
 

@@ -23,3 +23,17 @@ describe('CURRENCY_CHOICES', () => {
     expect(CURRENCY_SYMBOLS.ZAR).toBe('R');
   });
 });
+
+describe('CURRENCY_CHOICES in Russian', () => {
+  it('names the currency in the request locale and keeps the code', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      expect(CURRENCY_CHOICES.find((c) => c.code === 'EUR')?.label).toBe('EUR, евро');
+    } finally {
+      overwriteGetLocale(base);
+    }
+    expect(CURRENCY_CHOICES.find((c) => c.code === 'EUR')?.label).toBe('EUR, Euro');
+  });
+});
