@@ -7,6 +7,7 @@ import {
 } from '#lib/server/v2/solutions.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies, locals, params }) {
@@ -30,12 +31,12 @@ export const actions = {
   setStatus: async ({ cookies, params, request }) => {
     const form = await request.formData();
     const status = form.get('status')?.toString() ?? '';
-    if (!status) return fail(400, { error: 'No status to set.' });
+    if (!status) return fail(400, { error: m.solutions_err_no_status() });
 
     try {
       await updateArticle({ cookies }, params.id, { status });
     } catch (/** @type {any} */ err) {
-      return fail(400, { error: readableError(err, 'Could not change the status.') });
+      return fail(400, { error: readableError(err, m.solutions_err_status()) });
     }
     return { status };
   },
@@ -57,7 +58,7 @@ export const actions = {
       return fail(400, {
         error: readableError(
           err,
-          published ? 'Could not publish this article.' : 'Could not unpublish this article.'
+          published ? m.solutions_err_publish() : m.solutions_err_unpublish()
         )
       });
     }
@@ -73,7 +74,7 @@ export const actions = {
       await deleteArticle({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       const code = err?.status >= 400 && err?.status < 500 ? err.status : 400;
-      return fail(code, { error: readableError(err, 'Could not delete this article.') });
+      return fail(code, { error: readableError(err, m.solutions_err_delete()) });
     }
     redirect(303, '/solutions');
   }

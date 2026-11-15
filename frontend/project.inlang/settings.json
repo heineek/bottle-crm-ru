@@ -16,6 +16,7 @@
       "./messages/documents/{locale}.json",
       "./messages/tickets/{locale}.json",
       "./messages/tasks/{locale}.json",
+      "./messages/solutions/{locale}.json",
       "./messages/profile/{locale}.json",
       "./messages/leads/{locale}.json",
       "./messages/contacts/{locale}.json",

@@ -4,6 +4,7 @@ import { getTags } from '#lib/server/v2/tags.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { sameIds } from '#lib/v2/pickers.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The mock's detail page had an Edit button that went nowhere, so this route
@@ -77,7 +78,7 @@ export const actions = {
     } catch (/** @type {any} */ err) {
       return fail(400, {
         values: { ...values, tags: tagsForRetry },
-        error: readableError(err, 'Could not save this article.')
+        error: readableError(err, m.solutions_err_save())
       });
     }
 

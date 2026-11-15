@@ -41,6 +41,7 @@
 import { error } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** `Solution.STATUS_CHOICES`, in workflow order. */
 export const SOLUTION_STATUSES = ['draft', 'reviewed', 'approved'];
@@ -137,7 +138,7 @@ export async function getArticle({ cookies }, id) {
     // On the status, not on the wording. Another org's article is a 404 and
     // not a 403, which would confirm the id exists.
     if (err?.status === 404) {
-      error(404, 'That article does not exist, or it belongs to another team.');
+      error(404, m.solutions_not_found());
     }
     throw err;
   }
