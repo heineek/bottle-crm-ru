@@ -7,6 +7,7 @@
  */
 
 import { error, redirect } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import {
   ACCESS_COOKIE,
   ORG_COOKIE,
@@ -38,7 +39,7 @@ export async function load({ cookies, url }) {
       toLogin(cookies);
     }
     if (err instanceof PortalError && err.status === 404) {
-      error(404, 'There is nothing to show here right now.');
+      error(404, m.public_portal_articles_nothing());
     }
     throw err;
   }

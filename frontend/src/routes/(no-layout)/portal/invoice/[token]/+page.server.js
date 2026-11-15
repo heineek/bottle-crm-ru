@@ -7,6 +7,7 @@
 
 import { error } from '@sveltejs/kit';
 import * as env from '$app/env/public';
+import { m } from '#lib/paraglide/messages.js';
 
 // The Django API, reached server-to-server. Absolute (not a relative `/api/...`
 // that only resolves behind a production reverse proxy) so the anonymous portal
@@ -18,7 +19,7 @@ export async function load({ params, fetch }) {
   const { token } = params;
 
   if (!token) {
-    throw error(400, 'Invoice token is required');
+    throw error(400, m.public_portal_invoice_token_required());
   }
 
   try {
@@ -27,9 +28,9 @@ export async function load({ params, fetch }) {
 
     if (!response.ok) {
       if (response.status === 404) {
-        throw error(404, 'Invoice not found or link has expired');
+        throw error(404, m.public_portal_invoice_not_found());
       }
-      throw error(response.status, 'Failed to load invoice');
+      throw error(response.status, m.public_portal_invoice_load_failed());
     }
 
     // The v2 portal renders the Django shape directly (snake_case, template
@@ -40,6 +41,6 @@ export async function load({ params, fetch }) {
   } catch (err) {
     if (err.status) throw err;
     console.error('Error loading public invoice:', err);
-    throw error(500, 'Failed to load invoice');
+    throw error(500, m.public_portal_invoice_load_failed());
   }
 }

@@ -10,10 +10,13 @@
    */
   import { resolve } from '$app/paths';
   import HelpCenterShell from '#lib/v2/components/HelpCenterShell.svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { getLocale } from '#lib/paraglide/runtime.js';
+  import { intlLocale } from '#lib/i18n/locale.js';
 
   let { data } = $props();
 
-  let title = $derived(`${data.article.title} | ${data.name} help center`);
+  let title = $derived(m.public_help_article_title({ title: data.article.title, name: data.name }));
 
   /** A one-line summary for search results: the body's opening, whitespace folded. */
   let description = $derived.by(() => {
@@ -26,7 +29,8 @@
   /** @param {string} value */
   function formatDate(value) {
     if (!value) return '';
-    return new Date(value).toLocaleDateString('en', {
+    // The number locale is en-US for English, which is what 'en' always rendered.
+    return new Date(value).toLocaleDateString(intlLocale(getLocale(), 'number'), {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -46,22 +50,22 @@
 </svelte:head>
 
 <HelpCenterShell name={data.name} slug={data.slug}>
-  <a class="back" href={resolve(`help-center/${data.slug}`)}>All help articles</a>
+  <a class="back" href={resolve(`help-center/${data.slug}`)}>{m.public_help_all_articles()}</a>
 
   <article>
     <h1>{data.article.title}</h1>
     {#if data.article.updated_at}
       <p class="when">
-        Updated <time datetime={data.article.updated_at}>{formatDate(data.article.updated_at)}</time
-        >
+        {m.public_help_updated()}
+        <time datetime={data.article.updated_at}>{formatDate(data.article.updated_at)}</time>
       </p>
     {/if}
     <div class="body">{data.article.description}</div>
   </article>
 
   {#if data.related.length > 0}
-    <nav class="related" aria-label="Related articles">
-      <h2>Related articles</h2>
+    <nav class="related" aria-label={m.public_help_related()}>
+      <h2>{m.public_help_related()}</h2>
       <ul>
         {#each data.related as item (item.id)}
           <li>

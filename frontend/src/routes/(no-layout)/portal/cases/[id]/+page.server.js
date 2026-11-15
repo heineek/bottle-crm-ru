@@ -7,6 +7,7 @@
  */
 
 import { error, fail, redirect } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import {
   ACCESS_COOKIE,
   ORG_COOKIE,
@@ -45,7 +46,7 @@ export async function load({ cookies, params, url }) {
       if (err.status === 401 || err.status === 403) toLogin(cookies, url);
       // The API answers 404 both for "no such case" and "not yours", so that
       // an id cannot be probed to learn whether it belongs to a colleague.
-      if (err.status === 404) throw error(404, 'Request not found');
+      if (err.status === 404) throw error(404, m.public_portal_case_not_found());
     }
     throw err;
   }
@@ -59,7 +60,7 @@ export const actions = {
 
     const form = await request.formData();
     const comment = String(form.get('comment') || '').trim();
-    if (!comment) return fail(400, { error: 'Write a message before sending.' });
+    if (!comment) return fail(400, { error: m.public_portal_case_reply_required() });
 
     try {
       await postReply(token, params.id, comment);
@@ -67,7 +68,7 @@ export const actions = {
       if (err instanceof PortalError) {
         if (err.status === 401 || err.status === 403) toLogin(cookies, url);
         return fail(err.status, {
-          error: err.data?.comment?.[0] || 'Could not send that reply.'
+          error: err.data?.comment?.[0] || m.public_portal_case_reply_failed()
         });
       }
       throw err;

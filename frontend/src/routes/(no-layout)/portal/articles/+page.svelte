@@ -9,31 +9,37 @@
    */
   import { resolve } from '$app/paths';
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   let { data } = $props();
 </script>
 
 <svelte:head>
-  <title>Help articles</title>
+  <title>{m.public_portal_articles_title()}</title>
 </svelte:head>
 
 <PortalShell>
   <header class="head">
-    <h1>Help articles</h1>
-    <a class="btn" href={resolve('portal/cases')}>Your requests</a>
+    <h1>{m.public_portal_articles_title()}</h1>
+    <a class="btn" href={resolve('portal/cases')}>{m.public_portal_cases_heading()}</a>
   </header>
 
   <form method="GET" class="find">
-    <label class="sr-only" for="search">Search help articles</label>
-    <input id="search" name="search" value={data.search} placeholder="Search for an answer" />
-    <button type="submit">Search</button>
+    <label class="sr-only" for="search">{m.public_help_search_label()}</label>
+    <input
+      id="search"
+      name="search"
+      value={data.search}
+      placeholder={m.public_help_search_placeholder()}
+    />
+    <button type="submit">{m.public_help_search_button()}</button>
   </form>
 
   {#if data.articles.length === 0}
     <p class="empty">
       {data.search
-        ? `Nothing matches "${data.search}". Try a different word, or send us a request.`
-        : 'There are no help articles yet.'}
+        ? m.public_portal_articles_no_matches({ search: data.search })
+        : m.public_portal_articles_empty()}
     </p>
   {:else}
     <ul class="list">

@@ -32,6 +32,8 @@
    *    into a support thread.
    */
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
   import { money, longDate } from '#lib/v2/format.js';
   import { Download, CheckCircle2 } from '@lucide/svelte';
@@ -62,12 +64,17 @@
 
   /** "in 5 days" / "today" / "9 days ago". A date alone makes people count. */
   let duePhrase = $derived.by(() => {
-    if (daysToDue === null) return 'on receipt';
-    if (daysToDue === 0) return 'today';
-    if (daysToDue > 0) return `in ${daysToDue} ${daysToDue === 1 ? 'day' : 'days'}`;
-    const n = Math.abs(daysToDue);
-    return `${n} ${n === 1 ? 'day' : 'days'} ago`;
+    if (daysToDue === null) return m.public_portal_invoice_on_receipt();
+    if (daysToDue === 0) return m.public_portal_invoice_today();
+    if (daysToDue > 0) return m.public_portal_invoice_in_days({ count: daysToDue });
+    return m.public_portal_invoice_days_ago({ count: Math.abs(daysToDue) });
   });
+
+  let ref = $derived(
+    messageParts(
+      m.public_portal_invoice_ref({ number: slot('number'), date: longDate(inv.issue_date) })
+    )
+  );
 
   let addr = $derived(inv.billing_address || {});
   let addressLines = $derived(
@@ -77,7 +84,7 @@
 
 <svelte:head>
   <!-- The number is the thing a customer searches their inbox for. -->
-  <title>{inv.invoice_number} from {inv.org.name}</title>
+  <title>{m.public_portal_invoice_title({ number: inv.invoice_number, org: inv.org.name })}</title>
 </svelte:head>
 
 <PortalShell>
@@ -87,10 +94,10 @@
     <header class="doc-head">
       <div>
         <div class="from">{inv.org.name}</div>
-        <h1>{inv.invoice_title || 'Invoice'}</h1>
+        <h1>{inv.invoice_title || m.public_portal_invoice_heading()}</h1>
         <div class="ref">
-          Invoice <span class="v2-num">{inv.invoice_number}</span> · issued
-          {longDate(inv.issue_date)}
+          {#each ref as p, i (i)}{#if p.key}<span class="v2-num">{inv.invoice_number}</span
+              >{:else}{p.text}{/if}{/each}
         </div>
       </div>
       <!-- A backend download endpoint, not a SvelteKit route: rel="external"
@@ -100,7 +107,7 @@
         class="v2-btn v2-btn-sm"
         href="/api/public/invoice/{token}/pdf/"
         rel="external"
-        aria-label="Download this invoice as a PDF"
+        aria-label={m.public_portal_invoice_download()}
       >
         <Download size={13} />PDF
       </a>
@@ -111,24 +118,22 @@
       {#if state === 'paid'}
         <div class="paid-mark"><CheckCircle2 size={20} /></div>
         <div>
-          <div class="amount-label">Paid in full</div>
+          <div class="amount-label">{m.public_portal_invoice_paid_in_full()}</div>
           <div class="amount-sub">
-            Nothing is outstanding on this invoice. It is here for your records.
+            {m.public_portal_invoice_paid_body()}
           </div>
         </div>
       {:else}
         <div>
-          <div class="amount-label">Amount due</div>
+          <div class="amount-label">{m.public_portal_invoice_amount_due()}</div>
           <div class="amount-value v2-num">{money(inv.amount_due, inv.currency)}</div>
           <div class="amount-sub">
-            {#if state === 'overdue'}
-              Due {longDate(inv.due_date)}, {duePhrase}
-            {:else}
-              Due {longDate(inv.due_date)}, {duePhrase}
-            {/if}
+            {m.public_portal_invoice_due({ date: longDate(inv.due_date), phrase: duePhrase })}
             {#if state === 'part-paid'}
-              · {money(inv.amount_paid, inv.currency)} of {money(inv.total_amount, inv.currency)} already
-              received
+              · {m.public_portal_invoice_part_paid({
+                paid: money(inv.amount_paid, inv.currency),
+                total: money(inv.total_amount, inv.currency)
+              })}
             {/if}
           </div>
         </div>
@@ -139,12 +144,12 @@
       <!-- How to pay. This is the action, in the absence of a payment
            processor, so it gets the weight a button would have had. -->
       <section class="pay">
-        <div class="v2-label">How to pay</div>
+        <div class="v2-label">{m.public_portal_invoice_how_to_pay()}</div>
         <p>{inv.terms}</p>
         <dl class="pay-ref">
-          <dt>Reference</dt>
+          <dt>{m.public_portal_invoice_reference()}</dt>
           <dd class="v2-num">{inv.invoice_number}</dd>
-          <dt>Amount</dt>
+          <dt>{m.public_portal_invoice_amount()}</dt>
           <dd class="v2-num">{money(inv.amount_due, inv.currency)}</dd>
         </dl>
       </section>
@@ -152,7 +157,7 @@
 
     <!-- Evidence. -->
     <section class="block">
-      <div class="v2-label">Billed to</div>
+      <div class="v2-label">{m.public_portal_invoice_billed_to()}</div>
       <div class="addr">
         <div class="addr-name">{inv.client_name}</div>
         {#each addressLines as line, i (i)}
@@ -162,7 +167,7 @@
     </section>
 
     <section class="block">
-      <div class="v2-label">What this covers</div>
+      <div class="v2-label">{m.public_portal_invoice_covers()}</div>
       <PortalLineItems
         items={inv.line_items}
         currency={inv.currency}
@@ -181,7 +186,7 @@
       <!-- What they have already sent. Without this the page asserts a balance
            with nothing behind it, and the first reply is always "we paid that". -->
       <section class="block">
-        <div class="v2-label">Payments received</div>
+        <div class="v2-label">{m.public_portal_invoice_payments()}</div>
         <ul class="payments">
           {#each inv.payments as p, i (i)}
             <li>
@@ -191,7 +196,7 @@
           {/each}
           <li class="payments-balance">
             <span class="v2-num">{money(inv.amount_due, inv.currency)}</span>
-            <span class="pay-meta">remaining</span>
+            <span class="pay-meta">{m.public_portal_invoice_remaining()}</span>
           </li>
         </ul>
       </section>
@@ -199,7 +204,7 @@
 
     {#if inv.notes}
       <section class="block">
-        <div class="v2-label">Notes</div>
+        <div class="v2-label">{m.common_notes()}</div>
         <p class="note">{inv.notes}</p>
       </section>
     {/if}
@@ -210,7 +215,7 @@
            words "write to us" opens a message addressed to the person reading
            the page. The org's address is in `footer_text`, put there by
            whoever wrote the template, and that is the one to use. -->
-      <p>Questions about this invoice? Reply to the email it arrived with.</p>
+      <p>{m.public_portal_invoice_questions()}</p>
       {#if inv.template?.footer_text}
         <p class="foot-org">{inv.template.footer_text}</p>
       {/if}

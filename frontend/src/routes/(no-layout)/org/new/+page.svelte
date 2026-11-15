@@ -4,6 +4,7 @@
   import '#lib/v2/styles/v2.css';
   import { enhance } from '$app/forms';
   import { goto } from '$app/navigation';
+  import { m } from '#lib/paraglide/messages.js';
   import imgLogo from '#lib/assets/images/logo.png';
   import { ArrowLeft, Check, AlertCircle } from '@lucide/svelte';
 
@@ -41,7 +42,7 @@
 </script>
 
 <svelte:head>
-  <title>Create organisation · BottleCRM</title>
+  <title>{m.public_org_new_title()}</title>
 </svelte:head>
 
 <div class="v2-root v2-auth">
@@ -53,8 +54,8 @@
 
     <div class="v2-auth-card">
       <div class="v2-auth-head">
-        <h1>Create organisation</h1>
-        <p>Set up a new workspace for your team.</p>
+        <h1>{m.public_org_create()}</h1>
+        <p>{m.public_org_new_subtitle()}</p>
       </div>
 
       <form
@@ -69,21 +70,21 @@
         }}
       >
         <div class="v2-field">
-          <label for="org_name">Organisation name</label>
+          <label for="org_name">{m.public_org_new_name_label()}</label>
           <input
             type="text"
             id="org_name"
             name="org_name"
             class="v2-input"
-            placeholder="e.g. Acme Inc."
+            placeholder={m.public_org_new_name_placeholder()}
             required
             disabled={isSubmitting || !!form?.data}
           />
-          <p class="v2-hint">This becomes your workspace name in BottleCRM.</p>
+          <p class="v2-hint">{m.public_org_new_name_hint()}</p>
         </div>
 
         <div class="v2-field">
-          <label for="timezone">Time zone</label>
+          <label for="timezone">{m.public_org_new_timezone_label()}</label>
           <select
             id="timezone"
             name="timezone"
@@ -96,17 +97,15 @@
             {/each}
           </select>
           <p class="v2-hint">
-            Sets when a day starts here, so "due today" and "overdue" mean what your team expects.
-            You can change it later in Settings.
+            {m.public_org_new_timezone_hint()}
           </p>
         </div>
 
         {#if packs.length > 0}
           <fieldset class="v2-field pack-choice">
-            <legend>What kind of business is this?</legend>
+            <legend>{m.public_org_new_pack_legend()}</legend>
             <p class="v2-hint" style="margin-top:0">
-              Sets up a starter pipeline, tags and fields for your industry. You can change
-              everything later.
+              {m.public_org_new_pack_hint()}
             </p>
 
             <label class="pack-opt">
@@ -118,8 +117,8 @@
                 disabled={isSubmitting || !!form?.data}
               />
               <span class="pack-opt-body">
-                <b>Skip for now</b>
-                <span class="v2-hint" style="margin:0">Start with a blank workspace.</span>
+                <b>{m.public_org_new_pack_skip()}</b>
+                <span class="v2-hint" style="margin:0">{m.public_org_new_pack_blank()}</span>
               </span>
             </label>
 
@@ -146,9 +145,9 @@
           <div class="v2-auth-note v2-auth-note-bad" style="margin-bottom:14px">
             <AlertCircle />
             <div>
-              <b>Couldn't create organisation</b>
+              <b>{m.public_org_new_failed_title()}</b>
               <div style="font-weight:400;margin-top:2px">
-                {form.error.name || 'Please try again.'}
+                {form.error.name || m.public_org_new_try_again()}
               </div>
             </div>
           </div>
@@ -158,8 +157,8 @@
           <div class="v2-auth-note v2-auth-note-ok" style="margin-bottom:14px">
             <Check />
             <div>
-              <b>Organisation created</b>
-              <div style="font-weight:400;margin-top:2px">Taking you to your workspaces…</div>
+              <b>{m.public_org_new_created_title()}</b>
+              <div style="font-weight:400;margin-top:2px">{m.public_org_new_redirecting()}</div>
             </div>
           </div>
         {/if}
@@ -171,12 +170,12 @@
         >
           {#if isSubmitting}
             <span class="v2-spin"></span>
-            <span>Creating…</span>
+            <span>{m.public_org_new_creating()}</span>
           {:else if form?.data}
             <Check size={15} />
-            <span>Created</span>
+            <span>{m.public_org_new_created()}</span>
           {:else}
-            <span>Create organisation</span>
+            <span>{m.public_org_create()}</span>
           {/if}
         </button>
       </form>
@@ -184,7 +183,8 @@
 
     <div class="v2-auth-foot">
       <a href={resolve('org')} style="display:inline-flex;align-items:center;gap:5px">
-        <ArrowLeft size={13} /> Back to organisations
+        <ArrowLeft size={13} />
+        {m.public_org_new_back()}
       </a>
     </div>
   </div>

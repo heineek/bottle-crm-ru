@@ -8,6 +8,7 @@
 
 import { fail } from '@sveltejs/kit';
 import * as env from '$app/env/public';
+import { m } from '#lib/paraglide/messages.js';
 
 import { preselectedRating } from '#lib/server/v2/csat.js';
 
@@ -23,7 +24,7 @@ export async function load({ params, fetch, url }) {
     return { invalid: true, token: params.token };
   }
   if (!res.ok) {
-    return { error: `Server returned ${res.status}`, token: params.token };
+    return { error: m.public_csat_server_status({ status: res.status }), token: params.token };
   }
   const data = await res.json();
   return {
@@ -52,7 +53,7 @@ export const actions = {
     const rating = Number(form.get('rating'));
     const comment = (form.get('comment')?.toString() || '').trim();
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      return fail(400, { error: 'Please pick a rating between 1 and 5.' });
+      return fail(400, { error: m.public_csat_pick_rating() });
     }
     const res = await fetch(`${API_BASE_URL}/public/csat/${params.token}/`, {
       method: 'POST',
@@ -60,15 +61,15 @@ export const actions = {
       body: JSON.stringify({ rating, comment })
     });
     if (res.status === 410) {
-      return fail(410, { error: 'This survey link has expired.' });
+      return fail(410, { error: m.public_csat_link_expired() });
     }
     if (res.status === 409) {
-      return fail(409, { error: 'This survey is locked. The edit window has closed.' });
+      return fail(409, { error: m.public_csat_locked() });
     }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       return fail(res.status, {
-        error: body?.error || `Server returned ${res.status}`
+        error: body?.error || m.public_csat_server_status({ status: res.status })
       });
     }
     return { success: true, rating, comment };

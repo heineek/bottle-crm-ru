@@ -53,6 +53,20 @@ describe('opening the link', () => {
     );
     expect(result).toEqual({ error: 'Missing verification token.' });
   });
+
+  it('says so in Russian for a Russian visitor', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const original = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      const result = await load(
+        /** @type {any} */ ({ url: new URL('http://app.test/login/verify') })
+      );
+      expect(result).toEqual({ error: 'Не указан токен подтверждения.' });
+    } finally {
+      overwriteGetLocale(original);
+    }
+  });
 });
 
 describe('pressing the button', () => {
