@@ -21,6 +21,8 @@ own, and `peek_portal_claims` refuses an internal token here.
 
 from datetime import timedelta
 
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
@@ -129,13 +131,13 @@ class PortalContactAuthentication(BaseAuthentication):
 
         claims = peek_portal_claims(raw)
         if claims is None:
-            raise AuthenticationFailed("Not a portal token.")
+            raise AuthenticationFailed(_("Not a portal token."))
 
         contact = Contact.objects.filter(
             id=claims["contact_id"], org_id=claims["org_id"], is_active=True
         ).first()
         if contact is None:
-            raise AuthenticationFailed("Portal access has been withdrawn.")
+            raise AuthenticationFailed(_("Portal access has been withdrawn."))
 
         request.portal_contact = contact
         return (PortalPrincipal(contact), claims)
@@ -147,7 +149,7 @@ class PortalContactAuthentication(BaseAuthentication):
 class IsPortalContact(BasePermission):
     """A live portal contact whose org matches the org resolved for the request."""
 
-    message = "You do not have Permission to perform this action"
+    message = gettext_lazy("You do not have Permission to perform this action")
 
     def has_permission(self, request, view):
         contact = getattr(request, "portal_contact", None)

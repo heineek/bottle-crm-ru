@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from django.apps import apps
 from django.db import models
+from django.utils.translation import ngettext, ngettext_lazy
 
 from common.modules import (
     Requires,
@@ -23,34 +24,90 @@ from common.modules import (
 
 @dataclass(frozen=True)
 class Guard:
+    """``things`` is a lazy plural taking ``%(count)d``: "1 ticket", "2 tickets"."""
+
     child: str
     field: str
-    noun: str
-    plural: str
+    things: str
 
 
 DELETE_GUARDS: dict[str, tuple[Guard, ...]] = {
     "accounts.Account": (
-        Guard("cases.Case", "account", "ticket", "tickets"),
-        Guard("opportunity.Opportunity", "account", "deal", "deals"),
-        Guard("invoices.Invoice", "account", "invoice", "invoices"),
-        Guard("invoices.Estimate", "account", "estimate", "estimates"),
+        Guard(
+            "cases.Case",
+            "account",
+            ngettext_lazy("%(count)d ticket", "%(count)d tickets", "count"),
+        ),
+        Guard(
+            "opportunity.Opportunity",
+            "account",
+            ngettext_lazy("%(count)d deal", "%(count)d deals", "count"),
+        ),
+        Guard(
+            "invoices.Invoice",
+            "account",
+            ngettext_lazy("%(count)d invoice", "%(count)d invoices", "count"),
+        ),
+        Guard(
+            "invoices.Estimate",
+            "account",
+            ngettext_lazy("%(count)d estimate", "%(count)d estimates", "count"),
+        ),
         Guard(
             "invoices.RecurringInvoice",
             "account",
-            "recurring invoice",
-            "recurring invoices",
+            ngettext_lazy(
+                "%(count)d recurring invoice", "%(count)d recurring invoices", "count"
+            ),
         ),
     ),
-    "cases.Case": (Guard("cases.TimeEntry", "case", "time entry", "time entries"),),
+    "cases.Case": (
+        Guard(
+            "cases.TimeEntry",
+            "case",
+            ngettext_lazy("%(count)d time entry", "%(count)d time entries", "count"),
+        ),
+    ),
     "common.Profile": (
-        Guard("cases.TimeEntry", "profile", "time entry", "time entries"),
-        Guard("cases.Approval", "requested_by", "approval", "approvals"),
-        Guard("cases.Approval", "approver", "approval", "approvals"),
-        Guard("cases.CaseWatcher", "profile", "watched ticket", "watched tickets"),
-        Guard("macros.Macro", "owner", "saved reply", "saved replies"),
-        Guard("tasks.Board", "owner", "board", "boards"),
-        Guard("tasks.BoardMember", "profile", "board membership", "board memberships"),
+        Guard(
+            "cases.TimeEntry",
+            "profile",
+            ngettext_lazy("%(count)d time entry", "%(count)d time entries", "count"),
+        ),
+        Guard(
+            "cases.Approval",
+            "requested_by",
+            ngettext_lazy("%(count)d approval", "%(count)d approvals", "count"),
+        ),
+        Guard(
+            "cases.Approval",
+            "approver",
+            ngettext_lazy("%(count)d approval", "%(count)d approvals", "count"),
+        ),
+        Guard(
+            "cases.CaseWatcher",
+            "profile",
+            ngettext_lazy(
+                "%(count)d watched ticket", "%(count)d watched tickets", "count"
+            ),
+        ),
+        Guard(
+            "macros.Macro",
+            "owner",
+            ngettext_lazy("%(count)d saved reply", "%(count)d saved replies", "count"),
+        ),
+        Guard(
+            "tasks.Board",
+            "owner",
+            ngettext_lazy("%(count)d board", "%(count)d boards", "count"),
+        ),
+        Guard(
+            "tasks.BoardMember",
+            "profile",
+            ngettext_lazy(
+                "%(count)d board membership", "%(count)d board memberships", "count"
+            ),
+        ),
     ),
 }
 
@@ -101,17 +158,17 @@ def _refusal(org, available, label, parent, subject):
 
 
 def _body(org, key, subject, guard, count):
-    label = module_label(org, key)
-    if count == 1:
-        message = (
-            f"{subject} has 1 {guard.noun}. {label} is switched off, so switch it "
-            "on to review it before deleting."
-        )
-    else:
-        message = (
-            f"{subject} has {count} {guard.plural}. {label} is switched off, so "
-            "switch it on to review them before deleting."
-        )
+    message = ngettext(
+        "%(subject)s has %(things)s. %(label)s is switched off, so switch it on "
+        "to review it before deleting.",
+        "%(subject)s has %(things)s. %(label)s is switched off, so switch it on "
+        "to review them before deleting.",
+        count,
+    ) % {
+        "subject": subject,
+        "things": guard.things % {"count": count},
+        "label": module_label(org, key),
+    }
     return {"error": True, "errors": message, "code": "module_off", "module": key}
 
 

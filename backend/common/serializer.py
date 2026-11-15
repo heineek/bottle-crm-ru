@@ -1,7 +1,10 @@
 import re
 
 from disposable_email_domains import blocklist as disposable_domains
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -50,7 +53,8 @@ class OrgAwareRefreshToken(RefreshToken):
     - role: User's role in the org (ADMIN/USER)
     - is_organization_admin: ``is_org_admin(profile)``, the one admin fact
       both clients gate admin UI on (the role, or a superuser's profile)
-    - org_settings: Currency, locale and timezone settings
+    - org_settings: Currency, locale, timezone and default language settings
+    - language: The user's chosen interface language, blank if none
 
     The clients read these claims for display and to hide controls only. The
     API never trusts them: every request re-resolves the profile from the
@@ -78,6 +82,9 @@ class OrgAwareRefreshToken(RefreshToken):
             # Build display name from email (User model doesn't have first/last name)
             token["user_name"] = user.email.split("@")[0] if user.email else ""
             token["user_profile_pic"] = user.profile_pic or ""
+            # The interface language the user chose, blank for "not chosen".
+            # Display only, like every claim here; a refresh picks up a change.
+            token["language"] = user.language or ""
 
         # Add org context to the token payload
         if org:
@@ -97,6 +104,7 @@ class OrgAwareRefreshToken(RefreshToken):
                     # The org's day, for a form's "today" default. Display
                     # only: the API dates what it owns itself.
                     "timezone": org.timezone or "UTC",
+                    "default_language": org.default_language or "en",
                 }
 
         # Add role if profile provided (avoids /api/auth/profile call)
@@ -177,6 +185,7 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
             "default_country",
             "currency_symbol",
             "timezone",
+            "default_language",
             # Case-handling behaviour (org-wide switches). Editable only here.
             "csat_enabled",
             "auto_close_children_on_parent_close",
@@ -219,8 +228,11 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "invoice_number_start": [
-                        "A starting number only applies to numbers without a "
-                        "date. A dated number's counter restarts at 1 each period."
+                        _(
+                            "A starting number only applies to numbers without a "
+                            "date. A dated number's counter restarts at 1 each "
+                            "period."
+                        )
                     ]
                 }
             )
@@ -245,7 +257,7 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
         return obj.profiles.filter(is_active=True).count()
 
 
-HELP_CENTER_SLUG_TAKEN = "That address is already taken. Choose another."
+HELP_CENTER_SLUG_TAKEN = gettext_lazy("That address is already taken. Choose another.")
 
 
 class HelpCenterSettingsSerializer(serializers.ModelSerializer):
@@ -306,7 +318,7 @@ class HelpCenterSettingsSerializer(serializers.ModelSerializer):
         if enabled and not slug:
             raise serializers.ValidationError(
                 {
-                    "help_center_slug": (
+                    "help_center_slug": _(
                         "Choose an address before turning the help center on."
                     )
                 }
@@ -438,7 +450,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             content_type = ContentType.objects.get(model=content_type_str.lower())
         except ContentType.DoesNotExist as exc:
             raise serializers.ValidationError(
-                f"Invalid content type: {content_type_str}"
+                _("Invalid content type: %(type)s") % {"type": content_type_str}
             ) from exc
 
         validated_data["content_type"] = content_type
@@ -517,10 +529,10 @@ class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
 
     def validate_key(self, value):
         if not value:
-            raise serializers.ValidationError("key is required")
+            raise serializers.ValidationError(_("key is required"))
         if not re.fullmatch(r"[a-z][a-z0-9_]*", value):
             raise serializers.ValidationError(
-                "key must be a lowercase slug starting with a letter (a-z, 0-9, _)"
+                _("key must be a lowercase slug starting with a letter (a-z, 0-9, _)")
             )
         return value
 
@@ -529,7 +541,10 @@ class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
             for frozen in ("key", "target_model", "field_type"):
                 if frozen in attrs and getattr(self.instance, frozen) != attrs[frozen]:
                     raise serializers.ValidationError(
-                        {frozen: f"{frozen} cannot be changed after creation"}
+                        {
+                            frozen: _("%(field)s cannot be changed after creation")
+                            % {"field": frozen}
+                        }
                     )
             field_type = attrs.get("field_type", self.instance.field_type)
         else:
@@ -551,7 +566,10 @@ class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise serializers.ValidationError(
-                    {"key": f"a {target_model} field with key {key!r} already exists"}
+                    {
+                        "key": _("a %(model)s field with key %(key)s already exists")
+                        % {"model": target_model, "key": repr(key)}
+                    }
                 )
 
         return attrs
@@ -614,11 +632,11 @@ class OrgProfileCreateSerializer(serializers.ModelSerializer):
     def validate_name(self, name):
         if bool(re.search(r"[~\!@#\$%\^&\*\(\)\+{}\":;'/\[\]]", name)):
             raise serializers.ValidationError(
-                "organization name should not contain any special characters"
+                _("organization name should not contain any special characters")
             )
         if Org.objects.filter(name=name).exists():
             raise serializers.ValidationError(
-                "Organization already exists with this name"
+                _("Organization already exists with this name")
             )
         return name
 
@@ -707,12 +725,12 @@ class CreateUserSerializer(serializers.ModelSerializer):
             # spelling is kept rather than the echoed one.
             if self.instance.email.lower() == email.lower():
                 return self.instance.email
-            raise serializers.ValidationError("Email cannot be changed here.")
+            raise serializers.ValidationError(_("Email cannot be changed here."))
         # Creating a membership: an account owned elsewhere is reused by the
         # view, so only same-org duplicates are rejected here.
         if not Profile.objects.filter(user__email__iexact=email, org=self.org).exists():
             return email.lower()
-        raise serializers.ValidationError("Given Email id already exists")
+        raise serializers.ValidationError(_("Given Email id already exists"))
 
     def validate_profile_pic(self, value):
         """Only the account's owner may change it once the account exists.
@@ -727,7 +745,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         if (value or "") == (self.instance.profile_pic or ""):
             return self.instance.profile_pic
         raise serializers.ValidationError(
-            "Only the account's owner can change their picture."
+            _("Only the account's owner can change their picture.")
         )
 
 
@@ -795,7 +813,7 @@ class CreateProfileSerializer(serializers.ModelSerializer):
             return attrs
         submitted = self.initial_data if isinstance(self.initial_data, dict) else {}
         errors = {
-            name: ["Only an admin can change this, and never on themselves."]
+            name: [_("Only an admin can change this, and never on themselves.")]
             for name in self.PRIVILEGED_FIELDS
             if name in submitted
             and not self._unchanged(submitted[name], getattr(self.instance, name))
@@ -854,9 +872,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class ProfileSelfUpdateSerializer(serializers.Serializer):
-    """The two fields a user may change on their OWN profile via PATCH /api/profile/.
+    """The fields a user may change on their OWN profile via PATCH /api/profile/.
 
-    Deliberately just ``phone`` (on Profile) and ``name`` (on User). Role, org
+    Deliberately just ``phone`` (on Profile), ``name`` and ``language`` (on User). Role, org
     and the ``has_*_access`` flags are NOT here:
     those decide permissions and are an admin's to set. Leaving them out is what
     keeps this self-edit endpoint from becoming the same self-serve privilege
@@ -875,6 +893,11 @@ class ProfileSelfUpdateSerializer(serializers.Serializer):
         allow_blank=True,
         max_length=20,
         validators=[flexible_phone_validator],
+    )
+    # Lives on User, like ``name``. Blank clears the choice, so the client's
+    # Accept-Language and then the org default apply (see common.locale).
+    language = serializers.ChoiceField(
+        required=False, allow_blank=True, choices=settings.LANGUAGES
     )
 
 
@@ -927,7 +950,7 @@ class AttachmentsCreateSerializer(serializers.ModelSerializer):
             content_type = ContentType.objects.get(model=content_type_str.lower())
         except ContentType.DoesNotExist as exc:
             raise serializers.ValidationError(
-                f"Invalid content type: {content_type_str}"
+                _("Invalid content type: %(type)s") % {"type": content_type_str}
             ) from exc
 
         validated_data["content_type"] = content_type
@@ -995,12 +1018,12 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
                 .exists()
             ):
                 raise serializers.ValidationError(
-                    "Document with this Title already exists"
+                    _("Document with this Title already exists")
                 )
         else:
             if Document.objects.filter(title__iexact=title, org=self.org).exists():
                 raise serializers.ValidationError(
-                    "Document with this Title already exists"
+                    _("Document with this Title already exists")
                 )
         return title
 
@@ -1039,10 +1062,12 @@ class APISettingsSerializer(serializers.ModelSerializer):
         if website and not (
             website.startswith("http://") or website.startswith("https://")
         ):
-            raise serializers.ValidationError("Please provide valid schema")
+            raise serializers.ValidationError(_("Please provide valid schema"))
         if not len(find_urls(website)) > 0:
             raise serializers.ValidationError(
-                "Please provide a valid URL with schema and without trailing slash - Example: http://google.com"
+                _(
+                    "Please provide a valid URL with schema and without trailing slash - Example: http://google.com"
+                )
             )
         return website
 
@@ -1189,7 +1214,7 @@ class MagicLinkRequestSerializer(serializers.Serializer):
         domain = value.rsplit("@", 1)[-1].lower()
         if domain in disposable_domains:
             raise serializers.ValidationError(
-                "Disposable email addresses are not allowed."
+                _("Disposable email addresses are not allowed.")
             )
         return value
 
@@ -1214,7 +1239,14 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "profile_pic", "is_active", "organizations"]
+        fields = [
+            "id",
+            "email",
+            "profile_pic",
+            "language",
+            "is_active",
+            "organizations",
+        ]
 
     @extend_schema_field(list)
     def get_organizations(self, obj):
@@ -1367,10 +1399,14 @@ class TeamCreateSerializer(serializers.ModelSerializer):
                 .exclude(id=self.instance.id)
                 .exists()
             ):
-                raise serializers.ValidationError("Team already exists with this name")
+                raise serializers.ValidationError(
+                    _("Team already exists with this name")
+                )
         else:
             if Teams.objects.filter(name__iexact=name, org=self.org).exists():
-                raise serializers.ValidationError("Team already exists with this name")
+                raise serializers.ValidationError(
+                    _("Team already exists with this name")
+                )
         return name
 
     class Meta:
@@ -1419,9 +1455,9 @@ class PersonalAccessTokenCreateSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = (value or "").strip()
         if not value:
-            raise serializers.ValidationError("Name is required.")
+            raise serializers.ValidationError(_("Name is required."))
         if len(value) > 255:
-            raise serializers.ValidationError("Name too long (max 255).")
+            raise serializers.ValidationError(_("Name too long (max 255)."))
         return value
 
     def validate_scopes(self, value):
@@ -1441,9 +1477,9 @@ class PersonalAccessTokenCreateSerializer(serializers.ModelSerializer):
         if value in (None, ""):
             return []
         if not isinstance(value, list) or not all(isinstance(s, str) for s in value):
-            raise serializers.ValidationError("scopes must be a list of strings.")
+            raise serializers.ValidationError(_("scopes must be a list of strings."))
         if len(value) > 32:
-            raise serializers.ValidationError("Too many scopes (max 32).")
+            raise serializers.ValidationError(_("Too many scopes (max 32)."))
 
         seen = []
         for raw in value:
@@ -1459,5 +1495,5 @@ class PersonalAccessTokenCreateSerializer(serializers.ModelSerializer):
         from django.utils import timezone
 
         if value is not None and value <= timezone.now():
-            raise serializers.ValidationError("expires_at must be in the future.")
+            raise serializers.ValidationError(_("expires_at must be in the future."))
         return value

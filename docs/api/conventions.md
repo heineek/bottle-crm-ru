@@ -207,3 +207,31 @@ with one multipart request rather than a create-then-upload round trip.
 client integration should send `Accept: application/json` for) and `BrowsableAPIRenderer` for
 `text/html`: request the same endpoint with a browser's default `Accept` header and DRF's
 interactive HTML form is what comes back instead of JSON.
+
+## Language
+
+Error messages, labels the API sends (module names, choice lists) and the mail it sends are
+translated. English is the source language and the fallback for anything not yet translated; the
+supported languages are `settings.LANGUAGES` (`en`, `ru`). `backend/common/locale.py` decides which
+one applies, in this order:
+
+1. `User.language`, the caller's own choice, set with `PATCH /api/profile/` (`{"language": "ru"}`;
+   an empty string clears it) and returned by `GET /api/profile/` and `GET /api/auth/me/`.
+2. The request's `Accept-Language` header. A regional tag matches its base language (`ru-RU` is
+   `ru`).
+3. `Org.default_language`, which an admin sets with `PATCH /api/org/settings/`.
+4. English.
+
+Every response carries `Content-Language` with the language it was written in, and
+`Vary: Accept-Language`. Error `code` values, webhook payloads and anything stored in a record are
+never translated, so a client that branches on an error should read its `code` or field key, not
+its message.
+
+Mail follows the reader: a member gets their own language, falling back to the org default; a
+customer (an invoice, an estimate, a CSAT survey, a portal email) always gets the org default,
+since a contact has no `User` to carry a choice.
+
+`GET /api/org/locales/` lists what a client needs to offer these choices, named in the caller's
+language: `languages` (each in its own name, such as `Русский`), `countries` (sorted by translated
+name) and `currencies` (with their symbol). Like `/api/org/timezones/`, it needs a signed-in user
+but no org.

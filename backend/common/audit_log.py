@@ -18,8 +18,11 @@ Usage:
 
 import logging
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db import models
+from django.utils import translation
+from django.utils.translation import gettext_lazy as _
 
 from common.base import BaseModel
 from common.request_meta import client_ip, user_agent
@@ -82,30 +85,30 @@ class SecurityAuditLog(BaseModel):
     """
 
     EVENT_TYPES = (
-        ("LOGIN_SUCCESS", "Login Success"),
-        ("LOGIN_FAILURE", "Login Failure"),
-        ("LOGOUT", "Logout"),
-        ("ORG_SWITCH", "Organization Switch"),
-        ("TOKEN_REFRESH", "Token Refresh"),
-        ("TOKEN_REVOKED", "Token Revoked"),
-        ("PERMISSION_DENIED", "Permission Denied"),
-        ("CROSS_ORG_ATTEMPT", "Cross-Org Access Attempt"),
-        ("API_KEY_USED", "API Key Used"),
-        ("API_KEY_INVALID", "Invalid API Key"),
-        ("MEMBERSHIP_REVOKED", "Membership Revoked"),
-        ("SUSPICIOUS_ACTIVITY", "Suspicious Activity"),
-        ("SAMPLE_DATA_CLEARED", "Vertical Pack Sample Data Cleared"),
-        ("WEBHOOK_PAUSED", "Webhook Paused"),
-        ("WEBHOOK_REENABLED", "Webhook Re-enabled"),
-        ("WEBHOOK_CHANGED", "Webhook Destination Changed"),
-        ("RECORD_MERGED", "Record Merged"),
-        ("CALENDAR_FEED_ENABLED", "Calendar Feed Enabled"),
-        ("CALENDAR_FEED_REGENERATED", "Calendar Feed Regenerated"),
-        ("CALENDAR_FEED_DISABLED", "Calendar Feed Disabled"),
-        ("API_TOKEN_CREATED", "API Token Created"),
-        ("API_TOKEN_REVOKED", "API Token Revoked"),
-        ("FEATURE_GRANT_CHANGED", "Feature Grant Changed"),
-        ("MODULES_CHANGED", "Modules Changed"),
+        ("LOGIN_SUCCESS", _("Login Success")),
+        ("LOGIN_FAILURE", _("Login Failure")),
+        ("LOGOUT", _("Logout")),
+        ("ORG_SWITCH", _("Organization Switch")),
+        ("TOKEN_REFRESH", _("Token Refresh")),
+        ("TOKEN_REVOKED", _("Token Revoked")),
+        ("PERMISSION_DENIED", _("Permission Denied")),
+        ("CROSS_ORG_ATTEMPT", _("Cross-Org Access Attempt")),
+        ("API_KEY_USED", _("API Key Used")),
+        ("API_KEY_INVALID", _("Invalid API Key")),
+        ("MEMBERSHIP_REVOKED", _("Membership Revoked")),
+        ("SUSPICIOUS_ACTIVITY", _("Suspicious Activity")),
+        ("SAMPLE_DATA_CLEARED", _("Vertical Pack Sample Data Cleared")),
+        ("WEBHOOK_PAUSED", _("Webhook Paused")),
+        ("WEBHOOK_REENABLED", _("Webhook Re-enabled")),
+        ("WEBHOOK_CHANGED", _("Webhook Destination Changed")),
+        ("RECORD_MERGED", _("Record Merged")),
+        ("CALENDAR_FEED_ENABLED", _("Calendar Feed Enabled")),
+        ("CALENDAR_FEED_REGENERATED", _("Calendar Feed Regenerated")),
+        ("CALENDAR_FEED_DISABLED", _("Calendar Feed Disabled")),
+        ("API_TOKEN_CREATED", _("API Token Created")),
+        ("API_TOKEN_REVOKED", _("API Token Revoked")),
+        ("FEATURE_GRANT_CHANGED", _("Feature Grant Changed")),
+        ("MODULES_CHANGED", _("Modules Changed")),
     )
 
     event_type = models.CharField(max_length=50, choices=EVENT_TYPES, db_index=True)
@@ -471,8 +474,10 @@ class AuditLogger:
         """Log an admin switching modules off or on, or reordering them."""
         from common.modules import KEYS, module_label
 
+        # Stored text stays in the source language, whoever is signed in.
         def named(keys):
-            return ", ".join(module_label(org, k) for k in keys)
+            with translation.override(settings.LANGUAGE_CODE):
+                return ", ".join(module_label(org, k) for k in keys)
 
         off = [k for k in KEYS if k in switched_off]
         on = [k for k in KEYS if k in switched_on]

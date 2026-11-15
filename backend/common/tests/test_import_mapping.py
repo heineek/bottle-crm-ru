@@ -246,3 +246,32 @@ def test_read_mapped_upload_raises_unchanged():
     assert (
         str(exc.value) == "The column choices include a field that cannot be imported."
     )
+
+
+class TestChoiceLookup:
+    """An export writes labels in the exporter's language; it must import back."""
+
+    def test_value_and_label_in_every_language(self):
+        from common.import_mapping import choice_lookup
+        from common.utils import LEAD_STATUS, STATUS_CHOICE
+
+        leads = choice_lookup(LEAD_STATUS)
+        assert leads["in process"] == "in process"
+        assert leads["в работе"] == "in process"
+        assert leads["закрыт"] == "closed"
+        tickets = choice_lookup(STATUS_CHOICE)
+        assert tickets["закрыто"] == "Closed"
+        assert tickets["closed"] == "Closed"
+        assert "в работе" not in tickets
+
+    def test_same_answer_whatever_language_is_active(self):
+        from django.utils import translation
+
+        from common.import_mapping import choice_lookup
+        from common.utils import LEAD_STATUS
+
+        with translation.override("ru"):
+            ru = dict(choice_lookup(LEAD_STATUS))
+        with translation.override("en"):
+            en = dict(choice_lookup(LEAD_STATUS))
+        assert ru == en

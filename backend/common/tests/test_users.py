@@ -445,7 +445,7 @@ class TestUserDetailView:
 
         assert response.status_code == status.HTTP_200_OK
         send_email.delay.assert_called_once_with(
-            regular_user.email, deleted_by="admin@test.com"
+            regular_user.email, deleted_by="admin@test.com", org_id=str(org_a.id)
         )
 
     @pytest.mark.parametrize("relation", ["time-entry", "approval"])

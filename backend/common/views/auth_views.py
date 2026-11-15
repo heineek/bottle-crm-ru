@@ -8,6 +8,8 @@ import requests
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
+from django.utils.translation import get_language
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -101,7 +103,7 @@ def _disabled_account_response():
     Google and magic-link flows so clients can handle one shape.
     """
     return Response(
-        {"error": "User account is disabled"},
+        {"error": _("User account is disabled")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -148,7 +150,7 @@ class GoogleOAuthCallbackView(APIView):
 
         if not all([code, code_verifier, redirect_uri]):
             return Response(
-                {"error": "Missing required parameters"},
+                {"error": _("Missing required parameters")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -169,7 +171,7 @@ class GoogleOAuthCallbackView(APIView):
         except requests.RequestException:
             audit_log.login_failure("", "google_unreachable", request)
             return Response(
-                {"error": "Failed to communicate with Google"},
+                {"error": _("Failed to communicate with Google")},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -177,7 +179,11 @@ class GoogleOAuthCallbackView(APIView):
             audit_log.login_failure("", "google_code_rejected", request)
             error_data = _json_object(token_response)
             return Response(
-                {"error": error_data.get("error_description", "Token exchange failed")},
+                {
+                    "error": error_data.get(
+                        "error_description", _("Token exchange failed")
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -185,7 +191,7 @@ class GoogleOAuthCallbackView(APIView):
         if not id_token:
             audit_log.login_failure("", "google_invalid_id_token", request)
             return Response(
-                {"error": "No ID token received"},
+                {"error": _("No ID token received")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -203,14 +209,14 @@ class GoogleOAuthCallbackView(APIView):
             # that is not a JSON object. JSONDecodeError is a ValueError.
             audit_log.login_failure("", "google_invalid_id_token", request)
             return Response(
-                {"error": "Invalid ID token format"},
+                {"error": _("Invalid ID token format")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not email:
             audit_log.login_failure("", "google_no_email", request)
             return Response(
-                {"error": "No email in token"},
+                {"error": _("No email in token")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -219,7 +225,7 @@ class GoogleOAuthCallbackView(APIView):
         if not _google_email_is_verified(payload):
             audit_log.login_failure(email, "google_email_unverified", request)
             return Response(
-                {"error": "Google account email is not verified"},
+                {"error": _("Google account email is not verified")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -251,7 +257,7 @@ class GoogleOAuthCallbackView(APIView):
         if created:
             from common.tasks import send_welcome_email
 
-            send_welcome_email.delay(str(user.id))
+            send_welcome_email.delay(str(user.id), language=get_language())
 
         # Generate JWT tokens (with user info embedded)
         token = OrgAwareRefreshToken.for_user_and_org(user, None)
@@ -306,7 +312,7 @@ class GoogleIdTokenView(APIView):
         id_token_str = request.data.get("idToken")
         if not id_token_str:
             return Response(
-                {"error": "Missing idToken"},
+                {"error": _("Missing idToken")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -324,14 +330,14 @@ class GoogleIdTokenView(APIView):
             logger.warning("Google OAuth token validation failed", exc_info=True)
             audit_log.login_failure("", "google_invalid_token", request)
             return Response(
-                {"error": "Invalid token"},
+                {"error": _("Invalid token")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not email:
             audit_log.login_failure("", "google_no_email", request)
             return Response(
-                {"error": "No email in token"},
+                {"error": _("No email in token")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -340,7 +346,7 @@ class GoogleIdTokenView(APIView):
         if not _google_email_is_verified(idinfo):
             audit_log.login_failure(email, "google_email_unverified", request)
             return Response(
-                {"error": "Google account email is not verified"},
+                {"error": _("Google account email is not verified")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -454,7 +460,7 @@ class OrgAwareTokenRefreshView(APIView):
 
         if not refresh_token:
             return Response(
-                {"error": "Refresh token is required"},
+                {"error": _("Refresh token is required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -469,7 +475,7 @@ class OrgAwareTokenRefreshView(APIView):
 
             if not user.is_active:
                 return Response(
-                    {"error": "User account is disabled"},
+                    {"error": _("User account is disabled")},
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
@@ -489,7 +495,9 @@ class OrgAwareTokenRefreshView(APIView):
                     )
                     return Response(
                         {
-                            "error": "Organization membership revoked. Please login again."
+                            "error": _(
+                                "Organization membership revoked. Please login again."
+                            )
                         },
                         status=status.HTTP_403_FORBIDDEN,
                     )
@@ -514,12 +522,12 @@ class OrgAwareTokenRefreshView(APIView):
 
         except TokenError:
             return Response(
-                {"error": "Invalid or expired token"},
+                {"error": _("Invalid or expired token")},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         except User.DoesNotExist:
             return Response(
-                {"error": "User not found"}, status=status.HTTP_401_UNAUTHORIZED
+                {"error": _("User not found")}, status=status.HTTP_401_UNAUTHORIZED
             )
 
 
@@ -582,7 +590,7 @@ class LogoutView(APIView):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response(
-                {"error": "Refresh token is required"},
+                {"error": _("Refresh token is required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -593,7 +601,7 @@ class LogoutView(APIView):
             # caller asked for is already true, so answering 200 keeps a client
             # from getting stuck on a sign-out that in fact succeeded. Nothing
             # is leaked either way: both cases mean "this token is unusable".
-            return Response({"detail": "Signed out."}, status=status.HTTP_200_OK)
+            return Response({"detail": _("Signed out.")}, status=status.HTTP_200_OK)
 
         token.blacklist()
 
@@ -604,7 +612,7 @@ class LogoutView(APIView):
             org = Org.objects.filter(id=token.get("org_id")).first()
             audit_log.logout(user, org, request)
 
-        return Response({"detail": "Signed out."}, status=status.HTTP_200_OK)
+        return Response({"detail": _("Signed out.")}, status=status.HTTP_200_OK)
 
 
 class OrgSwitchView(APIView):
@@ -687,14 +695,14 @@ class OrgSwitchView(APIView):
 
         if not org_id:
             return Response(
-                {"error": "org_id is required"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": _("org_id is required")}, status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
             uuid.UUID(str(org_id))
         except (ValueError, AttributeError):
             return Response(
-                {"error": "org_id must be a valid UUID"},
+                {"error": _("org_id must be a valid UUID")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -711,7 +719,7 @@ class OrgSwitchView(APIView):
                 request.user, from_org, "ORG_SWITCH", f"org:{org_id}", request
             )
             return Response(
-                {"error": "User does not have access to this organization"},
+                {"error": _("User does not have access to this organization")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -768,7 +776,7 @@ class MagicLinkRequestView(FirstRefusalThrottleMixin, APIView):
         from common.tasks import send_magic_link_email
 
         generic_response = Response(
-            {"message": "If this email is valid, you will receive a sign-in link."},
+            {"message": _("If this email is valid, you will receive a sign-in link.")},
             status=status.HTTP_200_OK,
         )
 
@@ -810,10 +818,12 @@ class MagicLinkRequestView(FirstRefusalThrottleMixin, APIView):
         )
 
         # Send email via Celery. Pass raw_code only when delivery is "code".
-        send_magic_link_email.delay(str(token_obj.id), raw_code=raw_code)
+        send_magic_link_email.delay(
+            str(token_obj.id), raw_code=raw_code, language=get_language()
+        )
 
         return Response(
-            {"message": "If this email is valid, you will receive a sign-in link."},
+            {"message": _("If this email is valid, you will receive a sign-in link.")},
             status=status.HTTP_200_OK,
         )
 
@@ -850,7 +860,7 @@ class MagicLinkVerifyView(APIView):
         serializer_obj = serializer.MagicLinkVerifySerializer(data=request.data)
         if not serializer_obj.is_valid():
             return Response(
-                {"error": "Invalid request"},
+                {"error": _("Invalid request")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -876,7 +886,7 @@ class MagicLinkVerifyView(APIView):
             )
             audit_log.login_failure(link_email, "magic_link_invalid", request)
             return Response(
-                {"error": "Invalid or expired link"},
+                {"error": _("Invalid or expired link")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -902,7 +912,7 @@ class MagicLinkVerifyView(APIView):
         if created:
             from common.tasks import send_welcome_email
 
-            send_welcome_email.delay(str(user.id))
+            send_welcome_email.delay(str(user.id), language=get_language())
 
         # Update last_login
         user.last_login = timezone.now()
@@ -972,7 +982,7 @@ class MagicLinkVerifyCodeView(APIView):
         serializer_obj = serializer.MagicLinkVerifyCodeSerializer(data=request.data)
         if not serializer_obj.is_valid():
             return Response(
-                {"error": "Invalid request"},
+                {"error": _("Invalid request")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -986,7 +996,7 @@ class MagicLinkVerifyCodeView(APIView):
         # check the OTP. select_for_update protects against two concurrent
         # verify requests both observing the same `attempts` value.
         invalid = Response(
-            {"error": "Invalid or expired code"},
+            {"error": _("Invalid or expired code")},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -1043,7 +1053,7 @@ class MagicLinkVerifyCodeView(APIView):
         if created:
             from common.tasks import send_welcome_email
 
-            send_welcome_email.delay(str(user.id))
+            send_welcome_email.delay(str(user.id), language=get_language())
 
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])

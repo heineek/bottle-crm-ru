@@ -7,6 +7,7 @@ and ``modules_on_at``.
 from django.db import transaction
 from django.utils import timezone
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext as _
 
 from common.audit_log import audit_log
 from common.modules import (
@@ -40,7 +41,7 @@ def modules_payload(org, profile) -> dict:
                 "key": m.key,
                 "label": label,
                 "group": m.group,
-                "covers": m.covers,
+                "covers": str(m.covers),
                 "stops": m.stops.format(label=label),
                 "enabled": m.key in enabled,
                 "available": m.key in available,
@@ -52,13 +53,15 @@ def modules_payload(org, profile) -> dict:
 
 def _key_list(data, field, errors):
     if field not in data:
-        errors[field] = ["This field is required."]
+        errors[field] = [_("This field is required.")]
         return None
     value = data[field]
     if not isinstance(value, list) or not all(isinstance(k, str) for k in value):
-        errors[field] = ["Send a list of module keys."]
+        errors[field] = [_("Send a list of module keys.")]
         return None
-    unknown = [f'Unknown module: "{k}".' for k in value if k not in KEYS]
+    unknown = [
+        _('Unknown module: "%(key)s".') % {"key": k} for k in value if k not in KEYS
+    ]
     if unknown:
         errors[field] = unknown
         return None
@@ -66,9 +69,15 @@ def _key_list(data, field, errors):
 
 
 def _named(names):
-    shown = ", ".join(f'"{n}"' for n in names[:_NAMES_SHOWN])
-    extra = len(names) - _NAMES_SHOWN
-    return f"{shown} and {extra} more" if extra > 0 else shown
+    return _and_more([_('"%(name)s"') % {"name": n} for n in names])
+
+
+def _and_more(items):
+    shown = ", ".join(items[:_NAMES_SHOWN])
+    extra = len(items) - _NAMES_SHOWN
+    if extra <= 0:
+        return shown
+    return _("%(shown)s and %(extra)d more") % {"shown": shown, "extra": extra}
 
 
 def _blockers(row, key):
@@ -87,14 +96,20 @@ def _blockers(row, key):
         )
         if len(forms) == 1:
             messages.append(
-                f"{label} still receives submissions from the published web form "
-                f'"{forms[0]}". Unpublish it first, so no submission is lost.'
+                _(
+                    "%(label)s still receives submissions from the published web "
+                    'form "%(form)s". Unpublish it first, so no submission is lost.'
+                )
+                % {"label": label, "form": forms[0]}
             )
         elif forms:
             messages.append(
-                f"{label} still receives submissions from {len(forms)} published "
-                f"web forms: {_named(forms)}. Unpublish them first, so no "
-                "submission is lost."
+                _(
+                    "%(label)s still receives submissions from %(count)d published "
+                    "web forms: %(names)s. Unpublish them first, so no submission "
+                    "is lost."
+                )
+                % {"label": label, "count": len(forms), "names": _named(forms)}
             )
     if key == "tickets":
         addresses = list(
@@ -104,17 +119,23 @@ def _blockers(row, key):
         )
         if len(addresses) == 1:
             messages.append(
-                f"{label} still receives email at {addresses[0]}. Switch that "
-                "mailbox off first, so no email is lost."
+                _(
+                    "%(label)s still receives email at %(address)s. Switch that "
+                    "mailbox off first, so no email is lost."
+                )
+                % {"label": label, "address": addresses[0]}
             )
         elif addresses:
-            shown = ", ".join(addresses[:_NAMES_SHOWN])
-            extra = len(addresses) - _NAMES_SHOWN
-            if extra > 0:
-                shown += f" and {extra} more"
             messages.append(
-                f"{label} still receives email at {len(addresses)} mailboxes: "
-                f"{shown}. Switch them off first, so no email is lost."
+                _(
+                    "%(label)s still receives email at %(count)d mailboxes: "
+                    "%(addresses)s. Switch them off first, so no email is lost."
+                )
+                % {
+                    "label": label,
+                    "count": len(addresses),
+                    "addresses": _and_more(addresses),
+                }
             )
     return messages
 
@@ -130,7 +151,7 @@ def change_modules(org, actor, data, request=None) -> dict[str, list[str]]:
     off = _key_list(data, "off", errors)
     order = _key_list(data, "order", errors)
     if order is not None and len(set(order)) != len(order):
-        errors["order"] = ["Name each module once."]
+        errors["order"] = [_("Name each module once.")]
     if errors:
         return errors
 
@@ -149,8 +170,11 @@ def change_modules(org, actor, data, request=None) -> dict[str, list[str]]:
             needs = module(key).needs
             if key in was_off - now_off and needs in now_off:
                 problems.append(
-                    f"{module_label(row, key)} needs {module_label(row, needs)}. "
-                    f"Switch {module_label(row, needs)} on first."
+                    _("%(label)s needs %(needs)s. Switch %(needs)s on first.")
+                    % {
+                        "label": module_label(row, key),
+                        "needs": module_label(row, needs),
+                    }
                 )
         for key in KEYS:
             if key in before - after:

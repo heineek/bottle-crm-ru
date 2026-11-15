@@ -36,6 +36,7 @@ from common.views.notification_views import (
 )
 from common.views.org_settings_views import (
     HelpCenterSettingsView,
+    OrgLocalesView,
     OrgSettingsView,
     TimezoneListView,
 )
@@ -111,6 +112,7 @@ urlpatterns = [
     # Static reference data, org-free by design: the first caller is a user
     # creating their first org and has no org claim yet.
     path("org/timezones/", TimezoneListView.as_view(), name="timezone_list"),
+    path("org/locales/", OrgLocalesView.as_view(), name="org_locales"),
     # These literal org/… paths must precede org/<uid:pk>/ so they are not
     # captured as a pk (org/tokens/ would otherwise resolve to OrgUpdateView
     # with pk="tokens"). org/tokens/ is ADMIN-only token oversight, separate

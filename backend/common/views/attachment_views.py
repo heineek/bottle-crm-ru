@@ -24,6 +24,7 @@ the failure mode of the other default is handing out somebody's file.
 """
 
 from django.http import FileResponse, Http404
+from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
@@ -69,7 +70,7 @@ class AttachmentDownloadView(APIView):
     def get(self, request, pk, format=None):
         attachment = get_readable_attachment_or_404(request, pk)
         if not attachment.attachment:
-            raise Http404("That attachment has no file.")
+            raise Http404(_("That attachment has no file."))
         attachment.attachment.open("rb")
         return FileResponse(
             attachment.attachment,

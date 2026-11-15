@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.utils.translation import gettext as _
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -38,8 +39,10 @@ class APIKeyAuthentication(BaseAuthentication):
 
         if not getattr(settings, "ORG_API_KEY_AUTH_ENABLED", True):
             raise AuthenticationFailed(
-                "Organization API key authentication is disabled on this "
-                "deployment. Use a personal access token."
+                _(
+                    "Organization API key authentication is disabled on this "
+                    "deployment. Use a personal access token."
+                )
             )
 
         denial = scopes.check_request(
@@ -60,7 +63,7 @@ class APIKeyAuthentication(BaseAuthentication):
                 logger.error(
                     "No active admin profile found for org %s", organization.id
                 )
-                raise AuthenticationFailed("Invalid API Key configuration")
+                raise AuthenticationFailed(_("Invalid API Key configuration"))
 
             # Set org context on request for downstream use
             request.profile = profile
@@ -72,7 +75,7 @@ class APIKeyAuthentication(BaseAuthentication):
 
         except Org.DoesNotExist as exc:
             logger.warning("Invalid API key attempted")
-            raise AuthenticationFailed("Invalid API Key") from exc
+            raise AuthenticationFailed(_("Invalid API Key")) from exc
 
 
 class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
