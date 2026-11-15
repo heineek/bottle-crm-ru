@@ -1,4 +1,5 @@
 import '../../config/api_config.dart';
+import '../../l10n/l10n.dart';
 import '../../routes/app_routes.dart';
 import '../../routes/record_routes.dart';
 import '../../services/run_time.dart';
@@ -53,8 +54,8 @@ class AppNotification {
 
   bool get isUnread => readAt == null;
   String get displayActorName => verb.startsWith('support.')
-      ? 'BottleCRM Support'
-      : actorName ?? 'The system';
+      ? appL10n.appNotificationSupportActor
+      : actorName ?? appL10n.appNotificationSystemActor;
 
   /// Whether anything in the backend actually produces this verb. A row with
   /// an unknown verb still renders, as a readable sentence, so a new producer
@@ -118,7 +119,7 @@ class AppNotification {
     final details = actor['user_details'];
     return text(actor['name']) ??
         (details is Map ? text(details['email']) : null) ??
-        'Someone';
+        appL10n.appNotificationSomeone;
   }
 
   static String? _record(String kind, String id) =>
@@ -142,21 +143,23 @@ class AppNotification {
       case 'automation.failed':
         final rule = ruleName, why = reason;
         if (rule == null || why == null) return null;
-        return 'The rule "$rule" failed: $why';
+        return appL10n.appAutomationRuleFailed(rule, why);
       case 'automation.paused':
         final names = ruleNames, why = reason;
         if (names == null || why == null) return null;
-        return '$why Paused: ${names.join(', ')}.';
+        return appL10n.appAutomationPaused(why, names.join(', '));
       case 'automation.limit':
         final at = windowStart;
         if (at == null) return null;
-        final from = runTimeLabel(at, zone: zone, now: now).replaceFirstMapped(
-          RegExp(r'^(Today|Yesterday) '),
-          (m) => m[0]!.toLowerCase(),
-        );
-        return 'Automation reached its limit of 1,000 runs in the hour from '
-            '$from. '
-            "The rest of that hour's runs were skipped.";
+        final l10n = appL10n;
+        final label = runTimeLabel(at, zone: zone, now: now);
+        final relative =
+            label.startsWith('${l10n.appTimeToday} ') ||
+            label.startsWith('${l10n.appTimeYesterday} ');
+        final from = relative
+            ? '${label[0].toLowerCase()}${label.substring(1)}'
+            : label;
+        return l10n.appAutomationLimit(from);
     }
     return null;
   }
@@ -164,17 +167,20 @@ class AppNotification {
   /// The line under a message naming the rule that sent it.
   String? get automationSource =>
       verb == 'automation.message' && automationText() != null
-      ? 'From the rule "$ruleName"'
+      ? appL10n.appAutomationFromRule(ruleName ?? '')
       : null;
 
   /// "mentioned you on" / "commented on" for the verbs that exist, and a
   /// readable fallback for the ones that do not: `case.sla_breached` reads as
   /// "sla breached" rather than as its identifier.
   String get verbPhrase {
-    if (verb == 'case.mentioned') return 'mentioned you on';
-    if (verb == 'case.commented') return 'commented on';
-    if (verb == 'support.replied') return 'replied to';
-    if (verb == 'support.status_changed') return 'updated';
+    final l10n = appL10n;
+    if (verb == 'case.mentioned') return l10n.appNotificationVerbMentioned;
+    if (verb == 'case.commented') return l10n.appNotificationVerbCommented;
+    if (verb == 'support.replied') return l10n.appNotificationVerbReplied;
+    if (verb == 'support.status_changed') {
+      return l10n.appNotificationVerbUpdated;
+    }
     return verb.replaceFirst(RegExp(r'^[^.]+\.'), '').replaceAll('_', ' ');
   }
 

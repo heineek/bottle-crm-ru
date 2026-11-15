@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import 'lead.dart' show Priority;
 
 /// A kanban board, its lanes, and the cards on them.
@@ -14,9 +15,9 @@ import 'lead.dart' show Priority;
 /// the `Priority` enum for display. `wireValue` below is the only place that
 /// conversion happens; sending a task's spelling is a 400.
 
-/// The priority string a board card expects. `Priority.label` is the human
-/// spelling and also the tasks API's, so it cannot be sent as-is.
-String boardPriorityValue(Priority priority) => priority.label.toLowerCase();
+/// The priority string a board card expects. `Priority.value` is the
+/// tasks API's spelling, so it cannot be sent as-is.
+String boardPriorityValue(Priority priority) => priority.value.toLowerCase();
 
 /// One board, as `/api/boards/` lists them.
 class BoardSummary {
@@ -176,6 +177,6 @@ class BoardCard {
     final name = (details['name'] as String?)?.trim() ?? '';
     if (name.isNotEmpty) return name;
     final email = (details['email'] as String?)?.trim() ?? '';
-    return email.isNotEmpty ? email : 'Unknown';
+    return email.isNotEmpty ? email : appL10n.appUnknownPerson;
   }
 }

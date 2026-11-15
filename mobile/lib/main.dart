@@ -5,9 +5,12 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/theme.dart';
 import 'firebase_options.dart';
+import 'l10n/app_localizations.dart';
+import 'providers/language_provider.dart';
 import 'providers/org_modules_provider.dart';
 import 'routes/app_router.dart';
 import 'services/auth_service.dart';
@@ -77,10 +80,22 @@ class BottleCRMApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     ref.watch(moduleOffListenerProvider);
+    final language = ref.watch(languageProvider);
 
     return MaterialApp.router(
       title: 'BottleCRM',
       debugShowCheckedModeBanner: false,
+
+      // Language: decided by languageProvider, not by Flutter's own matching,
+      // so the app, the web and the API follow one order.
+      locale: Locale(language),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
 
       // Theme
       theme: AppTheme.light,

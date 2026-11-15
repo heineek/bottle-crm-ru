@@ -1,30 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import 'task.dart';
 
 /// Activity type enumeration
 enum ActivityType {
-  call('Call', LucideIcons.phone, AppColors.primary500),
-  email('Email', LucideIcons.mail, AppColors.purple500),
-  note('Note', LucideIcons.stickyNote, AppColors.gray500),
-  meeting('Meeting', LucideIcons.calendar, AppColors.warning500),
-  stageChange('Stage Change', LucideIcons.trendingUp, AppColors.primary600),
-  dealWon('Deal Won', LucideIcons.trophy, AppColors.success500),
-  dealLost('Deal Lost', LucideIcons.circleX, AppColors.danger500),
-  taskCompleted(
-    'Task Completed',
-    LucideIcons.circleCheck,
-    AppColors.success500,
-  ),
-  leadCreated('Lead Created', LucideIcons.userPlus, AppColors.primary500),
-  dealCreated('Deal Created', LucideIcons.circlePlus, AppColors.primary500);
+  call(LucideIcons.phone, AppColors.primary500),
+  email(LucideIcons.mail, AppColors.purple500),
+  note(LucideIcons.stickyNote, AppColors.gray500),
+  meeting(LucideIcons.calendar, AppColors.warning500),
+  stageChange(LucideIcons.trendingUp, AppColors.primary600),
+  dealWon(LucideIcons.trophy, AppColors.success500),
+  dealLost(LucideIcons.circleX, AppColors.danger500),
+  taskCompleted(LucideIcons.circleCheck, AppColors.success500),
+  leadCreated(LucideIcons.userPlus, AppColors.primary500),
+  dealCreated(LucideIcons.circlePlus, AppColors.primary500);
 
-  final String label;
   final IconData icon;
   final Color color;
 
-  const ActivityType(this.label, this.icon, this.color);
+  const ActivityType(this.icon, this.color);
+
+  String get label => switch (this) {
+    call => appL10n.appActivityTypeCall,
+    email => appL10n.appActivityTypeEmail,
+    note => appL10n.appActivityTypeNote,
+    meeting => appL10n.appActivityTypeMeeting,
+    stageChange => appL10n.appActivityTypeStageChange,
+    dealWon => appL10n.appActivityTypeDealWon,
+    dealLost => appL10n.appActivityTypeDealLost,
+    taskCompleted => appL10n.appActivityTypeTaskCompleted,
+    leadCreated => appL10n.appActivityTypeLeadCreated,
+    dealCreated => appL10n.appActivityTypeDealCreated,
+  };
 
   static ActivityType fromString(String value) {
     switch (value.toLowerCase().replaceAll('-', '').replaceAll('_', '')) {
@@ -83,20 +92,21 @@ class Activity {
     final now = DateTime.now();
     final diff = now.difference(timestamp);
 
+    final l10n = appL10n;
     if (diff.inMinutes < 1) {
-      return 'Just now';
+      return l10n.appRelativeJustNow;
     } else if (diff.inMinutes < 60) {
-      return '${diff.inMinutes}m ago';
+      return l10n.appRelativeMinutesAgo(diff.inMinutes);
     } else if (diff.inHours < 24) {
-      return '${diff.inHours}h ago';
+      return l10n.appRelativeHoursAgo(diff.inHours);
     } else if (diff.inDays < 7) {
-      return '${diff.inDays}d ago';
+      return l10n.appRelativeDaysAgo(diff.inDays);
     } else if (diff.inDays < 30) {
       final weeks = (diff.inDays / 7).floor();
-      return '${weeks}w ago';
+      return l10n.appRelativeWeeksAgo(weeks);
     } else {
       final months = (diff.inDays / 30).floor();
-      return '${months}mo ago';
+      return l10n.appRelativeMonthsAgo(months);
     }
   }
 

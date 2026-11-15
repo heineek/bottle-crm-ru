@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal_board.dart';
 import '../../data/models/models.dart';
@@ -219,7 +220,7 @@ class KanbanColumn extends StatelessWidget {
               if (bucket.mixed) ...[
                 const SizedBox(width: 4),
                 Text(
-                  '+ mixed',
+                  appL10n.appKanbanMixed,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                     fontStyle: FontStyle.italic,
@@ -231,7 +232,7 @@ class KanbanColumn extends StatelessWidget {
           if (isTruncated) ...[
             const SizedBox(height: 4),
             Text(
-              'Showing the first ${cards.length}. Filter to see the rest.',
+              appL10n.appKanbanTruncated(cards.length),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -257,8 +258,8 @@ class KanbanColumn extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               highlighted
-                  ? 'Drop to move to ${stage.label}'
-                  : 'No deals in ${stage.label}',
+                  ? appL10n.appKanbanDropTo(stage.label)
+                  : appL10n.appKanbanNoDeals(stage.label),
               textAlign: TextAlign.center,
               style: AppTypography.caption.copyWith(
                 color: highlighted ? color : AppColors.textTertiary,

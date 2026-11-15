@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/lead_pipeline.dart';
 import '../services/api_service.dart';
@@ -17,7 +18,8 @@ import 'lead_board_provider.dart';
 /// since a renamed, added, removed or reordered stage is a board lane.
 
 /// Shown for a 403.
-const leadPipelineAdminOnlyMessage = 'Only an admin can change lead pipelines.';
+String get leadPipelineAdminOnlyMessage =>
+    appL10n.appMsgOnlyAnAdminCanChangeLeadPipelines;
 
 /// The server's own sentence for a refused write.
 ///
@@ -31,8 +33,7 @@ const leadPipelineAdminOnlyMessage = 'Only an admin can change lead pipelines.';
 String leadPipelineMessage(ApiResponse<Map<String, dynamic>> response) {
   if (response.statusCode == 403) return leadPipelineAdminOnlyMessage;
   if (response.statusCode == 404) {
-    return 'That pipeline or stage no longer exists. Refresh to see the '
-        'current list.';
+    return appL10n.appMsgPipelineOrStageGone;
   }
   final data = response.data;
   final errors = data?['errors'];
@@ -47,7 +48,7 @@ String leadPipelineMessage(ApiResponse<Map<String, dynamic>> response) {
   if (error is String && error.trim().isNotEmpty) return error;
   final raw = response.message?.trim() ?? '';
   if (raw.startsWith('Error: ')) return raw.substring('Error: '.length);
-  return raw.isEmpty ? 'Something went wrong.' : raw;
+  return raw.isEmpty ? appL10n.appMsgSomethingWentWrongPeriod : raw;
 }
 
 /// The org's active lead pipelines, with their counts.
@@ -60,7 +61,9 @@ class LeadPipelinesNotifier extends AsyncNotifier<List<LeadPipeline>> {
   Future<List<LeadPipeline>> _fetch() async {
     final response = await _api.get(ApiConfig.leadPipelines);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load the pipelines.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadThePipelines,
+      );
     }
     final rows = response.data!['pipelines'];
     return rows is List
@@ -115,10 +118,12 @@ class LeadPipelineDetailNotifier extends AsyncNotifier<LeadPipelineDetail> {
   Future<LeadPipelineDetail> _fetch() async {
     final response = await _api.get(ApiConfig.leadPipeline(pipelineId));
     if (response.statusCode == 404) {
-      throw Exception('This pipeline no longer exists.');
+      throw Exception(appL10n.appMsgThisPipelineNoLongerExists);
     }
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load the pipeline.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadThePipeline,
+      );
     }
     return LeadPipelineDetail.fromJson(response.data!);
   }

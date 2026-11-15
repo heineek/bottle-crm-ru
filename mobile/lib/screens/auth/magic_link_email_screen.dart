@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
@@ -47,8 +48,7 @@ class _MagicLinkEmailScreenState extends ConsumerState<MagicLinkEmailScreen> {
       );
     } else {
       final error =
-          ref.read(authProvider).error ??
-          'Could not send code. Please try again.';
+          ref.read(authProvider).error ?? context.l10n.appCodeSendFailed;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
@@ -94,17 +94,17 @@ class _MagicLinkEmailScreenState extends ConsumerState<MagicLinkEmailScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Sign in with email', style: AppTypography.h1),
+                Text(context.l10n.appEmailSignInTitle, style: AppTypography.h1),
                 const SizedBox(height: 8),
                 Text(
-                  "Enter your email and we'll send you a 6-digit code to sign in. No password needed.",
+                  context.l10n.appEmailSignInBody,
                   style: AppTypography.body.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
                 FloatingLabelInput(
-                  label: 'Email',
+                  label: context.l10n.commonEmail,
                   hint: 'you@company.com',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -113,17 +113,17 @@ class _MagicLinkEmailScreenState extends ConsumerState<MagicLinkEmailScreen> {
                   onSubmitted: (_) => _handleSubmit(),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Email is required';
+                      return context.l10n.appEmailRequired;
                     }
                     if (!value.contains('@') || !value.contains('.')) {
-                      return 'Please enter a valid email';
+                      return context.l10n.appEmailInvalid;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 24),
                 PrimaryButton(
-                  label: 'Send code',
+                  label: context.l10n.appSendCode,
                   onPressed: _isLoading ? null : _handleSubmit,
                   isLoading: _isLoading,
                 ),

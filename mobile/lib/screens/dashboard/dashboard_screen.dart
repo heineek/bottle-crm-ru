@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/dashboard_data.dart';
 import '../../data/models/deal.dart';
@@ -50,7 +52,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_getGreeting()}  ·  ${DateFormat('EEE, MMM d').format(DateTime.now())}',
+                      '${_getGreeting()}  ·  ${localDateFormat('EEE, MMM d', 'MMMEd').format(DateTime.now())}',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 11,
@@ -100,13 +102,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Icon(LucideIcons.alertCircle, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
-                'Failed to load dashboard',
+                appL10n.appDashLoadFailed,
                 style: AppTypography.label.copyWith(color: Colors.grey[600]),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => ref.read(dashboardProvider.notifier).refresh(),
-                child: const Text('Retry'),
+                child: Text(appL10n.commonRetry),
               ),
             ],
           ),
@@ -197,11 +199,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 5) return 'Working late';
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    if (hour < 22) return 'Good evening';
-    return 'Working late';
+    if (hour < 5) return appL10n.appGreetLate;
+    if (hour < 12) return appL10n.appGreetMorning;
+    if (hour < 17) return appL10n.appGreetAfternoon;
+    if (hour < 22) return appL10n.appGreetEvening;
+    return appL10n.appGreetLate;
   }
 
   /// Derive a friendly first name. Backends often default `name` to the email
@@ -211,7 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final raw = (name != null && name.trim().isNotEmpty)
         ? name.trim()
         : (email?.split('@').first ?? '');
-    if (raw.isEmpty) return 'there';
+    if (raw.isEmpty) return appL10n.appGreetThere;
 
     final looksLikeUsername =
         !raw.contains(' ') && RegExp(r'[._\-\d]').hasMatch(raw);
@@ -235,7 +237,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final cards = [
       if (dealsOn)
         _KpiCard(
-          title: 'Pipeline',
+          title: appL10n.appModulePipeline,
           value: currencyFormat.format(data.revenueMetrics.pipelineValue),
           icon: LucideIcons.dollarSign,
           color: AppColors.success500,
@@ -246,7 +248,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           // Counted from the open stages, so this card agrees with the Pipeline
           // card beside it. `opportunitiesCount` counts closed deals too, which
           // is why this once read 4 next to a pipeline holding 2.
-          title: 'Open Deals',
+          title: appL10n.appDashOpenDeals,
           value: data.revenueMetrics.openOpportunitiesCount.toString(),
           icon: LucideIcons.briefcase,
           color: AppColors.primary500,
@@ -254,7 +256,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       if (leadsOn)
         _KpiCard(
-          title: 'Leads',
+          title: appL10n.appTargetLeads,
           value: data.leadsCount.toString(),
           icon: LucideIcons.users,
           color: AppColors.warning500,
@@ -262,7 +264,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       if (dealsOn)
         _KpiCard(
-          title: 'Conversion',
+          title: appL10n.appDashConversion,
           value: '${data.revenueMetrics.conversionRate.toStringAsFixed(0)}%',
           icon: LucideIcons.target,
           color: AppColors.purple500,
@@ -272,14 +274,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       // stay plain rather than link somewhere that shows something else.
       if (dealsOn)
         _KpiCard(
-          title: 'Won This Month',
+          title: appL10n.appDashWonThisMonth,
           value: currencyFormat.format(data.revenueMetrics.wonThisMonth),
           icon: LucideIcons.trophy,
           color: AppColors.success500,
         ),
       if (dealsOn)
         _KpiCard(
-          title: 'Weighted',
+          title: appL10n.appDashWeighted,
           value: currencyFormat.format(data.revenueMetrics.weightedPipeline),
           icon: LucideIcons.scale,
           color: AppColors.primary400,
@@ -322,7 +324,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Needs Attention',
+                  appL10n.appDashNeedsAttention,
                   style: AppTypography.labelSmall.copyWith(
                     color: AppColors.warning700,
                   ),
@@ -336,28 +338,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 if (tasksOn && counts.overdueTasks > 0)
                   _UrgentBadge(
-                    label: 'Overdue',
+                    label: appL10n.appDashOverdue,
                     count: counts.overdueTasks,
                     color: AppColors.danger500,
                     route: '${AppRoutes.tasks}?view=${AppRoutes.viewOverdue}',
                   ),
                 if (tasksOn && counts.tasksDueToday > 0)
                   _UrgentBadge(
-                    label: 'Due Today',
+                    label: appL10n.appDashDueToday,
                     count: counts.tasksDueToday,
                     color: AppColors.warning500,
                     route: '${AppRoutes.tasks}?view=${AppRoutes.viewDueToday}',
                   ),
                 if (leadsOn && counts.followupsToday > 0)
                   _UrgentBadge(
-                    label: 'Follow-ups',
+                    label: appL10n.appDashFollowUps,
                     count: counts.followupsToday,
                     color: AppColors.primary500,
                     route: '${AppRoutes.leads}?view=${AppRoutes.viewFollowUps}',
                   ),
                 if (leadsOn && counts.hotLeads > 0)
                   _UrgentBadge(
-                    label: 'Hot Leads',
+                    label: appL10n.appDashHotLeads,
                     count: counts.hotLeads,
                     color: AppColors.success500,
                     route: '${AppRoutes.leads}?view=${AppRoutes.viewHot}',
@@ -404,7 +406,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pipeline Overview', style: AppTypography.labelSmall),
+            Text(
+              appL10n.appDashPipelineOverview,
+              style: AppTypography.labelSmall,
+            ),
             const SizedBox(height: 10),
             ...activeStages.map((stage) {
               final percentage = maxValue > 0 ? stage.value / maxValue : 0;
@@ -454,8 +459,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         // exist.
                         stage.value > 0
                             ? currencyFormat.format(stage.value)
-                            : '${stage.count} '
-                                  '${stage.count == 1 ? 'deal' : 'deals'}',
+                            : appL10n.appDealCount(stage.count),
                         style: AppTypography.bodySmall.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 11,
@@ -470,11 +474,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             if (otherCurrencyCount > 0) ...[
               const SizedBox(height: 4),
               Text(
-                otherCurrencyCount == 1
-                    ? '1 deal in another currency is not counted in these '
-                          'totals'
-                    : '$otherCurrencyCount deals in other currencies are not '
-                          'counted in these totals',
+                appL10n.appDashOtherCurrency(otherCurrencyCount),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                   fontSize: 10,
@@ -506,9 +506,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Where you stand',
+                  appL10n.appDashWhereYouStand,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -518,7 +518,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 // infinite minimum width, which a Row cannot lay out: with the
                 // theme applied this header threw and the strip never drew.
                 style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
-                child: const Text('All goals'),
+                child: Text(appL10n.appDashAllGoals),
               ),
             ],
           ),
@@ -539,11 +539,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Hot Leads', style: AppTypography.labelSmall),
+              Text(appL10n.appDashHotLeads, style: AppTypography.labelSmall),
               GestureDetector(
                 onTap: () => context.go(AppRoutes.leads),
                 child: Text(
-                  'See All',
+                  appL10n.appSeeAll,
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.primary600,
                     fontSize: 11,
@@ -631,7 +631,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'HOT',
+                              appL10n.appLeadRatingHot.toUpperCase(),
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
@@ -683,17 +683,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   String _lastContactedLabel(DateTime? when) {
-    if (when == null) return 'Not contacted yet';
+    final l10n = appL10n;
+    if (when == null) return l10n.appContactedNever;
     final diff = DateTime.now().difference(when);
-    if (diff.inMinutes < 1) return 'Contacted just now';
-    if (diff.inHours < 1) return 'Contacted ${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return 'Contacted ${diff.inHours}h ago';
-    if (diff.inDays < 7) return 'Contacted ${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return l10n.appContactedJustNow;
+    if (diff.inHours < 1) {
+      return l10n.appContacted(l10n.appRelativeMinutesAgo(diff.inMinutes));
+    }
+    if (diff.inDays < 1) {
+      return l10n.appContacted(l10n.appRelativeHoursAgo(diff.inHours));
+    }
+    if (diff.inDays < 7) {
+      return l10n.appContacted(l10n.appRelativeDaysAgo(diff.inDays));
+    }
     if (diff.inDays < 30) {
       final weeks = (diff.inDays / 7).floor();
-      return 'Contacted ${weeks}w ago';
+      return l10n.appContacted(l10n.appRelativeWeeksAgo(weeks));
     }
-    return 'Contacted ${DateFormat.MMMd().format(when)}';
+    return l10n.appContacted(DateFormat.MMMd().format(when));
   }
 
   Widget _buildTasksSection(List<DashboardTask> tasks) {
@@ -709,7 +716,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'Upcoming Tasks',
+                  appL10n.appDashUpcomingTasks,
                   style: AppTypography.labelSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -718,7 +725,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               GestureDetector(
                 onTap: () => context.go(AppRoutes.tasks),
                 child: Text(
-                  'See All',
+                  appL10n.appSeeAll,
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.primary600,
                     fontSize: 11,
@@ -750,7 +757,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'No upcoming tasks',
+                            appL10n.appDashNoUpcomingTasks,
                             style: AppTypography.bodySmall.copyWith(
                               color: AppColors.textTertiary,
                             ),
@@ -783,8 +790,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           icon: LucideIcons.userPlus,
           background: AppColors.primary100,
           color: AppColors.primary600,
-          title: 'Add Lead',
-          subtitle: 'Create a new lead',
+          title: appL10n.appDashAddLead,
+          subtitle: appL10n.appDashAddLeadSub,
           route: AppRoutes.leadCreate,
         ),
       if (ref.watch(moduleOnProvider('deals')))
@@ -792,8 +799,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           icon: LucideIcons.plusCircle,
           background: AppColors.success100,
           color: AppColors.success600,
-          title: 'Add Deal',
-          subtitle: 'Create a new deal',
+          title: appL10n.appDashAddDeal,
+          subtitle: appL10n.appDashAddDealSub,
           route: AppRoutes.dealCreate,
         ),
       if (ref.watch(moduleOnProvider('tasks')))
@@ -801,8 +808,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           icon: LucideIcons.checkSquare,
           background: AppColors.warning100,
           color: AppColors.warning600,
-          title: 'Add Task',
-          subtitle: 'Create a new task',
+          title: appL10n.appDashAddTask,
+          subtitle: appL10n.appDashAddTaskSub,
           route: AppRoutes.taskCreate,
         ),
     ];
@@ -1118,8 +1125,8 @@ class _NotificationBell extends ConsumerWidget {
     return IconButton(
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
       tooltip: unread == 0
-          ? 'Notifications'
-          : '$unread unread ${unread == 1 ? 'notification' : 'notifications'}',
+          ? appL10n.appNotifications
+          : appL10n.appUnreadNotifications(unread),
       onPressed: () => context.push(AppRoutes.notifications),
       icon: Stack(
         clipBehavior: Clip.none,
@@ -1185,10 +1192,10 @@ class _DashboardGoalRow extends StatelessWidget {
     switch (goal.goalType) {
       case 'DEALS_CLOSED':
         final deals = value.round();
-        return '$deals ${deals == 1 ? 'deal' : 'deals'}';
+        return appL10n.appDealCount(deals);
       case 'ACTIVITIES':
         final logged = value.round();
-        return '$logged ${logged == 1 ? 'activity' : 'activities'}';
+        return appL10n.appActivityCount(logged);
       default:
         // The goal's own currency: the server counts it in no other. The
         // org's format is the fallback for a server that sends none.
@@ -1252,7 +1259,10 @@ class _DashboardGoalRow extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '${_value(goal.progressValue)} of ${_value(goal.targetValue)}',
+              appL10n.appGoalProgressOf(
+                _value(goal.progressValue),
+                _value(goal.targetValue),
+              ),
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
@@ -1282,12 +1292,12 @@ class _ImportCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Bring in your contacts',
+            appL10n.appWelcomeTitle,
             style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 2),
           Text(
-            'Upload a spreadsheet and your workspace fills up in a minute.',
+            appL10n.appDashImportBody,
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -1298,7 +1308,7 @@ class _ImportCard extends StatelessWidget {
               minimumSize: const Size.fromHeight(AppLayout.buttonHeightLarge),
             ),
             onPressed: () => context.push(AppRoutes.importWelcome),
-            child: const Text('Import a spreadsheet'),
+            child: Text(appL10n.appDashImportButton),
           ),
         ],
       ),

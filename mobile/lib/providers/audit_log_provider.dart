@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api_envelope.dart';
 import '../data/models/audit_entry.dart';
@@ -75,7 +76,9 @@ final auditLogProvider = FutureProvider.autoDispose
         queryParams: auditLogParams(q),
       );
       if (!response.success || response.data == null) {
-        throw Exception(response.message ?? 'Could not load the audit log');
+        throw Exception(
+          response.message ?? appL10n.appMsgCouldNotLoadTheAuditLog,
+        );
       }
       final body = response.data!;
       final count = body['count'];

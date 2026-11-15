@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_objects_provider.dart';
@@ -157,7 +158,7 @@ class _MoreSheet extends ConsumerWidget {
           if (tasksBehindMore(modules))
             _SheetItem(
               icon: LucideIcons.checkSquare,
-              label: 'Tasks',
+              label: context.l10n.appTargetTasks,
               onTap: () {
                 Navigator.pop(context);
                 goBranch(4);
@@ -165,7 +166,7 @@ class _MoreSheet extends ConsumerWidget {
             ),
           _SheetItem(
             icon: LucideIcons.settings,
-            label: 'Settings',
+            label: context.l10n.appNavSettings,
             onTap: () {
               Navigator.pop(context);
               goBranch(_moreBranch);
@@ -173,7 +174,7 @@ class _MoreSheet extends ConsumerWidget {
           ),
           _SheetItem(
             icon: LucideIcons.logOut,
-            label: 'Sign out',
+            label: context.l10n.appSignOut,
             destructive: true,
             onTap: () => _confirmSignOut(context, ref),
           ),
@@ -187,12 +188,12 @@ class _MoreSheet extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out'),
-        content: const Text('Are you sure you want to sign out?'),
+        title: Text(context.l10n.appSignOut),
+        content: Text(context.l10n.appSignOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -202,7 +203,7 @@ class _MoreSheet extends ConsumerWidget {
               if (context.mounted) context.go(AppRoutes.login);
             },
             child: Text(
-              'Sign out',
+              context.l10n.appSignOut,
               style: TextStyle(color: AppColors.danger600),
             ),
           ),

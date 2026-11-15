@@ -5,6 +5,8 @@
 /// the one dialog that shows it.
 library;
 
+import '../../l10n/l10n.dart';
+
 /// One module's events, as the checkbox group on the form draws them.
 class WebhookEventGroup {
   const WebhookEventGroup({
@@ -79,8 +81,9 @@ class WebhookEndpoint {
 
   String get title => description.isNotEmpty ? description : url;
 
-  String get formatLabel =>
-      format == formatSlack ? 'Slack message' : 'Signed JSON';
+  String get formatLabel => format == formatSlack
+      ? appL10n.appWebhookFormatSlack
+      : appL10n.appWebhookFormatJson;
 
   factory WebhookEndpoint.fromJson(Map<String, dynamic> json) {
     final creator = json['created_by'];
@@ -130,9 +133,9 @@ class WebhookDelivery {
   bool get canRedeliver => status != pending;
 
   String get statusLabel => switch (status) {
-    succeeded => 'Delivered',
-    failed => 'Failed',
-    _ => 'Pending',
+    succeeded => appL10n.appWebhookDelivered,
+    failed => appL10n.appWebhookFailed,
+    _ => appL10n.appWebhookPending,
   };
 
   factory WebhookDelivery.fromJson(Map<String, dynamic> json) {
@@ -154,6 +157,18 @@ class WebhookDelivery {
 String webhookEventLabel(String name) {
   final action = name.contains('.') ? name.split('.').last : name;
   if (action.isEmpty) return name;
+  final l10n = appL10n;
+  final known = switch (action) {
+    'created' => l10n.appWebhookEventCreated,
+    'updated' => l10n.appWebhookEventUpdated,
+    'deleted' => l10n.appWebhookEventDeleted,
+    'won' => l10n.appWebhookEventWon,
+    'lost' => l10n.appWebhookEventLost,
+    'paid' => l10n.appWebhookEventPaid,
+    'comment_added' => l10n.appWebhookEventCommentAdded,
+    _ => null,
+  };
+  if (known != null) return known;
   final words = action.replaceAll('_', ' ');
   return '${words[0].toUpperCase()}${words.substring(1)}';
 }

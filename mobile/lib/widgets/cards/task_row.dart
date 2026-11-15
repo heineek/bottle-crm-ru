@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:intl/intl.dart';
+
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/models.dart';
 import '../common/common.dart';
@@ -235,24 +239,28 @@ class TaskRow extends StatelessWidget {
   }
 
   String _formatDueTime() {
-    if (task.dueDate == null) return 'No due date';
+    final l10n = appL10n;
+    if (task.dueDate == null) return l10n.appNoDueDate;
 
     final now = DateTime.now();
     final dueDate = task.dueDate!;
 
     if (dueDate.isBefore(now) && !_isSameDay(dueDate, now)) {
       final daysOverdue = now.difference(dueDate).inDays;
-      return '${daysOverdue}d overdue';
+      return l10n.appDaysOverdue(daysOverdue);
     } else if (_isSameDay(dueDate, now)) {
-      return 'Today ${_formatTime(dueDate)}';
+      return '${l10n.appTimeToday} ${_formatTime(dueDate)}';
     } else if (_isSameDay(dueDate, now.add(const Duration(days: 1)))) {
-      return 'Tomorrow ${_formatTime(dueDate)}';
+      return '${l10n.appTimeTomorrow} ${_formatTime(dueDate)}';
     } else {
       return _formatDateShort(dueDate);
     }
   }
 
   String _formatTime(DateTime date) {
+    if (currentLanguage != baseLanguage) {
+      return DateFormat.Hm(currentLanguage).format(date);
+    }
     final hour = date.hour > 12 ? date.hour - 12 : date.hour;
     final period = date.hour >= 12 ? 'PM' : 'AM';
     final minute = date.minute.toString().padLeft(2, '0');
@@ -260,21 +268,7 @@ class TaskRow extends StatelessWidget {
   }
 
   String _formatDateShort(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+    return localDateFormat('MMM d', 'MMMd').format(date);
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -289,15 +283,15 @@ class TaskRow extends StatelessWidget {
 
     switch (type) {
       case RelatedEntityType.lead:
-        return 'Lead: $title';
+        return appL10n.appRelatedLeadTitle(title);
       case RelatedEntityType.account:
-        return 'Account: $title';
+        return appL10n.appRelatedAccountTitle(title);
       case RelatedEntityType.opportunity:
-        return 'Opportunity: $title';
+        return appL10n.appRelatedOpportunityTitle(title);
       case RelatedEntityType.ticket_:
-        return 'Ticket: $title';
+        return appL10n.appRelatedTicketTitle(title);
       case RelatedEntityType.contact:
-        return 'Contact: $title';
+        return appL10n.appRelatedContactTitle(title);
     }
   }
 }

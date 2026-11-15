@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
 import '../../providers/lookup_provider.dart';
@@ -69,7 +70,7 @@ class CustomFieldsForm extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
       error: (err, _) => Text(
-        'Failed to load custom fields',
+        context.l10n.appMsgFailedToLoadCustomFields,
         style: AppTypography.caption.copyWith(color: AppColors.danger500),
       ),
       data: _fields,
@@ -146,7 +147,7 @@ class _CustomFieldInput extends StatelessWidget {
     final shown = selectedLabel ?? (stored.isEmpty ? null : stored);
     return _DropdownField(
       label: _label(),
-      valueLabel: shown ?? 'Select…',
+      valueLabel: shown ?? context.l10n.appSelectEllipsis,
       hasValue: shown != null,
       onTap: () => _showDropdownSheet(context),
     );
@@ -192,7 +193,7 @@ class _CustomFieldInput extends StatelessWidget {
                       Icon(LucideIcons.x, size: 18, color: AppColors.gray500),
                       const SizedBox(width: 12),
                       Text(
-                        'Clear',
+                        context.l10n.appClear,
                         style: AppTypography.body.copyWith(
                           color: AppColors.gray600,
                         ),
@@ -250,7 +251,7 @@ class _CustomFieldInput extends StatelessWidget {
       parsed = DateTime.tryParse(value as String);
     }
     final display = parsed == null
-        ? 'Select date'
+        ? context.l10n.appSelectDate
         : '${parsed.year.toString().padLeft(4, '0')}-'
               '${parsed.month.toString().padLeft(2, '0')}-'
               '${parsed.day.toString().padLeft(2, '0')}';

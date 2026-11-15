@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 
 /// Leaving a form that has been filled in.
@@ -80,18 +81,19 @@ Future<bool> confirmDiscard(BuildContext context) async {
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Discard changes?'),
-      content: const Text(
-        'You have unsaved changes. Are you sure you want to leave?',
-      ),
+      title: Text(context.l10n.appDiscardChangesQ),
+      content: Text(context.l10n.appUnsavedChangesBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
-          child: Text('Discard', style: TextStyle(color: AppColors.danger600)),
+          child: Text(
+            context.l10n.appDiscard,
+            style: TextStyle(color: AppColors.danger600),
+          ),
         ),
       ],
     ),

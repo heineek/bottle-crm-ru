@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/auth_response.dart';
 import 'api_service.dart';
@@ -425,12 +426,12 @@ class AuthService {
       }, requiresAuth: true);
 
       if (!response.success || response.data == null) {
-        return response.message ?? 'Could not create the organization.';
+        return response.message ?? appL10n.appOrgCreateFailed;
       }
 
       final orgJson = response.data!['org'] as Map<String, dynamic>?;
       if (orgJson == null || orgJson['id'] == null) {
-        return 'The organization was created but the server did not say which.';
+        return appL10n.appOrgCreateNoId;
       }
 
       final org = Organization.fromJson(orgJson);
@@ -441,13 +442,12 @@ class AuthService {
       // none), so the app would land on a dashboard for the wrong org.
       final switched = await selectOrganization(org);
       if (!switched) {
-        return 'The organization was created, but signing into it failed. '
-            'Pick it from the list to continue.';
+        return appL10n.appOrgCreateSwitchFailed;
       }
       return null;
     } catch (e) {
       debugPrint('AuthService: Create org error: $e');
-      return 'Could not create the organization.';
+      return appL10n.appOrgCreateFailed;
     }
   }
 

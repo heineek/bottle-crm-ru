@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/lead_board.dart';
 import '../services/api_service.dart';
@@ -55,7 +56,9 @@ class LeadBoardNotifier extends AsyncNotifier<LeadBoardData> {
   Future<LeadBoardData> _fetch() async {
     final listResponse = await _apiService.get(ApiConfig.leadPipelines);
     if (!listResponse.success || listResponse.data == null) {
-      throw Exception(listResponse.message ?? 'Could not load the pipelines.');
+      throw Exception(
+        listResponse.message ?? appL10n.appMsgCouldNotLoadThePipelines,
+      );
     }
     final rows = listResponse.data!['pipelines'];
     final pipelines = rows is List
@@ -77,7 +80,9 @@ class LeadBoardNotifier extends AsyncNotifier<LeadBoardData> {
       queryParams: {'pipeline_id': active.id},
     );
     if (!boardResponse.success || boardResponse.data == null) {
-      throw Exception(boardResponse.message ?? 'Could not load that pipeline.');
+      throw Exception(
+        boardResponse.message ?? appL10n.appMsgCouldNotLoadThatPipeline,
+      );
     }
     return LeadBoardData(
       pipelines: pipelines,
@@ -116,7 +121,7 @@ class LeadBoardNotifier extends AsyncNotifier<LeadBoardData> {
     if (response.success) {
       await refresh();
     } else if (response.statusCode == 404) {
-      return const ApiResponse(
+      return ApiResponse(
         success: false,
         statusCode: 404,
         message: leadMoveNotAllowedMessage,
@@ -127,9 +132,7 @@ class LeadBoardNotifier extends AsyncNotifier<LeadBoardData> {
 }
 
 /// Shown when a move is answered 404.
-const leadMoveNotAllowedMessage =
-    'You cannot move that lead. You may not have access to it, or the lead or '
-    'stage no longer exists.';
+String get leadMoveNotAllowedMessage => appL10n.appMsgLeadMoveNotAllowed;
 
 final leadBoardProvider =
     AsyncNotifierProvider<LeadBoardNotifier, LeadBoardData>(

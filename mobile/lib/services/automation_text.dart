@@ -1,6 +1,7 @@
 import '../config/api_config.dart';
 import '../data/models/automation.dart';
 import '../data/models/org_module.dart';
+import '../l10n/l10n.dart';
 import '../routes/record_routes.dart';
 import 'api_service.dart';
 
@@ -8,11 +9,11 @@ import 'api_service.dart';
 /// builder. The twin of `frontend/src/lib/v2/automation.js`: same copy, and
 /// the catalogue is the only source of labels.
 
-const _gone = 'Someone no longer active';
-const _goneField = 'a field that is no longer available';
-const _planLimit =
-    "This rule can't be switched on for this organization right now.";
-const _notRunning = 'This rule is not running for this organization right now.';
+String get _gone => appL10n.appAutoSomeoneInactive;
+String get _goneField => appL10n.appAutoFieldGoneLower;
+String get _planLimit => appL10n.appAutoPlanLimit;
+String get _notRunning => appL10n.appAutoNotRunning;
+String _unavailable(Object value) => appL10n.appAutoNoLongerAvailable('$value');
 
 enum ValueKind {
   none,
@@ -94,30 +95,30 @@ List<String> operatorsFor(
   return [...base];
 }
 
-const _operatorLabels = {
-  'eq': 'is',
-  'neq': 'is not',
-  'contains': 'contains',
-  'not_contains': 'does not contain',
-  'gt': 'is more than',
-  'lt': 'is less than',
-  'in': 'is any of',
-  'not_in': 'is none of',
-  'true': 'is true',
-  'false': 'is false',
-  'includes': 'includes',
-  'excludes': 'does not include',
-  'empty': 'is empty',
-  'not_empty': 'is not empty',
-  'was': 'was',
-  'was_not': 'was not',
-};
-
 String operatorLabel(String op, [String? fieldType]) {
-  if (fieldType == 'date' && op == 'gt') return 'is after';
-  if (fieldType == 'date' && op == 'lt') return 'is before';
-  if (fieldType == 'people' && op == 'eq') return 'is exactly';
-  return _operatorLabels[op] ?? op;
+  final l10n = appL10n;
+  if (fieldType == 'date' && op == 'gt') return l10n.appAutoOpAfter;
+  if (fieldType == 'date' && op == 'lt') return l10n.appAutoOpBefore;
+  if (fieldType == 'people' && op == 'eq') return l10n.appAutoOpExactly;
+  return switch (op) {
+    'eq' => l10n.appAutoOpEq,
+    'neq' => l10n.appAutoOpNeq,
+    'contains' => l10n.appAutoOpContains,
+    'not_contains' => l10n.appAutoOpNotContains,
+    'gt' => l10n.appAutoOpGt,
+    'lt' => l10n.appAutoOpLt,
+    'in' => l10n.appAutoOpIn,
+    'not_in' => l10n.appAutoOpNotIn,
+    'true' => l10n.appAutoOpTrue,
+    'false' => l10n.appAutoOpFalse,
+    'includes' => l10n.appAutoOpIncludes,
+    'excludes' => l10n.appAutoOpExcludes,
+    'empty' => l10n.appAutoOpEmpty,
+    'not_empty' => l10n.appAutoOpNotEmpty,
+    'was' => l10n.appAutoOpWas,
+    'was_not' => l10n.appAutoOpWasNot,
+    _ => op,
+  };
 }
 
 ValueKind valueKind(RuleField field, String op) {
@@ -206,13 +207,13 @@ List<RuleTarget> targetsFor(
   return [
     RuleTarget(
       value: 'record',
-      label: 'This ${object.label.toLowerCase()}',
+      label: appL10n.appAutoTargetThis(object.label.toLowerCase()),
       object: object,
     ),
     if (parent != null)
       RuleTarget(
         value: 'parent',
-        label: 'Its ${parent.label.toLowerCase()}',
+        label: appL10n.appAutoTargetParent(parent.label.toLowerCase()),
         object: stand(parent.key, parent.label),
       ),
     for (final link in object.links)
@@ -226,41 +227,45 @@ List<RuleTarget> targetsFor(
 
 List<RuleOption> recipientsFor(AutomationObject? object) {
   final parent = object?.parent;
+  final l10n = appL10n;
   return [
-    const RuleOption(value: 'record_assignees', label: 'Its assignees'),
-    const RuleOption(value: 'record_creator', label: 'Who created it'),
+    RuleOption(
+      value: 'record_assignees',
+      label: l10n.appAutoRecipientAssignees,
+    ),
+    RuleOption(value: 'record_creator', label: l10n.appAutoRecipientCreator),
     if (object?.key == 'task')
-      const RuleOption(
+      RuleOption(
         value: 'parent_assignees',
-        label: "Its parent's assignees",
+        label: l10n.appAutoRecipientParentTask,
       )
     else if ((object?.key == 'deal' || object?.key == 'ticket') &&
         parent != null)
       RuleOption(
         value: 'parent_assignees',
-        label: "The ${parent.label.toLowerCase()}'s assignees",
+        label: l10n.appAutoRecipientParentNamed(parent.label.toLowerCase()),
       ),
-    const RuleOption(value: 'admins', label: 'All admins'),
+    RuleOption(value: 'admins', label: l10n.appAutoRecipientAdmins),
     for (final link in object?.links ?? const <RuleLinkSpec>[])
       RuleOption(
         value: 'linked:${link.id}',
-        label: 'Assignees of ${link.label}',
+        label: l10n.appAutoRecipientLinked(link.label),
       ),
   ];
 }
 
 /// How a recipient or task audience the object no longer offers reads.
 String recipientLabel(String value) {
-  if (value.startsWith('linked:')) return 'Assignees of a removed link';
+  final l10n = appL10n;
+  if (value.startsWith('linked:')) return l10n.appAutoRecipientRemovedLink;
   return switch (value) {
-    'record_assignees' || 'record' => 'Its assignees',
-    'record_creator' => 'Who created it',
-    'parent_assignees' ||
-    'parent' => "Its parent's assignees (no longer available)",
-    'admins' => 'All admins',
-    'owner' => "The rule's owner",
-    'person' => 'A chosen person',
-    _ => '$value (no longer available)',
+    'record_assignees' || 'record' => l10n.appAutoRecipientAssignees,
+    'record_creator' => l10n.appAutoRecipientCreator,
+    'parent_assignees' || 'parent' => l10n.appAutoRecipientParentGone,
+    'admins' => l10n.appAutoRecipientAdmins,
+    'owner' => l10n.appAutoRecipientOwner,
+    'person' => l10n.appAutoRecipientPerson,
+    _ => _unavailable(value),
   };
 }
 
@@ -283,9 +288,7 @@ List<RuleOption> withStored(
     out.add(
       RuleOption(
         value: value,
-        label:
-            label?.call(value) ??
-            (person ? _gone : '$value (no longer available)'),
+        label: label?.call(value) ?? (person ? _gone : _unavailable(value)),
         settable: false,
         gone: true,
       ),
@@ -304,12 +307,12 @@ String _personName(AutomationCatalogue c, dynamic id) {
 String _scalar(AutomationCatalogue c, RuleField? field, dynamic v) {
   switch (field?.type) {
     case 'boolean':
-      return v == true || v == 'true' ? 'Yes' : 'No';
+      return v == true || v == 'true' ? appL10n.commonYes : appL10n.commonNo;
     case 'choice':
       for (final ch in field!.choices) {
         if (ch.value == v.toString()) return ch.label;
       }
-      return '$v (no longer available)';
+      return _unavailable('$v');
     case 'person':
     case 'people':
       return _personName(c, v);
@@ -326,14 +329,17 @@ String _valueText(AutomationCatalogue c, RuleField? field, dynamic v) {
 
 String triggerSentence(AutomationRule rule, AutomationCatalogue catalogue) {
   final trigger = rule.trigger;
-  if (trigger.event == 'created') return 'Created';
+  final l10n = appL10n;
+  if (trigger.event == 'created') return l10n.appAutoTriggerCreated;
   final key = trigger.field;
-  if (key == null || key.isEmpty) return 'Updated';
+  if (key == null || key.isEmpty) return l10n.appAutoTriggerUpdated;
   final field = fieldOf(objectOf(catalogue, rule.objectKey), key);
-  if (field == null) return 'A field that is no longer available changes';
-  final base = '${field.label} changes';
-  if (trigger.to == null) return base;
-  return '$base to ${_valueText(catalogue, field, trigger.to)}';
+  if (field == null) return l10n.appAutoTriggerFieldGone;
+  if (trigger.to == null) return l10n.appAutoTriggerChanges(field.label);
+  return l10n.appAutoTriggerChangesTo(
+    field.label,
+    _valueText(catalogue, field, trigger.to),
+  );
 }
 
 /// The note under a "changes to" value, or null until there is one.
@@ -341,7 +347,7 @@ String? changeHint(RuleField? field, Object? to) {
   if (field == null || to == null || to == '') return null;
   var value = to.toString();
   if (field.type == 'boolean') {
-    value = to == true || to == 'true' ? 'Yes' : 'No';
+    value = to == true || to == 'true' ? appL10n.commonYes : appL10n.commonNo;
   }
   if (field.type == 'choice') {
     for (final c in field.choices) {
@@ -351,8 +357,7 @@ String? changeHint(RuleField? field, Object? to) {
       }
     }
   }
-  return 'Runs once, when the ${field.label.toLowerCase()} moves into '
-      '$value; later edits do not run it again.';
+  return appL10n.appAutoChangeHint(field.label.toLowerCase(), value);
 }
 
 String conditionSentence(
@@ -361,7 +366,7 @@ String conditionSentence(
   AutomationCatalogue catalogue,
 ) {
   final field = fieldOf(object, condition.field);
-  final label = field?.label ?? 'A field that is no longer available';
+  final label = field?.label ?? appL10n.appAutoFieldGone;
   final op = operatorLabel(condition.op, field?.type);
   final none = const [
     'empty',
@@ -384,10 +389,13 @@ String actionSentence(
   AutomationCatalogue catalogue,
 ) {
   final v = action.values;
+  final l10n = appL10n;
   switch (action.type) {
     case 'create_task':
       final title = (v['title'] ?? '').toString();
-      return title.isEmpty ? 'Create a task' : 'Create a task: $title';
+      return title.isEmpty
+          ? l10n.appAutoActionCreateTask
+          : l10n.appAutoActionCreateTaskTitled(title);
     case 'notify':
       final labels = {for (final r in recipientsFor(object)) r.value: r.label};
       final parts = [
@@ -398,7 +406,9 @@ String actionSentence(
           for (final id in v['people'] as List) _personName(catalogue, id),
         ],
       ];
-      return parts.isEmpty ? 'Notify' : 'Notify ${parts.join(', ')}';
+      return parts.isEmpty
+          ? l10n.appAutoActionNotify
+          : l10n.appAutoActionNotifyWho(parts.join(', '));
     case 'set_field':
       RuleTarget? target;
       for (final t in targetsFor(catalogue, object)) {
@@ -406,36 +416,42 @@ String actionSentence(
       }
       final field = fieldOf(target?.object, (v['field'] ?? '').toString());
       final where = target == null
-          ? 'a target that is no longer available'
+          ? l10n.appAutoTargetGone
           : target.value == 'record' || target.value == 'parent'
           ? _lowerFirst(target.label)
           : target.label;
       final name = field?.label ?? _goneField;
-      if (v['value'] == null) return 'Clear $name on $where';
-      return 'Set $name to ${_valueText(catalogue, field, v['value'])} on $where';
+      if (v['value'] == null) return l10n.appAutoActionClear(name, where);
+      return l10n.appAutoActionSet(
+        name,
+        _valueText(catalogue, field, v['value']),
+        where,
+      );
     case 'assign':
       final who = _names(catalogue, v['people']);
-      if (who.isEmpty) return 'Assign';
+      if (who.isEmpty) return l10n.appAutoActionAssign;
       return v['mode'] == 'rotate'
-          ? 'Assign in turn to $who'
-          : 'Assign to $who';
+          ? l10n.appAutoActionAssignRotate(who)
+          : l10n.appAutoActionAssignTo(who);
     case 'webhook':
       for (final e in catalogue.endpoints) {
         if (e.id == v['endpoint']) {
           return e.description.isEmpty
-              ? 'Send to an endpoint'
-              : 'Send to ${e.description}';
+              ? l10n.appAutoActionWebhook
+              : l10n.appAutoActionWebhookTo(e.description);
         }
       }
-      return 'Send to an endpoint that is no longer available';
+      return l10n.appAutoActionWebhookGone;
   }
-  return 'An action that is no longer available';
+  return l10n.appAutoActionGone;
 }
 
 String runsLabel(AutomationRuleRow row) {
-  if (row.runs7d == 0) return 'No runs';
-  final text = '${row.runs7d} ${row.runs7d == 1 ? 'run' : 'runs'}';
-  return row.failures7d > 0 ? '$text, ${row.failures7d} failed' : text;
+  final l10n = appL10n;
+  if (row.runs7d == 0) return l10n.appAutoRunsNone;
+  return row.failures7d > 0
+      ? l10n.appAutoRunsFailed(row.runs7d, row.failures7d)
+      : l10n.appAutoRuns(row.runs7d);
 }
 
 /// A saved rule's status: its list row's, or else what the rule itself says,
@@ -448,11 +464,11 @@ String? ruleStatus(AutomationRule? rule, AutomationRuleRow? row) {
 }
 
 String statusLabel(String status) => switch (status) {
-  'on' => 'On',
-  'paused' => 'Paused',
-  'over_limit' => 'Not running',
-  'needs_attention' => 'Needs attention',
-  _ => 'Off',
+  'on' => appL10n.appAutoStatusOn,
+  'paused' => appL10n.appAutoStatusPaused,
+  'over_limit' => appL10n.appAutoStatusOverLimit,
+  'needs_attention' => appL10n.appAutoStatusNeedsAttention,
+  _ => appL10n.appAutoStatusOff,
 };
 
 /// The server's words for a paused or failing rule; the plan's own wording
@@ -488,7 +504,7 @@ bool pausedByModule(AutomationRuleRow row, OrgModulesAnswer? modules) {
 }
 
 String modulePausedNote(AutomationRuleRow row) =>
-    '"${row.name}": ${row.statusText}. It runs again once that module is switched back on.';
+    appL10n.appAutoModulePausedNote(row.name, row.statusText);
 
 const _noValueOps = ['empty', 'not_empty', 'true', 'false'];
 
@@ -591,7 +607,7 @@ class RuleErrors {
     final message = r.message;
     return RuleErrors(
       general: message == null || message.isEmpty
-          ? 'Could not save the rule.'
+          ? appL10n.appAutoSaveFailed
           : message,
     );
   }

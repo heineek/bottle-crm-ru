@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/invoice.dart';
 import '../services/api_service.dart';
@@ -124,7 +125,7 @@ class InvoicesNotifier extends AsyncNotifier<InvoicesListData> {
     ).replace(queryParameters: params).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load invoices');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadInvoices);
     }
 
     final body = response.data!;
@@ -267,7 +268,9 @@ class InvoicesNotifier extends AsyncNotifier<InvoicesListData> {
     final detail = response.data?['message'];
     if (detail is String && detail.trim().isNotEmpty) return detail;
     final raw = response.message as String?;
-    return (raw == null || raw.trim().isEmpty) ? 'Something went wrong' : raw;
+    return (raw == null || raw.trim().isEmpty)
+        ? appL10n.appMsgSomethingWentWrong
+        : raw;
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/solution.dart';
 import '../services/api_service.dart';
@@ -60,7 +61,7 @@ class SolutionsNotifier extends Notifier<SolutionsListData> {
     if (!response.success || response.data == null) {
       state = state.copyWith(
         isLoading: false,
-        error: response.message ?? 'Failed to load solutions',
+        error: response.message ?? appL10n.appMsgFailedToLoadSolutions,
       );
       return;
     }

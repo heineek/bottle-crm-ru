@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api_envelope.dart';
 import '../data/models/contact.dart';
@@ -93,7 +94,7 @@ class ContactsNotifier extends AsyncNotifier<ContactsListData> {
     ).replace(queryParameters: params).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load contacts');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadContacts);
     }
 
     final body = response.data!;
@@ -169,7 +170,9 @@ class ContactsNotifier extends AsyncNotifier<ContactsListData> {
       }
     }
     final raw = response.message as String?;
-    return (raw == null || raw.trim().isEmpty) ? 'Something went wrong' : raw;
+    return (raw == null || raw.trim().isEmpty)
+        ? appL10n.appMsgSomethingWentWrong
+        : raw;
   }
 }
 

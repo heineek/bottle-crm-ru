@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../services/org_date.dart';
 import 'deal.dart' show Currency;
 
@@ -14,19 +15,29 @@ import 'deal.dart' show Currency;
 /// existing `StatusBadge` can draw it without a second palette. Red is money
 /// at risk, green is settled, grey is not yet in play.
 enum InvoiceStatus {
-  draft('Draft', 'Draft', AppColors.gray500),
-  sent('Sent', 'Sent', AppColors.primary600),
-  viewed('Viewed', 'Viewed', AppColors.primary600),
-  paid('Paid', 'Paid', AppColors.success600),
-  partiallyPaid('Partially_Paid', 'Partially paid', AppColors.warning600),
-  overdue('Overdue', 'Overdue', AppColors.danger600),
-  pending('Pending', 'Pending', AppColors.warning600),
-  cancelled('Cancelled', 'Cancelled', AppColors.gray500);
+  draft('Draft', AppColors.gray500),
+  sent('Sent', AppColors.primary600),
+  viewed('Viewed', AppColors.primary600),
+  paid('Paid', AppColors.success600),
+  partiallyPaid('Partially_Paid', AppColors.warning600),
+  overdue('Overdue', AppColors.danger600),
+  pending('Pending', AppColors.warning600),
+  cancelled('Cancelled', AppColors.gray500);
 
-  const InvoiceStatus(this.value, this.label, this.color);
+  const InvoiceStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    draft => appL10n.appInvoiceStatusDraft,
+    sent => appL10n.appInvoiceStatusSent,
+    viewed => appL10n.appInvoiceStatusViewed,
+    paid => appL10n.appInvoiceStatusPaid,
+    partiallyPaid => appL10n.appInvoiceStatusPartiallyPaid,
+    overdue => appL10n.appInvoiceStatusOverdue,
+    pending => appL10n.appInvoiceStatusPending,
+    cancelled => appL10n.appInvoiceStatusCancelled,
+  };
 
   final String value;
-  final String label;
   final Color color;
 
   /// An unknown status keeps its server spelling rather than collapsing to a
@@ -312,15 +323,18 @@ class Payment {
 }
 
 /// `invoices.models.PAYMENT_METHODS`, value to label.
-const Map<String, String> paymentMethods = {
-  'CASH': 'Cash',
-  'CHECK': 'Check',
-  'CREDIT_CARD': 'Credit card',
-  'BANK_TRANSFER': 'Bank transfer',
-  'PAYPAL': 'PayPal',
-  'STRIPE': 'Stripe',
-  'OTHER': 'Other',
-};
+Map<String, String> get paymentMethods {
+  final l10n = appL10n;
+  return {
+    'CASH': l10n.appPaymentMethodCash,
+    'CHECK': l10n.appPaymentMethodCheck,
+    'CREDIT_CARD': l10n.appPaymentMethodCreditCard,
+    'BANK_TRANSFER': l10n.appPaymentMethodBankTransfer,
+    'PAYPAL': 'PayPal',
+    'STRIPE': 'Stripe',
+    'OTHER': l10n.appPaymentMethodOther,
+  };
+}
 
 /// The list header figures.
 ///

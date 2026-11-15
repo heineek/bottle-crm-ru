@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/org_module.dart';
 import '../services/api_service.dart';
@@ -18,7 +19,7 @@ class OrgModulesNotifier extends AsyncNotifier<OrgModulesAnswer?> {
     if (response.statusCode == 404) return null;
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load modules');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotLoadModules);
     }
     return OrgModulesAnswer.fromJson(data, orgId: orgId);
   }
@@ -49,7 +50,7 @@ class OrgModulesNotifier extends AsyncNotifier<OrgModulesAnswer?> {
       ];
       if (messages.isNotEmpty) return messages;
     }
-    return [response.message ?? 'Could not save the modules.'];
+    return [response.message ?? appL10n.appMsgCouldNotSaveTheModules];
   }
 }
 

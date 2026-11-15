@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
@@ -74,7 +75,7 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
   Future<void> _handleVerify() async {
     final code = _codeController.text.trim();
     if (code.length != _codeLength) {
-      setState(() => _errorMessage = 'Enter the 6-digit code from your email.');
+      setState(() => _errorMessage = context.l10n.appCodeEnterSix);
       return;
     }
 
@@ -101,7 +102,7 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
     } else {
       final error =
           ref.read(authProvider).error ??
-          'Invalid or expired code. Please try again.';
+          context.l10n.appMsgInvalidOrExpiredCodePleaseTryAgain;
       setState(() {
         _isVerifying = false;
         _errorMessage = error;
@@ -128,13 +129,13 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
     if (ok) {
       _startCooldown();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('New code sent.'),
+        SnackBar(
+          content: Text(context.l10n.appCodeResent),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
-      setState(() => _errorMessage = 'Could not resend code. Try again later.');
+      setState(() => _errorMessage = context.l10n.appCodeResendFailed);
     }
   }
 
@@ -171,7 +172,7 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('Enter your code', style: AppTypography.h1),
+              Text(context.l10n.appCodeTitle, style: AppTypography.h1),
               const SizedBox(height: 8),
               RichText(
                 text: TextSpan(
@@ -179,7 +180,7 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
                     color: AppColors.textSecondary,
                   ),
                   children: [
-                    const TextSpan(text: 'We sent a 6-digit code to '),
+                    TextSpan(text: context.l10n.appCodeSentPrefix),
                     TextSpan(
                       text: widget.email,
                       style: AppTypography.body.copyWith(
@@ -187,7 +188,7 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const TextSpan(text: '. It expires in 10 minutes.'),
+                    TextSpan(text: context.l10n.appCodeSentSuffix),
                   ],
                 ),
               ),
@@ -210,7 +211,7 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
               ],
               const SizedBox(height: 24),
               PrimaryButton(
-                label: 'Verify and sign in',
+                label: context.l10n.appCodeVerify,
                 onPressed: _isVerifying ? null : _handleVerify,
                 isLoading: _isVerifying,
               ),
@@ -222,8 +223,10 @@ class _MagicLinkCodeScreenState extends ConsumerState<MagicLinkCodeScreen> {
                       : null,
                   child: Text(
                     _resendCooldown > 0
-                        ? 'Resend code in ${_resendCooldown}s'
-                        : (_isResending ? 'Sending…' : 'Resend code'),
+                        ? context.l10n.appCodeResendIn(_resendCooldown)
+                        : (_isResending
+                              ? context.l10n.appSending
+                              : context.l10n.appCodeResend),
                     style: AppTypography.label.copyWith(
                       color: _resendCooldown == 0 && !_isResending
                           ? AppColors.primary600

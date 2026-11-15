@@ -1,3 +1,6 @@
+import '../../services/app_language.dart';
+import '../../l10n/l10n.dart';
+
 // Lookup models for deal form selectors
 // These are simplified models used for dropdowns and multi-selects
 
@@ -251,7 +254,7 @@ class EntityLookup {
   }) {
     return EntityLookup(
       id: json['id']?.toString() ?? '',
-      label: _firstNonEmpty(json, labelKeys) ?? 'Untitled',
+      label: _firstNonEmpty(json, labelKeys) ?? appL10n.appUntitled,
     );
   }
 
@@ -270,7 +273,7 @@ class EntityLookup {
       id: json['id']?.toString() ?? '',
       label: name.isNotEmpty
           ? name
-          : (_firstNonEmpty(json, fallbackKeys) ?? 'Unnamed'),
+          : (_firstNonEmpty(json, fallbackKeys) ?? appL10n.appUnnamedPerson),
     );
   }
 
@@ -291,4 +294,51 @@ class EntityLookup {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+/// An industry code (`common.utils.INDCHOICES`, "FOOD & BEVERAGE") as a
+/// person reads it, in the current language. The code stays what is stored
+/// and sent; an unknown one is shown in sentence case, as the web's
+/// `industryLabel` does.
+///
+/// English shows the code as the app always has; the translations exist for
+/// the other languages.
+String industryLabel(String? code) {
+  if (code == null || code.isEmpty) return '';
+  if (currentLanguage == baseLanguage) return code;
+  final l10n = appL10n;
+  return switch (code) {
+    'ADVERTISING' => l10n.appIndustryAdvertising,
+    'AGRICULTURE' => l10n.appIndustryAgriculture,
+    'APPAREL & ACCESSORIES' => l10n.appIndustryApparelAccessories,
+    'AUTOMOTIVE' => l10n.appIndustryAutomotive,
+    'BANKING' => l10n.appIndustryBanking,
+    'BIOTECHNOLOGY' => l10n.appIndustryBiotechnology,
+    'BUILDING MATERIALS & EQUIPMENT' =>
+      l10n.appIndustryBuildingMaterialsEquipment,
+    'CHEMICAL' => l10n.appIndustryChemical,
+    'COMPUTER' => l10n.appIndustryComputer,
+    'EDUCATION' => l10n.appIndustryEducation,
+    'ELECTRONICS' => l10n.appIndustryElectronics,
+    'ENERGY' => l10n.appIndustryEnergy,
+    'ENTERTAINMENT & LEISURE' => l10n.appIndustryEntertainmentLeisure,
+    'FINANCE' => l10n.appIndustryFinance,
+    'FOOD & BEVERAGE' => l10n.appIndustryFoodBeverage,
+    'GROCERY' => l10n.appIndustryGrocery,
+    'HEALTHCARE' => l10n.appIndustryHealthcare,
+    'INSURANCE' => l10n.appIndustryInsurance,
+    'LEGAL' => l10n.appIndustryLegal,
+    'MANUFACTURING' => l10n.appIndustryManufacturing,
+    'PUBLISHING' => l10n.appIndustryPublishing,
+    'REAL ESTATE' => l10n.appIndustryRealEstate,
+    'SERVICE' => l10n.appIndustryService,
+    'SOFTWARE' => l10n.appIndustrySoftware,
+    'SPORTS' => l10n.appIndustrySports,
+    'TECHNOLOGY' => l10n.appIndustryTechnology,
+    'TELECOMMUNICATIONS' => l10n.appIndustryTelecommunications,
+    'TELEVISION' => l10n.appIndustryTelevision,
+    'TRANSPORTATION' => l10n.appIndustryTransportation,
+    'VENTURE CAPITAL' => l10n.appIndustryVentureCapital,
+    _ => '${code[0]}${code.substring(1).toLowerCase()}',
+  };
 }

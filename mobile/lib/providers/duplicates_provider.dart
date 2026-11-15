@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 import 'accounts_provider.dart';
 import 'contacts_provider.dart';
@@ -46,43 +47,48 @@ enum DuplicateModule {
     accounts => const ['name', 'email', 'phone', 'website'],
   };
 
+  /// The record kind in the current language, lowercase: "lead".
+  String get singularLabel => appL10n.appDupSingular(name);
+
   /// The rows the compare screen shows side by side, the same as the web's.
-  List<(String, String Function(Map<String, dynamic>))> get compareFields =>
-      switch (this) {
-        leads => [
-          ('Name', _personName),
-          ('Company', (o) => _text(o['company_name'])),
-          ('Email', (o) => _text(o['email'])),
-          ('Phone', (o) => _text(o['phone'])),
-          ('Website', (o) => _text(o['website'])),
-          ('Status', (o) => _text(o['status'])),
-          ('Created', _created),
-        ],
-        contacts => [
-          ('Name', _personName),
-          ('Job title', (o) => _text(o['title'])),
-          ('Company', (o) => _text(o['organization'])),
-          ('Email', (o) => _text(o['email'])),
-          ('Phone', (o) => _text(o['phone'])),
-          ('City', (o) => _text(o['city'])),
-          ('Created', _created),
-        ],
-        accounts => [
-          ('Name', (o) => _text(o['name'])),
-          ('Website', (o) => _text(o['website'])),
-          ('Email', (o) => _text(o['email'])),
-          ('Phone', (o) => _text(o['phone'])),
-          ('Industry', (o) => _text(o['industry'])),
-          ('City', (o) => _text(o['city'])),
-          ('Created', _created),
-        ],
-      };
+  List<(String, String Function(Map<String, dynamic>))> get compareFields {
+    final l10n = appL10n;
+    return switch (this) {
+      leads => [
+        (l10n.commonName, _personName),
+        (l10n.appDupFieldCompany, (o) => _text(o['company_name'])),
+        (l10n.commonEmail, (o) => _text(o['email'])),
+        (l10n.commonPhone, (o) => _text(o['phone'])),
+        (l10n.appWebFormFieldWebsite, (o) => _text(o['website'])),
+        (l10n.commonStatus, (o) => _text(o['status'])),
+        (l10n.appDupFieldCreated, _created),
+      ],
+      contacts => [
+        (l10n.commonName, _personName),
+        (l10n.appWebFormFieldJobTitle, (o) => _text(o['title'])),
+        (l10n.appDupFieldCompany, (o) => _text(o['organization'])),
+        (l10n.commonEmail, (o) => _text(o['email'])),
+        (l10n.commonPhone, (o) => _text(o['phone'])),
+        (l10n.appWebFormFieldCity, (o) => _text(o['city'])),
+        (l10n.appDupFieldCreated, _created),
+      ],
+      accounts => [
+        (l10n.commonName, (o) => _text(o['name'])),
+        (l10n.appWebFormFieldWebsite, (o) => _text(o['website'])),
+        (l10n.commonEmail, (o) => _text(o['email'])),
+        (l10n.commonPhone, (o) => _text(o['phone'])),
+        (l10n.appWebFormFieldIndustry, (o) => _text(o['industry'])),
+        (l10n.appWebFormFieldCity, (o) => _text(o['city'])),
+        (l10n.appDupFieldCreated, _created),
+      ],
+    };
+  }
 
   String nameOf(Map<String, dynamic> record) {
     final name = this == accounts ? _text(record['name']) : _personName(record);
     if (name.isNotEmpty) return name;
     final email = _text(record['email']);
-    return email.isNotEmpty ? email : singular;
+    return email.isNotEmpty ? email : singularLabel;
   }
 }
 
@@ -101,7 +107,10 @@ String _created(Map<String, dynamic> o) {
 /// "email and phone": the API names each rule in plain words already.
 String matchedLabel(List<String> reasons) {
   if (reasons.length <= 1) return reasons.join();
-  return '${reasons.sublist(0, reasons.length - 1).join(', ')} and ${reasons.last}';
+  return appL10n.appJoinAnd(
+    reasons.sublist(0, reasons.length - 1).join(', '),
+    reasons.last,
+  );
 }
 
 /// One possible duplicate. List-level fields only, which is all the API sends.
@@ -245,10 +254,9 @@ class DuplicatesApi {
     );
     if (response.success) return null;
     if (response.statusCode == 404) {
-      return 'One of these ${module.singular}s no longer exists, or you do '
-          'not have access to it.';
+      return appL10n.appDupMergeGone(module.name);
     }
-    return response.message ?? 'Could not merge these ${module.singular}s.';
+    return response.message ?? appL10n.appDupMergeFailed(module.name);
   }
 
   List<DuplicateHit> _hits(Map<String, dynamic> data) => [

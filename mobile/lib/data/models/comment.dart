@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// Comment model for notes on leads, deals, etc.
 class Comment {
   final String id;
@@ -35,7 +37,7 @@ class Comment {
     if (commentedByContactName != null && commentedByContactName!.isNotEmpty) {
       return commentedByContactName!;
     }
-    return 'Unknown';
+    return appL10n.appUnknownPerson;
   }
 
   /// Factory constructor to create Comment from JSON

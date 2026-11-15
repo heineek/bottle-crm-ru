@@ -6,6 +6,9 @@
 /// metrics are for.
 library;
 
+import '../../l10n/l10n.dart';
+import 'ticket.dart' show TicketStatus;
+
 /// `ReopenPolicySerializer.NON_TERMINAL_STATUSES`. A ticket reopened into a
 /// terminal status would close again on arrival, so only these three.
 const List<String> reopenToStatuses = ['New', 'Assigned', 'Pending'];
@@ -101,28 +104,29 @@ String? reopenPolicyProblem({
   if (windowDays == null ||
       windowDays < reopenWindowMin ||
       windowDays > reopenWindowMax) {
-    return 'The window has to be a whole number of days between '
-        '$reopenWindowMin and $reopenWindowMax.';
+    return appL10n.appReopenValidateWindow(reopenWindowMin, reopenWindowMax);
   }
   if (!reopenToStatuses.contains(reopenToStatus)) {
-    return 'A reopened ticket has to come back as New, Assigned or Pending.';
+    return appL10n.appReopenValidateStatus;
   }
   return null;
 }
 
 /// What the policy does, in one sentence.
-String reopenSummary(ReopenPolicy policy) => policy.isEnabled
-    ? 'A reply within ${policy.windowDays} days brings a closed ticket back as '
-          '${policy.reopenToStatus}.'
-    : 'Closed tickets stay closed. A reply is filed on the ticket and nothing '
-          'else happens.';
+String reopenSummary(ReopenPolicy policy) {
+  if (!policy.isEnabled) return appL10n.appReopenSummaryOff;
+  final status = TicketStatus.values
+      .where((s) => s.value == policy.reopenToStatus)
+      .firstOrNull;
+  return appL10n.appReopenSummaryOn(
+    policy.windowDays,
+    status?.label ?? policy.reopenToStatus,
+  );
+}
 
 /// The note that has to sit under the missed-window figure when the policy is
 /// off, or `null`.
 String? missedWindowCaveat(ReopenPolicy policy) {
   if (policy.missedWindowIsMeasured) return null;
-  return 'Not counted while reopening is off. Replies to closed tickets are '
-      'filed and nothing else happens, so none of them are recorded as having '
-      'missed anything. This is a zero because nothing is measured, not '
-      'because nothing is being lost.';
+  return appL10n.appReopenMissedCaveat;
 }

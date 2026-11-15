@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 
 /// Floating Label Input Field
@@ -124,7 +125,7 @@ class SearchInput extends StatefulWidget {
 
   const SearchInput({
     super.key,
-    this.hint = 'Search...',
+    this.hint,
     this.controller,
     this.onChanged,
     this.onClear,
@@ -182,7 +183,7 @@ class _SearchInputState extends State<SearchInput> {
         onChanged: widget.onChanged,
         style: AppTypography.body,
         decoration: InputDecoration(
-          hintText: widget.hint,
+          hintText: widget.hint ?? context.l10n.appSearchHint,
           hintStyle: AppTypography.body.copyWith(color: AppColors.gray400),
           prefixIcon: const Icon(
             LucideIcons.search,

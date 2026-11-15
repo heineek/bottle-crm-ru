@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api_envelope.dart';
 import '../data/models/lookup_models.dart';
@@ -49,7 +50,7 @@ class AccountsLookupNotifier extends AsyncNotifier<List<AccountLookup>> {
   Future<List<AccountLookup>> _fetch() async {
     final response = await _apiService.get(lookupUrl(ApiConfig.accounts));
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load accounts');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadAccounts);
     }
     // `/api/accounts/` nests its rows under `active_accounts.open_accounts`
     // and publishes neither `accounts` nor `results`, which is why this picker
@@ -82,7 +83,7 @@ class ContactsLookupNotifier extends AsyncNotifier<List<ContactLookup>> {
   Future<List<ContactLookup>> _fetch() async {
     final response = await _apiService.get(lookupUrl(ApiConfig.contacts));
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load contacts');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadContacts);
     }
     return listFromEnvelope(response.data!, const [
       'results',
@@ -109,7 +110,7 @@ class UsersLookupNotifier extends AsyncNotifier<List<UserLookup>> {
   Future<List<UserLookup>> _fetch() async {
     final response = await _apiService.get(ApiConfig.teamsAndUsers);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load users');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadUsers);
     }
     return listFromEnvelope(response.data!, const [
       'profiles',
@@ -138,7 +139,7 @@ class TeamsLookupNotifier extends AsyncNotifier<List<TeamLookup>> {
   Future<List<TeamLookup>> _fetch() async {
     final response = await _apiService.get(ApiConfig.teamsAndUsers);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load teams');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTeams);
     }
     return listFromEnvelope(response.data!, const ['teams'])
         .map(TeamLookup.fromJson)
@@ -165,7 +166,7 @@ class TagsLookupNotifier extends AsyncNotifier<List<TagLookup>> {
   Future<List<TagLookup>> _fetch() async {
     final response = await _apiService.get(lookupUrl(ApiConfig.tags));
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load tags');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTags);
     }
     return listFromEnvelope(response.data!, const [
       'tags',
@@ -337,7 +338,9 @@ final customFieldDefinitionsProvider =
           .toString();
       final response = await _apiService.get(url);
       if (!response.success || response.data == null) {
-        throw Exception(response.message ?? 'Failed to load custom fields');
+        throw Exception(
+          response.message ?? appL10n.appMsgFailedToLoadCustomFields,
+        );
       }
       final parsed = listFromEnvelope(response.data!, const [
         'definitions',

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/estimate.dart';
 import '../data/models/invoice_report.dart';
@@ -31,7 +32,9 @@ String _message(dynamic response) {
   final detail = response.data?['message'];
   if (detail is String && detail.trim().isNotEmpty) return detail;
   final raw = response.message as String?;
-  return (raw == null || raw.trim().isEmpty) ? 'Something went wrong' : raw;
+  return (raw == null || raw.trim().isEmpty)
+      ? appL10n.appMsgSomethingWentWrong
+      : raw;
 }
 
 List<Map<String, dynamic>> _rows(Map<String, dynamic> body) {
@@ -80,7 +83,7 @@ class EstimatesNotifier extends AsyncNotifier<List<Estimate>> {
     ).replace(queryParameters: params).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load estimates');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadEstimates);
     }
     return _rows(response.data!).map(Estimate.fromJson).toList(growable: false);
   }
@@ -156,7 +159,7 @@ class RecurringNotifier extends AsyncNotifier<List<RecurringInvoice>> {
     ).replace(queryParameters: params).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load schedules');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadSchedules);
     }
     return _rows(
       response.data!,
@@ -226,7 +229,7 @@ class ProductsNotifier extends AsyncNotifier<List<Product>> {
     ).replace(queryParameters: params).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load products');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadProducts);
     }
     return _rows(response.data!).map(Product.fromJson).toList(growable: false);
   }
@@ -291,7 +294,7 @@ class InvoiceTemplatesNotifier extends AsyncNotifier<List<InvoiceTemplate>> {
   Future<List<InvoiceTemplate>> _fetch() async {
     final response = await _api.get('${ApiConfig.invoiceTemplates}?limit=50');
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load templates');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTemplates);
     }
     return _rows(
       response.data!,
@@ -401,7 +404,7 @@ final invoiceReportsProvider = FutureProvider<InvoiceReports>((ref) async {
     throw ReportsForbidden(_message(dashboard));
   }
   if (!dashboard.success || dashboard.data == null) {
-    throw Exception(dashboard.message ?? 'Failed to load reports');
+    throw Exception(dashboard.message ?? appL10n.appMsgFailedToLoadReports);
   }
 
   final aging = await api.get(ApiConfig.invoiceReportAging);
@@ -409,7 +412,7 @@ final invoiceReportsProvider = FutureProvider<InvoiceReports>((ref) async {
     throw ReportsForbidden(_message(aging));
   }
   if (!aging.success || aging.data == null) {
-    throw Exception(aging.message ?? 'Failed to load the ageing report');
+    throw Exception(aging.message ?? appL10n.appMsgFailedToLoadTheAgeingReport);
   }
 
   return InvoiceReports(

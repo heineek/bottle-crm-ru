@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/duplicates_provider.dart';
 
@@ -74,9 +75,8 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
       setState(() {
         _loading = false;
         _loadError = e.notFound
-            ? 'One of these ${_module.singular}s does not exist, or you do '
-                  'not have access to it.'
-            : 'Could not load these ${_module.singular}s.';
+            ? context.l10n.appDupLoadGone(_module.name)
+            : context.l10n.appDupLoadFailed(_module.name);
       });
     }
   }
@@ -87,7 +87,9 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
   /// other record". The web says the same.
   String _label(MergeSide side) {
     if (_current!.name != _other!.name) return side.name;
-    return side.id == _current!.id ? 'this record' : 'the other record';
+    return side.id == _current!.id
+        ? appL10n.appDupThisRecord
+        : appL10n.appDupOtherRecord;
   }
 
   /// Keeping [side] deletes the other one.
@@ -102,20 +104,19 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${_label(dropped)}?'),
+        title: Text(context.l10n.appDupDeleteQ(_label(dropped))),
         content: Text(
-          'Its notes, files, activity and links move to ${_label(kept)}, and '
-          'then ${_label(dropped)} is deleted for good. This cannot be undone.',
+          context.l10n.appDupDeleteBody(_label(kept), _label(dropped)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Merge and delete',
+              context.l10n.appDupMergeAndDelete,
               style: TextStyle(color: AppColors.danger600),
             ),
           ),
@@ -148,13 +149,13 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text('Merge ${_module.singular}s'),
+        title: Text(context.l10n.appDupMergeTitle(_module.name)),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),
-          tooltip: 'Back',
+          tooltip: context.l10n.commonBack,
           onPressed: () => context.pop(),
         ),
       ),
@@ -183,7 +184,10 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
                 style: AppTypography.body,
               ),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _load, child: const Text('Retry')),
+              FilledButton(
+                onPressed: _load,
+                child: Text(context.l10n.commonRetry),
+              ),
             ],
           ),
         ),
@@ -199,8 +203,7 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 48),
       children: [
         Text(
-          'Pick the one to keep. The other is deleted once everything linked '
-          'to it has moved over.',
+          context.l10n.appDupPickKeep,
           style: AppTypography.bodySmall.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -223,15 +226,15 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
             style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
             onPressed: _merging ? null : _merge,
             child: Text(
-              _merging ? 'Merging…' : 'Merge into ${_label(kept)}',
+              _merging
+                  ? context.l10n.appDupMerging
+                  : context.l10n.appDupMergeInto(_label(kept)),
               overflow: TextOverflow.ellipsis,
             ),
           ),
         ] else
           Text(
-            'You cannot merge these two: keeping either would delete the '
-            'other, and only an admin or the person who created a '
-            '${_module.singular} may delete it.',
+            context.l10n.appDupCannotMerge(_module.name),
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -249,7 +252,7 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
       borderRadius: BorderRadius.circular(8),
     ),
     child: Text(
-      'Nothing was merged. $message',
+      appL10n.appDupNothingMerged(message),
       style: AppTypography.bodySmall.copyWith(color: AppColors.danger700),
     ),
   );
@@ -278,7 +281,7 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
               value: side.id,
               enabled: keepable,
               title: Text(
-                'Keep ${_label(side)}',
+                context.l10n.appDupKeep(_label(side)),
                 style: AppTypography.label.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -286,8 +289,7 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
               subtitle: keepable
                   ? null
                   : Text(
-                      'Keeping this one would delete the other, which only an '
-                      'admin or its creator may do.',
+                      context.l10n.appDupKeepForbidden,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -323,15 +325,12 @@ class _MergeCompareScreenState extends ConsumerState<MergeCompareScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('AFTER THE MERGE', style: AppTypography.overline),
+          Text(context.l10n.appDupAfterMerge, style: AppTypography.overline),
           const SizedBox(height: 8),
           _fieldTable(rows),
           const SizedBox(height: 8),
           Text(
-            'Notes, files, activity and every link to ${_label(dropped)} move '
-            'to ${_label(kept)}. Tags are combined; owners stay '
-            '${_label(kept)}\'s '
-            'unless it has none.',
+            context.l10n.appDupAfterMergeBody(_label(dropped), _label(kept)),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),

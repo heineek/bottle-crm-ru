@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' show Color;
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 
 /// Deal pipelines and their stages, as `GET /opportunities/pipelines/` serves
 /// them: every pipeline of the org, default first, each with its stages in
@@ -19,11 +20,14 @@ const dealStageWon = 'won';
 const dealStageLost = 'lost';
 
 /// `opportunity.workflow.STAGE_KINDS`.
-const dealStageKinds = {
-  dealStageOpen: 'Open',
-  dealStageWon: 'Won',
-  dealStageLost: 'Lost',
-};
+Map<String, String> get dealStageKinds {
+  final l10n = appL10n;
+  return {
+    dealStageOpen: l10n.appStageKindOpen,
+    dealStageWon: l10n.appStageKindWon,
+    dealStageLost: l10n.appStageKindLost,
+  };
+}
 
 /// The six stages every pipeline starts with, in board order, as
 /// `(code, label, kind, expected_days)`. Only read as a fallback: by a server
@@ -271,9 +275,9 @@ const dealStageDaysMax = 3650;
 /// Why a pipeline name cannot be sent, or null when it can.
 String? dealPipelineNameProblem(String name) {
   final trimmed = name.trim();
-  if (trimmed.isEmpty) return 'Give the pipeline a name.';
+  if (trimmed.isEmpty) return appL10n.appPipelineValidateName;
   if (trimmed.length > dealPipelineNameMax) {
-    return 'Keep the name to $dealPipelineNameMax characters.';
+    return appL10n.appValidateNameMax(dealPipelineNameMax);
   }
   return null;
 }
@@ -288,17 +292,16 @@ String? dealStageDraftProblem({
   required String warningDays,
 }) {
   final trimmed = label.trim();
-  if (trimmed.isEmpty) return 'Give the stage a name.';
+  if (trimmed.isEmpty) return appL10n.appStageValidateName;
   if (trimmed.length > dealStageLabelMax) {
-    return 'Keep the name to $dealStageLabelMax characters.';
+    return appL10n.appValidateNameMax(dealStageLabelMax);
   }
   if (kind != dealStageOpen) return null;
   for (final text in [expectedDays, warningDays]) {
     if (text.trim().isEmpty) continue;
     final days = int.tryParse(text.trim());
     if (days == null || days < dealStageDaysMin || days > dealStageDaysMax) {
-      return 'Days must be a whole number from $dealStageDaysMin to '
-          '$dealStageDaysMax.';
+      return appL10n.appStageValidateDays(dealStageDaysMin, dealStageDaysMax);
     }
   }
   return null;
@@ -333,12 +336,15 @@ Map<String, dynamic> dealStagePayload({
   required DateTime? closeDate,
 }) {
   if (kind == dealStageWon && (amount == null || amount <= 0)) {
-    return (field: 'amount', message: 'A deal in $stageLabel needs an amount.');
+    return (
+      field: 'amount',
+      message: appL10n.appDealCloseNeedsAmount(stageLabel),
+    );
   }
   if ((kind == dealStageWon || kind == dealStageLost) && closeDate == null) {
     return (
       field: 'closed_on',
-      message: 'A deal in $stageLabel needs a close date.',
+      message: appL10n.appDealCloseNeedsDate(stageLabel),
     );
   }
   return null;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/org_modules_provider.dart';
@@ -55,19 +56,19 @@ class ModuleOffView extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  '$label is switched off',
+                  context.l10n.appModuleOffTitle(label),
                   textAlign: TextAlign.center,
                   style: AppTypography.h3,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '$label is switched off for this organization.',
+                  context.l10n.appModuleOffBody(label),
                   textAlign: TextAlign.center,
                   style: AppTypography.body,
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 PrimaryButton(
-                  label: 'Back to Home',
+                  label: context.l10n.appBackToHome,
                   onPressed: () => context.go(AppRoutes.dashboard),
                 ),
                 if (isAdmin) ...[
@@ -88,8 +89,8 @@ class ModuleOffView extends ConsumerWidget {
                         ),
                       ),
                       onPressed: () => context.push(AppRoutes.settingsModules),
-                      child: const Text(
-                        'Open Modules settings',
+                      child: Text(
+                        context.l10n.appOpenModulesSettings,
                         textAlign: TextAlign.center,
                       ),
                     ),

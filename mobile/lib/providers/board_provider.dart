@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/board.dart';
 import '../services/api_service.dart';
@@ -58,7 +59,9 @@ class BoardNotifier extends AsyncNotifier<BoardData> {
       queryParams: const {'archived': 'false'},
     );
     if (!listResponse.success || listResponse.data == null) {
-      throw Exception(listResponse.message ?? 'Could not load your boards.');
+      throw Exception(
+        listResponse.message ?? appL10n.appMsgCouldNotLoadYourBoards,
+      );
     }
     final rows = listResponse.data!['results'];
     final boards = rows is List
@@ -81,7 +84,9 @@ class BoardNotifier extends AsyncNotifier<BoardData> {
       ApiConfig.boardLanes(active.id),
     );
     if (!lanesResponse.success || lanesResponse.data == null) {
-      throw Exception(lanesResponse.message ?? 'Could not load that board.');
+      throw Exception(
+        lanesResponse.message ?? appL10n.appMsgCouldNotLoadThatBoard,
+      );
     }
     final lanes =
         lanesResponse.data!
@@ -131,9 +136,9 @@ class BoardNotifier extends AsyncNotifier<BoardData> {
   }) async {
     final board = state.value?.active;
     if (board == null) {
-      return const ApiResponse(
+      return ApiResponse(
         success: false,
-        message: 'Open a board first.',
+        message: appL10n.appMsgOpenABoardFirst,
         statusCode: 0,
       );
     }

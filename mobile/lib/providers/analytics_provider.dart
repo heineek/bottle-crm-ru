@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../services/api_service.dart';
 
@@ -80,7 +81,8 @@ class AnalyticsDashboard {
     final data = response.success ? response.data : null;
     final errors = {...this.errors}..remove(section);
     if (!response.success) {
-      errors[section] = response.message ?? 'Could not load this section.';
+      errors[section] =
+          response.message ?? appL10n.appMsgCouldNotLoadThisSection;
     }
     List<Map<String, dynamic>> agentsFrom(Map<String, dynamic>? body) =>
         (body?['results'] as List<dynamic>? ?? const [])

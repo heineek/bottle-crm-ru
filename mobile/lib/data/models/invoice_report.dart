@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// The invoice reports, from `/invoices/reports/dashboard/` and
 /// `/invoices/reports/aging/`.
 ///
@@ -124,13 +126,16 @@ class AgingReport {
   /// Past the due date only, so `total` minus what is merely not yet due.
   final double overdue;
 
-  static const _buckets = {
-    'current': 'Not yet due',
-    '1_30_days': '1 to 30 days',
-    '31_60_days': '31 to 60 days',
-    '61_90_days': '61 to 90 days',
-    'over_90_days': 'Over 90 days',
-  };
+  static Map<String, String> get _buckets {
+    final l10n = appL10n;
+    return {
+      'current': l10n.appAgingCurrent,
+      '1_30_days': l10n.appAging1To30,
+      '31_60_days': l10n.appAging31To60,
+      '61_90_days': l10n.appAging61To90,
+      'over_90_days': l10n.appAgingOver90,
+    };
+  }
 
   /// One report per currency code the response has unpaid money in.
   static Map<String, AgingReport> byCurrencyFromJson(

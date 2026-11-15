@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/csv_import_provider.dart';
 import '../../services/attachment_upload.dart' show clearAttachmentPickerCache;
@@ -57,7 +58,11 @@ Future<void> showCsvImportSheet(
   // The done step has already said it for a column-matching import.
   if (!imported.usesMapping) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Imported $created ${imported.noun(created)}')),
+      SnackBar(
+        content: Text(
+          context.l10n.appCsvImported(created, imported.noun(created)),
+        ),
+      ),
     );
   }
   onImported();
@@ -133,8 +138,8 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
     final note = await _save(
       _target.templateFileName,
       _target.templateCsv,
-      saved: 'Template saved.',
-      failed: 'Could not save the template.',
+      saved: context.l10n.appCsvTemplateSaved,
+      failed: context.l10n.appCsvTemplateSaveFailed,
     );
     if (mounted) setState(() => _templateNote = note);
   }
@@ -144,8 +149,8 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
     final note = await _save(
       _target.errorsFileName,
       csvImportErrorsCsv(errors),
-      saved: 'Saved ${_target.errorsFileName}.',
-      failed: 'Could not save the errors.',
+      saved: context.l10n.appCsvSavedFile(_target.errorsFileName),
+      failed: context.l10n.appCsvErrorsSaveFailed,
     );
     if (mounted) setState(() => _saveNote = note);
   }
@@ -162,8 +167,8 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
     final note = await _save(
       _target.skippedFileName,
       '\uFEFF$csv',
-      saved: 'Saved ${_target.skippedFileName}.',
-      failed: 'Could not save the skipped rows.',
+      saved: context.l10n.appCsvSavedFile(_target.skippedFileName),
+      failed: context.l10n.appCsvSkippedSaveFailed,
     );
     if (mounted) setState(() => _saveNote = note);
   }
@@ -172,7 +177,7 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
     String fileName,
     List<int> bytes,
   ) async => (await FilePicker.saveFile(
-    dialogTitle: 'Save CSV file',
+    dialogTitle: appL10n.appCsvSaveDialog,
     fileName: fileName,
     bytes: Uint8List.fromList(bytes),
   ))?.toString();
@@ -257,15 +262,15 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                   Expanded(
                     child: Text(
                       mapping
-                          ? 'Import ${_target.plural}'
-                          : 'Import ${_target.plural} from CSV',
+                          ? context.l10n.appCsvTitle(_target.name)
+                          : context.l10n.appCsvTitleFromCsv(_target.name),
                       style: AppTypography.h3.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: context.l10n.commonClose,
                     icon: const Icon(LucideIcons.x, size: 20),
                     onPressed: state.committing ? null : _close,
                   ),
@@ -337,11 +342,9 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                       if (state.commitErrors.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _RowErrors(
-                          heading:
-                              'Server rejected ${state.commitErrors.length} '
-                              'row${state.commitErrors.length == 1 ? '' : 's'} '
-                              'during import. The file may have changed since '
-                              'preview',
+                          heading: context.l10n.appCsvServerRejected(
+                            state.commitErrors.length,
+                          ),
                           errors: state.commitErrors,
                           onSave: _saveErrors,
                           note: _saveNote,
@@ -358,7 +361,7 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                             child: TextButton(
                               style: _textButton,
                               onPressed: _notifier.retryPreview,
-                              child: const Text('Try again'),
+                              child: Text(context.l10n.appTryAgain),
                             ),
                           ),
                       ],
@@ -376,7 +379,7 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                   ? FilledButton(
                       style: _filled,
                       onPressed: _close,
-                      child: const Text('Done'),
+                      child: Text(context.l10n.commonDone),
                     )
                   : Row(
                       children: [
@@ -392,7 +395,11 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                                 : preview == null
                                 ? _close
                                 : _notifier.reset,
-                            child: Text(preview == null ? 'Cancel' : 'Back'),
+                            child: Text(
+                              preview == null
+                                  ? context.l10n.commonCancel
+                                  : context.l10n.commonBack,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -409,8 +416,8 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                                   ),
                                   label: Text(
                                     mapping
-                                        ? 'Choose a spreadsheet'
-                                        : 'Choose CSV file',
+                                        ? context.l10n.appCsvChooseSpreadsheet
+                                        : context.l10n.appCsvChooseCsvButton,
                                     textAlign: TextAlign.center,
                                   ),
                                 )
@@ -418,8 +425,10 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                                   style: _filled,
                                   onPressed: state.canCommit ? _commit : null,
                                   child: Text(
-                                    'Import ${preview.valid} '
-                                    '${_target.noun(preview.valid)}',
+                                    context.l10n.appCsvImportButton(
+                                      preview.valid,
+                                      _target.noun(preview.valid),
+                                    ),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
@@ -447,8 +456,6 @@ final ButtonStyle _textButton = TextButton.styleFrom(
   minimumSize: const Size(0, AppLayout.buttonHeightLarge),
   padding: EdgeInsets.zero,
 );
-
-String _rows(int n) => '$n ${n == 1 ? 'row' : 'rows'}';
 
 class _FileLine extends StatelessWidget {
   const _FileLine({required this.file});
@@ -498,20 +505,16 @@ class _SpreadsheetHelp extends StatelessWidget {
     );
     return _HelpBox(
       children: [
-        Text(
-          "Any column names work. You'll check how they match before "
-          'anything is imported.',
-          style: AppTypography.bodySmall,
-        ),
+        Text(context.l10n.appCsvAnyColumns, style: AppTypography.bodySmall),
         const SizedBox(height: 4),
-        Text('.xlsx or .csv, up to 5 MB.', style: secondary),
+        Text(context.l10n.appCsvXlsxLimit, style: secondary),
         const SizedBox(height: 8),
-        Text('Starting from scratch?', style: secondary),
+        Text(context.l10n.appCsvFromScratch, style: secondary),
         TextButton.icon(
           style: _textButton,
           onPressed: onSaveTemplate,
           icon: const Icon(LucideIcons.download, size: 16),
-          label: const Text('Save CSV template'),
+          label: Text(context.l10n.appCsvSaveTemplate),
         ),
         if (note != null) Text(note!, style: secondary),
       ],
@@ -540,22 +543,24 @@ class _FormatHelp extends StatelessWidget {
     return _HelpBox(
       children: [
         Text(
-          'CSV format',
+          context.l10n.appCsvFormat,
           style: AppTypography.label.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
-          'Required headers: ${target.requiredHeaders.join(', ')}. '
-          'Optional: ${target.optionalHelp ?? ''}',
+          context.l10n.appCsvHeadersHelp(
+            target.requiredHeaders.join(', '),
+            target.optionalHelp ?? '',
+          ),
           style: secondary,
         ),
-        Text('.csv only, up to 5 MB.', style: secondary),
+        Text(context.l10n.appCsvCsvLimit, style: secondary),
         const SizedBox(height: 4),
         TextButton.icon(
           style: _textButton,
           onPressed: onSaveTemplate,
           icon: const Icon(LucideIcons.download, size: 16),
-          label: const Text('Save CSV template'),
+          label: Text(context.l10n.appCsvSaveTemplate),
         ),
         if (note != null) Text(note!, style: secondary),
       ],
@@ -633,7 +638,7 @@ class _MatchStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!csvHasAnyMatch(columns)) ...[
-          const _Note(child: Text(csvImportNoMatchHint)),
+          _Note(child: Text(csvImportNoMatchHint)),
           const SizedBox(height: 12),
         ],
         for (final column in shown) ...[
@@ -655,8 +660,8 @@ class _MatchStep extends StatelessWidget {
               onPressed: onToggleEmpty,
               child: Text(
                 showEmpty
-                    ? 'Hide the empty columns'
-                    : 'Show $hidden empty column${hidden == 1 ? '' : 's'}',
+                    ? context.l10n.appCsvHideEmpty
+                    : context.l10n.appCsvShowEmpty(hidden),
               ),
             ),
           ),
@@ -672,7 +677,12 @@ class _MatchStep extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 8),
-              Expanded(child: Text('Updating the preview', style: secondary)),
+              Expanded(
+                child: Text(
+                  context.l10n.appCsvUpdatingPreview,
+                  style: secondary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -687,8 +697,7 @@ class _MatchStep extends StatelessWidget {
           if (skipped.length > skippedShown) ...[
             const SizedBox(height: 4),
             Text(
-              '${_rows(skipped.length - skippedShown)} more are in the '
-              'download.',
+              context.l10n.appCsvRowsMore(skipped.length - skippedShown),
               style: secondary,
             ),
           ],
@@ -698,7 +707,7 @@ class _MatchStep extends StatelessWidget {
               style: _textButton,
               onPressed: onSaveSkipped,
               icon: const Icon(LucideIcons.download, size: 16),
-              label: const Text('Save skipped rows'),
+              label: Text(context.l10n.appCsvSaveSkipped),
             ),
           ),
           if (saveNote != null) Text(saveNote!, style: secondary),
@@ -709,11 +718,7 @@ class _MatchStep extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Some rows were skipped for a missing first or last name. '
-                  'A lead needs only one of the two, so this file could go in '
-                  'as leads instead.',
-                ),
+                Text(context.l10n.appCsvSuggestLeads),
                 if (onUseLeads != null) ...[
                   const SizedBox(height: 8),
                   OutlinedButton(
@@ -721,7 +726,7 @@ class _MatchStep extends StatelessWidget {
                       minimumSize: const Size(0, AppLayout.buttonHeightLarge),
                     ),
                     onPressed: state.committing ? null : onUseLeads,
-                    child: const Text('Import as leads instead'),
+                    child: Text(context.l10n.appCsvImportAsLeads),
                   ),
                 ],
               ],
@@ -794,7 +799,10 @@ class _DoneStep extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Imported $created ${target.noun(created)}.',
+                    context.l10n.appCsvImportedDot(
+                      created,
+                      target.noun(created),
+                    ),
                     style: AppTypography.body.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -809,12 +817,12 @@ class _DoneStep extends StatelessWidget {
           ],
           if (skipped > 0) ...[
             const SizedBox(height: 8),
-            Text('${_rows(skipped)} skipped.', style: secondary),
+            Text(context.l10n.appCsvRowsSkipped(skipped), style: secondary),
             TextButton.icon(
               style: _textButton,
               onPressed: onSaveSkipped,
               icon: const Icon(LucideIcons.download, size: 16),
-              label: const Text('Save skipped rows'),
+              label: Text(context.l10n.appCsvSaveSkipped),
             ),
             if (saveNote != null) Text(saveNote!, style: secondary),
           ],
@@ -841,7 +849,7 @@ class _ColumnCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = column.header.isEmpty
-        ? 'Column ${column.index + 1}'
+        ? context.l10n.appCsvColumn(column.index + 1)
         : column.header;
     // The server matches only to fields it lists; anything else would leave
     // the menu with no item for its value.
@@ -865,7 +873,7 @@ class _ColumnCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             column.samples.isEmpty
-                ? 'No values'
+                ? context.l10n.appCsvNoValues
                 : column.samples.join(' \u00b7 '),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -877,12 +885,12 @@ class _ColumnCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Semantics(
-            label: 'Import $name as',
+            label: context.l10n.appCsvImportColumnAs(name),
             child: DropdownButtonFormField<String>(
               initialValue: value,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Import as',
+              decoration: InputDecoration(
+                labelText: context.l10n.appCsvImportAs,
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 12,
@@ -890,9 +898,9 @@ class _ColumnCard extends StatelessWidget {
                 ),
               ),
               items: [
-                const DropdownMenuItem<String>(
+                DropdownMenuItem<String>(
                   value: null,
-                  child: Text("Don't import"),
+                  child: Text(context.l10n.appCsvDontImport),
                 ),
                 for (final f in fields)
                   DropdownMenuItem<String>(
@@ -937,7 +945,7 @@ class _SkippedList extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: 'Row ${rows[i].row}  ',
+                  text: '${context.l10n.appCsvRow('${rows[i].row}')}  ',
                   style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 TextSpan(text: rows[i].message),
@@ -1000,16 +1008,16 @@ class _PreviewSummary extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _Count(label: 'Total: ${preview.total}'),
+              _Count(label: context.l10n.appCsvTotal(preview.total)),
               _Count(
-                label: 'Valid: ${preview.valid}',
+                label: context.l10n.appCsvValid(preview.valid),
                 color: AppColors.success700,
                 background: AppColors.success50,
                 icon: LucideIcons.circleCheck,
               ),
               if (preview.invalid > 0)
                 _Count(
-                  label: 'Invalid: ${preview.invalid}',
+                  label: context.l10n.appCsvInvalid(preview.invalid),
                   color: AppColors.danger700,
                   background: AppColors.danger50,
                   icon: LucideIcons.circleAlert,
@@ -1023,9 +1031,7 @@ class _PreviewSummary extends StatelessWidget {
           if (errors.isNotEmpty) ...[
             const SizedBox(height: 12),
             _RowErrors(
-              heading:
-                  '${errors.length} error${errors.length == 1 ? '' : 's'}, '
-                  'fix the CSV before importing',
+              heading: context.l10n.appCsvErrorsHeading(errors.length),
               errors: errors,
               onSave: onSaveErrors,
               note: errorsNote,
@@ -1033,7 +1039,7 @@ class _PreviewSummary extends StatelessWidget {
           ] else if (preview.valid == 0) ...[
             const SizedBox(height: 12),
             Text(
-              'No ${target.plural} to import in this file.',
+              context.l10n.appCsvNoneToImport(target.name),
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -1115,7 +1121,7 @@ class _RowErrors extends StatelessWidget {
             style: _textButton,
             onPressed: () => onSave(errors),
             icon: const Icon(LucideIcons.download, size: 16),
-            label: const Text('Save errors as CSV'),
+            label: Text(context.l10n.appCsvSaveErrors),
           ),
         ),
         if (note != null) ...[
@@ -1152,7 +1158,7 @@ class _RowErrors extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: 'Row ${e.row}',
+                        text: context.l10n.appCsvRow('${e.row}'),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       if (e.field.isNotEmpty) TextSpan(text: ' · ${e.field}'),
@@ -1218,7 +1224,9 @@ class _ValidSample extends StatelessWidget {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: 'Row ${row['row'] ?? i + 1}',
+                          text: context.l10n.appCsvRow(
+                            '${row['row'] ?? i + 1}',
+                          ),
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                           ),
@@ -1242,7 +1250,7 @@ class _ValidSample extends StatelessWidget {
               color: AppColors.surfaceDim,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: Text(
-                'Showing first $shown of ${rows.length} valid rows',
+                context.l10n.appCsvShowingFirst(shown, rows.length),
                 textAlign: TextAlign.center,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,

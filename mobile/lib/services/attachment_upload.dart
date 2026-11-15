@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import 'api_service.dart';
 
@@ -70,21 +71,20 @@ Future<AttachmentSelectionResult> selectAttachment({
   final picked = await (pickFile ?? _pickOneFile)();
   if (picked == null) return const AttachmentSelectionResult.cancelled();
   if ((picked.path ?? '').isEmpty) {
-    return const AttachmentSelectionResult.failed(
-      'That file could not be read. Try picking it again.',
+    return AttachmentSelectionResult.failed(
+      appL10n.appMsgThatFileCouldNotBeReadTry,
     );
   }
   final size = await picked.length();
   if (size == null) {
-    return const AttachmentSelectionResult.failed(
-      'That file could not be read. Try picking it again.',
+    return AttachmentSelectionResult.failed(
+      appL10n.appMsgThatFileCouldNotBeReadTry,
     );
   }
   if (size > attachmentMaxBytes) {
     final limit = attachmentMaxBytes ~/ (1024 * 1024);
     return AttachmentSelectionResult.failed(
-      '${picked.name} is ${_megabytes(size)} MB. '
-      'Files must be $limit MB or smaller.',
+      appL10n.appAttachmentTooBig(picked.name, _megabytes(size), limit),
     );
   }
   return AttachmentSelectionResult.selected(picked);
@@ -109,23 +109,23 @@ Future<AttachmentDownloadResult> downloadAttachment({
   if (!response.success || response.data == null) {
     return AttachmentDownloadResult(
       success: false,
-      error: response.message ?? 'Could not download that file.',
+      error: response.message ?? appL10n.appAttachmentDownloadFailed,
     );
   }
   try {
     await (saveFile ?? _saveFile)(response.data!, fileName);
     return const AttachmentDownloadResult(success: true);
   } catch (_) {
-    return const AttachmentDownloadResult(
+    return AttachmentDownloadResult(
       success: false,
-      error: 'Could not save that file.',
+      error: appL10n.appAttachmentSaveFailed,
     );
   }
 }
 
 Future<String?> _saveFile(Uint8List bytes, String fileName) async =>
     (await FilePicker.saveFile(
-      dialogTitle: 'Save attachment',
+      dialogTitle: appL10n.appAttachmentSaveDialog,
       fileName: fileName,
       bytes: bytes,
     ))?.toString();
@@ -190,16 +190,16 @@ Future<AttachmentUploadResult> pickAndUploadAttachmentTo({
 
   final path = picked.path;
   if (path == null || path.isEmpty) {
-    return const AttachmentUploadResult.failed(
-      'That file could not be read. Try picking it again.',
+    return AttachmentUploadResult.failed(
+      appL10n.appMsgThatFileCouldNotBeReadTry,
     );
   }
 
   final size = await picked.length();
   if (size == null) {
     if (pickFile == null) await _clearPickerCache();
-    return const AttachmentUploadResult.failed(
-      'That file could not be read. Try picking it again.',
+    return AttachmentUploadResult.failed(
+      appL10n.appMsgThatFileCouldNotBeReadTry,
     );
   }
 
@@ -209,8 +209,7 @@ Future<AttachmentUploadResult> pickAndUploadAttachmentTo({
     if (pickFile == null) await _clearPickerCache();
     final limit = attachmentMaxBytes ~/ (1024 * 1024);
     return AttachmentUploadResult.failed(
-      '${picked.name} is ${_megabytes(size)} MB. '
-      'Files must be $limit MB or smaller.',
+      appL10n.appAttachmentTooBig(picked.name, _megabytes(size), limit),
     );
   }
 
@@ -225,7 +224,7 @@ Future<AttachmentUploadResult> pickAndUploadAttachmentTo({
 
   if (!response.success) {
     return AttachmentUploadResult.failed(
-      response.message ?? 'Could not upload that file.',
+      response.message ?? appL10n.appAttachmentUploadFailed,
     );
   }
   return AttachmentUploadResult.uploaded(response.data);

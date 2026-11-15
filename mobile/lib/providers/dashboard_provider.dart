@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/dashboard_data.dart';
 import '../services/api_service.dart';
@@ -26,7 +27,9 @@ class DashboardNotifier extends AsyncNotifier<DashboardData> {
     debugPrint('DashboardNotifier: Response status: ${response.statusCode}');
     if (!response.success || response.data == null) {
       debugPrint('DashboardNotifier: API error - ${response.message}');
-      throw Exception(response.message ?? 'Failed to load dashboard data');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadDashboardData,
+      );
     }
     final dashboardData = DashboardData.fromJson(response.data!);
     debugPrint(

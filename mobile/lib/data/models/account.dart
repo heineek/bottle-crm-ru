@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// An account: the company a contact works for and a deal is booked against.
 ///
 /// Mobile had no accounts module at all, while the deal form already fetched
@@ -275,7 +277,7 @@ class AccountRelation {
             id: row['id']?.toString() ?? '',
             label: label(row)?.trim().isNotEmpty == true
                 ? label(row)!.trim()
-                : 'Untitled',
+                : appL10n.appUntitled,
             detail: _str(row['stage_label']) ?? _str(row['stage']),
           );
         })

@@ -1,14 +1,20 @@
-const defaultModuleLabels = {
-  'deals': 'Pipeline',
-  'leads': 'Leads',
-  'goals': 'Goals',
-  'tasks': 'Tasks',
-  'tickets': 'Tickets',
-  'knowledge_base': 'Knowledge base',
-  'documents': 'Documents',
-  'invoices': 'Invoices',
-  'timesheet': 'Timesheet',
-};
+import '../../l10n/l10n.dart';
+
+/// The module names to show when a server sends none of its own.
+Map<String, String> get defaultModuleLabels {
+  final l10n = appL10n;
+  return {
+    'deals': l10n.appModulePipeline,
+    'leads': l10n.appTargetLeads,
+    'goals': l10n.appModuleGoals,
+    'tasks': l10n.appTargetTasks,
+    'tickets': l10n.appTargetTickets,
+    'knowledge_base': l10n.appModuleKnowledgeBase,
+    'documents': l10n.appModuleDocuments,
+    'invoices': l10n.appTargetInvoices,
+    'timesheet': l10n.appModuleTimesheet,
+  };
+}
 
 const moduleGroups = ['sell', 'serve', 'bill'];
 

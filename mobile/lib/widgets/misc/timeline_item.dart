@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/models.dart';
 
@@ -164,15 +166,15 @@ class TimelineItem extends StatelessWidget {
     final difference = now.difference(timestamp);
 
     if (difference.inDays > 7) {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+      return localDateFormat('d/M/y', 'yMd').format(timestamp);
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return appL10n.appRelativeDaysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return appL10n.appRelativeHoursAgo(difference.inHours);
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return appL10n.appRelativeMinutesAgo(difference.inMinutes);
     } else {
-      return 'Just now';
+      return appL10n.appRelativeJustNow;
     }
   }
 }
@@ -248,12 +250,12 @@ class TimelineEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No activity yet',
+              context.l10n.appNoActivityYet,
               style: AppTypography.h3.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 8),
             Text(
-              'Start by making a call or sending an email',
+              context.l10n.appNoActivityHint,
               style: AppTypography.body.copyWith(color: AppColors.textTertiary),
               textAlign: TextAlign.center,
             ),

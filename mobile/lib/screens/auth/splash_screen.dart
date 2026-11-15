@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
@@ -149,7 +150,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'CRM for AI and People',
+                        context.l10n.appSplashTagline,
                         style: AppTypography.body.copyWith(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 16,
