@@ -18,6 +18,7 @@
  * preselect the approver multi-select. The page reads `.email` off each entry
  * for the sentence it renders on the row.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
 
@@ -100,14 +101,14 @@ function buildBody(allowed, values) {
 /** @param {{ cookies: import('@sveltejs/kit').Cookies }} event */
 export async function createApprovalRule({ cookies }, values) {
   const body = buildBody(CREATE_FIELDS, values);
-  if (!body.name) throw new Error('A rule needs a name.');
+  if (!body.name) throw new Error(m.settings_approvals_error_no_name());
   body.trigger_event = TRIGGER_EVENT;
   return await apiRequest('/cases/approval-rules/', { method: 'POST', body }, { cookies });
 }
 
 /** @param {{ cookies: import('@sveltejs/kit').Cookies }} event */
 export async function updateApprovalRule({ cookies }, id, values) {
-  if (!id) throw new Error('Which rule? No rule id was given.');
+  if (!id) throw new Error(m.settings_approvals_error_no_id());
   const body = buildBody(UPDATE_FIELDS, values);
   return await apiRequest(`/cases/approval-rules/${id}/`, { method: 'PUT', body }, { cookies });
 }
@@ -150,7 +151,7 @@ export async function updateApprovalRule({ cookies }, id, values) {
  *   rule had history and was disabled rather than destroyed.
  */
 export async function deleteApprovalRule({ cookies }, id) {
-  if (!id) throw new Error('Which rule? No rule id was given.');
+  if (!id) throw new Error(m.settings_approvals_error_no_id());
   const resp = await apiRequest(`/cases/approval-rules/${id}/`, { method: 'DELETE' }, { cookies });
   return { turned_off: resp?.is_active === false };
 }

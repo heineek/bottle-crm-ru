@@ -12,21 +12,26 @@
   import { recordRoute, runNotes } from '#lib/v2/automation.js';
   import { runTime } from '#lib/v2/format.js';
   import { ChevronLeft, ChevronDown } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: any }} */
   let { data } = $props();
 
-  const RUN = /** @type {Record<string, {label: string, tone: 'moss'|'rust'|'slate'}>} */ ({
-    done: { label: 'Done', tone: 'moss' },
-    failed: { label: 'Failed', tone: 'rust' },
-    skipped: { label: 'Skipped', tone: 'slate' }
-  });
-  const STEP = /** @type {Record<string, string>} */ ({
-    done: 'Done',
-    undone: 'Undone',
-    failed: 'Failed',
-    skipped: 'Skipped'
-  });
+  let RUN = $derived(
+    /** @type {Record<string, {label: string, tone: 'moss'|'rust'|'slate'}>} */ ({
+      done: { label: m.settings_automation_run_done(), tone: 'moss' },
+      failed: { label: m.settings_automation_run_failed(), tone: 'rust' },
+      skipped: { label: m.settings_automation_run_skipped(), tone: 'slate' }
+    })
+  );
+  let STEP = $derived(
+    /** @type {Record<string, string>} */ ({
+      done: m.settings_automation_run_done(),
+      undone: m.settings_automation_step_undone(),
+      failed: m.settings_automation_run_failed(),
+      skipped: m.settings_automation_run_skipped()
+    })
+  );
 
   let runs = $derived(data.runs ?? []);
   let hasNewer = $derived(data.offset > 0);
@@ -38,14 +43,16 @@
   let timezone = $derived(data.org?.timezone || 'UTC');
 </script>
 
-<PageHeader title={data.forbidden ? 'Runs' : data.rule.name}>
+<PageHeader title={data.forbidden ? m.settings_automation_runs_title() : data.rule.name}>
   {#snippet crumb()}
     {#if !data.forbidden}
-      <a class="rn-crumb" href={resolve(asInternalPath(rulePath))}><ChevronLeft size={13} />Rule</a>
+      <a class="rn-crumb" href={resolve(asInternalPath(rulePath))}
+        ><ChevronLeft size={13} />{m.settings_automation_runs_back()}</a
+      >
     {/if}
   {/snippet}
   {#snippet sub()}
-    {#if !data.forbidden}Runs from the last 30 days, newest first.{/if}
+    {#if !data.forbidden}{m.settings_automation_runs_sub()}{/if}
   {/snippet}
 </PageHeader>
 
@@ -55,12 +62,12 @@
       <AdminsOnly />
     {:else if !runs.length && data.offset === 0}
       <EmptyState
-        title="No runs yet"
-        body="When this rule runs, each run and what it did shows here for 30 days."
+        title={m.settings_automation_runs_empty_title()}
+        body={m.settings_automation_runs_empty_body()}
       />
     {:else}
       {#if !runs.length}
-        <p class="rn-none">No more runs.</p>
+        <p class="rn-none">{m.settings_automation_runs_no_more()}</p>
       {/if}
       <div class="rn-list">
         {#each runs as run (run.id)}
@@ -72,9 +79,11 @@
             <span class="rn-when">{runTime(run.created_at, timezone)}</span>
             <span class="rn-rec">
               {#if href}
-                <a href={resolve(asInternalPath(href))}>{run.record_name || 'Record'}</a>
+                <a href={resolve(asInternalPath(href))}
+                  >{run.record_name || m.settings_automation_runs_record()}</a
+                >
               {:else}
-                {run.record_name || 'Record'}
+                {run.record_name || m.settings_automation_runs_record()}
               {/if}
             </span>
             <Pill tone={pill.tone}>{pill.label}</Pill>
@@ -119,14 +128,14 @@
               class="v2-btn v2-btn-sm rn-tap"
               href={resolve(
                 asInternalPath(`${runsPath}?offset=${Math.max(0, data.offset - data.pageSize)}`)
-              )}>Newer</a
+              )}>{m.settings_automation_runs_newer()}</a
             >
           {/if}
           {#if hasOlder}
             <a
               class="v2-btn v2-btn-sm rn-tap"
               href={resolve(asInternalPath(`${runsPath}?offset=${data.offset + data.pageSize}`))}
-              >Older</a
+              >{m.settings_automation_runs_older()}</a
             >
           {/if}
         </div>

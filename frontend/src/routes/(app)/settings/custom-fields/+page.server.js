@@ -6,6 +6,7 @@ import {
   deactivateCustomField
 } from '#lib/server/v2/custom-fields.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies }) {
@@ -54,9 +55,9 @@ export const actions = {
       await createCustomField(event, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { create: { error: 'Only an admin can add custom fields.' } });
+        return fail(403, { create: { error: m.settings_fields_error_add_admin() } });
       }
-      return fail(400, { create: { error: readableError(err, 'Could not add the field.') } });
+      return fail(400, { create: { error: readableError(err, m.settings_fields_error_add()) } });
     }
     return { created: true };
   },
@@ -69,9 +70,9 @@ export const actions = {
       await updateCustomField(event, id, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { update: { error: 'Only an admin can change custom fields.' } });
+        return fail(403, { update: { error: m.settings_fields_error_change_admin() } });
       }
-      return fail(400, { update: { error: readableError(err, 'Could not save the field.') } });
+      return fail(400, { update: { error: readableError(err, m.settings_fields_error_save()) } });
     }
     return { updated: true };
   },
@@ -83,10 +84,10 @@ export const actions = {
       await deactivateCustomField(event, id);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { deactivate: { error: 'Only an admin can turn custom fields off.' } });
+        return fail(403, { deactivate: { error: m.settings_fields_error_off_admin() } });
       }
       return fail(400, {
-        deactivate: { error: readableError(err, 'Could not turn the field off.') }
+        deactivate: { error: readableError(err, m.settings_fields_error_off()) }
       });
     }
     return { deactivated: true };
@@ -108,10 +109,10 @@ export const actions = {
       await updateCustomField(event, id, { is_active: true });
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { activate: { error: 'Only an admin can turn custom fields on.' } });
+        return fail(403, { activate: { error: m.settings_fields_error_on_admin() } });
       }
       return fail(400, {
-        activate: { error: readableError(err, 'Could not turn the field on.') }
+        activate: { error: readableError(err, m.settings_fields_error_on()) }
       });
     }
     return { activated: true };

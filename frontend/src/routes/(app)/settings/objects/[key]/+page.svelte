@@ -15,8 +15,12 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { FIELD_TYPE_LABEL } from '#lib/v2/enums.js';
   import { ChevronLeft, Plus } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
-  const TYPE_LABEL = /** @type {Record<string, string>} */ ({ ...FIELD_TYPE_LABEL, link: 'Link' });
+  const TYPE_LABEL = /** @type {Record<string, string>} */ ({
+    ...FIELD_TYPE_LABEL,
+    link: m.settings_objects_type_link()
+  });
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -61,31 +65,31 @@
 <PageHeader title={def.label_plural}>
   {#snippet crumb()}
     <a class="o-back" href={resolve(asInternalPath('/settings/objects'))}
-      ><ChevronLeft size={13} />Custom objects</a
+      ><ChevronLeft size={13} />{m.settings_objects_back()}</a
     >
   {/snippet}
   {#snippet sub()}
     <code class="o-key">{def.key}</code>
-    {#if !def.is_active}<Pill tone="slate">Archived</Pill>{/if}
+    {#if !def.is_active}<Pill tone="slate">{m.settings_objects_stat_archived()}</Pill>{/if}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit}
       {#if def.is_active}
         <ConfirmAction
           action="?/archive"
-          label="Archive"
-          confirmLabel="Archive"
-          explain="Hides it from the sidebar and its records. Nothing is deleted."
+          label={m.settings_objects_archive()}
+          confirmLabel={m.settings_objects_archive()}
+          explain={m.settings_objects_archive_explain()}
         />
       {:else}
         <form method="POST" action="?/restore" use:enhance>
-          <button class="v2-btn" type="submit">Restore</button>
+          <button class="v2-btn" type="submit">{m.settings_objects_restore()}</button>
         </form>
         <ConfirmAction
           action="?/destroy"
-          label="Delete for good"
-          confirmLabel="Delete for good"
-          explain="Removes the object and its fields for good."
+          label={m.settings_objects_destroy()}
+          confirmLabel={m.settings_objects_destroy()}
+          explain={m.settings_objects_destroy_explain()}
         />
       {/if}
     {/if}
@@ -100,23 +104,22 @@
 
     {#if data.can_edit && data.customObjects?.has_custom_objects === false}
       <p class="v2-sub" style="font-size:12.5px;margin:0 0 16px;max-width:66ch">
-        Custom objects are not included in this organization's plan. Existing objects stay readable,
-        and can be archived, restored or deleted.
+        {m.settings_objects_no_plan()}
       </p>
     {/if}
 
     {#if editingObject && canWrite}
       <SettingsFormPanel
-        title={`Edit ${def.label}`}
+        title={m.settings_objects_edit_title({ label: def.label })}
         action="?/update"
         error={form?.update?.error}
-        submitLabel="Save object"
+        submitLabel={m.settings_objects_save_button()}
         oncancel={() => (editingObject = false)}
         ondone={() => (editingObject = false)}
       >
         {#snippet fields()}
           <div class="v2-field">
-            <label for="o-label">Name (singular)</label>
+            <label for="o-label">{m.settings_objects_label_singular()}</label>
             <input
               id="o-label"
               class="v2-input"
@@ -127,7 +130,7 @@
             />
           </div>
           <div class="v2-field">
-            <label for="o-plural">Name (plural)</label>
+            <label for="o-plural">{m.settings_objects_label_plural()}</label>
             <input
               id="o-plural"
               class="v2-input"
@@ -138,7 +141,7 @@
             />
           </div>
           <div class="v2-field">
-            <label for="o-name-label">What each record's name is called</label>
+            <label for="o-name-label">{m.settings_objects_name_label_label()}</label>
             <input
               id="o-name-label"
               class="v2-input"
@@ -148,13 +151,13 @@
             />
           </div>
           <div class="v2-field v2-sfp-wide">
-            <label for="o-desc">Description</label>
+            <label for="o-desc">{m.settings_objects_description_label()}</label>
             <textarea id="o-desc" class="v2-input" name="description" rows="2"
               >{def.description ?? ''}</textarea
             >
           </div>
           <fieldset class="v2-field v2-sfp-wide" style="border:0;padding:0;margin:0">
-            <legend class="v2-label" style="padding:0">Who can see its records</legend>
+            <legend class="v2-label" style="padding:0">{m.settings_objects_access_legend()}</legend>
             <label class="o-choice">
               <input
                 type="radio"
@@ -162,7 +165,7 @@
                 value="own"
                 checked={def.record_access !== 'everyone'}
               />
-              Only the people involved
+              {m.settings_objects_access_own()}
             </label>
             <label class="o-choice">
               <input
@@ -171,7 +174,7 @@
                 value="everyone"
                 checked={def.record_access === 'everyone'}
               />
-              Everyone in this organization
+              {m.settings_objects_access_everyone()}
             </label>
           </fieldset>
         {/snippet}
@@ -180,51 +183,55 @@
       <div class="v2-card o-summary">
         <dl>
           <div>
-            <dt class="v2-label">Name</dt>
+            <dt class="v2-label">{m.settings_objects_name()}</dt>
             <dd>{def.label} / {def.label_plural}</dd>
           </div>
           <div>
-            <dt class="v2-label">Each record's name is called</dt>
-            <dd>{def.name_label || 'Name'}</dd>
+            <dt class="v2-label">{m.settings_objects_name_called()}</dt>
+            <dd>{def.name_label || m.settings_objects_name()}</dd>
           </div>
           <div>
-            <dt class="v2-label">Who can see its records</dt>
+            <dt class="v2-label">{m.settings_objects_access_legend()}</dt>
             <dd>
               {def.record_access === 'everyone'
-                ? 'Everyone in this organization'
-                : 'Only the people involved'}
+                ? m.settings_objects_access_everyone()
+                : m.settings_objects_access_own()}
             </dd>
           </div>
           {#if def.description}
             <div>
-              <dt class="v2-label">Description</dt>
+              <dt class="v2-label">{m.settings_objects_description_label()}</dt>
               <dd>{def.description}</dd>
             </div>
           {/if}
         </dl>
         {#if canWrite}
           <button class="v2-btn" type="button" onclick={() => (editingObject = true)}>
-            Edit object
+            {m.settings_objects_edit_button()}
           </button>
         {/if}
       </div>
     {/if}
 
     <div class="o-fields-head">
-      <h2 class="v2-label" style="margin:0">Fields</h2>
+      <h2 class="v2-label" style="margin:0">{m.settings_objects_fields_heading()}</h2>
       {#if canWrite && !editing}
         <button class="v2-btn v2-btn-sm o-add" type="button" onclick={openNewField}>
-          <Plus />New field
+          <Plus />{m.settings_objects_new_field()}
         </button>
       {/if}
     </div>
 
     {#if editing && canWrite}
       <SettingsFormPanel
-        title={editing === 'new' ? 'New field' : `Edit ${editing.label}`}
+        title={editing === 'new'
+          ? m.settings_objects_new_field()
+          : m.settings_objects_edit_field_title({ label: editing.label })}
         action={editing === 'new' ? '?/createField' : '?/updateField'}
         error={editing === 'new' ? form?.createField?.error : form?.updateField?.error}
-        submitLabel={editing === 'new' ? 'Add field' : 'Save field'}
+        submitLabel={editing === 'new'
+          ? m.settings_objects_add_field()
+          : m.settings_objects_save_field()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
@@ -235,7 +242,7 @@
           {/if}
 
           <div class="v2-field">
-            <label for="f-label">Label</label>
+            <label for="f-label">{m.settings_objects_field_label()}</label>
             <input
               id="f-label"
               class="v2-input"
@@ -247,7 +254,7 @@
           </div>
 
           <div class="v2-field">
-            <label for="f-key">Key</label>
+            <label for="f-key">{m.settings_objects_key_label()}</label>
             {#if editing === 'new'}
               <input
                 id="f-key"
@@ -259,17 +266,16 @@
                 placeholder="price"
               />
               <p class="v2-hint">
-                Lowercase letters, numbers and underscores, starting with a letter. Cannot be
-                changed later.
+                {m.settings_objects_key_hint()}
               </p>
             {:else}
               <code class="o-key">{editing.key}</code>
-              <p class="v2-hint">Fixed after creation.</p>
+              <p class="v2-hint">{m.settings_objects_fixed()}</p>
             {/if}
           </div>
 
           <div class="v2-field">
-            <label for="f-type">Type</label>
+            <label for="f-type">{m.settings_objects_type_label()}</label>
             {#if editing === 'new'}
               <select id="f-type" class="v2-input" name="field_type" bind:value={fieldType}>
                 {#each Object.entries(TYPE_LABEL) as [value, label] (value)}
@@ -278,14 +284,14 @@
               </select>
             {:else}
               <div style="font-size:13px">{TYPE_LABEL[editing.field_type]}</div>
-              <p class="v2-hint">Fixed after creation.</p>
+              <p class="v2-hint">{m.settings_objects_fixed()}</p>
             {/if}
           </div>
 
           {#if fieldType === 'link'}
             {#if editing === 'new'}
               <div class="v2-field">
-                <label for="f-target">Links to</label>
+                <label for="f-target">{m.settings_objects_links_to()}</label>
                 <select id="f-target" class="v2-input" name="target" required>
                   {#each linkTargets as t (t.key)}
                     <option value={t.key}>{t.label_plural}</option>
@@ -293,26 +299,28 @@
                 </select>
               </div>
               <div class="v2-field">
-                <label for="f-many">How many</label>
+                <label for="f-many">{m.settings_objects_how_many()}</label>
                 <select id="f-many" class="v2-input" name="many">
-                  <option value="false">One record</option>
-                  <option value="true">Several records</option>
+                  <option value="false">{m.settings_objects_one_record()}</option>
+                  <option value="true">{m.settings_objects_several_records()}</option>
                 </select>
               </div>
             {:else}
               <div class="v2-field">
-                <label for="f-linked">Links to</label>
+                <label for="f-linked">{m.settings_objects_links_to()}</label>
                 <div id="f-linked" style="font-size:13px">
-                  {targetLabel(editing.target)}, {editing.many ? 'several records' : 'one record'}
+                  {editing.many
+                    ? m.settings_objects_link_summary_many({ target: targetLabel(editing.target) })
+                    : m.settings_objects_link_summary_one({ target: targetLabel(editing.target) })}
                 </div>
-                <p class="v2-hint">Fixed after creation.</p>
+                <p class="v2-hint">{m.settings_objects_fixed()}</p>
               </div>
             {/if}
           {/if}
 
           {#if fieldType === 'dropdown'}
             <div class="v2-field v2-sfp-wide">
-              <label for="f-choices">Choices</label>
+              <label for="f-choices">{m.settings_objects_choices_label()}</label>
               {#each optionRows as row, i (i)}
                 <div class="o-option">
                   <input type="hidden" name="option_value" value={row.value} />
@@ -328,7 +336,7 @@
                     type="button"
                     onclick={() => (optionRows = optionRows.filter((_, j) => j !== i))}
                   >
-                    Remove
+                    {m.settings_objects_remove()}
                   </button>
                 </div>
               {/each}
@@ -338,13 +346,13 @@
                 style="align-self:flex-start"
                 onclick={() => (optionRows = [...optionRows, { value: '', label: '' }])}
               >
-                Add a choice
+                {m.settings_objects_add_choice()}
               </button>
             </div>
           {/if}
 
           <div class="v2-field">
-            <label for="f-order">Order</label>
+            <label for="f-order">{m.settings_objects_order_label()}</label>
             <input
               id="f-order"
               class="v2-input"
@@ -357,7 +365,7 @@
 
           {#if fieldType !== 'link'}
             <div class="v2-field">
-              <label for="f-required">Required</label>
+              <label for="f-required">{m.settings_objects_required_label()}</label>
               <label class="o-choice">
                 <input
                   id="f-required"
@@ -366,7 +374,7 @@
                   value="true"
                   checked={editing !== 'new' && editing.is_required}
                 />
-                A record cannot be saved without a value.
+                {m.settings_objects_required_hint()}
               </label>
             </div>
           {/if}
@@ -376,8 +384,8 @@
 
     {#if !data.fields.length}
       <EmptyState
-        title="No fields yet"
-        body="Fields are what each record holds, such as a price, a date or a link to a contact."
+        title={m.settings_objects_fields_empty_title()}
+        body={m.settings_objects_fields_empty_body()}
       />
     {:else}
       <div class="v2-card" style="overflow:hidden">
@@ -391,7 +399,9 @@
               <span class="v2-sub" style="font-size:11.5px">
                 {TYPE_LABEL[f.field_type] ?? f.field_type}
                 {#if f.field_type === 'link'}
-                  · {targetLabel(f.target)}, {f.many ? 'several' : 'one'}
+                  · {f.many
+                    ? m.settings_objects_link_row_many({ target: targetLabel(f.target) })
+                    : m.settings_objects_link_row_one({ target: targetLabel(f.target) })}
                 {/if}
                 {#if f.options}
                   · {f.options.map((/** @type {any} */ o) => o.label).join(', ')}
@@ -399,27 +409,29 @@
               </span>
             </div>
             {#if !f.is_active}
-              <Pill tone="slate">Off</Pill>
+              <Pill tone="slate">{m.settings_objects_off()}</Pill>
             {:else if f.is_required}
-              <Pill tone="clay">Required</Pill>
+              <Pill tone="clay">{m.settings_objects_required_label()}</Pill>
             {/if}
             {#if canWrite}
               <div class="o-actions">
                 <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEditField(f)}>
-                  Edit
+                  {m.settings_objects_edit()}
                 </button>
                 {#if f.is_active}
                   <ConfirmAction
                     action="?/fieldOff"
-                    label="Turn off"
-                    confirmLabel="Turn off"
-                    explain="Stops being collected. Stored values stay."
+                    label={m.settings_objects_turn_off()}
+                    confirmLabel={m.settings_objects_turn_off()}
+                    explain={m.settings_objects_turn_off_explain()}
                     hidden={{ field_key: f.key }}
                   />
                 {:else}
                   <form method="POST" action="?/fieldOn" use:enhance>
                     <input type="hidden" name="field_key" value={f.key} />
-                    <button class="v2-btn v2-btn-sm" type="submit">Turn on</button>
+                    <button class="v2-btn v2-btn-sm" type="submit"
+                      >{m.settings_objects_turn_on()}</button
+                    >
                   </form>
                 {/if}
               </div>

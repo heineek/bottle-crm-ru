@@ -505,6 +505,19 @@ describe('recordWriteError', () => {
   it('falls back to the readable error', () => {
     expect(recordWriteError(new Error(''), fields)).toBe('Could not save this record.');
   });
+
+  it('speaks Russian when the reader does', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      const err = { status: 400, body: { name: ['x'], assigned_to: ['y'] } };
+      expect(recordWriteError(err, fields)).toBe('Название: x\nОтветственные: y');
+      expect(recordWriteError(new Error(''), fields)).toBe('Не удалось сохранить запись.');
+    } finally {
+      overwriteGetLocale(base);
+    }
+  });
 });
 
 describe('recordPage', () => {

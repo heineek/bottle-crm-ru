@@ -23,7 +23,9 @@
   import SettingsFormPanel from '#lib/v2/components/SettingsFormPanel.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { shortDate, relativeDays } from '#lib/v2/format.js';
-  import { weeklyHours, isAlwaysOn } from './week.js';
+  import { weeklyHours, isAlwaysOn, weekdayName, dayLabel } from './week.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { Plus, Clock, TriangleAlert } from '@lucide/svelte';
 
   /** @type {{ data: any, form: any }} */
@@ -36,7 +38,12 @@
   /** See `week.js`: this is the state where the engine drops the calendar and
    *  runs the clock, so the page has to contradict its own rows. */
   let alwaysOn = $derived(isAlwaysOn(calendar.days));
-  const todayName = new Intl.DateTimeFormat('en-GB', { weekday: 'long' }).format(new Date());
+  const todayName = weekdayName();
+
+  let weeklyParts = $derived(messageParts(m.settings_hours_sub_weekly({ hours: slot('hours') })));
+  let analyticsNote = $derived(
+    messageParts(m.settings_hours_analytics_note({ link: slot('link') }))
+  );
 
   // `null` when the panel is closed. One panel for the week, so only one
   // edit can be in flight at a time.
@@ -67,19 +74,22 @@
   let addingHoliday = $state(false);
 </script>
 
-<PageHeader title="Business hours">
+<PageHeader title={m.settings_hours_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
     {calendar.name} · {calendar.timezone} ·
     {#if alwaysOn}
-      no day open, so targets run around the clock
+      {m.settings_hours_sub_always_on()}
     {:else}
-      <span class="v2-num">{weekly}</span> hours a week
+      {#each weeklyParts as p, i (i)}{#if p.key}<span class="v2-num">{weekly}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !editingHours}
-      <button class="v2-btn v2-btn-primary" onclick={openHoursEdit}>Edit hours</button>
+      <button class="v2-btn v2-btn-primary" onclick={openHoursEdit}
+        >{m.settings_hours_edit_button()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -88,20 +98,20 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     <div class="v2-split">
       <div>
-        <div class="v2-label" style="margin-bottom:10px">Open hours</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_hours_open_heading()}</div>
 
         {#if editingHours}
           <SettingsFormPanel
-            title="Edit business hours"
+            title={m.settings_hours_edit_title()}
             action="?/updateHours"
             error={form?.updateHours?.error}
-            submitLabel="Save hours"
+            submitLabel={m.settings_hours_save_button()}
             oncancel={() => (editingHours = false)}
             ondone={() => (editingHours = false)}
           >
             {#snippet fields()}
               <div class="v2-field">
-                <label for="bh-name">Name</label>
+                <label for="bh-name">{m.settings_hours_name_label()}</label>
                 <input
                   id="bh-name"
                   class="v2-input"
@@ -113,7 +123,7 @@
               </div>
 
               <div class="v2-field">
-                <label for="bh-timezone">Timezone</label>
+                <label for="bh-timezone">{m.settings_hours_timezone_label()}</label>
                 <input
                   id="bh-timezone"
                   class="v2-input"
@@ -123,14 +133,14 @@
                   value={calendar.timezone}
                   placeholder="America/New_York"
                 />
-                <p class="v2-hint">IANA timezone name.</p>
+                <p class="v2-hint">{m.settings_hours_timezone_hint()}</p>
               </div>
 
               <div class="v2-field v2-sfp-wide">
-                <label for="bh-day-0-open">Week</label>
+                <label for="bh-day-0-open">{m.settings_hours_week_label()}</label>
                 {#each hourRows as row, i (row.key)}
                   <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
-                    <span style="width:84px;font-size:13px;flex:none">{row.day}</span>
+                    <span style="width:84px;font-size:13px;flex:none">{dayLabel(row.day)}</span>
                     <label
                       style="display:flex;gap:6px;align-items:center;font-size:12px;font-weight:400;flex:none"
                     >
@@ -140,7 +150,7 @@
                         value="true"
                         bind:checked={row.closed}
                       />
-                      Closed
+                      {m.settings_hours_closed()}
                     </label>
                     <input
                       id={i === 0 ? 'bh-day-0-open' : undefined}
@@ -151,7 +161,7 @@
                       disabled={row.closed}
                       style="width:auto"
                     />
-                    <span class="v2-sub">to</span>
+                    <span class="v2-sub">{m.settings_hours_to()}</span>
                     <input
                       class="v2-input"
                       type="time"
@@ -172,12 +182,10 @@
             <TriangleAlert size={17} style="color:var(--v2-clay);flex:none;margin-top:1px" />
             <div>
               <div style="font-weight:600;font-size:13px">
-                Every day is closed, and the clock still runs
+                {m.settings_hours_always_on_title()}
               </div>
               <p class="v2-sub" style="font-size:12px;margin:4px 0 0">
-                A four-hour target expires four hours after the ticket arrives, weekend or not. The
-                engine drops a calendar that never opens rather than treating it as permanently
-                shut, so open at least one day to make this calendar count.
+                {m.settings_hours_always_on_body()}
               </p>
             </div>
           </div>
@@ -187,16 +195,16 @@
           {#each calendar.days as d (d.day)}
             <div class="v2-setting" style={d.day === todayName ? 'background:var(--v2-hover)' : ''}>
               <div class="v2-setting-body">
-                <b>{d.day}</b>
+                <b>{dayLabel(d.day)}</b>
                 {#if d.day === todayName}
-                  <span class="v2-sub" style="font-size:11px">today</span>
+                  <span class="v2-sub" style="font-size:11px">{m.settings_hours_today()}</span>
                 {/if}
               </div>
               {#if d.open && d.close}
                 <span class="v2-num" style="font-size:13px">{d.open} - {d.close}</span>
               {:else}
                 <!-- Named, not blank. A blank cell reads as missing data. -->
-                <span class="v2-sub" style="font-size:12.5px">Closed</span>
+                <span class="v2-sub" style="font-size:12.5px">{m.settings_hours_closed()}</span>
               {/if}
             </div>
           {/each}
@@ -204,49 +212,48 @@
 
         {#if calendar.is_default}
           <p class="v2-sub" style="font-size:11.5px;margin-top:11px">
-            This is the default calendar, so it applies to every ticket that does not have a more
-            specific one.
+            {m.settings_hours_default_note()}
           </p>
         {/if}
       </div>
 
       <div>
         <div style="display:flex;align-items:baseline;margin-bottom:10px">
-          <div class="v2-label">Holidays</div>
+          <div class="v2-label">{m.settings_hours_holidays_heading()}</div>
           {#if data.can_edit && !addingHoliday}
             <button
               class="v2-btn v2-btn-sm"
               style="margin-left:auto"
               onclick={() => (addingHoliday = true)}
             >
-              <Plus size={12} />Add
+              <Plus size={12} />{m.settings_hours_add_button()}
             </button>
           {/if}
         </div>
 
         {#if addingHoliday}
           <SettingsFormPanel
-            title="Add holiday"
+            title={m.settings_hours_add_holiday_title()}
             action="?/addHoliday"
             error={form?.addHoliday?.error}
-            submitLabel="Add holiday"
+            submitLabel={m.settings_hours_add_holiday_title()}
             oncancel={() => (addingHoliday = false)}
             ondone={() => (addingHoliday = false)}
           >
             {#snippet fields()}
               <div class="v2-field">
-                <label for="bh-holiday-date">Date</label>
+                <label for="bh-holiday-date">{m.settings_hours_date_label()}</label>
                 <input id="bh-holiday-date" class="v2-input" type="date" name="date" required />
               </div>
               <div class="v2-field">
-                <label for="bh-holiday-name">Name</label>
+                <label for="bh-holiday-name">{m.settings_hours_name_label()}</label>
                 <input
                   id="bh-holiday-name"
                   class="v2-input"
                   name="name"
                   maxlength="100"
                   required
-                  placeholder="Christmas"
+                  placeholder={m.settings_hours_holiday_placeholder()}
                 />
               </div>
             {/snippet}
@@ -261,9 +268,9 @@
                was already stored, so the name just typed was discarded. Silence
                here reads as a successful rename. -->
           <p class="v2-sub" style="margin-bottom:12px;font-size:12px">
-            That date was already a holiday, called
-            <b style="font-weight:600">{form.holidayAlreadyNamed}</b>. The name you typed was not
-            saved: remove it and add it again to rename it.
+            {#each messageParts(m.settings_hours_already_named( { name: slot('name') } )) as p, i (i)}{#if p.key}<b
+                  style="font-weight:600">{form.holidayAlreadyNamed}</b
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
 
@@ -278,16 +285,16 @@
               {#if data.can_edit}
                 <ConfirmAction
                   action="?/removeHoliday"
-                  label="Remove"
-                  confirmLabel="Remove"
-                  explain="Deletes it. The day counts as working time again."
+                  label={m.settings_hours_remove()}
+                  confirmLabel={m.settings_hours_remove()}
+                  explain={m.settings_hours_remove_explain()}
                   hidden={{ holiday_id: h.id }}
                 />
               {/if}
             </div>
           {:else}
             <p class="v2-sub" style="padding:14px 16px;font-size:12.5px;margin:0">
-              No holidays set. Targets will keep running on public holidays.
+              {m.settings_hours_no_holidays()}
             </p>
           {/each}
         </div>
@@ -297,31 +304,31 @@
         >
           <Clock size={16} style="color:var(--v2-slate);flex:none;margin-top:1px" />
           <div>
-            <div style="font-weight:600;font-size:13px">What this changes</div>
+            <div style="font-weight:600;font-size:13px">{m.settings_hours_changes_heading()}</div>
             <p class="v2-sub" style="font-size:12px;margin:4px 0 0">
               {#if alwaysOn}
                 <!-- The claim above this branch is false when nothing is open:
                      `_has_any_open_window` is what decides whether the calendar
                      is consulted at all, and with no open day it is not. -->
-                With no day open, targets do not count anything out: they run on the wall clock, through
-                evenings, weekends and the holidays below.
+                {m.settings_hours_changes_always_on()}
               {:else}
-                Response and resolution targets count only the time inside these hours. A ticket
-                opened at 17:20 on Friday
                 {#if calendar.days[0].open}
-                  starts its clock at <span class="v2-num">{calendar.days[0].open}</span> on Monday,
+                  {#each messageParts(m.settings_hours_changes_monday( { time: slot('time') } )) as p, i (i)}{#if p.key}<span
+                        class="v2-num">{calendar.days[0].open}</span
+                      >{:else}{p.text}{/if}{/each}
                 {:else}
                   <!-- Monday can be marked closed from this page now, so the
                        fixed "Monday morning" framing can no longer assume an
                        open time exists to quote. -->
-                  starts its clock whenever the week next opens,
+                  {m.settings_hours_changes_next_open()}
                 {/if}
-                so the weekend does not spend a four-hour target.
               {/if}
             </p>
             <p class="v2-sub" style="font-size:12px;margin:8px 0 0">
-              <a href={resolve('tickets/analytics')} style="color:inherit">Service analytics</a> is measured
-              on this calendar.
+              {#each analyticsNote as p, i (i)}{#if p.key}<a
+                    href={resolve('tickets/analytics')}
+                    style="color:inherit">{m.settings_hours_analytics_link()}</a
+                  >{:else}{p.text}{/if}{/each}
             </p>
           </div>
         </div>

@@ -17,14 +17,15 @@ import { listTickets } from '#lib/server/v2/tickets.js';
 import { listTasks } from '#lib/server/v2/tasks.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
 import { isPhoto, OBJECT_KEY, UUID } from '#lib/v2/custom-objects.js';
+import { m } from '#lib/paraglide/messages.js';
 
 export const FIELD_KEY = /^[a-z][a-z0-9_]{0,63}$/;
 
 const PAGE_SIZE = 20;
 const ABSENT_FOR_MS = 5 * 60 * 1000;
-const NOT_AVAILABLE = 'Custom objects are not available here.';
-export const OBJECT_GONE = 'That object does not exist, or you do not have access to it.';
-const RECORD_GONE = 'That record does not exist, or you do not have access to it.';
+const notAvailable = () => m.settings_objects_not_available();
+export const objectGone = () => m.settings_objects_object_gone();
+const recordGone = () => m.settings_objects_record_gone();
 
 /** @typedef {{ cookies: import('@sveltejs/kit').Cookies }} Event */
 
@@ -33,7 +34,7 @@ const RECORD_GONE = 'That record does not exist, or you do not have access to it
  * @returns {string}
  */
 export function checkKey(key) {
-  if (typeof key !== 'string' || !OBJECT_KEY.test(key)) error(404, OBJECT_GONE);
+  if (typeof key !== 'string' || !OBJECT_KEY.test(key)) error(404, objectGone());
   return key;
 }
 
@@ -42,7 +43,7 @@ export function checkKey(key) {
  * @returns {string}
  */
 export function checkFieldKey(key) {
-  if (typeof key !== 'string' || !FIELD_KEY.test(key)) error(404, OBJECT_GONE);
+  if (typeof key !== 'string' || !FIELD_KEY.test(key)) error(404, objectGone());
   return key;
 }
 
@@ -51,7 +52,7 @@ export function checkFieldKey(key) {
  * @returns {string}
  */
 export function checkId(id) {
-  if (typeof id !== 'string' || !UUID.test(id)) error(404, RECORD_GONE);
+  if (typeof id !== 'string' || !UUID.test(id)) error(404, recordGone());
   return id;
 }
 
@@ -131,7 +132,7 @@ export async function getCustomObjects({ cookies }) {
 export async function listObjectsForSettings({ cookies }) {
   return await orNotFound(
     () => apiRequest('/objects/?include_archived=true', { expectedStatuses: [404] }, { cookies }),
-    NOT_AVAILABLE
+    notAvailable()
   );
 }
 
@@ -144,7 +145,7 @@ export async function getObject({ cookies }, key) {
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/`, { expectedStatuses: [404] }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -157,7 +158,7 @@ export async function listFields({ cookies }, key) {
   checkKey(key);
   const response = await orNotFound(
     () => apiRequest(`/objects/${key}/fields/`, { expectedStatuses: [404] }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
   return response?.fields ?? [];
 }
@@ -179,7 +180,7 @@ export async function updateObject({ cookies }, key, body) {
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/`, { method: 'PATCH', body }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -194,7 +195,7 @@ export async function deleteObject({ cookies }, key) {
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/`, { method: 'DELETE' }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -207,7 +208,7 @@ export async function createField({ cookies }, key, body) {
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/fields/`, { method: 'POST', body }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -222,7 +223,7 @@ export async function updateField({ cookies }, key, fieldKey, body) {
   checkFieldKey(fieldKey);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/fields/${fieldKey}/`, { method: 'PATCH', body }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -238,7 +239,7 @@ export async function turnOffField({ cookies }, key, fieldKey) {
   checkFieldKey(fieldKey);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/fields/${fieldKey}/`, { method: 'DELETE' }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -254,7 +255,7 @@ export async function listRecords({ cookies }, key, { q = '', page = 1 } = {}) {
   const qs = query({ q: q.trim(), limit: PAGE_SIZE, offset });
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/?${qs}`, { expectedStatuses: [404] }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -269,7 +270,7 @@ export async function getRecord({ cookies }, key, id) {
   checkId(id);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/${id}/`, { expectedStatuses: [404] }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -288,7 +289,7 @@ export async function recordPage(event, key, id) {
     getObject(event, key),
     getRecord(event, key, id)
   ]);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   const attachments = (record.attachments ?? []).map((/** @type {any} */ a) => ({
     ...a,
     href: attachmentHref(a.id)
@@ -310,7 +311,7 @@ export async function createRecord({ cookies }, key, body) {
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/`, { method: 'POST', body }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -327,7 +328,7 @@ export async function updateRecord({ cookies }, key, id, body) {
   checkId(id);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/${id}/`, { method: 'PATCH', body }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -341,7 +342,7 @@ export async function deleteRecord({ cookies }, key, id) {
   checkId(id);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/${id}/`, { method: 'DELETE' }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -363,7 +364,7 @@ export async function uploadAttachment({ cookies }, key, id, file) {
         { method: 'POST', body },
         { cookies }
       ),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -384,7 +385,7 @@ export async function deleteAttachment({ cookies }, key, id, attachmentId) {
         { method: 'DELETE' },
         { cookies }
       ),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -419,7 +420,7 @@ export async function getRelated({ cookies }, to, id) {
  * @param {{ to: string, id: string, record: string, field: string }} link
  */
 function checkLink({ to, id, record, field }) {
-  if (!BUILT_IN.includes(to)) error(404, RECORD_GONE);
+  if (!BUILT_IN.includes(to)) error(404, recordGone());
   checkId(id);
   checkId(record);
   checkFieldKey(field);
@@ -475,7 +476,7 @@ const ROW_NAME = {
     [row.first_name, row.last_name].filter(Boolean).join(' ').trim() ||
     row.company_name ||
     row.email ||
-    'Untitled',
+    m.settings_objects_untitled(),
   contact: (row) => row.name,
   account: (row) => row.name,
   deal: (row) => row.name,
@@ -524,7 +525,7 @@ const first = (value) => String(Array.isArray(value) ? value[0] : value);
  * @param {string} [nameLabel] The object's `name_label`.
  * @returns {string}
  */
-export function recordWriteError(err, fields, nameLabel = 'Name') {
+export function recordWriteError(err, fields, nameLabel = m.settings_objects_name()) {
   const body = err?.body;
   /** @param {string} key */
   const label = (key) => fields.find((field) => field.key === key)?.label ?? key;
@@ -537,8 +538,9 @@ export function recordWriteError(err, fields, nameLabel = 'Name') {
   for (const [key, message] of Object.entries(body?.links ?? {})) {
     lines.push(`${label(key)}: ${first(message)}`);
   }
-  if (body?.assigned_to) lines.push(`Assignees: ${first(body.assigned_to)}`);
+  if (body?.assigned_to)
+    lines.push(m.settings_objects_assignees_error({ message: first(body.assigned_to) }));
   if (lines.length) return lines.join('\n');
   if (typeof body?.detail === 'string') return body.detail;
-  return readableError(err, 'Could not save this record.');
+  return readableError(err, m.settings_objects_error_save_record());
 }

@@ -27,6 +27,7 @@
  *
  * `mobile/lib/data/models/mailbox.dart` carries the same rules.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 /** The providers the webhook actually handles. Everything else 501s. */
 export const SUPPORTED_PROVIDERS = ['ses'];
@@ -45,10 +46,10 @@ export function deliveryState(mailbox) {
 }
 
 const LABEL = {
-  off: 'Creating nothing',
-  unsupported: 'Provider not wired up',
-  unconfirmed: 'Not connected yet',
-  live: 'Creating tickets'
+  off: () => m.settings_inbound_state_off(),
+  unsupported: () => m.settings_inbound_state_unsupported(),
+  unconfirmed: () => m.settings_inbound_state_unconfirmed(),
+  live: () => m.settings_inbound_state_live()
 };
 
 const TONE = {
@@ -60,7 +61,7 @@ const TONE = {
 
 /** @param {string} state */
 export function deliveryLabel(state) {
-  return LABEL[state] ?? LABEL.off;
+  return (LABEL[state] ?? LABEL.off)();
 }
 
 /** @param {string} state */
@@ -79,13 +80,13 @@ export function deliveryTone(state) {
  */
 export function deliveryExplanation(state, providerLabel) {
   if (state === 'off') {
-    return 'Mail still arrives here and no ticket is opened. Nothing bounces, so whoever wrote gets silence rather than an error.';
+    return m.settings_inbound_explain_off();
   }
   if (state === 'unsupported') {
-    return `${providerLabel} deliveries are not implemented. The webhook refuses them, so mail to this address becomes nothing whatever else is set here. Only AWS SES is wired up.`;
+    return m.settings_inbound_explain_unsupported({ provider: providerLabel });
   }
   if (state === 'unconfirmed') {
-    return 'Waiting for its SNS topic. Every message is refused until this address has a Topic ARN: an admin can enter it here, or it is set when AWS confirms a subscription from an AWS account this server allows.';
+    return m.settings_inbound_explain_unconfirmed();
   }
   return null;
 }
@@ -101,7 +102,7 @@ export function deliveryExplanation(state, providerLabel) {
  * @param {any[]} mailboxes
  */
 export function deliveringCount(mailboxes) {
-  return (mailboxes ?? []).filter((m) => deliveryState(m) === 'live').length;
+  return (mailboxes ?? []).filter((box) => deliveryState(box) === 'live').length;
 }
 
 /**
@@ -113,8 +114,8 @@ export function deliveringCount(mailboxes) {
  * @param {any[]} mailboxes
  */
 export function silentMailboxes(mailboxes) {
-  return (mailboxes ?? []).filter((m) => {
-    const state = deliveryState(m);
+  return (mailboxes ?? []).filter((box) => {
+    const state = deliveryState(box);
     return state === 'unsupported' || state === 'unconfirmed';
   });
 }
@@ -130,5 +131,7 @@ export function silentMailboxes(mailboxes) {
  * @param {string} label
  */
 export function providerChoiceLabel(value, label) {
-  return SUPPORTED_PROVIDERS.includes(value) ? label : `${label} (not wired up yet)`;
+  return SUPPORTED_PROVIDERS.includes(value)
+    ? label
+    : m.settings_inbound_provider_not_wired({ provider: label });
 }

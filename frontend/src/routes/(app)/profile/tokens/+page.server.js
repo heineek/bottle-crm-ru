@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { listMyTokens, createToken, revokeMyToken } from '#lib/server/v2/tokens.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { expiryFromChoice, scopesFromChoice } from '#lib/v2/token-rules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Your own API tokens: issue one, see what you have, revoke one.
@@ -35,7 +36,7 @@ export const actions = {
     const name = form.get('name')?.toString().trim();
     const expires_at = expiryFromChoice(form.get('expiry')?.toString());
     const scopes = scopesFromChoice(form.get('access')?.toString());
-    if (!name) return fail(400, { create: { error: 'Give the token a name.' } });
+    if (!name) return fail(400, { create: { error: m.profile_tokens_err_name() } });
 
     try {
       const res = await createToken({ cookies }, { name, expires_at, scopes });
@@ -49,7 +50,7 @@ export const actions = {
       };
     } catch (/** @type {any} */ err) {
       return fail(400, {
-        create: { error: readableError(err, 'Could not create that token.') }
+        create: { error: readableError(err, m.profile_tokens_err_create()) }
       });
     }
   },
@@ -61,14 +62,14 @@ export const actions = {
   revoke: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which token?' });
+    if (!id) return fail(400, { error: m.profile_tokens_err_which() });
     try {
       await revokeMyToken({ cookies }, id);
     } catch (/** @type {any} */ err) {
       if (err?.status === 404) {
-        return fail(404, { error: 'That token is not one of yours.' });
+        return fail(404, { error: m.profile_tokens_err_not_yours() });
       }
-      return fail(400, { error: readableError(err, 'Could not revoke that token.') });
+      return fail(400, { error: readableError(err, m.profile_tokens_err_revoke()) });
     }
     return { revoked: id };
   }

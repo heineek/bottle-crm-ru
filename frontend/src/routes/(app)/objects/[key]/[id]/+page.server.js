@@ -10,6 +10,7 @@ import {
 import { pairForDisplay } from '#lib/server/v2/record-fields.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { uploadTooLarge } from '#lib/v2/custom-objects.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @param {any} err */
 const refusalCode = (err) => (err?.status >= 400 && err?.status < 500 ? err.status : 400);
@@ -37,7 +38,7 @@ export const actions = {
       await deleteRecord({ cookies }, key, id);
     } catch (/** @type {any} */ err) {
       return fail(refusalCode(err), {
-        deleteError: readableError(err, 'Could not delete this record.')
+        deleteError: readableError(err, m.app_objects_delete_failed())
       });
     }
     redirect(303, `/objects/${key}`);
@@ -48,7 +49,7 @@ export const actions = {
     const id = checkId(params.id);
     const picked = (await request.formData()).get('file');
     if (!picked || typeof picked !== 'object' || !('size' in picked) || picked.size === 0) {
-      return fail(400, { uploadError: 'Choose a file to upload.' });
+      return fail(400, { uploadError: m.app_objects_choose_file() });
     }
     const tooLarge = uploadTooLarge(picked);
     if (tooLarge) return fail(400, { uploadError: tooLarge });
@@ -56,7 +57,7 @@ export const actions = {
       await uploadAttachment({ cookies }, key, id, picked);
     } catch (/** @type {any} */ err) {
       return fail(refusalCode(err), {
-        uploadError: readableError(err, 'Could not upload that file.')
+        uploadError: readableError(err, m.app_objects_upload_failed())
       });
     }
     return { uploaded: true };
@@ -70,7 +71,7 @@ export const actions = {
       await deleteAttachment({ cookies }, key, id, attachment);
     } catch (/** @type {any} */ err) {
       return fail(refusalCode(err), {
-        fileError: readableError(err, 'Could not delete that file.')
+        fileError: readableError(err, m.app_objects_file_delete_failed())
       });
     }
     return { fileDeleted: true };

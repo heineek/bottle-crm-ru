@@ -15,7 +15,7 @@ const {
   listRuns,
   reorderRules,
   automationSummary,
-  NOT_AVAILABLE,
+  notAvailable,
   ruleBody,
   moveRule,
   ruleErrors
@@ -104,10 +104,13 @@ describe('requests', () => {
   });
 
   it('turns a 404 on the list or the catalogue into a page 404 that says rules are not offered', async () => {
-    expect(NOT_AVAILABLE).toBe('Automation rules are not available here.');
+    expect(notAvailable()).toBe('Automation rules are not available here.');
     for (const call of [() => listRules(event), () => getCatalogue(event)]) {
       apiRequest.mockRejectedValueOnce(status(404));
-      await expect(call()).rejects.toMatchObject({ status: 404, body: { message: NOT_AVAILABLE } });
+      await expect(call()).rejects.toMatchObject({
+        status: 404,
+        body: { message: notAvailable() }
+      });
     }
     apiRequest.mockRejectedValueOnce(status(403));
     await expect(getCatalogue(event)).rejects.toMatchObject({ status: 403 });

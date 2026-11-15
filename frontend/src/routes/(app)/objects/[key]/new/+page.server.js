@@ -3,7 +3,7 @@ import {
   checkKey,
   createRecord,
   getObject,
-  OBJECT_GONE,
+  objectGone,
   recordWriteError
 } from '#lib/server/v2/custom-objects.js';
 import { getOrgPeopleAndTeams } from '#lib/server/v2/org-people.js';
@@ -18,7 +18,7 @@ export async function load({ cookies, params }) {
     getObject({ cookies }, key),
     getOrgPeopleAndTeams(cookies)
   ]);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   const plain = definition.fields.filter((/** @type {any} */ f) => f.field_type !== 'link');
   return {
     definition,

@@ -33,6 +33,7 @@
  */
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * @param {{ cookies: import('@sveltejs/kit').Cookies }} event
@@ -80,7 +81,7 @@ export async function getTags({ cookies }) {
  */
 export async function createTag({ cookies }, values) {
   const name = (values.name ?? '').trim();
-  if (!name) throw new Error('A tag needs a name.');
+  if (!name) throw new Error(m.settings_tags_error_no_name());
 
   const resp = await apiRequest('/tags/', { method: 'POST', body: { name } }, { cookies });
   return resp.tag ?? resp;
@@ -110,7 +111,7 @@ export async function createTag({ cookies }, values) {
  * @returns {Promise<any>}
  */
 export async function archiveTag({ cookies }, id) {
-  if (!id) throw new Error('A tag id is required to turn a tag off.');
+  if (!id) throw new Error(m.settings_tags_error_no_id_off());
   return await apiRequest(`/tags/${id}/`, { method: 'DELETE' }, { cookies });
 }
 
@@ -124,7 +125,7 @@ export async function archiveTag({ cookies }, id) {
  * @returns {Promise<any>}
  */
 export async function restoreTag({ cookies }, id) {
-  if (!id) throw new Error('A tag id is required to turn a tag back on.');
+  if (!id) throw new Error(m.settings_tags_error_no_id_on());
   return await apiRequest(`/tags/${id}/restore/`, { method: 'POST' }, { cookies });
 }
 
@@ -150,7 +151,7 @@ export async function restoreTag({ cookies }, id) {
  *   many records changed hands, which is what the page reports back.
  */
 export async function mergeTags({ cookies }, id, into) {
-  if (!id || !into) throw new Error('Two tags are required to merge.');
+  if (!id || !into) throw new Error(m.settings_tags_error_merge_pair());
   const resp = await apiRequest(
     `/tags/${id}/merge/`,
     { method: 'POST', body: { into } },

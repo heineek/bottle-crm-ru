@@ -7,6 +7,7 @@ import {
 } from '#lib/server/v2/ticket-approvals.js';
 import { getOrgPeopleAndTeams } from '#lib/server/v2/org-people.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 // The rule list and the create/edit form's approver picker are two independent
 // fetches: `getApprovalRules` does not fold `getOrgPeopleAndTeams` into its own
@@ -59,9 +60,9 @@ export const actions = {
       await createApprovalRule(event, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { create: { error: 'Only an admin can change approval rules.' } });
+        return fail(403, { create: { error: m.settings_approvals_error_admin_only() } });
       }
-      return fail(400, { create: { error: readableError(err, 'Could not add the rule.') } });
+      return fail(400, { create: { error: readableError(err, m.settings_approvals_error_add()) } });
     }
     return { created: true };
   },
@@ -74,9 +75,11 @@ export const actions = {
       await updateApprovalRule(event, id, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { update: { error: 'Only an admin can change approval rules.' } });
+        return fail(403, { update: { error: m.settings_approvals_error_admin_only() } });
       }
-      return fail(400, { update: { error: readableError(err, 'Could not save the rule.') } });
+      return fail(400, {
+        update: { error: readableError(err, m.settings_approvals_error_save()) }
+      });
     }
     return { updated: true };
   },
@@ -88,10 +91,10 @@ export const actions = {
       await updateApprovalRule(event, id, { is_active: false });
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { deactivate: { error: 'Only an admin can change approval rules.' } });
+        return fail(403, { deactivate: { error: m.settings_approvals_error_admin_only() } });
       }
       return fail(400, {
-        deactivate: { error: readableError(err, 'Could not turn the rule off.') }
+        deactivate: { error: readableError(err, m.settings_approvals_error_turn_off()) }
       });
     }
     return { deactivated: true };
@@ -112,10 +115,10 @@ export const actions = {
       await updateApprovalRule(event, id, { is_active: true });
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { activate: { error: 'Only an admin can change approval rules.' } });
+        return fail(403, { activate: { error: m.settings_approvals_error_admin_only() } });
       }
       return fail(400, {
-        activate: { error: readableError(err, 'Could not turn the rule on.') }
+        activate: { error: readableError(err, m.settings_approvals_error_turn_on()) }
       });
     }
     return { activated: true };
@@ -137,9 +140,11 @@ export const actions = {
       outcome = await deleteApprovalRule(event, id);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { remove: { error: 'Only an admin can change approval rules.' } });
+        return fail(403, { remove: { error: m.settings_approvals_error_admin_only() } });
       }
-      return fail(400, { remove: { error: readableError(err, 'Could not delete the rule.') } });
+      return fail(400, {
+        remove: { error: readableError(err, m.settings_approvals_error_delete()) }
+      });
     }
     return { removed: !outcome.turned_off, remove: { turned_off: outcome.turned_off } };
   }

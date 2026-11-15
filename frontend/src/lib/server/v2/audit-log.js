@@ -12,6 +12,7 @@
  * `include_token_refresh=true` is sent (or `event_type=TOKEN_REFRESH`).
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** Entries per page. */
 export const AUDIT_PAGE = 25;
@@ -62,7 +63,7 @@ export async function listAuditLog({ cookies }, filters, offset = 0) {
       return {
         forbidden: false,
         ...page,
-        error: err.message || 'That filter is not valid.',
+        error: err.message || m.settings_audit_error_filter(),
         entries: [],
         count: 0,
         eventTypes: []

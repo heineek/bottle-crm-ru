@@ -31,6 +31,7 @@
  * Nothing here recounts the page.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import { missingOption, missingOptions } from '#lib/v2/pickers.js';
 import { builtinFor } from '#lib/v2/webform-fields.js';
 import { viewerIsAdmin } from './organization.js';
@@ -80,7 +81,7 @@ async function listProfiles(cookies) {
     const resp = await apiRequest('/users/get-teams-and-users/', {}, { cookies });
     return (resp.profiles ?? []).map((/** @type {any} */ p) => ({
       id: p.id,
-      name: p.user_details?.email || p.user?.email || 'Unknown'
+      name: p.user_details?.email || p.user?.email || m.settings_webforms_unknown_person()
     }));
   } catch {
     return [];
@@ -143,7 +144,7 @@ async function listTags(cookies) {
  * @param {string} id
  */
 export async function getWebForm({ cookies }, id) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   const [form, profiles, definitions, tags] = await Promise.all([
     apiRequest(`/webforms/${id}/`, {}, { cookies }),
     listProfiles(cookies),
@@ -249,7 +250,7 @@ function buildBody(values) {
 
   if (body.name !== undefined) {
     body.name = String(body.name).trim();
-    if (!body.name) throw new Error('A form needs a name.');
+    if (!body.name) throw new Error(m.settings_webforms_name_required());
   }
 
   if (Array.isArray(values.fields)) {
@@ -273,7 +274,7 @@ function buildBody(values) {
  */
 export async function createWebForm({ cookies }, values) {
   const body = buildBody(values);
-  if (!body.name) throw new Error('A form needs a name.');
+  if (!body.name) throw new Error(m.settings_webforms_name_required());
   return await apiRequest('/webforms/', { method: 'POST', body }, { cookies });
 }
 
@@ -287,7 +288,7 @@ export async function createWebForm({ cookies }, values) {
  * @param {{ [key: string]: any }} values
  */
 export async function updateWebForm({ cookies }, id, values) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   const body = buildBody(values);
   return await apiRequest(`/webforms/${id}/`, { method: 'PUT', body }, { cookies });
 }
@@ -301,7 +302,7 @@ export async function updateWebForm({ cookies }, id, values) {
  * @param {string} id
  */
 export async function deleteWebForm({ cookies }, id) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/`, { method: 'DELETE' }, { cookies });
 }
 
@@ -317,7 +318,7 @@ export async function deleteWebForm({ cookies }, id) {
  * @param {string} id
  */
 export async function publishWebForm({ cookies }, id) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/publish/`, { method: 'POST' }, { cookies });
 }
 
@@ -326,7 +327,7 @@ export async function publishWebForm({ cookies }, id) {
  * @param {string} id
  */
 export async function unpublishWebForm({ cookies }, id) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/unpublish/`, { method: 'POST' }, { cookies });
 }
 
@@ -342,7 +343,7 @@ export async function unpublishWebForm({ cookies }, id) {
  * @param {number} limit
  */
 export async function getSubmissions({ cookies }, id, limit = 25) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   const resp = await apiRequest(`/webforms/${id}/submissions/?limit=${limit}`, {}, { cookies });
   return { submissions: resp?.results ?? [], count: resp?.count ?? 0 };
 }
@@ -358,6 +359,6 @@ export async function getSubmissions({ cookies }, id, limit = 25) {
  * @param {string} id
  */
 export async function getAnalytics({ cookies }, id) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/analytics/`, {}, { cookies });
 }

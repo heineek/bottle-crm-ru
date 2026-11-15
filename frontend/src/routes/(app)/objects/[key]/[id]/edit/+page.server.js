@@ -4,7 +4,7 @@ import {
   checkKey,
   getObject,
   getRecord,
-  OBJECT_GONE,
+  objectGone,
   recordWriteError,
   updateRecord
 } from '#lib/server/v2/custom-objects.js';
@@ -22,7 +22,7 @@ export async function load({ cookies, params }) {
     getRecord({ cookies }, key, id),
     getOrgPeopleAndTeams(cookies)
   ]);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   if (!record.can_edit) redirect(303, recordHref(`obj:${key}`, id) ?? `/objects/${key}`);
   const plain = definition.fields.filter((/** @type {any} */ f) => f.field_type !== 'link');
   return {

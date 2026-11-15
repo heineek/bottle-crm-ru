@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   SUPPORTED_PROVIDERS,
   deliveryState,
@@ -156,5 +157,16 @@ describe('providerChoiceLabel', () => {
     for (const value of values) {
       expect(providerChoiceLabel(value, value)).toContain(value);
     }
+  });
+});
+
+describe('in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('translates the state label and the provider suffix', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(deliveryLabel('live')).toBe('Создаёт обращения');
+    expect(providerChoiceLabel('mailgun', 'Mailgun')).toBe('Mailgun (пока не подключён)');
   });
 });

@@ -3,13 +3,14 @@
   import AdminsOnly from '#lib/v2/components/automation/AdminsOnly.svelte';
   import AutomationCrumb from '#lib/v2/components/automation/AutomationCrumb.svelte';
   import RuleEditor from '#lib/v2/components/automation/RuleEditor.svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="New rule">
+  <PageHeader title={m.settings_automation_new_rule()}>
     {#snippet crumb()}<AutomationCrumb />{/snippet}
   </PageHeader>
   <div class="v2-scroll">

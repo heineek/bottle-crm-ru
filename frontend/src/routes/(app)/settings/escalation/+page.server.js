@@ -7,6 +7,7 @@ import {
 } from '#lib/server/v2/escalation.js';
 import { getOrgPeopleAndTeams } from '#lib/server/v2/org-people.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 // The policy list and the create/edit form's target picker are two
 // independent fetches: `getEscalationPolicies` does not fold
@@ -69,9 +70,11 @@ export const actions = {
       await createEscalationPolicy(event, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { create: { error: 'Only an admin can change escalation policies.' } });
+        return fail(403, { create: { error: m.settings_escalation_error_admin_only() } });
       }
-      return fail(400, { create: { error: readableError(err, 'Could not add the policy.') } });
+      return fail(400, {
+        create: { error: readableError(err, m.settings_escalation_error_add()) }
+      });
     }
     return { created: true };
   },
@@ -84,9 +87,11 @@ export const actions = {
       await updateEscalationPolicy(event, id, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { update: { error: 'Only an admin can change escalation policies.' } });
+        return fail(403, { update: { error: m.settings_escalation_error_admin_only() } });
       }
-      return fail(400, { update: { error: readableError(err, 'Could not save the policy.') } });
+      return fail(400, {
+        update: { error: readableError(err, m.settings_escalation_error_save()) }
+      });
     }
     return { updated: true };
   },
@@ -99,11 +104,11 @@ export const actions = {
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
         return fail(403, {
-          deactivate: { error: 'Only an admin can change escalation policies.' }
+          deactivate: { error: m.settings_escalation_error_admin_only() }
         });
       }
       return fail(400, {
-        deactivate: { error: readableError(err, 'Could not turn the policy off.') }
+        deactivate: { error: readableError(err, m.settings_escalation_error_turn_off()) }
       });
     }
     return { deactivated: true };
@@ -123,10 +128,10 @@ export const actions = {
       await updateEscalationPolicy(event, id, { is_active: true });
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { activate: { error: 'Only an admin can change escalation policies.' } });
+        return fail(403, { activate: { error: m.settings_escalation_error_admin_only() } });
       }
       return fail(400, {
-        activate: { error: readableError(err, 'Could not turn the policy on.') }
+        activate: { error: readableError(err, m.settings_escalation_error_turn_on()) }
       });
     }
     return { activated: true };
@@ -142,9 +147,11 @@ export const actions = {
       await deleteEscalationPolicy(event, id);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { remove: { error: 'Only an admin can change escalation policies.' } });
+        return fail(403, { remove: { error: m.settings_escalation_error_admin_only() } });
       }
-      return fail(400, { remove: { error: readableError(err, 'Could not delete the policy.') } });
+      return fail(400, {
+        remove: { error: readableError(err, m.settings_escalation_error_delete()) }
+      });
     }
     return { removed: true };
   }

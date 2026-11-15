@@ -21,17 +21,20 @@
   import { count } from '#lib/v2/format.js';
   import { LEAD_STATUS_LABEL } from '#lib/v2/enums.js';
   import { ArrowDown, ArrowUp, Columns3, Plus } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
 
   /** `LeadStage.STAGE_TYPE_CHOICES`. */
-  const STAGE_TYPES = /** @type {const} */ ([
-    ['open', 'Open'],
-    ['won', 'Won'],
-    ['lost', 'Lost']
+  let STAGE_TYPES = $derived([
+    ['open', m.settings_leadpipelines_type_open()],
+    ['won', m.settings_leadpipelines_type_won()],
+    ['lost', m.settings_leadpipelines_type_lost()]
   ]);
-  const TYPE_LABEL = Object.fromEntries(STAGE_TYPES);
+  let TYPE_LABEL = $derived(Object.fromEntries(STAGE_TYPES));
+
   const TYPE_TONE = /** @type {Record<string, 'slate'|'moss'|'rust'>} */ ({
     open: 'slate',
     won: 'moss',
@@ -78,16 +81,17 @@
   );
 </script>
 
-<PageHeader title="Lead pipelines">
+<PageHeader title={m.settings_leadpipelines_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(data.pipelines.length)}</span>
-    {data.pipelines.length === 1 ? 'pipeline' : 'pipelines'} on the lead board
+    {#each messageParts(m.settings_leadpipelines_sub( { count: data.pipelines.length, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+          class="v2-num">{count(data.pipelines.length)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !addingPipeline}
       <button class="v2-btn v2-btn-primary" onclick={() => (addingPipeline = true)}
-        ><Plus />New pipeline</button
+        ><Plus />{m.settings_leadpipelines_new_pipeline()}</button
       >
     {/if}
   {/snippet}
@@ -97,21 +101,20 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if addingPipeline}
       <SettingsFormPanel
-        title="New pipeline"
+        title={m.settings_leadpipelines_new_pipeline()}
         action="?/createPipeline"
         error={form?.createPipeline?.error}
-        submitLabel="Create pipeline"
+        submitLabel={m.settings_leadpipelines_create_pipeline()}
         oncancel={() => (addingPipeline = false)}
         ondone={() => (addingPipeline = false)}
       >
         {#snippet fields()}
           <div class="v2-field v2-sfp-wide">
-            <label for="p-name">Name</label>
+            <label for="p-name">{m.settings_leadpipelines_name_label()}</label>
             <!-- svelte-ignore a11y_autofocus -->
             <input id="p-name" class="v2-input" name="name" maxlength="255" required autofocus />
             <p class="v2-hint">
-              Starts with six stages (New, Contacted, Qualified, Proposal, Won, Lost) that you can
-              rename, reorder or delete.
+              {m.settings_leadpipelines_new_pipeline_hint()}
             </p>
           </div>
         {/snippet}
@@ -120,17 +123,19 @@
 
     {#if data.pipelines.length === 0}
       <EmptyState
-        title="No lead pipelines yet"
+        title={m.settings_leadpipelines_empty_title()}
         body={data.can_edit
-          ? 'A pipeline gives the lead board its columns. Create one to start moving leads through stages.'
-          : 'A pipeline gives the lead board its columns. An admin can create one here.'}
+          ? m.settings_leadpipelines_empty_body_admin()
+          : m.settings_leadpipelines_empty_body_member()}
       >
         {#snippet icon()}<Columns3 size={21} />{/snippet}
       </EmptyState>
     {:else}
       {#if data.pipelines.length > 1}
-        <div class="v2-label" style="margin-bottom:10px">Pipelines</div>
-        <nav class="lp-pipelines" aria-label="Pipelines">
+        <div class="v2-label" style="margin-bottom:10px">
+          {m.settings_leadpipelines_pipelines_heading()}
+        </div>
+        <nav class="lp-pipelines" aria-label={m.settings_leadpipelines_pipelines_heading()}>
           {#each data.pipelines as p (p.id)}
             <a
               class="v2-btn lp-pipeline"
@@ -158,7 +163,9 @@
                 }}
             >
               <input type="hidden" name="id" value={pipeline.id} />
-              <label class="v2-sr-only" for="p-rename">Pipeline name</label>
+              <label class="v2-sr-only" for="p-rename"
+                >{m.settings_leadpipelines_pipeline_name_label()}</label
+              >
               <input
                 id="p-rename"
                 class="v2-input"
@@ -167,32 +174,40 @@
                 required
                 value={pipeline.name}
               />
-              <button class="v2-btn v2-btn-primary" type="submit">Save</button>
-              <button class="v2-btn" type="button" onclick={() => (renaming = false)}>Cancel</button
+              <button class="v2-btn v2-btn-primary" type="submit"
+                >{m.settings_leadpipelines_save()}</button
+              >
+              <button class="v2-btn" type="button" onclick={() => (renaming = false)}
+                >{m.settings_leadpipelines_cancel()}</button
               >
             </form>
           {:else}
             <div style="flex:1;min-width:0">
               <b style="font-size:14px">{pipeline.name}</b>
               <div class="v2-sub" style="font-size:11.5px;margin-top:3px">
-                <span class="v2-num">{count(pipeline.stages.length)}</span> stages ·
-                <span class="v2-num">{count(pipeline.leadCount)}</span>
-                {pipeline.leadCount === 1 ? 'lead' : 'leads'} in them ·
+                {#each messageParts(m.settings_leadpipelines_stage_count( { count: pipeline.stages.length, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                      class="v2-num">{count(pipeline.stages.length)}</span
+                    >{:else}{p.text}{/if}{/each}
+                ·
+                {#each messageParts(m.settings_leadpipelines_lead_count_in( { count: pipeline.leadCount, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                      class="v2-num">{count(pipeline.leadCount)}</span
+                    >{:else}{p.text}{/if}{/each}
+                ·
                 <a href={resolve(`leads/board?pipeline=${pipeline.id}`)} style="color:inherit"
-                  >Open the board</a
+                  >{m.settings_leadpipelines_open_board()}</a
                 >
               </div>
             </div>
             {#if data.can_edit}
               <div class="lp-actions">
                 <button class="v2-btn v2-btn-sm" type="button" onclick={() => (renaming = true)}>
-                  Rename
+                  {m.settings_leadpipelines_rename()}
                 </button>
                 <ConfirmAction
                   action="?/deletePipeline"
-                  label="Delete"
-                  confirmLabel="Delete pipeline"
-                  explain="It leaves the board and this list. Refused while a lead on the board is still in one of its stages."
+                  label={m.settings_leadpipelines_delete()}
+                  confirmLabel={m.settings_leadpipelines_delete_pipeline()}
+                  explain={m.settings_leadpipelines_delete_pipeline_explain()}
                   hidden={{ id: pipeline.id }}
                 />
               </div>
@@ -208,10 +223,14 @@
 
         {#if editing}
           <SettingsFormPanel
-            title={editing === 'new' ? 'New stage' : `Edit ${editing.name}`}
+            title={editing === 'new'
+              ? m.settings_leadpipelines_new_stage()
+              : m.settings_leadpipelines_edit_stage_title({ name: editing.name })}
             action={editing === 'new' ? '?/createStage' : '?/updateStage'}
             error={form?.stage?.error}
-            submitLabel={editing === 'new' ? 'Add stage' : 'Save stage'}
+            submitLabel={editing === 'new'
+              ? m.settings_leadpipelines_add_stage()
+              : m.settings_leadpipelines_save_stage()}
             oncancel={() => (editing = null)}
             ondone={() => (editing = null)}
           >
@@ -222,7 +241,7 @@
                 <input type="hidden" name="id" value={editing.id} />
               {/if}
               <div class="v2-field">
-                <label for="s-name">Name</label>
+                <label for="s-name">{m.settings_leadpipelines_name_label()}</label>
                 <input
                   id="s-name"
                   class="v2-input"
@@ -233,7 +252,7 @@
                 />
               </div>
               <div class="v2-field">
-                <label for="s-type">Type</label>
+                <label for="s-type">{m.settings_leadpipelines_type_label()}</label>
                 <select id="s-type" class="v2-input" name="stage_type">
                   {#each STAGE_TYPES as [value, label] (value)}
                     <option
@@ -245,10 +264,10 @@
                 </select>
               </div>
               <div class="v2-field">
-                <label for="s-status">Sets lead status to</label>
+                <label for="s-status">{m.settings_leadpipelines_status_label()}</label>
                 <select id="s-status" class="v2-input" name="maps_to_status">
                   <option value="" selected={editing === 'new' || !editing.mapsToStatus}
-                    >Leave it as it is</option
+                    >{m.settings_leadpipelines_status_keep()}</option
                   >
                   {#each stageOptions as s (s)}
                     <option value={s} selected={editing !== 'new' && editing.mapsToStatus === s}
@@ -256,10 +275,10 @@
                     >
                   {/each}
                 </select>
-                <p class="v2-hint">Applied when a lead is moved into this stage.</p>
+                <p class="v2-hint">{m.settings_leadpipelines_status_hint()}</p>
               </div>
               <div class="v2-field">
-                <label for="s-prob">Win probability (%)</label>
+                <label for="s-prob">{m.settings_leadpipelines_prob_label()}</label>
                 <input
                   id="s-prob"
                   class="v2-input"
@@ -271,7 +290,7 @@
                   inputmode="numeric"
                   value={editing === 'new' ? 0 : editing.winProbability}
                 />
-                <p class="v2-hint">Given to a lead moved here that has no probability yet.</p>
+                <p class="v2-hint">{m.settings_leadpipelines_prob_hint()}</p>
               </div>
             {/snippet}
           </SettingsFormPanel>
@@ -282,10 +301,10 @@
         {/if}
 
         <div class="lp-stages-head">
-          <div class="v2-label">Stages, in board order</div>
+          <div class="v2-label">{m.settings_leadpipelines_stages_heading()}</div>
           {#if data.can_edit && !editing}
             <button class="v2-btn v2-btn-sm" type="button" onclick={() => (editing = 'new')}
-              ><Plus size={13} />Add stage</button
+              ><Plus size={13} />{m.settings_leadpipelines_add_stage()}</button
             >
           {/if}
         </div>
@@ -293,11 +312,11 @@
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Stage</th>
-                <th>Type</th>
-                <th>Sets status</th>
-                <th style="text-align:right">Win %</th>
-                <th style="text-align:right">Leads</th>
+                <th>{m.settings_leadpipelines_col_stage()}</th>
+                <th>{m.settings_leadpipelines_col_type()}</th>
+                <th>{m.settings_leadpipelines_col_status()}</th>
+                <th style="text-align:right">{m.settings_leadpipelines_col_win()}</th>
+                <th style="text-align:right">{m.settings_leadpipelines_col_leads()}</th>
                 {#if data.can_edit}<th></th>{/if}
               </tr>
             </thead>
@@ -313,7 +332,10 @@
                   <td data-m="meta">{s.mapsToStatus ? statusLabel(s.mapsToStatus) : '—'}</td>
                   <td class="v2-num" style="text-align:right" data-m="meta">{s.winProbability}%</td>
                   <td class="v2-num" style="text-align:right" data-m="meta"
-                    >{count(s.leadCount)} {s.leadCount === 1 ? 'lead' : 'leads'}</td
+                    >{m.settings_leadpipelines_lead_count({
+                      count: s.leadCount,
+                      shown: count(s.leadCount)
+                    })}</td
                   >
                   {#if data.can_edit}
                     <td class="lp-actions-cell">
@@ -326,7 +348,9 @@
                             <button
                               class="v2-btn v2-btn-sm lp-icon"
                               type="submit"
-                              aria-label="Move {s.name} {direction}"
+                              aria-label={direction === 'up'
+                                ? m.settings_leadpipelines_move_up({ name: s.name })
+                                : m.settings_leadpipelines_move_down({ name: s.name })}
                               disabled={direction === 'up'
                                 ? i === 0
                                 : i === pipeline.stages.length - 1}
@@ -338,15 +362,15 @@
                           </form>
                         {/each}
                         <button class="v2-btn v2-btn-sm" type="button" onclick={() => (editing = s)}
-                          >Edit</button
+                          >{m.settings_leadpipelines_edit()}</button
                         >
                         <ConfirmAction
                           action="?/deleteStage"
-                          label="Delete"
-                          confirmLabel="Delete stage"
+                          label={m.settings_leadpipelines_delete()}
+                          confirmLabel={m.settings_leadpipelines_delete_stage()}
                           explain={s.leadCount > 0
-                            ? 'Refused while leads are in it. Move them to another stage first.'
-                            : 'The column leaves the board.'}
+                            ? m.settings_leadpipelines_delete_stage_explain_busy()
+                            : m.settings_leadpipelines_delete_stage_explain()}
                           hidden={{ id: s.id }}
                         />
                       </div>
@@ -357,7 +381,7 @@
                 <tr>
                   <td colspan={data.can_edit ? 6 : 5}>
                     <p class="v2-sub" style="margin:6px 0">
-                      No stages yet, so the board has nowhere to put a lead.
+                      {m.settings_leadpipelines_no_stages()}
                     </p>
                   </td>
                 </tr>
@@ -366,8 +390,7 @@
           </table>
         </div>
         <p class="v2-sub" style="font-size:11.5px;margin-top:14px;max-width:64ch">
-          Lead counts are the leads you can see. A converted lead never blocks deleting a stage; it
-          just loses the stage.
+          {m.settings_leadpipelines_footnote()}
         </p>
       {/if}
     {/if}

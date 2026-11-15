@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { dayHours, weeklyHours, isAlwaysOn } from './week.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
+import { dayHours, weeklyHours, isAlwaysOn, dayLabel, weekdayName } from './week.js';
 
 /** @param {string | null} open @param {string | null} close */
 const day = (open, close) => ({ open, close });
@@ -74,5 +75,23 @@ describe('isAlwaysOn', () => {
     const week = WORKING_WEEK.map(() => day(null, null));
     week[0] = day('17:00', '09:00');
     expect(isAlwaysOn(week)).toBe(true);
+  });
+});
+
+describe('dayLabel', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('keeps the API name in English and translates it in Russian', () => {
+    expect(dayLabel('Monday')).toBe('Monday');
+    overwriteGetLocale(() => 'ru');
+    expect(dayLabel('Monday')).toBe('Понедельник');
+    expect(dayLabel('Someday')).toBe('Someday');
+  });
+});
+
+describe('weekdayName', () => {
+  it('names the weekday the API way, whatever the locale', () => {
+    expect(weekdayName(new Date(2026, 10, 9))).toBe('Monday');
   });
 });
