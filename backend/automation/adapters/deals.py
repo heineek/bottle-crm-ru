@@ -1,6 +1,8 @@
 from dataclasses import replace
 
 from django.core.exceptions import ValidationError
+from django.utils.text import format_lazy
+from django.utils.translation import gettext_lazy as _
 
 from automation.adapters import same_org
 from automation.objects import Adapter, Choice, FieldSpec, model_choices
@@ -16,32 +18,36 @@ class DealAdapter(Adapter):
     parent_key = "account"
     route = "/pipeline/{id}"
     FIELDS = (
-        FieldSpec("name", "Deal name", "text"),
+        FieldSpec("name", _("Deal name"), "text"),
         # By stage id: every pipeline is seeded with the same codes.
-        FieldSpec("stage", "Stage", "choice"),
+        FieldSpec("stage", _("Stage"), "choice"),
         # "Won in any pipeline" as one field, matched by kind like `deal.won`.
         FieldSpec(
             "stage_kind",
-            "Outcome",
+            _("Outcome"),
             "choice",
             tuple(
-                Choice(value, f"{label} (any pipeline)") for value, label in STAGE_KINDS
+                Choice(value, format_lazy(_("{label} (any pipeline)"), label=label))
+                for value, label in STAGE_KINDS
             ),
             settable=False,
         ),
         FieldSpec(
             "opportunity_type",
-            "Type",
+            _("Type"),
             "choice",
             model_choices(Opportunity, "opportunity_type"),
         ),
         FieldSpec(
-            "lead_source", "Source", "choice", model_choices(Opportunity, "lead_source")
+            "lead_source",
+            _("Source"),
+            "choice",
+            model_choices(Opportunity, "lead_source"),
         ),
-        FieldSpec("amount", "Amount", "number"),
-        FieldSpec("probability", "Probability", "number"),
-        FieldSpec("closed_on", "Close date", "date"),
-        FieldSpec("assigned_to", "Assigned to", "people"),
+        FieldSpec("amount", _("Amount"), "number"),
+        FieldSpec("probability", _("Probability"), "number"),
+        FieldSpec("closed_on", _("Close date"), "date"),
+        FieldSpec("assigned_to", _("Assigned to"), "people"),
     )
 
     def own_fields(self, org):

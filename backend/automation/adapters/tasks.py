@@ -1,3 +1,5 @@
+from django.utils.translation import gettext_lazy as _
+
 from automation.adapters import same_org
 from automation.objects import Adapter, FieldSpec, model_choices
 from tasks.models import Task
@@ -16,11 +18,11 @@ PARENTS = (
 class TaskAdapter(Adapter):
     route = "/tasks/{id}"
     FIELDS = (
-        FieldSpec("title", "Title", "text"),
-        FieldSpec("status", "Status", "choice", model_choices(Task, "status")),
-        FieldSpec("priority", "Priority", "choice", model_choices(Task, "priority")),
-        FieldSpec("due_date", "Due date", "date"),
-        FieldSpec("assigned_to", "Assigned to", "people"),
+        FieldSpec("title", _("Title"), "text"),
+        FieldSpec("status", _("Status"), "choice", model_choices(Task, "status")),
+        FieldSpec("priority", _("Priority"), "choice", model_choices(Task, "priority")),
+        FieldSpec("due_date", _("Due date"), "date"),
+        FieldSpec("assigned_to", _("Assigned to"), "people"),
     )
 
     def name(self, record):

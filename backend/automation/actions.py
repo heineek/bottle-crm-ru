@@ -250,7 +250,7 @@ def _plan_set_field(ctx, index, action):
         adapter, targets = _targets(ctx, record, action.get("target"))
         spec = next((s for s in adapter.fields(ctx.org) if s.key == key), None)
         if spec is None or not spec.settable:
-            raise StepFailed(UNKNOWN_FIELD)
+            raise StepFailed(str(UNKNOWN_FIELD))
         if value is None:
             change = (f"clear {spec.label}", f"Cleared {spec.label}")
         else:
