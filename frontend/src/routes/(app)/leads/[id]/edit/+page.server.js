@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, getLeadForEdit, updateLead } from '#lib/server/v2/leads.js';
 import { collectFromForm, leadFieldDefinitions } from '#lib/server/v2/lead-custom-fields.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies, params }) {
@@ -65,7 +66,7 @@ export const actions = {
     if (!values.first_name && !values.last_name) {
       return fail(400, {
         values,
-        errors: { last_name: 'A lead needs a name to be findable. First or last will do.' }
+        errors: { last_name: m.leads_error_name() }
       });
     }
 
@@ -77,7 +78,7 @@ export const actions = {
       // `api-helpers` flattens DRF's field errors into one string. Surface it
       // rather than a generic failure: "email: lead with this email already
       // exists" tells somebody what to change; "Could not save" does not.
-      return fail(400, { values, message: String(err?.message ?? 'Could not save this lead.') });
+      return fail(400, { values, message: String(err?.message ?? m.leads_edit_failed()) });
     }
 
     // A save that also converted the lead (status -> "converted") carries the

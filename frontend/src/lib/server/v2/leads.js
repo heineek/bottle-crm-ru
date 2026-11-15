@@ -32,6 +32,7 @@ import {
   pairForDisplay,
   pairForEdit
 } from '#lib/server/v2/lead-custom-fields.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** See the note on FILTER_FIELDS in tickets.js. */
 export const FILTER_FIELDS = ['assigned_to', 'status', 'source', 'tags'];
@@ -220,7 +221,7 @@ function buildActivity(response) {
       type: 'file',
       at: a.created_at,
       by: null,
-      body: a.file_name || 'Attachment',
+      body: a.file_name || m.leads_activity_attachment(),
       href: attachmentHref(a.id)
     });
   }
@@ -230,7 +231,7 @@ function buildActivity(response) {
     type: 'status',
     at: response.lead_obj.created_at,
     by: response.lead_obj.created_by?.email ?? null,
-    body: 'Lead created'
+    body: m.leads_activity_created()
   });
 
   return events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -268,7 +269,7 @@ async function listOwners(cookies) {
     const response = await apiRequest('/users/get-teams-and-users/', {}, { cookies });
     return (response.profiles ?? []).map((/** @type {any} */ p) => ({
       id: p.id,
-      name: p.user_details?.email || p.user?.email || 'Unknown'
+      name: p.user_details?.email || p.user?.email || m.leads_owner_unknown()
     }));
   } catch {
     return [];
@@ -412,7 +413,7 @@ async function fetchDetail(cookies, id) {
     // and Django's message for a missing lead is "No Lead matches the given
     // query.", so opening a deleted lead answered 500. See `api-helpers.js`.
     if (err?.status === 404) {
-      error(404, 'That lead does not exist, or you do not have access to it.');
+      error(404, m.leads_not_found());
     }
     throw err;
   }
