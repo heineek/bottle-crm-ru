@@ -19,7 +19,7 @@ for the catalog formats. If the language is written right to left, also read
    `pt`). The code is what `User.language` stores and what `Accept-Language` is matched against;
    a regional request (`fa-IR`) falls back to its base language automatically.
 3. **Write a glossary.** Copy [Russian glossary](glossary-ru.md) to
-   `docs/localization/glossary-<code>.md` (add it to the nav in `mkdocs.yml`) and fill in the
+   `docs/EN/localization/glossary-<code>.md` (add it to the nav in `mkdocs.yml`) and fill in the
    terms before translating screens: lead, deal, account, ticket, pipeline, stage, status words and
    their grammatical gender if the language has one. A glossary agreed up front is what keeps four
    thousand strings, translated over weeks, saying the same thing.
@@ -136,7 +136,7 @@ language then waits for the API and mobile catalogs.
 
 ## Checklist {#checklist}
 
-- [ ] Issue opened, glossary page added under `docs/localization/`.
+- [ ] Issue opened, glossary page added under `docs/EN/localization/`.
 - [ ] API: language in `LANGUAGES`, every `django.po` translated, `.mo` compiled and committed.
 - [ ] Web: code in `project.inlang/settings.json`, every `messages/**/<code>.json` translated, `language_name` set.
 - [ ] Mobile: every `lib/l10n/parts/*/<code>.json` translated, ARBs merged and committed.

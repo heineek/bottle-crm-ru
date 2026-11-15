@@ -1,4 +1,4 @@
-"""Render every route in the OpenAPI schema to docs/api/endpoint-index.md.
+"""Render every route in the OpenAPI schema to docs/{EN,RU}/api/endpoint-index.md.
 
 The curated API pages are written by hand. This index is not: a hand-maintained
 list of 350 operations would be wrong within a week. Re-run this script when
@@ -21,9 +21,11 @@ django.setup()
 
 from drf_spectacular.generators import SchemaGenerator  # noqa: E402
 
-OUTPUT = (
-    Path(__file__).resolve().parent.parent.parent / "docs" / "api" / "endpoint-index.md"
-)
+DOCS = Path(__file__).resolve().parent.parent.parent / "docs"
+OUTPUT = DOCS / "EN" / "api" / "endpoint-index.md"
+# The translation keeps its own header; only the rows below it are replaced.
+TRANSLATIONS = [DOCS / "RU" / "api" / "endpoint-index.md"]
+TABLE_START = "| --- | --- |\n"
 METHODS = ("get", "post", "put", "patch", "delete")
 
 HEADER = """# Endpoint index
@@ -88,8 +90,15 @@ def render(schema) -> list[str]:
 
 def main() -> None:
     rows = render(SchemaGenerator().get_schema(request=None, public=True))
-    OUTPUT.write_text(HEADER + "\n".join(rows) + "\n")
+    body = "\n".join(rows) + "\n"
+    OUTPUT.write_text(HEADER + body)
     print(f"wrote {OUTPUT}, {len(rows)} paths")
+    for translation in TRANSLATIONS:
+        header, found, _rows = translation.read_text().partition(TABLE_START)
+        if not found:
+            raise SystemExit(f"{translation} has no `{TABLE_START.strip()}` table")
+        translation.write_text(header + TABLE_START + body)
+        print(f"wrote {translation}")
 
 
 if __name__ == "__main__":

@@ -4,8 +4,9 @@
 
 `CONTRIBUTING.md` (repo root) lays out the process this page assumes: branch from `master` with a
 descriptive name, keep the change focused rather than mixing in unrelated edits, include tests where
-practical, and update documentation when behavior, setup, or a public API changes. Its own checklist
-is worth re-reading right before you open a PR:
+practical, and update documentation when behavior, setup, or a public API changes. Edit the
+documentation in `docs/EN/` (the source) and update the Russian translation in `docs/RU/` alongside
+it. Its own checklist is worth re-reading right before you open a PR:
 
 - The change is focused and does not include unrelated edits.
 - Relevant backend and frontend checks pass. See [Development setup](development-setup.md) and
@@ -55,13 +56,14 @@ formatting difference is reported as a warning, not a failure: see
 
 ```bash
 uv run mkdocs build --strict -f ../mkdocs.yml -d site
+uv run mkdocs build --strict -f ../mkdocs.ru.yml -d site-ru
 ```
 
 `--strict` fails the build on a broken nav entry or a broken internal link target that doesn't
 exist. A second step then runs `common/tests/test_docs_build_excludes_internal.py`, which rebuilds
-the site again and asserts that nothing under `docs/superpowers/` or `docs/design/`, internal specs
+both sites again and asserts that nothing under `docs/superpowers/` or `docs/EN/design/`, internal specs
 and plans, excluded via `exclude_docs` in `mkdocs.yml`. Ends up published in the output. If you add
-a documentation page, `mkdocs build --strict` is the same command you can run locally first; see
+a documentation page, the same two commands are what you can run locally first; see
 [Development setup](development-setup.md#backend) for the `uv run --group docs` invocation.
 
 ## Review expectations

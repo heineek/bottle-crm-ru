@@ -6,7 +6,7 @@
 `mobile/tool/l10n_merge.dart` builds from `mobile/lib/l10n/parts/`. A
 language added to one of the three and not the others shows a choice the
 other two cannot render, so the three lists are compared here. See
-`docs/localization/adding-a-language.md`.
+`docs/EN/localization/adding-a-language.md`.
 """
 
 import json

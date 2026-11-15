@@ -1,4 +1,4 @@
-"""Every endpoint named in docs/api/ must exist in the generated OpenAPI schema.
+"""Every endpoint named in docs/EN/api/ and docs/RU/api/ must exist in the generated OpenAPI schema.
 
 The API reference is hand-written by choice, so nothing else stops it drifting
 from the code. The current bottlecrm.io docs document `POST /api/auth/refresh/`;
@@ -15,8 +15,11 @@ from pathlib import Path
 from django.conf import settings
 from drf_spectacular.generators import SchemaGenerator
 
-DOCS_API_DIR = Path(settings.BASE_DIR).parent / "docs" / "api"
-ALLOWLIST_PATH = DOCS_API_DIR / ".endpoint-check-allowlist"
+DOCS_DIR = Path(settings.BASE_DIR).parent / "docs"
+# The Russian pages are a translation of the English ones, so both are checked
+# against the same allowlist.
+DOCS_API_DIRS = (DOCS_DIR / "EN" / "api", DOCS_DIR / "RU" / "api")
+ALLOWLIST_PATH = DOCS_DIR / "EN" / "api" / ".endpoint-check-allowlist"
 
 HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
 
@@ -88,11 +91,12 @@ def _find_missing(
     return missing
 
 
-def test_docs_api_directory_exists():
-    # Without this, every check below passes vacuously if the directory is
+def test_docs_api_directories_exist():
+    # Without this, every check below passes vacuously if a directory is
     # renamed or moved: Path.glob() on a missing directory yields nothing
     # rather than raising, so the whole guard would silently stop guarding.
-    assert DOCS_API_DIR.is_dir(), f"{DOCS_API_DIR} is missing"
+    for directory in DOCS_API_DIRS:
+        assert directory.is_dir(), f"{directory} is missing"
 
 
 def test_normalise_path_collapses_parameters_and_trailing_slash():
@@ -159,14 +163,15 @@ def test_every_documented_api_endpoint_exists():
     operations = _schema_operations()
     allowlist = _load_allowlist()
     documented = [
-        (path.name, method, endpoint)
-        for path in sorted(DOCS_API_DIR.glob("*.md"))
+        (f"{directory.parent.name}/{path.name}", method, endpoint)
+        for directory in DOCS_API_DIRS
+        for path in sorted(directory.glob("*.md"))
         for method, endpoint in _extract_endpoints(path.read_text())
     ]
     missing = _find_missing(documented, operations, allowlist)
     assert not missing, (
-        "docs/api/ documents endpoints that do not exist:\n  "
+        "docs/EN/api/ or docs/RU/api/ documents endpoints that do not exist:\n  "
         + "\n  ".join(missing)
-        + "\n\nFix the docs, or add an entry to docs/api/.endpoint-check-allowlist "
+        + "\n\nFix the docs, or add an entry to docs/EN/api/.endpoint-check-allowlist "
         "with a comment explaining why."
     )

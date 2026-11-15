@@ -23,7 +23,9 @@ Django-CRM/
 └── schema.yml           # Generated OpenAPI schema (drf-spectacular), not hand-maintained
 ```
 
-`docs/` also holds internal specs and plans under `docs/superpowers/` and `docs/design/`. These are
+The English docs in `docs/EN/` are the source; the Russian translation in `docs/RU/` mirrors them
+at the same paths, so a page change updates both. `docs/` also holds internal specs and plans under
+`docs/superpowers/` and `docs/EN/design/`. These are
 excluded from the built site (`exclude_docs` in `mkdocs.yml`) and are not part of the published
 documentation.
 

@@ -1,0 +1,242 @@
+# Соглашения
+
+На этой странице описаны правила, общие для большей части API: как устроен базовый URL, как клиент
+проходит аутентификацию, как эндпоинты-списки разбивают результат на страницы и фильтруют его и как
+выглядит тело ответа. Описание намеренно составлено по реальному коду (настоящий класс пагинации,
+настоящее представление списка, настоящие настройки `REST_FRAMEWORK`), а не по тому, каким «должен»
+быть типичный DRF API. Некоторые из этих соглашений менее единообразны, чем можно было бы ожидать, и
+эти различия важны для всех, кто интегрируется с API.
+
+## Базовый URL {#base-url}
+
+Каждый эндпоинт этого раздела и каждый эндпоинт из [указателя эндпоинтов](endpoint-index.md)
+подключён под `/api/` в корне Django (`backend/crm/urls.py`: `path("api/",
+include("common.app_urls", ...))`), который, в свою очередь, с тем же пустым префиксом подключает
+`backend/common/urls.py`, файл, на который ссылается большинство страниц этого раздела. Отдельные
+приложения подключаются оттуда под собственным сегментом, например `path("leads/", include("leads.urls", ...))`,
+поэтому эндпоинт лида имеет вид `/api/leads/…`.
+
+Локально это `http://localhost:8000/api/` (порт, который публикует быстрый старт Docker. Внутри
+сети compose фронтенд обращается к тому же API как `http://backend:8000`. См.
+[Быстрый старт с Docker](../getting-started/docker-quick-start.md)). При развёртывании на своём сервере
+это тот хост, который вы указали в `DOMAIN_NAME` / `ALLOWED_HOSTS`, по-прежнему под `/api/`.
+
+## Заголовок аутентификации {#authentication-header}
+
+Запрос аутентифицируется одним из трёх типов учётных данных. `common.middleware.get_company.GetProfileAndOrg`
+проверяет их в следующем порядке, а независимо от него это делают классы аутентификации DRF из
+`DEFAULT_AUTHENTICATION_CLASSES` (`backend/crm/settings.py`, `common.pat_auth.PATAuthentication`,
+`rest_framework_simplejwt.authentication.JWTAuthentication`, `common.external_auth.APIKeyAuthentication`):
+
+```
+Authorization: Bearer <jwt-access-token>          # interactive sign-in (see authentication.md)
+Authorization: Bearer bcrm_pat_...                 # personal access token
+Token: bcrm_pat_...                                 # personal access token, alternate header
+Token: <org-api-key>                                # organization API key
+```
+
+Персональный токен доступа распознаётся по префиксу `bcrm_pat_` и может передаваться либо как
+bearer-токен, либо в заголовке `Token` (`backend/common/pat_auth.py`, `_extract_raw`); API-ключ
+организации читается только из `Token` (`backend/common/external_auth.py`,
+`APIKeyAuthentication.authenticate`). Как получить JWT, описано в разделе
+[Аутентификация](authentication.md), а два других типа: в разделе
+[Токены и API-ключи](tokens-and-api-keys.md). То, от имени кого выполняется запрос и к какой
+организации он привязан, никогда не задаётся самим запросом напрямую. Это выводится из того из трёх
+типов учётных данных, который сервер смог проверить.
+
+Два неинтерактивных типа учётных данных ограничены так, как не ограничена сессия вошедшего
+пользователя. Персональный токен доступа ограничен своими `scopes` (`<resource>:<action>`,
+проверяются в middleware до запуска представления; пустой список означает отсутствие ограничений).
+API-ключ организации даёт доступ только на чтение. Ни один из них вообще не может обратиться к
+`/api/profile/tokens/`, `/api/org/tokens/` или `/api/org/api-key/`: управление учётными данными
+требует интерактивного входа. См.
+[Токены и API-ключи](tokens-and-api-keys.md#scopes).
+
+Одна вещь, которую сгенерированная схема OpenAPI отражает *неточно*: заметная часть операций
+(112 из 350 в схеме, около трети) объявляет параметр заголовка `org`
+(`organization_params_in_header`, определён в `backend/common/swagger_params.py` и скопирован в
+`swagger_params.py` шести других приложений: `leads`, `cases`, `opportunity`, `contacts`, `accounts` и
+`tasks`). Ничто в коде обработки запросов не читает заголовок с таким именем. Контекст организации
+берётся только из claim `org_id` в JWT, из профиля-владельца персонального токена или из
+организации, к которой привязан API-ключ, как описано выше. Заголовок `org` ни на что не влияет; не
+полагайтесь на него.
+
+## Пагинация {#pagination}
+
+Эндпоинты-списки разбивают результат на страницы с помощью `rest_framework.pagination.LimitOffsetPagination`
+(`DEFAULT_PAGINATION_CLASS` в `backend/crm/settings.py`) и параметров запроса `limit` и
+`offset`. Размер страницы по умолчанию `PAGE_SIZE = 10` из того же блока настроек; у класса
+пагинации не задан `max_limit`, поэтому клиент может запросить страницу большего размера и получит её.
+
+При этом класс пагинации по умолчанию не применяется автоматически. В этой кодовой базе нигде нет
+`generics.ListAPIView`. Каждый эндпоинт-список написан вручную как `APIView`, который напрямую
+подмешивает `LimitOffsetPagination` и сам вызывает `self.paginate_queryset(...)`, например:
+
+```python
+class LeadListView(APIView, LimitOffsetPagination):
+    ...
+    def get_context_data(self, **kwargs):
+        ...
+        results_leads_open = self.paginate_queryset(
+            queryset_open.distinct(), self.request, view=self
+        )
+```
+
+(`backend/leads/views/lead_views.py:51`, `:167`.) Та же структура повторяется в `common/views/user_views.py`,
+`common/views/team_views.py`, `common/views/document_views.py`, `common/views/tags_views.py`,
+`cases/views.py`, `contacts/views.py`, `accounts/views.py`, `opportunity/views/opportunity_views.py`,
+`tasks/views/task_views.py`, `invoices/api_views.py` и других.
+
+Поскольку пагинация применяется вручную, обёртка ответа выбирается каждым эндпоинтом отдельно и ничем
+не гарантирована. Обычно в этой кодовой базе представление собирает собственную структуру, а не
+вызывает DRF-метод `get_paginated_response()`: `GET /api/leads/` сообщает пагинацию отдельно по
+каждой секции, поскольку список разделён на открытые и закрытые лиды:
+
+```python
+context["open_leads"] = {
+    "leads_count": self.count,   # LimitOffsetPagination's own running total
+    "open_leads": open_leads,     # this page's serialized results
+    "offset": offset,             # offset to request for the next page, or None on the last page
+}
+```
+
+(`backend/leads/views/lead_views.py:180-184`.) Но `get_paginated_response()`, а вместе с ним и
+стандартная для DRF структура `count`/`next`/`previous`/`results`, тоже встречается:
+`GET /api/cases/solutions/` (`SolutionListView`, `backend/cases/solution_views.py:85`, маршрут в
+`backend/cases/urls.py:59`) вызывает его напрямую и добавляет сверху ещё один ключ:
+
+```python
+response = self.get_paginated_response(serializer.data)
+response.data["totals"] = counts
+return response
+```
+
+(`backend/cases/solution_views.py:178-180`.) Так что обе структуры реальны. Считайте точные имена
+полей пагинации, а также то, используется ли стандартная обёртка DRF или самодельная, особенностью
+конкретного эндпоинта: `limit`/`offset` как параметры запроса единообразны, а то, где в теле ответа
+окажутся общее количество, следующее смещение и результаты, нет; проверяйте эндпоинт, который
+вызываете.
+
+## Фильтрация и поиск {#filtering-and-search}
+
+Общего бэкенда фильтрации нет: `DEFAULT_FILTER_BACKENDS` в `REST_FRAMEWORK` не задан, и ни одно
+представление не использует `django_filters`. Каждое представление списка читает `request.query_params`
+напрямую в своём `get`/`get_context_data` и применяет те фильтры, которые определяет само.
+`GET /api/leads/` (`backend/leads/views/lead_views.py:105-160`) хорошо показывает, насколько богатыми
+они бывают:
+
+| Параметр запроса | Условие |
+| --- | --- |
+| `name` | `first_name` или `last_name`, вхождение подстроки без учёта регистра |
+| `salutation` | вхождение подстроки без учёта регистра |
+| `source` | точное совпадение |
+| `assigned_to` | можно повторять; `assigned_to__id__in` |
+| `status` | точное совпадение |
+| `tags` | можно повторять; `tags__id__in` |
+| `city` | вхождение подстроки без учёта регистра |
+| `email` | вхождение подстроки без учёта регистра |
+| `rating` | точное совпадение |
+| `search` | `first_name`, `last_name`, `company_name` или `email`, вхождение подстроки без учёта регистра, объединены через OR |
+| `created_at__gte`, `created_at__lte` | диапазон дат |
+| `close_date__gte`, `close_date__lte` | диапазон дат |
+| `cf_<key>` | дополнительное поле `<key>` равно переданному значению (`custom_fields__contains`) |
+
+Например, `GET /api/leads/?status=assigned&source=partner&search=acme`; `status` и `source`
+сравниваются на точное совпадение с `LEAD_STATUS` и `LEAD_SOURCE` (`backend/common/utils.py:50-67`:
+статусы `assigned`, `in process`, `converted`, `recycled`, `closed`; источники `call`,
+`email`, `existing customer`, `partner`, `public relations`, `compaign`, `other`), поэтому значение
+фильтра вне этих точных строк ничего не находит, а не вызывает ошибку. Другие эндпоинты-списки
+определяют собственные, как правило меньшие, наборы фильтров в том же стиле. Единого справочника
+«всех фильтров, которые поддерживает API», нет; читайте код представления (или ищите отдельный
+раздел на странице соответствующего ресурса, если он есть), а не считайте, что эта таблица
+применима где-то ещё.
+
+## Структура ответа {#response-shape}
+
+Единой обёртки ответа для всего API нет. Повторяются три структуры, и то, какую из них использует
+эндпоинт, является частью его собственного контракта:
+
+**Изменяющие операции, обёрнутые во флаг `error`.** Подавляющее большинство эндпоинтов создания,
+изменения и удаления возвращает `{"error": bool, ...}`, и этот флаг проверяется явно, а не только по
+HTTP-коду статуса, например успешное создание лида (`backend/leads/views/lead_views.py:402-404`):
+
+```json
+{"error": false, "message": "Lead Created Successfully"}
+```
+
+и неуспешное (`backend/leads/views/lead_views.py:406-408`):
+
+```json
+{"error": true, "errors": {"email": ["Another lead in this organisation already uses that email address."]}}
+```
+
+Та же структура `{"error": false, "tokens": [...]}` используется в списке персональных токенов
+доступа в разделе [Токены и API-ключи](tokens-and-api-keys.md#personal-access-tokens).
+
+**Голые данные сериализатора.** Некоторые более новые эндпоинты вообще не используют обёртку `error`
+и возвращают `serializer.data` (или сериализацию созданного или изменённого объекта) напрямую,
+сообщая об ошибке через `serializer.is_valid(raise_exception=True)` и HTTP-код статуса. Например,
+`MacroListCreateView.post` возвращает `Response(MacroSerializer(macro).data, status=201)`
+(`backend/macros/views.py:136`).
+
+**Ответы с одним объектом вкладывают запись, а не возвращают её как есть.** `GET /api/leads/{id}/`
+не возвращает объект `Lead` на верхнем уровне; он возвращает запись под ключом `lead_obj` вместе со
+связанными данными, полученными в том же вызове:
+
+```json
+{
+  "lead_obj": {"id": "...", "first_name": "...", "...": "..."},
+  "attachments": [...],
+  "comments": [...],
+  "users_mention": [...],
+  "assigned_data": [...]
+}
+```
+
+(`backend/leads/views/lead_views.py:412-517`.) Не рассчитывайте, что эндпоинт детального просмотра
+возвращает свой ресурс на верхнем уровне ответа; проверяйте эндпоинт.
+
+## Типы содержимого {#content-types}
+
+`REST_FRAMEWORK` не задаёт `DEFAULT_PARSER_CLASSES`, поэтому действуют умолчания DRF: тело запроса
+может быть `application/json`, `application/x-www-form-urlencoded` или `multipart/form-data`
+(`JSONParser`, `FormParser`, `MultiPartParser`, в этом порядке). `multipart/form-data` нужен каждому
+эндпоинту, который принимает загрузку файла вместе с другими полями. Например, `POST /api/leads/`
+читает необязательный файл `lead_attachment` прямо из `request.FILES` в том же вызове, который
+создаёт лид (`backend/leads/views/lead_views.py:330`), поэтому лид с первым вложением создаётся одним
+multipart-запросом, а не парой «создать, затем загрузить».
+
+`REST_FRAMEWORK` не задаёт и `DEFAULT_RENDERER_CLASSES`, поэтому активны оба умолчания DRF:
+`JSONRenderer` для `application/json` (его подразумевает каждый пример на этой странице, и любая
+клиентская интеграция должна отправлять для него `Accept: application/json`) и `BrowsableAPIRenderer`
+для `text/html`: если запросить тот же эндпоинт со стандартным для браузера заголовком `Accept`,
+вместо JSON вернётся интерактивная HTML-форма DRF.
+
+## Язык {#language}
+
+Сообщения об ошибках, подписи, которые отправляет API (названия модулей, списки вариантов), и письма,
+которые он рассылает, переводятся. Английский является исходным языком и запасным для всего, что ещё
+не переведено; поддерживаемые языки перечислены в `settings.LANGUAGES` (`en`, `ru`).
+`backend/common/locale.py` выбирает язык в следующем порядке:
+
+1. `User.language`, собственный выбор вызывающего, задаётся через `PATCH /api/profile/`
+   (`{"language": "ru"}`; пустая строка сбрасывает его) и возвращается в `GET /api/profile/` и
+   `GET /api/auth/me/`.
+2. Заголовок запроса `Accept-Language`. Региональный тег соответствует своему базовому языку (`ru-RU`
+   означает `ru`).
+3. `Org.default_language`, который администратор задаёт через `PATCH /api/org/settings/`.
+4. Английский.
+
+Каждый ответ содержит `Content-Language` с языком, на котором он написан, и
+`Vary: Accept-Language`. Значения `code` в ошибках, payload вебхуков и всё, что хранится в записи,
+никогда не переводятся, поэтому клиент, который ветвится по ошибке, должен читать её `code` или ключ
+поля, а не сообщение.
+
+Письма следуют за читателем: участник получает письмо на своём языке, с откатом на язык организации
+по умолчанию; клиент (счёт, коммерческое предложение, опрос CSAT, письмо портала) всегда получает
+язык организации по умолчанию, поскольку у контакта нет `User`, в котором мог бы храниться выбор.
+
+`GET /api/org/locales/` перечисляет всё, что нужно клиенту, чтобы предложить этот выбор, с названиями
+на языке вызывающего: `languages` (каждый на своём языке, например `Русский`), `countries`
+(отсортированы по переведённому названию) и `currencies` (с символом). Как и `/api/org/timezones/`,
+он требует вошедшего пользователя, но не требует организации.

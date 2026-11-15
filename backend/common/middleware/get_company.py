@@ -295,7 +295,7 @@ class GetProfileAndOrg:
 
         This narrows what the key can do. It does not make the key safe: it
         still reads every record in the org. Prefer a scoped personal access
-        token; see docs/api/tokens-and-api-keys.md.
+        token; see docs/EN/api/tokens-and-api-keys.md.
         """
         if not getattr(settings, "ORG_API_KEY_AUTH_ENABLED", True):
             logger.warning("Organization API key auth is disabled; refusing request")

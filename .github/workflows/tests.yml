@@ -13,6 +13,7 @@ on:
       - 'frontend/**'
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'mkdocs.ru.yml'
       - '.readthedocs.yaml'
       - '.coveragerc'
       - '.github/workflows/tests.yml'
@@ -23,6 +24,7 @@ on:
       - 'frontend/**'
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'mkdocs.ru.yml'
       - '.readthedocs.yaml'
       - '.coveragerc'
       - '.github/workflows/tests.yml'
@@ -390,6 +392,10 @@ jobs:
       - name: Build docs
         working-directory: backend
         run: uv run mkdocs build --strict -f ../mkdocs.yml -d site
+
+      - name: Build Russian docs
+        working-directory: backend
+        run: uv run mkdocs build --strict -f ../mkdocs.ru.yml -d site-ru
 
       # These two tests skip when mkdocs is absent, so the backend-tests job
       # (which installs no docs group) cannot run them. Without this step the
