@@ -1,13 +1,14 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/support_ticket.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/support_provider.dart';
+import '../../services/app_language.dart';
 import '../../services/attachment_upload.dart';
 
 class SupportDetailScreen extends ConsumerStatefulWidget {
@@ -43,7 +44,7 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.surfaceDim,
     appBar: AppBar(
-      title: Text(_ticket?.reference ?? 'Support ticket'),
+      title: Text(_ticket?.reference ?? context.l10n.supportDetailTitle),
       backgroundColor: AppColors.surface,
       elevation: 0,
       scrolledUnderElevation: 1,
@@ -73,12 +74,15 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
       const SizedBox(height: 8),
       Text(
         ticket.assigned
-            ? 'A support agent is assigned.'
-            : 'Waiting for assignment.',
+            ? context.l10n.supportDetailAssigned
+            : context.l10n.supportDetailUnassigned,
         style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
       ),
       const SizedBox(height: 24),
-      Text('CONVERSATION', style: AppTypography.overline),
+      Text(
+        context.l10n.supportDetailConversation,
+        style: AppTypography.overline,
+      ),
       const SizedBox(height: 10),
       ...ticket.messages.map(_message),
       const SizedBox(height: 18),
@@ -115,7 +119,7 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
               ),
               const SizedBox(width: 10),
               Text(
-                DateFormat('d MMM, HH:mm').format(message.createdAt.toLocal()),
+                _stamp(message.createdAt.toLocal()),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -154,10 +158,10 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
           minLines: 4,
           maxLines: 8,
           maxLength: 10000,
-          decoration: const InputDecoration(
-            labelText: 'Reply',
+          decoration: InputDecoration(
+            labelText: context.l10n.supportDetailReply,
             alignLabelWithHint: true,
-            hintText: 'Add any details that will help us investigate.',
+            hintText: context.l10n.supportDetailReplyHint,
           ),
         ),
         const SizedBox(height: 8),
@@ -170,12 +174,18 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
             OutlinedButton.icon(
               onPressed: _sending ? null : _pickAttachment,
               icon: const Icon(LucideIcons.paperclip),
-              label: Text(_attachment?.name ?? 'Attach file'),
+              label: Text(
+                _attachment?.name ?? context.l10n.supportDetailAttach,
+              ),
             ),
             FilledButton.icon(
               onPressed: _sending ? null : _send,
               icon: const Icon(LucideIcons.send),
-              label: Text(_sending ? 'Sending…' : 'Send reply'),
+              label: Text(
+                _sending
+                    ? context.l10n.supportDetailSending
+                    : context.l10n.supportDetailSend,
+              ),
             ),
           ],
         ),
@@ -190,9 +200,7 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
       border: Border.all(color: AppColors.border),
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Text(
-      'This ticket is closed. Open a new ticket if you still need help.',
-    ),
+    child: Text(context.l10n.supportDetailClosed),
   );
 
   Widget _chip(String label, Color color) => Container(
@@ -218,7 +226,10 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
         children: [
           Text(_error!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: _load, child: const Text('Try again')),
+          OutlinedButton(
+            onPressed: _load,
+            child: Text(context.l10n.supportTryAgain),
+          ),
         ],
       ),
     ),
@@ -252,7 +263,7 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
 
   Future<void> _send() async {
     if (_reply.text.trim().isEmpty && _attachment == null) {
-      _snack('Write a reply or attach a file before sending.');
+      _snack(context.l10n.supportDetailReplyEmpty);
       return;
     }
     setState(() => _sending = true);
@@ -273,7 +284,9 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
         _reply.clear();
       }
     });
-    if (!result.success) _snack(result.error ?? 'Could not send this reply.');
+    if (!result.success) {
+      _snack(result.error ?? context.l10n.supportDetailReplyFailed);
+    }
   }
 
   Future<void> _download(SupportMessage message) async {
@@ -282,8 +295,14 @@ class _SupportDetailScreenState extends ConsumerState<SupportDetailScreen> {
       fileName: message.attachmentName!,
     );
     if (!mounted || result.success) return;
-    _snack(result.error ?? 'Could not download that file.');
+    _snack(result.error ?? context.l10n.supportDetailDownloadFailed);
   }
+
+  // Two formats rather than one pattern, so English keeps its comma and
+  // other languages get their own day-month order.
+  String _stamp(DateTime t) =>
+      '${localDateFormat('d MMM', 'MMMd').format(t)}, '
+      '${localDateFormat('HH:mm', 'Hm').format(t)}';
 
   void _snack(String message) => ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),

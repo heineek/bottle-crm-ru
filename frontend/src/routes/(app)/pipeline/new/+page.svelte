@@ -6,6 +6,8 @@
   import { OPPORTUNITY_TYPE_LABEL } from '#lib/v2/enums.js';
   import { money } from '#lib/v2/format.js';
   import { ChevronDown, ChevronRight, TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form: result } = $props();
@@ -82,21 +84,20 @@
   let errors = $derived.by(() => {
     /** @type {Record<string, string>} */
     const e = {};
-    if (!form.name.trim()) e.name = 'Give the deal a name you would recognise in a list.';
-    if (!form.account) e.account = 'Pick the account this deal belongs to.';
+    if (!form.name.trim()) e.name = m.pipeline_error_name();
+    if (!form.account) e.account = m.pipeline_error_account_pick();
 
     const amount = Number(form.amount);
-    if (form.amount === '') e.amount = 'How much is it worth?';
-    else if (!Number.isFinite(amount) || amount <= 0)
-      e.amount = 'Amount has to be a number greater than zero.';
+    if (form.amount === '') e.amount = m.pipeline_error_amount_missing();
+    else if (!Number.isFinite(amount) || amount <= 0) e.amount = m.pipeline_error_amount_positive();
 
-    if (!form.closed_on) e.closed_on = 'When do you expect this to close?';
+    if (!form.closed_on) e.closed_on = m.pipeline_error_close_missing();
     else if (new Date(form.closed_on).getTime() < Date.now() - 86400000)
-      e.closed_on = 'That date has passed. Pick the date you now expect.';
+      e.closed_on = m.pipeline_error_close_past();
 
     const p = Number(form.probability);
     if (form.probability !== '' && (!Number.isFinite(p) || p < 0 || p > 100))
-      e.probability = 'Probability is a percentage between 0 and 100.';
+      e.probability = m.pipeline_error_probability();
 
     return e;
   });
@@ -127,12 +128,12 @@
   };
 </script>
 
-<PageHeader title="New deal" center>
+<PageHeader title={m.pipeline_new_deal()} center>
   {#snippet crumb()}
-    <a href={resolve('pipeline')}>Pipeline</a> ›
+    <a href={resolve('pipeline')}>{m.pipeline_title()}</a> ›
   {/snippet}
   {#snippet sub()}
-    Five fields to start. Everything else can wait until you know it.
+    {m.pipeline_new_sub()}
   {/snippet}
 </PageHeader>
 
@@ -146,7 +147,7 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this deal</div>
+          <div style="font-weight:600">{m.pipeline_new_server_refused()}</div>
           <div class="v2-sub" style="margin-top:2px">{result.error}</div>
         </div>
       </div>
@@ -161,21 +162,17 @@
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
           <div style="font-weight:600">
-            {Object.keys(errors).length} field{Object.keys(errors).length === 1 ? '' : 's'} still need{Object.keys(
-              errors
-            ).length === 1
-              ? 's'
-              : ''} you
+            {m.pipeline_form_fields_need_you({ count: Object.keys(errors).length })}
           </div>
           <div class="v2-sub" style="margin-top:2px">
-            They are marked below. Nothing has been saved.
+            {m.pipeline_form_marked_below()}
           </div>
         </div>
       </div>
     {/if}
 
     <div class="v2-field">
-      <label for="f-name">Deal name</label>
+      <label for="f-name">{m.pipeline_field_name()}</label>
       <input
         id="f-name"
         name="name"
@@ -184,19 +181,19 @@
         onblur={() => (touched.name = true)}
         aria-invalid={show('name') ? 'true' : undefined}
         aria-describedby={show('name') ? 'e-name' : 'h-name'}
-        placeholder="Platform renewal"
+        placeholder={m.pipeline_field_name_placeholder()}
       />
       {#if show('name')}
         <p class="v2-error" id="e-name">{errors.name}</p>
       {:else}
         <p class="v2-hint" id="h-name">
-          What you would say out loud, “40 seats plus onboarding”, not “Opportunity 118”.
+          {m.pipeline_field_name_hint()}
         </p>
       {/if}
     </div>
 
     <div class="v2-field">
-      <label for="f-account">Account</label>
+      <label for="f-account">{m.pipeline_field_account()}</label>
       <select
         id="f-account"
         name="account"
@@ -206,7 +203,7 @@
         aria-invalid={show('account') ? 'true' : undefined}
         aria-describedby={show('account') ? 'e-account' : undefined}
       >
-        <option value="">Choose an account…</option>
+        <option value="">{m.pipeline_field_account_choose()}</option>
         {#each data.accounts as a (a.id)}
           <option value={a.id}>{a.name}</option>
         {/each}
@@ -216,7 +213,7 @@
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="v2-field">
-        <label for="f-amount">Amount</label>
+        <label for="f-amount">{m.pipeline_field_amount()}</label>
         <input
           id="f-amount"
           name="amount"
@@ -241,7 +238,7 @@
       </div>
 
       <div class="v2-field">
-        <label for="f-close">Expected close</label>
+        <label for="f-close">{m.pipeline_field_expected_close()}</label>
         <input
           id="f-close"
           name="closed_on"
@@ -258,7 +255,7 @@
 
     {#if pipelines.length > 1}
       <div class="v2-field">
-        <label for="f-pipeline">Pipeline</label>
+        <label for="f-pipeline">{m.pipeline_field_pipeline()}</label>
         <select
           id="f-pipeline"
           name="pipeline"
@@ -274,15 +271,14 @@
     {/if}
 
     <div class="v2-field">
-      <label for="f-stage">Stage</label>
+      <label for="f-stage">{m.pipeline_field_stage()}</label>
       <select id="f-stage" name="stage" class="v2-input" bind:value={form.stage}>
         {#each openStages as s (s.code)}
           <option value={s.code}>{s.label}</option>
         {/each}
       </select>
       <p class="v2-hint">
-        A new deal cannot start closed. Won and lost are things you do to a deal that exists, so
-        they are not offered here.
+        {m.pipeline_new_stage_hint()}
       </p>
     </div>
 
@@ -310,15 +306,15 @@
         aria-controls="more-fields"
       >
         {#if more}<ChevronDown />{:else}<ChevronRight />{/if}
-        More fields
-        <span class="v2-sub" style="font-size:12px">. Type, probability, source, owner, notes</span>
+        {m.pipeline_new_more_fields()}
+        <span class="v2-sub" style="font-size:12px">{m.pipeline_new_more_fields_list()}</span>
       </button>
 
       {#if more}
         <div id="more-fields" style="margin-top:14px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div class="v2-field">
-              <label for="f-type">Type</label>
+              <label for="f-type">{m.pipeline_field_type()}</label>
               <select
                 id="f-type"
                 name="opportunity_type"
@@ -331,7 +327,7 @@
               </select>
             </div>
             <div class="v2-field">
-              <label for="f-prob">Probability</label>
+              <label for="f-prob">{m.pipeline_field_probability()}</label>
               <input
                 id="f-prob"
                 name="probability"
@@ -348,30 +344,30 @@
           </div>
 
           <div class="v2-field">
-            <label for="f-owner">Owner</label>
+            <label for="f-owner">{m.pipeline_field_owner()}</label>
             <select id="f-owner" name="assigned_to" class="v2-input" bind:value={form.assigned_to}>
               {#each data.owners as o (o.id)}
                 <option value={o.id}>{o.name}</option>
               {/each}
             </select>
             <p class="v2-hint">
-              Defaults to you. Who created the deal is recorded separately and is not editable.
+              {m.pipeline_new_owner_hint()}
             </p>
           </div>
 
           <div class="v2-field">
-            <label for="f-source">Source</label>
+            <label for="f-source">{m.pipeline_field_source()}</label>
             <input
               id="f-source"
               name="lead_source"
               class="v2-input"
               bind:value={form.lead_source}
-              placeholder="Existing customer"
+              placeholder={m.pipeline_field_source_placeholder()}
             />
           </div>
 
           <div class="v2-field">
-            <label for="f-notes">Notes</label>
+            <label for="f-notes">{m.pipeline_field_notes()}</label>
             <textarea
               id="f-notes"
               name="description"
@@ -384,11 +380,13 @@
     </div>
 
     <div style="display:flex;gap:8px;align-items:center;margin-top:22px">
-      <button class="v2-btn v2-btn-primary" type="submit">Create deal</button>
-      <a class="v2-btn" href={resolve('pipeline')}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit">{m.pipeline_new_submit()}</button>
+      <a class="v2-btn" href={resolve('pipeline')}>{m.pipeline_cancel()}</a>
       <span class="v2-sub" style="margin-left:auto;font-size:12px">
-        <span class="v2-num">{REQUIRED.filter((f) => !errors[f]).length}</span>
-        of <span class="v2-num">{REQUIRED.length}</span> required fields done
+        {#each messageParts(m.pipeline_new_required_done( { done: slot('done'), total: slot('total') } )) as p, i (i)}{#if p.key === 'done'}<span
+              class="v2-num">{REQUIRED.filter((f) => !errors[f]).length}</span
+            >{:else if p.key === 'total'}<span class="v2-num">{REQUIRED.length}</span
+            >{:else}{p.text}{/if}{/each}
       </span>
     </div>
   </form>

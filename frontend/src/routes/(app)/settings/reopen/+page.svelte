@@ -18,8 +18,10 @@
   import StatCard from '#lib/v2/components/StatCard.svelte';
   import SettingsFormPanel from '#lib/v2/components/SettingsFormPanel.svelte';
   import { count } from '#lib/v2/format.js';
-  import { REOPEN_TO_STATUSES } from '#lib/v2/enums.js';
+  import { REOPEN_TO_STATUSES, CASE_STATUS_LABEL } from '#lib/v2/enums.js';
   import { RotateCcw, MailX } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -27,18 +29,21 @@
   let editing = $state(false);
 
   let p = $derived(data.policy);
+  let inboundNote = $derived(messageParts(m.settings_reopen_inbound_note({ link: slot('link') })));
 </script>
 
-<PageHeader title="Reopen policy">
+<PageHeader title={m.settings_reopen_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
     {p.is_enabled
-      ? `Replies within ${p.reopen_window_days} days bring a closed ticket back`
-      : 'Closed tickets stay closed'}
+      ? m.settings_reopen_sub_on({ days: p.reopen_window_days })
+      : m.settings_reopen_sub_off()}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !editing}
-      <button class="v2-btn v2-btn-primary" onclick={() => (editing = true)}>Edit policy</button>
+      <button class="v2-btn v2-btn-primary" onclick={() => (editing = true)}
+        >{m.settings_reopen_edit_button()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -46,10 +51,10 @@
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
     <StatCard
-      label="Reopened, 30 days"
+      label={m.settings_reopen_stat_reopened()}
       value={count(p.reopened_last_30d)}
       tone="ink"
-      detail="Closed, then a reply landed in time"
+      detail={m.settings_reopen_stat_reopened_detail()}
     />
     <!-- "n/a" rather than 0 while the policy is off. `_evaluate_reopen` returns
          `None` on `if not policy["is_enabled"]` BEFORE it compares the window,
@@ -59,16 +64,18 @@
          reply to a closed ticket reopens nothing. A plain 0 there is
          reassurance about the one thing certainly happening. -->
     <StatCard
-      label="Missed the window"
-      value={p.is_enabled ? count(p.replies_after_window_30d) : 'n/a'}
+      label={m.settings_reopen_stat_missed()}
+      value={p.is_enabled ? count(p.replies_after_window_30d) : m.settings_reopen_not_applicable()}
       tone={p.is_enabled && p.replies_after_window_30d > 0 ? 'clay' : 'slate'}
-      detail={p.is_enabled ? 'Replies that reopened nothing' : 'Not counted while reopening is off'}
+      detail={p.is_enabled
+        ? m.settings_reopen_stat_missed_detail_on()
+        : m.settings_reopen_stat_missed_detail_off()}
     />
     <StatCard
-      label="Median reply"
-      value={`${p.median_days_to_reply}d`}
+      label={m.settings_reopen_stat_median()}
+      value={m.settings_reopen_stat_median_value({ days: p.median_days_to_reply })}
       tone="slate"
-      detail="After the ticket was closed"
+      detail={m.settings_reopen_stat_median_detail()}
     />
   </div>
 </div>
@@ -77,16 +84,16 @@
   <div class="v2-pad" style="padding-bottom:32px">
     {#if editing}
       <SettingsFormPanel
-        title="Reopen policy"
+        title={m.settings_reopen_title()}
         action="?/update"
         error={form?.update?.error}
-        submitLabel="Save policy"
+        submitLabel={m.settings_reopen_save_button()}
         oncancel={() => (editing = false)}
         ondone={() => (editing = false)}
       >
         {#snippet fields()}
           <div class="v2-field v2-sfp-wide">
-            <label for="f-enabled">Reopen on customer reply</label>
+            <label for="f-enabled">{m.settings_reopen_enabled_label()}</label>
             <label style="display:flex;gap:8px;align-items:center;font-weight:400">
               <input
                 id="f-enabled"
@@ -95,12 +102,12 @@
                 value="true"
                 checked={p.is_enabled}
               />
-              Off means a reply is filed on the closed ticket and nothing else happens.
+              {m.settings_reopen_enabled_hint()}
             </label>
           </div>
 
           <div class="v2-field">
-            <label for="f-window">Window, in days</label>
+            <label for="f-window">{m.settings_reopen_window_label()}</label>
             <input
               id="f-window"
               class="v2-input"
@@ -111,23 +118,25 @@
               required
               value={p.reopen_window_days}
             />
-            <p class="v2-hint">Counted from when the ticket was closed, in calendar days.</p>
+            <p class="v2-hint">{m.settings_reopen_window_hint()}</p>
           </div>
 
           <div class="v2-field">
-            <label for="f-status">Comes back as</label>
+            <label for="f-status">{m.settings_reopen_status_label()}</label>
             <select id="f-status" class="v2-input" name="reopen_to_status">
               {#each REOPEN_TO_STATUSES as status (status)}
-                <option value={status} selected={status === p.reopen_to_status}>{status}</option>
+                <option value={status} selected={status === p.reopen_to_status}
+                  >{CASE_STATUS_LABEL[status] ?? status}</option
+                >
               {/each}
             </select>
             <p class="v2-hint">
-              Only these three. A ticket reopened into a closed status would close again on arrival.
+              {m.settings_reopen_status_hint()}
             </p>
           </div>
 
           <div class="v2-field v2-sfp-wide">
-            <label for="f-notify">Tell the assignee</label>
+            <label for="f-notify">{m.settings_reopen_notify_label()}</label>
             <label style="display:flex;gap:8px;align-items:center;font-weight:400">
               <input
                 id="f-notify"
@@ -136,7 +145,7 @@
                 value="true"
                 checked={p.notify_assigned}
               />
-              The person the ticket was assigned to when it closed.
+              {m.settings_reopen_notify_hint()}
             </label>
           </div>
         {/snippet}
@@ -144,69 +153,73 @@
     {/if}
     <div class="v2-split">
       <div>
-        <div class="v2-label" style="margin-bottom:10px">The rule</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_reopen_rule_heading()}</div>
         <div class="v2-card" style="overflow:hidden">
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Reopen on customer reply</b>
+              <b>{m.settings_reopen_enabled_label()}</b>
               <span class="v2-sub" style="font-size:11.5px">
-                Off means a reply is filed on the closed ticket and nothing else happens.
+                {m.settings_reopen_enabled_hint()}
               </span>
             </div>
-            <Pill tone={p.is_enabled ? 'moss' : 'slate'}>{p.is_enabled ? 'On' : 'Off'}</Pill>
+            <Pill tone={p.is_enabled ? 'moss' : 'slate'}
+              >{p.is_enabled ? m.settings_reopen_on() : m.settings_reopen_off()}</Pill
+            >
           </div>
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Window</b>
+              <b>{m.settings_reopen_window_row()}</b>
               <span class="v2-sub" style="font-size:11.5px">
-                Counted from when the ticket was closed, in calendar days.
+                {m.settings_reopen_window_hint()}
               </span>
             </div>
-            <span class="v2-num" style="font-size:13px">{p.reopen_window_days} days</span>
+            <span class="v2-num" style="font-size:13px"
+              >{m.settings_reopen_window_days({ count: p.reopen_window_days })}</span
+            >
           </div>
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Comes back as</b>
+              <b>{m.settings_reopen_status_label()}</b>
               <!-- Must be a non-terminal status: reopening a ticket into a
                    closed status would close it again on arrival. -->
               <span class="v2-sub" style="font-size:11.5px">
-                Has to be a status that counts as open.
+                {m.settings_reopen_status_row_hint()}
               </span>
             </div>
-            <Pill tone="ink">{p.reopen_to_status}</Pill>
+            <Pill tone="ink">{CASE_STATUS_LABEL[p.reopen_to_status] ?? p.reopen_to_status}</Pill>
           </div>
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Tell the assignee</b>
+              <b>{m.settings_reopen_notify_label()}</b>
               <span class="v2-sub" style="font-size:11.5px">
-                The person the ticket was assigned to when it closed.
+                {m.settings_reopen_notify_hint()}
               </span>
             </div>
             <Pill tone={p.notify_assigned ? 'moss' : 'slate'}>
-              {p.notify_assigned ? 'Yes' : 'No'}
+              {p.notify_assigned ? m.common_yes() : m.common_no()}
             </Pill>
           </div>
         </div>
       </div>
 
       <div>
-        <div class="v2-label" style="margin-bottom:10px">What this changes</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_reopen_changes_heading()}</div>
         <div class="v2-card" style="padding:15px 16px">
           <div style="display:flex;gap:10px;align-items:flex-start">
             <RotateCcw size={16} style="color:var(--v2-slate);flex:none;margin-top:2px" />
             <p class="v2-sub" style="font-size:12.5px;margin:0;line-height:1.5">
               {#if p.is_enabled}
-                A reply inside the window puts the ticket back in the queue as
-                <b style="font-weight:600;color:var(--v2-ink)">{p.reopen_to_status}</b>, keeping its
-                history and its original number. It is the same ticket, not a new one, so first
-                response and resolution are still measured against the original open.
+                {#each messageParts(m.settings_reopen_changes_on( { status: slot('status') } )) as part, i (i)}{#if part.key}<b
+                      style="font-weight:600;color:var(--v2-ink)"
+                      >{CASE_STATUS_LABEL[p.reopen_to_status] ?? p.reopen_to_status}</b
+                    >{:else}{part.text}{/if}{/each}
               {:else}
                 <!-- Present tense, and the policy is off, so this cannot be
                      written as though a reply still reopened anything. -->
-                Nothing. A reply is filed on the closed ticket, the ticket stays closed and nobody is
-                told. Turned on, a reply inside the window would put it back in the queue as
-                <b style="font-weight:600;color:var(--v2-ink)">{p.reopen_to_status}</b>, keeping its
-                history and its number.
+                {#each messageParts(m.settings_reopen_changes_off( { status: slot('status') } )) as part, i (i)}{#if part.key}<b
+                      style="font-weight:600;color:var(--v2-ink)"
+                      >{CASE_STATUS_LABEL[p.reopen_to_status] ?? p.reopen_to_status}</b
+                    >{:else}{part.text}{/if}{/each}
               {/if}
             </p>
           </div>
@@ -217,11 +230,11 @@
             <div style="display:flex;gap:10px;align-items:flex-start">
               <MailX size={16} style="color:var(--v2-clay);flex:none;margin-top:2px" />
               <div>
-                <div style="font-weight:600;font-size:13px">Nothing is counting the misses</div>
+                <div style="font-weight:600;font-size:13px">
+                  {m.settings_reopen_no_count_title()}
+                </div>
                 <p class="v2-sub" style="font-size:12.5px;margin:5px 0 0;line-height:1.5">
-                  With reopening off, a reply to a closed ticket is filed and nothing else happens,
-                  and nothing records it as having missed anything. The figure above is a zero
-                  because nothing is measured, not because nothing is being lost.
+                  {m.settings_reopen_no_count_body()}
                 </p>
               </div>
             </div>
@@ -232,13 +245,14 @@
               <MailX size={16} style="color:var(--v2-clay);flex:none;margin-top:2px" />
               <div>
                 <div style="font-weight:600;font-size:13px">
-                  <span class="v2-num">{count(p.replies_after_window_30d)}</span> replies arrived too
-                  late
+                  {#each messageParts(m.settings_reopen_late_title( { count: p.replies_after_window_30d, shown: slot('shown') } )) as part, i (i)}{#if part.key}<span
+                        class="v2-num">{count(p.replies_after_window_30d)}</span
+                      >{:else}{part.text}{/if}{/each}
                 </div>
                 <p class="v2-sub" style="font-size:12.5px;margin:5px 0 0;line-height:1.5">
-                  They landed on tickets closed more than
-                  <span class="v2-num">{p.reopen_window_days}</span> days earlier, so no ticket came back
-                  and nobody was told. Those customers are still waiting.
+                  {#each messageParts(m.settings_reopen_late_body( { days: slot('days') } )) as part, i (i)}{#if part.key}<span
+                        class="v2-num">{p.reopen_window_days}</span
+                      >{:else}{part.text}{/if}{/each}
                 </p>
               </div>
             </div>
@@ -246,8 +260,10 @@
         {/if}
 
         <p class="v2-sub" style="font-size:11.5px;margin-top:14px">
-          Which addresses accept replies at all is set in
-          <a href={resolve('settings/inbound-email')} style="color:inherit">inbound email</a>.
+          {#each inboundNote as part, i (i)}{#if part.key}<a
+                href={resolve('settings/inbound-email')}
+                style="color:inherit">{m.settings_reopen_inbound_link()}</a
+              >{:else}{part.text}{/if}{/each}
         </p>
       </div>
     </div>

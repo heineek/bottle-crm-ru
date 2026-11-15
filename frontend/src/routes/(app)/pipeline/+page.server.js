@@ -12,6 +12,7 @@ import { dealListQuery } from '#lib/server/v2/list-queries.js';
 import { getOrgPeopleAndTeams, resolveMe } from '#lib/server/v2/org-people.js';
 import { getTags } from '#lib/server/v2/tags.js';
 import { loadSavedViews, savedViewActions } from '#lib/server/v2/saved-views.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The list and the board are two different queries, not two renderings of one
@@ -128,13 +129,13 @@ export const actions = {
     const columnId = String(form.get('column_id') || '');
     const aboveId = String(form.get('above_id') || '');
     const belowId = String(form.get('below_id') || '');
-    if (!id || !columnId) return fail(400, { error: 'Missing card or column.' });
+    if (!id || !columnId) return fail(400, { error: m.pipeline_move_missing() });
     try {
       await moveDeal({ cookies }, id, { columnId, aboveId, belowId });
       return { success: true };
     } catch (err) {
       const status = /** @type {any} */ (err)?.status === 404 ? 404 : 400;
-      return fail(status, { error: readableError(err, 'Could not move the deal.') });
+      return fail(status, { error: readableError(err, m.pipeline_move_failed()) });
     }
   }
 };

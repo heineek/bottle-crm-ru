@@ -1,6 +1,7 @@
 import logging
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -39,11 +40,11 @@ def resolve_valid_pat(raw):
         ).get(token_hash=PersonalAccessToken.hash_token(raw))
     except PersonalAccessToken.DoesNotExist as exc:
         logger.warning("Invalid PAT attempted")
-        raise AuthenticationFailed("Invalid token") from exc
+        raise AuthenticationFailed(_("Invalid token")) from exc
     if not pat.is_valid():
-        raise AuthenticationFailed("Token revoked or expired")
+        raise AuthenticationFailed(_("Token revoked or expired"))
     if not pat.profile.is_active or not pat.org.is_active:
-        raise AuthenticationFailed("Token owner or org is inactive")
+        raise AuthenticationFailed(_("Token owner or org is inactive"))
     return pat
 
 

@@ -1,0 +1,94 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-10 09:47+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Org"
+msgstr "Организация"
+
+msgid "Personal"
+msgstr "Личный"
+
+msgid "The case's first contact"
+msgstr "Первый контакт обращения"
+
+msgid "That contact's email"
+msgstr "Email этого контакта"
+
+msgid "The case number"
+msgstr "Номер обращения"
+
+msgid "The case title"
+msgstr "Тема обращения"
+
+msgid "You: the local part of your email"
+msgstr "Вы: часть вашего email до «@»"
+
+msgid "Your email"
+msgstr "Ваш email"
+
+msgid "The organisation name"
+msgstr "Название организации"
+
+msgid "This user is deactivated. Choose an active member."
+msgstr "Этот пользователь деактивирован. Выберите активного участника."
+
+msgid "This tag is archived. Choose an active tag."
+msgstr "Этот тег в архиве. Выберите активный тег."
+
+msgid "A macro needs a body, an action, or both."
+msgstr "У макроса должен быть текст, действие или и то и другое."
+
+msgid "Not found."
+msgstr "Не найдено."
+
+msgid "Macro is inactive."
+msgstr "Макрос неактивен."
+
+msgid "scope must be 'org' or 'personal'."
+msgstr "scope должен быть «org» или «personal»."
+
+msgid "Only admins can manage org-scope macros."
+msgstr "Управлять макросами организации могут только администраторы."
+
+msgid "Only admins can edit org-scope macros."
+msgstr "Изменять макросы организации могут только администраторы."
+
+msgid "case_id is required."
+msgstr "Укажите case_id."
+
+msgid "This macro has no actions to apply."
+msgstr "У этого макроса нет действий для применения."
+
+#, python-format
+msgid "only must be a list of: %(keys)s."
+msgstr "only должен быть списком из значений: %(keys)s."
+
+msgid "None of the chosen actions are on this macro."
+msgstr "Ни одного из выбранных действий нет в этом макросе."
+
+msgid "Everyone this macro assigns is deactivated, so the assignees were left as they were."
+msgstr "Все, кого назначает этот макрос, деактивированы, поэтому ответственные не изменились."
+
+msgid "Every tag this macro adds is archived, so no tags were added."
+msgstr "Все теги, которые добавляет этот макрос, в архиве, поэтому теги не добавлены."
+
+msgid "Macro applied"
+msgstr "Макрос применён"
+
+msgid "Nothing was applied"
+msgstr "Ничего не применено"

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   ROLES_THAT_EXIST,
   roleClears,
@@ -200,5 +201,21 @@ describe('shadowedBy', () => {
   it('is null for a rule nothing shadows', () => {
     const rules = [rule({ id: 'a' })];
     expect(shadowedBy(rules[0], rules)).toBeNull();
+  });
+});
+
+describe('in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('translates the match and approver sentences', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(ruleMatchSentence(rule())).toBe('Все обращения');
+    expect(
+      ruleMatchSentence(
+        rule({ match_priority: 'Urgent', match_case_type: 'Incident', match_team: SUPPORT })
+      )
+    ).toBe('Срочный приоритет · инцидент · команда Support');
+    expect(approverSentence(rule({ approver_role: 'MANAGER' }))).toBe('никто');
   });
 });

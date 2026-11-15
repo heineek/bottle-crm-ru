@@ -1,0 +1,160 @@
+{
+  "objectsMissingObject": "This object does not exist, or you do not have access to it.",
+  "objectsRecordsTitle": "Records",
+  "objectsLoadObjectFailed": "Failed to load this object",
+  "objectsNewRecord": "New {label}",
+  "@objectsNewRecord": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsSearchHint": "Search {plural}",
+  "@objectsSearchHint": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsClearSearch": "Clear search",
+  "objectsLoadRecordsFailed": "Failed to load records",
+  "objectsNoMatching": "No matching {plural}",
+  "@objectsNoMatching": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsEmpty": "No {plural} yet",
+  "@objectsEmpty": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsCannotEdit": "You cannot edit this record.",
+  "objectsMissingRecord": "This record does not exist, or you do not have access to it.",
+  "objectsLoadRecordFailed": "Could not load this record",
+  "objectsInactiveMember": "{name} (inactive)",
+  "@objectsInactiveMember": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsAssignedTo": "Assigned to",
+  "objectsNoMembers": "No members",
+  "objectsRecordTitle": "Record",
+  "objectsEditRecord": "Edit {label}",
+  "@objectsEditRecord": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsNameRequired": "{label} is required",
+  "@objectsNameRequired": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsChoose": "Choose",
+  "objectsDeleteRecordTitle": "Delete {label}?",
+  "@objectsDeleteRecordTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsDeleteRecordBody": "This action cannot be undone. Its photos and files are deleted too.",
+  "objectsDeleteRecordFailed": "Failed to delete {label}",
+  "@objectsDeleteRecordFailed": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsDeletePhotoTitle": "Delete photo?",
+  "objectsDeleteFileTitle": "Delete file?",
+  "objectsDeleteAttachmentBody": "Delete {name}? This action cannot be undone.",
+  "@objectsDeleteAttachmentBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsDeleteFileFailed": "Could not delete that file",
+  "objectsNoFile": "That attachment has no file.",
+  "objectsDownloadFailed": "Could not download that file.",
+  "objectsDetails": "Details",
+  "objectsLinks": "Links",
+  "objectsPhotos": "Photos",
+  "objectsFiles": "Files",
+  "objectsPeople": "People",
+  "objectsCreatedBy": "Created by",
+  "objectsNone": "None",
+  "objectsHidden": "{count} you can't open",
+  "@objectsHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectsHiddenMore": "and {count} you can't open",
+  "@objectsHiddenMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectsUntitled": "Untitled",
+  "objectsDeleteFileTooltip": "Delete file",
+  "objectsLinkedHidden": "Linked to a record you can't open",
+  "objectsRemoveNamed": "Remove {name}",
+  "@objectsRemoveNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsSearchFailed": "Could not search. Try again.",
+  "objectsNoMatches": "No matches",
+  "objectsLinkChangeFailed": "Could not change this link",
+  "objectsAddTo": "Add to",
+  "objectsRemoveFromTitle": "Remove from {object}: {field}?",
+  "@objectsRemoveFromTitle": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      },
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsRemoveBody": "{name} will no longer link here.",
+  "@objectsRemoveBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsRemoveBodyUnnamed": "This record will no longer link here.",
+  "objectsRelated": "Related",
+  "objectsDeletePhotoTooltip": "Delete photo"
+}

@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import 'attachment.dart';
 import 'comment.dart';
 
 /// Lead status enumeration matching backend LEAD_STATUS
 enum LeadStatus {
-  assigned('assigned', 'Assigned', AppColors.primary400),
-  inProcess('in process', 'In Process', AppColors.warning500),
-  converted('converted', 'Converted', AppColors.success600),
-  recycled('recycled', 'Recycled', AppColors.gray500),
-  closed('closed', 'Closed', AppColors.danger500);
+  assigned('assigned', AppColors.primary400),
+  inProcess('in process', AppColors.warning500),
+  converted('converted', AppColors.success600),
+  recycled('recycled', AppColors.gray500),
+  closed('closed', AppColors.danger500);
 
   final String value;
-  final String label;
   final Color color;
 
-  const LeadStatus(this.value, this.label, this.color);
+  const LeadStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    assigned => appL10n.appLeadStatusAssigned,
+    inProcess => appL10n.appLeadStatusInProcess,
+    converted => appL10n.appLeadStatusConverted,
+    recycled => appL10n.appLeadStatusRecycled,
+    closed => appL10n.appLeadStatusClosed,
+  };
 
   String get displayName => label;
 
@@ -32,28 +40,33 @@ enum LeadStatus {
 
 /// Lead source enumeration matching backend LEAD_SOURCE
 enum LeadSource {
-  none('', 'None', LucideIcons.circleHelp),
-  call('call', 'Call', LucideIcons.phone),
-  email('email', 'Email', LucideIcons.mail),
-  existingCustomer('existing customer', 'Existing Customer', LucideIcons.users),
-  partner('partner', 'Partner', LucideIcons.handshake),
-  publicRelations(
-    'public relations',
-    'Public Relations',
-    LucideIcons.newspaper,
-  ),
+  none('', LucideIcons.circleHelp),
+  call('call', LucideIcons.phone),
+  email('email', LucideIcons.mail),
+  existingCustomer('existing customer', LucideIcons.users),
+  partner('partner', LucideIcons.handshake),
+  publicRelations('public relations', LucideIcons.newspaper),
   campaign(
     'compaign',
-    'Campaign',
     LucideIcons.megaphone,
   ), // Note: backend has typo "compaign"
-  other('other', 'Other', LucideIcons.ellipsis);
+  other('other', LucideIcons.ellipsis);
 
   final String value;
-  final String label;
   final IconData icon;
 
-  const LeadSource(this.value, this.label, this.icon);
+  const LeadSource(this.value, this.icon);
+
+  String get label => switch (this) {
+    none => appL10n.appLeadSourceNone,
+    call => appL10n.appLeadSourceCall,
+    email => appL10n.appLeadSourceEmail,
+    existingCustomer => appL10n.appLeadSourceExistingCustomer,
+    partner => appL10n.appLeadSourcePartner,
+    publicRelations => appL10n.appLeadSourcePublicRelations,
+    campaign => appL10n.appLeadSourceCampaign,
+    other => appL10n.appLeadSourceOther,
+  };
 
   String get displayName => label;
 
@@ -69,15 +82,20 @@ enum LeadSource {
 
 /// Lead rating/priority enumeration matching backend rating field
 enum LeadRating {
-  cold('COLD', 'Cold', AppColors.primary400),
-  warm('WARM', 'Warm', AppColors.warning500),
-  hot('HOT', 'Hot', AppColors.danger500);
+  cold('COLD', AppColors.primary400),
+  warm('WARM', AppColors.warning500),
+  hot('HOT', AppColors.danger500);
 
   final String value;
-  final String label;
   final Color color;
 
-  const LeadRating(this.value, this.label, this.color);
+  const LeadRating(this.value, this.color);
+
+  String get label => switch (this) {
+    cold => appL10n.appLeadRatingCold,
+    warm => appL10n.appLeadRatingWarm,
+    hot => appL10n.appLeadRatingHot,
+  };
 
   String get displayName => label;
 
@@ -98,10 +116,18 @@ enum Priority {
   high('High', AppColors.danger500),
   urgent('Urgent', AppColors.purple500);
 
-  final String label;
+  /// The tasks API's spelling (`High`); boards send it lowercased.
+  final String value;
   final Color color;
 
-  const Priority(this.label, this.color);
+  const Priority(this.value, this.color);
+
+  String get label => switch (this) {
+    low => appL10n.appPriorityLow,
+    medium => appL10n.appPriorityMedium,
+    high => appL10n.appPriorityHigh,
+    urgent => appL10n.appPriorityUrgent,
+  };
 
   String get displayName => label;
 
@@ -239,7 +265,7 @@ class Lead {
   /// to the email-local-part, and finally to "Unknown" so the avatar never
   /// shows just "?".
   String get assignedToName {
-    if (assignedTo == null || assignedTo!.isEmpty) return 'Unassigned';
+    if (assignedTo == null || assignedTo!.isEmpty) return appL10n.appUnassigned;
     final first = assignedTo!.first;
     final details = first['user_details'];
     if (details is Map<String, dynamic>) {
@@ -251,7 +277,7 @@ class Lead {
     // Legacy / flat shapes some endpoints used to return.
     final flatEmail = (first['user__email'] as String?)?.trim() ?? '';
     if (flatEmail.isNotEmpty) return flatEmail.split('@').first;
-    return 'Unknown';
+    return appL10n.appUnknownPerson;
   }
 
   /// Profile picture URL of the first assignee, if any.

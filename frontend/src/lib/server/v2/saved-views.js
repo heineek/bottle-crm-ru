@@ -26,6 +26,7 @@ import { FILTER_FIELDS as DEAL_FIELDS, BOARD_FIELDS } from './deals.js';
 import { FILTER_FIELDS as TICKET_FIELDS, OPEN_STATUSES } from './tickets.js';
 import { FILTER_FIELDS as INVOICE_FIELDS } from './invoices.js';
 import { FILTERS } from '#lib/v2/filters.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Per API list, the URL parameters its page forwards to the list under the
@@ -159,7 +160,7 @@ export function savedViewActions(module) {
       return fail(status === 404 ? 404 : 400, {
         savedViewError:
           status === 404
-            ? 'That view no longer exists.'
+            ? m.app_srv_saved_views_gone()
             : (firstSentence(/** @type {any} */ (err).body) ?? readableError(err, fallback))
       });
     }
@@ -179,12 +180,12 @@ export function savedViewActions(module) {
         event,
         (form) => {
           const name = String(form.get('name') ?? '').trim();
-          if (!name) return 'Give the view a name.';
+          if (!name) return m.app_srv_saved_views_name_required();
           const query = new URLSearchParams(String(form.get('query') ?? ''));
           const filters = pickFilters(query, savedViewSpec(module, query));
           return { path: '/saved-views/', method: 'POST', body: { module, name, filters } };
         },
-        'Could not save the view.'
+        m.app_srv_saved_views_save_failed()
       ),
 
     /** @param {import('@sveltejs/kit').RequestEvent} event */
@@ -194,11 +195,11 @@ export function savedViewActions(module) {
         (form) => {
           const id = viewId(form);
           const name = String(form.get('name') ?? '').trim();
-          if (!id) return 'Which view?';
-          if (!name) return 'Give the view a name.';
+          if (!id) return m.app_srv_saved_views_which();
+          if (!name) return m.app_srv_saved_views_name_required();
           return { path: `/saved-views/${id}/`, method: 'PATCH', body: { name } };
         },
-        'Could not rename the view.'
+        m.app_srv_saved_views_rename_failed()
       ),
 
     /** @param {import('@sveltejs/kit').RequestEvent} event */
@@ -207,10 +208,10 @@ export function savedViewActions(module) {
         event,
         (form) => {
           const id = viewId(form);
-          if (!id) return 'Which view?';
+          if (!id) return m.app_srv_saved_views_which();
           return { path: `/saved-views/${id}/`, method: 'DELETE' };
         },
-        'Could not delete the view.'
+        m.app_srv_saved_views_delete_failed()
       )
   };
 }

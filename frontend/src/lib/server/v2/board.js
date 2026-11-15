@@ -16,12 +16,13 @@
  * are all checked server-side; this layer only carries the request.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** A board card's assignee → `{ id, name }`. ProfileSerializer nests the
  *  display name under `user_details`; fall back to the email, then a label. */
 function assignee(/** @type {any} */ p) {
   const d = p.user_details || {};
-  return { id: p.id, name: d.name || d.email || 'Unknown' };
+  return { id: p.id, name: d.name || d.email || m.app_board_unknown() };
 }
 
 /** One nested BoardTask → the flat card shape the board renders. */

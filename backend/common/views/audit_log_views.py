@@ -35,6 +35,7 @@ Admins only. `/api/org/audit-log/` is on the credential deny-list in
 before it gets here, the same way `/api/webhooks/` is.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import ValidationError
@@ -98,7 +99,7 @@ def _entry(row):
     return {
         "id": str(row.id),
         "event_type": row.event_type,
-        "event_label": EVENT_LABELS.get(row.event_type, row.event_type),
+        "event_label": str(EVENT_LABELS.get(row.event_type, row.event_type)),
         "created_at": row.created_at.isoformat(),
         "success": row.success,
         "actor": (
@@ -145,7 +146,7 @@ class SecurityAuditLogListView(APIView):
         event_type = params.get("event_type")
         if event_type:
             if event_type not in EVENT_LABELS:
-                raise ValidationError({"event_type": ["Unknown event type."]})
+                raise ValidationError({"event_type": [_("Unknown event type.")]})
             rows = rows.filter(event_type=event_type)
         elif params.get("include_token_refresh") != "true":
             rows = rows.exclude(event_type=TOKEN_REFRESH)
@@ -155,7 +156,7 @@ class SecurityAuditLogListView(APIView):
         start = date_param(params, "from")
         end = date_param(params, "to")
         if start and end and start > end:
-            raise ValidationError({"from": ["Must be on or before 'to'."]})
+            raise ValidationError({"from": [_("Must be on or before 'to'.")]})
         if start:
             rows = rows.filter(created_at__date__gte=start)
         if end:
@@ -166,7 +167,7 @@ class SecurityAuditLogListView(APIView):
         page = paginator.paginate_queryset(rows, request, view=self)
         response = paginator.get_paginated_response([_entry(row) for row in page])
         response.data["event_types"] = [
-            {"value": value, "label": label}
+            {"value": value, "label": str(label)}
             for value, label in SecurityAuditLog.EVENT_TYPES
         ]
         return response

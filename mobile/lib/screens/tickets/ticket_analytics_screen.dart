@@ -7,6 +7,7 @@ import '../../core/theme/theme.dart';
 import '../../data/models/ticket.dart';
 import '../../providers/analytics_provider.dart';
 import '../../services/org_date.dart';
+import '../../l10n/l10n.dart';
 
 /// Analytics dashboard for tickets (Tier 2). Read-only, no CSV export on
 /// mobile; users go to the web for that.
@@ -64,7 +65,7 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Analytics'),
+        title: Text(context.l10n.ticketsAnalyticsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -105,7 +106,10 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
                   // instead of overflowing the bar.
                   Expanded(
                     child: Text(
-                      '${_fmt(_range.start)} to ${_fmt(_range.end)}',
+                      context.l10n.ticketsAnalyticsRange(
+                        _fmt(_range.start),
+                        _fmt(_range.end),
+                      ),
                       style: AppTypography.body,
                     ),
                   ),
@@ -122,7 +126,11 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
-                      label: Text(p == null ? 'All priorities' : p.label),
+                      label: Text(
+                        p == null
+                            ? context.l10n.ticketsAnalyticsAllPriorities
+                            : p.label,
+                      ),
                       selected: _priority == p,
                       onSelected: (_) {
                         setState(() => _priority = p);
@@ -170,22 +178,30 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
           _TileRow(
             children: [
               _MetricTile(
-                title: 'First Response',
+                title: context.l10n.ticketsAnalyticsFirstResponse,
                 value: _hours(frt?['median_hours']),
-                subtitle:
-                    'p90 ${_hours(frt?['p90_hours'])} · ${frt?['count'] ?? 0} tickets',
-                breachLabel: '${frt?['breach_count'] ?? 0} breached',
+                subtitle: context.l10n.ticketsAnalyticsFrtSubtitle(
+                  frt?['count'] as int? ?? 0,
+                  _hours(frt?['p90_hours']),
+                ),
+                breachLabel: context.l10n.ticketsAnalyticsBreached(
+                  frt?['breach_count'] as int? ?? 0,
+                ),
                 icon: LucideIcons.zap,
                 color: AppColors.primary600,
                 error: errorOf(AnalyticsSection.frt),
                 onRetry: retryOf(AnalyticsSection.frt),
               ),
               _MetricTile(
-                title: 'Next Response',
+                title: context.l10n.ticketsAnalyticsNextResponse,
                 value: _hours(nrt?['median_hours']),
-                subtitle:
-                    'p90 ${_hours(nrt?['p90_hours'])} · ${nrt?['count'] ?? 0} answered',
-                breachLabel: '${nrt?['breach_count'] ?? 0} breached',
+                subtitle: context.l10n.ticketsAnalyticsNrtSubtitle(
+                  nrt?['count'] as int? ?? 0,
+                  _hours(nrt?['p90_hours']),
+                ),
+                breachLabel: context.l10n.ticketsAnalyticsBreached(
+                  nrt?['breach_count'] as int? ?? 0,
+                ),
                 icon: LucideIcons.messageSquareReply,
                 color: AppColors.teal600,
                 error: errorOf(AnalyticsSection.nrt),
@@ -197,20 +213,23 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
           _TileRow(
             children: [
               _MetricTile(
-                title: 'Resolution',
+                title: context.l10n.ticketsAnalyticsResolution,
                 value: _hours(mttr?['median_hours']),
-                subtitle:
-                    'p90 ${_hours(mttr?['p90_hours'])} · ${mttr?['count'] ?? 0} resolved',
+                subtitle: context.l10n.ticketsAnalyticsMttrSubtitle(
+                  mttr?['count'] as int? ?? 0,
+                  _hours(mttr?['p90_hours']),
+                ),
                 icon: LucideIcons.checkCircle,
                 color: AppColors.success600,
                 error: errorOf(AnalyticsSection.mttr),
                 onRetry: retryOf(AnalyticsSection.mttr),
               ),
               _MetricTile(
-                title: 'Backlog (today)',
+                title: context.l10n.ticketsAnalyticsBacklog,
                 value: _backlogCurrent(backlog).toString(),
-                subtitle:
-                    'Peak urgent ${_backlogPeakUrgent(backlog)} in window',
+                subtitle: context.l10n.ticketsAnalyticsBacklogPeak(
+                  _backlogPeakUrgent(backlog),
+                ),
                 icon: LucideIcons.inbox,
                 color: AppColors.warning600,
                 error: errorOf(AnalyticsSection.backlog),
@@ -221,12 +240,12 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
           const SizedBox(height: 12),
           // Full width: three rates, and the headline one is first response.
           _MetricTile(
-            title: 'SLA breach rate',
+            title: context.l10n.ticketsAnalyticsSlaBreachRate,
             value: _rate(sla?['frt_breach_rate']),
-            subtitle:
-                'First response above · Resolution '
-                '${_rate(sla?['resolution_breach_rate'])} · Next response '
-                '${_rate(sla?['nrt_breach_rate'])}',
+            subtitle: context.l10n.ticketsAnalyticsSlaSubtitle(
+              _rate(sla?['resolution_breach_rate']),
+              _rate(sla?['nrt_breach_rate']),
+            ),
             icon: LucideIcons.alertTriangle,
             color: AppColors.danger600,
             error: errorOf(AnalyticsSection.sla),
@@ -252,9 +271,10 @@ class _TicketAnalyticsScreenState extends ConsumerState<TicketAnalyticsScreen> {
   String _hours(dynamic v) {
     if (v == null) return '—';
     final d = (v as num).toDouble();
-    if (d < 1) return '${(d * 60).round()}m';
-    if (d < 10) return '${d.toStringAsFixed(1)}h';
-    return '${d.round()}h';
+    final l10n = context.l10n;
+    if (d < 1) return l10n.ticketsAnalyticsMinutes('${(d * 60).round()}');
+    if (d < 10) return l10n.ticketsAnalyticsHours(d.toStringAsFixed(1));
+    return l10n.ticketsAnalyticsHours('${d.round()}');
   }
 
   String _rate(dynamic v) {
@@ -422,7 +442,7 @@ class _CsatSection extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'CUSTOMER SATISFACTION',
+                  context.l10n.ticketsAnalyticsCsatHeading,
                   style: AppTypography.overline.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -438,8 +458,7 @@ class _CsatSection extends StatelessWidget {
             _SectionError(message: error!, onRetry: onRetry)
           else if (count == 0 || average == null)
             Text(
-              'No ratings in this window. Scores appear once customers answer '
-              'the satisfaction survey sent when a ticket closes.',
+              context.l10n.ticketsAnalyticsCsatEmpty,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -459,7 +478,7 @@ class _CsatSection extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    'out of 5 · $count ${count == 1 ? 'rating' : 'ratings'}',
+                    context.l10n.ticketsAnalyticsCsatOutOf5(count),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -536,7 +555,7 @@ class _AgentsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'PER-AGENT',
+            context.l10n.ticketsAnalyticsAgentsHeading,
             style: AppTypography.overline.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -545,13 +564,13 @@ class _AgentsSection extends StatelessWidget {
           if (error != null)
             _SectionError(message: error!, onRetry: onRetry)
           else
-            for (final a in agents.take(20)) _agentRow(a),
+            for (final a in agents.take(20)) _agentRow(context, a),
         ],
       ),
     );
   }
 
-  Widget _agentRow(Map<String, dynamic> a) {
+  Widget _agentRow(BuildContext context, Map<String, dynamic> a) {
     final email = a['email'] as String? ?? a['name'] as String? ?? '—';
     final handled = a['handled'] as int? ?? 0;
     final avgFrt = a['avg_frt_hours'];
@@ -568,11 +587,17 @@ class _AgentsSection extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          _stat('$handled', 'cases'),
+          _stat('$handled', context.l10n.ticketsAnalyticsAgentCases),
           const SizedBox(width: 12),
-          _stat(_formatFrt(avgFrt), 'FRT'),
+          _stat(
+            _formatFrt(context, avgFrt),
+            context.l10n.ticketsAnalyticsAgentFrt,
+          ),
           const SizedBox(width: 12),
-          _stat(_formatRate(breachRate), 'breach'),
+          _stat(
+            _formatRate(breachRate),
+            context.l10n.ticketsAnalyticsAgentBreach,
+          ),
         ],
       ),
     );
@@ -597,11 +622,12 @@ class _AgentsSection extends StatelessWidget {
     );
   }
 
-  String _formatFrt(dynamic v) {
+  String _formatFrt(BuildContext context, dynamic v) {
     if (v == null) return '—';
     final d = (v as num).toDouble();
-    if (d < 1) return '${(d * 60).round()}m';
-    return '${d.toStringAsFixed(1)}h';
+    final l10n = context.l10n;
+    if (d < 1) return l10n.ticketsAnalyticsMinutes('${(d * 60).round()}');
+    return l10n.ticketsAnalyticsHours(d.toStringAsFixed(1));
   }
 
   String _formatRate(dynamic v) {
@@ -636,7 +662,7 @@ class _SectionError extends StatelessWidget {
               alignment: Alignment.centerLeft,
             ),
             icon: const Icon(LucideIcons.refreshCw, size: 14),
-            label: const Text('Retry'),
+            label: Text(context.l10n.commonRetry),
           ),
       ],
     );

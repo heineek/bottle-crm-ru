@@ -26,17 +26,20 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import { count } from '#lib/v2/format.js';
   import { ArrowDown, ArrowUp, Plus } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
 
   /** `workflow.STAGE_KINDS`. */
-  const KINDS = /** @type {const} */ ([
-    ['open', 'Open'],
-    ['won', 'Won'],
-    ['lost', 'Lost']
+  let KINDS = $derived([
+    ['open', m.settings_dealpipelines_type_open()],
+    ['won', m.settings_dealpipelines_type_won()],
+    ['lost', m.settings_dealpipelines_type_lost()]
   ]);
-  const KIND_LABEL = Object.fromEntries(KINDS);
+  let KIND_LABEL = $derived(Object.fromEntries(KINDS));
+
   const KIND_TONE = /** @type {Record<string, 'slate'|'moss'|'rust'>} */ ({
     open: 'slate',
     won: 'moss',
@@ -70,23 +73,25 @@
 
   /** @param {any} s */
   function rotting(s) {
-    if (s.kind !== 'open') return 'Closed, does not age';
-    if (!s.expected_days) return 'Never';
-    const warn = s.warning_days ? `, warns at ${s.warning_days}d` : '';
-    return `After ${s.expected_days}d${warn}`;
+    if (s.kind !== 'open') return m.settings_dealpipelines_rots_closed();
+    if (!s.expected_days) return m.settings_dealpipelines_rots_never();
+    return s.warning_days
+      ? m.settings_dealpipelines_rots_after_warn({ days: s.expected_days, warn: s.warning_days })
+      : m.settings_dealpipelines_rots_after({ days: s.expected_days });
   }
 </script>
 
-<PageHeader title="Deal pipelines">
+<PageHeader title={m.settings_dealpipelines_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(data.pipelines.length)}</span>
-    {data.pipelines.length === 1 ? 'pipeline' : 'pipelines'} of deal stages
+    {#each messageParts(m.settings_dealpipelines_sub( { count: data.pipelines.length, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+          class="v2-num">{count(data.pipelines.length)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !addingPipeline}
       <button class="v2-btn v2-btn-primary" onclick={() => (addingPipeline = true)}
-        ><Plus />New pipeline</button
+        ><Plus />{m.settings_dealpipelines_new_pipeline()}</button
       >
     {/if}
   {/snippet}
@@ -96,21 +101,20 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if addingPipeline}
       <SettingsFormPanel
-        title="New pipeline"
+        title={m.settings_dealpipelines_new_pipeline()}
         action="?/createPipeline"
         error={form?.createPipeline?.error}
-        submitLabel="Create pipeline"
+        submitLabel={m.settings_dealpipelines_create_pipeline()}
         oncancel={() => (addingPipeline = false)}
         ondone={() => (addingPipeline = false)}
       >
         {#snippet fields()}
           <div class="v2-field v2-sfp-wide">
-            <label for="p-name">Name</label>
+            <label for="p-name">{m.settings_dealpipelines_name_label()}</label>
             <!-- svelte-ignore a11y_autofocus -->
             <input id="p-name" class="v2-input" name="name" maxlength="100" required autofocus />
             <p class="v2-hint">
-              Starts with six stages (four open, then Closed Won and Closed Lost) that you can
-              rename, reorder or delete.
+              {m.settings_dealpipelines_new_pipeline_hint()}
             </p>
           </div>
         {/snippet}
@@ -118,8 +122,10 @@
     {/if}
 
     {#if data.pipelines.length > 1}
-      <div class="v2-label" style="margin-bottom:10px">Pipelines</div>
-      <nav class="dp-pipelines" aria-label="Pipelines">
+      <div class="v2-label" style="margin-bottom:10px">
+        {m.settings_dealpipelines_pipelines_heading()}
+      </div>
+      <nav class="dp-pipelines" aria-label={m.settings_dealpipelines_pipelines_heading()}>
         {#each data.pipelines as p (p.id)}
           <a
             class="v2-btn dp-pipeline"
@@ -127,7 +133,8 @@
             aria-current={p.id === pipeline?.id ? 'page' : undefined}
           >
             {p.name}
-            {#if p.is_default}<span class="v2-sub">default</span>{/if}
+            {#if p.is_default}<span class="v2-sub">{m.settings_dealpipelines_default_tag()}</span
+              >{/if}
           </a>
         {/each}
       </nav>
@@ -147,7 +154,9 @@
               }}
           >
             <input type="hidden" name="id" value={pipeline.id} />
-            <label class="v2-sr-only" for="p-rename">Pipeline name</label>
+            <label class="v2-sr-only" for="p-rename"
+              >{m.settings_dealpipelines_pipeline_name_label()}</label
+            >
             <input
               id="p-rename"
               class="v2-input"
@@ -156,31 +165,40 @@
               required
               value={pipeline.name}
             />
-            <button class="v2-btn v2-btn-primary" type="submit">Save</button>
-            <button class="v2-btn" type="button" onclick={() => (renaming = false)}>Cancel</button>
+            <button class="v2-btn v2-btn-primary" type="submit"
+              >{m.settings_dealpipelines_save()}</button
+            >
+            <button class="v2-btn" type="button" onclick={() => (renaming = false)}
+              >{m.settings_dealpipelines_cancel()}</button
+            >
           </form>
         {:else}
           <div style="flex:1;min-width:0">
             <b style="font-size:14px">{pipeline.name}</b>
-            {#if pipeline.is_default}<Pill tone="slate">Default</Pill>{/if}
+            {#if pipeline.is_default}<Pill tone="slate"
+                >{m.settings_dealpipelines_default_pill()}</Pill
+              >{/if}
             <div class="v2-sub" style="font-size:11.5px;margin-top:3px">
-              <span class="v2-num">{count(pipeline.stages.length)}</span> stages ·
+              {#each messageParts(m.settings_dealpipelines_stage_count( { count: pipeline.stages.length, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                    class="v2-num">{count(pipeline.stages.length)}</span
+                  >{:else}{p.text}{/if}{/each}
+              ·
               <a href={resolve(`pipeline?view=board&pipeline=${pipeline.id}`)} style="color:inherit"
-                >Open the board</a
+                >{m.settings_dealpipelines_open_board()}</a
               >
             </div>
           </div>
           {#if data.can_edit}
             <div class="dp-actions">
               <button class="v2-btn v2-btn-sm" type="button" onclick={() => (renaming = true)}>
-                Rename
+                {m.settings_dealpipelines_rename()}
               </button>
               {#if !pipeline.is_default}
                 <ConfirmAction
                   action="?/deletePipeline"
-                  label="Delete"
-                  confirmLabel="Delete pipeline"
-                  explain="It leaves the board and the deal forms. Refused while any deal is still in it."
+                  label={m.settings_dealpipelines_delete()}
+                  confirmLabel={m.settings_dealpipelines_delete_pipeline()}
+                  explain={m.settings_dealpipelines_delete_pipeline_explain()}
                   hidden={{ id: pipeline.id }}
                 />
               {/if}
@@ -190,8 +208,7 @@
       </div>
       {#if pipeline.is_default}
         <p class="v2-sub" style="font-size:11.5px;margin:-6px 0 14px;max-width:64ch">
-          The default pipeline is where a deal lands when nothing names another one, so it cannot be
-          deleted.
+          {m.settings_dealpipelines_default_note()}
         </p>
       {/if}
       {#if form?.renamePipeline?.error}
@@ -203,10 +220,14 @@
 
       {#if editing}
         <SettingsFormPanel
-          title={editing === 'new' ? 'New stage' : `Edit ${editing.label}`}
+          title={editing === 'new'
+            ? m.settings_dealpipelines_new_stage()
+            : m.settings_dealpipelines_edit_stage_title({ name: editing.label })}
           action={editing === 'new' ? '?/createStage' : '?/updateStage'}
           error={form?.stage?.error}
-          submitLabel={editing === 'new' ? 'Add stage' : 'Save stage'}
+          submitLabel={editing === 'new'
+            ? m.settings_dealpipelines_add_stage()
+            : m.settings_dealpipelines_save_stage()}
           oncancel={() => (editing = null)}
           ondone={() => (editing = null)}
         >
@@ -217,7 +238,7 @@
               <input type="hidden" name="id" value={editing.id} />
             {/if}
             <div class="v2-field">
-              <label for="s-label">Name</label>
+              <label for="s-label">{m.settings_dealpipelines_name_label()}</label>
               <input
                 id="s-label"
                 class="v2-input"
@@ -228,19 +249,19 @@
               />
             </div>
             <div class="v2-field">
-              <label for="s-kind">Kind</label>
+              <label for="s-kind">{m.settings_dealpipelines_kind_label()}</label>
               <select id="s-kind" class="v2-input" name="kind" bind:value={editingKind}>
                 {#each KINDS as [value, label] (value)}
                   <option {value}>{label}</option>
                 {/each}
               </select>
               <p class="v2-hint">
-                Won and lost close a deal. Reports and goals count by kind, not by name.
+                {m.settings_dealpipelines_kind_hint()}
               </p>
             </div>
             {#if editingKind === 'open'}
               <div class="v2-field">
-                <label for="s-expected">Rotting after (days)</label>
+                <label for="s-expected">{m.settings_dealpipelines_expected_label()}</label>
                 <input
                   id="s-expected"
                   class="v2-input"
@@ -253,12 +274,11 @@
                   value={editing === 'new' ? '' : (editing.expected_days ?? '')}
                 />
                 <p class="v2-hint">
-                  A deal past this many days in the stage reads Past expected, and Stalled at one
-                  and a half times it. Blank: it never rots here.
+                  {m.settings_dealpipelines_expected_hint()}
                 </p>
               </div>
               <div class="v2-field">
-                <label for="s-warning">Warn after (days)</label>
+                <label for="s-warning">{m.settings_dealpipelines_warning_label()}</label>
                 <input
                   id="s-warning"
                   class="v2-input"
@@ -270,7 +290,7 @@
                   inputmode="numeric"
                   value={editing === 'new' ? '' : (editing.warning_days ?? '')}
                 />
-                <p class="v2-hint">Optional. An earlier Past expected, before the rotting day.</p>
+                <p class="v2-hint">{m.settings_dealpipelines_warning_hint()}</p>
               </div>
             {/if}
           {/snippet}
@@ -282,10 +302,10 @@
       {/if}
 
       <div class="dp-stages-head">
-        <div class="v2-label">Stages, in board order</div>
+        <div class="v2-label">{m.settings_dealpipelines_stages_heading()}</div>
         {#if data.can_edit && !editing}
           <button class="v2-btn v2-btn-sm" type="button" onclick={() => edit('new')}
-            ><Plus size={13} />Add stage</button
+            ><Plus size={13} />{m.settings_dealpipelines_add_stage()}</button
           >
         {/if}
       </div>
@@ -293,9 +313,9 @@
         <table class="v2-table">
           <thead>
             <tr>
-              <th>Stage</th>
-              <th>Kind</th>
-              <th>Rots</th>
+              <th>{m.settings_dealpipelines_col_stage()}</th>
+              <th>{m.settings_dealpipelines_col_kind()}</th>
+              <th>{m.settings_dealpipelines_col_rots()}</th>
               {#if data.can_edit}<th></th>{/if}
             </tr>
           </thead>
@@ -318,7 +338,9 @@
                           <button
                             class="v2-btn v2-btn-sm dp-icon"
                             type="submit"
-                            aria-label="Move {s.label} {direction}"
+                            aria-label={direction === 'up'
+                              ? m.settings_dealpipelines_move_up({ name: s.label })
+                              : m.settings_dealpipelines_move_down({ name: s.label })}
                             disabled={direction === 'up'
                               ? i === 0
                               : i === pipeline.stages.length - 1}
@@ -330,13 +352,13 @@
                         </form>
                       {/each}
                       <button class="v2-btn v2-btn-sm" type="button" onclick={() => edit(s)}
-                        >Edit</button
+                        >{m.settings_dealpipelines_edit()}</button
                       >
                       <ConfirmAction
                         action="?/deleteStage"
-                        label="Delete"
-                        confirmLabel="Delete stage"
-                        explain="The column leaves the board. Refused while deals are in it, and for the pipeline's last open, won or lost stage."
+                        label={m.settings_dealpipelines_delete()}
+                        confirmLabel={m.settings_dealpipelines_delete_stage()}
+                        explain={m.settings_dealpipelines_delete_stage_explain()}
                         hidden={{ id: s.id }}
                       />
                     </div>

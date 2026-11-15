@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   moveField,
   withOrder,
@@ -211,5 +212,18 @@ describe('ticket forms', () => {
     // The server refuses a lead row on a ticket form, so the page must not
     // tell someone it is publishable.
     expect(hasRequiredField([{ source: 'lead', lead_field: 'email' }], 'ticket')).toBe(false);
+  });
+});
+
+describe('field labels in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('reads the label in the request locale, not the one at import', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(builtinFieldLabel('lead', 'title')).toBe('Тема');
+    expect(WEBFORM_TICKET_FIELDS.find((f) => f.value === 'email')?.label).toBe('Эл. почта');
+    overwriteGetLocale(() => 'en');
+    expect(builtinFieldLabel('lead', 'title')).toBe('Subject');
   });
 });

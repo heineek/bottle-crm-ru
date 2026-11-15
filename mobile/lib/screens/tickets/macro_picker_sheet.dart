@@ -6,6 +6,7 @@ import '../../core/theme/theme.dart';
 import '../../data/models/macro.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
+import '../../l10n/l10n.dart';
 
 /// What picking a saved reply produced.
 ///
@@ -134,14 +135,14 @@ class _MacroPickerSheetState extends ConsumerState<_MacroPickerSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Saved replies',
+                      context.l10n.ticketsMacroTitle,
                       style: AppTypography.h3.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: context.l10n.commonClose,
                     icon: const Icon(LucideIcons.x, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -154,9 +155,9 @@ class _MacroPickerSheetState extends ConsumerState<_MacroPickerSheet> {
                 controller: _search,
                 onChanged: (v) => setState(() => _query = v),
                 textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  hintText: 'Search saved replies',
-                  prefixIcon: Icon(LucideIcons.search, size: 18),
+                decoration: InputDecoration(
+                  hintText: context.l10n.ticketsMacroSearchHint,
+                  prefixIcon: const Icon(LucideIcons.search, size: 18),
                   isDense: true,
                   border: OutlineInputBorder(),
                 ),
@@ -180,7 +181,7 @@ class _MacroPickerSheetState extends ConsumerState<_MacroPickerSheet> {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'Could not load the saved replies',
+                      context.l10n.ticketsMacroLoadError,
                       style: AppTypography.body.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -196,9 +197,8 @@ class _MacroPickerSheetState extends ConsumerState<_MacroPickerSheet> {
                         padding: const EdgeInsets.all(24),
                         child: Text(
                           macros.isEmpty
-                              ? 'No saved replies yet. You can write one under '
-                                    'More, Organization settings.'
-                              : 'No saved reply matches that search',
+                              ? context.l10n.ticketsMacroEmpty
+                              : context.l10n.ticketsMacroNoMatch,
                           style: AppTypography.body.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -309,7 +309,7 @@ class _PickerRow extends StatelessWidget {
                 height: 44,
                 child: FilledButton.tonal(
                   onPressed: busy ? null : onTap,
-                  child: const Text('Apply'),
+                  child: Text(context.l10n.ticketsMacroApply),
                 ),
               ),
           ],

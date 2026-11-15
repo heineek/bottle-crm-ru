@@ -18,13 +18,12 @@ import { fail, redirect } from '@sveltejs/kit';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
 import { relayHeaders } from '#lib/server/relay.js';
-
-const MISSING = 'Missing verification token.';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ url }) {
   if (!url.searchParams.get('token')) {
-    return { error: MISSING };
+    return { error: m.public_verify_missing_token() };
   }
   return {};
 }
@@ -36,7 +35,7 @@ export const actions = {
   default: async ({ url, cookies, getClientAddress, request }) => {
     const token = url.searchParams.get('token');
     if (!token) {
-      return fail(400, { error: MISSING });
+      return fail(400, { error: m.public_verify_missing_token() });
     }
 
     try {
@@ -72,7 +71,7 @@ export const actions = {
         maxAge: 60 * 60 * 24 * 365 // 1 year
       });
     } catch (/** @type {any} */ error) {
-      return fail(400, { error: error.response?.data?.error || 'Verification failed' });
+      return fail(400, { error: error.response?.data?.error || m.public_verify_failed() });
     }
 
     // Success - redirect to org selection (same as Google OAuth)

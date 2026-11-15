@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, createLead, getLeadFormOptions } from '#lib/server/v2/leads.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load(event) {
@@ -24,7 +25,7 @@ export const actions = {
       created = await createLead(event, values);
     } catch (/** @type {any} */ err) {
       // Values go back so a rejected form is not a blank form.
-      return fail(400, { values, error: readableError(err, 'Could not create the lead.') });
+      return fail(400, { values, error: readableError(err, m.leads_new_failed()) });
     }
 
     redirect(303, created?.id ? `/leads/${created.id}` : '/leads');

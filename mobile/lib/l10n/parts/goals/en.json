@@ -1,0 +1,164 @@
+{
+  "goalsTitle": "Goals",
+  "goalsHistoryTooltip": "Goal history",
+  "goalsNewTooltip": "New goal",
+  "goalsSectionGoals": "GOALS",
+  "goalsSectionLeaderboard": "LEADERBOARD",
+  "goalsDealsCount": "{count, plural, =1{1 deal} other{{count} deals}}",
+  "@goalsDealsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsActivitiesCount": "{count, plural, =1{1 activity} other{{count} activities}}",
+  "@goalsActivitiesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsStatActive": "active",
+  "goalsStatTargeted": "targeted",
+  "goalsStatAchieved": "achieved",
+  "goalsStatBehind": "behind pace",
+  "goalsTotalsAll": "Totals cover every goal. Revenue is summed per currency; deal and activity goals are not in the money totals.",
+  "goalsTotalsActive": "{active, plural, =1{Totals cover the 1 active goal of {count}. Revenue is summed per currency.} other{Totals cover the {active} active goals of {count}. Revenue is summed per currency.}}",
+  "@goalsTotalsActive": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsRowProgress": "{achieved} of {target} · {label}",
+  "@goalsRowProgress": {
+    "placeholders": {
+      "achieved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "goalsAchievedOfTarget": "{achieved} of {target}",
+  "@goalsAchievedOfTarget": {
+    "placeholders": {
+      "achieved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "goalsRetired": "Retired",
+  "goalsWeighted": "Weighted ({count})",
+  "@goalsWeighted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsLeaderboardEmpty": "Nothing to rank yet. The board covers monthly goals running today, and shows the ones you can see: your own, and your teams'.",
+  "goalsLeaderboardNote": "Ranked on attainment against each person's own target, not on raw revenue. Otherwise the biggest patch wins every quarter regardless of who worked hardest.",
+  "goalsEmptyTitle": "No goals yet",
+  "goalsEmptyAdmin": "A goal is a target and a period. Progress is counted from the deals closed inside it, so nothing needs updating by hand.",
+  "goalsEmptyMember": "Nothing is assigned to you or your teams. An administrator sets these.",
+  "goalsLoadFailed": "Could not load the goals",
+  "goalsTryAgain": "Try again",
+  "goalsSearchHint": "Search goals by name",
+  "goalsClearSearch": "Clear search",
+  "goalsRunningToday": "Running today",
+  "goalsNotPaused": "Not paused",
+  "goalsNoMatchTitle": "No goals match this filter",
+  "goalsNoMatchBody": "Nothing here matches the search and period you picked. Clearing the filter shows everything you can see.",
+  "goalsClearFilter": "Clear filter",
+  "goalsHistoryTitle": "Goal history",
+  "goalsHistoryFootnote": "The twelve most recent periods you can see. Attainment is recomputed from the closed-won deals of each period, so it matches what the goals screen showed while the period was running.",
+  "goalsHistoryMet": "{attained} of {count, plural, =1{{count} goal} other{{count} goals}} met",
+  "@goalsHistoryMet": {
+    "placeholders": {
+      "attained": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsHistoryPercentOfTarget": "{percent}% of target",
+  "@goalsHistoryPercentOfTarget": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsHistoryMetBadge": "Met",
+  "goalsHistoryMissedBadge": "Missed",
+  "goalsHistoryEmptyTitle": "No finished periods yet",
+  "goalsHistoryEmptyBody": "Once a goal's period ends it moves here with what it attained. Goals still running are on the goals screen.",
+  "goalsHistoryLoadFailed": "Could not load goal history",
+  "goalsFormSaveFailed": "Could not save this goal.",
+  "goalsFormUpdated": "Goal updated",
+  "goalsFormCreated": "Goal created",
+  "goalsFormDeleted": "Goal deleted",
+  "goalsFormDeleteTitle": "Delete this goal?",
+  "goalsFormDeleteBody": "The goal and its record of the period go for good. Nothing that was closed against it changes: those deals stay exactly as they are. To stop tracking a goal without losing it, retire it instead.",
+  "goalsFormKeepIt": "Keep it",
+  "goalsFormDeleteFailed": "Could not delete this goal.",
+  "goalsFormEditTitle": "Edit goal",
+  "goalsFormNewTitle": "New goal",
+  "goalsFormName": "Goal name",
+  "goalsFormMeasuredIn": "Measured in",
+  "goalsFormCurrency": "Currency",
+  "goalsFormCurrencyHelper": "Only won deals in this currency count",
+  "goalsFormTarget": "Target",
+  "goalsFormTargetDeals": "How many deals must close in the period",
+  "goalsFormTargetActivities": "How many activities must be logged in the period",
+  "goalsFormTargetRevenue": "Total revenue that must close in the period",
+  "goalsFormWeightTitle": "Weight by deal type",
+  "goalsFormWeightOptional": "Optional",
+  "goalsFormWeightAdjusted": "{count} adjusted",
+  "@goalsFormWeightAdjusted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsFormWeightHint": "A multiplier on each closed-won deal of that type. Leave a box empty to count that type in full. At 0.5 a 20,000 renewal counts as 10,000; at 0 it does not count at all.",
+  "goalsFormPeriod": "Period",
+  "goalsFormPeriodHint": "The period type groups goals on the leaderboard. The dates below are what progress is counted against.",
+  "goalsFormStarts": "Starts",
+  "goalsFormEnds": "Ends",
+  "goalsFormGoalFor": "Goal for",
+  "goalsFormWholeOrg": "The whole organisation",
+  "goalsFormTeam": "{team} (team)",
+  "@goalsFormTeam": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "goalsFormActive": "Active",
+  "goalsFormActiveHint": "A retired goal stays on the list and stops counting towards the totals and the leaderboard.",
+  "goalsFormSaveChanges": "Save changes",
+  "goalsFormCreate": "Create goal",
+  "goalsFormDelete": "Delete goal",
+  "goalsFormPickDate": "Pick a date",
+  "goalsFormGoalTitle": "Goal",
+  "goalsFormAdminsOnly": "Only an administrator can add or change a goal. You can see the ones set for you and your teams on the goals list."
+}

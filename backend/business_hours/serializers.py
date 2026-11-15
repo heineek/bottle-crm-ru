@@ -3,6 +3,7 @@
 from datetime import time
 from zoneinfo import available_timezones
 
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from business_hours.models import BusinessCalendar, BusinessHoliday
@@ -49,7 +50,7 @@ class BusinessCalendarSerializer(serializers.ModelSerializer):
 
     def validate_timezone(self, value):
         if value not in available_timezones():
-            raise serializers.ValidationError("Not a valid IANA timezone.")
+            raise serializers.ValidationError(_("Not a valid IANA timezone."))
         return value
 
     def validate(self, attrs):
@@ -63,13 +64,13 @@ class BusinessCalendarSerializer(serializers.ModelSerializer):
             )
             if (open_val is None) != (close_val is None):
                 raise serializers.ValidationError(
-                    {open_field: "Open and close must be both set or both null."}
+                    {open_field: _("Open and close must be both set or both null.")}
                 )
             if open_val is not None and close_val is not None:
                 if not isinstance(open_val, time) or not isinstance(close_val, time):
                     continue
                 if close_val <= open_val:
                     raise serializers.ValidationError(
-                        {close_field: "Close time must be after open time."}
+                        {close_field: _("Close time must be after open time.")}
                     )
         return attrs

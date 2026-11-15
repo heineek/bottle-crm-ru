@@ -3,9 +3,11 @@ import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.cache import patch_vary_headers
 
 from common import scopes
+from common.locale import request_language
 from common.models import Org, Profile
 from common.org_time import activate_org_timezone
 
@@ -50,10 +52,17 @@ class GetProfileAndOrg:
         # thread-local, worker threads are reused, and a request that raised
         # after activating would hand the next tenant its own day boundary.
         activate_org_timezone(getattr(request, "org", None))
+        # The language, the same way and for the same thread-reuse reason.
+        request.LANGUAGE_CODE = request_language(request)
+        translation.activate(request.LANGUAGE_CODE)
         try:
-            return self.get_response(request)
+            response = self.get_response(request)
+            response.headers.setdefault("Content-Language", request.LANGUAGE_CODE)
+            patch_vary_headers(response, ("Accept-Language",))
+            return response
         finally:
             timezone.deactivate()
+            translation.deactivate()
 
     def process_request(self, request):
         # Skip JWT validation for authentication endpoints that don't need org context
@@ -286,7 +295,7 @@ class GetProfileAndOrg:
 
         This narrows what the key can do. It does not make the key safe: it
         still reads every record in the org. Prefer a scoped personal access
-        token; see docs/api/tokens-and-api-keys.md.
+        token; see docs/EN/api/tokens-and-api-keys.md.
         """
         if not getattr(settings, "ORG_API_KEY_AUTH_ENABLED", True):
             logger.warning("Organization API key auth is disabled; refusing request")

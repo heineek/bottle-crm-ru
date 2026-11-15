@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getLeadBoard, moveLead } from '#lib/server/v2/lead-board.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Leads grouped by the stages of one lead pipeline. `?pipeline=<id>` picks
@@ -26,15 +27,15 @@ export const actions = {
     const stageId = String(form.get('stage_id') || '');
     const aboveId = String(form.get('above_id') || '');
     const belowId = String(form.get('below_id') || '');
-    if (!id || !stageId) return fail(400, { error: 'Missing lead or stage.' });
+    if (!id || !stageId) return fail(400, { error: m.leads_board_missing() });
     try {
       await moveLead({ cookies }, id, { stageId, aboveId, belowId });
       return { success: true };
     } catch (err) {
       if (/** @type {any} */ (err)?.status === 404) {
-        return fail(404, { error: 'That lead is not one you can move.' });
+        return fail(404, { error: m.leads_board_not_movable() });
       }
-      return fail(400, { error: readableError(err, 'Could not move the lead.') });
+      return fail(400, { error: readableError(err, m.leads_board_move_error()) });
     }
   }
 };

@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const apiRequest = vi.fn();
 vi.mock('#lib/api-helpers.js', () => ({ apiRequest: (...args) => apiRequest(...args) }));
 
+const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
 const {
+  SUPPORT_CATEGORIES,
   createSupportTicket,
   getSupportTicket,
   listSupportTickets,
@@ -159,5 +161,18 @@ describe('support API adapter', () => {
     expect(url).toContain(`/support/${apiTicket().id}/replies/`);
     expect([...options.body.keys()]).toEqual(['body']);
     expect(options.body.get('body')).toBe('Still broken');
+  });
+});
+
+describe('support categories', () => {
+  it('labels each category in the request locale, not the one at import', () => {
+    const before = getLocale;
+    try {
+      overwriteGetLocale(() => 'ru');
+      expect(SUPPORT_CATEGORIES.find((c) => c.value === 'billing')?.label).toBe('Оплата');
+    } finally {
+      overwriteGetLocale(before);
+    }
+    expect(SUPPORT_CATEGORIES.find((c) => c.value === 'billing')?.label).toBe('Billing');
   });
 });

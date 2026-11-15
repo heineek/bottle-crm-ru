@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createTask, getTaskFormOptions } from '#lib/server/v2/tasks.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { listTickets } from '#lib/server/v2/tickets.js';
 import { listDeals } from '#lib/server/v2/deals.js';
 import { listLeads } from '#lib/server/v2/leads.js';
@@ -26,7 +27,7 @@ export async function load(event) {
   // Asked directly: `parent()` would rerun the whole shell load.
   const modulesP = getModules(event);
   /** @param {string} key */
-  const when = (key) => modulesP.then((m) => isOn(m?.modules ?? null, key));
+  const when = (key) => modulesP.then((answer) => isOn(answer?.modules ?? null, key));
   const [options, tickets, deals, leads] = await Promise.allSettled([
     getTaskFormOptions(event),
     when('tickets').then((on) =>
@@ -66,7 +67,7 @@ export async function load(event) {
                 `${l.first_name} ${l.last_name}`.trim() ||
                 l.company_name ||
                 l.email ||
-                '(unnamed lead)'
+                m.tasks_unnamed_lead()
             }))
           : []
     }
@@ -95,7 +96,7 @@ function readParent(form) {
   const id = form.get(`parent_${kind}`)?.toString() ?? '';
   if (!id) {
     return {
-      error: 'Pick which record this is attached to, or set "Attached to" back to Nothing.'
+      error: m.tasks_error_parent_missing()
     };
   }
   return { parent: { [kind]: id } };
@@ -132,7 +133,7 @@ export const actions = {
     } catch (/** @type {any} */ err) {
       return fail(400, {
         values: { ...values, parent_kind: kind },
-        error: readableError(err, 'Could not save this task.')
+        error: readableError(err, m.tasks_error_save())
       });
     }
 

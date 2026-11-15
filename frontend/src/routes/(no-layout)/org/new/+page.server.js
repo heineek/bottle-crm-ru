@@ -10,6 +10,7 @@ import { describeError } from '#lib/server/log-safe.js';
 import { relayHeaders } from '#lib/server/relay.js';
 import { listPacks, applyPack } from '#lib/server/packs.js';
 import { listTimezones } from '#lib/server/v2/organization.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies }) {
@@ -45,7 +46,7 @@ export const actions = {
     if (!user) {
       return {
         error: {
-          name: 'You must be logged in to create an organization'
+          name: m.public_org_new_login_required()
         }
       };
     }
@@ -60,7 +61,7 @@ export const actions = {
     if (!orgName || orgName.trim().length === 0) {
       return {
         error: {
-          name: 'Organization name is required'
+          name: m.public_org_new_name_required()
         }
       };
     }
@@ -70,7 +71,7 @@ export const actions = {
       if (!jwtAccess) {
         return {
           error: {
-            name: 'Authentication required'
+            name: m.public_org_new_auth_required()
           }
         };
       }
@@ -198,17 +199,14 @@ export const actions = {
         const errors = err.response.data?.errors;
         return {
           error: {
-            name:
-              errors?.name?.[0] ||
-              errors?.timezone?.[0] ||
-              'Organization with this name may already exist'
+            name: errors?.name?.[0] || errors?.timezone?.[0] || m.public_org_new_name_taken()
           }
         };
       }
 
       return {
         error: {
-          name: 'An unexpected error occurred while creating the organization.'
+          name: m.public_org_new_unexpected()
         }
       };
     }

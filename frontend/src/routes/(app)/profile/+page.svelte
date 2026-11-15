@@ -23,6 +23,8 @@
   import { KeyRound, Lock, ArrowLeftRight, CalendarDays } from '@lucide/svelte';
   import { isOn, labelOf } from '#lib/v2/modules.js';
   import { asInternalPath } from '#lib/utils/paths.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { locales } from '#lib/paraglide/runtime.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -32,9 +34,9 @@
   // Only the modules that are on: each row opens its module's page.
   let workRows = $derived(
     [
-      { key: 'goals', path: '/goals', body: 'Your quota and how it is pacing' },
-      { key: 'timesheet', path: '/timesheet', body: 'Hours you have logged this week' },
-      { key: 'tasks', path: '/tasks', body: 'What is assigned to you' }
+      { key: 'goals', path: '/goals', body: m.profile_page_work_goals() },
+      { key: 'timesheet', path: '/timesheet', body: m.profile_page_work_timesheet() },
+      { key: 'tasks', path: '/tasks', body: m.profile_page_work_tasks() }
     ].filter((row) => isOn(data.modules, row.key))
   );
   let name = $derived(`${p.user_details.first_name} ${p.user_details.last_name}`.trim());
@@ -71,17 +73,26 @@
   };
 
   // `form` is shared by both actions; the switch action tags its failures.
-  let editError = $derived(form?.scope === 'switch' ? '' : (form?.message ?? ''));
+  let editError = $derived(
+    form?.scope === 'switch' || form?.scope === 'language' ? '' : (form?.message ?? '')
+  );
+  let languageError = $derived(form?.scope === 'language' ? (form?.message ?? '') : '');
   let switchError = $derived(form?.scope === 'switch' ? (form?.message ?? '') : '');
 </script>
 
 <PageHeader title={name} record>
   {#snippet sub()}
-    {ROLE_LABEL[p.role]} · {data.org.name} · joined {shortDate(p.joined_at)}
+    {m.profile_page_sub({
+      role: ROLE_LABEL[p.role],
+      org: data.org.name,
+      date: shortDate(p.joined_at)
+    })}
   {/snippet}
   {#snippet actions()}
     {#if !editing}
-      <button class="v2-btn v2-btn-primary" onclick={openEdit}>Edit details</button>
+      <button class="v2-btn v2-btn-primary" onclick={openEdit}
+        >{m.profile_page_edit_details()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -90,7 +101,7 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     <div class="v2-split">
       <div>
-        <div class="v2-label" style="margin-bottom:10px">You</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.profile_page_you()}</div>
 
         {#if editing}
           <form
@@ -101,7 +112,7 @@
             style="padding:17px 18px;margin-bottom:20px"
           >
             <div class="v2-field">
-              <label for="f-name">Full name</label>
+              <label for="f-name">{m.profile_page_full_name()}</label>
               <input
                 id="f-name"
                 name="name"
@@ -111,22 +122,24 @@
               />
             </div>
             <div class="v2-field" style="margin-top:12px">
-              <label for="f-phone">Phone</label>
+              <label for="f-phone">{m.profile_page_phone()}</label>
               <input
                 id="f-phone"
                 name="phone"
                 class="v2-input"
                 bind:value={editPhone}
-                placeholder="+44 20 7946 0100"
+                placeholder={m.profile_page_phone_placeholder()}
               />
-              <p class="v2-hint">Digits and separators only. Leave blank to remove it.</p>
+              <p class="v2-hint">{m.profile_page_phone_hint()}</p>
             </div>
             {#if editError}
               <p class="v2-error" style="margin-top:10px">{editError}</p>
             {/if}
             <div style="display:flex;gap:8px;margin-top:16px">
-              <button class="v2-btn v2-btn-primary" type="submit">Save</button>
-              <button class="v2-btn" type="button" onclick={() => (editing = false)}>Cancel</button>
+              <button class="v2-btn v2-btn-primary" type="submit">{m.common_save()}</button>
+              <button class="v2-btn" type="button" onclick={() => (editing = false)}
+                >{m.common_cancel()}</button
+              >
             </div>
           </form>
         {:else}
@@ -139,37 +152,37 @@
               </div>
             </div>
             <dl class="v2-kv">
-              <dt>Phone</dt>
+              <dt>{m.profile_page_phone()}</dt>
               <dd class="v2-num" style="font-size:12px">{p.phone || '—'}</dd>
-              <dt>Teams</dt>
+              <dt>{m.profile_page_teams()}</dt>
               <dd>{p.teams.join(', ') || '—'}</dd>
-              <dt>Joined</dt>
+              <dt>{m.profile_page_joined()}</dt>
               <dd>{shortDate(p.joined_at)}</dd>
-              <dt>Last signed in</dt>
+              <dt>{m.profile_page_last_login()}</dt>
               <dd>{relativeDays(p.last_login)}</dd>
             </dl>
           </div>
         {/if}
 
-        <div class="v2-label" style="margin-bottom:10px">Organisations</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.profile_page_orgs()}</div>
         <div class="v2-card" style="overflow:hidden">
           {#each p.orgs as o (o.id)}
             <div class="v2-setting">
               <div class="v2-setting-body">
                 <b>{o.name}</b>
                 <span class="v2-sub" style="font-size:11.5px">
-                  You are {ROLE_LABEL[o.role] === 'Admin' ? 'an admin' : 'a member'} here
+                  {o.role === 'ADMIN' ? m.profile_page_org_admin() : m.profile_page_org_member()}
                 </span>
               </div>
               {#if o.is_current}
-                <Pill tone="ink" dot>Current</Pill>
+                <Pill tone="ink" dot>{m.profile_page_current()}</Pill>
               {:else}
                 <!-- Switching org re-issues the token; it does not edit a field
                      on this page. The action swaps the cookies and reloads. -->
                 <form method="POST" action="?/switchOrg" use:enhance class="v2-inline-form">
                   <input type="hidden" name="org_id" value={o.id} />
                   <button class="v2-btn v2-btn-sm" type="submit">
-                    <ArrowLeftRight size={12} />Switch
+                    <ArrowLeftRight size={12} />{m.profile_page_switch()}
                   </button>
                 </form>
               {/if}
@@ -180,20 +193,41 @@
           <p class="v2-error" style="margin-top:9px">{switchError}</p>
         {/if}
         <p class="v2-sub" style="font-size:11.5px;margin-top:11px">
-          Switching organisation signs you in again with a new token. Which org you are in decides
-          which records exist for you at all, so it is not a filter you can toggle.
+          {m.profile_page_switch_note()}
         </p>
+
+        <div class="v2-label" style="margin:20px 0 10px">{m.profile_language_title()}</div>
+        <!-- No use:enhance: the reload renders the whole document in the new
+             language, <html lang> included. -->
+        <form class="v2-card" method="POST" action="?/language" style="padding:17px 18px">
+          <div class="v2-field">
+            <label for="f-language">{m.profile_language_label()}</label>
+            <select id="f-language" name="language" class="v2-input" value={p.language}>
+              <option value="">{m.profile_language_automatic()}</option>
+              {#each locales as code (code)}
+                <option value={code} lang={code}>{m.language_name({}, { locale: code })}</option>
+              {/each}
+            </select>
+            <p class="v2-hint">{m.profile_language_hint()}</p>
+          </div>
+          {#if languageError}
+            <p class="v2-error" style="margin-top:10px">{languageError}</p>
+          {/if}
+          <button class="v2-btn v2-btn-primary" type="submit" style="margin-top:14px">
+            {m.common_save()}
+          </button>
+        </form>
       </div>
 
       <div>
-        <div class="v2-label" style="margin-bottom:10px">Access</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.profile_page_access()}</div>
         <div class="v2-card" style="overflow:hidden;margin-bottom:20px">
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Role</b>
+              <b>{m.profile_page_role()}</b>
               <!-- Displayed, never editable from here. -->
               <span class="v2-sub" style="font-size:11.5px">
-                Set by an admin. You cannot change your own role.
+                {m.profile_page_role_hint()}
               </span>
             </div>
             <Lock size={14} style="color:var(--v2-slate);flex:none" />
@@ -204,9 +238,9 @@
                to lead most of the people who clicked it to "Admins only". -->
           <a class="v2-setting" href={resolve('profile/tokens')}>
             <div class="v2-setting-body">
-              <b>API tokens</b>
+              <b>{m.profile_page_api_tokens()}</b>
               <span class="v2-sub" style="font-size:11.5px">
-                Each one signs in as you, with your role.
+                {m.profile_page_api_tokens_hint()}
               </span>
             </div>
             <KeyRound size={14} style="color:var(--v2-slate);flex:none" />
@@ -217,9 +251,9 @@
           {#if isOn(data.modules, 'tasks')}
             <a class="v2-setting" href={resolve('profile/calendar-feed')}>
               <div class="v2-setting-body">
-                <b>Calendar feed</b>
+                <b>{m.profile_page_calendar_feed()}</b>
                 <span class="v2-sub" style="font-size:11.5px">
-                  Your open tasks in Google Calendar, Outlook or Apple Calendar.
+                  {m.profile_page_calendar_feed_hint()}
                 </span>
               </div>
               <CalendarDays size={14} style="color:var(--v2-slate);flex:none" />
@@ -227,21 +261,20 @@
           {/if}
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Sign-in method</b>
+              <b>{m.profile_page_sign_in_method()}</b>
               <!-- It used to say "Google, on <email>", which is false for
                    anyone who signed in with an emailed code. Nothing in the
                    payload says which was used, so this states what holds for
                    both rather than guessing. -->
               <span class="v2-sub" style="font-size:11.5px">
-                {p.user_details.email}, by Google or an emailed code. There is no password to
-                change.
+                {m.profile_page_sign_in_method_body({ email: p.user_details.email })}
               </span>
             </div>
           </div>
         </div>
 
         {#if workRows.length}
-          <div class="v2-label" style="margin-bottom:10px">Where your work shows up</div>
+          <div class="v2-label" style="margin-bottom:10px">{m.profile_page_work_title()}</div>
           <div class="v2-card" style="overflow:hidden">
             {#each workRows as row (row.key)}
               <a class="v2-setting" href={resolve(asInternalPath(row.path))}>

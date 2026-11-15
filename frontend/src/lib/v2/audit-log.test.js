@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import { auditActor, auditDetail, auditWebhookId } from '#lib/v2/audit-log.js';
 
 describe('auditActor', () => {
@@ -128,5 +129,24 @@ describe('auditWebhookId', () => {
     expect(auditWebhookId({ details: { endpoint_id: 'e1' } })).toBe('e1');
     expect(auditWebhookId({ details: {} })).toBeNull();
     expect(auditWebhookId({ details: { endpoint_id: 5 } })).toBeNull();
+  });
+});
+
+describe('in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('builds the detail line as one translated sentence', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(auditActor({ actor: null })).toBe('Без пользователя');
+    expect(auditDetail({ event_type: 'SAMPLE_DATA_CLEARED', details: { deleted_count: 5 } })).toBe(
+      'Удалено 5 демонстрационных лидов'
+    );
+    expect(
+      auditDetail({
+        event_type: 'API_TOKEN_CREATED',
+        details: { token_name: 'CI', token_prefix: 'bcrm_pat_ab12', scopes: [] }
+      })
+    ).toBe('Токен «CI» (bcrm_pat_ab12), полный доступ.');
   });
 });

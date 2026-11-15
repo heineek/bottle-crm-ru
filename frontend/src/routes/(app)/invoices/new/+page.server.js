@@ -5,6 +5,7 @@ import { listProducts } from '#lib/server/v2/products.js';
 import { createInvoice } from '#lib/server/v2/invoices.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { getNumbering } from '#lib/server/v2/organization.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The builder needs three pickers: account (required), contact (required, the
@@ -25,10 +26,13 @@ export async function load({ cookies }) {
   ]);
 
   return {
-    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || 'Unnamed account' })),
+    accounts: accounts.results.map((a) => ({
+      id: a.id,
+      name: a.name || m.invoices_unnamed_account()
+    })),
     contacts: contacts.results.map((c) => ({
       id: c.id,
-      name: c.name || c.email || 'Unnamed contact',
+      name: c.name || c.email || m.invoices_unnamed_contact(),
       account_id: c.account?.id ?? null,
       account_name: c.account?.name ?? ''
     })),
@@ -53,13 +57,13 @@ export const actions = {
     try {
       body = JSON.parse(form.get('payload')?.toString() || '{}');
     } catch {
-      return fail(400, { error: 'The invoice form could not be read. Please try again.' });
+      return fail(400, { error: m.invoices_form_unreadable() });
     }
 
-    if (!body.account_id) return fail(400, { error: 'Choose an account.' });
-    if (!body.contact_id) return fail(400, { error: 'Choose a contact.' });
+    if (!body.account_id) return fail(400, { error: m.invoices_recurring_choose_account() });
+    if (!body.contact_id) return fail(400, { error: m.invoices_recurring_choose_contact() });
     if (!Array.isArray(body.line_items) || body.line_items.length === 0) {
-      return fail(400, { error: 'Add at least one line with a description and an amount.' });
+      return fail(400, { error: m.invoices_lines_required() });
     }
 
     let created;
@@ -67,7 +71,7 @@ export const actions = {
       created = await createInvoice({ cookies }, body);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 403 ? 403 : 400, {
-        error: readableError(err, 'Could not create the invoice.')
+        error: readableError(err, m.invoices_create_failed())
       });
     }
 

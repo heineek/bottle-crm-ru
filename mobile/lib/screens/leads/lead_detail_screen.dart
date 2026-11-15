@@ -18,6 +18,8 @@ import '../../services/org_date.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/duplicates/duplicates_panel.dart';
 import '../../widgets/objects/related_objects_section.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// Lead Detail Screen
 /// Shows lead info with tabs: Overview, Timeline, Notes
@@ -97,8 +99,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
         } else if (isInitialLoad) {
           _notFound = notFound;
           _error = notFound
-              ? 'It may have been deleted, or you may not have access to it'
-              : 'Check your connection and try again';
+              ? context.l10n.leadsDetailNotFoundBody
+              : context.l10n.leadsDetailCheckConnection;
         }
       });
     }
@@ -135,19 +137,24 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
               Icon(LucideIcons.userX, size: 48, color: AppColors.gray400),
               const SizedBox(height: 16),
               Text(
-                _notFound ? 'Lead not found' : 'Could not load this lead',
+                _notFound
+                    ? context.l10n.leadsDetailNotFound
+                    : context.l10n.leadsDetailLoadFailed,
                 style: AppTypography.h3,
               ),
               const SizedBox(height: 8),
               Text(
-                _error ?? 'Check your connection and try again',
+                _error ?? context.l10n.leadsDetailCheckConnection,
                 textAlign: TextAlign.center,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
-              TextButton(onPressed: _fetchLead, child: const Text('Retry')),
+              TextButton(
+                onPressed: _fetchLead,
+                child: Text(context.l10n.commonRetry),
+              ),
             ],
           ),
         ),
@@ -239,13 +246,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   tabs: [
-                    const Tab(text: 'Overview'),
-                    const Tab(text: 'Timeline'),
-                    const Tab(text: 'Notes'),
+                    Tab(text: context.l10n.leadsDetailTabOverview),
+                    Tab(text: context.l10n.leadsDetailTabTimeline),
+                    Tab(text: context.l10n.leadsDetailTabNotes),
                     Tab(
                       text: _lead!.attachments.isEmpty
-                          ? 'Files'
-                          : 'Files (${_lead!.attachments.length})',
+                          ? context.l10n.leadsDetailTabFiles
+                          : context.l10n.leadsDetailTabFilesCount(
+                              _lead!.attachments.length,
+                            ),
                     ),
                   ],
                 ),
@@ -336,8 +345,13 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
               const SizedBox(height: 10),
               // Status badge is tap-to-change so users don't have to dig
               // through the kebab for a workflow they hit constantly.
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // Wrap: a long translated status and rating move to a second
+              // line rather than overflow the header.
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   InkWell(
                     borderRadius: BorderRadius.circular(6),
@@ -355,7 +369,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
                   _RatingChip(rating: lead.rating),
                 ],
               ),
@@ -367,25 +380,31 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _QuickActionButton(
-                    icon: LucideIcons.phone,
-                    label: 'Call',
-                    enabled: _hasPhone,
-                    onTap: () => _launchPhone(lead.phone),
+                  Flexible(
+                    child: _QuickActionButton(
+                      icon: LucideIcons.phone,
+                      label: context.l10n.leadsDetailCall,
+                      enabled: _hasPhone,
+                      onTap: () => _launchPhone(lead.phone),
+                    ),
                   ),
                   const SizedBox(width: 24),
-                  _QuickActionButton(
-                    icon: LucideIcons.mail,
-                    label: 'Email',
-                    enabled: _hasEmail,
-                    onTap: () => _launchEmail(lead.email),
+                  Flexible(
+                    child: _QuickActionButton(
+                      icon: LucideIcons.mail,
+                      label: context.l10n.leadsDetailEmail,
+                      enabled: _hasEmail,
+                      onTap: () => _launchEmail(lead.email),
+                    ),
                   ),
                   const SizedBox(width: 24),
-                  _QuickActionButton(
-                    icon: LucideIcons.messageSquare,
-                    label: 'Message',
-                    enabled: _hasPhone,
-                    onTap: () => _launchSms(lead.phone),
+                  Flexible(
+                    child: _QuickActionButton(
+                      icon: LucideIcons.messageSquare,
+                      label: context.l10n.leadsDetailMessage,
+                      enabled: _hasPhone,
+                      onTap: () => _launchSms(lead.phone),
+                    ),
                   ),
                 ],
               ),
@@ -430,13 +449,16 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           DuplicatesPanel(module: DuplicateModule.leads, recordId: lead.id),
           // Deal card, most valuable info on a lead. Shown first when present.
           if (hasDeal) ...[
-            _buildCard(title: 'Deal', child: _buildDealContent(lead)),
+            _buildCard(
+              title: context.l10n.leadsDetailCardDeal,
+              child: _buildDealContent(lead),
+            ),
             const SizedBox(height: 16),
           ],
 
           // Contact Information
           _buildCard(
-            title: 'Contact Information',
+            title: context.l10n.leadsDetailCardContact,
             child: Column(children: _buildContactRows(lead)),
           ),
 
@@ -445,10 +467,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           // Address
           if (hasAddress) ...[
             _buildCard(
-              title: 'Address',
+              title: context.l10n.leadsDetailCardAddress,
               child: _InfoRow(
                 icon: LucideIcons.mapPin,
-                label: 'LOCATION',
+                label: context.l10n.leadsDetailLocation,
                 value: _formatAddress(lead),
               ),
             ),
@@ -457,14 +479,20 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
 
           // Dates
           if (hasDates) ...[
-            _buildCard(title: 'Dates', child: _buildDatesContent(lead)),
+            _buildCard(
+              title: context.l10n.leadsDetailCardDates,
+              child: _buildDatesContent(lead),
+            ),
             const SizedBox(height: 16),
           ],
 
           // Assigned To, render all assignees, not just the first one. The
           // backend lets a lead belong to multiple users and the count alone
           // changes who's responsible for follow-up.
-          _buildCard(title: 'Assigned To', child: _buildAssigneesContent(lead)),
+          _buildCard(
+            title: context.l10n.leadsDetailCardAssigned,
+            child: _buildAssigneesContent(lead),
+          ),
 
           const SizedBox(height: 16),
 
@@ -473,7 +501,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           // one definition AND the lead has at least one value.
           if (_hasRenderableCustomFields(lead)) ...[
             _buildCard(
-              title: 'Custom Fields',
+              title: context.l10n.leadsDetailCardCustomFields,
               child: _buildCustomFieldsContent(lead),
             ),
             const SizedBox(height: 16),
@@ -482,7 +510,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           // Tags
           if (lead.tags.isNotEmpty) ...[
             _buildCard(
-              title: 'Tags',
+              title: context.l10n.commonTags,
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -497,7 +525,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           // Description Preview
           if (lead.description != null && lead.description!.isNotEmpty)
             _buildCard(
-              title: 'Description',
+              title: context.l10n.commonDescription,
               child: Text(
                 lead.description!.length > 200
                     ? '${lead.description!.substring(0, 200)}…'
@@ -523,7 +551,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       rows.add(
         _InfoRow(
           icon: LucideIcons.dollarSign,
-          label: 'DEAL VALUE',
+          label: context.l10n.leadsDetailDealValue,
           value: _formatMoney(lead.opportunityAmount!, lead.currency),
         ),
       );
@@ -537,7 +565,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       rows.add(
         _InfoRow(
           icon: LucideIcons.calendar,
-          label: 'CLOSE DATE',
+          label: context.l10n.leadsDetailCloseDate,
           value: _formatDate(lead.closeDate!),
         ),
       );
@@ -556,7 +584,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'PROBABILITY',
+                context.l10n.leadsDetailProbability,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textTertiary,
                   fontSize: 10,
@@ -599,16 +627,16 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     addRow(
       _InfoRow(
         icon: LucideIcons.mail,
-        label: 'EMAIL',
-        value: _hasEmail ? lead.email : 'Not provided',
+        label: context.l10n.leadsDetailEmailLabel,
+        value: _hasEmail ? lead.email : context.l10n.leadsDetailNotProvided,
         onTap: _hasEmail ? () => _launchEmail(lead.email) : null,
       ),
     );
     addRow(
       _InfoRow(
         icon: LucideIcons.phone,
-        label: 'PHONE',
-        value: _hasPhone ? lead.phone! : 'Not provided',
+        label: context.l10n.leadsDetailPhoneLabel,
+        value: _hasPhone ? lead.phone! : context.l10n.leadsDetailNotProvided,
         onTap: _hasPhone ? () => _launchPhone(lead.phone!) : null,
       ),
     );
@@ -616,7 +644,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.briefcase,
-          label: 'JOB TITLE',
+          label: context.l10n.leadsDetailJobTitle,
           value: lead.jobTitle!,
         ),
       );
@@ -625,7 +653,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.globe,
-          label: 'WEBSITE',
+          label: context.l10n.leadsDetailWebsite,
           value: lead.website!,
           onTap: () => _launchWeb(lead.website!),
         ),
@@ -635,7 +663,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.link,
-          label: 'LINKEDIN',
+          label: context.l10n.leadsDetailLinkedin,
           value: lead.linkedinUrl!,
           onTap: () => _launchWeb(lead.linkedinUrl!),
         ),
@@ -644,7 +672,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     addRow(
       _InfoRow(
         icon: LucideIcons.compass,
-        label: 'SOURCE',
+        label: context.l10n.leadsDetailSource,
         value: lead.source.displayName,
       ),
     );
@@ -652,15 +680,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.building,
-          label: 'INDUSTRY',
-          value: lead.industry!,
+          label: context.l10n.leadsDetailIndustry,
+          value: industryLabel(lead.industry),
         ),
       );
     }
     addRow(
       _InfoRow(
         icon: LucideIcons.calendar,
-        label: 'CREATED',
+        label: context.l10n.leadsDetailCreated,
         value: _formatDate(lead.createdAt),
       ),
     );
@@ -678,7 +706,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.clock,
-          label: 'LAST CONTACT',
+          label: context.l10n.leadsDetailLastContact,
           value: _formatDate(lead.lastContacted!),
         ),
       );
@@ -687,7 +715,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.calendarClock,
-          label: 'NEXT FOLLOW-UP',
+          label: context.l10n.leadsDetailNextFollowUp,
           value: _formatDate(lead.nextFollowUp!),
         ),
       );
@@ -696,7 +724,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       addRow(
         _InfoRow(
           icon: LucideIcons.refreshCw,
-          label: 'UPDATED',
+          label: context.l10n.leadsDetailUpdated,
           value: _formatDate(lead.updatedAt!),
         ),
       );
@@ -712,7 +740,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           Icon(LucideIcons.userX, size: 20, color: AppColors.gray400),
           const SizedBox(width: 12),
           Text(
-            'Unassigned',
+            context.l10n.leadsDetailUnassigned,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
         ],
@@ -730,7 +758,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
 
   Widget _buildAssigneeRow(Map<String, dynamic> a) {
     final details = a['user_details'];
-    String name = 'Unknown';
+    String name = context.l10n.leadsDetailUnknownUser;
     String? email;
     String? pic;
     if (details is Map<String, dynamic>) {
@@ -814,7 +842,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (raw == null) return '';
     switch (def.fieldType) {
       case CustomFieldType.checkbox:
-        return raw == true ? 'Yes' : 'No';
+        return raw == true ? context.l10n.commonYes : context.l10n.commonNo;
       case CustomFieldType.dropdown:
         final value = raw.toString();
         final match = def.options
@@ -853,12 +881,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                     color: AppColors.gray400,
                   ),
                   const SizedBox(height: 16),
-                  Text('No files attached', style: AppTypography.h3),
+                  Text(
+                    context.l10n.leadsDetailNoFiles,
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 8),
                   // This used to read "Attachments uploaded from the web
                   // appear here", which was true and was the whole problem.
                   Text(
-                    'Attach a document, a business card, or a photo.',
+                    context.l10n.leadsDetailNoFilesBody,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -942,7 +973,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
   /// note on `Attachment.filePath` for why the stored path is not a URL.
   Future<void> _openFile(Attachment a) async {
     if (!a.hasFile) {
-      _snackBar('That attachment has no file.');
+      _snackBar(context.l10n.leadsDetailAttachmentNoFile);
       return;
     }
     final result = await downloadAttachment(
@@ -950,7 +981,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       fileName: a.fileName,
     );
     if (!mounted || result.success) return;
-    _snackBar(result.error ?? 'Could not download that file.');
+    _snackBar(result.error ?? context.l10n.leadsDetailDownloadFailed);
   }
 
   void _snackBar(String message) {
@@ -1023,10 +1054,13 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                 children: [
                   Icon(LucideIcons.clock, size: 48, color: AppColors.gray400),
                   const SizedBox(height: 16),
-                  Text('No activity yet', style: AppTypography.h3),
+                  Text(
+                    context.l10n.leadsDetailNoActivity,
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Activity will appear here as it happens',
+                    context.l10n.leadsDetailNoActivityBody,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -1063,7 +1097,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
           kind: _TimelineKind.comment,
           ts: c.commentedOn,
           actor: c.authorName,
-          summary: 'commented',
+          summary: context.l10n.leadsDetailEventCommented,
           body: c.comment,
         ),
       for (final a in lead.attachments)
@@ -1072,13 +1106,13 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             kind: _TimelineKind.attachment,
             ts: a.createdAt!,
             actor: a.createdBy ?? '',
-            summary: 'uploaded ${a.fileName}',
+            summary: context.l10n.leadsDetailEventUploaded(a.fileName),
           ),
       _TimelineEvent(
         kind: _TimelineKind.created,
         ts: lead.createdAt,
         actor: '',
-        summary: 'Lead created',
+        summary: context.l10n.leadsDetailEventCreated,
       ),
     ]..sort((a, b) => b.ts.compareTo(a.ts));
     return events;
@@ -1091,10 +1125,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       children: [
         Expanded(
           child: comments.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.fileText,
-                  title: 'No notes yet',
-                  description: 'Add a note to keep track of important details',
+                  title: context.l10n.leadsDetailNoNotes,
+                  description: context.l10n.leadsDetailNoNotesBody,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -1144,7 +1178,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                     controller: _noteController,
                     enabled: !_isAddingNote,
                     decoration: InputDecoration(
-                      hintText: 'Add a note...',
+                      hintText: context.l10n.leadsDetailNoteHint,
                       hintStyle: AppTypography.body.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -1212,7 +1246,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (!response.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to add note'),
+          content: Text(
+            response.message ?? context.l10n.leadsDetailNoteAddFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -1243,8 +1279,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Note added'),
+      SnackBar(
+        content: Text(context.l10n.leadsDetailNoteAdded),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1268,7 +1304,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (!response.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to update note'),
+          content: Text(
+            response.message ?? context.l10n.leadsDetailNoteUpdateFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -1296,8 +1334,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Note updated'),
+      SnackBar(
+        content: Text(context.l10n.leadsDetailNoteUpdated),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1312,7 +1350,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (!response.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to delete note'),
+          content: Text(
+            response.message ?? context.l10n.leadsDetailNoteDeleteFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -1329,8 +1369,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Note deleted'),
+      SnackBar(
+        content: Text(context.l10n.leadsDetailNoteDeleted),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1397,7 +1437,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             ),
             ListTile(
               leading: const Icon(LucideIcons.users),
-              title: const Text('Assign Users'),
+              title: Text(context.l10n.leadsDetailAssignUsers),
               onTap: () {
                 Navigator.pop(context);
                 _showAssignSheet();
@@ -1405,7 +1445,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             ),
             ListTile(
               leading: const Icon(LucideIcons.tags),
-              title: const Text('Edit Tags'),
+              title: Text(context.l10n.leadsDetailEditTags),
               onTap: () {
                 Navigator.pop(context);
                 _showTagsSheet();
@@ -1413,7 +1453,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             ),
             ListTile(
               leading: const Icon(LucideIcons.calendarClock),
-              title: const Text('Set Follow-up'),
+              title: Text(context.l10n.leadsDetailSetFollowUp),
               onTap: () {
                 Navigator.pop(context);
                 _pickFollowUpDate();
@@ -1421,7 +1461,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             ),
             ListTile(
               leading: const Icon(LucideIcons.share2),
-              title: const Text('Share'),
+              title: Text(context.l10n.leadsDetailShare),
               onTap: () {
                 Navigator.pop(context);
                 _shareLead();
@@ -1434,7 +1474,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                   color: AppColors.success600,
                 ),
                 title: Text(
-                  'Convert Lead',
+                  context.l10n.leadsDetailConvertLead,
                   style: TextStyle(color: AppColors.success700),
                 ),
                 onTap: () {
@@ -1446,7 +1486,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
               ListTile(
                 leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
                 title: Text(
-                  'Delete Lead',
+                  context.l10n.leadsDetailDeleteLead,
                   style: TextStyle(color: AppColors.danger600),
                 ),
                 onTap: () {
@@ -1466,8 +1506,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
   Future<void> _showAssignSheet() async {
     if (_assignableUsers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No assignable users available'),
+        SnackBar(
+          content: Text(context.l10n.leadsDetailNoAssignable),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1483,7 +1523,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       ),
       builder: (sheetContext) {
         return _MultiSelectSheet<AssignableUser>(
-          title: 'Assign Users',
+          title: context.l10n.leadsDetailAssignUsers,
           items: _assignableUsers,
           initialSelected: selected,
           idOf: (u) => u.id,
@@ -1497,10 +1537,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
         );
       },
     );
-    if (saved == null) return;
+    if (saved == null || !mounted) return;
     await _patchLead({
       'assigned_to': saved.toList(),
-    }, successMessage: 'Assignees updated');
+    }, successMessage: context.l10n.leadsDetailAssigneesUpdated);
   }
 
   Future<void> _showTagsSheet() async {
@@ -1515,8 +1555,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (tags.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No tags defined for this org'),
+        SnackBar(
+          content: Text(context.l10n.leadsDetailNoTags),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1533,7 +1573,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       ),
       builder: (sheetContext) {
         return _MultiSelectSheet<TagLookup>(
-          title: 'Edit Tags',
+          title: context.l10n.leadsDetailEditTags,
           items: tags,
           initialSelected: selected,
           idOf: (t) => t.id,
@@ -1544,8 +1584,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
         );
       },
     );
-    if (saved == null) return;
-    await _patchLead({'tags': saved.toList()}, successMessage: 'Tags updated');
+    if (saved == null || !mounted) return;
+    await _patchLead({
+      'tags': saved.toList(),
+    }, successMessage: context.l10n.leadsDetailTagsUpdated);
   }
 
   Future<void> _pickFollowUpDate() async {
@@ -1558,14 +1600,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       initialDate: initial.isBefore(now) ? now : initial,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 3),
-      helpText: 'Set next follow-up',
+      helpText: context.l10n.leadsDetailFollowUpHelp,
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     final iso =
         '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-    await _patchLead({
-      'next_follow_up': iso,
-    }, successMessage: 'Follow-up set for ${_formatDate(picked)}');
+    await _patchLead(
+      {'next_follow_up': iso},
+      successMessage: context.l10n.leadsDetailFollowUpSet(_formatDate(picked)),
+    );
   }
 
   Future<void> _shareLead() async {
@@ -1582,8 +1625,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     await Clipboard.setData(ClipboardData(text: summary));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Lead details copied to clipboard'),
+      SnackBar(
+        content: Text(context.l10n.leadsDetailCopied),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1593,20 +1636,16 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Convert Lead?'),
+        title: Text(context.l10n.leadsDetailConvertTitle),
         content: Text(
           ref.read(moduleOnProvider('deals'))
-              ? 'This creates an Account, Contact, and Opportunity from this '
-                    'lead, then marks the lead as converted. This cannot be '
-                    'undone from the app.'
-              : 'This creates an Account and a Contact from this lead, then '
-                    'marks the lead as converted. This cannot be undone from '
-                    'the app.',
+              ? context.l10n.leadsDetailConvertBodyDeals
+              : context.l10n.leadsDetailConvertBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -1614,7 +1653,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
               await _convertLead();
             },
             child: Text(
-              'Convert',
+              context.l10n.leadsDetailConvert,
               style: TextStyle(color: AppColors.success700),
             ),
           ),
@@ -1632,15 +1671,17 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       await _fetchLead();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lead converted'),
+        SnackBar(
+          content: Text(context.l10n.leadsDetailConverted),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to convert lead'),
+          content: Text(
+            response.message ?? context.l10n.leadsDetailConvertFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -1668,7 +1709,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Update failed'),
+          content: Text(
+            response.message ?? context.l10n.leadsDetailUpdateFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -1698,7 +1741,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Change Status', style: AppTypography.h3),
+              child: Text(
+                context.l10n.leadsDetailChangeStatus,
+                style: AppTypography.h3,
+              ),
             ),
             ...LeadStatus.values.map(
               (status) => ListTile(
@@ -1719,6 +1765,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                   if (_lead!.status == status) return;
 
                   final messenger = ScaffoldMessenger.of(context);
+                  final l10n = context.l10n;
                   final response = await ref
                       .read(leadsProvider.notifier)
                       .updateLeadStatus(_lead!.id, status);
@@ -1731,7 +1778,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Status changed to ${status.displayName}',
+                            l10n.leadsDetailStatusChanged(status.displayName),
                           ),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1740,7 +1787,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text(
-                            response.message ?? 'Failed to update status',
+                            response.message ?? l10n.leadsDetailStatusFailed,
                           ),
                           behavior: SnackBarBehavior.floating,
                           backgroundColor: AppColors.danger600,
@@ -1762,21 +1809,22 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Lead?'),
-        content: const Text(
-          'This action cannot be undone. Are you sure you want to delete this lead?',
-        ),
+        title: Text(context.l10n.leadsDetailDeleteTitle),
+        content: Text(context.l10n.leadsDetailDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
               await _deleteLead();
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1791,8 +1839,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (mounted) {
       if (response.success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lead deleted'),
+          SnackBar(
+            content: Text(context.l10n.leadsDetailDeleted),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1800,7 +1848,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to delete lead'),
+            content: Text(
+              response.message ?? context.l10n.leadsDetailDeleteFailed,
+            ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -1815,21 +1865,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
   }
 
   String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    return localDateFormat('MMM d, y', 'yMMMd').format(date);
   }
 
   bool get _hasPhone => _lead?.phone != null && _lead!.phone!.trim().isNotEmpty;
@@ -1843,7 +1879,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen>
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(failureLabel ?? 'Could not open ${uri.scheme}'),
+          content: Text(
+            failureLabel ?? context.l10n.leadsDetailOpenFailed(uri.scheme),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1899,6 +1937,8 @@ class _QuickActionButton extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -1997,25 +2037,25 @@ class _EditNoteDialogState extends State<_EditNoteDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Note'),
+      title: Text(context.l10n.leadsDetailEditNote),
       content: TextField(
         controller: _controller,
         autofocus: true,
         maxLines: null,
         minLines: 3,
-        decoration: const InputDecoration(
-          hintText: 'Update your note...',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          hintText: context.l10n.leadsDetailEditNoteHint,
+          border: const OutlineInputBorder(),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, _controller.text.trim()),
-          child: const Text('Save'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );
@@ -2063,7 +2103,7 @@ class _NoteCard extends StatelessWidget {
             if (onEdit != null)
               ListTile(
                 leading: Icon(LucideIcons.pencil, color: AppColors.primary600),
-                title: const Text('Edit Note'),
+                title: Text(context.l10n.leadsDetailEditNote),
                 onTap: () {
                   Navigator.pop(context);
                   onEdit!();
@@ -2073,7 +2113,7 @@ class _NoteCard extends StatelessWidget {
               ListTile(
                 leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
                 title: Text(
-                  'Delete Note',
+                  context.l10n.leadsDetailDeleteNote,
                   style: TextStyle(color: AppColors.danger600),
                 ),
                 onTap: () {
@@ -2092,16 +2132,19 @@ class _NoteCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Note?'),
-        content: const Text('This action cannot be undone.'),
+        title: Text(context.l10n.leadsDetailDeleteNoteTitle),
+        content: Text(context.l10n.leadsDetailCannotUndo),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -2151,7 +2194,7 @@ class _NoteCard extends StatelessWidget {
                         LucideIcons.moreVertical,
                         color: AppColors.textTertiary,
                       ),
-                      tooltip: 'Note options',
+                      tooltip: context.l10n.leadsDetailNoteOptions,
                       onPressed: () => _showOptions(context),
                     ),
                   ),
@@ -2170,7 +2213,7 @@ class _NoteCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _formatTimeAgo(timestamp),
+                  _formatTimeAgo(context, timestamp),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -2183,20 +2226,20 @@ class _NoteCard extends StatelessWidget {
     );
   }
 
-  String _formatTimeAgo(DateTime dateTime) {
+  String _formatTimeAgo(BuildContext context, DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
+      return context.l10n.leadsTimeMonthsAgo((difference.inDays / 30).floor());
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return context.l10n.leadsTimeDaysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return context.l10n.leadsTimeHoursAgo(difference.inHours);
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return context.l10n.leadsTimeMinutesAgo(difference.inMinutes);
     } else {
-      return 'Just now';
+      return context.l10n.leadsTimeJustNow;
     }
   }
 }
@@ -2278,7 +2321,7 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
                     ),
                     onPressed: () =>
                         Navigator.pop<Set<String>>(context, _selected),
-                    child: const Text('Save'),
+                    child: Text(context.l10n.commonSave),
                   ),
                 ],
               ),
@@ -2288,7 +2331,7 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
               child: TextField(
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
-                  hintText: 'Search…',
+                  hintText: context.l10n.leadsSearchEllipsis,
                   prefixIcon: const Icon(LucideIcons.search, size: 16),
                   filled: true,
                   fillColor: AppColors.gray100,
@@ -2455,7 +2498,7 @@ class _TimelineRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _relTime(event.ts),
+                        _relTime(context, event.ts),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -2488,13 +2531,15 @@ class _TimelineRow extends StatelessWidget {
     );
   }
 
-  String _relTime(DateTime dt) {
+  String _relTime(BuildContext context, DateTime dt) {
     final d = DateTime.now().difference(dt);
-    if (d.inDays > 30) return '${(d.inDays / 30).floor()}mo';
-    if (d.inDays > 0) return '${d.inDays}d';
-    if (d.inHours > 0) return '${d.inHours}h';
-    if (d.inMinutes > 0) return '${d.inMinutes}m';
-    return 'now';
+    if (d.inDays > 30) {
+      return context.l10n.leadsTimeMonths((d.inDays / 30).floor());
+    }
+    if (d.inDays > 0) return context.l10n.leadsTimeDays(d.inDays);
+    if (d.inHours > 0) return context.l10n.leadsTimeHours(d.inHours);
+    if (d.inMinutes > 0) return context.l10n.leadsTimeMinutes(d.inMinutes);
+    return context.l10n.leadsTimeNow;
   }
 }
 
@@ -2520,7 +2565,10 @@ class _StageLine extends StatelessWidget {
           child: Text(
             stage.pipelineName.isEmpty
                 ? stage.name
-                : '${stage.name} in ${stage.pipelineName}',
+                : context.l10n.leadsDetailStageInPipeline(
+                    stage.name,
+                    stage.pipelineName,
+                  ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.caption.copyWith(

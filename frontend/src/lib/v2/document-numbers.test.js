@@ -3,6 +3,7 @@ import {
   exampleNumber,
   numberPattern,
   numberSeries,
+  NUMBER_DATE_PARTS,
   NUMBER_PREFIX_PATTERN
 } from '#lib/v2/document-numbers.js';
 
@@ -91,5 +92,20 @@ describe('numberPattern', () => {
   it('shows the series and the counter width, not a number nobody holds yet', () => {
     expect(numberPattern(settings, 'invoice', '2026-10-15')).toBe('INVNSD-2026-nnnnn');
     expect(numberPattern(settings, 'estimate', '2026-10-15')).toBe('ESTNSD-2026-nnnnn');
+  });
+});
+
+describe('NUMBER_DATE_PARTS', () => {
+  it('labels each part in the request locale, read when used', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    expect(NUMBER_DATE_PARTS[0].label).toBe('No date, one running count');
+    overwriteGetLocale(() => 'ru');
+    try {
+      expect(NUMBER_DATE_PARTS.map((p) => p.value)).toEqual(['NONE', 'YEAR', 'MONTH', 'DAY']);
+      expect(NUMBER_DATE_PARTS[1].label).toBe('Год, нумерация с начала каждого года');
+    } finally {
+      overwriteGetLocale(base);
+    }
   });
 });

@@ -7,6 +7,7 @@ import '../../core/theme/theme.dart';
 import '../../data/models/approval.dart';
 import '../../providers/approvals_provider.dart';
 import '../../widgets/common/common.dart';
+import '../../l10n/l10n.dart';
 
 /// Approvals inbox: Mine vs All, state filter (pending / approved / rejected
 /// / cancelled / all). Pending rows expose approve / reject (with reason) /
@@ -55,15 +56,18 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     if (res.success) {
       await _refresh();
     } else {
-      _toast(res.message ?? 'Failed to approve', error: true);
+      _toast(
+        res.message ?? context.l10n.ticketsInboxApproveFailed,
+        error: true,
+      );
     }
   }
 
   Future<void> _reject(Approval a) async {
     final reason = await _promptText(
-      'Reject approval',
-      'Reason (required)',
-      'Reject',
+      context.l10n.ticketsInboxRejectTitle,
+      context.l10n.ticketsInboxRejectReason,
+      context.l10n.ticketsInboxReject,
       required: true,
     );
     if (reason == null || reason.isEmpty) return;
@@ -74,7 +78,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     if (res.success) {
       await _refresh();
     } else {
-      _toast(res.message ?? 'Failed to reject', error: true);
+      _toast(res.message ?? context.l10n.ticketsInboxRejectFailed, error: true);
     }
   }
 
@@ -82,16 +86,16 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel approval request?'),
-        content: const Text('This will withdraw the approval request.'),
+        title: Text(context.l10n.ticketsInboxCancelTitle),
+        content: Text(context.l10n.ticketsInboxCancelBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep'),
+            child: Text(context.l10n.ticketsInboxKeep),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cancel request'),
+            child: Text(context.l10n.ticketsInboxCancelRequest),
           ),
         ],
       ),
@@ -104,7 +108,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     if (res.success) {
       await _refresh();
     } else {
-      _toast(res.message ?? 'Failed to cancel', error: true);
+      _toast(res.message ?? context.l10n.ticketsInboxCancelFailed, error: true);
     }
   }
 
@@ -128,7 +132,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
@@ -159,7 +163,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Approvals'),
+        title: Text(context.l10n.ticketsInboxTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -172,9 +176,9 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
           labelColor: AppColors.primary600,
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary600,
-          tabs: const [
-            Tab(text: 'Mine'),
-            Tab(text: 'All'),
+          tabs: [
+            Tab(text: context.l10n.ticketsInboxTabMine),
+            Tab(text: context.l10n.ticketsInboxTabAll),
           ],
         ),
       ),
@@ -205,7 +209,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: ChoiceChip(
-                  label: Text(_capitalize(s)),
+                  label: Text(_stateLabel(s)),
                   selected: _state == s,
                   onSelected: (_) {
                     setState(() => _state = s);
@@ -219,17 +223,18 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     );
   }
 
-  String _capitalize(String s) =>
-      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+  String _stateLabel(String s) => s == 'all'
+      ? context.l10n.ticketsInboxStateAll
+      : ApprovalState.fromString(s).label;
 
   Widget _body(List<Approval> approvals) {
     if (approvals.isEmpty) {
       return EmptyState(
         icon: LucideIcons.shieldCheck,
-        title: 'No approvals',
+        title: context.l10n.ticketsInboxEmptyTitle,
         description: _state == 'pending' && _mineTab
-            ? "You don't have any pending approvals to act on."
-            : 'No approvals match the current filter.',
+            ? context.l10n.ticketsInboxEmptyMine
+            : context.l10n.ticketsInboxEmptyFiltered,
       );
     }
     return RefreshIndicator(
@@ -292,14 +297,14 @@ class _ApprovalTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        c?.name ?? 'Ticket',
+                        c?.name ?? context.l10n.ticketsInboxTicketFallback,
                         style: AppTypography.label.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (r != null)
                         Text(
-                          'Rule: ${r.name}',
+                          context.l10n.ticketsInboxRule(r.name),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -327,7 +332,7 @@ class _ApprovalTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                'Rejection: ${approval.reason!}',
+                context.l10n.ticketsInboxRejection(approval.reason!),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.danger700,
                 ),
@@ -341,14 +346,16 @@ class _ApprovalTile extends StatelessWidget {
               children: [
                 if (approval.requestedBy != null)
                   Text(
-                    'Requested by ${approval.requestedBy!.email}',
+                    context.l10n.ticketsInboxRequestedBy(
+                      approval.requestedBy!.email,
+                    ),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
                   ),
                 if (approval.approver != null)
                   Text(
-                    'Approver ${approval.approver!.email}',
+                    context.l10n.ticketsInboxApprover(approval.approver!.email),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -369,7 +376,7 @@ class _ApprovalTile extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: isBusy ? null : onApprove,
                     icon: const Icon(LucideIcons.check, size: 16),
-                    label: const Text('Approve'),
+                    label: Text(context.l10n.ticketsInboxApprove),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.success600,
                       minimumSize: const Size(0, 44),
@@ -381,7 +388,7 @@ class _ApprovalTile extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: isBusy ? null : onReject,
                     icon: const Icon(LucideIcons.x, size: 16),
-                    label: const Text('Reject'),
+                    label: Text(context.l10n.ticketsInboxReject),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger600,
                       minimumSize: const Size(0, 44),
@@ -398,7 +405,7 @@ class _ApprovalTile extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: isBusy ? null : onCancel,
                 icon: const Icon(LucideIcons.circleMinus, size: 16),
-                label: const Text('Withdraw request'),
+                label: Text(context.l10n.ticketsInboxWithdraw),
                 style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
               ),
             ),

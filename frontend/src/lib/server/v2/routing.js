@@ -17,6 +17,7 @@
  * object; the page wants `{ id, name, is_active }` / `{ id, name }`, so
  * flatten here.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
 import { CONDITION_FIELD_LABEL, CONDITION_OP_LABEL, ROUTING_STRATEGY_NAME } from '#lib/v2/enums.js';
@@ -176,10 +177,10 @@ function cleanConditions(rows) {
     .filter((r) => r.field)
     .map((r) => {
       if (!(CONDITION_FIELDS.includes(r.field) || r.field.startsWith('custom_fields.'))) {
-        throw new Error(`"${r.field}" is not a field a rule can match on.`);
+        throw new Error(m.settings_routing_error_bad_field({ field: r.field }));
       }
       if (!CONDITION_OPS.includes(r.op)) {
-        throw new Error(`"${r.op}" is not an operator a rule can use.`);
+        throw new Error(m.settings_routing_error_bad_op({ op: r.op }));
       }
       return r;
     });
@@ -241,7 +242,7 @@ function buildBody(allowed, values) {
 /** @param {{ cookies: import('@sveltejs/kit').Cookies }} event */
 export async function createRoutingRule({ cookies }, values) {
   const body = buildBody(CREATE_FIELDS, values);
-  if (!body.name) throw new Error('A rule needs a name.');
+  if (!body.name) throw new Error(m.settings_routing_error_no_name());
   return await apiRequest('/cases/routing-rules/', { method: 'POST', body }, { cookies });
 }
 
@@ -256,7 +257,7 @@ const PEOPLE_STRATEGIES = Object.keys(ROUTING_STRATEGY_NAME).filter((s) => s !==
 
 /** @param {{ cookies: import('@sveltejs/kit').Cookies }} event */
 export async function updateRoutingRule({ cookies }, id, values) {
-  if (!id) throw new Error('Which rule? No rule id was given.');
+  if (!id) throw new Error(m.settings_routing_error_no_id());
   const body = buildBody(UPDATE_FIELDS, values);
 
   // The one rule the backend enforces on create and cannot enforce on edit.
@@ -280,7 +281,7 @@ export async function updateRoutingRule({ cookies }, id, values) {
     PEOPLE_STRATEGIES.includes(body.strategy)
   ) {
     const name = ROUTING_STRATEGY_NAME[body.strategy].toLowerCase();
-    throw new Error(`A ${name} rule needs at least one assignee.`);
+    throw new Error(m.settings_routing_error_no_assignee({ strategy: name }));
   }
 
   return await apiRequest(`/cases/routing-rules/${id}/`, { method: 'PUT', body }, { cookies });
@@ -296,6 +297,6 @@ export async function updateRoutingRule({ cookies }, id, values) {
  * @param {{ cookies: import('@sveltejs/kit').Cookies }} event
  */
 export async function deleteRoutingRule({ cookies }, id) {
-  if (!id) throw new Error('Which rule? No rule id was given.');
+  if (!id) throw new Error(m.settings_routing_error_no_id());
   return await apiRequest(`/cases/routing-rules/${id}/`, { method: 'DELETE' }, { cookies });
 }

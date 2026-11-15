@@ -52,6 +52,7 @@ export const EDITABLE_FIELDS = [
   'default_currency',
   'default_country',
   'timezone',
+  'default_language',
   // Invoice and estimate numbering (#802). Sent as typed; the serializer
   // parses the two numbers and enforces every format rule.
   'invoice_number_prefix',

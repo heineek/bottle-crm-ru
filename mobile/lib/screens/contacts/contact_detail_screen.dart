@@ -10,6 +10,7 @@ import '../../providers/duplicates_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/duplicates/duplicates_panel.dart';
 import '../../widgets/objects/related_objects_section.dart';
+import '../../l10n/l10n.dart';
 
 /// One contact.
 class ContactDetailScreen extends ConsumerStatefulWidget {
@@ -54,8 +55,8 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
       // and one this user may not open. Offline or a 500 is "could not load".
       if (contact == null) {
         _error = notFound
-            ? 'This contact does not exist, or you do not have access to them'
-            : 'Could not load this contact';
+            ? context.l10n.contactsDetailNotFound
+            : context.l10n.contactsFormLoadFailed;
       }
     });
   }
@@ -71,16 +72,19 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this contact?'),
-        content: Text('Deleting ${contact.fullName} cannot be undone.'),
+        title: Text(context.l10n.contactsDetailDeleteTitle),
+        content: Text(context.l10n.contactsDetailDeleteBody(contact.fullName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -109,7 +113,9 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(contact?.fullName ?? 'Contact'),
+        title: Text(
+          contact?.fullName ?? context.l10n.contactsDetailTitleFallback,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -121,7 +127,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
           if (contact != null)
             IconButton(
               icon: const Icon(LucideIcons.edit3, size: 20),
-              tooltip: 'Edit contact',
+              tooltip: context.l10n.contactsDetailEditTooltip,
               onPressed: () async {
                 await context.push('${AppRoutes.contacts}/${contact.id}/edit');
                 if (mounted) _load();
@@ -130,7 +136,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
           if (_canDelete)
             IconButton(
               icon: const Icon(LucideIcons.trash2, size: 20),
-              tooltip: 'Delete contact',
+              tooltip: context.l10n.contactsDetailDeleteTooltip,
               onPressed: _deleting ? null : _confirmDelete,
             ),
         ],
@@ -150,12 +156,15 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
             Icon(LucideIcons.alertCircle, size: 40, color: AppColors.danger500),
             const SizedBox(height: 12),
             Text(
-              _error ?? 'Could not load this contact',
+              _error ?? context.l10n.contactsFormLoadFailed,
               textAlign: TextAlign.center,
               style: AppTypography.body,
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _load, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _load,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -197,7 +206,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Do not call. This person asked not to be phoned.',
+              context.l10n.contactsDetailDoNotCall,
               style: AppTypography.caption.copyWith(color: AppColors.danger600),
             ),
           ),
@@ -207,28 +216,32 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
   }
 
   Widget _details(Contact contact) {
+    final l10n = context.l10n;
     final rows = <(String, String?)>[
-      ('Email', contact.email),
-      ('Phone', contact.phone),
-      ('Title', contact.title),
-      ('Department', contact.department),
-      ('Company', contact.organization),
-      ('LinkedIn', contact.linkedinUrl),
-      ('Address', _address(contact)),
+      (l10n.commonEmail, contact.email),
+      (l10n.commonPhone, contact.phone),
+      (l10n.contactsDetailTitle, contact.title),
+      (l10n.contactsFormDepartment, contact.department),
+      (l10n.contactsFormCompany, contact.organization),
+      (l10n.contactsDetailLinkedin, contact.linkedinUrl),
+      (l10n.contactsFormAddress, _address(contact)),
       (
-        'Assigned to',
+        l10n.commonAssignedTo,
         contact.assignedToNames.isEmpty
             ? null
             : contact.assignedToNames.join(', '),
       ),
-      ('Tags', contact.tagNames.isEmpty ? null : contact.tagNames.join(', ')),
-      ('Notes', contact.description),
+      (
+        l10n.commonTags,
+        contact.tagNames.isEmpty ? null : contact.tagNames.join(', '),
+      ),
+      (l10n.commonNotes, contact.description),
     ].where((row) => row.$2 != null && row.$2!.trim().isNotEmpty).toList();
 
     if (rows.isEmpty) {
       return _card(
         child: Text(
-          'No details recorded yet.',
+          l10n.contactsDetailNoDetails,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
       );
@@ -297,7 +310,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                'Accounts (${links.length})',
+                context.l10n.contactsDetailAccounts(links.length),
                 style: AppTypography.label.copyWith(
                   color: AppColors.textSecondary,
                 ),

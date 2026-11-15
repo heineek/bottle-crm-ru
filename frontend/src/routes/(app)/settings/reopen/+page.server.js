@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getReopenPolicy, updateReopenPolicy } from '#lib/server/v2/reopen.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies }) {
@@ -29,10 +30,10 @@ export const actions = {
       await updateReopenPolicy(event, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { update: { error: 'Only an admin can change the reopen policy.' } });
+        return fail(403, { update: { error: m.settings_reopen_error_admin_only() } });
       }
       return fail(400, {
-        update: { error: readableError(err, 'Could not save the reopen policy.') }
+        update: { error: readableError(err, m.settings_reopen_error_save()) }
       });
     }
 

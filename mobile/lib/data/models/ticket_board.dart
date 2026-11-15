@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import 'lead_board.dart';
 import 'ticket.dart';
 
@@ -62,7 +63,7 @@ class TicketBoardCard {
     final name = (json['name'] as String?)?.trim() ?? '';
     return TicketBoardCard(
       id: (json['id'] ?? '').toString(),
-      name: name.isNotEmpty ? name : 'Untitled ticket',
+      name: name.isNotEmpty ? name : appL10n.appUntitledTicket,
       accountName: (json['account_name'] as String?) ?? '',
       assignee: assignee,
       priority: TicketPriority.fromString(json['priority'] as String?),

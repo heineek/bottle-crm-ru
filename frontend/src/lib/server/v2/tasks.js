@@ -42,6 +42,7 @@ import { error } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** `Task.STATUS_CHOICES`. Note `Task` priority is Low/Medium/High. A Case's is not. */
 export const TASK_STATUSES = ['New', 'In Progress', 'Completed'];
@@ -84,7 +85,7 @@ function toRelated(row) {
       return {
         kind: parent.kind,
         id: value.id,
-        name: value.name || '(unnamed)',
+        name: value.name || m.tasks_unnamed(),
         href: parent.href(value.id)
       };
     }
@@ -222,7 +223,7 @@ export async function getTask({ cookies }, id) {
   } catch (/** @type {any} */ err) {
     rethrowModuleOff(err);
     if (err?.status === 404) {
-      error(404, 'That task does not exist, or it belongs to another team.');
+      error(404, m.tasks_error_not_found());
     }
     if (err?.status === 403) error(403);
     throw err;
@@ -277,7 +278,7 @@ function buildTaskActivity(response) {
       type: 'file',
       at: a.created_at,
       by: null,
-      body: a.file_name || 'Attachment',
+      body: a.file_name || m.tasks_activity_attachment(),
       href: attachmentHref(a.id)
     });
   }
@@ -289,7 +290,7 @@ function buildTaskActivity(response) {
       type: 'status',
       at: task.created_at,
       by: null,
-      body: 'Task created'
+      body: m.tasks_activity_created()
     });
   }
 

@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/macro.dart';
+import '../../data/models/ticket.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/forms/multi_select_sheet.dart';
@@ -38,6 +40,22 @@ Future<Map<String, dynamic>?> showMacroFormSheet(
 }
 
 /// [active] plus any of [stored] it does not already hold.
+/// A status or priority code as the ticket screens name it, or the code
+/// itself for one this build does not know.
+String _statusName(String code) {
+  for (final s in TicketStatus.values) {
+    if (s.value == code) return s.displayName;
+  }
+  return code;
+}
+
+String _priorityName(String code) {
+  for (final p in TicketPriority.values) {
+    if (p.value == code) return p.displayName;
+  }
+  return code;
+}
+
 List<MacroRef> _withStored(List<MacroRef> active, List<MacroRef> stored) {
   final ids = {for (final r in active) r.id};
   return [...active, ...stored.where((r) => !ids.contains(r.id))];
@@ -101,14 +119,14 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
     final options = _withStored(active, widget.existing?.assignees ?? []);
     final picked = await MultiSelectSheet.show<MacroRef>(
       context: context,
-      title: 'Assign to',
+      title: context.l10n.settingsMacroFormAssignTo,
       items: options,
       initialSelection: options
           .where((o) => _assignees.any((a) => a.id == o.id))
           .toList(),
       labelOf: (r) => r.label,
       searchText: (r) => r.name,
-      emptyMessage: 'No active members to choose from',
+      emptyMessage: context.l10n.settingsMacroFormNoMembers,
     );
     if (picked != null && mounted) setState(() => _assignees = picked);
   }
@@ -121,14 +139,14 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
     final options = _withStored(active, widget.existing?.tags ?? []);
     final picked = await MultiSelectSheet.show<MacroRef>(
       context: context,
-      title: 'Add tags',
+      title: context.l10n.settingsMacroFormAddTags,
       items: options,
       initialSelection: options
           .where((o) => _tags.any((t) => t.id == o.id))
           .toList(),
       labelOf: (r) => r.label,
       searchText: (r) => r.name,
-      emptyMessage: 'No active tags to choose from',
+      emptyMessage: context.l10n.settingsMacroFormNoTags,
     );
     if (picked != null && mounted) setState(() => _tags = picked);
   }
@@ -185,6 +203,7 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
     // them when tapped.
     ref.watch(usersProvider);
     ref.watch(tagsProvider);
+    final l10n = context.l10n;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -198,7 +217,9 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New saved reply' : 'Edit ${widget.existing!.title}',
+              _isCreate
+                  ? l10n.settingsMacroFormNewTitle
+                  : l10n.settingsMacroFormEditTitle(widget.existing!.title),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -206,10 +227,10 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
               controller: _title,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 255,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                helperText: 'What you will look for in the reply box',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsMacroFormTitleLabel,
+                helperText: l10n.settingsMacroFormTitleHelper,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -218,18 +239,18 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
               DropdownButtonFormField<String>(
                 initialValue: _scope,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Who can use it',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.settingsMacroFormScopeLabel,
+                  border: const OutlineInputBorder(),
                 ),
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: Macro.scopeOrg,
-                    child: Text('Everyone in the organization'),
+                    child: Text(l10n.settingsMacroFormScopeOrg),
                   ),
                   DropdownMenuItem(
                     value: Macro.scopePersonal,
-                    child: Text('Just you'),
+                    child: Text(l10n.settingsMacroFormScopeMe),
                   ),
                 ],
                 onChanged: (v) => setState(() => _scope = v ?? _scope),
@@ -246,8 +267,7 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Saved for you alone. An administrator writes the replies '
-                  'the whole organization shares.',
+                  l10n.settingsMacroFormMemberNote,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -259,20 +279,18 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
               textCapitalization: TextCapitalization.sentences,
               minLines: 5,
               maxLines: 12,
-              decoration: const InputDecoration(
-                labelText: 'Reply',
-                helperText:
-                    'Leave empty for a reply that only changes the '
-                    'ticket',
+              decoration: InputDecoration(
+                labelText: l10n.settingsMacroFormBodyLabel,
+                helperText: l10n.settingsMacroFormBodyHelper,
                 helperMaxLines: 2,
                 alignLabelWithHint: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             if (widget.placeholders.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                'Tap to insert',
+                l10n.settingsMacroFormTapToInsert,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -295,21 +313,24 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
             ],
             const SizedBox(height: 16),
             Text(
-              'When the reply is sent',
+              l10n.settingsMacroFormWhenSent,
               style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _status,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Set status',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsMacroFormSetStatus,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: '', child: Text('No change')),
+                DropdownMenuItem(
+                  value: '',
+                  child: Text(l10n.settingsMacroFormNoChange),
+                ),
                 for (final s in macroStatuses)
-                  DropdownMenuItem(value: s, child: Text(s)),
+                  DropdownMenuItem(value: s, child: Text(_statusName(s))),
               ],
               onChanged: (v) => setState(() => _status = v ?? ''),
             ),
@@ -317,28 +338,31 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
             DropdownButtonFormField<String>(
               initialValue: _priority,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Set priority',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsMacroFormSetPriority,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: '', child: Text('No change')),
+                DropdownMenuItem(
+                  value: '',
+                  child: Text(l10n.settingsMacroFormNoChange),
+                ),
                 for (final p in macroPriorities)
-                  DropdownMenuItem(value: p, child: Text(p)),
+                  DropdownMenuItem(value: p, child: Text(_priorityName(p))),
               ],
               onChanged: (v) => setState(() => _priority = v ?? ''),
             ),
             const SizedBox(height: 12),
             _PickerField(
-              label: 'Assign to',
-              hint: 'Replaces whoever the ticket is assigned to',
+              label: l10n.settingsMacroFormAssignTo,
+              hint: l10n.settingsMacroFormAssignHint,
               values: [for (final a in _assignees) a.label],
               onTap: _pickPeople,
             ),
             const SizedBox(height: 12),
             _PickerField(
-              label: 'Add tags',
-              hint: "Added to the ticket's own tags",
+              label: l10n.settingsMacroFormAddTags,
+              hint: l10n.settingsMacroFormTagsHint,
               values: [for (final t in _tags) t.label],
               onTap: _pickTags,
             ),
@@ -359,7 +383,7 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -369,7 +393,11 @@ class _MacroFormSheetState extends ConsumerState<_MacroFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Save reply' : 'Save changes'),
+                      child: Text(
+                        _isCreate
+                            ? l10n.settingsMacroFormSaveReply
+                            : l10n.settingsMacroFormSaveChanges,
+                      ),
                     ),
                   ),
                 ),
@@ -410,7 +438,9 @@ class _PickerField extends StatelessWidget {
           suffixIcon: const Icon(LucideIcons.chevronDown, size: 18),
         ),
         child: Text(
-          values.isEmpty ? 'No change' : values.join(', '),
+          values.isEmpty
+              ? context.l10n.settingsMacroFormNoChange
+              : values.join(', '),
           style: AppTypography.body.copyWith(
             color: values.isEmpty
                 ? AppColors.textTertiary

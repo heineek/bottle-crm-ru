@@ -1,4 +1,6 @@
 from django.db.models import Count, Manager, Max, Q, Sum
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from rest_framework import serializers
 
 from accounts.access import has_account_access
@@ -47,7 +49,7 @@ from contacts.serializer import ContactLinkSerializer
 
 
 # The refusal `/link/` gives, so the two doors into a tree answer alike.
-PARENT_NOT_FOUND = "Parent case not found in this organization."
+PARENT_NOT_FOUND = gettext_lazy("Parent case not found in this organization.")
 
 
 def parent_access_context(profile, cases):
@@ -309,7 +311,9 @@ class CaseCreateSerializer(serializers.ModelSerializer):
         else:
             # An id that matches no account at all reads the same as one the
             # caller may not open; see `validate_account`.
-            self.fields["account"].error_messages["does_not_exist"] = "No such account."
+            self.fields["account"].error_messages["does_not_exist"] = _(
+                "No such account."
+            )
         # An id that matches no case reads the same as one in another org or
         # one the caller may not open; see `validate_parent`.
         self.fields["parent"].error_messages["does_not_exist"] = PARENT_NOT_FOUND
@@ -339,7 +343,7 @@ class CaseCreateSerializer(serializers.ModelSerializer):
         if account.org_id != self.org.id or not has_account_access(
             self.profile, account
         ):
-            raise serializers.ValidationError("No such account.")
+            raise serializers.ValidationError(_("No such account."))
         return account
 
     def validate(self, attrs):
@@ -423,7 +427,7 @@ class CaseCreateSerializer(serializers.ModelSerializer):
         if self.instance:
             clash = clash.exclude(id=self.instance.id)
         if clash.exists():
-            raise serializers.ValidationError("Case already exists with this name")
+            raise serializers.ValidationError(_("Case already exists with this name"))
         return name
 
     def validate_parent(self, parent):
@@ -541,7 +545,7 @@ class CaseStageSerializer(serializers.ModelSerializer):
     def validate_maps_to_status(self, value):
         # A board move into this stage would set Duplicate without a merge.
         if value == "Duplicate":
-            raise serializers.ValidationError(DUPLICATE_BY_MERGE_ONLY)
+            raise serializers.ValidationError(_(DUPLICATE_BY_MERGE_ONLY))
         return value
 
     def get_case_count(self, obj):
@@ -705,14 +709,15 @@ class ReopenPolicySerializer(serializers.ModelSerializer):
     def validate_reopen_to_status(self, value):
         if value not in self.NON_TERMINAL_STATUSES:
             raise serializers.ValidationError(
-                f"reopen_to_status must be one of {self.NON_TERMINAL_STATUSES}"
+                _("reopen_to_status must be one of %(statuses)s")
+                % {"statuses": self.NON_TERMINAL_STATUSES}
             )
         return value
 
     def validate_reopen_window_days(self, value):
         if value < 1 or value > 365:
             raise serializers.ValidationError(
-                "reopen_window_days must be between 1 and 365"
+                _("reopen_window_days must be between 1 and 365")
             )
         return value
 
@@ -796,7 +801,12 @@ class EscalationPolicySerializer(serializers.ModelSerializer):
                 and EscalationPolicy.objects.filter(org=org, priority=priority).exists()
             ):
                 raise serializers.ValidationError(
-                    {"priority": f"Policy already exists for priority {priority}."}
+                    {
+                        "priority": _(
+                            "Policy already exists for priority %(priority)s."
+                        )
+                        % {"priority": priority}
+                    }
                 )
         return attrs
 
@@ -880,7 +890,7 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
         stored = getattr(self.instance, "default_assignee_id", None)
         if value is not None and not value.is_active and value.id != stored:
             raise serializers.ValidationError(
-                "This user is deactivated. Choose an active member."
+                _("This user is deactivated. Choose an active member.")
             )
         return value
 
@@ -896,7 +906,8 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
                 clash = clash.exclude(pk=self.instance.pk)
             if clash.exists():
                 raise serializers.ValidationError(
-                    f"A mailbox with address {value!r} already exists for this org."
+                    _("A mailbox with address %(address)s already exists for this org.")
+                    % {"address": repr(value)}
                 )
         return value
 
@@ -906,8 +917,10 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
         refuse every delivery without a word."""
         if value and topic_account_id(value) is None:
             raise serializers.ValidationError(
-                "Enter an SNS topic ARN, like "
-                "arn:aws:sns:us-east-1:123456789012:inbound-mail."
+                _(
+                    "Enter an SNS topic ARN, like "
+                    "arn:aws:sns:us-east-1:123456789012:inbound-mail."
+                )
             )
         return value
 
@@ -1037,32 +1050,43 @@ class RoutingRuleSerializer(serializers.ModelSerializer):
         if value in (None, ""):
             return []
         if not isinstance(value, list):
-            raise serializers.ValidationError("conditions must be a list of objects.")
+            raise serializers.ValidationError(
+                _("conditions must be a list of objects.")
+            )
         for i, cond in enumerate(value):
             if not isinstance(cond, dict):
-                raise serializers.ValidationError(f"conditions[{i}] must be an object.")
+                raise serializers.ValidationError(
+                    _("conditions[%(index)s] must be an object.") % {"index": i}
+                )
             field = cond.get("field")
             op = cond.get("op", "eq")
             if not isinstance(field, str) or not field:
-                raise serializers.ValidationError(f"conditions[{i}].field is required.")
+                raise serializers.ValidationError(
+                    _("conditions[%(index)s].field is required.") % {"index": i}
+                )
             if not (
                 field in self.SUPPORTED_FIELDS or field.startswith("custom_fields.")
             ):
                 raise serializers.ValidationError(
-                    f"conditions[{i}].field {field!r} is not supported."
+                    _("conditions[%(index)s].field %(field)s is not supported.")
+                    % {"index": i, "field": repr(field)}
                 )
             if op not in self.SUPPORTED_OPS:
                 raise serializers.ValidationError(
-                    f"conditions[{i}].op {op!r} is not supported."
+                    _("conditions[%(index)s].op %(op)s is not supported.")
+                    % {"index": i, "op": repr(op)}
                 )
             if "value" not in cond:
-                raise serializers.ValidationError(f"conditions[{i}].value is required.")
+                raise serializers.ValidationError(
+                    _("conditions[%(index)s].value is required.") % {"index": i}
+                )
             if op == "regex":
                 try:
                     compile_pattern(cond["value"])
                 except ValueError as exc:
                     raise serializers.ValidationError(
-                        f"conditions[{i}].value {exc}."
+                        _("conditions[%(index)s].value %(problem)s.")
+                        % {"index": i, "problem": exc}
                     ) from None
         return value
 
@@ -1074,7 +1098,7 @@ class RoutingRuleSerializer(serializers.ModelSerializer):
             )
             if target_team is None:
                 raise serializers.ValidationError(
-                    {"target_team_id": "by_team strategy requires target_team_id."}
+                    {"target_team_id": _("by_team strategy requires target_team_id.")}
                 )
         if strategy in ("round_robin", "least_busy", "direct"):
             assignees = attrs.get("target_assignees")
@@ -1082,7 +1106,10 @@ class RoutingRuleSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {
                         "target_assignee_ids": (
-                            f"{strategy} strategy requires at least one target assignee."
+                            _(
+                                "%(strategy)s strategy requires at least one target assignee."
+                            )
+                            % {"strategy": strategy}
                         )
                     }
                 )
@@ -1162,7 +1189,7 @@ class TimeEntryCreateSerializer(serializers.ModelSerializer):
     def validate_description(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError(
-                "Description is required when logging time manually."
+                _("Description is required when logging time manually.")
             )
         return value.strip()
 
@@ -1171,12 +1198,12 @@ class TimeEntryCreateSerializer(serializers.ModelSerializer):
         ended = attrs.get("ended_at")
         if started and ended and ended < started:
             raise serializers.ValidationError(
-                {"ended_at": "ended_at must be on or after started_at."}
+                {"ended_at": _("ended_at must be on or after started_at.")}
             )
         rate = attrs.get("hourly_rate")
         if rate is not None and rate < 0:
             raise serializers.ValidationError(
-                {"hourly_rate": "hourly_rate cannot be negative."}
+                {"hourly_rate": _("hourly_rate cannot be negative.")}
             )
         return attrs
 
@@ -1205,7 +1232,7 @@ class TimeEntryUpdateSerializer(serializers.ModelSerializer):
         # Only blocks explicit attempts to clear the field; PATCH bodies that
         # omit `description` (e.g., toggling billable) skip this entirely.
         if value is not None and not value.strip():
-            raise serializers.ValidationError("Description cannot be empty.")
+            raise serializers.ValidationError(_("Description cannot be empty."))
         return value.strip() if value else value
 
     def validate(self, attrs):
@@ -1215,12 +1242,12 @@ class TimeEntryUpdateSerializer(serializers.ModelSerializer):
         ended = attrs.get("ended_at", self.instance.ended_at if self.instance else None)
         if started and ended and ended < started:
             raise serializers.ValidationError(
-                {"ended_at": "ended_at must be on or after started_at."}
+                {"ended_at": _("ended_at must be on or after started_at.")}
             )
         rate = attrs.get("hourly_rate")
         if rate is not None and rate < 0:
             raise serializers.ValidationError(
-                {"hourly_rate": "hourly_rate cannot be negative."}
+                {"hourly_rate": _("hourly_rate cannot be negative.")}
             )
         return attrs
 
@@ -1240,13 +1267,13 @@ class CaseMoveSerializer(serializers.Serializer):
         # The stage path, where the status comes from the stage's mapping, is
         # refused in `CaseMoveView.patch`, which is where the stage is loaded.
         if value == "Duplicate":
-            raise serializers.ValidationError(DUPLICATE_BY_MERGE_ONLY)
+            raise serializers.ValidationError(_(DUPLICATE_BY_MERGE_ONLY))
         return value
 
     def validate(self, attrs):
         if not attrs.get("stage_id") and not attrs.get("status"):
             raise serializers.ValidationError(
-                "Either stage_id or status must be provided"
+                _("Either stage_id or status must be provided")
             )
         return attrs
 

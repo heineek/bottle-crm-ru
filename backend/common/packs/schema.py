@@ -319,11 +319,16 @@ def _validate_pipeline(
         if pipeline_key == "case_pipeline" and stage.get("maps_to_status") == (
             "Duplicate"
         ):
+            from django.utils.translation import gettext
+
             from cases.workflow import DUPLICATE_BY_MERGE_ONLY
 
             raise PackValidationError(
-                f"{where}.stages[{i}]: maps_to_status 'Duplicate' is not "
-                f"allowed. {DUPLICATE_BY_MERGE_ONLY}"
+                gettext("%(where)s: maps_to_status 'Duplicate' is not allowed. %(why)s")
+                % {
+                    "where": f"{where}.stages[{i}]",
+                    "why": gettext(DUPLICATE_BY_MERGE_ONLY),
+                }
             )
 
 

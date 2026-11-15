@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/macro.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
@@ -44,7 +45,10 @@ class MacrosScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Reply saved' : 'Changes saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsMacrosReplySaved
+                  : context.l10n.settingsMacrosChangesSaved),
         ),
       ),
     );
@@ -62,7 +66,7 @@ class MacrosScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsMacrosKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -78,7 +82,10 @@ class MacrosScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (removal.isPermanent ? 'Reply deleted' : 'Reply turned off'),
+          error ??
+              (removal.isPermanent
+                  ? context.l10n.settingsMacrosReplyDeleted
+                  : context.l10n.settingsMacrosReplyTurnedOff),
         ),
       ),
     );
@@ -89,9 +96,11 @@ class MacrosScreen extends ConsumerWidget {
         .read(macrosProvider.notifier)
         .activateMacro(macro.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Reply turned on')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsMacrosReplyTurnedOn),
+      ),
+    );
   }
 
   @override
@@ -103,7 +112,7 @@ class MacrosScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Saved replies'),
+        title: Text(context.l10n.settingsMacrosTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -111,7 +120,7 @@ class MacrosScreen extends ConsumerWidget {
           // No admin gate: every member may keep their own.
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New saved reply',
+            tooltip: context.l10n.settingsMacrosNew,
             onPressed: () => _edit(context, ref, null),
           ),
         ],
@@ -160,6 +169,7 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -171,10 +181,19 @@ class _Summary extends StatelessWidget {
             spacing: 20,
             runSpacing: 10,
             children: [
-              _Stat(value: '${state.orgCount}', label: 'shared'),
-              _Stat(value: '${state.personalCount}', label: 'just yours'),
+              _Stat(
+                value: '${state.orgCount}',
+                label: l10n.settingsMacrosStatShared,
+              ),
+              _Stat(
+                value: '${state.personalCount}',
+                label: l10n.settingsMacrosStatYours,
+              ),
               if (state.inactiveCount > 0)
-                _Stat(value: '${state.inactiveCount}', label: 'turned off'),
+                _Stat(
+                  value: '${state.inactiveCount}',
+                  label: l10n.settingsMacrosStatTurnedOff,
+                ),
             ],
           ),
           if (state.brokenCount > 0) ...[
@@ -197,13 +216,7 @@ class _Summary extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      state.brokenCount == 1
-                          ? 'One reply uses a placeholder that is not '
-                                'recognized. It goes out to the customer '
-                                'exactly as written.'
-                          : '${state.brokenCount} replies use a placeholder '
-                                'that is not recognized. Those go out to the '
-                                'customer exactly as written.',
+                      l10n.settingsMacrosBrokenWarning(state.brokenCount),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textPrimary,
                       ),
@@ -261,6 +274,7 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final broken = macro.unknownPlaceholders;
     return Container(
       color: AppColors.surface,
@@ -292,8 +306,9 @@ class _MacroRow extends StatelessWidget {
           if (macroActionChips(macro).isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              'On send: '
-              '${macroActionChips(macro).map((c) => c.label).join(' · ')}',
+              l10n.settingsMacrosOnSend(
+                macroActionChips(macro).map((c) => c.label).join(' · '),
+              ),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
@@ -313,12 +328,14 @@ class _MacroRow extends StatelessWidget {
                     : AppColors.primary600,
               ),
               if (!macro.isActive)
-                StatusBadge(label: 'Turned off', color: AppColors.gray500),
+                StatusBadge(
+                  label: l10n.settingsMacrosBadgeTurnedOff,
+                  color: AppColors.gray500,
+                ),
               Text(
                 macro.usageCount == 0
-                    ? 'not used yet'
-                    : 'used ${macro.usageCount} time'
-                          '${macro.usageCount == 1 ? '' : 's'}',
+                    ? l10n.settingsMacrosNotUsed
+                    : l10n.settingsMacrosUsedTimes(macro.usageCount),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -332,9 +349,8 @@ class _MacroRow extends StatelessWidget {
               // fix, and a typo like %custmer_name% is only obvious beside the
               // right spelling.
               broken.length == 1
-                  ? '${broken.single} is not recognized and goes out as written'
-                  : '${broken.join(', ')} are not recognized and go out as '
-                        'written',
+                  ? l10n.settingsMacrosBrokenOne(broken.single)
+                  : l10n.settingsMacrosBrokenMany(broken.join(', ')),
               style: AppTypography.caption.copyWith(
                 color: AppColors.warning600,
               ),
@@ -350,7 +366,7 @@ class _MacroRow extends StatelessWidget {
                   height: 40,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -365,7 +381,7 @@ class _MacroRow extends StatelessWidget {
                         )
                       : OutlinedButton(
                           onPressed: onTurnOn,
-                          child: const Text('Turn on'),
+                          child: Text(l10n.settingsMacrosTurnOn),
                         ),
                 ),
               ],
@@ -395,14 +411,13 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No saved replies yet',
+              context.l10n.settingsMacrosEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Write the answer you keep typing once, then insert it into a '
-              'ticket reply in two taps.',
+              context.l10n.settingsMacrosEmptyBody,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -435,12 +450,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the saved replies',
+              context.l10n.settingsMacrosLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsMacrosTryAgain),
+            ),
           ],
         ),
       ),

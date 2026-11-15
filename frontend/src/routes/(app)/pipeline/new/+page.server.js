@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, createDeal, getDealFormOptions } from '#lib/server/v2/deals.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load(event) {
@@ -29,7 +30,7 @@ export const actions = {
       // `values` goes back so a rejected form is not a blank form. Retyping
       // eight fields because the ninth collided is how people learn to
       // distrust a create page.
-      return fail(400, { values, error: String(err?.message ?? 'Could not create the deal.') });
+      return fail(400, { values, error: String(err?.message ?? m.pipeline_new_create_failed()) });
     }
 
     // Straight to the deal, not back to the list: the next thing anyone does

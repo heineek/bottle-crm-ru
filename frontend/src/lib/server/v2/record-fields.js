@@ -4,6 +4,9 @@
  * location, but imports only a browser-safe helper, so it is also safe to unit test in Node.
  */
 import { sameIds } from '#lib/v2/pickers.js';
+import { intlLocale } from '#lib/i18n/locale.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Render one stored value for reading.
@@ -23,9 +26,11 @@ export function displayValue(definition, value) {
 
   switch (definition.field_type) {
     case 'checkbox':
-      return value ? 'Yes' : 'No';
+      return value ? m.common_yes() : m.common_no();
     case 'number':
-      return typeof value === 'number' ? value.toLocaleString() : String(value);
+      return typeof value === 'number'
+        ? value.toLocaleString(intlLocale(getLocale(), 'number'))
+        : String(value);
     case 'dropdown': {
       const match = (definition.options ?? []).find((/** @type {any} */ o) => o.value === value);
       return match?.label ?? String(value);

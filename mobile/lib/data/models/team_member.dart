@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// A person in the org, as `/api/users/` returns them.
 ///
 /// Two ids, and they are not interchangeable. `id` is the Profile row, which
@@ -50,7 +52,7 @@ class TeamMember {
       // only thing there is to call them.
       name: (details['name'] as String?)?.trim().isNotEmpty == true
           ? (details['name'] as String).trim()
-          : (email.isNotEmpty ? email : 'Unnamed'),
+          : (email.isNotEmpty ? email : appL10n.appUnnamedPerson),
       email: email,
       role: (json['role'] as String?) ?? 'USER',
       isActive: json['is_active'] as bool? ?? true,

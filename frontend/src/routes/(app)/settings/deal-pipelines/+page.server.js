@@ -10,8 +10,8 @@ import {
   moveStage
 } from '#lib/server/v2/deal-pipelines.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
-const ADMIN_ONLY = 'Only an admin can change deal pipelines.';
 const KINDS = ['open', 'won', 'lost'];
 const DAYS = /^\d{1,4}$/;
 
@@ -42,11 +42,11 @@ function readStage(form) {
  * @returns {string | null}
  */
 function stageProblem(values) {
-  if (!values.label) return 'Give the stage a name.';
-  if (!KINDS.includes(values.kind)) return 'Pick open, won or lost.';
+  if (!values.label) return m.settings_dealpipelines_error_stage_name();
+  if (!KINDS.includes(values.kind)) return m.settings_dealpipelines_error_kind();
   for (const days of [values.expectedDays, values.warningDays]) {
     if (days !== '' && (!DAYS.test(days) || Number(days) < 1 || Number(days) > 3650)) {
-      return 'Days are a whole number from 1 to 3650, or blank.';
+      return m.settings_dealpipelines_error_days();
     }
   }
   return null;
@@ -66,7 +66,8 @@ async function attempt(key, fallback, write) {
   try {
     await write();
   } catch (/** @type {any} */ err) {
-    if (err?.status === 403) return fail(403, { [key]: { error: ADMIN_ONLY } });
+    if (err?.status === 403)
+      return fail(403, { [key]: { error: m.settings_dealpipelines_error_admin_only() } });
     return fail(400, { [key]: { error: readableError(err, fallback) } });
   }
   return null;
@@ -77,12 +78,19 @@ export const actions = {
   async createPipeline(event) {
     const form = await event.request.formData();
     const name = form.get('name')?.toString().trim() ?? '';
-    if (!name) return fail(400, { createPipeline: { error: 'Give the pipeline a name.' } });
+    if (!name)
+      return fail(400, {
+        createPipeline: { error: m.settings_dealpipelines_error_pipeline_name() }
+      });
     /** @type {any} */
     let created = null;
-    const refused = await attempt('createPipeline', 'Could not create the pipeline.', async () => {
-      created = await createPipeline(event, { name });
-    });
+    const refused = await attempt(
+      'createPipeline',
+      m.settings_dealpipelines_error_create_pipeline(),
+      async () => {
+        created = await createPipeline(event, { name });
+      }
+    );
     if (refused) return refused;
     // Straight to the new pipeline, so its seeded stages are what is on screen.
     redirect(303, `/settings/deal-pipelines?pipeline=${encodeURIComponent(created.id)}`);
@@ -92,9 +100,12 @@ export const actions = {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
     const name = form.get('name')?.toString().trim() ?? '';
-    if (!id || !name) return fail(400, { renamePipeline: { error: 'Give the pipeline a name.' } });
+    if (!id || !name)
+      return fail(400, {
+        renamePipeline: { error: m.settings_dealpipelines_error_pipeline_name() }
+      });
     return (
-      (await attempt('renamePipeline', 'Could not rename the pipeline.', () =>
+      (await attempt('renamePipeline', m.settings_dealpipelines_error_rename_pipeline(), () =>
         renamePipeline(event, id, { name })
       )) ?? { renamed: true }
     );
@@ -104,9 +115,13 @@ export const actions = {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
     if (!id)
-      return fail(400, { deletePipeline: { error: 'That pipeline could not be identified.' } });
-    const refused = await attempt('deletePipeline', 'Could not delete the pipeline.', () =>
-      deletePipeline(event, id)
+      return fail(400, {
+        deletePipeline: { error: m.settings_dealpipelines_error_pipeline_unknown() }
+      });
+    const refused = await attempt(
+      'deletePipeline',
+      m.settings_dealpipelines_error_delete_pipeline(),
+      () => deletePipeline(event, id)
     );
     if (refused) return refused;
     // Its `?pipeline=` id is gone now, so land on the default without it.
@@ -117,10 +132,12 @@ export const actions = {
     const form = await event.request.formData();
     const pipelineId = form.get('pipeline_id')?.toString() ?? '';
     const values = readStage(form);
-    const problem = pipelineId ? stageProblem(values) : 'That pipeline could not be identified.';
+    const problem = pipelineId
+      ? stageProblem(values)
+      : m.settings_dealpipelines_error_pipeline_unknown();
     if (problem) return fail(400, { stage: { error: problem } });
     return (
-      (await attempt('stage', 'Could not add the stage.', () =>
+      (await attempt('stage', m.settings_dealpipelines_error_add_stage(), () =>
         createStage(event, pipelineId, values)
       )) ?? { saved: true }
     );
@@ -130,10 +147,10 @@ export const actions = {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
     const values = readStage(form);
-    const problem = id ? stageProblem(values) : 'That stage could not be identified.';
+    const problem = id ? stageProblem(values) : m.settings_dealpipelines_error_stage_unknown();
     if (problem) return fail(400, { stage: { error: problem } });
     return (
-      (await attempt('stage', 'Could not save the stage.', () =>
+      (await attempt('stage', m.settings_dealpipelines_error_save_stage(), () =>
         updateStage(event, id, values)
       )) ?? {
         saved: true
@@ -144,9 +161,12 @@ export const actions = {
   async deleteStage(event) {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
-    if (!id) return fail(400, { stageList: { error: 'That stage could not be identified.' } });
+    if (!id)
+      return fail(400, { stageList: { error: m.settings_dealpipelines_error_stage_unknown() } });
     return (
-      (await attempt('stageList', 'Could not delete the stage.', () => deleteStage(event, id))) ?? {
+      (await attempt('stageList', m.settings_dealpipelines_error_delete_stage(), () =>
+        deleteStage(event, id)
+      )) ?? {
         deleted: true
       }
     );
@@ -158,10 +178,10 @@ export const actions = {
     const id = form.get('id')?.toString() ?? '';
     const direction = form.get('direction')?.toString();
     if (!pipelineId || !id || (direction !== 'up' && direction !== 'down')) {
-      return fail(400, { stageList: { error: 'That stage could not be moved.' } });
+      return fail(400, { stageList: { error: m.settings_dealpipelines_error_stage_move() } });
     }
     return (
-      (await attempt('stageList', 'Could not reorder the stages.', () =>
+      (await attempt('stageList', m.settings_dealpipelines_error_reorder(), () =>
         moveStage(event, pipelineId, id, direction)
       )) ?? { moved: true }
     );

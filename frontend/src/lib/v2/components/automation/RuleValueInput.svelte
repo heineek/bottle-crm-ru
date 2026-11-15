@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { withStored } from '#lib/v2/automation.js';
 
   /**
@@ -27,7 +28,7 @@
     settableOnly = false,
     lostLabel = undefined,
     id,
-    label = 'Value',
+    label = m.app_automation_value(),
     invalid = false,
     describedby = undefined
   } = $props();
@@ -110,7 +111,7 @@
     aria-invalid={invalid ? 'true' : undefined}
     aria-describedby={describedby}
   >
-    <option value={null}>Choose an option</option>
+    <option value={null}>{m.app_automation_choose_option()}</option>
     {#each groups as g (g.group)}
       {#if g.group}
         <optgroup label={g.group}>
@@ -130,9 +131,9 @@
     aria-invalid={invalid ? 'true' : undefined}
     aria-describedby={describedby}
   >
-    <option value={null}>Choose Yes or No</option>
-    <option value={true}>Yes</option>
-    <option value={false}>No</option>
+    <option value={null}>{m.app_automation_choose_yes_no()}</option>
+    <option value={true}>{m.common_yes()}</option>
+    <option value={false}>{m.common_no()}</option>
   </select>
 {:else if kind === 'person'}
   <select
@@ -143,8 +144,8 @@
     aria-invalid={invalid ? 'true' : undefined}
     aria-describedby={describedby}
   >
-    <option value={null}>Choose a person</option>
-    {#each members as m (m.value)}<option value={m.value}>{m.label}</option>{/each}
+    <option value={null}>{m.app_automation_choose_person()}</option>
+    {#each members as p (p.value)}<option value={p.value}>{p.label}</option>{/each}
   </select>
 {:else if kind === 'choices' || kind === 'people'}
   {@const options = kind === 'people' ? members : choices}

@@ -12,6 +12,7 @@ that buys, which a hand-written serializer would not:
 """
 
 from disposable_email_domains import blocklist as disposable_domains
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from common.custom_fields import validate_payload
@@ -125,8 +126,9 @@ def build_serializer(form):
         domain = value.rsplit("@", 1)[-1].lower()
         if domain in disposable_domains:
             raise serializers.ValidationError(
-                "Disposable email addresses are not allowed."
+                gettext("Disposable email addresses are not allowed.")
             )
+
         return value
 
     def validate(self, attrs_in):

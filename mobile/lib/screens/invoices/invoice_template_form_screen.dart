@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/invoice_template.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../services/attachment_upload.dart';
 import '../../widgets/forms/unsaved_changes.dart';
@@ -140,24 +141,26 @@ class _InvoiceTemplateFormScreenState
     final secondary = _secondary.text.trim();
 
     setState(() {
-      _nameError = name.isEmpty ? 'Give the template a name' : null;
+      _nameError = name.isEmpty
+          ? context.l10n.invoicesTemplateNameRequired
+          : null;
       // Mirrors `_validate_hex_color` in the serializer. Both colours are
       // substituted into the PDF stylesheet, so a value a renderer cannot parse
       // prints every invoice in the org with a broken accent. The server
       // refuses it too; this saves the round trip.
       _primaryError = InvoiceTemplateDraft.isHexColor(primary)
           ? null
-          : 'Use a six digit hex colour, for example #3B82F6';
+          : context.l10n.invoicesTemplateHexError('#3B82F6');
       _secondaryError = InvoiceTemplateDraft.isHexColor(secondary)
           ? null
-          : 'Use a six digit hex colour, for example #1E40AF';
+          : context.l10n.invoicesTemplateHexError('#1E40AF');
       // The button sits below the fields on a 390px screen, so a tap that only
       // lights an `errorText` several hundred pixels up the form reads as a
       // tap that did nothing. This puts a line where the thumb already is.
       _error =
           _nameError == null && _primaryError == null && _secondaryError == null
           ? null
-          : 'Check the highlighted fields above.';
+          : context.l10n.invoicesTemplateCheckFields;
     });
     if (_error != null) return;
 
@@ -198,7 +201,11 @@ class _InvoiceTemplateFormScreenState
     _dirty = false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(widget.isEdit ? 'Template saved' : 'Template created'),
+        content: Text(
+          widget.isEdit
+              ? context.l10n.invoicesTemplateSaved
+              : context.l10n.invoicesTemplateCreated,
+        ),
       ),
     );
     context.pop();
@@ -220,7 +227,7 @@ class _InvoiceTemplateFormScreenState
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                'That template is no longer in the catalogue.',
+                context.l10n.invoicesTemplateGone,
                 textAlign: TextAlign.center,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
@@ -239,21 +246,21 @@ class _InvoiceTemplateFormScreenState
         ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
-            _card('Name', [
+            _card(context.l10n.invoicesTemplateNameCard, [
               TextField(
                 controller: _name,
                 textCapitalization: TextCapitalization.sentences,
                 maxLength: 100,
                 decoration: InputDecoration(
-                  labelText: 'Template name',
+                  labelText: context.l10n.invoicesTemplateNameField,
                   border: const OutlineInputBorder(),
                   errorText: _nameError,
                 ),
               ),
             ]),
-            _card('Brand colours', [
+            _card(context.l10n.invoicesTemplateColours, [
               _ColourField(
-                label: 'Primary',
+                label: context.l10n.invoicesTemplatePrimary,
                 controller: _primary,
                 errorText: _primaryError,
                 onPicked: (hex) => setState(() {
@@ -263,7 +270,7 @@ class _InvoiceTemplateFormScreenState
               ),
               const SizedBox(height: 20),
               _ColourField(
-                label: 'Secondary',
+                label: context.l10n.invoicesTemplateSecondary,
                 controller: _secondary,
                 errorText: _secondaryError,
                 onPicked: (hex) => setState(() {
@@ -272,17 +279,17 @@ class _InvoiceTemplateFormScreenState
                 }),
               ),
             ]),
-            _card('Logo', [_logoRow()]),
-            _card('Boilerplate', [
+            _card(context.l10n.invoicesTemplateLogo, [_logoRow()]),
+            _card(context.l10n.invoicesTemplateBoilerplate, [
               TextField(
                 controller: _notes,
                 textCapitalization: TextCapitalization.sentences,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Default notes',
-                  hintText: 'Thanks for your business.',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.invoicesTemplateDefaultNotes,
+                  hintText: context.l10n.invoicesTemplateNotesHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -291,10 +298,10 @@ class _InvoiceTemplateFormScreenState
                 textCapitalization: TextCapitalization.sentences,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Default terms',
-                  hintText: 'Payment due within 30 days.',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.invoicesTemplateDefaultTerms,
+                  hintText: context.l10n.invoicesTemplateTermsHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -303,22 +310,21 @@ class _InvoiceTemplateFormScreenState
                 textCapitalization: TextCapitalization.sentences,
                 minLines: 1,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Footer text',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.invoicesTemplateFooter,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'New invoices start from these. Changing them here does not '
-                'rewrite invoices already raised.',
+                context.l10n.invoicesTemplateBoilerplateNote,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
             ]),
             if (!widget.isEdit)
-              _card('Default template', [
+              _card(context.l10n.invoicesTemplateDefaultCard, [
                 // Its own Material, because `_card` paints a background: a
                 // ListTile draws its splash on the nearest Material ancestor,
                 // so without this the switch has no touch feedback at all.
@@ -333,19 +339,14 @@ class _InvoiceTemplateFormScreenState
                       _isDefault = v;
                       _dirty = true;
                     }),
-                    title: const Text('Use this for new invoices'),
-                    subtitle: const Text(
-                      'Only one template can be the default. Turning this on '
-                      'replaces whichever holds it now.',
-                    ),
+                    title: Text(context.l10n.invoicesTemplateUseForNew),
+                    subtitle: Text(context.l10n.invoicesTemplateUseForNewHint),
                   ),
                 ),
               ]),
-            _card('Layout', [
+            _card(context.l10n.invoicesTemplateLayout, [
               Text(
-                'The PDF layout is HTML and CSS, and it is edited on the web. '
-                'Saving here changes the fields above and leaves the layout '
-                'as it is.',
+                context.l10n.invoicesTemplateLayoutNote,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -369,10 +370,10 @@ class _InvoiceTemplateFormScreenState
                   onPressed: _saving ? null : _save,
                   child: Text(
                     _saving
-                        ? 'Saving...'
+                        ? context.l10n.invoicesTemplateSaving
                         : widget.isEdit
-                        ? 'Save template'
-                        : 'Create template',
+                        ? context.l10n.invoicesTemplateSave
+                        : context.l10n.invoicesTemplateCreate,
                   ),
                 ),
               ),
@@ -387,13 +388,17 @@ class _InvoiceTemplateFormScreenState
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(widget.isEdit ? 'Edit template' : 'New template'),
+        title: Text(
+          widget.isEdit
+              ? context.l10n.invoicesTemplateEditTitle
+              : context.l10n.invoicesTemplateNewTitle,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),
-          tooltip: 'Back',
+          tooltip: context.l10n.commonBack,
           onPressed: _saving
               ? null
               : () => leaveForm(context, hasUnsavedChanges: _dirty),
@@ -412,8 +417,8 @@ class _InvoiceTemplateFormScreenState
           picked != null
               ? picked.name
               : _hadLogo
-              ? 'A logo is already set. Choosing one replaces it.'
-              : 'No logo. Invoices print with the org name instead.',
+              ? context.l10n.invoicesTemplateLogoSet
+              : context.l10n.invoicesTemplateNoLogo,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 10),
@@ -423,7 +428,9 @@ class _InvoiceTemplateFormScreenState
             onPressed: _saving ? null : _pickLogo,
             icon: const Icon(LucideIcons.image, size: 18),
             label: Text(
-              picked != null || _hadLogo ? 'Replace logo' : 'Add logo',
+              picked != null || _hadLogo
+                  ? context.l10n.invoicesTemplateReplaceLogo
+                  : context.l10n.invoicesTemplateAddLogo,
             ),
           ),
         ),

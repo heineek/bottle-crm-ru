@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createTicket, getTicketFormOptions } from '#lib/server/v2/tickets.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies, url }) {
@@ -24,7 +25,7 @@ export const actions = {
     if (contacts.length) values.contacts = contacts;
 
     if (!values.name) {
-      return fail(400, { values, error: 'A ticket needs a subject.' });
+      return fail(400, { values, error: m.tickets_new_subject_required() });
     }
 
     /** @type {any} */
@@ -32,7 +33,7 @@ export const actions = {
     try {
       created = await createTicket({ cookies }, values);
     } catch (/** @type {any} */ err) {
-      return fail(400, { values, error: readableError(err, 'Could not raise this ticket.') });
+      return fail(400, { values, error: readableError(err, m.tickets_new_create_failed()) });
     }
 
     // `CaseListView.post` returns the new id, so this lands on the ticket

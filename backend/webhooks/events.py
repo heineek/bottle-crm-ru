@@ -9,6 +9,7 @@ instance. A field reaches a subscriber only by being listed below.
 import json
 
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.translation import gettext_lazy
 
 from common.modules import available_modules, model_module
 
@@ -17,38 +18,48 @@ PING = "ping"
 # Grouped the way both settings screens draw their checkboxes. Each group names
 # the model its events describe, whose module the group follows.
 CATALOGUE = (
-    ("lead", "Leads", "leads.Lead", ("lead.created", "lead.updated", "lead.deleted")),
+    (
+        "lead",
+        gettext_lazy("Leads"),
+        "leads.Lead",
+        ("lead.created", "lead.updated", "lead.deleted"),
+    ),
     (
         "contact",
-        "Contacts",
+        gettext_lazy("Contacts"),
         "contacts.Contact",
         ("contact.created", "contact.updated", "contact.deleted"),
     ),
     (
         "account",
-        "Accounts",
+        gettext_lazy("Accounts"),
         "accounts.Account",
         ("account.created", "account.updated", "account.deleted"),
     ),
     (
         "deal",
-        "Deals",
+        gettext_lazy("Deals"),
         "opportunity.Opportunity",
         ("deal.created", "deal.updated", "deal.deleted", "deal.won", "deal.lost"),
     ),
     (
         "ticket",
-        "Tickets",
+        gettext_lazy("Tickets"),
         "cases.Case",
         ("ticket.created", "ticket.updated", "ticket.comment_added"),
     ),
     (
         "invoice",
-        "Invoices",
+        gettext_lazy("Invoices"),
         "invoices.Invoice",
         ("invoice.created", "invoice.updated", "invoice.paid"),
     ),
-    ("task", "Tasks", "tasks.Task", ("task.created", "task.updated", "task.deleted")),
+    (
+        "task",
+        gettext_lazy("Tasks"),
+        "tasks.Task",
+        ("task.created", "task.updated", "task.deleted"),
+    ),
 )
 
 EVENT_NAMES = tuple(name for *_, names in CATALOGUE for name in names)

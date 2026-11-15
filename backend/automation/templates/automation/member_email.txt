@@ -1,6 +1,6 @@
-{% autoescape off %}{% comment %}Plain text: escaping would turn "R&D" into "R&amp;D".{% endcomment %}{{ text }}
+{% load i18n %}{% autoescape off %}{% comment %}Plain text: escaping would turn "R&D" into "R&amp;D".{% endcomment %}{{ text }}
 
-Open the record: {{ url }}
+{% blocktranslate %}Open the record: {{ url }}{% endblocktranslate %}
 
-Sent by BottleCRM
+{% translate "Sent by BottleCRM" %}
 {% endautoescape %}

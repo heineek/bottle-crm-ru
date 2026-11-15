@@ -1,3 +1,4 @@
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -21,7 +22,7 @@ def _deal_not_found():
     Writes take the read rule here: anyone who may open the deal may price it.
     """
     return Response(
-        {"error": True, "message": "Opportunity not found"},
+        {"error": True, "message": _("Opportunity not found")},
         status=status.HTTP_404_NOT_FOUND,
     )
 
@@ -116,7 +117,7 @@ class OpportunityLineItemListView(APIView):
             return Response(
                 {
                     "error": False,
-                    "message": "Line item created successfully",
+                    "message": _("Line item created successfully"),
                     "line_item": OpportunityLineItemSerializer(line_item).data,
                     "opportunity_amount": opportunity.amount,
                 },
@@ -163,7 +164,7 @@ class OpportunityLineItemDetailView(APIView):
         line_item = self.get_line_item(opportunity, line_item_id)
         if not line_item:
             return Response(
-                {"error": True, "message": "Line item not found"},
+                {"error": True, "message": _("Line item not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -196,7 +197,7 @@ class OpportunityLineItemDetailView(APIView):
         line_item = self.get_line_item(opportunity, line_item_id)
         if not line_item:
             return Response(
-                {"error": True, "message": "Line item not found"},
+                {"error": True, "message": _("Line item not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -213,7 +214,7 @@ class OpportunityLineItemDetailView(APIView):
             return Response(
                 {
                     "error": False,
-                    "message": "Line item updated successfully",
+                    "message": _("Line item updated successfully"),
                     "line_item": OpportunityLineItemSerializer(line_item).data,
                     "opportunity_amount": opportunity.amount,
                 },
@@ -249,7 +250,7 @@ class OpportunityLineItemDetailView(APIView):
         line_item = self.get_line_item(opportunity, line_item_id)
         if not line_item:
             return Response(
-                {"error": True, "message": "Line item not found"},
+                {"error": True, "message": _("Line item not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -259,7 +260,7 @@ class OpportunityLineItemDetailView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Line item deleted successfully",
+                "message": _("Line item deleted successfully"),
                 "opportunity_amount": opportunity.amount,
             },
             status=status.HTTP_200_OK,

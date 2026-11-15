@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
@@ -53,7 +54,9 @@ def validate_uuid(value, field: str) -> str:
     try:
         uuid_module.UUID(str(value))
     except (AttributeError, TypeError, ValueError):
-        raise DRFValidationError({field: [f"'{value}' is not a valid id."]}) from None
+        raise DRFValidationError(
+            {field: [gettext("'%(value)s' is not a valid id.") % {"value": value}]}
+        ) from None
     return value
 
 
@@ -74,6 +77,10 @@ def validate_uuid_list(value, field: str) -> list:
     if isinstance(value, str):
         value = [value]
     return [validate_uuid(v, field) for v in value if v not in (None, "")]
+
+
+def _list_of_ids(field):
+    return gettext("%(field)s must be a list of ids.") % {"field": field}
 
 
 def payload_id_list(value, field: str) -> list:
@@ -101,13 +108,11 @@ def payload_id_list(value, field: str) -> list:
             try:
                 value = json.loads(text)
             except json.JSONDecodeError:
-                raise DRFValidationError(
-                    {field: [f"{field} must be a list of ids."]}
-                ) from None
+                raise DRFValidationError({field: [_list_of_ids(field)]}) from None
         else:
             value = [text]
     if not isinstance(value, (list, tuple)):
-        raise DRFValidationError({field: [f"{field} must be a list of ids."]})
+        raise DRFValidationError({field: [_list_of_ids(field)]})
     ids = [item.get("id") if isinstance(item, dict) else item for item in value]
     return validate_uuid_list(ids, field)
 
@@ -171,7 +176,12 @@ def validate_date(value, field: str) -> datetime.date:
         day = None
     if day is None:
         raise DRFValidationError(
-            {field: [f"'{value}' is not a valid date. Use YYYY-MM-DD."]}
+            {
+                field: [
+                    gettext("'%(value)s' is not a valid date. Use YYYY-MM-DD.")
+                    % {"value": value}
+                ]
+            }
         ) from None
     return day
 
@@ -201,7 +211,7 @@ def decimal_param(params, field: str):
             raise ValueError
     except (ArithmeticError, TypeError, ValueError):
         raise DRFValidationError(
-            {field: [f"'{value}' is not a valid number."]}
+            {field: [gettext("'%(value)s' is not a valid number.") % {"value": value}]}
         ) from None
     return value
 
@@ -252,7 +262,23 @@ def validate_iana_timezone(value: str) -> None:
     ``business_hours.models._validate_iana_tz``, still resolves.
     """
     if value not in available_timezones():
-        raise DjangoValidationError(f"{value!r} is not a valid IANA timezone.")
+        raise DjangoValidationError(
+            gettext("%(value)s is not a valid IANA timezone.") % {"value": repr(value)}
+        )
+
+
+def validate_language_code(value: str) -> None:
+    """Reject a language code that is not in ``settings.LANGUAGES``.
+
+    A validator rather than ``choices`` on the field, so adding a language is a
+    settings change and not a migration. Blank is allowed by the field itself.
+    """
+    from django.conf import settings
+
+    if value and value not in {code for code, _name in settings.LANGUAGES}:
+        raise DjangoValidationError(
+            _("%(value)r is not a supported language."), params={"value": value}
+        )
 
 
 # Words an org may not claim as its public help center address. Some are the
@@ -305,15 +331,21 @@ def validate_help_center_slug(value: str) -> None:
     """
     if not HELP_CENTER_SLUG_MIN <= len(value) <= HELP_CENTER_SLUG_MAX:
         raise DjangoValidationError(
-            f"Use between {HELP_CENTER_SLUG_MIN} and {HELP_CENTER_SLUG_MAX} characters."
+            gettext("Use between %(min)d and %(max)d characters.")
+            % {"min": HELP_CENTER_SLUG_MIN, "max": HELP_CENTER_SLUG_MAX}
         )
     if not _HELP_CENTER_SLUG_RE.match(value):
         raise DjangoValidationError(
-            "Use lowercase letters, numbers and single hyphens, "
-            "not starting or ending with a hyphen."
+            gettext(
+                "Use lowercase letters, numbers and single hyphens, "
+                "not starting or ending with a hyphen."
+            )
         )
     if value in HELP_CENTER_RESERVED_SLUGS:
-        raise DjangoValidationError(f"'{value}' is reserved. Choose another address.")
+        raise DjangoValidationError(
+            gettext("'%(value)s' is reserved. Choose another address.")
+            % {"value": value}
+        )
 
 
 # The prefix of an invoice or estimate number (`Org.invoice_number_prefix`,

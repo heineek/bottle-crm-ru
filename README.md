@@ -62,7 +62,7 @@ docker compose up --build
 ```
 
 Frontend at http://localhost:5181, API and Swagger UI at http://localhost:8000/swagger-ui/. See
-the [Docker quick start guide](docs/getting-started/docker-quick-start.md) for the default admin
+the [Docker quick start guide](docs/EN/getting-started/docker-quick-start.md) for the default admin
 login, loading demo data, and what each service does.
 
 ## One-click deploy
@@ -72,13 +72,13 @@ login, loading demo data, and what each service does.
 ## Documentation
 
 The full documentation (setup, self-hosting, architecture, the REST API, and contributing) is
-built from this repository's [`docs/`](docs/) with MkDocs Material and publishes to Read the Docs
+built from this repository's [`docs/EN/`](docs/EN/) with MkDocs Material and publishes to Read the Docs
 at <https://django-crm.readthedocs.io/en/latest/>. Four starting points:
 
-- **[Getting started](docs/getting-started/docker-quick-start.md)**: Docker and manual setup, first sign-in, demo data.
-- **[Self-hosting](docs/self-hosting/requirements.md)**: requirements, production deployment, PostgreSQL and Row-Level Security, backups, security hardening.
-- **[API reference](docs/api/conventions.md)**: authentication, conventions, and every documented endpoint.
-- **[Contributing](docs/contributing/development-setup.md)**: local development setup, testing, code style, and how to open a pull request.
+- **[Getting started](docs/EN/getting-started/docker-quick-start.md)**: Docker and manual setup, first sign-in, demo data.
+- **[Self-hosting](docs/EN/self-hosting/requirements.md)**: requirements, production deployment, PostgreSQL and Row-Level Security, backups, security hardening.
+- **[API reference](docs/EN/api/conventions.md)**: authentication, conventions, and every documented endpoint.
+- **[Contributing](docs/EN/contributing/development-setup.md)**: local development setup, testing, code style, and how to open a pull request.
 
 ## Contributing
 

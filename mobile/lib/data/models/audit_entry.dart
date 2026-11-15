@@ -6,6 +6,8 @@
 /// built from those.
 library;
 
+import '../../l10n/l10n.dart';
+
 /// One option in the event filter.
 class AuditEventType {
   const AuditEventType({required this.value, required this.label});
@@ -47,10 +49,10 @@ class AuditEntry {
   final Map<String, dynamic> details;
 
   String get actorLabel {
-    if (actorId == null) return 'No user';
+    if (actorId == null) return appL10n.appAuditNoUser;
     if (actorName.isNotEmpty) return actorName;
     if (actorEmail.isNotEmpty) return actorEmail;
-    return 'No user';
+    return appL10n.appAuditNoUser;
   }
 
   /// One line on what happened, or '' when the label says it all. The same
@@ -69,9 +71,13 @@ class AuditEntry {
         return ' (${text.length > 8 ? text.substring(0, 8) : text})';
       }
 
-      return 'Merged ${entity.isEmpty ? 'record' : entity} '
-          '"${details['merged_name']}"${tag(details['merged_id'])} '
-          'into "${details['kept_name']}"${tag(details['kept_id'])}.';
+      return appL10n.appAuditMerged(
+        entity.isEmpty ? appL10n.appAuditRecord : entity,
+        '${details['merged_name']}',
+        tag(details['merged_id']),
+        '${details['kept_name']}',
+        tag(details['kept_id']),
+      );
     }
     final prefix = details['token_prefix'];
     if ((eventType == 'API_TOKEN_CREATED' ||
@@ -82,26 +88,32 @@ class AuditEntry {
       // owner is named only when someone else acted: an admin revoking it.
       final scopes = details['scopes'];
       final scopeText = scopes is List && scopes.isNotEmpty
-          ? 'scopes ${scopes.join(', ')}'
-          : 'full access';
+          ? appL10n.appAuditScopes(scopes.join(', '))
+          : appL10n.appAuditFullAccess;
       final ownerId = details['owner_id'];
       final owner = ownerId != null && ownerId.toString() != actorId
-          ? ', owned by ${details['owner_name']}'
+          ? appL10n.appAuditOwnedBy('${details['owner_name']}')
           : '';
-      return 'Token "${details['token_name']}" ($prefix), $scopeText$owner.';
+      return appL10n.appAuditToken(
+        '${details['token_name']}',
+        '$prefix',
+        '$scopeText$owner',
+      );
     }
     if (eventType == 'WEBHOOK_REENABLED') {
-      return 'Turned back on, and now answers for the webhook.';
+      return appL10n.appAuditWebhookReenabled;
     }
     final changed = details['changed'];
     if (eventType == 'WEBHOOK_CHANGED' && changed is List) {
-      return 'Changed ${changed.join(', ')}, and now answers for the webhook.';
+      return appL10n.appAuditWebhookChanged(changed.join(', '));
     }
     final action = details['action'];
     final resource = details['resource'];
-    if (action != null && resource != null) return '$action on $resource';
+    if (action != null && resource != null) {
+      return appL10n.appAuditActionOn('$action', '$resource');
+    }
     final deleted = details['deleted_count'];
-    if (deleted != null) return '$deleted sample leads removed';
+    if (deleted != null) return appL10n.appAuditSampleLeadsRemoved('$deleted');
     return '';
   }
 

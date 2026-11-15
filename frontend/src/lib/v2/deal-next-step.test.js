@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as runtime from '#lib/paraglide/runtime.js';
 import { dealNextStep } from '#lib/v2/deal-next-step.js';
 
 const now = new Date('2026-09-26T12:00:00');
@@ -45,5 +46,25 @@ describe('dealNextStep', () => {
   it('shows no next-step flag while Tasks is off', () => {
     expect(dealNextStep({ stage_kind: 'open', next_activity: null }, false, now)).toBeNull();
     expect(dealNextStep({ stage_kind: 'open', next_activity: task }, false, now)).toBeNull();
+  });
+});
+
+describe('dealNextStep in Russian', () => {
+  /** @type {typeof runtime.getLocale} */
+  let original;
+  beforeEach(() => {
+    original = runtime.getLocale;
+    runtime.overwriteGetLocale(() => 'ru');
+  });
+  afterEach(() => runtime.overwriteGetLocale(original));
+
+  it('says there is no next step, or no date, in Russian', () => {
+    expect(dealNextStep({ stage_kind: 'open', next_activity: null }, true, now)?.text).toBe(
+      'Нет следующего шага'
+    );
+    const undated = { ...task, due_date: null };
+    expect(dealNextStep({ stage_kind: 'open', next_activity: undated }, true, now)?.text).toBe(
+      'Send proposal · без даты'
+    );
   });
 });

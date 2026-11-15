@@ -1,0 +1,172 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "solutions_not_found": "That article does not exist, or it belongs to another team.",
+  "solutions_err_no_publish_id": "No article to publish.",
+  "solutions_err_publish": "Could not publish this article.",
+  "solutions_err_unpublish": "Could not unpublish this article.",
+  "solutions_err_save": "Could not save this article.",
+  "solutions_err_no_status": "No status to set.",
+  "solutions_err_status": "Could not change the status.",
+  "solutions_err_delete": "Could not delete this article.",
+  "solutions_list_title": "Knowledge base",
+  "solutions_list_sub_articles": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} article",
+        "countPlural=other": "{shown} articles"
+      }
+    }
+  ],
+  "solutions_list_sub_live": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} live to customers",
+        "countPlural=other": "{shown} live to customers"
+      }
+    }
+  ],
+  "solutions_new_article": "New article",
+  "solutions_list_totals_note": "These numbers cover every article, not just the ones shown.",
+  "solutions_stat_approved_unpublished": "Approved, not published",
+  "solutions_stat_ready": "Ready to go live",
+  "solutions_stat_waiting_admin": "Waiting on an admin",
+  "solutions_stat_nothing_waiting": "Nothing waiting",
+  "solutions_stat_published": "Published",
+  "solutions_stat_draft": "Draft",
+  "solutions_stat_total": "Total",
+  "solutions_filter_meta": "Published means customers can read it. Approving it is a separate step",
+  "solutions_empty_filtered_title": "No articles match that",
+  "solutions_empty_title": "No articles yet",
+  "solutions_empty_filtered_body": "Nothing in the knowledge base matches those filters. Clearing them shows everything.",
+  "solutions_empty_body_tickets": "Write the answer once, link it from the tickets that ask for it, and stop retyping it. The first one usually comes straight out of a ticket you just resolved.",
+  "solutions_empty_body": "Write the answer once and stop retyping it. A published article is what customers read in the portal, and in the public help center once it is switched on.",
+  "solutions_clear_filters": "Clear filters",
+  "solutions_go_to_tickets": "Go to tickets",
+  "solutions_col_article": "Article",
+  "solutions_col_status": "Status",
+  "solutions_col_visibility": "Visibility",
+  "solutions_col_tickets_solved": "Tickets solved",
+  "solutions_col_author": "Author",
+  "solutions_col_edited": "Edited",
+  "solutions_live": "Live to customers",
+  "solutions_internal": "Internal only",
+  "solutions_publish": "Publish",
+  "solutions_showing": "Showing {shown} of {total}",
+  "solutions_clear_filters_lower": "clear filters",
+  "solutions_gate_approved_tickets": "Approved, but not suggested on tickets yet.",
+  "solutions_gate_approved_unpublished": "Approved, but not published yet.",
+  "solutions_gate_publish_last": "Publishing is the last step.",
+  "solutions_gate_admin_publish": "An admin has to publish it.",
+  "solutions_gate_reviewed_admin": "Someone has read this. Approving it is what lets it be published.",
+  "solutions_gate_reviewed_waiting": "Waiting on an admin to approve it. Until then it stays internal.",
+  "solutions_gate_draft": "This is a draft. Send it for review when the answer is right: somebody other than you has to approve it before it can be published.",
+  "solutions_approve": "Approve",
+  "solutions_send_for_review": "Send for review",
+  "solutions_detail_unknown_author": "Unknown author",
+  "solutions_detail_edited": "edited {when}",
+  "solutions_detail_filed_on": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "filed on {countShown} ticket",
+        "countPlural=other": "filed on {countShown} tickets"
+      }
+    }
+  ],
+  "solutions_detail_not_linked": "not linked to a ticket yet",
+  "solutions_detail_unpublish": "Unpublish",
+  "solutions_detail_delete_confirm": "Delete for good",
+  "solutions_detail_delete_explain": "Deletes {title} permanently. This cannot be undone.",
+  "solutions_detail_not_visible": "Not visible yet",
+  "solutions_detail_filed_against": "Filed against",
+  "solutions_detail_not_used": "Not used yet",
+  "solutions_detail_nobody_attached": "Nobody has attached this to a ticket. Either the question has stopped being asked, or the article is hard to find while somebody is typing a reply.",
+  "solutions_detail_hidden_tickets": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} other ticket uses this article and is not yours to open.",
+        "countPlural=other": "{countShown} other tickets use this article and are not yours to open."
+      }
+    }
+  ],
+  "solutions_detail_rail_article": "Article",
+  "solutions_detail_status": "Status",
+  "solutions_detail_visibility": "Visibility",
+  "solutions_detail_published": "Published",
+  "solutions_detail_author": "Author",
+  "solutions_detail_used_on": "Used on",
+  "solutions_detail_used_count": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} tickets",
+        "countPlural=other": "{countShown} tickets"
+      }
+    }
+  ],
+  "solutions_detail_written": "Written",
+  "solutions_detail_edited_label": "Edited",
+  "solutions_detail_how_used": "How this gets used",
+  "solutions_detail_how_used_body": "Published articles are offered on the ticket screen while somebody is typing a reply. An article nobody has linked to a ticket is usually one that answers a question nobody asked.",
+  "solutions_form_consequence_live": "Live for customers to read, and suggested on tickets.",
+  "solutions_form_consequence_refused": "This will be refused: an article has to be approved before it can be published. Set the status to Approved, or leave it internal for now.",
+  "solutions_form_consequence_approved": "Checked, but no customer can read it yet. Publishing is what releases it.",
+  "solutions_form_consequence_internal": "Internal only. Agents can still search for it and attach it to a ticket.",
+  "solutions_new_sub": "Write the answer once, attach it to every ticket that asks",
+  "solutions_form_saving": "Saving…",
+  "solutions_new_save": "Save article",
+  "solutions_form_title": "Title",
+  "solutions_new_title_placeholder": "Fixing an SSO login loop after an identity provider change",
+  "solutions_form_title_hint": "Say the symptom the way a customer would report it, not the fix.",
+  "solutions_form_answer": "Answer",
+  "solutions_new_answer_placeholder": "What is happening, why, and the steps that resolve it.",
+  "solutions_new_answer_short": "A few more words: this is the text an agent will paste to a customer.",
+  "solutions_new_answer_hint": "This is pasted into replies as-is, so write it to be read by the person with the problem.",
+  "solutions_form_tags": "Tags",
+  "solutions_new_tags_lead": "Internal filing. Customers never see these names, but articles sharing one are shown to each other in the portal.",
+  "solutions_new_review_visibility": "Review and visibility",
+  "solutions_new_review_lead": "These are two separate facts about the article and this form keeps them separate.",
+  "solutions_form_review_status": "Review status",
+  "solutions_form_approve_admin": "Approving is an admin's call. It is what lets an article be published.",
+  "solutions_new_customer_visibility": "Customer visibility",
+  "solutions_new_internal": "Internal",
+  "solutions_new_published": "Published",
+  "solutions_edit_title": "Edit article",
+  "solutions_edit_used_on": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "used on {shown} tickets",
+        "countPlural=other": "used on {shown} tickets"
+      }
+    }
+  ],
+  "solutions_edit_save": "Save changes",
+  "solutions_edit_notice_tickets": "This article is published, so anything saved here is what customers read in the portal and what agents are offered on tickets.",
+  "solutions_edit_notice": "This article is published, so anything saved here is what customers read in the portal.",
+  "solutions_edit_answer_hint": "This is pasted into replies as-is.",
+  "solutions_edit_tags_lead": "Customers never see these names, but articles sharing one are shown to each other in the portal.",
+  "solutions_edit_locked": "A published article cannot move back down the workflow. Unpublish it first.",
+  "solutions_edit_approve_hint": "Approving does not publish it. That is a separate button on the article."
+}

@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * "Possible duplicates" beside a create form, while it is being typed.
    *
@@ -19,6 +20,22 @@
   /** @type {Array<{ id: string, name: string, matched_on: string }>} */
   let hits = $state([]);
   let latest = 0;
+
+  /** @type {Record<string, () => string>} */
+  const FIELD = {
+    email: m.app_dup_field_email,
+    phone: m.app_dup_field_phone,
+    name: m.app_dup_field_name,
+    company: m.app_dup_field_company,
+    website: m.app_dup_field_website
+  };
+  /** The API's `matched_on` reasons as words. @param {string | string[]} reasons */
+  const same = (reasons) =>
+    m.app_dup_same({
+      fields: (Array.isArray(reasons) ? reasons : [reasons])
+        .map((r) => FIELD[r]?.() ?? r)
+        .join(m.app_dup_separator())
+    });
 
   /**
    * Whether a value is worth asking about. The API ignores weaker ones anyway;
@@ -70,18 +87,18 @@
     <TriangleAlert size={17} style="color:var(--v2-clay);flex:none" />
     <div class="v2-next-body">
       <div style="font-weight:600">
-        Possible duplicate{hits.length === 1 ? '' : 's'}
+        {m.app_dup_title({ count: hits.length })}
       </div>
       <ul>
         {#each hits as hit (hit.id)}
           <li>
             <a href={resolve(`${module}/${hit.id}`)} target="_blank" rel="noopener">{hit.name}</a>
-            <span class="v2-sub">· same {hit.matched_on}</span>
+            <span class="v2-sub">· {same(hit.matched_on)}</span>
           </li>
         {/each}
       </ul>
       <div class="v2-sub" style="margin-top:2px">
-        You can still save. If it is the same one, open it instead, or merge the two afterwards.
+        {m.app_dup_still_save()}
       </div>
     </div>
   </div>

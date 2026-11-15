@@ -1,3 +1,4 @@
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -142,7 +143,7 @@ class CreateContactSerializer(serializers.ModelSerializer):
         self.profile = request_obj.profile if request_obj else None
         # An id that matches no account at all reads the same as one the
         # caller may not open; see `validate_account`.
-        self.fields["account"].error_messages["does_not_exist"] = "No such account."
+        self.fields["account"].error_messages["does_not_exist"] = _("No such account.")
 
     def validate_account(self, account):
         """An account the caller may not open is not a valid link.
@@ -176,7 +177,7 @@ class CreateContactSerializer(serializers.ModelSerializer):
             or account.org_id != self.org.id
             or not has_account_access(self.profile, account)
         ):
-            raise serializers.ValidationError("No such account.")
+            raise serializers.ValidationError(_("No such account."))
         return account
 
     def validate_email(self, email):
@@ -188,12 +189,12 @@ class CreateContactSerializer(serializers.ModelSerializer):
                     .exists()
                 ):
                     raise serializers.ValidationError(
-                        "Contact already exists with this email"
+                        _("Contact already exists with this email")
                     )
             else:
                 if Contact.objects.filter(email__iexact=email, org=self.org).exists():
                     raise serializers.ValidationError(
-                        "Contact already exists with this email"
+                        _("Contact already exists with this email")
                     )
         return email
 

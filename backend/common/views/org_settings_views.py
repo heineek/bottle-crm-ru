@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound
@@ -14,6 +16,7 @@ from common.serializer import (
     HelpCenterSettingsSerializer,
     OrgSettingsSerializer,
 )
+from common.utils import COUNTRIES, CURRENCY_CODES, CURRENCY_SYMBOLS
 
 
 class OrgSettingsView(APIView):
@@ -30,7 +33,7 @@ class OrgSettingsView(APIView):
         """Get current organization settings."""
         if not request.profile:
             return Response(
-                {"error": "Organization context required"},
+                {"error": _("Organization context required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         org = request.profile.org
@@ -41,12 +44,12 @@ class OrgSettingsView(APIView):
         """Update organization settings (admin only)."""
         if not request.profile:
             return Response(
-                {"error": "Organization context required"},
+                {"error": _("Organization context required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not is_org_admin(request.profile):
             return Response(
-                {"error": "Only admins can update organization settings"},
+                {"error": _("Only admins can update organization settings")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -106,7 +109,7 @@ class HelpCenterSettingsView(APIView):
     def patch(self, request):
         if not self._can_edit(request):
             return Response(
-                {"error": True, "errors": "Only admins can change the help center."},
+                {"error": True, "errors": _("Only admins can change the help center.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         org = request.profile.org
@@ -170,3 +173,71 @@ class TimezoneListView(APIView):
     )
     def get(self, request):
         return Response({"timezones": selectable_timezones()})
+
+
+def _option(name):
+    return inline_serializer(
+        name=name,
+        fields={"code": serializers.CharField(), "name": serializers.CharField()},
+    )
+
+
+class OrgLocalesView(APIView):
+    """Languages, countries and currencies, named in the caller's language.
+
+    Served for the same reason as ``TimezoneListView``: both clients read one
+    list, so a stored code always has an option, and a country is named the
+    same way on the web and on a phone. Org-free for the same reason too: the
+    first caller may be creating their first org.
+
+    Languages carry their own names ("Русский"), not translated ones, so a
+    reader can find theirs whatever the interface is in. Countries are sorted
+    by their translated name, which is how a reader scans for theirs.
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["organization"],
+        operation_id="org_locales",
+        responses={
+            200: inline_serializer(
+                name="OrgLocalesResponse",
+                fields={
+                    "languages": serializers.ListField(child=_option("LanguageOption")),
+                    "countries": serializers.ListField(child=_option("CountryOption")),
+                    "currencies": serializers.ListField(
+                        child=inline_serializer(
+                            name="CurrencyOption",
+                            fields={
+                                "code": serializers.CharField(),
+                                "name": serializers.CharField(),
+                                "symbol": serializers.CharField(),
+                            },
+                        )
+                    ),
+                },
+            )
+        },
+    )
+    def get(self, request):
+        countries = sorted(
+            ({"code": code, "name": str(name)} for code, name in COUNTRIES),
+            key=lambda c: c["name"].casefold(),
+        )
+        return Response(
+            {
+                "languages": [
+                    {"code": code, "name": name} for code, name in settings.LANGUAGES
+                ],
+                "countries": countries,
+                "currencies": [
+                    {
+                        "code": code,
+                        "name": str(name),
+                        "symbol": CURRENCY_SYMBOLS.get(code, code),
+                    }
+                    for code, name in CURRENCY_CODES
+                ],
+            }
+        )

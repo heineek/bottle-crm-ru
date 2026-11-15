@@ -7,6 +7,7 @@ import {
   EDITABLE_FIELDS
 } from '#lib/server/v2/goals.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Editing a goal.
@@ -23,7 +24,7 @@ export async function load(event) {
     return await getGoalForEdit(event, event.params.id);
   } catch (/** @type {any} */ err) {
     if (err?.status === 404) {
-      error(404, 'That goal does not exist, or you cannot see it.');
+      error(404, m.goals_error_not_found());
     }
     throw err;
   }
@@ -51,11 +52,11 @@ export const actions = {
       await updateGoal(event, event.params.id, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { values, error: 'Only an admin can change goals.' });
+        return fail(403, { values, error: m.goals_error_save_forbidden() });
       }
       return fail(400, {
         values,
-        error: readableError(err, 'Could not save this goal.')
+        error: readableError(err, m.goals_error_save_failed())
       });
     }
 
@@ -67,11 +68,11 @@ export const actions = {
       await deleteGoal(event, event.params.id);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { error: 'Only an admin can delete goals.' });
+        return fail(403, { error: m.goals_error_delete_forbidden() });
       }
       // Already gone is the outcome the caller wanted; treat 404 as done.
       if (err?.status === 404) redirect(303, '/goals');
-      return fail(400, { error: readableError(err, 'Could not delete this goal.') });
+      return fail(400, { error: readableError(err, m.goals_error_delete_failed()) });
     }
 
     redirect(303, '/goals');

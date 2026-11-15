@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/solution.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/solutions_provider.dart';
@@ -72,9 +73,9 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
 
   Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Title is required')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.solutionsDetailTitleRequired)),
+      );
       return;
     }
     setState(() => _isLoading = true);
@@ -107,7 +108,9 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.isCreate ? 'Solution created' : 'Solution updated',
+            widget.isCreate
+                ? context.l10n.solutionsDetailCreated
+                : context.l10n.solutionsDetailUpdated,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -116,7 +119,7 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to save'),
+          content: Text(res.message ?? context.l10n.solutionsDetailSaveFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -139,7 +142,9 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
     if (!res.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed'),
+          content: Text(
+            res.message ?? context.l10n.solutionsDetailPublishFailed,
+          ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -154,17 +159,17 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete solution?'),
-        content: Text('Permanently delete "${_existing!.title}"?'),
+        title: Text(ctx.l10n.solutionsDetailDeleteTitle),
+        content: Text(ctx.l10n.solutionsDetailDeleteBody(_existing!.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(ctx.l10n.commonDelete),
           ),
         ],
       ),
@@ -179,9 +184,13 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
     if (res.success) {
       context.pop(true);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(res.message ?? 'Delete failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            res.message ?? context.l10n.solutionsDetailDeleteFailed,
+          ),
+        ),
+      );
     }
   }
 
@@ -206,7 +215,11 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: Text(widget.isCreate ? 'New solution' : 'Solution'),
+        title: Text(
+          widget.isCreate
+              ? context.l10n.solutionsDetailNewTitle
+              : context.l10n.solutionsDetailTitle,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
@@ -216,7 +229,7 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
         actions: [
           if (!widget.isCreate && (_existing?.canDelete ?? false))
             IconButton(
-              tooltip: 'Delete',
+              tooltip: context.l10n.commonDelete,
               icon: const Icon(LucideIcons.trash2),
               onPressed: _isLoading ? null : _delete,
             ),
@@ -230,19 +243,19 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   FloatingLabelInput(
-                    label: 'Title',
+                    label: context.l10n.solutionsDetailTitleField,
                     controller: _titleController,
                     prefixIcon: LucideIcons.bookOpen,
                   ),
                   const SizedBox(height: 16),
                   TextAreaField(
-                    label: 'Description',
+                    label: context.l10n.commonDescription,
                     controller: _descController,
                     maxLines: 10,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'STATUS',
+                    context.l10n.solutionsDetailStatusHeading,
                     style: AppTypography.overline.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -263,7 +276,7 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                   if (tags.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Text(
-                      'TAGS',
+                      context.l10n.solutionsDetailTagsHeading,
                       style: AppTypography.overline.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -274,8 +287,7 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                     // so the vocabulary is visible instead of hidden behind a
                     // tap. Same shape as the web form.
                     Text(
-                      'Internal filing. Customers never see these names, but '
-                      'articles sharing one are shown to each other in the portal.',
+                      context.l10n.solutionsDetailTagsHelp,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -336,7 +348,11 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _isPublished ? 'Published' : 'Not published',
+                                  _isPublished
+                                      ? context.l10n.solutionsDetailPublished
+                                      : context
+                                            .l10n
+                                            .solutionsDetailNotPublished,
                                   style: AppTypography.label,
                                 ),
                                 Text(
@@ -349,8 +365,12 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                                   // this switch does, so the customer comes
                                   // first in the sentence.
                                   _isPublished
-                                      ? 'Live to customers, and suggested to agents.'
-                                      : 'Only approved solutions can be published.',
+                                      ? context
+                                            .l10n
+                                            .solutionsDetailPublishedHint
+                                      : context
+                                            .l10n
+                                            .solutionsDetailNotPublishedHint,
                                   style: AppTypography.caption.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -381,7 +401,11 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                                         _status != SolutionStatus.approved)
                                 ? null
                                 : _togglePublish,
-                            child: Text(_isPublished ? 'Unpublish' : 'Publish'),
+                            child: Text(
+                              _isPublished
+                                  ? context.l10n.solutionsDetailUnpublish
+                                  : context.l10n.solutionsDetailPublish,
+                            ),
                           ),
                         ],
                       ),
@@ -391,8 +415,8 @@ class _SolutionDetailScreenState extends ConsumerState<SolutionDetailScreen> {
                   if (canWrite)
                     PrimaryButton(
                       label: widget.isCreate
-                          ? 'Create solution'
-                          : 'Save changes',
+                          ? context.l10n.solutionsListCreate
+                          : context.l10n.solutionsDetailSaveChanges,
                       onPressed: _isLoading ? null : _save,
                       isLoading: _isLoading,
                     ),

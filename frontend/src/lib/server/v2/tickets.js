@@ -47,7 +47,8 @@ import { error, redirect } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
-import { RESTRICTED_TICKET_NAME } from '#lib/v2/enums.js';
+import { restrictedTicketName } from '#lib/v2/enums.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** Statuses where somebody still owes the customer something. Mirrors `cases.views.OPEN_STATUSES`. */
 export const OPEN_STATUSES = ['New', 'Assigned', 'Pending'];
@@ -56,7 +57,7 @@ export const OPEN_STATUSES = ['New', 'Assigned', 'Pending'];
  * @param {any} profile
  */
 function profileName(profile) {
-  return profile?.user_details?.email || profile?.user?.email || 'Unknown';
+  return profile?.user_details?.email || profile?.user?.email || m.tickets_server_unknown();
 }
 
 /**
@@ -72,14 +73,14 @@ function accountLink(account) {
  * A parent the viewer may not open arrives as `{ id, name: null, status: null,
  * restricted: true }`. It keeps its id (the viewer may still detach from it,
  * since unlinking needs write on the child alone) and reads as
- * `RESTRICTED_TICKET_NAME`, never as a link: opening it would only answer 404.
+ * `restrictedTicketName()`, never as a link: opening it would only answer 404.
  *
  * @param {any} parent
  */
 function parentLink(parent) {
   if (!parent) return null;
   if (parent.restricted) {
-    return { id: parent.id, name: RESTRICTED_TICKET_NAME, status: null, restricted: true };
+    return { id: parent.id, name: restrictedTicketName(), status: null, restricted: true };
   }
   return {
     id: parent.id,
@@ -222,8 +223,8 @@ function toConversation(response) {
       // it, so name them. "The customer" is still the answer for an inbound
       // email or anything else that arrived without an author.
       author: author
-        ? author.user_details?.email || 'Support'
-        : comment.commented_by_contact?.name || 'The customer',
+        ? author.user_details?.email || m.tickets_server_support()
+        : comment.commented_by_contact?.name || m.tickets_server_customer(),
       at: comment.commented_on,
       body: comment.comment ?? ''
     });
@@ -234,7 +235,7 @@ function toConversation(response) {
       id: `n-${note.id}`,
       kind: 'note',
       direction: 'note',
-      author: note.commented_by?.user_details?.email || 'Support',
+      author: note.commented_by?.user_details?.email || m.tickets_server_support(),
       at: note.commented_on,
       body: note.comment ?? ''
     });
@@ -245,7 +246,7 @@ function toConversation(response) {
       id: `e-${message.id}`,
       kind: 'email',
       direction: message.direction === 'outbound' ? 'out' : 'in',
-      author: message.from_address ?? 'Unknown sender',
+      author: message.from_address ?? m.tickets_server_unknown_sender(),
       at: message.received_at,
       subject: message.subject ?? '',
       body: message.body_text ?? ''
@@ -337,7 +338,7 @@ export async function getTicket({ cookies }, id) {
     // hidden parent does, and is never a link.
     mergedFrom: (response.merged_from_cases ?? []).map((/** @type {any} */ src) => ({
       id: src.id,
-      name: src.restricted ? RESTRICTED_TICKET_NAME : (src.name ?? ''),
+      name: src.restricted ? restrictedTicketName() : (src.name ?? ''),
       merged_at: src.merged_at ?? null,
       restricted: Boolean(src.restricted),
       can_unmerge: src.can_unmerge === true
@@ -556,7 +557,7 @@ export async function getTicketForEdit({ cookies }, id) {
   // A reader (a watcher) would fill the form in and be refused on save, so
   // the page says so up front. They know the ticket exists: 403, not 404.
   if (response.comment_permission !== true) {
-    error(403, 'You can read this ticket but not change it.');
+    error(403, m.tickets_server_read_only());
   }
   const raw = response.cases_obj;
   const ticket = toRow(raw);
@@ -822,7 +823,7 @@ async function fetchDetail(cookies, id) {
     rethrowModuleOff(err);
     // On the status, not on the wording.
     if (err?.status === 404) {
-      error(404, 'That ticket does not exist, or you do not have access to it.');
+      error(404, m.tickets_server_not_found());
     }
     throw err;
   }

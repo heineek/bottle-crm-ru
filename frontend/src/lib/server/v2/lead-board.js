@@ -21,6 +21,7 @@
  */
 import { apiRequest } from '#lib/api-helpers.js';
 import { canMoveCard } from '#lib/v2/board-drag.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** The lane id standing for "in no stage". A stage id is always a UUID. */
 export const UNSTAGED = 'unstaged';
@@ -42,7 +43,7 @@ function toCard(lead) {
   const owner = lead.assigned_to?.[0];
   return {
     id: lead.id,
-    name: lead.full_name || lead.title || 'Unnamed lead',
+    name: lead.full_name || lead.title || m.leads_board_unnamed(),
     company: lead.company_name ?? '',
     rating: lead.rating ?? '',
     owner: owner?.user_details?.name || owner?.user_details?.email || '',
@@ -100,7 +101,7 @@ export async function getLeadBoard({ cookies }, pipelineId = null) {
 
   const stages = [...(board.columns ?? [])].sort((a, b) => a.order - b.order);
   const lanes = [
-    toLane(UNSTAGED, 'No stage', GREY, board.unstaged ?? {}),
+    toLane(UNSTAGED, m.leads_board_no_stage(), GREY, board.unstaged ?? {}),
     ...stages.map((/** @type {any} */ c) =>
       toLane(String(c.id), c.name, swatch(c.color), c, c.wip_limit ?? null)
     )

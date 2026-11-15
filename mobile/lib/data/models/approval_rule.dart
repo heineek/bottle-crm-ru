@@ -23,7 +23,9 @@
 /// the same rules.
 library;
 
+import '../../l10n/l10n.dart';
 import 'lookup_models.dart';
+import 'ticket.dart' show TicketPriority, TicketType;
 
 /// The `approver_role` values a profile can actually hold.
 ///
@@ -36,9 +38,9 @@ const List<String> rolesThatExist = ['ADMIN'];
 /// What the approver-role picker offers, which is the model's list, not the
 /// list that works. MANAGER is offered because the column accepts it and
 /// hiding it would rewrite a rule already set to it.
-const List<({String value, String label})> approverRoleChoices = [
-  (value: 'ADMIN', label: 'Admin'),
-  (value: 'MANAGER', label: 'Manager (matches nobody yet)'),
+List<({String value, String label})> get approverRoleChoices => [
+  (value: 'ADMIN', label: appL10n.appRoleAdmin),
+  (value: 'MANAGER', label: appL10n.appApproverRoleManager),
 ];
 
 const List<String> approvalPriorities = ['Low', 'Normal', 'High', 'Urgent'];
@@ -113,13 +115,14 @@ class ApprovalRule {
 
   /// Everyone who can clear this rule, as the sentence a person would say.
   String get approverSentence {
-    final named = approverNames;
+    final l10n = appL10n;
+    final named = approverNames.join(l10n.appApproverOrJoiner);
     if (roleClears) {
       return named.isEmpty
-          ? 'any admin'
-          : 'any admin, or ${named.join(' or ')}';
+          ? l10n.appApproverAnyAdmin
+          : l10n.appApproverAnyAdminOr(named);
     }
-    return named.isEmpty ? 'nobody' : named.join(' or ');
+    return named.isEmpty ? l10n.appApproverNobody : named;
   }
 
   /// True when this rule gates closes that nobody in the org can clear.
@@ -131,12 +134,21 @@ class ApprovalRule {
 
   /// What the rule matches, as the sentence a person would say.
   String get matchSentence {
+    final l10n = appL10n;
+    final priority = TicketPriority.values
+        .where((p) => p.value == matchPriority)
+        .firstOrNull;
+    final caseType = TicketType.values
+        .where((t) => t.value == matchCaseType)
+        .firstOrNull;
     final parts = [
-      if (matchPriority != null) '$matchPriority priority',
-      if (matchCaseType != null) matchCaseType!.toLowerCase(),
-      if (matchTeam != null) '${matchTeam!.name} team',
+      if (matchPriority != null)
+        l10n.appApprovalMatchPriority(priority?.label ?? matchPriority!),
+      if (matchCaseType != null)
+        (caseType?.label ?? matchCaseType!).toLowerCase(),
+      if (matchTeam != null) l10n.appApprovalMatchTeam(matchTeam!.name),
     ];
-    return parts.isEmpty ? 'Every ticket' : parts.join(' · ');
+    return parts.isEmpty ? l10n.appApprovalMatchEvery : parts.join(' · ');
   }
 
   /// How many filters are set. Mirrors `ApprovalRule.specificity`, the sort key
@@ -256,9 +268,9 @@ Map<String, dynamic> approvalRuleActivePayload(bool isActive) => {
 /// What a create or edit has to fix before it is worth sending, or null.
 String? approvalRuleNameProblem(String name) {
   final trimmed = name.trim();
-  if (trimmed.isEmpty) return 'Give the rule a name.';
+  if (trimmed.isEmpty) return appL10n.appApprovalValidateName;
   if (trimmed.length > 128) {
-    return 'That name is too long (128 characters max).';
+    return appL10n.appApprovalValidateNameLength;
   }
   return null;
 }
@@ -270,10 +282,8 @@ String? approvalRuleNameProblem(String name) {
 /// `on_delete=PROTECT` and the history has to keep pointing at it. Both answer
 /// 2xx, and `pendingCount` cannot predict which: it counts only the pending
 /// state, and the backend's check counts every state. So the line names both.
-const String approvalRuleDeleteExplanation =
-    'A rule that has never gated a close is deleted for good. One with any '
-    'approval history is turned off instead, because the record has to be '
-    'kept. Which happens is decided when you confirm, and you will be told.';
+String get approvalRuleDeleteExplanation =>
+    appL10n.appApprovalDeleteExplanation;
 
 /// Which of the two outcomes the response describes.
 ///
@@ -285,7 +295,5 @@ bool approvalRuleWasTurnedOff(Map<String, dynamic>? body) =>
     body?['is_active'] == false;
 
 /// What actually happened, once the server has decided.
-String approvalRuleDeleteResult({required bool turnedOff}) => turnedOff
-    ? 'That rule had approval history, so it was turned off instead of '
-          'deleted. It is still in the list, off, and gates nothing.'
-    : 'Rule deleted';
+String approvalRuleDeleteResult({required bool turnedOff}) =>
+    turnedOff ? appL10n.appApprovalDeleteTurnedOff : appL10n.appApprovalDeleted;

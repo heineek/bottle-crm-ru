@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/custom_object.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_objects_provider.dart';
@@ -37,7 +38,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -59,10 +60,11 @@ class ObjectSettingsScreen extends ConsumerWidget {
     if (!active) {
       final ok = await _confirm(
         context,
-        title: 'Archive ${summary.labelPlural}?',
-        body:
-            'Hides it from More and from Related sections; its records stay and come back when you restore it.',
-        action: 'Archive',
+        title: context.l10n.settingsObjectSettingsArchiveTitle(
+          summary.labelPlural,
+        ),
+        body: context.l10n.settingsObjectSettingsArchiveBody,
+        action: context.l10n.settingsObjectSettingsArchive,
       );
       if (!ok || !context.mounted) return;
     }
@@ -75,10 +77,12 @@ class ObjectSettingsScreen extends ConsumerWidget {
     _say(
       context,
       response.success
-          ? (active ? 'Restored' : 'Archived')
+          ? (active
+                ? context.l10n.settingsObjectSettingsRestored
+                : context.l10n.settingsObjectSettingsArchivedDone)
           : settingsWriteError(
               response,
-              'Could not do that.',
+              context.l10n.settingsObjectSettingsCouldNotDoThat,
               labels: objectFormLabels,
             ),
     );
@@ -91,9 +95,11 @@ class ObjectSettingsScreen extends ConsumerWidget {
   ) async {
     final ok = await _confirm(
       context,
-      title: 'Delete ${summary.labelPlural} for good?',
-      body: 'Removes the object and its fields for good.',
-      action: 'Delete for good',
+      title: context.l10n.settingsObjectSettingsDestroyTitle(
+        summary.labelPlural,
+      ),
+      body: context.l10n.settingsObjectSettingsDestroyBody,
+      action: context.l10n.settingsObjectSettingsDeleteForGood,
     );
     if (!ok || !context.mounted) return;
     final response = await ref
@@ -108,7 +114,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
         context,
         settingsWriteError(
           response,
-          'Could not delete it.',
+          context.l10n.settingsObjectSettingsDeleteError,
           labels: objectFormLabels,
         ),
       );
@@ -130,7 +136,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
         if (!response.success) {
           return settingsWriteError(
             response,
-            'Could not save the object.',
+            appL10n.settingsObjectSettingsSaveObjectError,
             labels: objectFormLabels,
           );
         }
@@ -158,7 +164,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
         if (!response.success) {
           return settingsWriteError(
             response,
-            'Could not save the field.',
+            appL10n.settingsObjectSettingsSaveFieldError,
             labels: fieldFormLabels,
           );
         }
@@ -177,9 +183,9 @@ class ObjectSettingsScreen extends ConsumerWidget {
     if (!on) {
       final ok = await _confirm(
         context,
-        title: 'Turn off ${field.label}?',
-        body: 'Stops being collected. Stored values stay.',
-        action: 'Turn off',
+        title: context.l10n.settingsObjectSettingsTurnOffTitle(field.label),
+        body: context.l10n.settingsObjectSettingsTurnOffBody,
+        action: context.l10n.settingsObjectSettingsTurnOff,
       );
       if (!ok || !context.mounted) return;
     }
@@ -192,10 +198,12 @@ class ObjectSettingsScreen extends ConsumerWidget {
     _say(
       context,
       response.success
-          ? (on ? 'Field turned on' : 'Field turned off')
+          ? (on
+                ? context.l10n.settingsObjectSettingsFieldTurnedOn
+                : context.l10n.settingsObjectSettingsFieldTurnedOff)
           : settingsWriteError(
               response,
-              'Could not do that.',
+              context.l10n.settingsObjectSettingsCouldNotDoThat,
               labels: fieldFormLabels,
             ),
     );
@@ -215,7 +223,10 @@ class ObjectSettingsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(async.value?.summary.labelPlural ?? 'Object'),
+        title: Text(
+          async.value?.summary.labelPlural ??
+              context.l10n.settingsObjectSettingsTitleFallback,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -228,12 +239,12 @@ class ObjectSettingsScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Could not load this object'),
+                Text(context.l10n.settingsObjectSettingsLoadError),
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: () =>
                       ref.invalidate(objectSettingsProvider(objectKey)),
-                  child: const Text('Try again'),
+                  child: Text(context.l10n.settingsObjectsTryAgain),
                 ),
               ],
             ),
@@ -266,22 +277,22 @@ class ObjectSettingsScreen extends ConsumerWidget {
                   actions: [
                     if (canWrite)
                       _action(
-                        'Edit object',
+                        context.l10n.settingsObjectSettingsEditObject,
                         () => _editObject(context, ref, summary),
                       ),
                     if (isAdmin && summary.isActive)
                       _action(
-                        'Archive',
+                        context.l10n.settingsObjectSettingsArchive,
                         () => _setActive(context, ref, summary, false),
                         danger: true,
                       ),
                     if (isAdmin && !summary.isActive) ...[
                       _action(
-                        'Restore',
+                        context.l10n.settingsObjectSettingsRestore,
                         () => _setActive(context, ref, summary, true),
                       ),
                       _action(
-                        'Delete for good',
+                        context.l10n.settingsObjectSettingsDeleteForGood,
                         () => _destroy(context, ref, summary),
                         danger: true,
                       ),
@@ -294,7 +305,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'FIELDS',
+                          context.l10n.settingsObjectSettingsFieldsHeader,
                           style: AppTypography.overline.copyWith(
                             color: AppColors.textSecondary,
                             letterSpacing: 1.2,
@@ -308,7 +319,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
                             onPressed: () =>
                                 _editField(context, ref, null, targets),
                             icon: const Icon(LucideIcons.plus, size: 16),
-                            label: const Text('Add field'),
+                            label: Text(context.l10n.settingsObjectsAddField),
                           ),
                         ),
                     ],
@@ -318,8 +329,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'No fields yet. Fields are what each record holds, such '
-                      'as a price, a date or a link to a contact.',
+                      context.l10n.settingsObjectSettingsFieldsEmpty,
                       style: AppTypography.body.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -367,7 +377,7 @@ class _LoadFailed extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
-            child: const Text('Retry'),
+            child: Text(context.l10n.commonRetry),
           ),
         ],
       ),
@@ -405,6 +415,7 @@ class _Details extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       color: AppColors.surface,
       margin: const EdgeInsets.only(top: 16),
@@ -412,20 +423,23 @@ class _Details extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _line('Name', '${summary.label} / ${summary.labelPlural}'),
-          _line('Key', summary.key),
-          _line("Each record's name is called", summary.nameLabel),
+          _line(l10n.commonName, '${summary.label} / ${summary.labelPlural}'),
+          _line(l10n.settingsObjectsKey, summary.key),
+          _line(l10n.settingsObjectSettingsNameCalled, summary.nameLabel),
           _line(
-            'Who can see its records',
+            l10n.settingsObjectsAccessLabel,
             summary.recordAccess == 'everyone'
-                ? 'Everyone in this organization'
-                : 'Only the people involved',
+                ? l10n.settingsObjectsAccessEveryone
+                : l10n.settingsObjectsAccessOwn,
           ),
           if (summary.description.isNotEmpty)
-            _line('Description', summary.description),
+            _line(l10n.commonDescription, summary.description),
           if (!summary.isActive) ...[
             const SizedBox(height: 10),
-            StatusBadge(label: 'Archived', color: AppColors.gray500),
+            StatusBadge(
+              label: l10n.settingsObjectsArchived,
+              color: AppColors.gray500,
+            ),
           ],
           if (actions.isNotEmpty) ...[
             const SizedBox(height: 14),
@@ -472,12 +486,15 @@ class _FieldRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final type = objectFieldTypeLabels[field.fieldType] ?? field.fieldType;
+    final target = linkTargetLabel(targets, field.target);
     final detail = [
       type,
       if (field.isLink)
-        '${linkTargetLabel(targets, field.target)}, '
-            '${field.many == true ? 'several' : 'one'}',
+        field.many == true
+            ? l10n.settingsObjectSettingsLinkSeveral(target)
+            : l10n.settingsObjectSettingsLinkOne(target),
       if (field.options.isNotEmpty)
         field.options.map((o) => o.label).join(', '),
     ].join(' · ');
@@ -502,9 +519,15 @@ class _FieldRow extends StatelessWidget {
                 ),
               ),
               if (!field.isActive)
-                StatusBadge(label: 'Turned off', color: AppColors.gray500)
+                StatusBadge(
+                  label: l10n.settingsObjectSettingsTurnedOff,
+                  color: AppColors.gray500,
+                )
               else if (field.isRequired)
-                StatusBadge(label: 'Required', color: AppColors.primary600),
+                StatusBadge(
+                  label: l10n.settingsObjectsRequired,
+                  color: AppColors.primary600,
+                ),
             ],
           ),
           Text(
@@ -531,7 +554,7 @@ class _FieldRow extends StatelessWidget {
                   height: 44,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -543,7 +566,11 @@ class _FieldRow extends StatelessWidget {
                             foregroundColor: AppColors.danger600,
                           )
                         : null,
-                    child: Text(field.isActive ? 'Turn off' : 'Turn on'),
+                    child: Text(
+                      field.isActive
+                          ? l10n.settingsObjectSettingsTurnOff
+                          : l10n.settingsObjectSettingsTurnOn,
+                    ),
                   ),
                 ),
               ],

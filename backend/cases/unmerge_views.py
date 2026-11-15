@@ -15,6 +15,7 @@ from __future__ import annotations
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.utils.dateparse import parse_date
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -55,13 +56,16 @@ class CaseUnmergeView(APIView):
             # A ticket the caller may not open answers as a missing one does.
             if source is None or not has_case_read_access(request.profile, source):
                 return Response(
-                    {"error": True, "errors": "Ticket not found."},
+                    {"error": True, "errors": _("Ticket not found.")},
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
             if source.merged_into_id is None:
                 return Response(
-                    {"error": True, "errors": "This ticket is not currently merged."},
+                    {
+                        "error": True,
+                        "errors": _("This ticket is not currently merged."),
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -70,7 +74,7 @@ class CaseUnmergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": (
+                        "errors": _(
                             "Unmerge metadata is missing for this ticket (it "
                             "was merged before unmerge tracking was added). "
                             "Please restore manually."
@@ -87,7 +91,7 @@ class CaseUnmergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": "Target ticket no longer exists; cannot unmerge.",
+                        "errors": _("Target ticket no longer exists; cannot unmerge."),
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -96,7 +100,7 @@ class CaseUnmergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": (
+                        "errors": _(
                             "You must be an admin, or the creator of both "
                             "tickets, to unmerge them."
                         ),
@@ -187,7 +191,7 @@ class CaseUnmergeView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Tickets unmerged",
+                "message": _("Tickets unmerged"),
                 "source_case": CaseSerializer(
                     source, context=parent_access_context(request.profile, [source])
                 ).data,

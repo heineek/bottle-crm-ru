@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/attachment.dart';
 
@@ -105,10 +106,13 @@ class AttachmentTile extends StatelessWidget {
 
   static String _formatRelative(DateTime dt) {
     final d = DateTime.now().difference(dt);
-    if (d.inDays > 30) return '${(d.inDays / 30).floor()}mo ago';
-    if (d.inDays > 0) return '${d.inDays}d ago';
-    if (d.inHours > 0) return '${d.inHours}h ago';
-    if (d.inMinutes > 0) return '${d.inMinutes}m ago';
-    return 'just now';
+    final l10n = appL10n;
+    if (d.inDays > 30) {
+      return l10n.appRelativeMonthsAgo((d.inDays / 30).floor());
+    }
+    if (d.inDays > 0) return l10n.appRelativeDaysAgo(d.inDays);
+    if (d.inHours > 0) return l10n.appRelativeHoursAgo(d.inHours);
+    if (d.inMinutes > 0) return l10n.appRelativeMinutesAgo(d.inMinutes);
+    return l10n.appRelativeJustNowLower;
   }
 }

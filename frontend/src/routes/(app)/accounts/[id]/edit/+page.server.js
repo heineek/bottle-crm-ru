@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, getAccountForEdit, updateAccount } from '#lib/server/v2/accounts.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies, params }) {
@@ -37,7 +38,7 @@ export const actions = {
     try {
       await updateAccount({ cookies }, params.id, values);
     } catch (/** @type {any} */ err) {
-      return fail(400, { values, error: readableError(err, 'Could not save this account.') });
+      return fail(400, { values, error: readableError(err, m.accounts_edit_failed()) });
     }
 
     redirect(303, `/accounts/${params.id}`);

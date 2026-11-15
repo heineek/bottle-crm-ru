@@ -5,11 +5,21 @@
  */
 import { MODULE_KEYS, isOn } from '#lib/v2/modules.js';
 import { t } from '#lib/terminology.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * @typedef {{ href: string, label: string, icon: string, count?: string, exact?: boolean }} NavItem
  * @typedef {import('#lib/v2/modules.js').ModuleRow} ModuleRow
  */
+
+// Labels are functions so each request reads its own locale. A group's
+// `label` below is its code; the heading comes from GROUP_LABEL.
+const GROUP_LABEL = {
+  Sell: () => m.app_nav_group_sell(),
+  Serve: () => m.app_nav_group_serve(),
+  Bill: () => m.app_nav_group_bill(),
+  Run: () => m.app_nav_group_run()
+};
 
 /** Sidebar item for each module, with the group it sits in. */
 const MODULE_ITEMS = {
@@ -17,7 +27,7 @@ const MODULE_ITEMS = {
     group: 'Sell',
     item: {
       href: '/pipeline',
-      label: 'Pipeline',
+      label: () => m.app_nav_pipeline(),
       icon: 'Columns3',
       count: 'pipeline',
       termKey: 'opportunity.plural'
@@ -25,33 +35,48 @@ const MODULE_ITEMS = {
   },
   leads: {
     group: 'Sell',
-    item: { href: '/leads', label: 'Leads', icon: 'Target', count: 'leads', termKey: 'lead.plural' }
+    item: {
+      href: '/leads',
+      label: () => m.app_nav_leads(),
+      icon: 'Target',
+      count: 'leads',
+      termKey: 'lead.plural'
+    }
   },
-  goals: { group: 'Sell', item: { href: '/goals', label: 'Goals', icon: 'Trophy' } },
+  goals: {
+    group: 'Sell',
+    item: { href: '/goals', label: () => m.app_nav_goals(), icon: 'Trophy' }
+  },
   tasks: {
     group: 'Serve',
-    item: { href: '/tasks', label: 'Tasks', icon: 'CircleCheck', count: 'tasks' }
+    item: { href: '/tasks', label: () => m.app_nav_tasks(), icon: 'CircleCheck', count: 'tasks' }
   },
   tickets: {
     group: 'Serve',
-    item: { href: '/tickets', label: 'Tickets', icon: 'LifeBuoy', count: 'tickets' }
+    item: { href: '/tickets', label: () => m.app_nav_tickets(), icon: 'LifeBuoy', count: 'tickets' }
   },
   knowledge_base: {
     group: 'Serve',
-    item: { href: '/solutions', label: 'Knowledge base', icon: 'BookOpen' }
+    item: { href: '/solutions', label: () => m.app_nav_knowledge_base(), icon: 'BookOpen' }
   },
-  documents: { group: 'Serve', item: { href: '/documents', label: 'Documents', icon: 'FileText' } },
+  documents: {
+    group: 'Serve',
+    item: { href: '/documents', label: () => m.app_nav_documents(), icon: 'FileText' }
+  },
   invoices: {
     group: 'Bill',
     item: {
       href: '/invoices',
-      label: 'Invoices',
+      label: () => m.app_nav_invoices(),
       icon: 'Receipt',
       count: 'invoices',
       termKey: 'invoice.plural'
     }
   },
-  timesheet: { group: 'Bill', item: { href: '/timesheet', label: 'Timesheet', icon: 'Clock' } }
+  timesheet: {
+    group: 'Bill',
+    item: { href: '/timesheet', label: () => m.app_nav_timesheet(), icon: 'Clock' }
+  }
 };
 
 /**
@@ -87,10 +112,20 @@ export function sidebarGroups(modules, { isAdmin = false, terminology = undefine
     {
       label: 'Sell',
       items: [
-        { href: '/', label: 'Today', icon: 'Sun', exact: true },
+        { href: '/', label: () => m.app_nav_today(), icon: 'Sun', exact: true },
         ...moduleItems('Sell'),
-        { href: '/accounts', label: 'Accounts', icon: 'Building2', termKey: 'account.plural' },
-        { href: '/contacts', label: 'Contacts', icon: 'Users', termKey: 'contact.plural' }
+        {
+          href: '/accounts',
+          label: () => m.app_nav_accounts(),
+          icon: 'Building2',
+          termKey: 'account.plural'
+        },
+        {
+          href: '/contacts',
+          label: () => m.app_nav_contacts(),
+          icon: 'Users',
+          termKey: 'contact.plural'
+        }
       ]
     },
     { label: 'Serve', items: moduleItems('Serve') },
@@ -98,20 +133,21 @@ export function sidebarGroups(modules, { isAdmin = false, terminology = undefine
     {
       label: 'Run',
       items: [
-        { href: '/team', label: 'Team and access', icon: 'UserCog', admin: true },
-        { href: '/settings', label: 'Settings', icon: 'SlidersHorizontal' }
+        { href: '/team', label: () => m.app_nav_team(), icon: 'UserCog', admin: true },
+        { href: '/settings', label: () => m.common_settings(), icon: 'SlidersHorizontal' }
       ]
     }
   ];
 
   return groups
     .map((group) => ({
-      label: group.label,
+      label: GROUP_LABEL[/** @type {keyof typeof GROUP_LABEL} */ (group.label)](),
       items: group.items
         .filter((item) => isAdmin || !('admin' in item && item.admin))
         .map((item) => {
           const { termKey, admin: _admin, ...rest } = /** @type {any} */ (item);
-          return termKey ? { ...rest, label: t(terminology, termKey, rest.label) } : rest;
+          const label = rest.label();
+          return { ...rest, label: termKey ? t(terminology, termKey, label) : label };
         })
     }))
     .filter((group) => group.items.length > 0);
@@ -122,20 +158,26 @@ const TAB_CANDIDATES = [
   {
     key: 'deals',
     href: '/pipeline',
-    label: 'Pipeline',
+    label: () => m.app_nav_pipeline(),
     icon: 'Columns3',
     termKey: 'opportunity.plural'
   },
-  { key: 'tickets', href: '/tickets', label: 'Tickets', icon: 'LifeBuoy' },
+  { key: 'tickets', href: '/tickets', label: () => m.app_nav_tickets(), icon: 'LifeBuoy' },
   {
     key: 'invoices',
     href: '/invoices',
-    label: 'Invoices',
+    label: () => m.app_nav_invoices(),
     icon: 'Receipt',
     termKey: 'invoice.plural'
   },
-  { key: 'leads', href: '/leads', label: 'Leads', icon: 'Target', termKey: 'lead.plural' },
-  { key: 'tasks', href: '/tasks', label: 'Tasks', icon: 'CircleCheck' }
+  {
+    key: 'leads',
+    href: '/leads',
+    label: () => m.app_nav_leads(),
+    icon: 'Target',
+    termKey: 'lead.plural'
+  },
+  { key: 'tasks', href: '/tasks', label: () => m.app_nav_tasks(), icon: 'CircleCheck' }
 ];
 
 /**
@@ -150,17 +192,17 @@ export function tabBar(modules, terminology) {
     .slice(0, 3)
     .map(({ href, label, icon, termKey }) => ({
       href,
-      label: termKey ? t(terminology, termKey, label) : label,
+      label: termKey ? t(terminology, termKey, label()) : label(),
       icon
     }));
-  return [{ href: '/', label: 'Today', icon: 'Sun', exact: true }, ...rest];
+  return [{ href: '/', label: m.app_nav_today(), icon: 'Sun', exact: true }, ...rest];
 }
 
 const FAB_CANDIDATES = [
-  { key: 'deals', href: '/pipeline/new', label: 'New deal', icon: 'Plus' },
-  { key: 'tickets', href: '/tickets/new', label: 'New ticket', icon: 'Plus' },
-  { key: 'leads', href: '/leads/new', label: 'New lead', icon: 'Plus' },
-  { key: 'tasks', href: '/tasks/new', label: 'New task', icon: 'Plus' }
+  { key: 'deals', href: '/pipeline/new', label: () => m.app_nav_new_deal(), icon: 'Plus' },
+  { key: 'tickets', href: '/tickets/new', label: () => m.app_nav_new_ticket(), icon: 'Plus' },
+  { key: 'leads', href: '/leads/new', label: () => m.app_nav_new_lead(), icon: 'Plus' },
+  { key: 'tasks', href: '/tasks/new', label: () => m.app_nav_new_task(), icon: 'Plus' }
 ];
 
 /**
@@ -171,7 +213,7 @@ const FAB_CANDIDATES = [
  */
 export function fabAction(modules) {
   const hit = FAB_CANDIDATES.find((c) => isOn(modules, c.key));
-  return hit ? { href: hit.href, label: hit.label, icon: hit.icon } : null;
+  return hit ? { href: hit.href, label: hit.label(), icon: hit.icon } : null;
 }
 
 /**
@@ -184,16 +226,23 @@ export function paletteActions(modules) {
     {
       module: 'deals',
       id: 'act-deal',
-      title: 'New deal',
-      meta: 'Pipeline',
+      title: m.app_nav_new_deal(),
+      meta: m.app_nav_pipeline(),
       href: '/pipeline/new',
       icon: 'Plus'
     },
-    { module: null, id: 'act-today', title: 'Go to Today', meta: '', href: '/', icon: 'Columns3' },
+    {
+      module: null,
+      id: 'act-today',
+      title: m.app_palette_go_today(),
+      meta: '',
+      href: '/',
+      icon: 'Columns3'
+    },
     {
       module: 'tasks',
       id: 'act-tasks',
-      title: 'Go to Tasks',
+      title: m.app_palette_go_tasks(),
       meta: '',
       href: '/tasks',
       icon: 'Columns3'
@@ -201,7 +250,7 @@ export function paletteActions(modules) {
     {
       module: 'invoices',
       id: 'act-invoices',
-      title: 'Go to Invoices',
+      title: m.app_palette_go_invoices(),
       meta: '',
       href: '/invoices',
       icon: 'Receipt'
@@ -218,13 +267,13 @@ export function paletteActions(modules) {
  */
 export function searchPlaceholder(modules) {
   const words = [
-    isOn(modules, 'deals') && 'deals',
-    'accounts',
-    'people',
-    isOn(modules, 'tickets') && 'tickets',
-    isOn(modules, 'invoices') && 'invoices'
+    isOn(modules, 'deals') && m.app_palette_word_deals(),
+    m.app_palette_word_accounts(),
+    m.app_palette_word_people(),
+    isOn(modules, 'tickets') && m.app_palette_word_tickets(),
+    isOn(modules, 'invoices') && m.app_palette_word_invoices()
   ].filter(Boolean);
-  return `Search ${words.join(', ')}…`;
+  return m.app_palette_search_placeholder({ list: words.join(', ') });
 }
 
 /**
@@ -233,11 +282,10 @@ export function searchPlaceholder(modules) {
  * @returns {string}
  */
 export function noHitsText(query, modules) {
-  const tries = [
-    'an account name',
-    isOn(modules, 'deals') && 'a deal',
-    isOn(modules, 'invoices') && 'an invoice number'
-  ].filter(Boolean);
-  const list = tries.length === 3 ? `${tries[0]}, ${tries[1]}, or ${tries[2]}` : tries.join(' or ');
-  return `Nothing matches “${query}”. Try ${list}.`;
+  const deals = isOn(modules, 'deals');
+  const invoices = isOn(modules, 'invoices');
+  if (deals && invoices) return m.app_palette_no_hits_all({ query });
+  if (deals) return m.app_palette_no_hits_deals({ query });
+  if (invoices) return m.app_palette_no_hits_invoices({ query });
+  return m.app_palette_no_hits({ query });
 }

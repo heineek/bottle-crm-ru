@@ -37,6 +37,7 @@
  * people rows need it to show who is on what.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Profile.role is ADMIN | USER, the only two the backend recognises. There is
@@ -85,7 +86,7 @@ function toMember(p, teamsByProfile, viewerId) {
   return {
     id: p.id,
     user_id: details.id,
-    name: details.name || details.email || 'Unnamed',
+    name: details.name || details.email || m.team_unnamed(),
     email: details.email,
     role: p.role,
     is_active: p.is_active,

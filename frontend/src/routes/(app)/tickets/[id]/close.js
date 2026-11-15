@@ -26,20 +26,11 @@
  *   closed child is still cascaded.
  */
 
-import { RESTRICTED_TICKET_NAME } from '#lib/v2/enums.js';
+import { restrictedTicketName } from '#lib/v2/enums.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** Statuses a cascading close leaves alone: already closed, or merged away. */
 const NOT_OPEN = ['Closed', 'Duplicate'];
-
-/**
- * What a ticket the viewer may not open is called in the list.
- *
- * `/tree/` redacts such a node to `{ id, name: null, restricted: true, status,
- * is_active }`: kept, so the count and the shape stay true, but nameless. The
- * close refuses the whole cascade when one of these would be closed, so the
- * list should say plainly that it is there.
- */
-export const RESTRICTED_NAME = RESTRICTED_TICKET_NAME;
 
 /**
  * The node for `id` inside the tree, or null.
@@ -78,7 +69,7 @@ export function openDescendants(root, id) {
       if (!NOT_OPEN.includes(child.status) && child.is_active !== false) {
         out.push({
           id: child.id,
-          name: child.restricted ? RESTRICTED_NAME : child.name,
+          name: child.restricted ? restrictedTicketName() : child.name,
           status: child.status,
           restricted: Boolean(child.restricted)
         });
@@ -119,14 +110,10 @@ export function subtreeTruncated(root, id) {
  * @param {{ count: number, truncated?: boolean }} args
  */
 export function cascadeSummary({ count, truncated = false }) {
-  if (count === 0) {
-    return 'Nothing linked to this ticket is still open, so closing it changes nothing else.';
-  }
-  const noun = count === 1 ? 'ticket' : 'tickets';
-  const tail = truncated
-    ? ' There may be more further down than are listed here, and those close too.'
-    : '';
-  return `${count} linked ${noun} ${count === 1 ? 'is' : 'are'} still open and will be closed with it.${tail}`;
+  if (count === 0) return m.tickets_detail_cascade_none();
+  return truncated
+    ? m.tickets_detail_cascade_open_truncated({ count })
+    : m.tickets_detail_cascade_open({ count });
 }
 
 /**
@@ -139,12 +126,9 @@ export function cascadeSummary({ count, truncated = false }) {
  * @param {{ cascade: boolean, cascaded: number }} args
  */
 export function closeResultMessage({ cascade, cascaded }) {
-  if (!cascade) return 'Ticket closed.';
-  if (cascaded === 0) {
-    return 'Ticket closed. Nothing linked was open, so nothing else changed.';
-  }
-  const noun = cascaded === 1 ? 'ticket' : 'tickets';
-  return `Ticket closed, and ${cascaded} linked ${noun} with it.`;
+  if (!cascade) return m.tickets_detail_closed();
+  if (cascaded === 0) return m.tickets_detail_closed_nothing_linked();
+  return m.tickets_detail_closed_cascaded({ count: cascaded });
 }
 
 /**

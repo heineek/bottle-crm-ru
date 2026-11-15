@@ -17,6 +17,8 @@ import re
 from datetime import timedelta
 from datetime import timezone as dt_timezone
 
+from django.utils.translation import gettext_lazy
+
 CRLF = "\r\n"
 
 # RFC 5545 3.1: "Lines of text SHOULD NOT be longer than 75 octets, excluding
@@ -24,7 +26,7 @@ CRLF = "\r\n"
 FOLD_OCTETS = 75
 
 PRODID = "-//BottleCRM//Task calendar feed//EN"
-CALENDAR_NAME = "BottleCRM tasks"
+CALENDAR_NAME = gettext_lazy("BottleCRM tasks")
 
 # Every control character except HTAB is illegal in a TEXT value (RFC 5545
 # 3.3.11). Line breaks are turned into the `\n` escape before this runs.
@@ -78,7 +80,7 @@ def render_calendar(events):
         f"PRODID:{PRODID}",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        f"X-WR-CALNAME:{escape_text(CALENDAR_NAME)}",
+        f"X-WR-CALNAME:{escape_text(str(CALENDAR_NAME))}",
     ]
     for event in events:
         day = event["date"]

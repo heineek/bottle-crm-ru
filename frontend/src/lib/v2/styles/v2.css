@@ -11,7 +11,7 @@
 
    WHERE THE NUMBERS COME FROM
    Colour is this file's own (the Ember palette). Every metric and every type
-   size below is taken from docs/design/clearing-reference.html, which is the
+   size below is taken from docs/EN/design/clearing-reference.html, which is the
    agreed reference for layout and type. That reference is built on a 14.4px
    base and derives most sizes from it, so --v2-fs is a real variable here and
    sizes are written as calc() against it, same as the mocks.

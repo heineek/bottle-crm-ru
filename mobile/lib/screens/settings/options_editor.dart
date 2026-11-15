@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 
 /// One dropdown option being edited.
 ///
@@ -34,12 +35,12 @@ class OptionsEditor extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Options',
+          context.l10n.settingsOptionsEditorTitle,
           style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
-          'Renaming an option keeps the records that already use it.',
+          context.l10n.settingsOptionsEditorHint,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 8),
@@ -54,14 +55,16 @@ class OptionsEditor extends StatelessWidget {
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText: 'Option ${i + 1}',
+                      hintText: context.l10n.settingsOptionsEditorPlaceholder(
+                        i + 1,
+                      ),
                       border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => onRemove(i),
-                  tooltip: 'Remove option',
+                  tooltip: context.l10n.settingsOptionsEditorRemove,
                   icon: Icon(
                     LucideIcons.x,
                     size: 18,
@@ -76,7 +79,7 @@ class OptionsEditor extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onAdd,
             icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add option'),
+            label: Text(context.l10n.settingsOptionsEditorAdd),
           ),
         ),
       ],

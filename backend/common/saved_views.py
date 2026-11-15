@@ -26,6 +26,7 @@ import re
 
 from django.db import IntegrityError, transaction
 from django.http import QueryDict
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from accounts.views import account_list_queryset
@@ -188,10 +189,10 @@ def _clean_filters(module, value):
     a parameter left with nothing is dropped with them.
     """
     if not isinstance(value, dict):
-        raise serializers.ValidationError("Send the filters as an object.")
+        raise serializers.ValidationError(_("Send the filters as an object."))
     if len(value) > MAX_PARAMS:
         raise serializers.ValidationError(
-            f"A view can hold at most {MAX_PARAMS} filters."
+            _("A view can hold at most %(max)d filters.") % {"max": MAX_PARAMS}
         )
     accepted = LISTS[module][1]
     unknown = sorted(
@@ -202,21 +203,26 @@ def _clean_filters(module, value):
     )
     if unknown:
         raise serializers.ValidationError(
-            f"This list does not filter by: {', '.join(unknown[:5])}."
+            _("This list does not filter by: %(params)s.")
+            % {"params": ", ".join(unknown[:5])}
         )
     cleaned = {}
     for key, raw in value.items():
         values = raw if isinstance(raw, list) else [raw]
         if not all(isinstance(v, str) for v in values):
-            raise serializers.ValidationError(f"{key}: every value must be text.")
+            raise serializers.ValidationError(
+                _("%(param)s: every value must be text.") % {"param": key}
+            )
         values = [v.strip() for v in values if v.strip()]
         if len(values) > MAX_VALUES_PER_PARAM:
             raise serializers.ValidationError(
-                f"{key}: at most {MAX_VALUES_PER_PARAM} values."
+                _("%(param)s: at most %(max)d values.")
+                % {"param": key, "max": MAX_VALUES_PER_PARAM}
             )
         if any(len(v) > MAX_VALUE_LENGTH for v in values):
             raise serializers.ValidationError(
-                f"{key}: a value can be at most {MAX_VALUE_LENGTH} characters."
+                _("%(param)s: a value can be at most %(max)d characters.")
+                % {"param": key, "max": MAX_VALUE_LENGTH}
             )
         if values:
             cleaned[key] = values
@@ -263,19 +269,21 @@ class SavedViewSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Give the view a name.")
+            raise serializers.ValidationError(_("Give the view a name."))
         return value
 
     def validate(self, attrs):
         for field in ("org", "profile"):
             if field in self.initial_data:
-                raise serializers.ValidationError({field: "This is set by the server."})
+                raise serializers.ValidationError(
+                    {field: _("This is set by the server.")}
+                )
         instance = self.instance
         if instance is not None and attrs.get("module", instance.module) != (
             instance.module
         ):
             raise serializers.ValidationError(
-                {"module": "A saved view cannot move to another list."}
+                {"module": _("A saved view cannot move to another list.")}
             )
         module = attrs.get("module") or instance.module
         if instance is None and module in off_lists(
@@ -304,12 +312,13 @@ class SavedViewSerializer(serializers.ModelSerializer):
             mine = mine.exclude(pk=instance.pk)
         elif mine.count() >= MAX_VIEWS_PER_LIST:
             raise serializers.ValidationError(
-                f"You can save at most {MAX_VIEWS_PER_LIST} views for one list."
+                _("You can save at most %(max)d views for one list.")
+                % {"max": MAX_VIEWS_PER_LIST}
             )
         name = attrs.get("name")
         if name is not None and mine.filter(name__iexact=name).exists():
             raise serializers.ValidationError(
-                {"name": "You already have a view with this name for this list."}
+                {"name": _("You already have a view with this name for this list.")}
             )
         return attrs
 
@@ -321,5 +330,5 @@ class SavedViewSerializer(serializers.ModelSerializer):
                 return super().save(**kwargs)
         except IntegrityError:
             raise serializers.ValidationError(
-                {"name": "You already have a view with this name for this list."}
+                {"name": _("You already have a view with this name for this list.")}
             ) from None

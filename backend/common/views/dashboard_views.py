@@ -2,7 +2,9 @@ from datetime import timedelta
 
 from django.db.models import Count, DecimalField, F, Q, Sum
 from django.db.models.functions import Coalesce
-from django.utils import timezone
+from django.utils import dateformat, timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext, pgettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -90,8 +92,12 @@ def _fmt_money(amount, currency):
 
 
 def _fmt_date(d):
-    """'Jul 5'. Portable (avoids the platform-specific %-d)."""
-    return f"{d:%b} {d.day}"
+    """'Jul 5', in the active language's order and month names."""
+    return dateformat.format(d, pgettext("short date: month day", "M j"))
+
+
+def _weekday(d):
+    return dateformat.format(d, "D")
 
 
 def _readable(queryset, visible):
@@ -558,10 +564,16 @@ class ApiTodayView(APIView):
                     "_rank": 0 if breached else 3,
                     "id": f"case-{c.id}",
                     "tone": "rust" if (hot or breached) else "clay",
-                    "due": "Overdue" if breached else "Today",
+                    "due": pgettext("today queue", "Overdue")
+                    if breached
+                    else pgettext("today queue", "Today"),
                     "title": c.name,
-                    "detail": f"{c.priority} · {c.account.name if c.account_id else 'No account'} · awaiting first reply",
-                    "action": "Reply",
+                    "detail": _("%(priority)s · %(account)s · awaiting first reply")
+                    % {
+                        "priority": c.get_priority_display(),
+                        "account": c.account.name if c.account_id else _("No account"),
+                    },
+                    "action": pgettext("today queue", "Reply"),
                     "href": f"/tickets/{c.id}",
                 }
             )
@@ -575,10 +587,17 @@ class ApiTodayView(APIView):
                     "_rank": 1,
                     "id": f"invoice-{inv.id}",
                     "tone": "clay",
-                    "due": "Overdue",
+                    "due": pgettext("today queue", "Overdue"),
                     "title": inv.invoice_title or inv.invoice_number,
-                    "detail": f"{_fmt_money(inv.total_amount, inv.currency)} · {inv.account.name if inv.account_id else 'No account'} · due {_fmt_date(inv.due_date)}",
-                    "action": "Send a reminder",
+                    "detail": _("%(amount)s · %(account)s · due %(date)s")
+                    % {
+                        "amount": _fmt_money(inv.total_amount, inv.currency),
+                        "account": (
+                            inv.account.name if inv.account_id else _("No account")
+                        ),
+                        "date": _fmt_date(inv.due_date),
+                    },
+                    "action": _("Send a reminder"),
                     "href": f"/invoices/{inv.id}",
                 }
             )
@@ -596,10 +615,20 @@ class ApiTodayView(APIView):
                     "_rank": 2 if rotten else 6,
                     "id": f"deal-{opp.id}",
                     "tone": "rust" if rotten else "clay",
-                    "due": "Stalled" if rotten else "Aging",
+                    "due": _("Stalled") if rotten else _("Aging"),
                     "title": opp.name,
-                    "detail": f"No movement for {days} days · {_fmt_money(opp.amount, opp.currency)} · {stage_label(opp)}",
-                    "action": "Open the deal",
+                    # English says "days" for every count, as it always has.
+                    "detail": ngettext(
+                        "No movement for %(days)d days · %(amount)s · %(stage)s",
+                        "No movement for %(days)d days · %(amount)s · %(stage)s",
+                        days,
+                    )
+                    % {
+                        "days": days,
+                        "amount": _fmt_money(opp.amount, opp.currency),
+                        "stage": stage_label(opp),
+                    },
+                    "action": _("Open the deal"),
                     "href": f"/pipeline/{opp.id}",
                 }
             )
@@ -612,14 +641,20 @@ class ApiTodayView(APIView):
                     "_rank": 4 if overdue else 5,
                     "id": f"task-{t.id}",
                     "tone": "clay" if overdue else "slate",
-                    "due": "Overdue" if overdue else "Today",
+                    "due": pgettext("today queue", "Overdue")
+                    if overdue
+                    else pgettext("today queue", "Today"),
                     "title": t.title,
                     "detail": (
-                        f"Due {_fmt_date(t.due_date)} · {t.priority}"
+                        _("Due %(date)s · %(priority)s")
+                        % {
+                            "date": _fmt_date(t.due_date),
+                            "priority": t.get_priority_display(),
+                        }
                         if t.due_date
-                        else t.priority
+                        else t.get_priority_display()
                     ),
-                    "action": "Open the task",
+                    "action": _("Open the task"),
                     "href": f"/tasks/{t.id}",
                 }
             )
@@ -637,19 +672,41 @@ class ApiTodayView(APIView):
         # neither its true total nor its visible one. Count each source instead,
         # and hand the page a per-source breakdown so the overflow has somewhere
         # to go. The hrefs are literals built here, never stored values.
+        # Clients print "<count> <label>", so the label agrees with the count.
+        # English keeps the plural for every count, as it always has.
+        counts = {
+            "tickets": awaiting_cases.count(),
+            "invoices": invoices.count(),
+            "deals": quiet_deals,
+            "tasks": tasks.count(),
+        }
         sources = [
             {
-                "label": "tickets awaiting a reply",
-                "count": awaiting_cases.count(),
+                "label": ngettext(
+                    "tickets awaiting a reply",
+                    "tickets awaiting a reply",
+                    counts["tickets"],
+                ),
+                "count": counts["tickets"],
                 "href": "/tickets",
             },
             {
-                "label": "overdue invoices",
-                "count": invoices.count(),
+                "label": ngettext(
+                    "overdue invoices", "overdue invoices", counts["invoices"]
+                ),
+                "count": counts["invoices"],
                 "href": "/invoices",
             },
-            {"label": "quiet deals", "count": quiet_deals, "href": "/pipeline"},
-            {"label": "tasks due", "count": tasks.count(), "href": "/tasks"},
+            {
+                "label": ngettext("quiet deals", "quiet deals", counts["deals"]),
+                "count": counts["deals"],
+                "href": "/pipeline",
+            },
+            {
+                "label": ngettext("tasks due", "tasks due", counts["tasks"]),
+                "count": counts["tasks"],
+                "href": "/tasks",
+            },
         ]
         sources = [s for s in sources if s["count"]]
         total_urgent = sum(s["count"] for s in sources)
@@ -730,9 +787,10 @@ class ApiTodayView(APIView):
                     t.due_date,
                     {
                         "id": f"task-{t.id}",
-                        "day": t.due_date.strftime("%a"),
+                        "day": _weekday(t.due_date),
                         "title": t.title,
-                        "meta": f"Task · {t.priority}",
+                        "meta": _("Task · %(priority)s")
+                        % {"priority": t.get_priority_display()},
                     },
                 )
             )
@@ -742,8 +800,8 @@ class ApiTodayView(APIView):
                     o.closed_on,
                     {
                         "id": f"deal-{o.id}",
-                        "day": o.closed_on.strftime("%a"),
-                        "title": f"{o.name} expected to close",
+                        "day": _weekday(o.closed_on),
+                        "title": _("%(name)s expected to close") % {"name": o.name},
                         "meta": f"{stage_label(o)} · {_fmt_money(o.amount, o.currency)}",
                     },
                 )
@@ -754,8 +812,9 @@ class ApiTodayView(APIView):
                     inv.due_date,
                     {
                         "id": f"invoice-{inv.id}",
-                        "day": inv.due_date.strftime("%a"),
-                        "title": f"{inv.invoice_title or inv.invoice_number} due",
+                        "day": _weekday(inv.due_date),
+                        "title": _("%(title)s due")
+                        % {"title": inv.invoice_title or inv.invoice_number},
                         "meta": _fmt_money(inv.total_amount, inv.currency),
                     },
                 )

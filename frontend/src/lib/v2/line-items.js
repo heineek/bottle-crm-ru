@@ -10,6 +10,8 @@
  * the two ever disagree, the server is right and this file has a bug.
  */
 
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * A line as the builders edit it. A line started from a deal also carries the
  * deal line's discount (`discount_type`, `discount_value`); a typed line has
@@ -131,8 +133,8 @@ const cents = (v) => Math.round(v * 100) / 100;
  */
 function discountError(type, value, cap, capMessage) {
   const v = num(value);
-  if (v < 0) return 'A discount cannot be negative.';
-  if (type === 'PERCENTAGE') return v > 100 ? 'A percentage discount cannot exceed 100.' : '';
+  if (v < 0) return m.invoices_discount_negative();
+  if (type === 'PERCENTAGE') return v > 100 ? m.invoices_discount_percent_max() : '';
   return v > cents(cap) ? capMessage : '';
 }
 
@@ -145,7 +147,7 @@ function discountError(type, value, cap, capMessage) {
  * @param {number} subtotal
  */
 export const documentDiscountError = (type, value, subtotal) =>
-  type ? discountError(type, value, subtotal, 'A discount cannot exceed the subtotal.') : '';
+  type ? discountError(type, value, subtotal, m.invoices_discount_over_subtotal()) : '';
 
 /**
  * A line's own discount against its gross. A line only carries one from the
@@ -160,7 +162,7 @@ export const lineDiscountError = (line) =>
         line.discount_type ?? '',
         line.discount_value,
         num(line.quantity) * num(line.unit_price),
-        "A discount cannot exceed the line's amount."
+        m.invoices_discount_over_line()
       )
     : '';
 
@@ -172,9 +174,9 @@ export const lineDiscountError = (line) =>
  */
 export function taxRateError(value) {
   const v = num(value);
-  if (v < 0) return 'Tax rate cannot be negative.';
-  return v > 100 ? 'Tax rate cannot exceed 100.' : '';
+  if (v < 0) return m.invoices_tax_rate_negative();
+  return v > 100 ? m.invoices_tax_rate_max() : '';
 }
 
 /** @param {any} value */
-export const shippingError = (value) => (num(value) < 0 ? 'Shipping cannot be negative.' : '');
+export const shippingError = (value) => (num(value) < 0 ? m.invoices_shipping_negative() : '');

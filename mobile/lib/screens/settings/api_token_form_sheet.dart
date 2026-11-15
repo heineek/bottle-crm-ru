@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/access_token.dart';
+import '../../l10n/l10n.dart';
 
 /// What the create form collected. The payload itself is built in the provider
 /// from `tokenCreatePayload`, so the sheet never decides the wire format.
@@ -69,13 +70,12 @@ class _ApiTokenFormSheetState extends State<_ApiTokenFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'New token',
+              context.l10n.settingsApiTokenFormTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
-              'The token is created for you and authenticates as you. The '
-              'value is shown once, on the next screen.',
+              context.l10n.settingsApiTokenFormIntro,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -86,21 +86,21 @@ class _ApiTokenFormSheetState extends State<_ApiTokenFormSheet> {
               autofocus: true,
               maxLength: 255,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'What is this token for?',
-                hintText: 'e.g. Nightly export job',
-                helperText: 'Names what breaks if you revoke it later',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsApiTokenFormNameLabel,
+                hintText: context.l10n.settingsApiTokenFormNameHint,
+                helperText: context.l10n.settingsApiTokenFormNameHelper,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
               initialValue: _access,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Access',
-                helperText: 'Finer scopes are available through the API',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsApiTokenFormAccess,
+                helperText: context.l10n.settingsApiTokenFormAccessHelper,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final choice in accessChoices)
@@ -115,9 +115,9 @@ class _ApiTokenFormSheetState extends State<_ApiTokenFormSheet> {
             DropdownButtonFormField<String>(
               initialValue: _expiry,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Expires',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsApiTokenFormExpires,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final choice in expiryChoices)
@@ -131,8 +131,7 @@ class _ApiTokenFormSheetState extends State<_ApiTokenFormSheet> {
             if (_expiry == 'never') ...[
               const SizedBox(height: 8),
               Text(
-                'A token that never expires has to be revoked by hand to ever '
-                'stop working.',
+                context.l10n.settingsApiTokenFormNeverWarning,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.warning600,
                 ),
@@ -155,7 +154,7 @@ class _ApiTokenFormSheetState extends State<_ApiTokenFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -165,7 +164,7 @@ class _ApiTokenFormSheetState extends State<_ApiTokenFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: const Text('Create token'),
+                      child: Text(context.l10n.settingsApiTokenFormCreate),
                     ),
                   ),
                 ),

@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/reopen_policy.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import 'reopen_form_sheet.dart';
@@ -29,9 +30,9 @@ class ReopenScreen extends ConsumerWidget {
         .read(reopenPolicyProvider.notifier)
         .savePolicy(payload);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Reopen policy saved')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.settingsReopenSaved)),
+    );
   }
 
   @override
@@ -41,7 +42,7 @@ class ReopenScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Reopen policy'),
+        title: Text(context.l10n.settingsReopenTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -49,7 +50,7 @@ class ReopenScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.pencil),
-              tooltip: 'Edit policy',
+              tooltip: context.l10n.settingsReopenEditPolicy,
               onPressed: () => _edit(context, ref),
             ),
         ],
@@ -74,15 +75,13 @@ class _MemberNotice extends StatelessWidget {
             Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'Administrators only',
+              context.l10n.settingsReopenAdminsOnly,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'The reopen policy and the reply figures behind it are visible '
-              'to administrators. Ask one of yours whether replies to closed '
-              'tickets bring them back.',
+              context.l10n.settingsReopenMemberBody,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -101,6 +100,7 @@ class _AdminBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(reopenPolicyProvider);
+    final l10n = context.l10n;
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, _) => _ErrorState(
@@ -112,34 +112,30 @@ class _AdminBody extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 96),
           children: [
             _Summary(policy: policy),
-            const _SectionHeader('Last 30 days'),
+            _SectionHeader(l10n.settingsReopenLast30Days),
             _Metrics(policy: policy),
-            const _SectionHeader('The rule'),
+            _SectionHeader(l10n.settingsReopenRuleSection),
             _SettingRow(
-              label: 'Reopen on customer reply',
-              detail:
-                  'Off means a reply is filed on the closed ticket and '
-                  'nothing else happens.',
-              value: policy.isEnabled ? 'On' : 'Off',
+              label: l10n.settingsReopenEnabledLabel,
+              detail: l10n.settingsReopenEnabledDetail,
+              value: policy.isEnabled
+                  ? l10n.settingsReopenOn
+                  : l10n.settingsReopenOff,
             ),
             _SettingRow(
-              label: 'Window',
-              detail:
-                  'Counted from when the ticket was closed, in calendar '
-                  'days.',
-              value: '${policy.windowDays} days',
+              label: l10n.settingsReopenWindowLabel,
+              detail: l10n.settingsReopenWindowDetail,
+              value: l10n.settingsReopenWindowDays(policy.windowDays),
             ),
             _SettingRow(
-              label: 'Comes back as',
-              detail:
-                  'Has to be a status that counts as open, or the ticket '
-                  'would close again on arrival.',
-              value: policy.reopenToStatus,
+              label: l10n.settingsReopenStatusLabel,
+              detail: l10n.settingsReopenStatusDetail,
+              value: reopenStatusName(policy.reopenToStatus),
             ),
             _SettingRow(
-              label: 'Tell the assignee',
-              detail: 'The person the ticket was assigned to when it closed.',
-              value: policy.notifyAssigned ? 'Yes' : 'No',
+              label: l10n.settingsReopenNotifyLabel,
+              detail: l10n.settingsReopenNotifyDetail,
+              value: policy.notifyAssigned ? l10n.commonYes : l10n.commonNo,
             ),
             _Footnote(isEnabled: policy.isEnabled),
           ],
@@ -190,6 +186,7 @@ class _Metrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final caveat = missedWindowCaveat(policy);
     return Container(
       color: AppColors.surface,
@@ -204,7 +201,7 @@ class _Metrics extends StatelessWidget {
             children: [
               _Stat(
                 value: '${policy.reopenedLast30d}',
-                label: 'reopened',
+                label: l10n.settingsReopenStatReopened,
                 tone: AppColors.textPrimary,
               ),
               _Stat(
@@ -212,16 +209,16 @@ class _Metrics extends StatelessWidget {
                 // a zero by construction there, and a plain 0 reads as
                 // reassurance about the one thing certainly happening.
                 value: caveat != null
-                    ? 'n/a'
+                    ? l10n.settingsReopenNotApplicable
                     : '${policy.repliesAfterWindow30d}',
-                label: 'missed the window',
+                label: l10n.settingsReopenStatMissed,
                 tone: caveat == null && policy.repliesAfterWindow30d > 0
                     ? AppColors.warning600
                     : AppColors.textPrimary,
               ),
               _Stat(
-                value: '${policy.medianDaysToReply}d',
-                label: 'median reply',
+                value: l10n.settingsReopenMedianDays(policy.medianDaysToReply),
+                label: l10n.settingsReopenStatMedian,
                 tone: AppColors.textPrimary,
               ),
             ],
@@ -258,10 +255,10 @@ class _Metrics extends StatelessWidget {
           ] else if (policy.repliesAfterWindow30d > 0) ...[
             const SizedBox(height: 12),
             Text(
-              '${policy.repliesAfterWindow30d} replies landed on tickets '
-              'closed more than ${policy.windowDays} days earlier, so no '
-              'ticket came back and nobody was told. Those customers are '
-              'still waiting.',
+              l10n.settingsReopenLateReplies(
+                policy.repliesAfterWindow30d,
+                policy.windowDays,
+              ),
               style: AppTypography.caption.copyWith(
                 color: AppColors.warning600,
               ),
@@ -381,17 +378,12 @@ class _Footnote extends StatelessWidget {
   Widget build(BuildContext context) {
     // Present tense either way, so with the policy off this cannot be written
     // as though a reply still reopened anything.
-    final what = isEnabled
-        ? 'A reopened ticket is the same ticket, keeping its history and its '
-              'number, so first response and resolution are still measured '
-              'from the original open.'
-        : 'Turned on, a reply inside the window would bring the same ticket '
-              'back rather than open a new one, keeping its history and its '
-              'number.';
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Text(
-        '$what Which addresses accept replies at all is set in inbound email.',
+        isEnabled
+            ? context.l10n.settingsReopenFootnoteOn
+            : context.l10n.settingsReopenFootnoteOff,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -418,12 +410,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the reopen policy',
+              context.l10n.settingsReopenLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsReopenTryAgain),
+            ),
           ],
         ),
       ),

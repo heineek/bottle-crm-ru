@@ -33,16 +33,20 @@
  */
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
+import { m } from '#lib/paraglide/messages.js';
 
-/** Monday-first weekday label ↔ the model's field prefix. */
+/**
+ * Monday-first weekday label ↔ the model's field prefix ↔ the reader's name for it.
+ * @type {[string, string, () => string][]}
+ */
 const WEEKDAYS = [
-  ['Monday', 'monday'],
-  ['Tuesday', 'tuesday'],
-  ['Wednesday', 'wednesday'],
-  ['Thursday', 'thursday'],
-  ['Friday', 'friday'],
-  ['Saturday', 'saturday'],
-  ['Sunday', 'sunday']
+  ['Monday', 'monday', () => m.settings_hours_day_monday()],
+  ['Tuesday', 'tuesday', () => m.settings_hours_day_tuesday()],
+  ['Wednesday', 'wednesday', () => m.settings_hours_day_wednesday()],
+  ['Thursday', 'thursday', () => m.settings_hours_day_thursday()],
+  ['Friday', 'friday', () => m.settings_hours_day_friday()],
+  ['Saturday', 'saturday', () => m.settings_hours_day_saturday()],
+  ['Sunday', 'sunday', () => m.settings_hours_day_sunday()]
 ];
 
 /** "09:00:00" → "09:00"; null/"" stays null (a closed day). */
@@ -98,12 +102,12 @@ export async function getBusinessHours({ cookies }) {
 function unfoldDays(days) {
   /** @type {Record<string, string | null>} */
   const flat = {};
-  for (const [label, key] of WEEKDAYS) {
+  for (const [label, key, dayName] of WEEKDAYS) {
     const entry = days.find((d) => d.day === label);
     const open = entry?.open || null;
     const close = entry?.close || null;
     if (Boolean(open) !== Boolean(close)) {
-      throw new Error(`${label} needs both an opening and a closing time, or neither.`);
+      throw new Error(m.settings_hours_error_half_open({ day: dayName() }));
     }
     flat[`${key}_open`] = open;
     flat[`${key}_close`] = close;
@@ -127,7 +131,7 @@ function unfoldDays(days) {
  *   `name` and `timezone` are ever read out of it
  */
 export async function updateBusinessHours({ cookies }, calendarId, days, meta) {
-  if (!calendarId) throw new Error('Which calendar? No calendar id was given.');
+  if (!calendarId) throw new Error(m.settings_hours_error_no_calendar());
   const body = { ...unfoldDays(days), name: meta.name, timezone: meta.timezone };
   return await apiRequest(
     `/business-hours/calendar/${calendarId}/`,
@@ -150,7 +154,7 @@ export async function updateBusinessHours({ cookies }, calendarId, days, meta) {
  * @param {{ date: string, name: string }} values
  */
 export async function addHoliday({ cookies }, calendarId, values) {
-  if (!values?.date) throw new Error('A holiday needs a date.');
+  if (!values?.date) throw new Error(m.settings_hours_error_no_date());
   const body = { date: values.date, name: values.name };
   return await apiRequest(
     `/business-hours/calendar/${calendarId}/holidays/`,
@@ -171,7 +175,7 @@ export async function addHoliday({ cookies }, calendarId, values) {
  * @param {string} holidayId
  */
 export async function removeHoliday({ cookies }, calendarId, holidayId) {
-  if (!holidayId) throw new Error('Which holiday? No holiday id was given.');
+  if (!holidayId) throw new Error(m.settings_hours_error_no_holiday());
   return await apiRequest(
     `/business-hours/calendar/${calendarId}/holidays/${holidayId}/`,
     { method: 'DELETE' },

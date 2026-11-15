@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { checkKey, getObject, listRecords, OBJECT_GONE } from '#lib/server/v2/custom-objects.js';
+import { checkKey, getObject, listRecords, objectGone } from '#lib/server/v2/custom-objects.js';
 import { displayValue } from '#lib/server/v2/record-fields.js';
 
 const LIST_COLUMNS = 4;
@@ -12,7 +12,7 @@ export async function load({ cookies, params, url }) {
   const pageNumber = Number.isInteger(asked) && asked >= 1 ? asked : 1;
 
   const definition = await getObject({ cookies }, key);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   const columns = (definition.fields ?? [])
     .filter((/** @type {any} */ f) => f.field_type !== 'link')
     .slice(0, LIST_COLUMNS);

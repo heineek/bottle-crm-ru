@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   droppedLines,
   hasAnyMatch,
@@ -296,5 +297,26 @@ describe('skippedRowsCsv', () => {
     expect(guarded).toBe(`'${phone}`);
     expect(FORMULA_GUARD.test(guarded)).toBe(true);
     expect(guarded.slice(1)).toBe(phone);
+  });
+});
+
+describe('in Russian', () => {
+  const english = getLocale;
+  beforeEach(() => overwriteGetLocale(() => 'ru'));
+  afterEach(() => overwriteGetLocale(english));
+
+  it('counts skipped rows with the Russian plural forms', () => {
+    const nouns = { singular: 'контакт', plural: 'контакты' };
+    const skipped = Array.from({ length: 5 }, (_, i) => skip(i + 1, 'email', 'row'));
+    expect(summaryLine(nouns, preview(2, skipped))).toBe(
+      'Будет импортировано (контакты): 2. Будут пропущены 5 строк.'
+    );
+  });
+
+  it('agrees the dropped-value line with its count', () => {
+    const fields = [{ name: 'country', label: 'Страна' }];
+    expect(droppedLines([{ field: 'country', count: 3 }], fields)).toEqual([
+      'Страна: 3 значения не подошли, поля оставлены пустыми.'
+    ]);
   });
 });

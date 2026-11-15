@@ -7,30 +7,34 @@
    * customers work with this company.
    */
   import { enhance } from '$app/forms';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
 
   let { form } = $props();
 
   let stage = $derived(form?.stage ?? 'request');
   let email = $derived(form?.email ?? '');
+
+  let sent = $derived(messageParts(m.public_portal_login_code_sent({ email: slot('email') })));
 </script>
 
 <svelte:head>
-  <title>Sign in to support</title>
+  <title>{m.public_portal_login_title()}</title>
 </svelte:head>
 
 <PortalShell>
   <div class="card">
-    <h1>Your support requests</h1>
+    <h1>{m.public_portal_login_heading()}</h1>
 
     {#if stage === 'code'}
       <p class="lede">
-        If <strong>{email}</strong> is on file, we have sent it a six digit code. It expires in 10 minutes.
+        {#each sent as p, i (i)}{#if p.key}<strong>{email}</strong>{:else}{p.text}{/if}{/each}
       </p>
 
       <form method="POST" action="?/verify" use:enhance>
         <input type="hidden" name="email" value={email} />
-        <label for="code">Code</label>
+        <label for="code">{m.public_portal_login_code_label()}</label>
         <input
           id="code"
           name="code"
@@ -42,20 +46,20 @@
           required
         />
         {#if form?.error}<p class="err">{form.error}</p>{/if}
-        <button type="submit">Sign in</button>
+        <button type="submit">{m.public_portal_login_sign_in()}</button>
       </form>
 
       <form method="POST" action="?/request" use:enhance class="again">
         <input type="hidden" name="email" value={email} />
-        <button type="submit" class="link">Send a new code</button>
+        <button type="submit" class="link">{m.public_portal_login_resend()}</button>
       </form>
     {:else}
       <p class="lede">
-        Enter the email address you use with this company and we will send you a sign-in code.
+        {m.public_portal_login_lede()}
       </p>
 
       <form method="POST" action="?/request" use:enhance>
-        <label for="email">Email</label>
+        <label for="email">{m.common_email()}</label>
         <input
           id="email"
           name="email"
@@ -65,7 +69,7 @@
           required
         />
         {#if form?.error}<p class="err">{form.error}</p>{/if}
-        <button type="submit">Email me a code</button>
+        <button type="submit">{m.public_portal_login_send_code()}</button>
       </form>
     {/if}
   </div>

@@ -4,6 +4,7 @@ The views live in `common.views.duplicate_views`; this names the lead rules
 they apply.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from common.views.duplicate_views import (
@@ -54,7 +55,7 @@ class LeadDuplicates(DuplicateSpec):
         # Merging into it would park open work on a record nobody lists;
         # merging it away would delete the lead those three came from.
         if record.status == "converted":
-            return "A converted lead cannot be merged."
+            return _("A converted lead cannot be merged.")
         return None
 
 

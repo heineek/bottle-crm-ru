@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { addLeadNote, convertLead, deleteLead, getLead } from '#lib/server/v2/leads.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { loadRelated, relatedActions } from '#lib/server/v2/related-records.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies, params }) {
@@ -36,16 +37,14 @@ export const actions = {
     // here turns a silent no-op into a message somebody can act on.
     if (!comment) {
       return fail(400, {
-        message: file
-          ? 'Add a note to save alongside the file.'
-          : 'Write something before you save the note.'
+        message: file ? m.leads_note_needs_text_with_file() : m.leads_note_needs_text()
       });
     }
 
     try {
       await addLeadNote({ cookies }, params.id, comment, file);
     } catch (/** @type {any} */ err) {
-      return fail(400, { message: String(err?.message ?? 'Could not save that note.') });
+      return fail(400, { message: String(err?.message ?? m.leads_note_failed()) });
     }
 
     return { noted: true };
@@ -68,7 +67,7 @@ export const actions = {
     } catch (/** @type {any} */ err) {
       // A lead this profile may not open is a 404, the same as a missing one.
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not convert this lead.')
+        error: readableError(err, m.leads_convert_failed())
       });
     }
   },
@@ -82,7 +81,7 @@ export const actions = {
       await deleteLead({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       const code = err?.status >= 400 && err?.status < 500 ? err.status : 400;
-      return fail(code, { deleteError: readableError(err, 'Could not delete this lead.') });
+      return fail(code, { deleteError: readableError(err, m.leads_delete_failed()) });
     }
     redirect(303, '/leads');
   }

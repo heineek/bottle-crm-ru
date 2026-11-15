@@ -16,6 +16,7 @@ import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/loading.dart';
 import '../../widgets/common/saved_views_button.dart';
 import '../../widgets/forms/csv_import_sheet.dart';
+import '../../l10n/l10n.dart';
 
 /// The contacts list.
 class ContactsListScreen extends ConsumerStatefulWidget {
@@ -83,7 +84,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Contacts'),
+        title: Text(context.l10n.contactsListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -92,7 +93,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           // 403 for anyone without admin or sales access.
           IconButton(
             icon: const Icon(LucideIcons.upload),
-            tooltip: 'Import from a spreadsheet',
+            tooltip: context.l10n.contactsListImportTooltip,
             onPressed: _import,
           ),
           SavedViewsButton(
@@ -109,7 +110,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           ),
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New contact',
+            tooltip: context.l10n.contactsListNewTooltip,
             onPressed: () => context.push(AppRoutes.contactCreate),
           ),
         ],
@@ -123,11 +124,11 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: 'Search contacts',
-                prefixIcon: Icon(LucideIcons.search, size: 18),
+              decoration: InputDecoration(
+                hintText: context.l10n.contactsListSearchHint,
+                prefixIcon: const Icon(LucideIcons.search, size: 18),
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
@@ -144,12 +145,14 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     final data = async.value;
     final String label;
     if (data == null) {
-      label = async.hasError ? '' : 'Loading';
+      label = async.hasError ? '' : context.l10n.contactsListLoading;
     } else {
-      final unit = data.totalCount == 1 ? 'contact' : 'contacts';
       label = data.contacts.length < data.totalCount
-          ? '${data.contacts.length} of ${data.totalCount} $unit'
-          : '${data.totalCount} $unit';
+          ? context.l10n.contactsListCountOf(
+              data.contacts.length,
+              data.totalCount,
+            )
+          : context.l10n.contactsListCount(data.totalCount);
     }
     return Container(
       width: double.infinity,
@@ -177,11 +180,14 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                 color: AppColors.danger500,
               ),
               const SizedBox(height: 12),
-              Text('Could not load contacts', style: AppTypography.body),
+              Text(
+                context.l10n.contactsListLoadFailed,
+                style: AppTypography.body,
+              ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => ref.read(contactsProvider.notifier).refresh(),
-                child: const Text('Retry'),
+                child: Text(context.l10n.commonRetry),
               ),
             ],
           ),
@@ -193,15 +199,15 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           // the import, as the web's does. Not for a search that matched
           // nothing: importing is not the answer to that.
           if (_searchController.text.isNotEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: LucideIcons.search,
-              title: 'No contacts match that search',
+              title: context.l10n.contactsListEmptySearch,
             );
           }
           return EmptyState(
             icon: LucideIcons.users,
-            title: 'No contacts yet',
-            actionLabel: 'Import contacts',
+            title: context.l10n.contactsListEmpty,
+            actionLabel: context.l10n.contactsListImportAction,
             onAction: _import,
           );
         }

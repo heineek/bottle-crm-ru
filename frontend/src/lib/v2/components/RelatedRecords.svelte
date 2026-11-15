@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * Custom records that link to the built-in record on this page, with add and
    * remove for someone who may edit it. The server decides what is offered;
@@ -28,8 +29,8 @@
 </script>
 
 {#if related}
-  <section class="rel" aria-label="Related">
-    <div class="v2-label" style="margin:{flush ? '0' : '22px'} 0 10px">Related</div>
+  <section class="rel" aria-label={m.app_related_title()}>
+    <div class="v2-label" style="margin:{flush ? '0' : '22px'} 0 10px">{m.app_related_title()}</div>
     <div class="v2-card rel-card">
       {#if error}
         <p class="v2-error" role="alert" style="margin:0 0 12px">{error}</p>
@@ -51,7 +52,11 @@
                     <button
                       type="submit"
                       class="v2-btn rel-x"
-                      aria-label="Remove {r.name} from {g.object.label}: {g.field.label}"
+                      aria-label={m.app_related_remove({
+                        name: r.name,
+                        object: g.object.label,
+                        field: g.field.label
+                      })}
                     >
                       <X />
                     </button>
@@ -75,7 +80,7 @@
                 if (result.type === 'success') added++;
               }}
           >
-            <label class="v2-label" for="{uid}-to">Add to</label>
+            <label class="v2-label" for="{uid}-to">{m.app_related_add_to()}</label>
             <select
               id="{uid}-to"
               class="v2-input"
@@ -93,11 +98,11 @@
               <RecordPicker
                 name="record"
                 target="obj:{current.object.key}"
-                label="Record to add"
+                label={m.app_related_record_to_add()}
                 bind:picked
               />
             {/key}
-            <button type="submit" class="v2-btn" disabled={picked === 0}>Add</button>
+            <button type="submit" class="v2-btn" disabled={picked === 0}>{m.common_add()}</button>
           </form>
         {/key}
       {/if}

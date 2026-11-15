@@ -10,12 +10,15 @@
    */
   import { resolve } from '$app/paths';
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { getLocale } from '#lib/paraglide/runtime.js';
+  import { intlLocale } from '#lib/i18n/locale.js';
 
   let { data } = $props();
 
   function formatDate(value) {
     if (!value) return '';
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(intlLocale(getLocale(), 'number'), {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -28,19 +31,21 @@
 </svelte:head>
 
 <PortalShell>
-  <a class="back" href={resolve('portal/articles')}>Back to help articles</a>
+  <a class="back" href={resolve('portal/articles')}>{m.public_portal_article_back()}</a>
 
   <article>
     <h1>{data.article.title}</h1>
     {#if data.article.updated_at}
-      <p class="when">Updated {formatDate(data.article.updated_at)}</p>
+      <p class="when">
+        {m.public_portal_article_updated({ date: formatDate(data.article.updated_at) })}
+      </p>
     {/if}
     <div class="body">{data.article.description}</div>
   </article>
 
   {#if data.related.length > 0}
-    <nav class="related" aria-label="Related articles">
-      <h2>Related articles</h2>
+    <nav class="related" aria-label={m.public_help_related()}>
+      <h2>{m.public_help_related()}</h2>
       <ul>
         {#each data.related as item (item.id)}
           <li><a href={resolve(`portal/articles/${item.id}`)}>{item.title}</a></li>
@@ -53,8 +58,8 @@
        inline prose it measured 17px tall, well under a thumb, and it is the
        action this whole page exists to avoid needing. -->
   <div class="ask">
-    <p>Still stuck?</p>
-    <a href={resolve('portal/cases')}>Send us a request</a>
+    <p>{m.public_portal_article_still_stuck()}</p>
+    <a href={resolve('portal/cases')}>{m.public_portal_article_send_request()}</a>
   </div>
 </PortalShell>
 

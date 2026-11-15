@@ -17,6 +17,7 @@ from datetime import timedelta
 from django.core.signing import BadSignature, SignatureExpired
 from django.db.models import Avg, Count
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import status as drf_status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -61,14 +62,14 @@ def _load_survey(token: str) -> tuple[CsatSurvey | None, int | None, str | None]
     try:
         csat_signer().unsign(token, max_age=CSAT_TOKEN_TTL_DAYS * 24 * 3600)
     except SignatureExpired:
-        return None, 410, "Survey link has expired."
+        return None, 410, _("Survey link has expired.")
     except BadSignature:
-        return None, 400, "Invalid survey link."
+        return None, 400, _("Invalid survey link.")
 
     token_hash = hash_csat_token(token)
     org_id = resolve_portal_org_by_hash(token_hash, "csat")
     if org_id is None:
-        return None, 410, "Survey link is no longer valid."
+        return None, 410, _("Survey link is no longer valid.")
     set_rls_context(org_id)
     survey = (
         CsatSurvey.objects.select_related("org")
@@ -78,9 +79,9 @@ def _load_survey(token: str) -> tuple[CsatSurvey | None, int | None, str | None]
     # Checked before expiry, so a link in an org with Tickets off answers
     # exactly as an unknown one does.
     if survey is None or not module_is_available(survey.org, "tickets"):
-        return None, 410, "Survey link is no longer valid."
+        return None, 410, _("Survey link is no longer valid.")
     if timezone.now() >= survey.expires_at:
-        return None, 410, "Survey link has expired."
+        return None, 410, _("Survey link has expired.")
     # Lock submission after the edit window closes.
     return survey, None, None
 
@@ -98,7 +99,9 @@ def _agent_display_name(case) -> str:
     if name and "@" not in name:
         return name
     org_name = (case.org.name or "").strip()
-    return f"{org_name} support" if org_name else "your support team"
+    if org_name:
+        return _("%(org)s support") % {"org": org_name}
+    return _("your support team")
 
 
 class PublicCsatView(APIView):
@@ -146,7 +149,7 @@ class PublicCsatView(APIView):
             window_close = survey.responded_at + timedelta(hours=EDIT_WINDOW_HOURS)
             if timezone.now() >= window_close:
                 return Response(
-                    {"error": "Survey is locked. Edit window has closed."},
+                    {"error": _("Survey is locked. Edit window has closed.")},
                     status=drf_status.HTTP_409_CONFLICT,
                 )
 
@@ -157,14 +160,17 @@ class PublicCsatView(APIView):
         except (TypeError, ValueError):
             return Response(
                 {
-                    "error": f"rating must be an integer "
-                    f"{CSAT_RATING_MIN}-{CSAT_RATING_MAX}"
+                    "error": _("rating must be an integer %(min)s-%(max)s")
+                    % {"min": CSAT_RATING_MIN, "max": CSAT_RATING_MAX}
                 },
                 status=drf_status.HTTP_400_BAD_REQUEST,
             )
         if rating_int < CSAT_RATING_MIN or rating_int > CSAT_RATING_MAX:
             return Response(
-                {"error": f"rating must be {CSAT_RATING_MIN}..{CSAT_RATING_MAX}"},
+                {
+                    "error": _("rating must be %(min)s..%(max)s")
+                    % {"min": CSAT_RATING_MIN, "max": CSAT_RATING_MAX}
+                },
                 status=drf_status.HTTP_400_BAD_REQUEST,
             )
 

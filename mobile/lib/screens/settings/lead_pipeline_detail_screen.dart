@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/lead_pipeline.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_pipelines_provider.dart';
 import 'lead_stage_form_sheet.dart';
@@ -50,7 +51,9 @@ class _LeadPipelineDetailScreenState
       () => existing == null
           ? _notifier.createStage(payload)
           : _notifier.updateStage(existing.id, payload),
-      existing == null ? 'Stage added' : 'Stage saved',
+      existing == null
+          ? context.l10n.settingsPipelineStageAdded
+          : context.l10n.settingsPipelineStageSaved,
     );
   }
 
@@ -58,30 +61,32 @@ class _LeadPipelineDetailScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${stage.name}?'),
-        content: const Text(
-          'Its lane disappears from the board. A stage that still holds leads '
-          'cannot be deleted: move them to another stage first.',
-        ),
+        title: Text(context.l10n.settingsPipelineDeleteTitle(stage.name)),
+        content: Text(context.l10n.settingsLeadPipelineDetailDeleteStageBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsPipelineKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    await _run(() => _notifier.deleteStage(stage.id), 'Stage deleted');
+    await _run(
+      () => _notifier.deleteStage(stage.id),
+      context.l10n.settingsPipelineStageDeleted,
+    );
   }
 
-  Future<void> _move(int from, int to) =>
-      _run(() => _notifier.moveStage(from, to), 'Order saved');
+  Future<void> _move(int from, int to) => _run(
+    () => _notifier.moveStage(from, to),
+    context.l10n.settingsPipelineOrderSaved,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +97,10 @@ class _LeadPipelineDetailScreenState
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(async.value?.pipeline.name ?? 'Pipeline'),
+        title: Text(
+          async.value?.pipeline.name ??
+              context.l10n.settingsPipelineTitleFallback,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -100,7 +108,7 @@ class _LeadPipelineDetailScreenState
           if (isAdmin && async.hasValue)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'Add stage',
+              tooltip: context.l10n.settingsPipelineAddStage,
               onPressed: canEdit ? () => _edit(null) : null,
             ),
         ],
@@ -122,9 +130,8 @@ class _LeadPipelineDetailScreenState
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     isAdmin
-                        ? 'No stages yet. Add one so leads can be moved into '
-                              'this pipeline.'
-                        : 'No stages yet.',
+                        ? context.l10n.settingsLeadPipelineDetailNoStagesAdmin
+                        : context.l10n.settingsLeadPipelineDetailNoStages,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -146,8 +153,7 @@ class _LeadPipelineDetailScreenState
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Text(
-                  'Stages are lanes on the lead board, in this order. Moving a '
-                  'lead into a stage can set its status and win probability.',
+                  context.l10n.settingsLeadPipelineDetailFooter,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -161,8 +167,6 @@ class _LeadPipelineDetailScreenState
   }
 }
 
-String _count(int n, String one, String many) => '$n ${n == 1 ? one : many}';
-
 class _Header extends StatelessWidget {
   const _Header({required this.detail});
 
@@ -171,6 +175,10 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pipeline = detail.pipeline;
+    final counts = context.l10n.settingsPipelineCounts(
+      context.l10n.settingsPipelineStageCount(detail.stages.length),
+      context.l10n.settingsPipelineLeadCount(pipeline.leadCount),
+    );
     return Container(
       color: AppColors.surface,
       width: double.infinity,
@@ -189,9 +197,9 @@ class _Header extends StatelessWidget {
             const SizedBox(height: 4),
           ],
           Text(
-            '${_count(detail.stages.length, 'stage', 'stages')}, '
-            '${_count(pipeline.leadCount, 'lead', 'leads')}'
-            '${pipeline.isDefault ? ', the default pipeline' : ''}',
+            pipeline.isDefault
+                ? context.l10n.settingsPipelineIsDefault(counts)
+                : counts,
             style: AppTypography.caption.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -219,13 +227,15 @@ class _StageRow extends StatelessWidget {
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
 
-  String get _summary {
+  String _summary(BuildContext context) {
     final parts = [
       leadStageTypeOptions(stage.stageType)[stage.stageType]!,
       if (stage.mapsToStatus != null)
-        'sets status to '
-            '${leadStageStatusOptions(stage.mapsToStatus)[stage.mapsToStatus]}',
-      if (stage.winProbability > 0) '${stage.winProbability}% win',
+        context.l10n.settingsLeadPipelineDetailSetsStatus(
+          '${leadStageStatusOptions(stage.mapsToStatus)[stage.mapsToStatus]}',
+        ),
+      if (stage.winProbability > 0)
+        context.l10n.settingsLeadPipelineDetailWinPercent(stage.winProbability),
     ];
     return parts.join(', ');
   }
@@ -268,13 +278,15 @@ class _StageRow extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              _summary,
+                              _summary(context),
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.textSecondary,
                               ),
                             ),
                             Text(
-                              _count(stage.leadCount, 'lead', 'leads'),
+                              context.l10n.settingsPipelineLeadCount(
+                                stage.leadCount,
+                              ),
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.textTertiary,
                               ),
@@ -291,17 +303,17 @@ class _StageRow extends StatelessWidget {
           if (isAdmin) ...[
             _IconAction(
               icon: LucideIcons.chevronUp,
-              tooltip: 'Move ${stage.name} up',
+              tooltip: context.l10n.settingsPipelineMoveStageUp(stage.name),
               onPressed: onMoveUp,
             ),
             _IconAction(
               icon: LucideIcons.chevronDown,
-              tooltip: 'Move ${stage.name} down',
+              tooltip: context.l10n.settingsPipelineMoveStageDown(stage.name),
               onPressed: onMoveDown,
             ),
             _IconAction(
               icon: LucideIcons.trash2,
-              tooltip: 'Delete ${stage.name}',
+              tooltip: context.l10n.settingsPipelineDeleteStage(stage.name),
               color: AppColors.danger600,
               onPressed: onDelete,
             ),
@@ -364,7 +376,10 @@ class _ErrorState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsPipelineTryAgain),
+            ),
           ],
         ),
       ),

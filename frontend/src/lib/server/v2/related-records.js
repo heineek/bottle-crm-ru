@@ -13,8 +13,9 @@ import {
   checkId
 } from '#lib/server/v2/custom-objects.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
-const REFUSED = 'No such record, or you cannot open it.';
+const REFUSED = () => m.app_srv_related_refused();
 
 /**
  * @param {{ cookies: import('@sveltejs/kit').Cookies }} event
@@ -49,7 +50,7 @@ function readLink(form) {
 /**
  * @param {string} to A built-in registry key.
  * @param {typeof addRelated} call
- * @param {string} fallback
+ * @param {() => string} fallback
  * @param {boolean} [needsRecord] Refuse an empty record before any API call.
  */
 function writer(to, call, fallback, needsRecord = false) {
@@ -57,15 +58,15 @@ function writer(to, call, fallback, needsRecord = false) {
   return async (event) => {
     const form = await event.request.formData();
     if (needsRecord && !form.get('record')?.toString()) {
-      return fail(400, { related: { error: 'Choose a record to add.' } });
+      return fail(400, { related: { error: m.app_srv_related_choose() } });
     }
     const link = readLink(form);
-    if (!link) return fail(400, { related: { error: REFUSED } });
+    if (!link) return fail(400, { related: { error: REFUSED() } });
     try {
       await call(event, { to, id: event.params.id ?? '', ...link });
     } catch (/** @type {any} */ err) {
       const code = [400, 403, 404].includes(err?.status) ? err.status : 400;
-      return fail(code, { related: { error: readableError(err, fallback) } });
+      return fail(code, { related: { error: readableError(err, fallback()) } });
     }
     return { related: { done: true } };
   };
@@ -77,7 +78,7 @@ function writer(to, call, fallback, needsRecord = false) {
  */
 export function relatedActions(to) {
   return {
-    relatedAdd: writer(to, addRelated, 'Could not add this record.', true),
-    relatedRemove: writer(to, removeRelated, 'Could not remove this record.')
+    relatedAdd: writer(to, addRelated, m.app_srv_related_add_failed, true),
+    relatedRemove: writer(to, removeRelated, m.app_srv_related_remove_failed)
   };
 }

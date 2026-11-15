@@ -2,6 +2,7 @@ import json
 import uuid
 
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -24,7 +25,7 @@ from common.validators import payload_id_list
 
 def _admin_required():
     return Response(
-        {"error": True, "errors": "Admin access required"},
+        {"error": True, "errors": _("Admin access required")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -73,7 +74,7 @@ def _active_members(value, org):
         raise DRFValidationError(
             {
                 "lead_assigned_to": [
-                    "Each assignee must be an active member of this organization."
+                    _("Each assignee must be an active member of this organization.")
                 ]
             }
         )
@@ -188,7 +189,7 @@ class DomainList(APIView):
             settings_obj = serializer.save(created_by=request.profile.user, org=org)
             _set_relations(settings_obj, tag_names, assignees, org)
             return Response(
-                {"error": False, "message": "API key added sucessfully"},
+                {"error": False, "message": _("API key added sucessfully")},
                 status=status.HTTP_201_CREATED,
             )
         return Response(
@@ -259,7 +260,7 @@ class DomainDetailView(APIView):
             api_setting = serializer.save()
             _set_relations(api_setting, tag_names, assignees, org)
             return Response(
-                {"error": False, "message": "API setting Updated sucessfully"},
+                {"error": False, "message": _("API setting Updated sucessfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -300,7 +301,7 @@ class DomainDetailView(APIView):
             api_setting = serializer.save()
             _set_relations(api_setting, tag_names, assignees, org)
             return Response(
-                {"error": False, "message": "API setting Updated successfully"},
+                {"error": False, "message": _("API setting Updated successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -329,6 +330,6 @@ class DomainDetailView(APIView):
         if api_setting:
             api_setting.delete()
         return Response(
-            {"error": False, "message": "API setting deleted sucessfully"},
+            {"error": False, "message": _("API setting deleted sucessfully")},
             status=status.HTTP_200_OK,
         )

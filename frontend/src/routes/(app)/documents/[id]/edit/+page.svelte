@@ -6,6 +6,8 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import { TriangleAlert, Users, Lock } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form: result } = $props();
@@ -60,7 +62,7 @@
   let errors = $derived.by(() => {
     /** @type {Record<string, string>} */
     const e = {};
-    if (!title.trim()) e.title = 'A document needs a title.';
+    if (!title.trim()) e.title = m.documents_edit_error_title();
     return e;
   });
 
@@ -107,18 +109,15 @@
 </script>
 
 {#if !data.can_edit}
-  <PageHeader title="Manage document">
-    {#snippet crumb()}<a href={resolve('documents')}>Documents</a> ›{/snippet}
+  <PageHeader title={m.documents_edit_title()}>
+    {#snippet crumb()}<a href={resolve('documents')}>{m.documents_crumb()}</a> ›{/snippet}
   </PageHeader>
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Owner or admin only"
-      text="Changing a document is limited to the person who uploaded it and admins. You can open a document shared with you, but not edit it."
-    />
+    <NextAction label={m.documents_edit_locked_label()} text={m.documents_edit_locked_text()} />
   </div>
 {:else}
-  <PageHeader title="Manage document" center>
-    {#snippet crumb()}<a href={resolve('documents')}>Documents</a> ›{/snippet}
+  <PageHeader title={m.documents_edit_title()} center>
+    {#snippet crumb()}<a href={resolve('documents')}>{m.documents_crumb()}</a> ›{/snippet}
     {#snippet sub()}{data.document.title}{/snippet}
   </PageHeader>
 
@@ -139,14 +138,14 @@
         >
           <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
           <div class="v2-next-body">
-            <div style="font-weight:600">The server refused this change</div>
+            <div style="font-weight:600">{m.documents_edit_refused()}</div>
             <div class="v2-sub" style="margin-top:2px">{result.error}</div>
           </div>
         </div>
       {/if}
 
       <div class="v2-field">
-        <label for="f-title">Title</label>
+        <label for="f-title">{m.documents_field_title()}</label>
         <input
           id="f-title"
           name="title"
@@ -163,7 +162,7 @@
            this by deleting and re-uploading was the only way before, and it
            silently dropped everyone the document was shared with. -->
       <div class="v2-field">
-        <label for="f-file">File</label>
+        <label for="f-file">{m.documents_field_file()}</label>
         <p class="v2-input v2-file-static">{data.document.document_file}</p>
         <input
           id="f-file"
@@ -176,39 +175,39 @@
         />
         <p class="v2-hint" id="h-file">
           {newFileName
-            ? `Replacing with: ${newFileName}`
-            : 'Leave this empty to keep the current file. Choosing one replaces it, and the title and shares stay as they are.'}
+            ? m.documents_edit_file_replacing({ name: newFileName })
+            : m.documents_edit_file_hint()}
         </p>
       </div>
 
       <div class="v2-field">
-        <label for="f-status">Status</label>
+        <label for="f-status">{m.documents_field_status()}</label>
         <select id="f-status" name="status" class="v2-input" bind:value={status}>
-          <option value="active">Active, appears in the list</option>
-          <option value="inactive">Archived, kept, hidden from the default view</option>
+          <option value="active">{m.documents_edit_status_active()}</option>
+          <option value="inactive">{m.documents_edit_status_inactive()}</option>
         </select>
       </div>
 
       <fieldset class="v2-field share">
-        <legend>Who can open it</legend>
+        <legend>{m.documents_share_legend()}</legend>
         <p class="v2-hint" style="margin-top:0">
           {#if reach === 0}
-            <span class="unshared"><Lock size={11} /> Only the owner and admins.</span>
+            <span class="unshared"><Lock size={11} /> {m.documents_edit_unshared()}</span>
           {:else}
-            Reaches <span class="v2-num">{reach}</span>
-            {reach === 1 ? 'person or team' : 'people and teams'}, plus admins.
+            {#each messageParts(m.documents_share_reach( { count: reach, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+                  class="v2-num">{reach}</span
+                >{:else}{p.text}{/if}{/each}
           {/if}
         </p>
 
         {#if data.options_failed}
           <p class="v2-hint" role="alert">
-            The people and teams list did not load, so sharing cannot be changed right now. Saving
-            keeps everyone this document is shared with.
+            {m.documents_edit_options_failed()}
           </p>
         {/if}
 
         {#if data.people?.length}
-          <div class="share-label">People</div>
+          <div class="share-label">{m.documents_share_people()}</div>
           <div class="share-grid">
             {#each data.people as p (p.id)}
               <label class="share-opt">
@@ -226,7 +225,7 @@
         {/if}
 
         {#if data.teams?.length}
-          <div class="share-label"><Users size={12} /> Teams</div>
+          <div class="share-label"><Users size={12} /> {m.documents_share_teams()}</div>
           <div class="share-grid">
             {#each data.teams as t (t.id)}
               <label class="share-opt">
@@ -245,8 +244,7 @@
 
         {#if inactiveShares > 0}
           <p class="v2-hint">
-            Also shared with {inactiveShares === 1 ? 'one person' : `${inactiveShares} people`} no longer
-            active. Saving keeps {inactiveShares === 1 ? 'that share' : 'those shares'}.
+            {m.documents_edit_inactive_shares({ count: inactiveShares })}
           </p>
         {/if}
 
@@ -263,8 +261,8 @@
       </fieldset>
 
       <div style="display:flex;gap:8px;align-items:center;margin-top:22px">
-        <button class="v2-btn v2-btn-primary" type="submit">Save changes</button>
-        <a class="v2-btn" href={resolve('documents')}>Cancel</a>
+        <button class="v2-btn v2-btn-primary" type="submit">{m.documents_edit_save()}</button>
+        <a class="v2-btn" href={resolve('documents')}>{m.documents_cancel()}</a>
       </div>
     </form>
 
@@ -279,23 +277,22 @@
           class="v2-btn"
           type="button"
           style="color:var(--v2-rust)"
-          onclick={() => (confirmingDelete = true)}>Delete this document</button
+          onclick={() => (confirmingDelete = true)}>{m.documents_edit_delete()}</button
         >
         <p class="v2-sub" style="font-size:12px;margin-top:8px">
-          Archiving keeps the document and its history; delete removes it for everyone who could
-          open it. Delete only when it was uploaded by mistake.
+          {m.documents_edit_delete_hint()}
         </p>
       {:else}
         <form method="POST" action="?/delete" use:enhance>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span class="v2-sub" style="font-size:13px"
-              >Delete “{data.document.title}” for good?</span
+              >{m.documents_edit_delete_confirm({ title: data.document.title })}</span
             >
             <button class="v2-btn v2-btn-primary" type="submit" style="background:var(--v2-rust)"
-              >Yes, delete</button
+              >{m.documents_edit_delete_yes()}</button
             >
             <button class="v2-btn" type="button" onclick={() => (confirmingDelete = false)}
-              >Keep it</button
+              >{m.documents_edit_delete_keep()}</button
             >
           </div>
         </form>

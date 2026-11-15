@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import { hubGroups } from './settings-hub.js';
 
 const row = (/** @type {string} */ key, /** @type {boolean} */ on = true) => ({
@@ -117,5 +118,27 @@ describe('hubGroups', () => {
     expect(none).not.toContain('Products');
     expect(none).not.toContain('Invoice templates');
     expect(titles(data({ modules: [row('invoices', false)] }))).toContain('Products');
+  });
+});
+
+describe('hubGroups in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('translates the labels and declines the counts', () => {
+    overwriteGetLocale(() => 'ru');
+    const d = data({ reopen: { is_enabled: true, reopen_window_days: 5 } });
+    expect(hubGroups(d)[0].label).toBe('Люди и доступ');
+    expect(item(d, 'Повторное открытие')?.value).toBe('В течение 5 дней');
+    expect(item(d, 'Команда и доступ')?.value).toBe('2 человека · 1 администратор');
+    expect(item(d, 'Рабочие часы')?.value).toBe('Standard · 1 день, 09:00-17:00');
+    expect(item(d, 'Теги')?.body).toBe('Теги, общие для компаний, лидов, сделок и обращений.');
+  });
+
+  it('keeps the English wording byte for byte', () => {
+    const d = data();
+    expect(item(d, 'Tags')?.body).toBe('Labels shared across accounts, leads, deals and tickets.');
+    expect(item(d, 'Team and access')?.value).toBe('2 people · 1 admins');
+    expect(item(d, 'Business hours')?.value).toBe('Standard · 1 days, 09:00-17:00');
   });
 });

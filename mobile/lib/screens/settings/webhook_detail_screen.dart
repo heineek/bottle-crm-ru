@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/webhook.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/webhooks_provider.dart';
 import 'webhook_form_sheet.dart';
@@ -54,7 +55,7 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -68,10 +69,9 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
 
   Future<void> _rotate() async {
     final ok = await _confirm(
-      'Rotate the secret?',
-      'The current secret stops verifying at once. Update your receiver '
-          'straight after.',
-      'Rotate now',
+      context.l10n.settingsWebhookDetailRotateTitle,
+      context.l10n.settingsWebhookDetailRotateBody,
+      context.l10n.settingsWebhookDetailRotateNow,
     );
     if (!ok || !mounted) return;
     setState(() => _busy = true);
@@ -86,16 +86,16 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
     }
     await showWebhookSecret(
       context,
-      title: 'Secret rotated, copy the new one now',
+      title: context.l10n.settingsWebhookDetailRotatedTitle,
       secret: result.secret ?? '',
     );
   }
 
   Future<void> _delete() async {
     final ok = await _confirm(
-      'Delete this webhook?',
-      'Removes the webhook and its delivery log.',
-      'Delete permanently',
+      context.l10n.settingsWebhookDetailDeleteTitle,
+      context.l10n.settingsWebhookDetailDeleteBody,
+      context.l10n.settingsWebhookDetailDeletePermanently,
     );
     if (!ok || !mounted) return;
     setState(() => _busy = true);
@@ -120,7 +120,7 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
     if (draft == null || !mounted) return;
     await _run(
       () => ref.read(webhooksProvider.notifier).save(endpoint.id, draft),
-      'Saved',
+      context.l10n.settingsWebhookDetailSaved,
     );
   }
 
@@ -131,7 +131,7 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Webhook'),
+        title: Text(context.l10n.settingsWebhookDetailTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -141,7 +141,7 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
           : async!.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => WebhookErrorState(
-                message: 'Could not load the webhook',
+                message: context.l10n.settingsWebhookDetailLoadError,
                 onRetry: () => ref.read(webhooksProvider.notifier).refresh(),
               ),
               data: (state) {
@@ -149,7 +149,7 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
                 if (endpoint == null) {
                   return Center(
                     child: Text(
-                      'That webhook does not exist.',
+                      context.l10n.settingsWebhookDetailNotFound,
                       style: AppTypography.body,
                     ),
                   );
@@ -170,19 +170,25 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
                           () => ref
                               .read(webhooksProvider.notifier)
                               .sendTest(endpoint.id),
-                          'Test queued. Pull to refresh in a few seconds.',
+                          context.l10n.settingsWebhookDetailTestQueued,
                         ),
                         onToggle: () => _run(
                           () => ref
                               .read(webhooksProvider.notifier)
                               .setActive(endpoint.id, !endpoint.isActive),
-                          endpoint.isActive ? 'Turned off' : 'Turned on',
+                          endpoint.isActive
+                              ? context.l10n.settingsWebhookDetailTurnedOff
+                              : context.l10n.settingsWebhookDetailTurnedOn,
                         ),
                         onEdit: () => _edit(endpoint, state),
                         onRotate: _rotate,
                         onDelete: _delete,
                       ),
-                      _SectionHeader('Events (${endpoint.events.length})'),
+                      _SectionHeader(
+                        context.l10n.settingsWebhookDetailEvents(
+                          endpoint.events.length,
+                        ),
+                      ),
                       Container(
                         color: AppColors.surface,
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -195,14 +201,16 @@ class _WebhookDetailScreenState extends ConsumerState<WebhookDetailScreen> {
                           ],
                         ),
                       ),
-                      const _SectionHeader('Deliveries'),
+                      _SectionHeader(
+                        context.l10n.settingsWebhookDetailDeliveries,
+                      ),
                       _Deliveries(
                         pageKey: _pageKey,
                         canRedeliver: endpoint.isActive && !_busy,
                         onRedeliver: (id) => _run(
                           () =>
                               ref.read(webhooksProvider.notifier).redeliver(id),
-                          'Queued to send again',
+                          context.l10n.settingsWebhookDetailRedelivered,
                         ),
                         onPage: (offset) => setState(() => _offset = offset),
                       ),
@@ -253,14 +261,17 @@ class _Summary extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '${endpoint.formatLabel} · secret ${endpoint.secretHint}',
+            context.l10n.settingsWebhookDetailSecretLine(
+              endpoint.formatLabel,
+              endpoint.secretHint,
+            ),
             style: AppTypography.caption.copyWith(
               color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Answers for it: ${endpoint.creatorLabel}',
+            context.l10n.settingsWebhookDetailAnswersFor(endpoint.creatorLabel),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -276,8 +287,7 @@ class _Summary extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           Text(
-            'Turning it on, changing its URL, events or format, or rotating '
-            'its secret makes you the admin who answers for it.',
+            context.l10n.settingsWebhookDetailAnswersNote,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -322,28 +332,28 @@ class _Actions extends StatelessWidget {
               style: FilledButton.styleFrom(minimumSize: size),
               onPressed: busy ? null : onTest,
               icon: const Icon(LucideIcons.send, size: 16),
-              label: const Text('Send test'),
+              label: Text(context.l10n.settingsWebhookDetailSendTest),
             ),
           OutlinedButton(
             style: OutlinedButton.styleFrom(minimumSize: size),
             onPressed: busy ? null : onToggle,
             child: Text(
               endpoint.isActive
-                  ? 'Turn off'
+                  ? context.l10n.settingsWebhookDetailTurnOff
                   : endpoint.disabledReason.isNotEmpty
-                  ? 'Re-enable'
-                  : 'Turn on',
+                  ? context.l10n.settingsWebhookDetailReEnable
+                  : context.l10n.settingsWebhookDetailTurnOn,
             ),
           ),
           OutlinedButton(
             style: OutlinedButton.styleFrom(minimumSize: size),
             onPressed: busy ? null : onEdit,
-            child: const Text('Edit'),
+            child: Text(context.l10n.commonEdit),
           ),
           OutlinedButton(
             style: OutlinedButton.styleFrom(minimumSize: size),
             onPressed: busy ? null : onRotate,
-            child: const Text('Rotate secret'),
+            child: Text(context.l10n.settingsWebhookDetailRotateSecret),
           ),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
@@ -351,7 +361,7 @@ class _Actions extends StatelessWidget {
               foregroundColor: AppColors.danger600,
             ),
             onPressed: busy ? null : onDelete,
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -383,7 +393,7 @@ class _Deliveries extends ConsumerWidget {
       error: (_, _) => Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          'Could not load deliveries. Pull to refresh.',
+          context.l10n.settingsWebhookDetailDeliveriesError,
           style: AppTypography.caption.copyWith(color: AppColors.danger600),
         ),
       ),
@@ -392,8 +402,7 @@ class _Deliveries extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Nothing sent yet. Send a test, or change a record this webhook '
-              'listens for.',
+              context.l10n.settingsWebhookDetailDeliveriesEmpty,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -424,7 +433,7 @@ class _Deliveries extends ConsumerWidget {
                             ? 0
                             : offset - webhookDeliveryPageSize,
                       ),
-                      child: const Text('Newer'),
+                      child: Text(context.l10n.settingsWebhookDetailNewer),
                     ),
                   const Spacer(),
                   if (offset + webhookDeliveryPageSize < page.count)
@@ -433,7 +442,7 @@ class _Deliveries extends ConsumerWidget {
                         minimumSize: const Size(0, 48),
                       ),
                       onPressed: () => onPage(offset + webhookDeliveryPageSize),
-                      child: const Text('Older'),
+                      child: Text(context.l10n.settingsWebhookDetailOlder),
                     ),
                 ],
               ),
@@ -461,7 +470,7 @@ class _DeliveryRow extends StatelessWidget {
     final detail = [
       if (delivery.responseStatus != null) 'HTTP ${delivery.responseStatus}',
       if (delivery.error.isNotEmpty) delivery.error,
-      '${delivery.attempts} ${delivery.attempts == 1 ? 'try' : 'tries'}',
+      context.l10n.settingsWebhookDetailTries(delivery.attempts),
     ].join(' · ');
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
@@ -503,7 +512,7 @@ class _DeliveryRow extends StatelessWidget {
             TextButton(
               style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
               onPressed: onRedeliver,
-              child: const Text('Redeliver'),
+              child: Text(context.l10n.settingsWebhookDetailRedeliver),
             ),
         ],
       ),

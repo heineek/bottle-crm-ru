@@ -24,6 +24,7 @@ member may not be allowed to see.
 Another org's id answers 404, never 403, so ids cannot be probed.
 """
 
+from django.utils.translation import gettext, ngettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -83,7 +84,12 @@ class WebhookListCreateView(WebhookBaseView):
         org = request.profile.org
         if WebhookEndpoint.objects.filter(org=org).count() >= MAX_ENDPOINTS_PER_ORG:
             return _error(
-                f"An organization can have at most {MAX_ENDPOINTS_PER_ORG} webhooks."
+                ngettext(
+                    "An organization can have at most %(count)s webhook.",
+                    "An organization can have at most %(count)s webhooks.",
+                    MAX_ENDPOINTS_PER_ORG,
+                )
+                % {"count": MAX_ENDPOINTS_PER_ORG}
             )
         serializer = WebhookEndpointSerializer(data=request.data, context={"org": org})
         serializer.is_valid(raise_exception=True)
@@ -143,7 +149,7 @@ class WebhookTestView(WebhookBaseView):
     def post(self, request, pk):
         endpoint = self.get_endpoint(request, pk)
         if not endpoint.is_active:
-            return _error("Turn the webhook on before sending a test.")
+            return _error(gettext("Turn the webhook on before sending a test."))
         payload = envelope(
             endpoint.org_id, events.PING, {"endpoint_id": str(endpoint.id)}
         )
@@ -190,10 +196,10 @@ class WebhookRedeliverView(WebhookBaseView):
     def post(self, request, pk):
         original = get_scoped_or_404(WebhookDelivery, pk, request.profile.org)
         if original.status == PENDING:
-            return _error("This delivery is still being attempted.")
+            return _error(gettext("This delivery is still being attempted."))
         endpoint = original.endpoint
         if not endpoint.is_active:
-            return _error("Turn the webhook on before redelivering.")
+            return _error(gettext("Turn the webhook on before redelivering."))
         delivery = queue_delivery(endpoint, original.event, original.payload)
         return Response(
             WebhookDeliverySerializer(delivery).data, status=status.HTTP_202_ACCEPTED

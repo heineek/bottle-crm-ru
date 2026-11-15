@@ -6,9 +6,11 @@ from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.html import escape
+from django.utils.translation import gettext as _
 
 from accounts.models import Account, AccountEmail, AccountEmailLog
 from common.links import frontend_url
+from common.locale import language_for_user
 from common.models import Profile
 from common.tasks import set_rls_context
 
@@ -102,10 +104,11 @@ def send_email_to_assigned_user(recipients, account_id, org_id):
             context["user"] = profile.user
             context["account"] = account
             context["created_by"] = created_by
-            subject = "Assigned a account for you."
-            html_content = render_to_string(
-                "assigned_to/account_assigned.html", context=context
-            )
+            with language_for_user(profile.user, account.org):
+                subject = _("Assigned a account for you.")
+                html_content = render_to_string(
+                    "assigned_to/account_assigned.html", context=context
+                )
 
             msg = EmailMessage(subject, html_content, to=recipients_list)
             msg.content_subtype = "html"

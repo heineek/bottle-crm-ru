@@ -8,6 +8,7 @@ import '../../data/models/sales_goal.dart';
 import '../../providers/goals_provider.dart';
 import '../../providers/settings_provider.dart';
 import 'goals_screen.dart' show formatGoalValue, goalSymbol;
+import '../../l10n/l10n.dart';
 
 /// How did we do, one finished period at a time.
 ///
@@ -36,7 +37,7 @@ class GoalHistoryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Goal history'),
+        title: Text(context.l10n.goalsHistoryTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -57,10 +58,7 @@ class GoalHistoryScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Text(
-                    'The twelve most recent periods you can see. Attainment is '
-                    'recomputed from the closed-won deals of each period, so it '
-                    'matches what the goals screen showed while the period was '
-                    'running.',
+                    context.l10n.goalsHistoryFootnote,
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ),
@@ -87,7 +85,7 @@ class _PeriodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final goalWord = period.goalsCount == 1 ? 'goal' : 'goals';
+    final l10n = context.l10n;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -118,8 +116,7 @@ class _PeriodCard extends StatelessWidget {
                     Text(
                       '${goalPeriodLabel(period.periodType)} · '
                       '${goalTypeLabel(period.goalType)} · '
-                      '${period.attainedCount} of ${period.goalsCount} '
-                      '$goalWord met',
+                      '${l10n.goalsHistoryMet(period.attainedCount, period.goalsCount)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -136,7 +133,7 @@ class _PeriodCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  '${period.percent}% of target',
+                  l10n.goalsHistoryPercentOfTarget(period.percent),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -161,9 +158,18 @@ class _PeriodCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '${formatGoalValue(period.achieved, goalType: period.goalType, symbol: goalSymbol(period.currency, symbol))}'
-            ' of '
-            '${formatGoalValue(period.target, goalType: period.goalType, symbol: goalSymbol(period.currency, symbol))}',
+            l10n.goalsAchievedOfTarget(
+              formatGoalValue(
+                period.achieved,
+                goalType: period.goalType,
+                symbol: goalSymbol(period.currency, symbol),
+              ),
+              formatGoalValue(
+                period.target,
+                goalType: period.goalType,
+                symbol: goalSymbol(period.currency, symbol),
+              ),
+            ),
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           if (period.goals.isNotEmpty) ...[
@@ -229,7 +235,9 @@ class _GoalOutcome extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              met ? 'Met' : 'Missed',
+              met
+                  ? context.l10n.goalsHistoryMetBadge
+                  : context.l10n.goalsHistoryMissedBadge,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -256,17 +264,16 @@ class _HistoryEmpty extends StatelessWidget {
           children: [
             Icon(LucideIcons.history, size: 40, color: Colors.grey.shade400),
             const SizedBox(height: 12),
-            const Text(
-              'No finished periods yet',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Text(
+              context.l10n.goalsHistoryEmptyTitle,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
               // Says which set is empty. The endpoint narrows a member to their
               // own goals and their teams', so "nothing has finished yet" would
               // be a claim about the org that a member cannot actually see.
-              'Once a goal\'s period ends it moves here with what it attained. '
-              'Goals still running are on the goals screen.',
+              context.l10n.goalsHistoryEmptyBody,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
@@ -296,9 +303,12 @@ class _HistoryError extends StatelessWidget {
               color: Colors.grey.shade400,
             ),
             const SizedBox(height: 12),
-            const Text('Could not load goal history'),
+            Text(context.l10n.goalsHistoryLoadFailed),
             const SizedBox(height: 12),
-            FilledButton(onPressed: onRetry, child: const Text('Try again')),
+            FilledButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.goalsTryAgain),
+            ),
           ],
         ),
       ),

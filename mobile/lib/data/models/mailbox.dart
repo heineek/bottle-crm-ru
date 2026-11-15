@@ -11,7 +11,9 @@
 /// same rules.
 library;
 
+import '../../l10n/l10n.dart';
 import 'lookup_models.dart';
+import 'ticket.dart' show TicketPriority, TicketType;
 
 /// What an address actually does with mail, as opposed to what its switch says.
 ///
@@ -29,14 +31,17 @@ import 'lookup_models.dart';
 /// delivery fail first". None of it is a security control: every gate is
 /// enforced in `cases/inbound_views.py`.
 enum MailboxDelivery {
-  off('Creating nothing'),
-  unsupported('Provider not wired up'),
-  unconfirmed('Not connected yet'),
-  live('Creating tickets');
+  off,
+  unsupported,
+  unconfirmed,
+  live;
 
-  const MailboxDelivery(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    off => appL10n.appMailboxDeliveryOff,
+    unsupported => appL10n.appMailboxDeliveryUnsupported,
+    unconfirmed => appL10n.appMailboxDeliveryUnconfirmed,
+    live => appL10n.appMailboxDeliveryLive,
+  };
 
   bool get isLive => this == MailboxDelivery.live;
 }
@@ -61,7 +66,7 @@ String mailboxProviderLabel(String provider) {
   final label = mailboxProviderLabels[provider] ?? provider;
   return supportedMailboxProviders.contains(provider)
       ? label
-      : '$label (not wired up yet)';
+      : appL10n.appMailboxProviderNotWired(label);
 }
 
 class Mailbox {
@@ -148,18 +153,12 @@ class Mailbox {
   String? get deliveryExplanation {
     switch (delivery) {
       case MailboxDelivery.off:
-        return 'Mail still arrives here and no ticket is opened. Nothing '
-            'bounces, so whoever wrote gets silence rather than an error.';
+        return appL10n.appMailboxExplainOff;
       case MailboxDelivery.unsupported:
         final label = mailboxProviderLabels[provider] ?? provider;
-        return '$label deliveries are not implemented. The webhook refuses '
-            'them, so mail to this address becomes nothing whatever else is '
-            'set here. Only AWS SES is wired up.';
+        return appL10n.appMailboxExplainUnsupported(label);
       case MailboxDelivery.unconfirmed:
-        return 'Waiting for its SNS topic. Every message is refused until '
-            'this address has a Topic ARN: an admin can enter it here, or it is '
-            'set when AWS confirms a subscription from an AWS account this '
-            'server allows.';
+        return appL10n.appMailboxExplainUnconfirmed;
       case MailboxDelivery.live:
         return null;
     }
@@ -167,12 +166,21 @@ class Mailbox {
 
   /// What a ticket from here starts out as, in one line.
   String get opensAs {
-    final parts = <String>[defaultPriority];
-    if (defaultCaseType != null) parts.add(defaultCaseType!);
+    final l10n = appL10n;
+    final priority = TicketPriority.values
+        .where((p) => p.value == defaultPriority)
+        .firstOrNull;
+    final caseType = TicketType.values
+        .where((t) => t.value == defaultCaseType)
+        .firstOrNull;
+    final parts = <String>[priority?.label ?? defaultPriority];
+    if (defaultCaseType != null) {
+      parts.add(caseType?.label ?? defaultCaseType!);
+    }
     parts.add(
       defaultAssignee == null
-          ? 'then routed'
-          : 'assigned to ${defaultAssignee!.displayName}',
+          ? l10n.appMailboxThenRouted
+          : l10n.appMailboxAssignedTo(defaultAssignee!.displayName),
     );
     return parts.join(' · ');
   }
@@ -286,39 +294,26 @@ Map<String, dynamic> mailboxActivePayload(bool isActive) => {
 /// field answers immediately rather than after a round trip.
 String? mailboxAddressProblem(String address) {
   final trimmed = address.trim();
-  if (trimmed.isEmpty) return 'Give the address.';
+  if (trimmed.isEmpty) return appL10n.appMailboxValidateAddress;
   // Deliberately loose. `EmailField` is what decides, and a stricter pattern
   // here would refuse addresses the server accepts.
   final at = trimmed.indexOf('@');
   if (at <= 0 || at == trimmed.length - 1 || trimmed.contains(' ')) {
-    return 'That does not look like an email address.';
+    return appL10n.appOrgValidateEmail;
   }
   return null;
 }
 
 /// What deleting an address does, said before it is done.
-const String mailboxDeleteExplanation =
-    'Deleted for good. Mail sent here stops becoming tickets, and the topic '
-    'pin goes with it, so a delivery already in flight from AWS stops '
-    'verifying. Tickets already opened from this address are not touched.';
+String get mailboxDeleteExplanation => appL10n.appMailboxDeleteExplanation;
 
 /// What turning one off does, which is not the same as deleting it.
-const String mailboxDeactivateExplanation =
-    'Stops opening tickets. Mail keeps arriving and nothing bounces, so anyone '
-    'writing here gets no ticket and no error. It stays in the list, off, '
-    'until it is turned back on.';
+String get mailboxDeactivateExplanation =>
+    appL10n.appMailboxDeactivateExplanation;
 
 /// The two checks a delivery has to clear, said once on the screen.
 ///
 /// This replaced a card that claimed a per-address shared secret proved a
 /// delivery genuine and that the server minted one on create. Neither is true:
 /// nothing in the backend compares that column.
-const String mailboxAuthExplanation =
-    'AWS signs each notification, and the address has to be pinned to the exact '
-    'SNS topic it was subscribed to. The signature alone proves only that some '
-    'AWS account sent it, so without the pin anyone who learned an address id '
-    'could have AWS sign forged mail into this organization. An admin can '
-    'enter the pin as the address\'s Topic ARN. Left blank, it is set by the '
-    'first subscription AWS confirms from an AWS account this server allows; '
-    'a subscription from any other account is refused. Only admins can see '
-    'the ARN, because it carries the AWS account id.';
+String get mailboxAuthExplanation => appL10n.appMailboxAuthExplanation;

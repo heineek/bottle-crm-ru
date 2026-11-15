@@ -4,7 +4,7 @@ BottleCRM community edition, a multi-tenant CRM. `backend/` is a Django 6.1 + DR
 
 ## Security first
 
-This is a production multi-tenant app under active attack. The two targets are account takeover and superadmin escalation: assume every change is probed for a way to act as another user, read another org's data, or reach `is_superuser`. Full rules: `docs/contributing/security-rules.md`.
+This is a production multi-tenant app under active attack. The two targets are account takeover and superadmin escalation: assume every change is probed for a way to act as another user, read another org's data, or reach `is_superuser`. Full rules: `docs/EN/contributing/security-rules.md`.
 
 - **The backend is the only trust boundary.** Web and mobile validation are UX; every rule must also live in the DRF serializer or view.
 - **Identity, org and role are server-derived** from `request.profile` and the JWT, never the request body. Login, OAuth, JWT claims, token refresh and rotation, email or password change, invitations, membership and role assignment are high-risk by default.
@@ -18,7 +18,8 @@ This is a production multi-tenant app under active attack. The two targets are a
 
 - **Web and mobile ship together.** A user-facing change reaches `frontend/src/` and `mobile/lib/` in the same pass, whichever side it starts on. If one half genuinely cannot ship, add a row to the Backlog in `mobile/docs/PARITY.md` and say so. Parity covers behaviour too: validators, status sets, role gates, filter params, currency and timezone rules. Change one client, grep the other.
 - **Mobile first.** A web page is done when it works at 390px: no horizontal scroll, no stranded action, tap targets about 44px. `frontend/src/lib/v2/styles/v2.css` turns `.v2-table` rows into cards below 768px (refined per cell with `data-m`: `title`, `meta`, `lead`, `tag`, `bar`, `hide`) and supplies `.v2-tabbar` and `.v2-fab`. Bespoke markup opts out of all of it. 768px is the phone breakpoint; other one-off values in route files are drift.
-- **Bump the version with the change.** `version` in `backend/pyproject.toml` is the only version, and `backend/uv.lock` repeats it on its `django-crm` line. Feature or endpoint: minor. Fix, docs or packaging: patch. Major only for a REST break or a migration that cannot be applied forward. A frontend change bumps too, since every release publishes `ghcr.io/django-crm/bottlecrm-frontend:<version>`; a mobile-only change does not. See `docs/contributing/releasing.md`.
+- **Bump the version with the change.** `version` in `backend/pyproject.toml` is the only version, and `backend/uv.lock` repeats it on its `django-crm` line. Feature or endpoint: minor. Fix, docs or packaging: patch. Major only for a REST break or a migration that cannot be applied forward. A frontend change bumps too, since every release publishes `ghcr.io/django-crm/bottlecrm-frontend:<version>`; a mobile-only change does not. See `docs/EN/contributing/releasing.md`.
+- **The docs exist in two languages.** `docs/EN/` is the English source that `mkdocs.yml` publishes; `docs/RU/` mirrors it file for file and builds from `mkdocs.ru.yml`. A docs change edits both, and a Russian heading keeps the English anchor as `{#id}`, so links stay the same in both trees.
 - **A new Django app is two edits**: `INSTALLED_APPS` and the hatch `packages`/`include` lists in `backend/pyproject.toml`. A missing entry imports fine from a checkout and fails after `pip install`; `common/tests/test_packaging.py` catches the drift.
 - **Build what was asked, and reuse before adding.** No config knob or abstraction without a second real caller. A feature is done when its failure paths, malformed input and wrong-role caller are tested. When you fix a block, check its other branches; no dead code, and no docstring describing behaviour the code lacks.
 - **Comment sparingly.** Comment only what the code cannot say: a non-obvious reason, a workaround, a subtle invariant, a deliberate departure from the obvious approach. Never narrate what it does. Two or three lines, five at most; a longer reason belongs in a docstring or `docs/`, with a one-line pointer. State a fact once, where a reader meets it first. Much of this code predates the rule, so the file you are editing is not the standard. This overrides matching the surrounding comment density.
@@ -35,10 +36,12 @@ Backend:
 - RLS: `common.tasks.set_rls_context` and `clear_rls_context` (pair them in `finally`); `get_enable_policy_sql` and `ORG_SCOPED_TABLES` in `common/rls/__init__.py`.
 - Uploads: `common.utils.validate_attachment` before the first write, then `create_attachment`.
 - Money: `common.money` (`org_currency`, `currency_block`, which never adds two currencies). Time: `common.org_time` (`org_timezone`, `activate_org_timezone`). Links in emails: `common.links.frontend_url` and `api_url`. Audit: `common.audit_log.audit_log`. Custom fields: `common.custom_fields.validate_payload`.
+- Strings: `gettext`/`gettext_lazy` with named placeholders, `pgettext_lazy` where a word needs a different form by entity; the language comes from `common.locale` (`language_for_user`, `language_for_org` for mail and Celery). Catalogs: `manage.py update_messages [--compile]`. See `docs/EN/localization/`.
 - Test fixtures: `common.testing` (`org_a`, `org_b`, `admin_client`, `user_client`, `set_rls_context`, ...), re-exported by `conftest.py`.
 
 Frontend:
 
+- Strings: `m` from `#lib/paraglide/messages.js`, keys in `messages/<module>/{en,ru}.json`, never called at module load; part of a sentence styled with `slot()`/`messageParts()` from `#lib/utils/message-parts.js`. Russian terms: `docs/EN/localization/glossary-ru.md`.
 - Formatting: `#lib/v2/format.js` (`money(n, currency)`, which defaults to USD, so pass `data.org.currency`; `shortDate`, `longDate`, `relativeTime`). The org's "today": `todayIn(tz)` from `#lib/v2/dates.js` with `data.org.timezone`.
 - Admin: `isOrgAdmin` from `#lib/admin.js`. Labels and tones: `#lib/v2/enums.js`. Classes: `cn` from `#lib/utils.js`. DRF errors to a sentence: `readableError` from `#lib/server/v2/form-errors.js`.
 - Lists and filters: `#lib/v2/filters.js`, `#lib/server/v2/filter-params.js`, `#lib/server/v2/list-queries.js`, `#lib/server/v2/saved-views.js`. Custom fields: `#lib/server/v2/custom-fields.js`. @mentions: `MentionTextarea` and `MentionBody` in `#lib/v2/components/`, fed by `mentionPeople()` from `#lib/v2/mentions.js`.
@@ -71,7 +74,7 @@ pnpm run format
 docker compose up --build                                   # full stack, from the repo root
 ```
 
-CI (`.github/workflows/tests.yml`) blocks on `makemigrations --check`, `ruff check`, `ruff format --check`, pytest on SQLite and on Postgres, the `postgres_only` tests as a non-superuser role, a wheel install check, `eslint`, `pnpm check`, `pnpm test`, `pnpm build` and `mkdocs --strict`. Prettier only warns. Nothing runs for mobile. Markers, the Postgres role and the three CI runs: `docs/contributing/testing.md`.
+CI (`.github/workflows/tests.yml`) blocks on `makemigrations --check`, `ruff check`, `ruff format --check`, pytest on SQLite and on Postgres, the `postgres_only` tests as a non-superuser role, a wheel install check, `eslint`, `pnpm check`, `pnpm test`, `pnpm build` and `mkdocs --strict`. Prettier only warns. Nothing runs for mobile. Markers, the Postgres role and the three CI runs: `docs/EN/contributing/testing.md`.
 
 ## Gotchas
 
@@ -85,7 +88,7 @@ Backend:
 - **A `read_only` field is dropped silently**: the write returns 200 and nothing changes. Privilege fields turn read-only for callers who may not grant them.
 - **The detail route carries comments and attachments.** `/api/<module>/<uid:pk>/` takes GET (record plus comments and attachments), POST (adds a comment or attachment), PUT, PATCH and DELETE. `/comment/<uid:pk>/` is PUT, PATCH, DELETE by comment id; `/attachment/<uid:pk>/` is DELETE only. Deals are `/api/opportunities/`. Swagger: `/swagger-ui/`.
 - **SQLite tests cannot see RLS**: `crm.test_settings` is in-memory SQLite, where the RLS helpers do nothing. Tenant isolation needs a `postgres_only` test.
-- **Most core models predate `BaseOrgModel`** and declare their own `org` FK. A new org-scoped model inherits `BaseOrgModel`, joins `ORG_SCOPED_TABLES` and gets an RLS migration; follow `docs/contributing/adding-an-org-scoped-model.md`.
+- **Most core models predate `BaseOrgModel`** and declare their own `org` FK. A new org-scoped model inherits `BaseOrgModel`, joins `ORG_SCOPED_TABLES` and gets an RLS migration; follow `docs/EN/contributing/adding-an-org-scoped-model.md`.
 - Celery workers have no middleware: call `set_rls_context(org_id)` before any query.
 
 Frontend:

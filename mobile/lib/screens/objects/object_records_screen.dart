@@ -10,9 +10,7 @@ import '../../data/models/custom_object.dart';
 import '../../providers/custom_objects_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/common.dart';
-
-const _missingObject =
-    'This object does not exist, or you do not have access to it.';
+import '../../l10n/l10n.dart';
 
 /// The records of one custom object, searchable and paged by the server.
 class ObjectRecordsScreen extends ConsumerStatefulWidget {
@@ -74,13 +72,13 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
 
     return definition.when(
       loading: () => _shell(
-        title: 'Records',
+        title: context.l10n.objectsRecordsTitle,
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => _shell(
-        title: 'Records',
+        title: context.l10n.objectsRecordsTitle,
         body: _ErrorView(
-          message: 'Failed to load this object',
+          message: context.l10n.objectsLoadObjectFailed,
           onRetry: () =>
               ref.invalidate(objectDefinitionProvider(widget.objectKey)),
         ),
@@ -88,10 +86,10 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
       data: (def) {
         if (def == null) {
           return _shell(
-            title: 'Records',
-            body: const EmptyState(
+            title: context.l10n.objectsRecordsTitle,
+            body: EmptyState(
               icon: LucideIcons.boxes,
-              title: _missingObject,
+              title: context.l10n.objectsMissingObject,
             ),
           );
         }
@@ -111,7 +109,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
           fab: canWrite
               ? AppFAB(
                   icon: LucideIcons.plus,
-                  label: 'New ${def.summary.label}',
+                  label: context.l10n.objectsNewRecord(def.summary.label),
                   onPressed: () => context.push(
                     AppRoutes.objectRecordCreate(widget.objectKey),
                   ),
@@ -145,7 +143,9 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
         style: AppTypography.body,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search ${summary.labelPlural.toLowerCase()}',
+          hintText: context.l10n.objectsSearchHint(
+            summary.labelPlural.toLowerCase(),
+          ),
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -155,7 +155,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
           suffixIcon: _search.text.isEmpty
               ? null
               : IconButton(
-                  tooltip: 'Clear search',
+                  tooltip: context.l10n.objectsClearSearch,
                   icon: Icon(
                     LucideIcons.x,
                     color: AppColors.textTertiary,
@@ -188,7 +188,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
     }
     if (async.hasError && (data == null || data.records.isEmpty)) {
       return _ErrorView(
-        message: 'Failed to load records',
+        message: context.l10n.objectsLoadRecordsFailed,
         onRetry: notifier.refresh,
       );
     }
@@ -205,8 +205,12 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
               child: EmptyState(
                 icon: LucideIcons.boxes,
                 title: searching
-                    ? 'No matching ${def.summary.labelPlural.toLowerCase()}'
-                    : 'No ${def.summary.labelPlural.toLowerCase()} yet',
+                    ? context.l10n.objectsNoMatching(
+                        def.summary.labelPlural.toLowerCase(),
+                      )
+                    : context.l10n.objectsEmpty(
+                        def.summary.labelPlural.toLowerCase(),
+                      ),
               ),
             ),
           ),
@@ -340,7 +344,7 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(message, style: AppTypography.label),
           const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(context.l10n.commonRetry)),
         ],
       ),
     );

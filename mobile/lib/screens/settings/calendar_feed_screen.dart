@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/calendar_feed.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/calendar_feed_provider.dart';
 
 /// Your task calendar feed, mirroring `/profile/calendar-feed` on the web.
@@ -46,7 +47,7 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -61,11 +62,9 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
   Future<void> _issue({required bool replacing}) async {
     if (replacing &&
         !await _confirm(
-          title: 'Regenerate the URL?',
-          body:
-              'The old URL stops working at once, and calendars subscribed to '
-              'it stop updating. Subscribe again with the new one.',
-          action: 'Regenerate',
+          title: context.l10n.settingsCalendarFeedRegenTitle,
+          body: context.l10n.settingsCalendarFeedRegenBody,
+          action: context.l10n.settingsCalendarFeedRegen,
         )) {
       return;
     }
@@ -81,11 +80,9 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
 
   Future<void> _disable() async {
     if (!await _confirm(
-      title: 'Turn the calendar feed off?',
-      body:
-          'The URL stops working and subscribed calendars stop updating. You '
-          'can turn it on again later with a new URL.',
-      action: 'Turn off',
+      title: context.l10n.settingsCalendarFeedOffTitle,
+      body: context.l10n.settingsCalendarFeedOffBody,
+      action: context.l10n.settingsCalendarFeedTurnOff,
     )) {
       return;
     }
@@ -96,7 +93,7 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
       _busy = false;
       if (error == null) _url = null;
     });
-    _say(error ?? 'Calendar feed turned off');
+    _say(error ?? context.l10n.settingsCalendarFeedTurnedOffToast);
   }
 
   @override
@@ -105,7 +102,7 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Calendar feed'),
+        title: Text(context.l10n.settingsCalendarFeedTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -124,11 +121,12 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
               _Summary(feed: feed),
               if (feed.enabled) ...[
                 _Row(
-                  label: 'Last fetched',
+                  label: context.l10n.settingsCalendarFeedLastFetched,
                   detail: feed.lastUsedAt == null
-                      ? 'No calendar app has read it yet.'
-                      : 'A calendar app read it on '
-                            '${DateFormat.yMMMd().add_jm().format(feed.lastUsedAt!)}.',
+                      ? context.l10n.settingsCalendarFeedNeverRead
+                      : context.l10n.settingsCalendarFeedReadAt(
+                          DateFormat.yMMMd().add_jm().format(feed.lastUsedAt!),
+                        ),
                 ),
                 _Actions(
                   children: [
@@ -138,7 +136,7 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
                       ),
                       onPressed: _busy ? null : () => _issue(replacing: true),
                       icon: const Icon(LucideIcons.refreshCw, size: 16),
-                      label: const Text('Regenerate URL'),
+                      label: Text(context.l10n.settingsCalendarFeedRegenUrl),
                     ),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
@@ -146,7 +144,7 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
                       ),
                       onPressed: _busy ? null : _disable,
                       icon: const Icon(LucideIcons.power, size: 16),
-                      label: const Text('Turn off'),
+                      label: Text(context.l10n.settingsCalendarFeedTurnOff),
                     ),
                   ],
                 ),
@@ -158,30 +156,22 @@ class _CalendarFeedScreenState extends ConsumerState<CalendarFeedScreen> {
                         minimumSize: const Size(0, 48),
                       ),
                       onPressed: _busy ? null : () => _issue(replacing: false),
-                      child: const Text('Turn on calendar feed'),
+                      child: Text(context.l10n.settingsCalendarFeedTurnOn),
                     ),
                   ],
                 ),
-              const _SectionHeader('Subscribe to it'),
-              const _Row(
-                label: 'Google Calendar',
-                detail:
-                    'On a computer, open Google Calendar. Beside Other '
-                    'calendars choose +, then From URL, paste the feed URL and '
-                    'choose Add calendar. Google refreshes it every few hours, '
-                    'so changes take a while to appear.',
+              _SectionHeader(context.l10n.settingsCalendarFeedSectionSubscribe),
+              _Row(
+                label: context.l10n.settingsCalendarFeedGoogle,
+                detail: context.l10n.settingsCalendarFeedGoogleBody,
               ),
-              const _Row(
+              _Row(
                 label: 'Outlook',
-                detail:
-                    'In Outlook on the web choose Add calendar, then Subscribe '
-                    'from web, paste the feed URL and choose Import.',
+                detail: context.l10n.settingsCalendarFeedOutlookBody,
               ),
-              const _Row(
-                label: 'Apple Calendar',
-                detail:
-                    'Choose File, then New Calendar Subscription, and paste '
-                    'the feed URL.',
+              _Row(
+                label: context.l10n.settingsCalendarFeedApple,
+                detail: context.l10n.settingsCalendarFeedAppleBody,
               ),
               const _Footnote(),
             ],
@@ -208,12 +198,12 @@ class _Reveal extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your feed URL, copy it now',
+            context.l10n.settingsCalendarFeedRevealTitle,
             style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
-            'This is the only time it is shown. If you lose it, regenerate it.',
+            context.l10n.settingsCalendarFeedRevealBody,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -241,12 +231,14 @@ class _Reveal extends StatelessWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: url));
               if (!context.mounted) return;
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Feed URL copied')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(context.l10n.settingsCalendarFeedCopied),
+                ),
+              );
             },
             icon: const Icon(LucideIcons.copy, size: 16),
-            label: const Text('Copy URL'),
+            label: Text(context.l10n.settingsCalendarFeedCopyUrl),
           ),
         ],
       ),
@@ -286,17 +278,17 @@ class _Summary extends StatelessWidget {
               children: [
                 Text(
                   feed.enabled && created != null
-                      ? 'On, URL created ${DateFormat.yMMMd().format(created)}'
-                      : 'Off',
+                      ? context.l10n.settingsCalendarFeedSummaryOn(
+                          DateFormat.yMMMd().format(created),
+                        )
+                      : context.l10n.settingsCalendarFeedSummaryOff,
                   style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Your tasks that are New or In progress and have a due '
-                  'date, from 90 days ago to a year ahead, as all-day events. '
-                  'Each shows the title, the priority and a link to the task.',
+                  context.l10n.settingsCalendarFeedSummaryBody,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -387,11 +379,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Text(
-        'The URL is the key. Anyone who has it can see the titles and '
-        'priorities of your open tasks without signing in, so share it with '
-        'nobody but your calendar app, and regenerate it if it leaks. It stops '
-        'working on its own if you leave the organisation or your account is '
-        'deactivated.',
+        context.l10n.settingsCalendarFeedFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -418,12 +406,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load your calendar feed',
+              context.l10n.settingsCalendarFeedLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsCalendarFeedTryAgain),
+            ),
           ],
         ),
       ),

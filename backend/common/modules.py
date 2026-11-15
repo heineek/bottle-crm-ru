@@ -11,11 +11,16 @@ from datetime import UTC, datetime
 
 import crum
 from django.http import JsonResponse
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
 from rest_framework.response import Response
 
 
 @dataclass(frozen=True)
 class Module:
+    """``label``, ``covers`` and ``stops`` are lazy, so each read follows the
+    active language; ``stops`` takes ``{label}``."""
+
     key: str
     label: str
     group: str
@@ -30,51 +35,51 @@ GROUPS = ("sell", "serve", "bill")
 MODULES = (
     Module(
         key="deals",
-        label="Pipeline",
+        label=_("Pipeline"),
         term="opportunity.plural",
         group="sell",
-        covers="Deals, deal pipelines, line items, the deal board and stage aging.",
-        stops=(
+        covers=_("Deals, deal pipelines, line items, the deal board and stage aging."),
+        stops=_(
             "Everything in {label} leaves every menu, search and Today, and stale-deal emails stop. "
             "Converting a lead no longer creates a deal, and Goals switches off too."
         ),
     ),
     Module(
         key="leads",
-        label="Leads",
+        label=_("Leads"),
         term="lead.plural",
         group="sell",
-        covers="Leads, lead pipelines, and lead import and export.",
-        stops="{label} leave every menu, search and Today.",
+        covers=_("Leads, lead pipelines, and lead import and export."),
+        stops=_("{label} leave every menu, search and Today."),
     ),
     Module(
         key="goals",
-        label="Goals",
+        label=_("Goals"),
         group="sell",
         needs="deals",
-        covers="Sales goals, the leaderboard and goal history.",
-        stops="{label} leave every menu, and goal milestone emails stop.",
+        covers=_("Sales goals, the leaderboard and goal history."),
+        stops=_("{label} leave every menu, and goal milestone emails stop."),
     ),
     Module(
         key="tasks",
-        label="Tasks",
+        label=_("Tasks"),
         group="serve",
-        covers="Tasks, boards, the task calendar and its calendar feed.",
-        stops=(
+        covers=_("Tasks, boards, the task calendar and its calendar feed."),
+        stops=_(
             "{label} leave every menu and Today, calendar feeds stop updating, "
             "and automation rules skip their Create a task steps."
         ),
     ),
     Module(
         key="tickets",
-        label="Tickets",
+        label=_("Tickets"),
         group="serve",
-        covers=(
+        covers=_(
             "Tickets, approvals, ticket analytics, routing, escalation, the reopen "
             "policy, business hours, saved replies, inbound email, CSAT and portal "
             "tickets."
         ),
-        stops=(
+        stops=_(
             "{label} leave every menu and Today, SLA escalation stops, CSAT survey "
             "links stop opening, and customers stop seeing their tickets in the "
             "portal. Timesheet switches off too."
@@ -82,31 +87,31 @@ MODULES = (
     ),
     Module(
         key="knowledge_base",
-        label="Knowledge base",
+        label=_("Knowledge base"),
         group="serve",
-        covers="Articles, the public help center and portal articles.",
-        stops=(
+        covers=_("Articles, the public help center and portal articles."),
+        stops=_(
             "Articles leave every menu, the public help center goes offline, and "
             "the portal stops showing articles."
         ),
     ),
     Module(
         key="documents",
-        label="Documents",
+        label=_("Documents"),
         group="serve",
-        covers="Documents and their downloads.",
-        stops="{label} leave every menu, and their downloads stop opening.",
+        covers=_("Documents and their downloads."),
+        stops=_("{label} leave every menu, and their downloads stop opening."),
     ),
     Module(
         key="invoices",
-        label="Invoices",
+        label=_("Invoices"),
         term="invoice.plural",
         group="bill",
-        covers=(
+        covers=_(
             "Invoices, estimates, recurring invoices, invoice templates, invoice "
             "reports, account statements, and public invoice and estimate links."
         ),
-        stops=(
+        stops=_(
             "Recurring invoices stop being sent, and links you have already sent to "
             "customers stop opening. Recurring invoices that fall due while {label} "
             "is off are not sent later. Payment reminders that fall due while "
@@ -115,11 +120,11 @@ MODULES = (
     ),
     Module(
         key="timesheet",
-        label="Timesheet",
+        label=_("Timesheet"),
         group="bill",
         needs="tickets",
-        covers="Time entries, the timesheet and the time report.",
-        stops=(
+        covers=_("Time entries, the timesheet and the time report."),
+        stops=_(
             "Time entries leave every menu and ticket, and running timers are no "
             "longer stopped automatically."
         ),
@@ -201,11 +206,13 @@ def module_label(org, key) -> str:
         value = terms.get(m.term)
         if isinstance(value, str) and value:
             return value
-    return m.label
+    return str(m.label)
 
 
 def module_off_message(org, key) -> str:
-    return f"{module_label(org, key)} is switched off for this organization."
+    return gettext("%(label)s is switched off for this organization.") % {
+        "label": module_label(org, key)
+    }
 
 
 def module_off_body(org, key) -> dict:

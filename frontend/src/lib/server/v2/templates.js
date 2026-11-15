@@ -45,6 +45,7 @@
  * delete) is derived from the rows. `limit=1000`; an org has a handful of
  * templates, and that ceiling is called out where it is set.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from '#lib/server/v2/organization.js';
 
@@ -210,12 +211,12 @@ export const UPDATE_FIELDS = [
  */
 export async function createInvoiceTemplate({ cookies }, values, logoFile = null) {
   const name = (values.name ?? '').toString().trim();
-  if (!name) throw new Error('Give the template a name.');
+  if (!name) throw new Error(m.settings_templates_error_name());
 
   for (const key of ['primary_color', 'secondary_color']) {
     const colour = values[key];
     if (colour !== undefined && colour !== '' && !HEX_COLOR.test(String(colour))) {
-      throw new Error('Colours must be a six digit hex value, for example #3B82F6.');
+      throw new Error(m.settings_templates_error_colour());
     }
   }
 
@@ -308,12 +309,12 @@ export async function getInvoiceTemplateForEdit({ cookies }, id) {
  */
 export async function updateInvoiceTemplate({ cookies }, id, values, logoFile = null) {
   const name = (values.name ?? '').toString().trim();
-  if (!name) throw new Error('Give the template a name.');
+  if (!name) throw new Error(m.settings_templates_error_name());
 
   for (const key of ['primary_color', 'secondary_color']) {
     const colour = values[key];
     if (colour !== undefined && colour !== '' && !HEX_COLOR.test(String(colour))) {
-      throw new Error('Colours must be a six digit hex value, for example #3B82F6.');
+      throw new Error(m.settings_templates_error_colour());
     }
   }
 

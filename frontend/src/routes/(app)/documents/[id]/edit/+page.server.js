@@ -7,6 +7,7 @@ import {
 } from '#lib/server/v2/documents.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { sameIds } from '#lib/v2/pickers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Editing a document: rename, archive/restore, and manage who can open it.
@@ -25,7 +26,7 @@ export async function load(event) {
     return await getDocumentForEdit(event, event.params.id);
   } catch (/** @type {any} */ err) {
     if (err?.status === 404) {
-      error(404, 'That document does not exist, or it belongs to another org.');
+      error(404, m.documents_error_not_found());
     }
     throw err;
   }
@@ -61,7 +62,7 @@ export const actions = {
     const file = picked instanceof File && picked.size > 0 ? picked : null;
 
     if (!title) {
-      return fail(400, { values, error: 'Give the document a title.' });
+      return fail(400, { values, error: m.documents_error_title_short() });
     }
 
     try {
@@ -72,11 +73,11 @@ export const actions = {
       );
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { values, error: 'Only the owner or an admin can change this document.' });
+        return fail(403, { values, error: m.documents_error_edit_forbidden() });
       }
       return fail(400, {
         values,
-        error: readableError(err, 'Could not save this document.')
+        error: readableError(err, m.documents_error_save_failed())
       });
     }
 
@@ -88,11 +89,11 @@ export const actions = {
       await deleteDocument(event, event.params.id);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { error: 'Only the owner or an admin can delete this document.' });
+        return fail(403, { error: m.documents_error_delete_forbidden() });
       }
       // Already gone is the outcome the caller wanted; treat 404 as done.
       if (err?.status === 404) redirect(303, '/documents');
-      return fail(400, { error: readableError(err, 'Could not delete this document.') });
+      return fail(400, { error: readableError(err, m.documents_error_delete_failed()) });
     }
 
     redirect(303, '/documents');

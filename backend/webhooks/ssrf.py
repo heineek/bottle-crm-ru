@@ -30,6 +30,7 @@ from urllib.parse import urlsplit
 import certifi
 import urllib3
 from django.conf import settings
+from django.utils.translation import gettext_noop
 
 DEFAULT_PORTS = {"https": 443, "http": 80}
 _HOSTNAME = re.compile(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?")
@@ -38,7 +39,10 @@ _NAT64 = ipaddress.ip_network("64:ff9b::/96")
 
 
 class UnsafeDestination(Exception):
-    """The URL may not be requested. The message is safe to show an admin."""
+    """The URL may not be requested. The message is safe to show an admin.
+
+    In English, since a delivery's `error` stores it; the serializer translates it.
+    """
 
 
 def _allowed_schemes():
@@ -55,27 +59,31 @@ def parse(url):
         parts = urlsplit(url.strip())
         port = parts.port
     except ValueError:
-        raise UnsafeDestination("Enter a valid URL.") from None
+        raise UnsafeDestination(gettext_noop("Enter a valid URL.")) from None
     scheme = parts.scheme.lower()
     if scheme not in _allowed_schemes():
-        raise UnsafeDestination("The URL must start with https://.")
+        raise UnsafeDestination(gettext_noop("The URL must start with https://."))
     if parts.username is not None or parts.password is not None:
-        raise UnsafeDestination("The URL must not contain a username or password.")
+        raise UnsafeDestination(
+            gettext_noop("The URL must not contain a username or password.")
+        )
     host = parts.hostname
     if not host:
-        raise UnsafeDestination("Enter a valid URL.")
+        raise UnsafeDestination(gettext_noop("Enter a valid URL."))
     try:
         ipaddress.ip_address(host)
     except ValueError:
         try:
             host = host.encode("idna").decode("ascii")
         except UnicodeError:
-            raise UnsafeDestination("Enter a valid host name.") from None
+            raise UnsafeDestination(gettext_noop("Enter a valid host name.")) from None
         if not _HOSTNAME.fullmatch(host):
-            raise UnsafeDestination("Enter a valid host name.")
+            raise UnsafeDestination(gettext_noop("Enter a valid host name."))
     port = port or DEFAULT_PORTS[scheme]
     if port not in _allowed_ports():
-        raise UnsafeDestination("Only the standard HTTPS port (443) is allowed.")
+        raise UnsafeDestination(
+            gettext_noop("Only the standard HTTPS port (443) is allowed.")
+        )
     target = parts.path or "/"
     if parts.query:
         target = f"{target}?{parts.query}"
@@ -115,13 +123,15 @@ def resolve(host, port):
     if literal is not None:
         if is_blocked(literal):
             raise UnsafeDestination(
-                "The URL points at a private or reserved network address."
+                gettext_noop("The URL points at a private or reserved network address.")
             )
         return [literal]
     try:
         infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
     except (socket.gaierror, UnicodeError):
-        raise UnsafeDestination("The host name could not be resolved.") from None
+        raise UnsafeDestination(
+            gettext_noop("The host name could not be resolved.")
+        ) from None
     addresses = []
     for info in infos:
         # A scoped IPv6 literal carries "%zone"; the zone is not part of the
@@ -130,10 +140,10 @@ def resolve(host, port):
         if ip not in addresses:
             addresses.append(ip)
     if not addresses:
-        raise UnsafeDestination("The host name could not be resolved.")
+        raise UnsafeDestination(gettext_noop("The host name could not be resolved."))
     if any(is_blocked(ip) for ip in addresses):
         raise UnsafeDestination(
-            "The URL points at a private or reserved network address."
+            gettext_noop("The URL points at a private or reserved network address.")
         )
     return addresses
 

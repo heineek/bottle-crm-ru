@@ -1,3 +1,4 @@
+import 'package:bottle_crm/data/models/org_locales.dart';
 import 'package:bottle_crm/data/models/deal.dart';
 import 'package:bottle_crm/data/models/org_settings.dart';
 import 'package:bottle_crm/data/models/ticket.dart';
@@ -336,15 +337,17 @@ void main() {
     });
   });
 
-  group('orgCountryOptions', () {
+  group('OrgLocales.fallback', () {
+    final countries = OrgLocales.fallback.countries;
+
     test('offers South Africa (issue #770)', () {
-      expect(orgCountryOptions, contains((value: 'ZA', label: 'South Africa')));
+      expect(countries, contains((value: 'ZA', label: 'South Africa')));
     });
 
     test('offers every country the backend accepts, not a short list', () {
       // The web org form lists the same 246 codes as common/utils COUNTRIES.
-      expect(orgCountryOptions.length, 246);
-      expect(orgCountryOptions.map((o) => o.value).toSet().length, 246);
+      expect(countries.length, 246);
+      expect(countries.map((o) => o.value).toSet().length, 246);
     });
   });
 

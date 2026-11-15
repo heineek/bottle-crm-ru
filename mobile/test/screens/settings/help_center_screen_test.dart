@@ -1,6 +1,7 @@
 import 'package:bottle_crm/data/models/help_center_settings.dart';
 import 'package:bottle_crm/providers/help_center_provider.dart';
 import 'package:bottle_crm/screens/settings/help_center_screen.dart';
+import 'package:bottle_crm/services/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,6 +100,18 @@ void main() {
     expect(find.byType(TextField), findsNothing);
     // Nothing to open while it is off.
     expect(find.text('Open the public page'), findsNothing);
+  });
+
+  testWidgets('reads in Russian and fits a 390px phone at 1.3x text', (
+    tester,
+  ) async {
+    applyLanguage('ru');
+    addTearDown(() => applyLanguage('en'));
+    await pump(tester, live, textScale: 1.3);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Справочный центр'), findsOneWidget);
+    expect(find.text('Открыть публичную страницу'), findsOneWidget);
+    expect(find.text('Вкл.'), findsOneWidget);
   });
 
   testWidgets('an admin sees the form', (tester) async {

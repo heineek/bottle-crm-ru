@@ -7,6 +7,7 @@ import '../../core/theme/theme.dart';
 import '../../data/models/custom_object.dart';
 import '../../providers/custom_objects_provider.dart';
 import '../../services/attachment_upload.dart';
+import '../../l10n/l10n.dart';
 
 const _columns = 3;
 const _gap = 8.0;
@@ -100,6 +101,7 @@ class _PhotoViewer extends ConsumerWidget {
 
   Future<void> _save(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final result = await downloadAttachment(
       url: ApiConfig.attachmentDownload(photo.id),
       fileName: photo.fileName,
@@ -107,7 +109,7 @@ class _PhotoViewer extends ConsumerWidget {
     if (result.success) return;
     messenger.showSnackBar(
       SnackBar(
-        content: Text(result.error ?? 'Could not download that file.'),
+        content: Text(result.error ?? l10n.objectsDownloadFailed),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -125,13 +127,13 @@ class _PhotoViewer extends ConsumerWidget {
         title: Text(photo.fileName, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
-            tooltip: 'Save',
+            tooltip: context.l10n.commonSave,
             icon: const Icon(LucideIcons.download),
             onPressed: () => _save(context),
           ),
           if (canDelete)
             IconButton(
-              tooltip: 'Delete photo',
+              tooltip: context.l10n.objectsDeletePhotoTooltip,
               icon: const Icon(LucideIcons.trash2),
               onPressed: () {
                 Navigator.of(context).pop();

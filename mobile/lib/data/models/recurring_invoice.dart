@@ -1,15 +1,19 @@
+import '../../l10n/l10n.dart';
 import 'deal.dart' show Currency;
 
 /// `invoices.models.RECURRING_FREQUENCIES`, value to label.
-const Map<String, String> recurringFrequencies = {
-  'WEEKLY': 'Weekly',
-  'BIWEEKLY': 'Every two weeks',
-  'MONTHLY': 'Monthly',
-  'QUARTERLY': 'Quarterly',
-  'SEMI_ANNUALLY': 'Twice a year',
-  'YEARLY': 'Yearly',
-  'CUSTOM': 'Custom',
-};
+Map<String, String> get recurringFrequencies {
+  final l10n = appL10n;
+  return {
+    'WEEKLY': l10n.appFrequencyWeekly,
+    'BIWEEKLY': l10n.appFrequencyBiweekly,
+    'MONTHLY': l10n.appGoalPeriodMonthly,
+    'QUARTERLY': l10n.appGoalPeriodQuarterly,
+    'SEMI_ANNUALLY': l10n.appFrequencySemiAnnually,
+    'YEARLY': l10n.appGoalPeriodYearly,
+    'CUSTOM': l10n.appFrequencyCustom,
+  };
+}
 
 /// Whether a cadence says enough to bill on.
 ///
@@ -74,7 +78,7 @@ class RecurringInvoice {
   /// interval is the one thing they came to check.
   String get frequencyLabel {
     if (frequency == 'CUSTOM' && customDays != null) {
-      return 'Every $customDays days';
+      return appL10n.appFrequencyEveryDays(customDays!);
     }
     return recurringFrequencies[frequency] ?? frequency;
   }

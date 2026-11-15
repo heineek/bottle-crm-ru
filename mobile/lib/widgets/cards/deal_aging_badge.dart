@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart';
 
@@ -12,10 +13,11 @@ import '../../data/models/deal.dart';
 /// missing status show nothing. Worded as the web board words it.
 String? dealAgingLabel(Deal deal) {
   final days = deal.daysInStageServer ?? deal.daysInCurrentStage;
-  final suffix = days == null ? '' : ' · ${days}d';
+  final l10n = appL10n;
+  final suffix = days == null ? '' : ' · ${l10n.appDaysShort(days)}';
   return switch (deal.agingStatus) {
-    'yellow' => 'Past expected$suffix',
-    'red' => 'Stalled$suffix',
+    'yellow' => '${l10n.appAgingPastExpected}$suffix',
+    'red' => '${l10n.appAgingStalled}$suffix',
     _ => null,
   };
 }

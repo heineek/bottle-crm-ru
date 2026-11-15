@@ -9,7 +9,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isRedirect } from '@sveltejs/kit';
-import { RESTRICTED_TICKET_NAME } from '#lib/v2/enums.js';
 
 const apiRequest = vi.fn();
 vi.mock('#lib/api-helpers.js', () => ({ apiRequest: (...a) => apiRequest(...a) }));
@@ -95,7 +94,7 @@ describe('getTicket merge fields', () => {
       },
       {
         id: 's-2',
-        name: RESTRICTED_TICKET_NAME,
+        name: 'A ticket you cannot open',
         merged_at: '2026-09-21T10:00:00Z',
         restricted: true,
         can_unmerge: false

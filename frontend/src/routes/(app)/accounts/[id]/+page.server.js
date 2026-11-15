@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { deleteAccount, getAccount } from '#lib/server/v2/accounts.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { loadRelated, relatedActions } from '#lib/server/v2/related-records.js';
 import { recordDuplicates } from '#lib/server/v2/duplicates.js';
 
@@ -27,7 +28,7 @@ export const actions = {
       await deleteAccount({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       const code = err?.status >= 400 && err?.status < 500 ? err.status : 400;
-      return fail(code, { deleteError: readableError(err, 'Could not delete this account.') });
+      return fail(code, { deleteError: readableError(err, m.accounts_detail_delete_failed()) });
     }
     redirect(303, '/accounts');
   }

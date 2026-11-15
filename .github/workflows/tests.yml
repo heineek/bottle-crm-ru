@@ -13,6 +13,7 @@ on:
       - 'frontend/**'
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'mkdocs.ru.yml'
       - '.readthedocs.yaml'
       - '.coveragerc'
       - '.github/workflows/tests.yml'
@@ -23,6 +24,7 @@ on:
       - 'frontend/**'
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'mkdocs.ru.yml'
       - '.readthedocs.yaml'
       - '.coveragerc'
       - '.github/workflows/tests.yml'
@@ -73,6 +75,23 @@ jobs:
           SECRET_KEY: test-secret-key-for-ci
           ADMIN_EMAIL: admin@test.com
         run: uv run python manage.py makemigrations --check --dry-run
+
+      # A wrapped string with no catalog entry ships untranslated, silently.
+      # Regenerating every app's catalogs must change nothing but the date;
+      # common/tests/test_translations.py checks each entry is translated.
+      - name: Check message catalogs are up to date
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: crm.test_settings
+          SECRET_KEY: test-secret-key-for-ci
+          ADMIN_EMAIL: admin@test.com
+        run: |
+          sudo apt-get install -y gettext
+          uv run python manage.py update_messages
+          git diff -I '^"POT-Creation-Date' --exit-code -- '*.po' || {
+            echo "::error::Message catalogs are stale. Run 'manage.py update_messages', translate the new entries, then 'manage.py update_messages --compile'."
+            exit 1
+          }
 
       - name: Run tests with coverage
         working-directory: backend
@@ -302,6 +321,16 @@ jobs:
           cd "$RUNNER_TEMP/neutral"
           "$RUNNER_TEMP/pkgenv/bin/python" -c "import django; django.setup(); from django.template.loader import get_template; [get_template(n) for n in ('magic_link_email.html', 'magic_link_code_email.html', 'root_email_template_new.html', 'healthz.html', 'assigned_to/leads_assigned.html', 'opportunity/goal_milestone.html', 'csat/survey_email.html')]; print('templates resolve from the installed package')"
 
+      # .mo files ship inside each app's locale/ dir; a packaging change that
+      # drops them leaves every language but English silently untranslated.
+      - name: Load packaged translations
+        env:
+          DJANGO_SETTINGS_MODULE: crm.settings
+          SECRET_KEY: startup-check-only-not-a-deployment-secret
+        run: |
+          cd "$RUNNER_TEMP/neutral"
+          "$RUNNER_TEMP/pkgenv/bin/python" -c "import django; django.setup(); from django.utils import translation; translation.activate('ru'); from common.utils import COUNTRIES; name = str(dict(COUNTRIES)['DE']); assert name == 'Германия', name; print('translations load from the installed package')"
+
   frontend-checks:
     runs-on: ubuntu-latest
 
@@ -363,6 +392,10 @@ jobs:
       - name: Build docs
         working-directory: backend
         run: uv run mkdocs build --strict -f ../mkdocs.yml -d site
+
+      - name: Build Russian docs
+        working-directory: backend
+        run: uv run mkdocs build --strict -f ../mkdocs.ru.yml -d site-ru
 
       # These two tests skip when mkdocs is absent, so the backend-tests job
       # (which installs no docs group) cannot run them. Without this step the

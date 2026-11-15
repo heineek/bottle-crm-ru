@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../data/models/auth_response.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
@@ -33,8 +34,8 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
         context.go(AppRoutes.dashboard);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to select organization'),
+          SnackBar(
+            content: Text(context.l10n.appOrgSelectFailed),
             backgroundColor: Colors.red,
           ),
         );
@@ -52,16 +53,16 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        title: Text(context.l10n.appSignOutTitle),
+        content: Text(context.l10n.appSignOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sign Out'),
+            child: Text(context.l10n.appSignOutButton),
           ),
         ],
       ),
@@ -134,7 +135,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
             Icon(LucideIcons.building2, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'No Organizations',
+              context.l10n.appNoOrgs,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -143,8 +144,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'You are not a member of any organization yet. Ask an administrator '
-              'to invite you, or start one of your own.',
+              context.l10n.appNoOrgsBody,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
@@ -155,7 +155,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
             FilledButton.icon(
               onPressed: () => context.push(AppRoutes.orgCreate),
               icon: const Icon(LucideIcons.plus),
-              label: const Text('Create an organization'),
+              label: Text(context.l10n.appCreateAnOrg),
             ),
           ],
         ),
@@ -172,7 +172,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Select Organization'),
+        title: Text(context.l10n.appSelectOrg),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -181,7 +181,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
           IconButton(
             icon: const Icon(LucideIcons.logOut),
             onPressed: _signOut,
-            tooltip: 'Sign Out',
+            tooltip: context.l10n.appSignOutButton,
           ),
         ],
       ),
@@ -215,7 +215,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        user?.displayName ?? 'Unknown User',
+                        user?.displayName ?? context.l10n.appUnknownUser,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
@@ -237,7 +237,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Choose your organization to continue:',
+                        context.l10n.appChooseOrg,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -270,7 +270,7 @@ class _OrgSelectionScreenState extends ConsumerState<OrgSelectionScreen> {
                           ? null
                           : () => context.push(AppRoutes.orgCreate),
                       icon: const Icon(LucideIcons.plus, size: 18),
-                      label: const Text('Create an organization'),
+                      label: Text(context.l10n.appCreateAnOrg),
                     ),
                   ),
               ],

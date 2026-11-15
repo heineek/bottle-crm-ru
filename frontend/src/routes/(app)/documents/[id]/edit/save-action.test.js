@@ -6,6 +6,8 @@ vi.mock('#lib/api-helpers.js', () => ({ apiRequest: (...a) => apiRequest(...a) }
 // Imports only `@sveltejs/kit` and `#lib`, so the standalone vitest config can
 // load it (see the note in `vitest.config.js`).
 const { load, actions } = await import('./+page.server.js');
+const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+const baseGetLocale = getLocale;
 
 /**
  * `DocumentDetailView.put` replaces `shared_to` and `teams` with the body's
@@ -225,5 +227,16 @@ describe('document edit load', () => {
       await load(/** @type {any} */ ({ cookies, params: { id: 'd1' } }))
     );
     expect(data.options_failed).toBe(false);
+  });
+});
+
+describe('document edit errors in Russian', () => {
+  afterEach(() => overwriteGetLocale(baseGetLocale));
+
+  it('asks for a title in the request locale', async () => {
+    overwriteGetLocale(() => 'ru');
+    const result = await save(untouched.filter(([k]) => k !== 'title'));
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBe('Укажите название документа.');
   });
 });

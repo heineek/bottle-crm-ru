@@ -27,6 +27,8 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import { count, relativeDays } from '#lib/v2/format.js';
   import { Plus, FileCode, ShieldAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -42,15 +44,16 @@
   let current = $derived(templates.find((t) => t.is_default));
 </script>
 
-<PageHeader title="Invoices">
+<PageHeader title={m.invoices_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.count)}</span> templates ·
-    {current ? `${current.name} is used for new invoices` : 'no default set'}
+    {#each messageParts(current ? m.invoices_templates_sub_default( { count: slot('count'), name: current.name } ) : m.invoices_templates_sub_none( { count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+          class="v2-num">{count(totals.count)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if canManage}
       <a class="v2-btn v2-btn-primary" href={resolve('invoices/templates/new')}
-        ><Plus />New template</a
+        ><Plus />{m.invoices_templates_new_button()}</a
       >
     {/if}
   {/snippet}
@@ -68,7 +71,7 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if !current}
       <p class="v2-sub" style="font-size:12.5px;margin:0 0 16px">
-        No template is the default, so new invoices print with the built-in layout.
+        {m.invoices_templates_no_default()}
       </p>
     {/if}
 
@@ -86,25 +89,29 @@
           <div style="padding:14px 16px 15px">
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <b style="font-size:13.5px">{t.name}</b>
-              {#if t.is_default}<Pill tone="moss" dot>Default</Pill>{/if}
-              {#if t.has_custom_html}<Pill tone="clay">Custom layout</Pill>{/if}
+              {#if t.is_default}<Pill tone="moss" dot>{m.invoices_templates_default()}</Pill>{/if}
+              {#if t.has_custom_html}<Pill tone="clay">{m.invoices_templates_custom_layout()}</Pill
+                >{/if}
             </div>
 
             <div class="v2-sub" style="font-size:11.5px;margin-top:5px">
               {#if t.used_on_invoices}
-                on <span class="v2-num">{count(t.used_on_invoices)}</span> invoices
+                {#each messageParts(m.invoices_templates_used_on( { count: t.used_on_invoices, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+                      class="v2-num">{count(t.used_on_invoices)}</span
+                    >{:else}{p.text}{/if}{/each}
               {:else}
-                never used
+                {m.invoices_templates_never_used()}
               {/if}
-              · {t.has_logo ? 'logo set' : 'no logo'} · edited {relativeDays(t.updated_at)} by {t.updated_by}
+              · {t.has_logo ? m.invoices_templates_logo_set() : m.invoices_templates_no_logo()} ·
+              {m.invoices_templates_edited({ when: relativeDays(t.updated_at), who: t.updated_by })}
             </div>
 
             <dl class="v2-kv" style="margin-top:12px">
-              <dt>Terms</dt>
+              <dt>{m.invoices_form_terms()}</dt>
               <dd>{t.default_terms || '—'}</dd>
-              <dt>Notes</dt>
+              <dt>{m.common_notes()}</dt>
               <dd>{t.default_notes || '—'}</dd>
-              <dt>Footer</dt>
+              <dt>{m.invoices_templates_footer()}</dt>
               <dd>{t.footer_text || '—'}</dd>
             </dl>
 
@@ -114,10 +121,9 @@
               <div class="v2-tpl-flag">
                 <FileCode size={13} style="flex:none;margin-top:1px" />
                 <span>
-                  Replaces the whole document with
-                  <span class="v2-num">{(t.custom_html_bytes / 1024).toFixed(1)}</span> kB of custom markup,
-                  including the line-item table and the totals. Nothing checks that it still prints an
-                  amount due.
+                  {#each messageParts(m.invoices_templates_custom_flag( { size: slot('size') } )) as p, i (i)}{#if p.key === 'size'}<span
+                        class="v2-num">{(t.custom_html_bytes / 1024).toFixed(1)}</span
+                      >{:else}{p.text}{/if}{/each}
                 </span>
               </div>
             {/if}
@@ -133,7 +139,7 @@
                      blanked it. The editor route serves those two fields on an
                      admin-only path, leaving this page's own fetch unchanged. -->
                 <a class="v2-btn v2-btn-sm" href={resolve(`invoices/templates/${t.id}/edit`)}
-                  >Edit</a
+                  >{m.common_edit()}</a
                 >
                 {#if !t.is_default}
                   <!-- Named as the swap it is: one default exists at a time.
@@ -142,7 +148,9 @@
                   <form method="POST" action="?/setDefault" use:enhance>
                     <input type="hidden" name="id" value={t.id} />
                     <button type="submit" class="v2-btn v2-btn-sm">
-                      Use instead of {current?.name ?? 'the built-in'}
+                      {current
+                        ? m.invoices_templates_use_instead({ name: current.name })
+                        : m.invoices_templates_use_instead_builtin()}
                     </button>
                   </form>
                 {/if}
@@ -155,10 +163,9 @@
 
     {#if totals.unused > 0}
       <p class="v2-sub" style="font-size:11.5px;margin-top:16px">
-        <span class="v2-num">{count(totals.unused)}</span>
-        {totals.unused === 1 ? 'template has' : 'templates have'} never been used and
-        {totals.unused === 1 ? 'is' : 'are'} not the default, deleting
-        {totals.unused === 1 ? 'it' : 'them'} changes no existing invoice.
+        {#each messageParts(m.invoices_templates_unused( { count: totals.unused, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+              class="v2-num">{count(totals.unused)}</span
+            >{:else}{p.text}{/if}{/each}
       </p>
     {/if}
 
@@ -166,11 +173,11 @@
       <div style="display:flex;gap:10px;align-items:flex-start">
         <ShieldAlert size={16} style="color:var(--v2-slate);flex:none;margin-top:2px" />
         <div>
-          <div style="font-weight:600;font-size:13px">Custom markup is not previewed here</div>
+          <div style="font-weight:600;font-size:13px">
+            {m.invoices_templates_no_preview_title()}
+          </div>
           <p class="v2-sub" style="font-size:12.5px;margin:5px 0 0;line-height:1.5">
-            A template's HTML and CSS are rendered into a PDF on the server, never into this page.
-            The only way to see a custom layout is to generate a document from it, which is also the
-            only way to see what a customer will actually receive.
+            {m.invoices_templates_no_preview_body()}
           </p>
         </div>
       </div>

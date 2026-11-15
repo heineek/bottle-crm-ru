@@ -19,7 +19,7 @@
  *   already only tickets this person may open.
  */
 
-import { RESTRICTED_TICKET_NAME } from '#lib/v2/enums.js';
+import { restrictedTicketName } from '#lib/v2/enums.js';
 import { findNode } from './close.js';
 
 /**
@@ -42,7 +42,7 @@ export function treeRows(root, focusId) {
     const restricted = Boolean(node.restricted);
     rows.push({
       id: node.id,
-      name: restricted ? RESTRICTED_TICKET_NAME : (node.name ?? ''),
+      name: restricted ? restrictedTicketName() : (node.name ?? ''),
       status: node.status ?? null,
       depth,
       restricted,

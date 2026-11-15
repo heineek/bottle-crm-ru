@@ -47,6 +47,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import URLValidator
 from django.db import IntegrityError, transaction
 from django.db.models.functions import Lower
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy, ngettext
 
 from accounts.access import visible_accounts_qs
 from automation.capture import suppress_rules
@@ -94,26 +96,26 @@ KNOWN_HEADERS = REQUIRED_HEADERS + OPTIONAL_HEADERS
 # full name that is split into first and last. Nothing server-derived (org,
 # creator, ids) is here, so a mapping can never set it.
 CONTACT_FIELDS: tuple[tuple[str, str, bool], ...] = (
-    ("first_name", "First name", True),
-    ("last_name", "Last name", True),
-    ("email", "Email", False),
-    ("phone", "Phone", False),
-    ("organization", "Company", False),
-    ("title", "Job title", False),
-    ("department", "Department", False),
-    ("do_not_call", "Do not call", False),
-    ("linkedin_url", "LinkedIn URL", False),
-    ("address_line", "Address", False),
-    ("city", "City", False),
-    ("state", "State", False),
-    ("postcode", "Postal code", False),
-    ("country", "Country", False),
-    ("description", "Notes", False),
-    ("account_name", "Account", False),
-    ("assigned_emails", "Assigned to (emails)", False),
-    ("team_names", "Teams", False),
-    ("tags", "Tags", False),
-    (FULL_NAME, "Full name (split into first and last)", False),
+    ("first_name", gettext_lazy("First name"), True),
+    ("last_name", gettext_lazy("Last name"), True),
+    ("email", gettext_lazy("Email"), False),
+    ("phone", gettext_lazy("Phone"), False),
+    ("organization", gettext_lazy("Company"), False),
+    ("title", gettext_lazy("Job title"), False),
+    ("department", gettext_lazy("Department"), False),
+    ("do_not_call", gettext_lazy("Do not call"), False),
+    ("linkedin_url", gettext_lazy("LinkedIn URL"), False),
+    ("address_line", gettext_lazy("Address"), False),
+    ("city", gettext_lazy("City"), False),
+    ("state", gettext_lazy("State"), False),
+    ("postcode", gettext_lazy("Postal code"), False),
+    ("country", gettext_lazy("Country"), False),
+    ("description", gettext_lazy("Notes"), False),
+    ("account_name", gettext_lazy("Account"), False),
+    ("assigned_emails", gettext_lazy("Assigned to (emails)"), False),
+    ("team_names", gettext_lazy("Teams"), False),
+    ("tags", gettext_lazy("Tags"), False),
+    (FULL_NAME, gettext_lazy("Full name (split into first and last)"), False),
 )
 
 # Headers that guess each field; every field also matches its own name, ranked
@@ -381,7 +383,9 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error="File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again.",
+            header_error=_(
+                "File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+            ),
         )
     # Python's csv module accepts NUL since 3.11, and Postgres refuses it in
     # any string parameter, so one would 500 the insert.
@@ -389,7 +393,7 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error="CSV could not be read: it contains NUL characters",
+            header_error=_("CSV could not be read: it contains NUL characters"),
         )
     try:
         rows = list(csv.reader(io.StringIO(text)))
@@ -397,10 +401,12 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         # A single field over the csv module's 128 KB limit raises here, which
         # used to reach the view as a 500.
         return ImportResult(
-            valid=[], errors=[], header_error=f"CSV could not be read: {exc}"
+            valid=[],
+            errors=[],
+            header_error=_("CSV could not be read: %(error)s") % {"error": exc},
         )
     if not rows:
-        return ImportResult(valid=[], errors=[], header_error="CSV is empty")
+        return ImportResult(valid=[], errors=[], header_error=_("CSV is empty"))
 
     headers = _normalize_headers(rows[0])
     missing = [h for h in REQUIRED_HEADERS if h not in headers]
@@ -408,14 +414,16 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error=f"Missing required header(s): {', '.join(missing)}",
+            header_error=_("Missing required header(s): %(headers)s")
+            % {"headers": ", ".join(missing)},
         )
     unknown = [h for h in headers if h and h not in KNOWN_HEADERS]
     if unknown:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error=f"Unknown header(s): {', '.join(unknown)}",
+            header_error=_("Unknown header(s): %(headers)s")
+            % {"headers": ", ".join(unknown)},
         )
 
     data_rows = rows[1:]
@@ -423,7 +431,8 @@ def parse_and_validate(file_bytes: bytes, org, profile) -> ImportResult:
         return ImportResult(
             valid=[],
             errors=[],
-            header_error=f"Too many rows ({len(data_rows)}); limit is {MAX_ROWS}",
+            header_error=_("Too many rows (%(count)s); limit is %(limit)s")
+            % {"count": len(data_rows), "limit": MAX_ROWS},
         )
 
     # First pass: parse each row into a dict and skip blank rows.
@@ -626,24 +635,38 @@ def _validate_and_build(
     first_name = record.get("first_name", "")
     last_name = record.get("last_name", "")
     if not first_name:
-        errors.append(RowError(idx, "first_name", "First name is required", kind="row"))
+        errors.append(
+            RowError(idx, "first_name", _("First name is required"), kind="row")
+        )
     elif len(first_name) > NAME_MAX_LEN:
         errors.append(
             RowError(
                 idx,
                 "first_name",
-                f"First name exceeds {NAME_MAX_LEN} characters",
+                ngettext(
+                    "First name exceeds %(max)d characters",
+                    "First name exceeds %(max)d characters",
+                    NAME_MAX_LEN,
+                )
+                % {"max": NAME_MAX_LEN},
                 kind="row",
             )
         )
     if not last_name:
-        errors.append(RowError(idx, "last_name", "Last name is required", kind="row"))
+        errors.append(
+            RowError(idx, "last_name", _("Last name is required"), kind="row")
+        )
     elif len(last_name) > NAME_MAX_LEN:
         errors.append(
             RowError(
                 idx,
                 "last_name",
-                f"Last name exceeds {NAME_MAX_LEN} characters",
+                ngettext(
+                    "Last name exceeds %(max)d characters",
+                    "Last name exceeds %(max)d characters",
+                    NAME_MAX_LEN,
+                )
+                % {"max": NAME_MAX_LEN},
                 kind="row",
             )
         )
@@ -652,10 +675,25 @@ def _validate_and_build(
     if email:
         if len(email) > EMAIL_MAX_LEN:
             errors.append(
-                RowError(idx, "email", f"Email exceeds {EMAIL_MAX_LEN} characters")
+                RowError(
+                    idx,
+                    "email",
+                    ngettext(
+                        "Email exceeds %(max)d characters",
+                        "Email exceeds %(max)d characters",
+                        EMAIL_MAX_LEN,
+                    )
+                    % {"max": EMAIL_MAX_LEN},
+                )
             )
         elif not EMAIL_RE.match(email):
-            errors.append(RowError(idx, "email", f"'{email}' is not a valid email"))
+            errors.append(
+                RowError(
+                    idx,
+                    "email",
+                    _("'%(email)s' is not a valid email") % {"email": email},
+                )
+            )
         else:
             email_lower = email.lower()
             prior = seen_emails.get(email_lower)
@@ -664,7 +702,8 @@ def _validate_and_build(
                     RowError(
                         idx,
                         "email",
-                        f"Duplicate email also used by row {prior} in this file",
+                        _("Duplicate email also used by row %(row)s in this file")
+                        % {"row": prior},
                         kind="duplicate",
                     )
                 )
@@ -673,7 +712,9 @@ def _validate_and_build(
                     RowError(
                         idx,
                         "email",
-                        "A contact with this email already exists in your organization",
+                        _(
+                            "A contact with this email already exists in your organization"
+                        ),
                         kind="duplicate",
                     )
                 )
@@ -686,7 +727,9 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "phone",
-                    "Phone must be 7-25 characters of digits and separators (+ - ( ) . space)",
+                    _(
+                        "Phone must be 7-25 characters of digits and separators (+ - ( ) . space)"
+                    ),
                 )
             )
         else:
@@ -698,7 +741,10 @@ def _validate_and_build(
                         RowError(
                             idx,
                             "phone",
-                            f"Duplicate phone number also used by row {prior} in this file",
+                            _(
+                                "Duplicate phone number also used by row %(row)s in this file"
+                            )
+                            % {"row": prior},
                             kind="duplicate",
                         )
                     )
@@ -707,7 +753,9 @@ def _validate_and_build(
                         RowError(
                             idx,
                             "phone",
-                            "A contact with this phone number already exists in your organization",
+                            _(
+                                "A contact with this phone number already exists in your organization"
+                            ),
                             kind="duplicate",
                         )
                     )
@@ -723,7 +771,10 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "first_name",
-                    f"Same name as row {prior} in this file; add an email or phone to either row to confirm they're different people",
+                    _(
+                        "Same name as row %(row)s in this file; add an email or phone to either row to confirm they're different people"
+                    )
+                    % {"row": prior},
                     kind="duplicate",
                 )
             )
@@ -732,7 +783,9 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "first_name",
-                    "A contact with this name already exists; add an email or phone to confirm it's a different person",
+                    _(
+                        "A contact with this name already exists; add an email or phone to confirm it's a different person"
+                    ),
                     kind="duplicate",
                 )
             )
@@ -743,7 +796,12 @@ def _validate_and_build(
             RowError(
                 idx,
                 "linkedin_url",
-                f"Exceeds {LINKEDIN_URL_MAX_LEN} characters",
+                ngettext(
+                    "Exceeds %(max)d characters",
+                    "Exceeds %(max)d characters",
+                    LINKEDIN_URL_MAX_LEN,
+                )
+                % {"max": LINKEDIN_URL_MAX_LEN},
             )
         )
     elif linkedin_url:
@@ -754,7 +812,7 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "linkedin_url",
-                    "Must be a valid URL starting with http:// or https://",
+                    _("Must be a valid URL starting with http:// or https://"),
                 )
             )
 
@@ -764,14 +822,19 @@ def _validate_and_build(
         country = country_raw.strip().upper()
         if country not in COUNTRY_CODES:
             errors.append(
-                RowError(idx, "country", f"'{country_raw}' is not a known country code")
+                RowError(
+                    idx,
+                    "country",
+                    _("'%(country)s' is not a known country code")
+                    % {"country": country_raw},
+                )
             )
             country = None
 
     do_not_call_raw = record.get("do_not_call", "")
     do_not_call = _parse_bool(do_not_call_raw)
     if do_not_call is None:
-        errors.append(RowError(idx, "do_not_call", "Use yes/no, true/false, or 1/0"))
+        errors.append(RowError(idx, "do_not_call", _("Use yes/no, true/false, or 1/0")))
         do_not_call = False
 
     account_id: str | None = None
@@ -783,7 +846,8 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "account_name",
-                    f"No account you can open is named '{account_name}'",
+                    _("No account you can open is named '%(name)s'")
+                    % {"name": account_name},
                 )
             )
 
@@ -794,7 +858,7 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "assigned_emails",
-                    f"'{assigned_email}' is not a valid email",
+                    _("'%(email)s' is not a valid email") % {"email": assigned_email},
                 )
             )
             continue
@@ -804,7 +868,8 @@ def _validate_and_build(
                 RowError(
                     idx,
                     "assigned_emails",
-                    f"No active member with email '{assigned_email}'",
+                    _("No active member with email '%(email)s'")
+                    % {"email": assigned_email},
                 )
             )
         else:
@@ -814,7 +879,13 @@ def _validate_and_build(
     for team_name in _split_multi(record.get("team_names", "")):
         resolved = refs.teams.get(team_name.lower())
         if resolved is None:
-            errors.append(RowError(idx, "team_names", f"No team named '{team_name}'"))
+            errors.append(
+                RowError(
+                    idx,
+                    "team_names",
+                    _("No team named '%(name)s'") % {"name": team_name},
+                )
+            )
         else:
             team_ids.append(resolved)
 
@@ -829,18 +900,34 @@ def _validate_and_build(
         val = record.get(length_field, "")
         if val and len(val) > NAME_MAX_LEN:
             errors.append(
-                RowError(idx, length_field, f"Exceeds {NAME_MAX_LEN} characters")
+                RowError(
+                    idx,
+                    length_field,
+                    ngettext(
+                        "Exceeds %(max)d characters",
+                        "Exceeds %(max)d characters",
+                        NAME_MAX_LEN,
+                    )
+                    % {"max": NAME_MAX_LEN},
+                )
             )
 
     postcode = record.get("postcode", "")
     if postcode and len(postcode) > 64:
-        errors.append(RowError(idx, "postcode", "Exceeds 64 characters"))
+        errors.append(RowError(idx, "postcode", _("Exceeds 64 characters")))
 
     tag_names = _split_multi(record.get("tags", ""))
     for tag_name in tag_names:
         name_error = Tags.name_error(tag_name)
         if name_error:
-            errors.append(RowError(idx, "tags", f"Tag '{tag_name}': {name_error}"))
+            errors.append(
+                RowError(
+                    idx,
+                    "tags",
+                    _("Tag '%(name)s': %(error)s")
+                    % {"name": tag_name, "error": name_error},
+                )
+            )
         elif archived_error := refs.archived_tags.get(Tags.slug_for(tag_name)):
             errors.append(RowError(idx, "tags", archived_error))
 
@@ -871,7 +958,7 @@ def _validate_and_build(
     )
 
 
-_CONCURRENT_CONFLICT = (
+_CONCURRENT_CONFLICT = gettext_lazy(
     "A contact was created concurrently that conflicts with this "
     "import (likely a duplicate email). Re-run preview and try again."
 )
@@ -897,7 +984,7 @@ def commit_rows(file_bytes: bytes, org, profile) -> dict[str, Any]:
         # Refuse to write anything if any row failed; users fix the file first.
         return {
             "error": True,
-            "message": "Fix the invalid rows before importing",
+            "message": _("Fix the invalid rows before importing"),
             "errors": [e.to_dict() for e in result.errors],
             "created": 0,
         }
@@ -970,7 +1057,7 @@ def _get_or_create_tag(name: str, org, cache: dict[str, Tags]) -> Tags:
     slug = Tags.slug_for(name)
     if slug in cache:
         return cache[slug]
-    tag, _ = Tags.objects.get_or_create(
+    tag, _created = Tags.objects.get_or_create(
         slug=slug,
         org=org,
         defaults={"name": name},
@@ -1059,7 +1146,7 @@ def commit_mapped(
     if not preview.valid:
         return {
             "error": True,
-            "message": "Nothing in this file can be imported.",
+            "message": _("Nothing in this file can be imported."),
             "skipped": report["skipped"],
             "created": 0,
         }

@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, createContact, getContactFormOptions } from '#lib/server/v2/contacts.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * `?account=<id>` preselects the company, so "add somebody at this account"
@@ -35,7 +36,7 @@ export const actions = {
     try {
       created = await createContact({ cookies }, values);
     } catch (/** @type {any} */ err) {
-      return fail(400, { values, error: readableError(err, 'Could not create this contact.') });
+      return fail(400, { values, error: readableError(err, m.contacts_new_failed()) });
     }
 
     // The API returns the new id. Landing on the person is the point of adding

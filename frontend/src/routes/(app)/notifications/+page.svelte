@@ -37,8 +37,10 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import Avatar from '#lib/v2/components/Avatar.svelte';
   import { relativeTime } from '#lib/v2/format.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts as parts, slot } from '#lib/utils/message-parts.js';
   import { isOn, notificationsEmptyText } from '#lib/v2/modules.js';
-  import { notificationText, actorName, AUTOMATION_FALLBACK } from '#lib/v2/automation.js';
+  import { notificationText, actorName, automationFallback } from '#lib/v2/automation.js';
   import {
     BellOff,
     AtSign,
@@ -82,10 +84,10 @@
    * "sla breached" and not `case.sla_breached`.
    */
   function verbPhrase(n) {
-    if (n.verb === 'case.mentioned') return 'mentioned you on';
-    if (n.verb === 'case.commented') return 'commented on';
-    if (n.verb === 'support.replied') return 'replied to';
-    if (n.verb === 'support.status_changed') return 'updated';
+    if (n.verb === 'case.mentioned') return m.app_notifications_verb_mentioned();
+    if (n.verb === 'case.commented') return m.app_notifications_verb_commented();
+    if (n.verb === 'support.replied') return m.app_notifications_verb_replied();
+    if (n.verb === 'support.status_changed') return m.app_notifications_verb_updated();
     return `${n.verb.replace(/^[^.]+\./, '').replace(/_/g, ' ')}, `;
   }
 
@@ -100,6 +102,19 @@
   function isSupportNotification(n) {
     return n.verb?.startsWith('support.');
   }
+
+  let unreadParts = $derived(parts(m.app_notifications_unread_count({ count: slot('count') })));
+  let noProducerParts = $derived(parts(m.app_notifications_no_producer({ verb: slot('verb') })));
+  let brokenParts = $derived(
+    parts(
+      m.app_notifications_broken_links({
+        count: slot('count'),
+        old: slot('old'),
+        current: slot('current'),
+        source: slot('source')
+      })
+    )
+  );
 
   /* Persist to a page action. `keepalive` so the write survives the navigation
      that a link click starts, clicking a notification both opens the ticket
@@ -139,12 +154,13 @@
   }
 </script>
 
-<PageHeader title="Notifications">
+<PageHeader title={m.app_notifications_title()}>
   {#snippet sub()}
     {#if unread.length}
-      <span class="v2-num">{unread.length}</span> unread
+      {#each unreadParts as p, i (i)}{#if p.key}<span class="v2-num">{unread.length}</span
+          >{:else}{p.text}{/if}{/each}
     {:else}
-      Nothing unread
+      {m.app_notifications_nothing_unread()}
     {/if}
   {/snippet}
   {#snippet actions()}
@@ -153,10 +169,10 @@
       type="button"
       onclick={() => (filter = filter === 'unread' ? 'all' : 'unread')}
     >
-      {filter === 'unread' ? 'Show read too' : 'Unread only'}
+      {filter === 'unread' ? m.app_notifications_show_read() : m.app_notifications_unread_only()}
     </button>
     <button class="v2-btn" type="button" disabled={!unread.length} onclick={markAllRead}>
-      <Check />Mark all read
+      <Check />{m.app_notifications_mark_all_read()}
     </button>
   {/snippet}
 </PageHeader>
@@ -165,20 +181,22 @@
   <div class="v2-pad" style="padding-top:16px;padding-bottom:32px">
     {#if visible.length === 0}
       <EmptyState
-        title={filter === 'unread' ? 'Nothing unread' : 'No notifications'}
-        body={filter === 'unread' ? `Everything here has been read. ${emptyText}` : emptyText}
+        title={filter === 'unread'
+          ? m.app_notifications_nothing_unread()
+          : m.app_notifications_none()}
+        body={filter === 'unread' ? m.app_notifications_all_read({ more: emptyText }) : emptyText}
       >
         {#snippet icon()}<BellOff size={21} />{/snippet}
         {#snippet actions()}
           {#if filter === 'unread' && rows.length}
             <button class="v2-btn" type="button" onclick={() => (filter = 'all')}>
-              Show read too
+              {m.app_notifications_show_read()}
             </button>
           {/if}
           {#if isOn(data.modules, 'tickets')}
-            <a class="v2-btn" href={resolve('tickets')}>Go to tickets</a>
+            <a class="v2-btn" href={resolve('tickets')}>{m.app_notifications_go_tickets()}</a>
           {/if}
-          <a class="v2-btn" href={resolve('help')}>Get help</a>
+          <a class="v2-btn" href={resolve('help')}>{m.app_notifications_get_help()}</a>
         {/snippet}
       </EmptyState>
     {:else}
@@ -196,22 +214,22 @@
             <div class="body">
               <p class="line">
                 {#if isSupportNotification(n)}
-                  <b class="system">BottleCRM Support</b>
+                  <b class="system">{m.app_notifications_support()}</b>
                 {:else if n.actor}
                   <Avatar name={actorName(n)} size={17} />
                   <b>{actorName(n)}</b>
                 {:else}
-                  <b class="system">The system</b>
+                  <b class="system">{m.app_notifications_system()}</b>
                 {/if}
                 {#if isAutomation(n)}
                   {#if n.resolved_link}
                     <a
                       class="auto-text"
                       href={resolve(asInternalPath(n.resolved_link))}
-                      onclick={() => markRead(n)}>{auto?.text ?? AUTOMATION_FALLBACK}</a
+                      onclick={() => markRead(n)}>{auto?.text ?? automationFallback()}</a
                     >
                   {:else}
-                    <span class="auto-text">{auto?.text ?? AUTOMATION_FALLBACK}</span>
+                    <span class="auto-text">{auto?.text ?? automationFallback()}</span>
                   {/if}
                 {:else}
                   {verbPhrase(n)}
@@ -227,7 +245,7 @@
                     <span class="entity">{n.entity_name}</span>
                   {/if}
                 {:else if isTicketVerb(n)}
-                  <span class="entity v2-muted">a ticket that no longer has a name</span>
+                  <span class="entity v2-muted">{m.app_notifications_unnamed_ticket()}</span>
                 {/if}
               </p>
 
@@ -251,14 +269,17 @@
                        The broken link is NOT flagged per row: it is true of
                        every row, so a badge on each one is a badge that says
                        nothing. It is counted once, below the list. -->
-                  <span class="tag"><code>{n.verb}</code> has no producer</span>
+                  <span class="tag"
+                    >{#each noProducerParts as p, i (i)}{#if p.key}<code>{n.verb}</code
+                        >{:else}{p.text}{/if}{/each}</span
+                  >
                 {/if}
               </p>
             </div>
 
             {#if n.read_at === null}
               <button class="v2-btn v2-btn-sm read-btn" type="button" onclick={() => markRead(n)}>
-                Mark read
+                {m.app_notifications_mark_read()}
               </button>
             {/if}
           </li>
@@ -271,10 +292,12 @@
           become the loudest thing on a page about other people's messages.
         -->
         <p class="footnote">
-          <span class="v2-num">{data.totals.broken_links}</span> of these were written before the
-          producer was fixed and still carry a <code>/cases/…</code> link, which no client serves.
-          They open as <code>/v2/tickets/…</code> here. New ones are written correctly at source by
-          <code>cases/notifications.py</code>.
+          {#each brokenParts as p, i (i)}{#if p.key === 'count'}<span class="v2-num"
+                >{data.totals.broken_links}</span
+              >{:else if p.key === 'old'}<code>/cases/…</code>{:else if p.key === 'current'}<code
+                >/v2/tickets/…</code
+              >{:else if p.key === 'source'}<code>cases/notifications.py</code
+              >{:else}{p.text}{/if}{/each}
         </p>
       {/if}
     {/if}

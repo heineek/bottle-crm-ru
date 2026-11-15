@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.db.models import Count, IntegerField, OuterRef, Subquery
 from django.db.models.functions import Coalesce
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.pagination import LimitOffsetPagination
@@ -122,7 +124,12 @@ def _non_text_error(params):
     for field in ("name", "color", "description"):
         if field in params and not isinstance(params[field], str):
             return Response(
-                {"error": True, "errors": {field: [f"{field} must be text."]}},
+                {
+                    "error": True,
+                    "errors": {
+                        field: [_("%(field)s must be text.") % {"field": field}]
+                    },
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
     return None
@@ -200,7 +207,7 @@ class TagsListView(APIView, LimitOffsetPagination):
         # Admin only for create
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can create tags"},
+                {"error": True, "errors": _("Only admins can create tags")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -212,7 +219,7 @@ class TagsListView(APIView, LimitOffsetPagination):
 
         if not name:
             return Response(
-                {"error": True, "errors": {"name": ["This field is required."]}},
+                {"error": True, "errors": {"name": [_("This field is required.")]}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         name_error = Tags.name_error(name)
@@ -240,7 +247,7 @@ class TagsListView(APIView, LimitOffsetPagination):
                 return Response(
                     {
                         "error": False,
-                        "message": "Tag reactivated successfully",
+                        "message": _("Tag reactivated successfully"),
                         "tag": TagsSerializer(existing).data,
                     },
                     status=status.HTTP_200_OK,
@@ -273,7 +280,7 @@ class TagsListView(APIView, LimitOffsetPagination):
         return Response(
             {
                 "error": False,
-                "message": "Tag Created Successfully",
+                "message": _("Tag Created Successfully"),
                 "tag": TagsSerializer(tag).data,
             },
             status=status.HTTP_201_CREATED,
@@ -303,7 +310,7 @@ class TagsDetailView(APIView):
             tag_obj = self.get_object(pk)
         except Tags.DoesNotExist:
             return Response(
-                {"error": True, "errors": "Tag not found."},
+                {"error": True, "errors": _("Tag not found.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response({"tag": TagsSerializer(tag_obj).data})
@@ -329,7 +336,7 @@ class TagsDetailView(APIView):
         # Admin only
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can update tags"},
+                {"error": True, "errors": _("Only admins can update tags")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -337,7 +344,7 @@ class TagsDetailView(APIView):
             tag_obj = self.get_object(pk)
         except Tags.DoesNotExist:
             return Response(
-                {"error": True, "errors": "Tag not found."},
+                {"error": True, "errors": _("Tag not found.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -349,7 +356,7 @@ class TagsDetailView(APIView):
 
         if not name:
             return Response(
-                {"error": True, "errors": {"name": ["This field is required."]}},
+                {"error": True, "errors": {"name": [_("This field is required.")]}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         name_error = Tags.name_error(name)
@@ -395,7 +402,7 @@ class TagsDetailView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Tag Updated Successfully",
+                "message": _("Tag Updated Successfully"),
                 "tag": TagsSerializer(tag_obj).data,
             },
             status=status.HTTP_200_OK,
@@ -420,7 +427,7 @@ class TagsDetailView(APIView):
         # Admin only
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can archive tags"},
+                {"error": True, "errors": _("Only admins can archive tags")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -428,7 +435,7 @@ class TagsDetailView(APIView):
             tag_obj = self.get_object(pk)
         except Tags.DoesNotExist:
             return Response(
-                {"error": True, "errors": "Tag not found."},
+                {"error": True, "errors": _("Tag not found.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -438,7 +445,7 @@ class TagsDetailView(APIView):
         tag_obj.save()
 
         return Response(
-            {"error": False, "message": "Tag archived successfully"},
+            {"error": False, "message": _("Tag archived successfully")},
             status=status.HTTP_200_OK,
         )
 
@@ -468,7 +475,7 @@ class TagsRestoreView(APIView):
         # Admin only
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can restore tags"},
+                {"error": True, "errors": _("Only admins can restore tags")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -476,7 +483,7 @@ class TagsRestoreView(APIView):
             tag_obj = Tags.objects.get(pk=pk, org=request.profile.org)
         except Tags.DoesNotExist:
             return Response(
-                {"error": True, "errors": "Tag not found."},
+                {"error": True, "errors": _("Tag not found.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -487,7 +494,7 @@ class TagsRestoreView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Tag restored successfully",
+                "message": _("Tag restored successfully"),
                 "tag": TagsSerializer(tag_obj).data,
             },
             status=status.HTTP_200_OK,
@@ -535,7 +542,7 @@ class TagsMergeView(APIView):
         """Merge the tag at `pk` into the tag named by `into` (admin only)."""
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can merge tags"},
+                {"error": True, "errors": _("Only admins can merge tags")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -551,7 +558,7 @@ class TagsMergeView(APIView):
         into = request.data.get("into")
         if not into:
             return Response(
-                {"error": True, "errors": {"into": ["This field is required."]}},
+                {"error": True, "errors": {"into": [_("This field is required.")]}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         target = get_scoped_or_404(Tags, into, org)
@@ -572,7 +579,7 @@ class TagsMergeView(APIView):
                 {
                     "error": True,
                     "errors": {
-                        "into": ["Restore that tag before merging records onto it."]
+                        "into": [_("Restore that tag before merging records onto it.")]
                     },
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -601,10 +608,16 @@ class TagsMergeView(APIView):
         return Response(
             {
                 "error": False,
-                "message": (
-                    f"Merged {source.name!r} into {target.name!r}. "
-                    f"{moved} record(s) moved."
-                ),
+                "message": ngettext(
+                    "Merged %(source)s into %(target)s. %(moved)d record(s) moved.",
+                    "Merged %(source)s into %(target)s. %(moved)d record(s) moved.",
+                    moved,
+                )
+                % {
+                    "source": repr(source.name),
+                    "target": repr(target.name),
+                    "moved": moved,
+                },
                 "tag": TagsSerializer(target).data,
                 "moved": moved,
             },

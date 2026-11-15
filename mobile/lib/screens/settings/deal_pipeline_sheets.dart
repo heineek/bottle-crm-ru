@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/deal_pipeline.dart';
+import '../../l10n/l10n.dart';
 
 /// Create or rename a deal pipeline. Returns the trimmed name, or null if
 /// dismissed. A new pipeline starts with the six default stages, which the
@@ -67,9 +68,13 @@ class _DealPipelineNameSheetState extends State<_DealPipelineNameSheet> {
   @override
   Widget build(BuildContext context) {
     return _SheetFrame(
-      title: _isCreate ? 'New pipeline' : 'Rename pipeline',
+      title: _isCreate
+          ? context.l10n.settingsPipelineNew
+          : context.l10n.settingsPipelineRenameTitle,
       error: _error,
-      submitLabel: _isCreate ? 'Create' : 'Save',
+      submitLabel: _isCreate
+          ? context.l10n.commonCreate
+          : context.l10n.commonSave,
       onSubmit: _submit,
       children: [
         TextField(
@@ -77,17 +82,16 @@ class _DealPipelineNameSheetState extends State<_DealPipelineNameSheet> {
           autofocus: true,
           maxLength: dealPipelineNameMax,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.commonName,
+            border: const OutlineInputBorder(),
             counterText: '',
           ),
         ),
         if (_isCreate) ...[
           const SizedBox(height: 8),
           Text(
-            'It starts with the default stages, from Prospecting to Closed '
-            'Won and Closed Lost. You can rename or remove any of them.',
+            context.l10n.settingsDealPipelineSheetsNewHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -161,9 +165,13 @@ class _DealStageSheetState extends State<_DealStageSheet> {
   @override
   Widget build(BuildContext context) {
     return _SheetFrame(
-      title: _isCreate ? 'New stage' : 'Edit stage',
+      title: _isCreate
+          ? context.l10n.settingsPipelineNewStage
+          : context.l10n.settingsPipelineEditStage,
       error: _error,
-      submitLabel: _isCreate ? 'Add stage' : 'Save',
+      submitLabel: _isCreate
+          ? context.l10n.settingsPipelineAddStage
+          : context.l10n.commonSave,
       onSubmit: _submit,
       children: [
         TextField(
@@ -171,9 +179,9 @@ class _DealStageSheetState extends State<_DealStageSheet> {
           autofocus: _isCreate,
           maxLength: dealStageLabelMax,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.commonName,
+            border: const OutlineInputBorder(),
             counterText: '',
           ),
         ),
@@ -181,13 +189,11 @@ class _DealStageSheetState extends State<_DealStageSheet> {
         DropdownButtonFormField<String>(
           initialValue: _kind,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Kind',
-            helperText:
-                'Won and lost close a deal. Reports and goals read this, '
-                'not the name.',
+          decoration: InputDecoration(
+            labelText: context.l10n.settingsDealPipelineSheetsKind,
+            helperText: context.l10n.settingsDealPipelineSheetsKindHint,
             helperMaxLines: 3,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           items: [
             for (final entry in dealStageKinds.entries)
@@ -202,9 +208,8 @@ class _DealStageSheetState extends State<_DealStageSheet> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: _days(
-              'Expected days (optional)',
-              'A deal here longer than this reads Past expected, and Stalled '
-                  'at one and a half times it. Empty: never ages.',
+              context.l10n.settingsDealPipelineSheetsExpectedLabel,
+              context.l10n.settingsDealPipelineSheetsExpectedHint,
             ),
           ),
           const SizedBox(height: 12),
@@ -213,8 +218,8 @@ class _DealStageSheetState extends State<_DealStageSheet> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: _days(
-              'Warning days (optional)',
-              'An earlier Past expected, before the expected days run out.',
+              context.l10n.settingsDealPipelineSheetsWarningLabel,
+              context.l10n.settingsDealPipelineSheetsWarningHint,
             ),
           ),
         ],
@@ -277,7 +282,7 @@ class _SheetFrame extends StatelessWidget {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),

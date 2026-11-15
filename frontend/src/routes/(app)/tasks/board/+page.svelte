@@ -32,6 +32,7 @@
   import { count, shortDate, daysSince } from '#lib/v2/format.js';
   import { BOARD_PRIORITY_LABEL, BOARD_PRIORITY_TONE } from '#lib/v2/enums.js';
   import { Plus, ChevronDown, TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: any }} */
   let { data } = $props();
@@ -138,22 +139,22 @@
       } else {
         moveError =
           (result.type === 'failure' && /** @type {any} */ (result.data)?.error) ||
-          'Could not move the card; reverted.';
+          m.tasks_board_move_reverted_semicolon();
         await refreshAll();
       }
     } catch {
-      moveError = 'Could not move the card, reverted.';
+      moveError = m.tasks_board_move_reverted_comma();
       await refreshAll();
     }
   }
 </script>
 
-<PageHeader title="Tasks">
+<PageHeader title={m.tasks_title()}>
   {#snippet sub()}
     {#if data.board}
       {data.board.name}{data.board.description ? ` · ${data.board.description}` : ''}
     {:else}
-      Boards
+      {m.tasks_board_boards()}
     {/if}
   {/snippet}
   {#snippet actions()}
@@ -192,10 +193,9 @@
   <div class="v2-pad" style="padding-top:32px">
     <div class="v2-empty">
       <Plus size={22} style="opacity:0.4" />
-      <p class="v2-empty-title">No boards yet</p>
+      <p class="v2-empty-title">{m.tasks_board_empty_title()}</p>
       <p class="v2-sub" style="max-width:34ch;text-align:center">
-        A board organises work into columns you drag cards between. It starts with To Do, In
-        Progress and Done, and you can rename them later.
+        {m.tasks_board_empty_body()}
       </p>
       <form
         class="v2-lane-add-form"
@@ -211,9 +211,9 @@
               await refreshAll();
             } else if (result.type === 'failure') {
               createBoardError =
-                /** @type {any} */ (result.data)?.error || 'Could not create the board.';
+                /** @type {any} */ (result.data)?.error || m.tasks_board_error_create();
             } else if (result.type === 'error') {
-              createBoardError = 'Could not create the board.';
+              createBoardError = m.tasks_board_error_create();
             }
           };
         }}
@@ -222,13 +222,13 @@
         <input
           class="v2-input"
           name="name"
-          placeholder="Board name"
+          placeholder={m.tasks_board_name_placeholder()}
           maxlength="255"
           required
           autofocus
         />
         <button class="v2-btn v2-btn-primary" type="submit" disabled={createBoardBusy}>
-          {createBoardBusy ? 'Creating…' : 'Create board'}
+          {createBoardBusy ? m.tasks_board_creating() : m.tasks_board_create()}
         </button>
       </form>
       {#if createBoardError}
@@ -248,23 +248,23 @@
 
   <div class="v2-pad" style="padding-top:16px;flex:none">
     <div class="v2-stats">
-      <StatCard label="Open cards" value={count(totals.open)} tone="ink" />
+      <StatCard label={m.tasks_board_stat_open()} value={count(totals.open)} tone="ink" />
       <StatCard
-        label="Overdue"
+        label={m.tasks_stat_overdue()}
         value={count(totals.overdue)}
         tone={totals.overdue > 0 ? 'rust' : 'slate'}
-        detail="Past due and not marked done"
+        detail={m.tasks_board_stat_overdue_detail()}
       />
       <StatCard
-        label="Unassigned"
+        label={m.tasks_board_unassigned()}
         value={count(totals.unassigned)}
         tone={totals.unassigned > 0 ? 'clay' : 'slate'}
       />
       <StatCard
-        label="Columns over limit"
+        label={m.tasks_board_stat_over_limit()}
         value={count(totals.over_limit)}
         tone={totals.over_limit > 0 ? 'clay' : 'slate'}
-        detail="More cards than the column allows"
+        detail={m.tasks_board_stat_over_limit_detail()}
       />
     </div>
   </div>
@@ -285,7 +285,12 @@
         {#if over}
           <div class="v2-lane-over">
             <TriangleAlert size={12} style="flex:none" />
-            <span>{lane.cards.length - lane.limit} over the limit of {lane.limit}</span>
+            <span
+              >{m.tasks_board_lane_over({
+                over: lane.cards.length - lane.limit,
+                limit: lane.limit
+              })}</span
+            >
           </div>
         {/if}
 
@@ -315,7 +320,7 @@
                   >{BOARD_PRIORITY_LABEL[t.priority]}</Pill
                 >
                 {#if overdue}
-                  <Pill tone="rust">{daysSince(t.due_date)}d late</Pill>
+                  <Pill tone="rust">{m.tasks_days_late({ days: daysSince(t.due_date) ?? 0 })}</Pill>
                 {/if}
               </div>
 
@@ -326,11 +331,13 @@
                   {/each}
                 {:else}
                   <!-- Named, not an empty slot. A blank reads as a rendering gap. -->
-                  <span class="v2-sub" style="font-size:11.5px">Unassigned</span>
+                  <span class="v2-sub" style="font-size:11.5px">{m.tasks_board_unassigned()}</span>
                 {/if}
                 {#if t.due_date}
                   <span class="v2-sub" style="margin-left:auto;font-size:11.5px">
-                    {done ? 'done ' : ''}{shortDate(done ? t.completed_at : t.due_date)}
+                    {done
+                      ? m.tasks_board_done_on({ date: shortDate(t.completed_at) })
+                      : shortDate(t.due_date)}
                   </span>
                 {/if}
               </div>
@@ -340,14 +347,14 @@
                      work by every count on this page, and by the API's. -->
                 <div class="v2-card-flag">
                   <TriangleAlert size={12} style="flex:none" />
-                  <span>In Done, never marked complete, still counted as open</span>
+                  <span>{m.tasks_board_done_flag()}</span>
                 </div>
               {/if}
             </div>
           {/each}
         </div>
         {#if lane.cards.length === 0}
-          <p class="v2-sub v2-lane-empty">Drop a card here</p>
+          <p class="v2-sub v2-lane-empty">{m.tasks_board_drop_here()}</p>
         {/if}
 
         <!-- Add a card. Any board member can, so it sits on every lane. Kept
@@ -366,9 +373,9 @@
                   await refreshAll();
                 } else if (result.type === 'failure') {
                   addCardError =
-                    /** @type {any} */ (result.data)?.error || 'Could not add the card.';
+                    /** @type {any} */ (result.data)?.error || m.tasks_board_error_add_card();
                 } else if (result.type === 'error') {
-                  addCardError = 'Could not add the card.';
+                  addCardError = m.tasks_board_error_add_card();
                 }
               };
             }}
@@ -378,7 +385,7 @@
             <input
               class="v2-input v2-lane-add-input"
               name="title"
-              placeholder="Card title"
+              placeholder={m.tasks_board_card_title()}
               required
               autofocus
               disabled={addCardBusy}
@@ -386,7 +393,7 @@
             <textarea
               class="v2-input v2-lane-add-input"
               name="description"
-              placeholder="Description (optional)"
+              placeholder={m.tasks_board_card_description()}
               rows="2"
               disabled={addCardBusy}></textarea>
             <select class="v2-input v2-lane-add-input" name="priority" disabled={addCardBusy}>
@@ -399,7 +406,7 @@
             {/if}
             <div class="v2-lane-add-actions">
               <button type="submit" class="v2-btn v2-btn-primary v2-btn-sm" disabled={addCardBusy}>
-                {addCardBusy ? 'Adding…' : 'Add card'}
+                {addCardBusy ? m.tasks_board_adding() : m.tasks_board_add_card()}
               </button>
               <button
                 type="button"
@@ -407,13 +414,14 @@
                 onclick={closeCardForm}
                 disabled={addCardBusy}
               >
-                Cancel
+                {m.common_cancel()}
               </button>
             </div>
           </form>
         {:else}
           <button class="v2-lane-add" onclick={() => openCardForm(lane.id)}>
-            <Plus size={13} /> Add card
+            <Plus size={13} />
+            {m.tasks_board_add_card()}
           </button>
         {/if}
       </section>
@@ -439,9 +447,9 @@
                   await refreshAll();
                 } else if (result.type === 'failure') {
                   addColumnError =
-                    /** @type {any} */ (result.data)?.error || 'Could not add the column.';
+                    /** @type {any} */ (result.data)?.error || m.tasks_board_error_add_column();
                 } else if (result.type === 'error') {
-                  addColumnError = 'Could not add the column.';
+                  addColumnError = m.tasks_board_error_add_column();
                 }
               };
             }}
@@ -459,7 +467,7 @@
               <input
                 class="v2-input v2-lane-add-input"
                 name="name"
-                placeholder="Column name"
+                placeholder={m.tasks_board_column_name()}
                 required
                 autofocus
                 disabled={addColumnBusy}
@@ -469,7 +477,7 @@
                 type="color"
                 name="color"
                 value="#6b7280"
-                aria-label="Column colour"
+                aria-label={m.tasks_board_column_colour()}
                 disabled={addColumnBusy}
               />
             </div>
@@ -482,7 +490,7 @@
                 class="v2-btn v2-btn-primary v2-btn-sm"
                 disabled={addColumnBusy}
               >
-                {addColumnBusy ? 'Adding…' : 'Add column'}
+                {addColumnBusy ? m.tasks_board_adding() : m.tasks_board_add_column()}
               </button>
               <button
                 type="button"
@@ -493,13 +501,14 @@
                 }}
                 disabled={addColumnBusy}
               >
-                Cancel
+                {m.common_cancel()}
               </button>
             </div>
           </form>
         {:else}
           <button class="v2-lane-add v2-lane-add-lane" onclick={() => (showAddColumn = true)}>
-            <Plus size={14} /> Add column
+            <Plus size={14} />
+            {m.tasks_board_add_column()}
           </button>
         {/if}
       </section>
@@ -511,9 +520,9 @@
      word "task" suggests that, and everyone assumes a card here is also a task
      there, so it is said once, in the open. -->
 <p class="v2-sub v2-pad" style="font-size:11.5px;padding-bottom:14px;flex:none;margin:0">
-  Cards on a board are separate records from the
-  <a href={resolve('tasks')} style="color:inherit">task list</a>. A card here does not appear there,
-  and completing one does not complete the other.
+  {m.tasks_board_foot_lead()}
+  <a href={resolve('tasks')} style="color:inherit">{m.tasks_board_foot_link()}</a
+  >{m.tasks_board_foot_tail()}
 </p>
 
 <style>

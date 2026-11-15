@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/attachment.dart';
 import '../data/models/custom_field_definition.dart';
@@ -55,7 +56,7 @@ class AssignableUser {
     }
     return AssignableUser(
       id: json['id']?.toString() ?? '',
-      label: label.isEmpty ? 'Unknown' : label,
+      label: label.isEmpty ? appL10n.appUnknownPerson : label,
       profilePic: pic,
     );
   }
@@ -379,7 +380,7 @@ class LeadsNotifier extends AsyncNotifier<LeadsListData> {
     final response = await _apiService.get(url);
 
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load leads');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadLeads);
     }
 
     final data = response.data!;

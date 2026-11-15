@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { listRecurringInvoices, toggleRecurring, FILTER_FIELDS } from '#lib/server/v2/recurring.js';
 import { readFilters, buildFilterQuery } from '#lib/server/v2/filter-params.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The schedules worklist. `load` returns `{ schedules, totals }`. The names the
@@ -28,13 +29,13 @@ export const actions = {
   toggle: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which schedule? None was given.' });
+    if (!id) return fail(400, { error: m.invoices_which_schedule() });
 
     try {
       await toggleRecurring({ cookies }, id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not change this schedule.')
+        error: readableError(err, m.invoices_recurring_change_failed())
       });
     }
     return { toggled: true };

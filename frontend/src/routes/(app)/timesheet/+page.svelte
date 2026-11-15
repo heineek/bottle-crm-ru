@@ -22,6 +22,8 @@
   import { todayIn } from '#lib/v2/dates.js';
   import { isBilled } from '#lib/v2/time-entry.js';
   import { ChevronLeft, ChevronRight, Square, Receipt } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -54,7 +56,15 @@
   const liveMinutes = (e) =>
     e.is_running ? e.live_duration_minutes + sinceLoad : e.duration_minutes;
 
-  const WEEKDAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const WEEKDAY = [
+    m.timesheet_weekday_mon,
+    m.timesheet_weekday_tue,
+    m.timesheet_weekday_wed,
+    m.timesheet_weekday_thu,
+    m.timesheet_weekday_fri,
+    m.timesheet_weekday_sat,
+    m.timesheet_weekday_sun
+  ];
   // The org's day, so the column marked today is the one the API files today's entries under.
   let todayISO = $derived(todayIn(data.org.timezone));
 
@@ -108,44 +118,46 @@
   );
 </script>
 
-<PageHeader title="Timesheet">
+<PageHeader title={m.timesheet_title()}>
   {#snippet sub()}
     {shortDate(week.start)} - {shortDate(week.end)} · {week.profile.name}
   {/snippet}
   {#snippet actions()}
-    <button class="v2-btn" aria-label="Previous week" onclick={() => shiftWeek(-7)}>
+    <button class="v2-btn" aria-label={m.timesheet_prev_week()} onclick={() => shiftWeek(-7)}>
       <ChevronLeft />
     </button>
-    <button class="v2-btn" onclick={thisWeek}>This week</button>
-    <button class="v2-btn" aria-label="Next week" onclick={() => shiftWeek(7)}>
+    <button class="v2-btn" onclick={thisWeek}>{m.timesheet_this_week()}</button>
+    <button class="v2-btn" aria-label={m.timesheet_next_week()} onclick={() => shiftWeek(7)}>
       <ChevronRight />
     </button>
     <!-- This page is one person's week. The report is every window and every
          grouping of the same entries, and where the CSV comes from. -->
-    <a class="v2-btn" href={resolve('timesheet/report')}>Report</a>
+    <a class="v2-btn" href={resolve('timesheet/report')}>{m.timesheet_report_link()}</a>
   {/snippet}
 </PageHeader>
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
-    <StatCard label="Logged this week" value={hm(weekMinutes)} tone="ink" />
+    <StatCard label={m.timesheet_stat_logged_week()} value={hm(weekMinutes)} tone="ink" />
     <StatCard
-      label="Billable"
+      label={m.timesheet_stat_billable()}
       value={hm(billableMinutes)}
       tone="moss"
-      detail="{Math.round((billableMinutes / Math.max(1, weekMinutes)) * 100)}% of logged time"
+      detail={m.timesheet_stat_billable_share({
+        percent: Math.round((billableMinutes / Math.max(1, weekMinutes)) * 100)
+      })}
     />
     <StatCard
-      label="Billable value"
+      label={m.timesheet_stat_billable_value()}
       value={money(billableValue, data.org.currency)}
       tone="slate"
-      detail="At the rate saved on each entry"
+      detail={m.timesheet_stat_rate_note()}
     />
     <StatCard
-      label="Not yet invoiced"
+      label={m.timesheet_stat_unbilled()}
       value={count(unbilled)}
       tone={unbilled ? 'clay' : 'slate'}
-      detail={unbilled ? 'Billable entries with no invoice' : 'Everything billable is billed'}
+      detail={unbilled ? m.timesheet_stat_unbilled_some() : m.timesheet_stat_unbilled_none()}
     />
   </div>
 </div>
@@ -157,7 +169,7 @@
       <div class="v2-next" style="margin-bottom:16px">
         <div class="v2-next-body">
           <div class="v2-label" style="color:var(--v2-ember)">
-            {week.running_count === 1 ? 'Timer running' : `${week.running_count} timers running`}
+            {m.timesheet_timers_running({ count: week.running_count })}
           </div>
           {#if form?.error}
             <!-- Stop can fail (ownership check, network). Silent failure here
@@ -170,16 +182,19 @@
               {#each d.entries.filter((e) => e.is_running) as e (e.id)}
                 <div class="v2-running-row">
                   <span>
-                    <span class="v2-num">{hm(liveMinutes(e))}</span> on
-                    <a href={resolve(`tickets/${e.case.id}`)} style="color:inherit">{e.case.name}</a
-                    >
+                    {#each messageParts(m.timesheet_running_on( { duration: slot('duration'), ticket: slot('ticket') } )) as p, i (i)}{#if p.key === 'duration'}<span
+                          class="v2-num">{hm(liveMinutes(e))}</span
+                        >{:else if p.key === 'ticket'}<a
+                          href={resolve(`tickets/${e.case.id}`)}
+                          style="color:inherit">{e.case.name}</a
+                        >{:else}{p.text}{/if}{/each}
                   </span>
                   <!-- One form per entry. A single shared button could not say
                        which of several running timers it meant. -->
                   <form method="POST" action="?/stop" use:enhance={stopping}>
                     <input type="hidden" name="entry_id" value={e.id} />
                     <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>
-                      <Square size={13} />Stop timer
+                      <Square size={13} />{m.timesheet_stop_timer()}
                     </button>
                   </form>
                 </div>
@@ -195,7 +210,7 @@
         <div class="v2-day" data-today={d.date === todayISO} data-empty={d.entries.length === 0}>
           <div class="v2-day-head">
             <div>
-              <div style="font-size:11.5px;font-weight:650">{WEEKDAY[i]}</div>
+              <div style="font-size:11.5px;font-weight:650">{WEEKDAY[i]()}</div>
               <div class="v2-sub" style="font-size:11px">{shortDate(d.date)}</div>
             </div>
             {#if dayMinutes[i]}
@@ -210,9 +225,10 @@
                   {hm(liveMinutes(e))}
                 </span>
                 {#if e.is_running}
-                  <Pill tone="clay" dot>running</Pill>
+                  <Pill tone="clay" dot>{m.timesheet_entry_running()}</Pill>
                 {:else if !e.billable}
-                  <span class="v2-sub" style="font-size:10.5px">internal</span>
+                  <span class="v2-sub" style="font-size:10.5px">{m.timesheet_entry_internal()}</span
+                  >
                 {:else if isBilled(e)}
                   <!-- Already billed. Links out rather than offering to bill
                        it again. Double-billing an hour is a refund, not an
@@ -222,16 +238,18 @@
                       href={resolve(`invoices/${e.invoice.id}`)}
                       class="v2-sub"
                       style="font-size:10.5px;display:inline-flex;gap:3px;align-items:center;color:var(--v2-moss)"
-                      title="Billed on {e.invoice.invoice_number}"
+                      title={m.timesheet_entry_billed_on({ number: e.invoice.invoice_number })}
                     >
-                      <Receipt size={10} />billed {e.invoice.invoice_number}
+                      <Receipt size={10} />{m.timesheet_entry_billed_number({
+                        number: e.invoice.invoice_number
+                      })}
                     </a>
                   {:else}
                     <span
                       class="v2-sub"
                       style="font-size:10.5px;display:inline-flex;gap:3px;align-items:center;color:var(--v2-moss)"
                     >
-                      <Receipt size={10} />billed
+                      <Receipt size={10} />{m.timesheet_entry_billed()}
                     </span>
                   {/if}
                 {/if}
@@ -250,7 +268,7 @@
             </div>
           {:else}
             <div style="flex:1;display:grid;place-items:center;padding:12px">
-              <span class="v2-sub" style="font-size:11px">Nothing logged</span>
+              <span class="v2-sub" style="font-size:11px">{m.timesheet_day_empty()}</span>
             </div>
           {/each}
         </div>
@@ -258,9 +276,7 @@
     </div>
 
     <p class="v2-sub" style="font-size:11.5px;margin-top:14px">
-      Time is logged against a ticket, so every hour here is attached to something a customer can be
-      shown. Rates are saved on each entry when it is logged. Changing your rate does not rewrite
-      what past weeks were worth.
+      {m.timesheet_footer_note()}
     </p>
   </div>
 </div>

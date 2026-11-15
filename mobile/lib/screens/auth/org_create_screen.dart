@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/l10n.dart';
 import '../../config/api_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
@@ -119,7 +120,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: const Text('New Organization'),
+          title: Text(context.l10n.appOrgCreateTitle),
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
@@ -137,20 +138,20 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
                     enabled: !_submitting,
-                    decoration: const InputDecoration(
-                      labelText: 'Organization name',
-                      hintText: 'e.g. Acme Inc.',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.appOrgNameLabel,
+                      hintText: context.l10n.appOrgNameHint,
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       final name = value?.trim() ?? '';
-                      if (name.isEmpty) return 'Give the organization a name';
+                      if (name.isEmpty) return context.l10n.appOrgNameRequired;
                       // Mirrors the server's `validate_name`, which is the rule
                       // that actually decides. This only saves a round trip.
                       if (RegExp(
                         r'''[~!@#$%^&*()+{}":;'/\[\]]''',
                       ).hasMatch(name)) {
-                        return 'Letters, numbers, spaces, hyphens and dots only';
+                        return context.l10n.appOrgNameChars;
                       }
                       return null;
                     },
@@ -165,8 +166,8 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _timezone,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Time zone',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.appTimeZone,
                         border: OutlineInputBorder(),
                       ),
                       items: _zones
@@ -190,9 +191,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     ),
                   const SizedBox(height: 6),
                   Text(
-                    'Sets when a day starts here, so "due today" and "overdue" '
-                    'mean what your team expects. You can change it later in '
-                    'Settings.',
+                    context.l10n.appOrgTimeZoneHint,
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 24),
@@ -206,7 +205,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                               width: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Create organization'),
+                          : Text(context.l10n.appOrgCreateButton),
                     ),
                   ),
                 ],

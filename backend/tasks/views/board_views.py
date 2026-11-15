@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -256,7 +257,7 @@ class BoardDetailView(APIView):
         ).first()
         if not membership or membership.role not in ["owner", "admin"]:
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         serializer = BoardSerializer(board, data=request.data, partial=True)
@@ -290,7 +291,7 @@ class BoardDetailView(APIView):
         ).first()
         if not membership or membership.role not in ["owner", "admin"]:
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         serializer = BoardSerializer(board, data=request.data, partial=True)
@@ -319,7 +320,7 @@ class BoardDetailView(APIView):
         # Only owner can delete
         if board.owner != request.profile:
             return Response(
-                {"error": "Only board owner can delete the board"},
+                {"error": _("Only board owner can delete the board")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -380,7 +381,7 @@ class BoardColumnListCreateView(APIView):
         ).first()
         if not membership or membership.role not in ["owner", "admin"]:
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         data = request.data.copy()
@@ -401,7 +402,9 @@ class BoardColumnListCreateView(APIView):
                 {
                     "error": True,
                     "errors": {
-                        "name": "A column with this name already exists on this board."
+                        "name": _(
+                            "A column with this name already exists on this board."
+                        )
                     },
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -527,7 +530,7 @@ class BoardTaskDetailView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": {"column": "Invalid column for this board."},
+                        "errors": {"column": _("Invalid column for this board.")},
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/attachment.dart';
 import '../data/models/comment.dart';
@@ -10,6 +11,17 @@ import '../services/api_service.dart';
 import 'deal_pipelines_provider.dart';
 import 'leads_provider.dart' show AssignableUser;
 
+/// The first message the server put on [field] in a refused write's
+/// `{"errors": {"field": [...]}}`, in whatever language it answered in.
+String? dealFieldError(Map<String, dynamic>? body, String field) {
+  final errors = body?['errors'];
+  if (errors is! Map) return null;
+  final messages = errors[field];
+  if (messages is List && messages.isNotEmpty) return messages.first.toString();
+  if (messages is String && messages.isNotEmpty) return messages;
+  return null;
+}
+
 /// How the list view sorts deals within a stage. Backend doesn't expose a
 /// sort param so we apply this client-side over the loaded page.
 enum DealSort { closeDateAsc, valueDesc, stageAgeDesc, updatedDesc }
@@ -18,13 +30,13 @@ extension DealSortX on DealSort {
   String get label {
     switch (this) {
       case DealSort.closeDateAsc:
-        return 'Closest close date';
+        return appL10n.appDealSortCloseDate;
       case DealSort.valueDesc:
-        return 'Largest value';
+        return appL10n.appDealSortValue;
       case DealSort.stageAgeDesc:
-        return 'Stalest first';
+        return appL10n.appDealSortStageAge;
       case DealSort.updatedDesc:
-        return 'Recently updated';
+        return appL10n.appDealSortUpdated;
     }
   }
 }
@@ -315,7 +327,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
     final response = await _apiService.get(url);
 
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load deals');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadDeals);
     }
 
     final data = response.data!;
@@ -483,7 +495,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
       if (response.success) return (success: true, error: null);
       return (
         success: false,
-        error: response.message ?? 'Failed to add comment',
+        error: response.message ?? appL10n.appMsgFailedToAddComment,
       );
     } catch (e) {
       return (success: false, error: 'Failed to add comment: ${e.toString()}');
@@ -500,7 +512,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
       if (response.success) return (success: true, error: null);
       return (
         success: false,
-        error: response.message ?? 'Failed to update comment',
+        error: response.message ?? appL10n.appMsgFailedToUpdateComment,
       );
     } catch (e) {
       return (
@@ -519,7 +531,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
       if (response.success) return (success: true, error: null);
       return (
         success: false,
-        error: response.message ?? 'Failed to delete comment',
+        error: response.message ?? appL10n.appMsgFailedToDeleteComment,
       );
     } catch (e) {
       return (
@@ -530,9 +542,8 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
   }
 
   /// Create a new deal, list refreshes on success.
-  Future<({bool success, String? error, Deal? deal})> createDeal(
-    Deal deal,
-  ) async {
+  Future<({bool success, String? error, Deal? deal, String? nameError})>
+  createDeal(Deal deal) async {
     try {
       final response = await _apiService.post(
         ApiConfig.opportunities,
@@ -543,7 +554,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
         final isError = response.data!['error'] as bool? ?? true;
         if (!isError) {
           await refresh();
-          return (success: true, error: null, deal: null);
+          return (success: true, error: null, deal: null, nameError: null);
         }
       }
 
@@ -551,23 +562,23 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
       // `message`, whether `errors` is a field map or a plain string.
       return (
         success: false,
-        error: response.message ?? 'Failed to create deal',
+        error: response.message ?? appL10n.appMsgFailedToCreateDeal,
         deal: null,
+        nameError: dealFieldError(response.data, 'name'),
       );
     } catch (e) {
       return (
         success: false,
         error: 'Failed to create deal: ${e.toString()}',
         deal: null,
+        nameError: null,
       );
     }
   }
 
   /// Update an existing deal, list refreshes on success.
-  Future<({bool success, String? error, Deal? deal})> updateDeal(
-    String id,
-    Deal deal,
-  ) async {
+  Future<({bool success, String? error, Deal? deal, String? nameError})>
+  updateDeal(String id, Deal deal) async {
     try {
       final url = '${ApiConfig.opportunities}$id/';
       final response = await _apiService.put(url, deal.toJson());
@@ -576,7 +587,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
         final isError = response.data!['error'] as bool? ?? true;
         if (!isError) {
           await refresh();
-          return (success: true, error: null, deal: null);
+          return (success: true, error: null, deal: null, nameError: null);
         }
       }
 
@@ -584,14 +595,16 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
       // `message`, whether `errors` is a field map or a plain string.
       return (
         success: false,
-        error: response.message ?? 'Failed to update deal',
+        error: response.message ?? appL10n.appMsgFailedToUpdateDeal,
         deal: null,
+        nameError: dealFieldError(response.data, 'name'),
       );
     } catch (e) {
       return (
         success: false,
         error: 'Failed to update deal: ${e.toString()}',
         deal: null,
+        nameError: null,
       );
     }
   }
@@ -642,7 +655,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
 
       return (
         success: false,
-        error: response.message ?? 'Failed to update stage',
+        error: response.message ?? appL10n.appMsgFailedToUpdateStage,
       );
     } catch (e) {
       return (success: false, error: 'Failed to update stage: ${e.toString()}');
@@ -671,7 +684,7 @@ class DealsNotifier extends AsyncNotifier<DealsListData> {
 
       return (
         success: false,
-        error: response.message ?? 'Failed to delete deal',
+        error: response.message ?? appL10n.appMsgFailedToDeleteDeal,
       );
     } catch (e) {
       return (success: false, error: 'Failed to delete deal: ${e.toString()}');
@@ -727,7 +740,7 @@ class DealBoardNotifier extends AsyncNotifier<DealBoard> {
       _withQuery(ApiConfig.opportunitiesKanban, query),
     );
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load the board');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTheBoard);
     }
     return DealBoard.fromJson(response.data!);
   }

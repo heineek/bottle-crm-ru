@@ -7,6 +7,7 @@ import '../data/api_envelope.dart';
 import '../data/models/custom_field_definition.dart';
 import '../data/models/custom_object.dart';
 import '../data/models/lookup_models.dart';
+import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
 
@@ -21,7 +22,9 @@ class CustomObjectsNotifier extends AsyncNotifier<CustomObjectsAnswer?> {
     if (response.statusCode == 404) return null;
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load custom objects');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadCustomObjects,
+      );
     }
     return CustomObjectsAnswer.fromJson(data);
   }
@@ -60,7 +63,9 @@ final objectDefinitionProvider = FutureProvider.autoDispose
       if (response.statusCode == 404) return null;
       final data = response.data;
       if (!response.success || data == null) {
-        throw Exception(response.message ?? 'Failed to load this object');
+        throw Exception(
+          response.message ?? appL10n.appMsgFailedToLoadThisObject,
+        );
       }
       return ObjectDefinition.fromJson(data);
     }, retry: (_, _) => null);
@@ -94,10 +99,10 @@ final objectSettingsProvider = FutureProvider.autoDispose
       final object = results[0];
       final fields = results[1];
       if (!object.success || object.data == null) {
-        throw Exception(object.message ?? 'Failed to load this object');
+        throw Exception(object.message ?? appL10n.appMsgFailedToLoadThisObject);
       }
       if (!fields.success || fields.data == null) {
-        throw Exception(fields.message ?? 'Failed to load its fields');
+        throw Exception(fields.message ?? appL10n.appMsgFailedToLoadItsFields);
       }
       return ObjectSettingsData(
         summary: ObjectSummary.fromJson(object.data!),
@@ -150,7 +155,7 @@ class ObjectRecordsNotifier extends AsyncNotifier<ObjectRecordsData> {
     );
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Failed to load records');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadRecords);
     }
     final records = listFromEnvelope(data, const [
       'results',
@@ -313,7 +318,7 @@ class CustomObjectsApi {
     );
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not search');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotSearch);
     }
     return [
       for (final row in listFromEnvelope(
@@ -502,7 +507,9 @@ String recordWriteError(
     }
 
     if (data['name'] != null) add(definition.summary.nameLabel, data['name']);
-    if (data['assigned_to'] != null) add('Assigned to', data['assigned_to']);
+    if (data['assigned_to'] != null) {
+      add(appL10n.commonAssignedTo, data['assigned_to']);
+    }
     for (final section in const ['custom_fields', 'links']) {
       final nested = data[section];
       if (nested is! Map) continue;
@@ -520,7 +527,7 @@ String recordWriteError(
     final detail = _messageText(data['detail']);
     if (detail.isNotEmpty) return detail;
   }
-  return response.message ?? 'Could not save that record.';
+  return response.message ?? appL10n.appMsgCouldNotSaveThatRecord;
 }
 
 /// The object settings write body, as the web's `readObjectForm` builds it.
@@ -602,26 +609,32 @@ Map<String, dynamic> fieldWriteBody({
 }
 
 /// The names the object form shows for the keys it sends.
-const objectFormLabels = {
-  'key': 'Key',
-  'label': 'Name (singular)',
-  'label_plural': 'Name (plural)',
-  'name_label': "What each record's name is called",
-  'description': 'Description',
-  'record_access': 'Who can see its records',
-};
+Map<String, String> get objectFormLabels {
+  final l10n = appL10n;
+  return {
+    'key': l10n.appObjectFormKey,
+    'label': l10n.appObjectFormLabelSingular,
+    'label_plural': l10n.appObjectFormLabelPlural,
+    'name_label': l10n.appObjectFormNameLabel,
+    'description': l10n.commonDescription,
+    'record_access': l10n.appObjectFormRecordAccess,
+  };
+}
 
 /// The names the field form shows for the keys it sends.
-const fieldFormLabels = {
-  'key': 'Key',
-  'label': 'Label',
-  'field_type': 'Type',
-  'options': 'Options',
-  'target': 'Links to',
-  'many': 'How many',
-  'is_required': 'Required',
-  'display_order': 'Order',
-};
+Map<String, String> get fieldFormLabels {
+  final l10n = appL10n;
+  return {
+    'key': l10n.appObjectFormKey,
+    'label': l10n.appFieldFormLabel,
+    'field_type': l10n.appRoutingFieldType,
+    'options': l10n.appFieldFormOptions,
+    'target': l10n.appFieldFormTarget,
+    'many': l10n.appFieldFormMany,
+    'is_required': l10n.appFieldFormRequired,
+    'display_order': l10n.appFieldFormOrder,
+  };
+}
 
 /// What the server refused, as one readable line per field or its `detail`.
 /// [labels] says what the form calls each key; unknown keys keep their name.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 
 /// Generic searchable multi-select bottom sheet.
@@ -14,7 +15,7 @@ class MultiSelectSheet<T> extends StatefulWidget {
   final String Function(T) labelOf;
   final String Function(T) searchText;
   final Widget Function(T)? leadingOf;
-  final String emptyMessage;
+  final String? emptyMessage;
 
   const MultiSelectSheet({
     super.key,
@@ -24,7 +25,7 @@ class MultiSelectSheet<T> extends StatefulWidget {
     required this.labelOf,
     required this.searchText,
     this.leadingOf,
-    this.emptyMessage = 'No options',
+    this.emptyMessage,
   });
 
   static Future<List<T>?> show<T>({
@@ -35,7 +36,7 @@ class MultiSelectSheet<T> extends StatefulWidget {
     required String Function(T) labelOf,
     required String Function(T) searchText,
     Widget Function(T)? leadingOf,
-    String emptyMessage = 'No options',
+    String? emptyMessage,
   }) {
     return showModalBottomSheet<List<T>>(
       context: context,
@@ -119,7 +120,7 @@ class _MultiSelectSheetState<T> extends State<MultiSelectSheet<T>> {
                   minimumSize: AppLayout.buttonMinSizeInRow,
                 ),
                 onPressed: () => Navigator.pop(context, _selected.toList()),
-                child: const Text('Done'),
+                child: Text(context.l10n.commonDone),
               ),
             ],
           ),
@@ -129,7 +130,7 @@ class _MultiSelectSheetState<T> extends State<MultiSelectSheet<T>> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Search…',
+              hintText: context.l10n.appSearchEllipsis,
               prefixIcon: const Icon(LucideIcons.search, size: 18),
               filled: true,
               fillColor: AppColors.gray50,
@@ -150,7 +151,7 @@ class _MultiSelectSheetState<T> extends State<MultiSelectSheet<T>> {
           child: filtered.isEmpty
               ? Center(
                   child: Text(
-                    widget.emptyMessage,
+                    widget.emptyMessage ?? context.l10n.appNoOptions,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),

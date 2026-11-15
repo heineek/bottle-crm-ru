@@ -8,6 +8,7 @@
  */
 
 import { error, redirect } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import {
   ACCESS_COOKIE,
   ORG_COOKIE,
@@ -38,7 +39,7 @@ export async function load({ cookies, params }) {
   } catch (err) {
     if (err instanceof PortalError) {
       if (err.status === 401 || err.status === 403) toLogin(cookies);
-      if (err.status === 404) throw error(404, 'Article not found');
+      if (err.status === 404) throw error(404, m.public_portal_article_not_found());
     }
     throw err;
   }

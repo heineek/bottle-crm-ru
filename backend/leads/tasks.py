@@ -4,8 +4,10 @@ from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 
 from common.links import frontend_url
+from common.locale import language_for_user
 from common.models import Profile
 from common.tasks import set_rls_context
 from leads.models import Lead
@@ -64,10 +66,11 @@ def send_email_to_assigned_user(recipients, lead_id, org_id, source=""):
             context["lead"] = lead
             context["created_by"] = created_by
             context["source"] = source
-            subject = "Assigned a lead for you. "
-            html_content = render_to_string(
-                "assigned_to/leads_assigned.html", context=context
-            )
+            with language_for_user(profile.user, lead.org):
+                subject = _("Assigned a lead for you. ")
+                html_content = render_to_string(
+                    "assigned_to/leads_assigned.html", context=context
+                )
             msg = EmailMessage(subject, html_content, to=recipients_list)
             msg.content_subtype = "html"
             try:

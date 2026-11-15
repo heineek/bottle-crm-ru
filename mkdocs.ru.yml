@@ -1,0 +1,92 @@
+# Russian translation of the docs. Everything not set here comes from
+# mkdocs.yml; the pages mirror docs/EN/ one to one, and headings keep the
+# English anchors as explicit ids, so links between pages stay the same.
+INHERIT: mkdocs.yml
+
+site_description: Мультитенантная CRM для развёртывания на своём сервере. Установка, развёртывание, API и разработка.
+edit_uri: edit/master/docs/RU/
+docs_dir: docs/RU
+
+theme:
+  language: ru
+
+validation:
+  anchors: warn
+
+nav:
+  - Главная: index.md
+  - Начало работы:
+      - Быстрый старт с Docker: getting-started/docker-quick-start.md
+      - Ручная установка: getting-started/manual-setup.md
+      - Первый вход: getting-started/first-sign-in.md
+      - Демоданные и отраслевые пакеты: getting-started/demo-data.md
+      - Модули: getting-started/modules.md
+  - Развёртывание на своём сервере:
+      - Требования: self-hosting/requirements.md
+      - Docker: self-hosting/docker.md
+      - Развёртывание в продакшене: self-hosting/production-deploy.md
+      - PostgreSQL и RLS: self-hosting/postgresql-and-rls.md
+      - Переменные окружения: self-hosting/environment-variables.md
+      - Почта и Celery: self-hosting/email-and-celery.md
+      - Google OAuth: self-hosting/google-oauth.md
+      - Резервное копирование и обновление: self-hosting/backups-and-upgrades.md
+      - Усиление безопасности: self-hosting/security-hardening.md
+      - Устранение неполадок: self-hosting/troubleshooting.md
+  - Архитектура:
+      - Обзор архитектуры: architecture/overview.md
+      - Мультитенантность и RLS: architecture/multi-tenancy-and-rls.md
+      - Аутентификация: architecture/authentication.md
+      - Права и роли: architecture/permissions-and-roles.md
+      - Модель данных: architecture/data-model.md
+      - Фоновые задачи: architecture/background-jobs.md
+  - Справочник API:
+      - Соглашения: api/conventions.md
+      - Аутентификация: api/authentication.md
+      - Ошибки: api/errors.md
+      - Токены и API-ключи: api/tokens-and-api-keys.md
+      - Модули: api/modules.md
+      - Лиды: api/leads.md
+      - Компании: api/accounts.md
+      - Контакты: api/contacts.md
+      - Сделки: api/opportunities.md
+      - Обращения: api/cases.md
+      - Макросы: api/macros.md
+      - Задачи: api/tasks.md
+      - Счета и коммерческие предложения: api/invoices.md
+      - Экспорт в CSV: api/exports.md
+      - Сохранённые представления: api/saved-views.md
+      - Журнал аудита безопасности: api/audit-log.md
+      - Клиентский портал: api/customer-portal.md
+      - Указатель эндпоинтов: api/endpoint-index.md
+  - Интеграции:
+      - ИИ-агенты: integrations/ai-agents.md
+      - Веб-формы (web-to-lead): integrations/web-forms.md
+      - Входящая почта: integrations/inbound-email.md
+      - Вебхуки: integrations/webhooks.md
+      - Правила автоматизации: integrations/automation.md
+      - Импорт из CSV: integrations/csv-import.md
+      - Пример на Python: integrations/python-sample.md
+      - Пример на JavaScript: integrations/javascript-sample.md
+  - Мобильное приложение:
+      - Сборка и настройка: mobile/build-and-configure.md
+      - Подключение к своему серверу: mobile/connect-to-self-hosted.md
+      - Релизные сборки: mobile/release-builds.md
+  - Участие в разработке:
+      - Настройка окружения разработки: contributing/development-setup.md
+      - Структура репозитория: contributing/repo-layout.md
+      - Тестирование: contributing/testing.md
+      - Стиль кода: contributing/code-style.md
+      - Добавление модели с привязкой к организации: contributing/adding-an-org-scoped-model.md
+      - Правила безопасности: contributing/security-rules.md
+      - Pull request: contributing/pull-requests.md
+      - Выпуск релизов: contributing/releasing.md
+  - Локализация:
+      - Обзор: localization/index.md
+      - Добавление строки: localization/adding-strings.md
+      - Добавление языка: localization/adding-a-language.md
+      - Языки с письмом справа налево: localization/right-to-left.md
+      - Русский глоссарий: localization/glossary-ru.md
+  - Справочник:
+      - Переменные окружения: reference/environment-variables.md
+      - Management-команды: reference/management-commands.md
+      - Глоссарий: reference/glossary.md

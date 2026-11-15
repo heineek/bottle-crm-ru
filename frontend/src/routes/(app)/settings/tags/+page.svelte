@@ -21,6 +21,8 @@
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count } from '#lib/v2/format.js';
   import { Plus, Merge, Tags as TagsIcon } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -38,13 +40,17 @@
   let busy = $state(false);
 
   let totals = $derived(data.totals);
+
   let taggedKinds = $derived(
     wordsOn(data.modules, [
-      [null, 'accounts'],
-      ['leads', 'leads'],
-      ['deals', 'deals'],
-      ['tickets', 'tickets']
+      [null, m.settings_tags_kind_accounts()],
+      ['leads', m.settings_tags_kind_leads()],
+      ['deals', m.settings_tags_kind_deals()],
+      ['tickets', m.settings_tags_kind_tickets()]
     ])
+  );
+  let subParts = $derived(
+    messageParts(m.settings_tags_sub({ count: slot('count'), kinds: taggedKinds }))
   );
 
   /**
@@ -115,10 +121,11 @@
   });
 </script>
 
-<PageHeader title="Tags">
+<PageHeader title={m.settings_tags_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(totals.active)}</span> in use across {taggedKinds}
+    {#each subParts as p, i (i)}{#if p.key}<span class="v2-num">{count(totals.active)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit}
@@ -147,19 +154,21 @@
           <input
             class="v2-input"
             name="name"
-            placeholder="Tag name"
+            placeholder={m.settings_tags_name_placeholder()}
             required
             autofocus
             disabled={busy}
           />
-          <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>Create</button>
+          <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}
+            >{m.settings_tags_create()}</button
+          >
           <button class="v2-btn" type="button" disabled={busy} onclick={() => (adding = false)}>
-            Cancel
+            {m.common_cancel()}
           </button>
         </form>
       {:else}
         <button class="v2-btn v2-btn-primary" onclick={() => (adding = true)}
-          ><Plus />New tag</button
+          ><Plus />{m.settings_tags_new_button()}</button
         >
       {/if}
     {/if}
@@ -168,14 +177,18 @@
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
-    <StatCard label="Active" value={count(totals.active)} tone="ink" />
+    <StatCard label={m.settings_tags_stat_active()} value={count(totals.active)} tone="ink" />
     <StatCard
-      label="Applied to nothing"
+      label={m.settings_tags_stat_unused()}
       value={count(totals.unused)}
       tone={totals.unused > 0 ? 'clay' : 'slate'}
-      detail="Counts every record type"
+      detail={m.settings_tags_stat_unused_detail()}
     />
-    <StatCard label="Turned off" value={count(totals.count - totals.active)} tone="slate" />
+    <StatCard
+      label={m.settings_tags_stat_off()}
+      value={count(totals.count - totals.active)}
+      tone="slate"
+    />
   </div>
 </div>
 
@@ -186,11 +199,16 @@
         <Merge size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
         <div>
           <div style="font-weight:600;font-size:13px">
-            {group.all.map((t) => t.name).join(' and ')} look like the same tag
+            {m.settings_tags_duplicate_title({
+              names: group.all.map((t) => t.name).join(m.settings_tags_names_and())
+            })}
           </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0;line-height:1.5">
-            {group.all.map((t) => `${t.name} is on ${used(t)} records`).join('; ')}. Anyone
-            filtering by one of them misses the other.
+            {m.settings_tags_duplicate_body({
+              usage: group.all
+                .map((t) => m.settings_tags_duplicate_usage({ name: t.name, count: used(t) }))
+                .join('; ')
+            })}
           </p>
         </div>
         {#if data.can_edit}
@@ -204,9 +222,15 @@
             {#each group.merge as loser (loser.id)}
               <ConfirmAction
                 action="?/merge"
-                label={group.merge.length > 1 ? `Merge ${loser.name}` : 'Merge'}
-                confirmLabel="Merge"
-                explain={`${used(loser)} ${used(loser) === 1 ? 'record moves' : 'records move'} from ${loser.name} to ${group.keep.name}, and ${loser.name} is turned off. Records already on ${group.keep.name} are untouched. This cannot be undone by merging back.`}
+                label={group.merge.length > 1
+                  ? m.settings_tags_merge_named({ name: loser.name })
+                  : m.settings_tags_merge()}
+                confirmLabel={m.settings_tags_merge()}
+                explain={m.settings_tags_merge_explain({
+                  count: used(loser),
+                  from: loser.name,
+                  into: group.keep.name
+                })}
                 hidden={{ id: loser.id, into: group.keep.id }}
               />
             {/each}
@@ -220,8 +244,7 @@
     {/if}
     {#if form?.merged}
       <p class="v2-sub" style="margin-bottom:12px">
-        Merged into {form.merged.name}. {count(form.merged.moved)}
-        {form.merged.moved === 1 ? 'record' : 'records'} moved.
+        {m.settings_tags_merged({ name: form.merged.name, count: form.merged.moved })}
       </p>
     {/if}
 
@@ -232,19 +255,27 @@
       <p class="v2-error" style="margin-bottom:12px">{form.restore.error}</p>
     {/if}
 
-    <div class="v2-label" style="margin-bottom:10px">All tags</div>
+    <div class="v2-label" style="margin-bottom:10px">{m.settings_tags_all_heading()}</div>
     <div class="v2-table-wrap">
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Tag</th>
-            <th style="text-align:right">Accounts</th>
-            <th style="text-align:right">Contacts</th>
-            {#if isOn(data.modules, 'leads')}<th style="text-align:right">Leads</th>{/if}
-            {#if isOn(data.modules, 'deals')}<th style="text-align:right">Deals</th>{/if}
-            {#if isOn(data.modules, 'tickets')}<th style="text-align:right">Tickets</th>{/if}
-            {#if isOn(data.modules, 'tasks')}<th style="text-align:right">Tasks</th>{/if}
-            <th style="text-align:right">Total</th>
+            <th>{m.settings_tags_col_tag()}</th>
+            <th style="text-align:right">{m.settings_tags_col_accounts()}</th>
+            <th style="text-align:right">{m.settings_tags_col_contacts()}</th>
+            {#if isOn(data.modules, 'leads')}<th style="text-align:right"
+                >{m.settings_tags_col_leads()}</th
+              >{/if}
+            {#if isOn(data.modules, 'deals')}<th style="text-align:right"
+                >{m.settings_tags_col_deals()}</th
+              >{/if}
+            {#if isOn(data.modules, 'tickets')}<th style="text-align:right"
+                >{m.settings_tags_col_tickets()}</th
+              >{/if}
+            {#if isOn(data.modules, 'tasks')}<th style="text-align:right"
+                >{m.settings_tags_col_tasks()}</th
+              >{/if}
+            <th style="text-align:right">{m.settings_tags_col_total()}</th>
             <th></th>
             {#if data.can_edit}<th></th>{/if}
           </tr>
@@ -258,7 +289,9 @@
                      offers eighteen named hues; v2's palette has six tones and
                      renders every tag in them, so a swatch here would be the
                      only place in the product those eighteen exist. -->
-                <span class="v2-sub" style="font-size:11px;margin-left:7px">{t.color}</span>
+                <span class="v2-sub" style="font-size:11px;margin-left:7px"
+                  >{/** @type {any} */ (m)[`settings_tags_color_${t.color}`]?.() ?? t.color}</span
+                >
               </td>
               <td class="v2-num" style="text-align:right">{t.usage.accounts || '—'}</td>
               <td class="v2-num" style="text-align:right">{t.usage.contacts || '—'}</td>
@@ -277,9 +310,9 @@
               <td class="v2-num" style="text-align:right;font-weight:600">{used(t) || '—'}</td>
               <td style="text-align:right">
                 {#if !t.is_active}
-                  <Pill tone="slate">Off</Pill>
+                  <Pill tone="slate">{m.settings_tags_off()}</Pill>
                 {:else if used(t) === 0}
-                  <Pill tone="clay">Unused</Pill>
+                  <Pill tone="clay">{m.settings_tags_unused()}</Pill>
                 {/if}
               </td>
               {#if data.can_edit}
@@ -293,11 +326,11 @@
                          not a vague warning. -->
                     <ConfirmAction
                       action="?/archive"
-                      label="Turn off"
-                      confirmLabel="Turn off"
+                      label={m.settings_tags_turn_off()}
+                      confirmLabel={m.settings_tags_turn_off()}
                       explain={used(t) > 0
-                        ? `${used(t)} ${used(t) === 1 ? 'record keeps' : 'records keep'} this tag. Turning it off stops it being offered on new records, and keeps it on the ones that have it. You can turn it back on.`
-                        : 'Nothing carries this tag. Turning it off stops it being offered on new records. You can turn it back on.'}
+                        ? m.settings_tags_turn_off_explain_used({ count: used(t) })
+                        : m.settings_tags_turn_off_explain_unused()}
                       hidden={{ id: t.id }}
                     />
                   {:else}
@@ -306,7 +339,9 @@
                          two-click confirm. -->
                     <form method="POST" action="?/restore" use:enhance>
                       <input type="hidden" name="id" value={t.id} />
-                      <button class="v2-btn v2-btn-sm" type="submit">Turn back on</button>
+                      <button class="v2-btn v2-btn-sm" type="submit"
+                        >{m.settings_tags_turn_back_on()}</button
+                      >
                     </form>
                   {/if}
                 </td>
@@ -316,8 +351,8 @@
             <tr>
               <td colspan={data.can_edit ? 8 : 7}>
                 <EmptyState
-                  title="No tags yet"
-                  body="Tags are shared across every record type, so the first one is worth naming carefully."
+                  title={m.settings_tags_empty_title()}
+                  body={m.settings_tags_empty_body()}
                 >
                   {#snippet icon()}<TagsIcon size={21} />{/snippet}
                 </EmptyState>
@@ -329,8 +364,7 @@
     </div>
 
     <p class="v2-sub" style="font-size:11.5px;margin-top:14px;max-width:64ch">
-      Turning a tag off hides it from the pickers and leaves it on the records that already carry
-      it. Nothing is removed, and you can turn a tag back on at any time.
+      {m.settings_tags_footer()}
     </p>
   </div>
 </div>

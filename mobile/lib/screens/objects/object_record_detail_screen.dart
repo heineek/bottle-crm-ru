@@ -12,9 +12,7 @@ import '../../routes/app_router.dart';
 import '../../services/attachment_upload.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/objects/photo_gallery.dart';
-
-const _missingRecord =
-    'This record does not exist, or you do not have access to it.';
+import '../../l10n/l10n.dart';
 
 /// One custom object record, with its links, photos, files and people.
 class ObjectRecordDetailScreen extends ConsumerStatefulWidget {
@@ -66,7 +64,7 @@ class _ObjectRecordDetailScreenState
           _record = ObjectRecord.fromJson(data);
           _error = null;
         } else if (!_notFound) {
-          _error = response.message ?? 'Could not load this record';
+          _error = response.message ?? context.l10n.objectsLoadRecordFailed;
         }
       });
     } on ArgumentError {
@@ -97,11 +95,14 @@ class _ObjectRecordDetailScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              dialogContext.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -111,9 +112,10 @@ class _ObjectRecordDetailScreenState
 
   Future<void> _deleteRecord(ObjectDefinition def) async {
     final label = def.summary.label;
+    final l10n = context.l10n;
     if (!await _confirm(
-      'Delete $label?',
-      'This action cannot be undone. Its photos and files are deleted too.',
+      l10n.objectsDeleteRecordTitle(label),
+      l10n.objectsDeleteRecordBody,
     )) {
       return;
     }
@@ -122,7 +124,10 @@ class _ObjectRecordDetailScreenState
         .deleteRecord(widget.objectKey, widget.recordId);
     if (!mounted) return;
     if (!response.success) {
-      _snack(response.message ?? 'Failed to delete $label', error: true);
+      _snack(
+        response.message ?? l10n.objectsDeleteRecordFailed(label),
+        error: true,
+      );
       return;
     }
     ref.invalidate(objectRecordsProvider(widget.objectKey));
@@ -147,9 +152,10 @@ class _ObjectRecordDetailScreenState
   }
 
   Future<void> _deleteAttachment(RecordAttachment a) async {
+    final l10n = context.l10n;
     if (!await _confirm(
-      a.isPhoto ? 'Delete photo?' : 'Delete file?',
-      'Delete ${a.fileName}? This action cannot be undone.',
+      a.isPhoto ? l10n.objectsDeletePhotoTitle : l10n.objectsDeleteFileTitle,
+      l10n.objectsDeleteAttachmentBody(a.fileName),
     )) {
       return;
     }
@@ -158,15 +164,16 @@ class _ObjectRecordDetailScreenState
         .deleteAttachment(widget.objectKey, widget.recordId, a.id);
     if (!mounted) return;
     if (!response.success) {
-      _snack(response.message ?? 'Could not delete that file', error: true);
+      _snack(response.message ?? l10n.objectsDeleteFileFailed, error: true);
       return;
     }
     await _load(quiet: true);
   }
 
   Future<void> _openFile(Attachment a) async {
+    final l10n = context.l10n;
     if (!a.hasFile) {
-      _snack('That attachment has no file.');
+      _snack(l10n.objectsNoFile);
       return;
     }
     final result = await downloadAttachment(
@@ -174,28 +181,31 @@ class _ObjectRecordDetailScreenState
       fileName: a.fileName,
     );
     if (!mounted || result.success) return;
-    _snack(result.error ?? 'Could not download that file.');
+    _snack(result.error ?? l10n.objectsDownloadFailed);
   }
 
   @override
   Widget build(BuildContext context) {
     final definition = ref.watch(objectDefinitionProvider(widget.objectKey));
+    final l10n = context.l10n;
 
     return definition.when(
       loading: () => _shell(
-        title: 'Record',
+        title: l10n.objectsRecordTitle,
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (_, _) => _shell(
-        title: 'Record',
+        title: l10n.objectsRecordTitle,
         body: _Problem(
-          message: 'Could not load this record',
+          message: l10n.objectsLoadRecordFailed,
           onRetry: () =>
               ref.invalidate(objectDefinitionProvider(widget.objectKey)),
         ),
       ),
       data: (def) {
-        if (def == null) return _shell(title: 'Record', body: _missing());
+        if (def == null) {
+          return _shell(title: l10n.objectsRecordTitle, body: _missing());
+        }
         final record = _record;
         if (_loading && record == null) {
           return _shell(
@@ -210,7 +220,7 @@ class _ObjectRecordDetailScreenState
           return _shell(
             title: def.summary.label,
             body: _Problem(
-              message: _error ?? 'Could not load this record',
+              message: _error ?? l10n.objectsLoadRecordFailed,
               onRetry: _load,
             ),
           );
@@ -220,7 +230,7 @@ class _ObjectRecordDetailScreenState
           actions: [
             if (record.canEdit)
               IconButton(
-                tooltip: 'Edit',
+                tooltip: l10n.commonEdit,
                 icon: const Icon(LucideIcons.pencil),
                 onPressed: () async {
                   await context.push(
@@ -231,7 +241,7 @@ class _ObjectRecordDetailScreenState
               ),
             if (record.canDelete)
               IconButton(
-                tooltip: 'Delete',
+                tooltip: l10n.commonDelete,
                 icon: Icon(LucideIcons.trash2, color: AppColors.danger600),
                 onPressed: () => _deleteRecord(def),
               ),
@@ -242,8 +252,10 @@ class _ObjectRecordDetailScreenState
     );
   }
 
-  Widget _missing() =>
-      const EmptyState(icon: LucideIcons.boxes, title: _missingRecord);
+  Widget _missing() => EmptyState(
+    icon: LucideIcons.boxes,
+    title: context.l10n.objectsMissingRecord,
+  );
 
   Widget _shell({
     required String title,
@@ -266,6 +278,7 @@ class _ObjectRecordDetailScreenState
   Widget _content(ObjectDefinition def, ObjectRecord record) {
     final photos = record.attachments.where((a) => a.isPhoto).toList();
     final files = record.attachments.where((a) => !a.isPhoto).toList();
+    final l10n = context.l10n;
     return RefreshIndicator(
       onRefresh: () => _load(quiet: true),
       child: CustomScrollView(
@@ -275,7 +288,7 @@ class _ObjectRecordDetailScreenState
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _card('Details', [
+                _card(l10n.objectsDetails, [
                   _field(def.summary.nameLabel, record.name),
                   for (final f in def.customFields)
                     _field(
@@ -286,14 +299,14 @@ class _ObjectRecordDetailScreenState
                     ),
                 ]),
                 if (def.linkFields.isNotEmpty)
-                  _card('Links', [
+                  _card(l10n.objectsLinks, [
                     for (final f in def.linkFields)
                       _linkField(f.label, record.links[f.key]),
                   ]),
                 if (photos.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(2, 0, 2, 10),
-                    child: Text('Photos', style: AppTypography.h3),
+                    child: Text(l10n.objectsPhotos, style: AppTypography.h3),
                   ),
               ]),
             ),
@@ -308,20 +321,20 @@ class _ObjectRecordDetailScreenState
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 if (files.isNotEmpty || record.canEdit)
-                  _card('Files', [
+                  _card(l10n.objectsFiles, [
                     if (files.isEmpty) _none(),
                     for (final a in files) _fileRow(a),
                     if (record.canEdit) _attachButton(),
                   ]),
-                _card('People', [
+                _card(l10n.objectsPeople, [
                   _field(
-                    'Assigned to',
+                    l10n.objectsAssignedTo,
                     record.assignedTo.isEmpty
                         ? ''
                         : record.assignedTo.map(_personName).join(', '),
                   ),
                   _field(
-                    'Created by',
+                    l10n.objectsCreatedBy,
                     record.createdBy == null
                         ? ''
                         : _personName(record.createdBy!),
@@ -363,7 +376,7 @@ class _ObjectRecordDetailScreenState
   Widget _none() => Padding(
     padding: const EdgeInsets.only(bottom: 4),
     child: Text(
-      'None',
+      context.l10n.objectsNone,
       style: AppTypography.body.copyWith(color: AppColors.textTertiary),
     ),
   );
@@ -378,7 +391,7 @@ class _ObjectRecordDetailScreenState
           _label(label),
           const SizedBox(height: 2),
           Text(
-            empty ? 'None' : value,
+            empty ? context.l10n.objectsNone : value,
             style: AppTypography.body.copyWith(
               color: empty ? AppColors.textTertiary : AppColors.textPrimary,
             ),
@@ -404,8 +417,8 @@ class _ObjectRecordDetailScreenState
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 records.isEmpty
-                    ? "$hidden you can't open"
-                    : "and $hidden you can't open",
+                    ? context.l10n.objectsHidden(hidden)
+                    : context.l10n.objectsHiddenMore(hidden),
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -418,7 +431,7 @@ class _ObjectRecordDetailScreenState
 
   Widget _linkRow(LinkedRecord r) {
     final route = linkedRecordRoute(r.object, r.id);
-    final name = r.name.isEmpty ? 'Untitled' : r.name;
+    final name = r.name.isEmpty ? context.l10n.objectsUntitled : r.name;
     if (route == null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -461,7 +474,7 @@ class _ObjectRecordDetailScreenState
           ),
           if (a.canDelete)
             IconButton(
-              tooltip: 'Delete file',
+              tooltip: context.l10n.objectsDeleteFileTooltip,
               icon: Icon(LucideIcons.trash2, color: AppColors.danger600),
               onPressed: () => _deleteAttachment(a),
             ),
@@ -490,7 +503,10 @@ class _Problem extends StatelessWidget {
           children: [
             Text(message, style: AppTypography.h3, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            TextButton(onPressed: onRetry, child: const Text('Retry')),
+            TextButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       ),

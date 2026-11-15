@@ -12,6 +12,7 @@ and rows that do not fit are skipped instead of refusing the file. Without
 `mapping`, both endpoints keep the template-only behaviour.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.parsers import MultiPartParser
@@ -48,19 +49,19 @@ def _read_upload(request):
     upload = request.FILES.get("file")
     if not upload:
         return None, Response(
-            {"error": True, "message": "No file uploaded (expected field 'file')"},
+            {"error": True, "message": _("No file uploaded (expected field 'file')")},
             status=status.HTTP_400_BAD_REQUEST,
         )
     name = (upload.name or "").lower()
     if not name.endswith(".csv"):
         return None, Response(
-            {"error": True, "message": "File must have a .csv extension"},
+            {"error": True, "message": _("File must have a .csv extension")},
             status=status.HTTP_400_BAD_REQUEST,
         )
     file_bytes = upload.read(MAX_UPLOAD_BYTES + 1)
     if len(file_bytes) > MAX_UPLOAD_BYTES:
         return None, Response(
-            {"error": True, "message": "File exceeds the 5 MB upload limit"},
+            {"error": True, "message": _("File exceeds the 5 MB upload limit")},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return file_bytes, None
@@ -113,7 +114,7 @@ class ContactImportPreviewView(APIView):
     def post(self, request, *args, **kwargs):
         if not can_mass_import(request.profile):
             return Response(
-                {"error": True, "message": "Permission denied"},
+                {"error": True, "message": _("Permission denied")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if "mapping" in request.data:
@@ -154,7 +155,7 @@ class ContactImportCommitView(APIView):
     def post(self, request, *args, **kwargs):
         if not can_mass_import(request.profile):
             return Response(
-                {"error": True, "message": "Permission denied"},
+                {"error": True, "message": _("Permission denied")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if "mapping" in request.data:

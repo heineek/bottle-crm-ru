@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/account_statement.dart';
 import '../services/api_service.dart';
@@ -49,8 +50,10 @@ final accountStatementProvider = FutureProvider.autoDispose
       if (const {400, 403, 404}.contains(response.statusCode)) {
         throw StatementRefusal(
           response.statusCode,
-          response.message ?? 'Could not load the statement',
+          response.message ?? appL10n.appMsgCouldNotLoadTheStatement,
         );
       }
-      throw Exception(response.message ?? 'Could not load the statement');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadTheStatement,
+      );
     });

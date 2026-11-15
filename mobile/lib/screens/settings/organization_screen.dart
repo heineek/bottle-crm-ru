@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/org_settings.dart';
 import '../../providers/auth_provider.dart';
@@ -39,7 +41,7 @@ class OrganizationScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Organization'),
+        title: Text(context.l10n.settingsOrgTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -47,7 +49,7 @@ class OrganizationScreen extends ConsumerWidget {
           if (isAdmin && async.value != null)
             IconButton(
               icon: const Icon(LucideIcons.pencil),
-              tooltip: 'Edit details',
+              tooltip: context.l10n.settingsOrgEditDetails,
               onPressed: () => context.push(AppRoutes.settingsOrganizationEdit),
             ),
         ],
@@ -66,41 +68,55 @@ class OrganizationScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 40),
             children: [
               _Header(org: org),
-              const _SectionHeader('What customers see'),
-              _Field(label: 'Legal name', value: org.companyName),
-              _Field(label: 'Trading as', value: org.name),
-              _Field(label: 'Address', value: org.addressSummary),
-              _Field(label: 'Tax ID', value: org.taxId),
-              _Field(label: 'Email', value: org.email),
-              _Field(label: 'Phone', value: org.phone),
-              _Field(label: 'Website', value: org.website),
-              if (invoicesOn) const _PrintedNote(),
-              const _SectionHeader('Defaults'),
+              _SectionHeader(context.l10n.settingsOrgSectionCustomersSee),
               _Field(
-                label: 'Currency',
+                label: context.l10n.settingsOrgLegalName,
+                value: org.companyName,
+              ),
+              _Field(label: context.l10n.settingsOrgTradingAs, value: org.name),
+              _Field(
+                label: context.l10n.settingsOrgAddress,
+                value: org.addressSummary,
+              ),
+              _Field(label: context.l10n.settingsOrgTaxId, value: org.taxId),
+              _Field(label: context.l10n.commonEmail, value: org.email),
+              _Field(label: context.l10n.commonPhone, value: org.phone),
+              _Field(
+                label: context.l10n.settingsOrgWebsite,
+                value: org.website,
+              ),
+              if (invoicesOn) const _PrintedNote(),
+              _SectionHeader(context.l10n.settingsOrgSectionDefaults),
+              _Field(
+                label: context.l10n.settingsOrgCurrency,
                 value: '${org.defaultCurrency} ${org.currencySymbol}',
                 detail: invoicesOn
-                    ? 'Applied to new invoices and estimates. Existing ones '
-                          'keep theirs.'
-                    : 'The default for new records that carry an amount. '
-                          'Existing ones keep theirs.',
+                    ? context.l10n.settingsOrgCurrencyHintInvoices
+                    : context.l10n.settingsOrgCurrencyHint,
               ),
               _Field(
-                label: 'Country',
+                label: context.l10n.settingsOrgCountry,
                 value: org.defaultCountry,
-                detail: 'Default for new addresses.',
+                detail: context.l10n.settingsOrgCountryHint,
               ),
               _Field(
-                label: 'Time zone',
+                label: context.l10n.settingsOrgTimeZone,
                 value: org.timezoneLabel,
-                detail:
-                    'When a day starts here, so "due today" and "overdue" '
-                    'mean what your team expects.',
+                detail: context.l10n.settingsOrgTimeZoneHint,
+              ),
+              _Field(
+                label: context.l10n.orgDefaultLanguageLabel,
+                value: supportedLanguage(org.defaultLanguage) != null
+                    ? lookupAppLocalizations(
+                        Locale(org.defaultLanguage),
+                      ).languageName
+                    : org.defaultLanguage,
+                detail: context.l10n.orgDefaultLanguageHint,
               ),
               if (invoicesOn) ...[
-                const _SectionHeader('Invoice numbers'),
+                _SectionHeader(context.l10n.settingsOrgSectionInvoiceNumbers),
                 _Field(
-                  label: 'New invoices',
+                  label: context.l10n.settingsOrgNewInvoices,
                   value: exampleNumber(
                     prefix: org.invoiceNumberPrefix,
                     datePart: org.numberDatePart,
@@ -108,40 +124,42 @@ class OrganizationScreen extends ConsumerWidget {
                     start: org.invoiceNumberStart,
                     today: orgToday(),
                   ),
-                  detail:
-                      '${_datePartLabel(org.numberDatePart)}. Numbers already '
-                      'issued keep theirs.',
+                  detail: context.l10n.settingsOrgNumberingHint(
+                    _datePartLabel(org.numberDatePart),
+                  ),
                 ),
                 _Field(
-                  label: 'New estimates',
+                  label: context.l10n.settingsOrgNewEstimates,
                   value: exampleNumber(
                     prefix: org.estimateNumberPrefix,
                     datePart: org.numberDatePart,
                     padding: org.numberPadding,
                     today: orgToday(),
                   ),
-                  detail: 'Same format, own prefix.',
+                  detail: context.l10n.settingsOrgEstimatesHint,
                 ),
               ],
               if (ticketsOn) ...[
-                const _SectionHeader('Behaviour'),
+                _SectionHeader(context.l10n.settingsOrgSectionBehaviour),
                 _Field(
-                  label: 'Satisfaction surveys',
-                  value: org.csatEnabled ? 'Sending' : 'Off',
+                  label: context.l10n.settingsOrgCsat,
+                  value: org.csatEnabled
+                      ? context.l10n.settingsOrgCsatSending
+                      : context.l10n.settingsOrgCsatOff,
                   detail: csatExplanation(org.csatEnabled),
                 ),
                 _Field(
-                  label: 'Close child tickets with the parent',
+                  label: context.l10n.settingsOrgCascade,
                   value: org.autoCloseChildren
-                      ? 'Starts ticked'
-                      : 'Starts unticked',
+                      ? context.l10n.settingsOrgCascadeTicked
+                      : context.l10n.settingsOrgCascadeUnticked,
                   detail:
                       '${cascadeDefaultExplanation(org.autoCloseChildren)} '
                       '$cascadeWebGapNote',
                 ),
               ],
               const _ApiKeyNote(),
-              const _SectionHeader('Vertical pack'),
+              _SectionHeader(context.l10n.settingsOrgSectionPack),
               _PackSection(org: org, isAdmin: isAdmin),
             ],
           ),
@@ -150,10 +168,6 @@ class OrganizationScreen extends ConsumerWidget {
     );
   }
 }
-
-/// "custom fields, products" while products are in use, else "custom fields".
-String _customFields(bool productsOn) =>
-    productsOn ? 'custom fields, products' : 'custom fields';
 
 /// "Year, count restarts each year" for a stored date part.
 String _datePartLabel(String datePart) => numberDatePartOptions
@@ -178,12 +192,12 @@ class _Header extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            org.name.isEmpty ? 'Unnamed organization' : org.name,
+            org.name.isEmpty ? context.l10n.settingsOrgUnnamed : org.name,
             style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 3),
           Text(
-            '${org.memberCount} member${org.memberCount == 1 ? '' : 's'}',
+            context.l10n.settingsOrgMemberCount(org.memberCount),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -219,7 +233,7 @@ class _Field extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            shown.isEmpty ? 'Not recorded' : shown,
+            shown.isEmpty ? context.l10n.settingsOrgNotRecorded : shown,
             style: AppTypography.body.copyWith(
               fontWeight: FontWeight.w500,
               color: shown.isEmpty
@@ -250,9 +264,7 @@ class _PrintedNote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Text(
-        'These fields are printed on every invoice and estimate. Changing one '
-        'changes documents from that moment on; PDFs already sent keep what '
-        'they were sent with.',
+        context.l10n.settingsOrgPrintedNote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -277,10 +289,7 @@ class _ApiKeyNote extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'The organization API key is not here. It authenticates as the '
-              'whole organization, so it is never shown on a page you can '
-              'reach by browsing. For per-person programmatic access, use API '
-              'tokens, which can be revoked one at a time.',
+              context.l10n.settingsOrgApiKeyNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -313,20 +322,20 @@ class _PackSectionState extends ConsumerState<_PackSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Apply "${pack.name}"?'),
+        title: Text(context.l10n.settingsOrgApplyTitle(pack.name)),
         content: Text(
-          'This adds starter pipelines, tags, '
-          '${_customFields(ref.read(productsOnProvider))} and a set of sample '
-          'records. Anything already set up is left exactly as it is.',
+          ref.read(productsOnProvider)
+              ? ctx.l10n.settingsOrgApplyBodyProducts
+              : ctx.l10n.settingsOrgApplyBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Apply'),
+            child: Text(ctx.l10n.settingsOrgApply),
           ),
         ],
       ),
@@ -348,21 +357,16 @@ class _PackSectionState extends ConsumerState<_PackSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear sample data?'),
-        content: const Text(
-          'Permanently deletes every sample record a pack created for this '
-          'organization. Your real records are never touched, and any sample '
-          'record you have since attached real work to is kept. This cannot '
-          'be undone.',
-        ),
+        title: Text(ctx.l10n.settingsOrgClearTitle),
+        content: Text(ctx.l10n.settingsOrgClearBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
+            child: Text(ctx.l10n.settingsOrgClear),
           ),
         ],
       ),
@@ -392,7 +396,7 @@ class _PackSectionState extends ConsumerState<_PackSection> {
   Widget build(BuildContext context) {
     final org = widget.org;
     final packs = ref.watch(orgPacksProvider).value ?? const <VerticalPack>[];
-    final fieldsAndProducts = _customFields(ref.watch(productsOnProvider));
+    final productsOn = ref.watch(productsOnProvider);
     // The registry entry matching `org.vertical`, or null when no pack has been
     // applied or the id is one this build does not know.
     final applied = packs.where((pack) => pack.id == org.vertical).firstOrNull;
@@ -408,7 +412,7 @@ class _PackSectionState extends ConsumerState<_PackSection> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'First pack applied',
+                context.l10n.settingsOrgFirstPack,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -416,14 +420,16 @@ class _PackSectionState extends ConsumerState<_PackSection> {
               const SizedBox(height: 3),
               Text(
                 applied?.name ??
-                    (org.vertical.isEmpty ? 'None yet' : org.vertical),
+                    (org.vertical.isEmpty
+                        ? context.l10n.settingsOrgNoneYet
+                        : org.vertical),
                 style: AppTypography.body.copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 6),
               Text(
-                'A pack adds starter pipelines, tags, $fieldsAndProducts '
-                'and sample records for one kind of business. Applying one '
-                'only fills in what this organization is missing.',
+                productsOn
+                    ? context.l10n.settingsOrgPackBodyProducts
+                    : context.l10n.settingsOrgPackBody,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -435,8 +441,7 @@ class _PackSectionState extends ConsumerState<_PackSection> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Text(
-              'Applying a pack or clearing sample data is limited to '
-              'administrators.',
+              context.l10n.settingsOrgAdminsOnly,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -455,7 +460,7 @@ class _PackSectionState extends ConsumerState<_PackSection> {
               color: AppColors.surface,
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Text(
-                'No packs available right now.',
+                context.l10n.settingsOrgNoPacks,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -468,7 +473,7 @@ class _PackSectionState extends ConsumerState<_PackSection> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : _clearSampleData,
                 icon: const Icon(LucideIcons.trash2, size: 16),
-                label: const Text('Clear sample data'),
+                label: Text(context.l10n.settingsOrgClearButton),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.danger600,
                 ),
@@ -478,8 +483,7 @@ class _PackSectionState extends ConsumerState<_PackSection> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Text(
-              'Removes only the records a pack created as samples. Your real '
-              'records are never touched.',
+              context.l10n.settingsOrgClearHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -535,7 +539,7 @@ class _PackRow extends StatelessWidget {
                     border: Border.all(color: AppColors.success200),
                   ),
                   child: Text(
-                    'Applied',
+                    context.l10n.settingsOrgApplied,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.success600,
                       fontWeight: FontWeight.w600,
@@ -558,7 +562,11 @@ class _PackRow extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: busy ? null : onApply,
-              child: Text(isApplied ? 'Apply again' : 'Apply'),
+              child: Text(
+                isApplied
+                    ? context.l10n.settingsOrgApplyAgain
+                    : context.l10n.settingsOrgApply,
+              ),
             ),
           ),
         ],
@@ -607,12 +615,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the organization',
+              context.l10n.settingsOrgLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsOrgTryAgain),
+            ),
           ],
         ),
       ),

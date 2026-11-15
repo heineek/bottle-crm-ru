@@ -6,6 +6,7 @@ import {
   cancelApproval
 } from '#lib/server/v2/approvals.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The approvals queue. `load` returns `{ approvals, totals, rules }`; the three
@@ -25,12 +26,12 @@ export const actions = {
   approve: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which approval? None was given.' });
+    if (!id) return fail(400, { error: m.tickets_approvals_missing_id() });
     try {
       await approveApproval({ cookies }, id, form.get('note')?.toString() || '');
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 403 ? 403 : 400, {
-        error: readableError(err, 'Could not approve this request.')
+        error: readableError(err, m.tickets_approvals_approve_failed())
       });
     }
     return { approved: true };
@@ -40,13 +41,13 @@ export const actions = {
     const form = await request.formData();
     const id = form.get('id')?.toString();
     const reason = form.get('reason')?.toString()?.trim();
-    if (!id) return fail(400, { error: 'Which approval? None was given.' });
-    if (!reason) return fail(400, { error: 'A rejection needs a reason.' });
+    if (!id) return fail(400, { error: m.tickets_approvals_missing_id() });
+    if (!reason) return fail(400, { error: m.tickets_approvals_reason_required() });
     try {
       await rejectApproval({ cookies }, id, reason);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 403 ? 403 : 400, {
-        error: readableError(err, 'Could not reject this request.')
+        error: readableError(err, m.tickets_approvals_reject_failed())
       });
     }
     return { rejected: true };
@@ -55,12 +56,12 @@ export const actions = {
   cancel: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which approval? None was given.' });
+    if (!id) return fail(400, { error: m.tickets_approvals_missing_id() });
     try {
       await cancelApproval({ cookies }, id);
     } catch (/** @type {any} */ err) {
       return fail(err?.status === 403 ? 403 : 400, {
-        error: readableError(err, 'Could not withdraw this request.')
+        error: readableError(err, m.tickets_approvals_withdraw_failed())
       });
     }
     return { cancelled: true };

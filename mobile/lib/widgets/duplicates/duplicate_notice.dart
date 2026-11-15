@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/duplicates_provider.dart';
 
@@ -120,9 +121,7 @@ class _DuplicateNoticeState extends ConsumerState<DuplicateNotice> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    _hits.length == 1
-                        ? 'Possible duplicate'
-                        : 'Possible duplicates',
+                    context.l10n.appPossibleDuplicates(_hits.length),
                     style: AppTypography.label.copyWith(
                       color: AppColors.warning700,
                     ),
@@ -149,7 +148,8 @@ class _DuplicateNoticeState extends ConsumerState<DuplicateNotice> {
                             ),
                           ),
                           TextSpan(
-                            text: '  same ${hit.matchedLabelText}',
+                            text:
+                                '  ${context.l10n.appDupSameLower(hit.matchedLabelText)}',
                             style: AppTypography.caption.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -161,8 +161,7 @@ class _DuplicateNoticeState extends ConsumerState<DuplicateNotice> {
                 ),
               ),
             Text(
-              'You can still save. If it is the same one, open it instead, '
-              'or merge the two afterwards.',
+              context.l10n.appDupNoticeHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),

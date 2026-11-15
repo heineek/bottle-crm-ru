@@ -12,7 +12,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// org claims `OrgAwareRefreshToken` embeds, with `org_settings.timezone` set
 /// to [zone] (left out entirely when [zone] is null, as a token minted before
 /// an org is picked does).
-String orgToken(String? zone, {String orgId = 'org-1'}) {
+///
+/// [language] and [orgLanguage] fill the `language` and
+/// `org_settings.default_language` claims, which the app's language reads.
+String orgToken(
+  String? zone, {
+  String orgId = 'org-1',
+  String? language,
+  String? orgLanguage,
+}) {
   String seg(Map<String, dynamic> m) =>
       base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
   final exp =
@@ -22,7 +30,8 @@ String orgToken(String? zone, {String orgId = 'org-1'}) {
       '${seg({
         'exp': exp,
         'org_id': orgId,
-        if (zone != null) 'org_settings': {'default_currency': 'USD', 'timezone': zone},
+        'language': ?language,
+        if (zone != null) 'org_settings': {'default_currency': 'USD', 'timezone': zone, 'default_language': ?orgLanguage},
       })}.sig';
 }
 

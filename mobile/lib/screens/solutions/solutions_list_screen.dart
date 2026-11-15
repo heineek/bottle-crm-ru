@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/solution.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/solutions_provider.dart';
 import '../../widgets/common/common.dart';
@@ -58,7 +59,7 @@ class _SolutionsListScreenState extends ConsumerState<SolutionsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Solutions'),
+        title: Text(context.l10n.solutionsListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -92,7 +93,7 @@ class _SolutionsListScreenState extends ConsumerState<SolutionsListScreen> {
         onChanged: _onSearchChanged,
         style: AppTypography.body,
         decoration: InputDecoration(
-          hintText: 'Search the knowledge base…',
+          hintText: context.l10n.solutionsListSearchHint,
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -126,7 +127,9 @@ class _SolutionsListScreenState extends ConsumerState<SolutionsListScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: ChoiceChip(
-                  label: Text(s == null ? 'All' : s.label),
+                  label: Text(
+                    s == null ? context.l10n.solutionsListFilterAll : s.label,
+                  ),
                   selected: _status == s,
                   onSelected: (_) {
                     setState(() => _status = s);
@@ -136,7 +139,7 @@ class _SolutionsListScreenState extends ConsumerState<SolutionsListScreen> {
               ),
             const SizedBox(width: 6),
             FilterChip(
-              label: const Text('Published only'),
+              label: Text(context.l10n.solutionsListPublishedOnly),
               selected: _publishedOnly,
               onSelected: (v) {
                 setState(() => _publishedOnly = v);
@@ -162,7 +165,10 @@ class _SolutionsListScreenState extends ConsumerState<SolutionsListScreen> {
             const SizedBox(height: 16),
             Text(state.error!, style: AppTypography.body),
             const SizedBox(height: 16),
-            TextButton(onPressed: _applyFilters, child: const Text('Retry')),
+            TextButton(
+              onPressed: _applyFilters,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -170,9 +176,9 @@ class _SolutionsListScreenState extends ConsumerState<SolutionsListScreen> {
     if (state.solutions.isEmpty) {
       return EmptyState(
         icon: LucideIcons.bookOpen,
-        title: 'No solutions yet',
-        description: 'Reusable answers for common issues live here.',
-        actionLabel: 'Create solution',
+        title: context.l10n.solutionsListEmptyTitle,
+        description: context.l10n.solutionsListEmptyBody,
+        actionLabel: context.l10n.solutionsListCreate,
         onAction: () => context.push('/solutions/new'),
       );
     }
@@ -241,7 +247,7 @@ class _SolutionTile extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'Published',
+                        context.l10n.solutionsListPublishedBadge,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.primary700,
                           fontWeight: FontWeight.w600,
@@ -267,7 +273,7 @@ class _SolutionTile extends ConsumerWidget {
                     Icon(LucideIcons.link, size: 12, color: AppColors.gray400),
                     const SizedBox(width: 4),
                     Text(
-                      '${solution.caseCount} linked',
+                      context.l10n.solutionsListLinkedCount(solution.caseCount),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),

@@ -6,6 +6,7 @@ import {
   putModules,
   switchBody
 } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load(event) {
@@ -24,12 +25,12 @@ export async function load(event) {
  */
 async function write(event, key, build) {
   const answer = await getModules(event);
-  if (!answer) return fail(400, { errors: ['Modules could not be loaded.'], key });
+  if (!answer) return fail(400, { errors: [m.settings_modules_failed_title()], key });
   if (!answer.canEdit) {
-    return fail(403, { errors: ['Only an organization admin can switch modules on or off.'], key });
+    return fail(403, { errors: [m.settings_modules_forbidden()], key });
   }
   const body = build(answer.modules);
-  if (!body) return fail(400, { errors: ['That module could not be changed.'], key });
+  if (!body) return fail(400, { errors: [m.settings_modules_not_changed()], key });
   try {
     await putModules(event, body);
   } catch (/** @type {any} */ err) {
@@ -45,7 +46,7 @@ export const actions = {
     const key = form.get('key')?.toString() ?? '';
     const on = form.get('on')?.toString();
     if (on !== 'true' && on !== 'false') {
-      return fail(400, { errors: ['That module could not be changed.'], key });
+      return fail(400, { errors: [m.settings_modules_not_changed()], key });
     }
     return write(event, key, (rows) => switchBody(rows, key, on === 'true'));
   },

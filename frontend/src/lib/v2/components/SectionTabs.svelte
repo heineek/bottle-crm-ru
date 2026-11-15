@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   import { page } from '$app/state';
@@ -31,7 +32,7 @@
     exact ? page.url.pathname === href : page.url.pathname.startsWith(href);
 </script>
 
-<nav class="v2-tabs" aria-label="Section">
+<nav class="v2-tabs" aria-label={m.app_section_tabs_label()}>
   {#each tabs as tab (tab.href)}
     <a
       href={resolve(asInternalPath(tab.href))}

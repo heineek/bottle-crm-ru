@@ -41,6 +41,8 @@
   import { Plus, ShieldAlert } from '@lucide/svelte';
   import { WEBFORM_TARGETS } from '#lib/v2/webform-fields.js';
   import { isOn, OBJECT_MODULES } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -78,16 +80,18 @@
   );
 </script>
 
-<PageHeader title="Web forms">
+<PageHeader title={m.settings_webforms_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(totals.published)}</span> published of
-    <span class="v2-num">{count(totals.count)}</span>
+    {#each messageParts(m.settings_webforms_list_sub( { published: slot('published'), total: slot('total') } )) as p, i (i)}{#if p.key === 'published'}<span
+          class="v2-num">{count(totals.published)}</span
+        >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.canManage}
       <button class="v2-btn v2-btn-primary" onclick={() => (creating = !creating)}>
-        <Plus />New form
+        <Plus />{m.settings_webforms_new_form()}
       </button>
     {/if}
   {/snippet}
@@ -95,19 +99,27 @@
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
-    <StatCard label="Published" value={count(totals.published)} tone="ink" />
     <StatCard
-      label="Drafts"
+      label={m.settings_webforms_stat_published()}
+      value={count(totals.published)}
+      tone="ink"
+    />
+    <StatCard
+      label={m.settings_webforms_stat_drafts()}
       value={count(drafts)}
       tone="slate"
-      detail={drafts ? 'Collecting nothing yet' : 'None'}
+      detail={drafts ? m.settings_webforms_stat_drafts_detail() : m.settings_webforms_none()}
     />
-    <StatCard label="Accepted, 30 days" value={count(totals.submissions_30d)} tone="ink" />
     <StatCard
-      label="Spam blocked, 30 days"
+      label={m.settings_webforms_stat_accepted_30d()}
+      value={count(totals.submissions_30d)}
+      tone="ink"
+    />
+    <StatCard
+      label={m.settings_webforms_stat_spam_30d()}
       value={count(totals.spam_30d)}
       tone="slate"
-      detail={totals.spam_30d ? 'Never reached a lead or ticket' : 'None'}
+      detail={totals.spam_30d ? m.settings_webforms_stat_spam_detail() : m.settings_webforms_none()}
     />
   </div>
 </div>
@@ -116,15 +128,15 @@
   <div class="v2-pad" style="padding-bottom:32px">
     {#if actionError}
       <div style="margin-bottom:16px">
-        <NextAction label="That did not work" text={actionError} tone="rust" />
+        <NextAction label={m.settings_webforms_error_label()} text={actionError} tone="rust" />
       </div>
     {/if}
 
     {#if creating && !targets.length}
       <div style="margin-bottom:18px">
         <NextAction
-          label="Nothing to create"
-          text="Web forms create leads or tickets, and both are switched off. An admin can switch one on in Settings › Modules."
+          label={m.settings_webforms_nothing_to_create_label()}
+          text={m.settings_webforms_nothing_to_create_text()}
         />
       </div>
     {:else if creating}
@@ -143,7 +155,7 @@
       >
         <div style="flex:1;min-width:220px">
           <label class="v2-label" for="form-name" style="display:block;margin-bottom:4px">
-            What is this form for?
+            {m.settings_webforms_create_name_label()}
           </label>
           <input
             id="form-name"
@@ -152,37 +164,43 @@
             maxlength="255"
             class="v2-input"
             style="width:100%"
-            placeholder="e.g. Contact us"
+            placeholder={m.settings_webforms_create_name_placeholder()}
           />
         </div>
         <div style="min-width:160px">
           <label class="v2-label" for="form-target" style="display:block;margin-bottom:4px">
-            Each submission creates
+            {m.settings_webforms_create_target_label()}
           </label>
           <select id="form-target" name="target" class="v2-input" style="width:100%">
             {#each targets as t (t.value)}
-              <option value={t.value}>A {t.label.toLowerCase()}</option>
+              <option value={t.value}
+                >{t.value === 'ticket'
+                  ? m.settings_webforms_target_option_ticket()
+                  : m.settings_webforms_target_option_lead()}</option
+              >
             {/each}
           </select>
         </div>
-        <button class="v2-btn v2-btn-primary" disabled={busy}>Create and add fields</button>
+        <button class="v2-btn v2-btn-primary" disabled={busy}
+          >{m.settings_webforms_create_submit()}</button
+        >
         <button type="button" class="v2-btn" disabled={busy} onclick={() => (creating = false)}>
-          Cancel
+          {m.common_cancel()}
         </button>
       </form>
     {/if}
 
     {#if !data.forms.length}
       <EmptyState
-        title="No web forms yet"
+        title={m.settings_webforms_empty_title()}
         body={data.canManage
-          ? 'A web form is a page you embed on your own site. What people fill in becomes a lead or a ticket here, with no login and no copy-pasting.'
-          : 'Nobody has built a web form for this organisation yet. An admin can create one.'}
+          ? m.settings_webforms_empty_body_admin()
+          : m.settings_webforms_empty_body_member()}
       >
         {#snippet actions()}
           {#if data.canManage}
             <button class="v2-btn v2-btn-primary" onclick={() => (creating = true)}>
-              <Plus />New form
+              <Plus />{m.settings_webforms_new_form()}
             </button>
           {/if}
         {/snippet}
@@ -192,11 +210,11 @@
         <table class="v2-table">
           <thead>
             <tr>
-              <th>Form</th>
-              <th>State</th>
-              <th class="v2-r">Submissions</th>
-              <th data-m="hide">Created</th>
-              {#if data.canManage}<th class="v2-r">Actions</th>{/if}
+              <th>{m.settings_webforms_col_form()}</th>
+              <th>{m.settings_webforms_col_state()}</th>
+              <th class="v2-r">{m.settings_webforms_col_submissions()}</th>
+              <th data-m="hide">{m.common_created()}</th>
+              {#if data.canManage}<th class="v2-r">{m.common_actions()}</th>{/if}
             </tr>
           </thead>
           <tbody>
@@ -217,12 +235,12 @@
                          count cell is `.v2-num`, and mono is numerals only;
                          prose inheriting that face reads as a typo. -->
                     <div class="v2-table-secondary">
-                      {f.target === 'ticket' ? 'Tickets' : 'Leads'} ·
-                      {f.field_count}
-                      {f.field_count === 1 ? 'field' : 'fields'}
+                      {f.target === 'ticket'
+                        ? m.settings_webforms_row_meta_ticket({ count: f.field_count })
+                        : m.settings_webforms_row_meta_lead({ count: f.field_count })}
                       {#if quiet}
                         <span style="color:var(--v2-clay);font-weight:600">
-                          · live but silent
+                          {m.settings_webforms_live_silent()}
                         </span>
                       {/if}
                     </div>
@@ -230,10 +248,16 @@
                 </td>
                 <td data-m="tag">
                   <Pill tone={f.is_published ? 'moss' : 'slate'}>
-                    {f.is_published ? 'Published' : 'Draft'}
+                    {f.is_published
+                      ? m.settings_webforms_pill_published()
+                      : m.settings_webforms_pill_draft()}
                   </Pill>
                 </td>
-                <td class="v2-r v2-num" data-m="meta" data-l="submissions">
+                <td
+                  class="v2-r v2-num"
+                  data-m="meta"
+                  data-l={m.settings_webforms_col_submissions()}
+                >
                   {count(f.submission_count)}
                 </td>
                 <td data-m="hide" class="v2-muted">{shortDate(f.created_at)}</td>
@@ -246,22 +270,24 @@
                              submission from then on is refused. -->
                         <ConfirmAction
                           action="?/unpublish"
-                          label="Unpublish"
-                          confirmLabel="Unpublish it"
-                          explain="Stops accepting submissions. The embed stays on the site and starts refusing people."
+                          label={m.settings_webforms_unpublish()}
+                          confirmLabel={m.settings_webforms_unpublish_confirm()}
+                          explain={m.settings_webforms_unpublish_explain_list()}
                           hidden={{ id: f.id }}
                         />
                       {:else}
                         <form method="POST" action="?/publish" use:enhance={working}>
                           <input type="hidden" name="id" value={f.id} />
-                          <button class="v2-btn v2-btn-sm" disabled={busy}>Publish</button>
+                          <button class="v2-btn v2-btn-sm" disabled={busy}
+                            >{m.settings_webforms_publish()}</button
+                          >
                         </form>
                       {/if}
                       <ConfirmAction
                         action="?/delete"
-                        label="Delete"
-                        confirmLabel="Delete permanently"
-                        explain="Removes the form and its submission history. Leads and tickets already created stay."
+                        label={m.common_delete()}
+                        confirmLabel={m.settings_webforms_delete_confirm()}
+                        explain={m.settings_webforms_delete_explain_list()}
                         hidden={{ id: f.id }}
                       />
                     </span>
@@ -275,8 +301,9 @@
 
       {#if data.truncated}
         <p class="v2-sub" style="font-size:12px;margin:12px 0 0">
-          Showing the {data.forms.length} most recent of
-          <span class="v2-num">{count(totals.count)}</span>. The rest are reachable through the API.
+          {#each messageParts(m.settings_webforms_truncated( { shown: data.forms.length, total: slot('total') } )) as p, i (i)}{#if p.key === 'total'}<span
+                class="v2-num">{count(totals.count)}</span
+              >{:else}{p.text}{/if}{/each}
         </p>
       {/if}
     {/if}
@@ -286,13 +313,9 @@
     >
       <ShieldAlert size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
       <div>
-        <div style="font-weight:600;font-size:13px">A published form accepts posts from anyone</div>
+        <div style="font-weight:600;font-size:13px">{m.settings_webforms_warning_title()}</div>
         <p class="v2-sub" style="font-size:12px;margin:4px 0 0">
-          It has to: the whole point is that a stranger can fill it in without an account. A
-          honeypot field, per-form and per-address rate limits, and disposable-address rejection are
-          always on, and each form can add a Cloudflare Turnstile challenge of its own. Publish only
-          the forms you are embedding, and unpublish one the moment you take its snippet off your
-          site.
+          {m.settings_webforms_warning_body()}
         </p>
       </div>
     </div>

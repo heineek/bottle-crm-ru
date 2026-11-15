@@ -29,15 +29,37 @@
 /// omits `order` entirely.
 library;
 
+import '../../l10n/l10n.dart';
 import 'lookup_models.dart';
 
 /// One built-in field a web form may collect (a Lead column, or a ticket
 /// field).
 class WebFormFieldChoice {
-  const WebFormFieldChoice(this.value, this.label);
+  const WebFormFieldChoice(this.value);
 
   final String value;
-  final String label;
+
+  String get label {
+    final l10n = appL10n;
+    return switch (value) {
+      'salutation' => l10n.appWebFormFieldSalutation,
+      'first_name' => l10n.appWebFormFieldFirstName,
+      'last_name' => l10n.appWebFormFieldLastName,
+      'email' => l10n.appWebFormFieldEmail,
+      'phone' => l10n.appWebFormFieldPhone,
+      'company_name' => l10n.appWebFormFieldCompanyName,
+      'job_title' => l10n.appWebFormFieldJobTitle,
+      'website' => l10n.appWebFormFieldWebsite,
+      'title' || 'name' => l10n.appWebFormFieldSubject,
+      'description' => l10n.appWebFormFieldMessage,
+      'city' => l10n.appWebFormFieldCity,
+      'state' => l10n.appWebFormFieldState,
+      'country' => l10n.appWebFormFieldCountry,
+      'postcode' => l10n.appWebFormFieldPostcode,
+      'industry' => l10n.appWebFormFieldIndustry,
+      _ => value,
+    };
+  }
 }
 
 /// Mirrored 1:1 from `backend/webforms/constants.py::LEAD_FIELD_CHOICES`, and
@@ -56,21 +78,21 @@ class WebFormFieldChoice {
 /// .validate_lead_field` refuses anything outside the backend's own list, so a
 /// stale entry here is a clean 400 rather than a bad write.
 const List<WebFormFieldChoice> webFormLeadFields = [
-  WebFormFieldChoice('salutation', 'Salutation'),
-  WebFormFieldChoice('first_name', 'First name'),
-  WebFormFieldChoice('last_name', 'Last name'),
-  WebFormFieldChoice('email', 'Email'),
-  WebFormFieldChoice('phone', 'Phone'),
-  WebFormFieldChoice('company_name', 'Company name'),
-  WebFormFieldChoice('job_title', 'Job title'),
-  WebFormFieldChoice('website', 'Website'),
-  WebFormFieldChoice('title', 'Subject'),
-  WebFormFieldChoice('description', 'Message'),
-  WebFormFieldChoice('city', 'City'),
-  WebFormFieldChoice('state', 'State'),
-  WebFormFieldChoice('country', 'Country'),
-  WebFormFieldChoice('postcode', 'Postal code'),
-  WebFormFieldChoice('industry', 'Industry'),
+  WebFormFieldChoice('salutation'),
+  WebFormFieldChoice('first_name'),
+  WebFormFieldChoice('last_name'),
+  WebFormFieldChoice('email'),
+  WebFormFieldChoice('phone'),
+  WebFormFieldChoice('company_name'),
+  WebFormFieldChoice('job_title'),
+  WebFormFieldChoice('website'),
+  WebFormFieldChoice('title'),
+  WebFormFieldChoice('description'),
+  WebFormFieldChoice('city'),
+  WebFormFieldChoice('state'),
+  WebFormFieldChoice('country'),
+  WebFormFieldChoice('postcode'),
+  WebFormFieldChoice('industry'),
 ];
 
 /// What a ticket form may collect, mirrored 1:1 from
@@ -80,13 +102,13 @@ const List<WebFormFieldChoice> webFormLeadFields = [
 /// submission creates. Priority, type and assignment are the form's own
 /// settings, never the visitor's.
 const List<WebFormFieldChoice> webFormTicketFields = [
-  WebFormFieldChoice('email', 'Email'),
-  WebFormFieldChoice('first_name', 'First name'),
-  WebFormFieldChoice('last_name', 'Last name'),
-  WebFormFieldChoice('phone', 'Phone'),
-  WebFormFieldChoice('company_name', 'Company name'),
-  WebFormFieldChoice('name', 'Subject'),
-  WebFormFieldChoice('description', 'Message'),
+  WebFormFieldChoice('email'),
+  WebFormFieldChoice('first_name'),
+  WebFormFieldChoice('last_name'),
+  WebFormFieldChoice('phone'),
+  WebFormFieldChoice('company_name'),
+  WebFormFieldChoice('name'),
+  WebFormFieldChoice('description'),
 ];
 
 /// Case priorities and types, mirroring `PRIORITY_CHOICE` and `CASE_TYPE` in
@@ -391,19 +413,17 @@ class WebForm {
   /// Kept close to `WebFormPublishView`'s own wording so the screen and the
   /// server never read like different rules. The server is what decides.
   String? get publishBlocker {
-    if (fields.isEmpty) return 'Add at least one field first.';
+    if (fields.isEmpty) return appL10n.appWebFormBlockerNoFields;
     if (!hasRequiredField(fields, target: target)) {
       return isTicket
-          ? 'Add an email field before publishing. It is how each ticket '
-                'finds its contact, or creates one.'
-          : 'Add an email field before publishing. It is what lets a repeat '
-                'submission update the existing lead instead of failing.';
+          ? appL10n.appWebFormBlockerEmailTicket
+          : appL10n.appWebFormBlockerEmailLead;
     }
     if (!fields.every((f) => f.isComplete)) {
-      return 'Every field needs a label and something to write into.';
+      return appL10n.appWebFormBlockerIncomplete;
     }
     if (redirectsOnSuccess && redirectUrl.isEmpty) {
-      return 'This form redirects on success but has no redirect URL set.';
+      return appL10n.appWebFormBlockerNoRedirect;
     }
     return null;
   }
@@ -610,11 +630,14 @@ class WebFormSubmission {
   bool get isAccepted => status == accepted || status == acceptedDuplicate;
 
   String get statusLabel => switch (status) {
-    accepted => caseId != null ? 'Ticket opened' : 'Lead created',
-    acceptedDuplicate => 'Merged into an existing lead',
-    'rejected_spam' => 'Rejected as spam',
-    'rejected_invalid' => 'Rejected, invalid',
-    'rejected_captcha' => 'Rejected, captcha',
+    accepted =>
+      caseId != null
+          ? appL10n.appWebFormSubmissionTicketOpened
+          : appL10n.appWebFormSubmissionLeadCreated,
+    acceptedDuplicate => appL10n.appWebFormSubmissionMerged,
+    'rejected_spam' => appL10n.appWebFormSubmissionSpam,
+    'rejected_invalid' => appL10n.appWebFormSubmissionInvalid,
+    'rejected_captcha' => appL10n.appWebFormSubmissionCaptcha,
     _ => status,
   };
 

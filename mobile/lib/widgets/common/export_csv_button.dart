@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../services/api_service.dart';
 import '../../services/record_export.dart';
 
@@ -41,6 +42,7 @@ class _ExportCsvButtonState extends State<ExportCsvButton> {
   bool _busy = false;
 
   Future<void> _export() async {
+    final l10n = context.l10n;
     setState(() => _busy = true);
     RecordExportResult result;
     try {
@@ -52,16 +54,16 @@ class _ExportCsvButtonState extends State<ExportCsvButton> {
         saveFile: widget.saveFile,
       );
     } catch (_) {
-      result = const RecordExportResult(
+      result = RecordExportResult(
         RecordExportOutcome.failed,
-        error: 'Could not export.',
+        error: l10n.appExportFailed,
       );
     }
     if (!mounted) return;
     setState(() => _busy = false);
     final message = switch (result.outcome) {
-      RecordExportOutcome.saved => 'Saved ${result.fileName}',
-      RecordExportOutcome.failed => result.error ?? 'Could not export.',
+      RecordExportOutcome.saved => l10n.appExportSaved(result.fileName ?? ''),
+      RecordExportOutcome.failed => result.error ?? l10n.appExportFailed,
       RecordExportOutcome.cancelled => null,
     };
     if (message != null) {
@@ -74,7 +76,7 @@ class _ExportCsvButtonState extends State<ExportCsvButton> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: 'Export CSV',
+      tooltip: context.l10n.appExportCsv,
       onPressed: _busy ? null : _export,
       icon: _busy
           ? const SizedBox(

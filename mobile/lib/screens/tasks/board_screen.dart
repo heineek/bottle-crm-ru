@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/board.dart';
 import '../../data/models/lead.dart' show Priority;
+import '../../l10n/l10n.dart';
 import '../../providers/board_provider.dart';
 
 /// The kanban board.
@@ -66,7 +67,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           : FloatingActionButton.extended(
               onPressed: _busy ? null : () => _showAddCard(lanes[laneIndex]),
               icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Card'),
+              label: Text(context.l10n.tasksBoardCardFab),
             ),
       body: boardAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -81,7 +82,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   }
 
   Widget _title(BoardData? data) {
-    final name = data?.active?.name ?? 'Board';
+    final name = data?.active?.name ?? context.l10n.tasksBoardDefaultTitle;
     return InkWell(
       onTap: _busy ? null : _showBoardPicker,
       child: Row(
@@ -122,12 +123,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               color: AppColors.textTertiary,
             ),
             const SizedBox(height: 12),
-            Text('No boards yet', style: AppTypography.h3),
+            Text(context.l10n.tasksBoardNoBoards, style: AppTypography.h3),
             const SizedBox(height: 6),
             Text(
-              'A board is a set of lanes you move cards through. You will own '
-              'the one you create, and it starts with To Do, In Progress and '
-              'Done.',
+              context.l10n.tasksBoardNoBoardsHint,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
@@ -137,7 +136,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
             FilledButton.icon(
               onPressed: _busy ? null : _showCreateBoard,
               icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Create a board'),
+              label: Text(context.l10n.tasksBoardCreateABoard),
             ),
           ],
         ),
@@ -153,13 +152,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('This board has no lanes', style: AppTypography.h3),
+              Text(context.l10n.tasksBoardNoLanes, style: AppTypography.h3),
               const SizedBox(height: 6),
               Text(
                 data.canManageLanes
-                    ? 'Add one and cards have somewhere to go.'
-                    : 'Ask the board owner to add one. Cards need a lane to '
-                          'live in.',
+                    ? context.l10n.tasksBoardNoLanesManage
+                    : context.l10n.tasksBoardNoLanesAsk,
                 textAlign: TextAlign.center,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
@@ -170,7 +168,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 FilledButton.icon(
                   onPressed: _busy ? null : _showAddLane,
                   icon: const Icon(LucideIcons.plus, size: 18),
-                  label: const Text('Add a lane'),
+                  label: Text(context.l10n.tasksBoardAddALane),
                 ),
               ],
             ],
@@ -214,7 +212,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               padding: const EdgeInsets.only(left: 4),
               child: ActionChip(
                 avatar: const Icon(LucideIcons.plus, size: 14),
-                label: const Text('Lane'),
+                label: Text(context.l10n.tasksBoardLaneChip),
                 onPressed: _busy ? null : _showAddLane,
               ),
             ),
@@ -288,7 +286,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'Nothing in ${lane.name}.',
+            context.l10n.tasksBoardLaneEmpty(lane.name),
             textAlign: TextAlign.center,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
@@ -444,7 +442,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       () => ref
           .read(boardProvider.notifier)
           .moveCard(cardId: card.id, laneId: lane.id, index: newIndex),
-      failure: 'Could not move that card.',
+      failure: context.l10n.tasksBoardMoveFailed,
     );
   }
 
@@ -482,7 +480,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               if (others.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Text('Move to', style: AppTypography.labelSmall),
+                  child: Text(
+                    context.l10n.tasksBoardMoveTo,
+                    style: AppTypography.labelSmall,
+                  ),
                 ),
                 for (final lane in others)
                   ListTile(
@@ -507,7 +508,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                   size: 20,
                   color: AppColors.danger600,
                 ),
-                title: const Text('Delete card'),
+                title: Text(context.l10n.tasksBoardDeleteCard),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _confirmDelete(card);
@@ -532,8 +533,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
             laneId: target.id,
             index: target.cards.length,
           ),
-      success: 'Moved to ${target.name}.',
-      failure: 'Could not move that card.',
+      success: context.l10n.tasksBoardMovedTo(target.name),
+      failure: context.l10n.tasksBoardMoveFailed,
     );
     if (!moved || !mounted) return;
     final lanes = ref.read(boardProvider).value?.lanes ?? const <BoardLane>[];
@@ -545,23 +546,26 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete card?'),
-        content: Text('"${card.title}" will be removed from this board.'),
+        title: Text(context.l10n.tasksBoardDeleteCardTitle),
+        content: Text(context.l10n.tasksBoardDeleteCardBody(card.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               _write(
                 () => ref.read(boardProvider.notifier).deleteCard(card.id),
-                success: 'Card deleted.',
-                failure: 'Could not delete that card.',
+                success: context.l10n.tasksBoardCardDeleted,
+                failure: context.l10n.tasksBoardDeleteCardFailed,
               );
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -585,7 +589,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Boards', style: AppTypography.h3),
+                child: Text(context.l10n.tasksBoards, style: AppTypography.h3),
               ),
               for (final board in boards)
                 ListTile(
@@ -600,8 +604,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                   ),
                   title: Text(board.name),
                   subtitle: Text(
-                    '${board.taskCount} '
-                    '${board.taskCount == 1 ? 'card' : 'cards'}',
+                    context.l10n.tasksBoardCardCount(board.taskCount),
                   ),
                   onTap: () {
                     Navigator.pop(sheetContext);
@@ -615,7 +618,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                   size: 20,
                   color: AppColors.textSecondary,
                 ),
-                title: const Text('New board'),
+                title: Text(context.l10n.tasksBoardNewBoard),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _showCreateBoard();
@@ -631,13 +634,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   void _showCreateBoard() {
     _showNameSheet(
-      title: 'New board',
-      hint: 'Product launch',
-      buttonLabel: 'Create board',
+      title: context.l10n.tasksBoardNewBoard,
+      hint: context.l10n.tasksBoardNewBoardHint,
+      buttonLabel: context.l10n.tasksBoardCreateBoard,
       onSubmit: (name) => _write(
         () => ref.read(boardProvider.notifier).createBoard(name: name),
-        success: 'Board created.',
-        failure: 'Could not create that board.',
+        success: context.l10n.tasksBoardBoardCreated,
+        failure: context.l10n.tasksBoardCreateBoardFailed,
         onSuccess: () => setState(() => _laneIndex = 0),
       ),
     );
@@ -645,13 +648,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   void _showAddLane() {
     _showNameSheet(
-      title: 'New lane',
-      hint: 'In Review',
-      buttonLabel: 'Add lane',
+      title: context.l10n.tasksBoardNewLane,
+      hint: context.l10n.tasksBoardNewLaneHint,
+      buttonLabel: context.l10n.tasksBoardAddLane,
       onSubmit: (name) => _write(
         () => ref.read(boardProvider.notifier).createLane(name: name),
-        success: 'Lane added.',
-        failure: 'Could not add that lane.',
+        success: context.l10n.tasksBoardLaneAdded,
+        failure: context.l10n.tasksBoardAddLaneFailed,
       ),
     );
   }
@@ -691,7 +694,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    labelText: 'Name',
+                    labelText: context.l10n.commonName,
                     hintText: hint,
                   ),
                 ),
@@ -703,7 +706,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       final name = controller.text.trim();
                       Navigator.pop(sheetContext);
                       if (name.isEmpty) {
-                        _snack('Give it a name first.');
+                        _snack(context.l10n.tasksBoardNameRequired);
                         return;
                       }
                       onSubmit(name);
@@ -743,26 +746,34 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('New card in ${lane.name}', style: AppTypography.h3),
+                  Text(
+                    context.l10n.tasksBoardNewCardIn(lane.name),
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: titleController,
                     autofocus: true,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(labelText: 'Title'),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.tasksBoardCardTitle,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: descriptionController,
                     maxLines: 3,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.commonDescription,
                       alignLabelWithHint: true,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Priority', style: AppTypography.labelSmall),
+                  Text(
+                    context.l10n.commonPriority,
+                    style: AppTypography.labelSmall,
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
@@ -786,7 +797,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                         final description = descriptionController.text.trim();
                         Navigator.pop(sheetContext);
                         if (title.isEmpty) {
-                          _snack('A card needs a title.');
+                          _snack(context.l10n.tasksBoardCardTitleRequired);
                           return;
                         }
                         _write(
@@ -798,11 +809,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                 description: description,
                                 priority: boardPriorityValue(priority),
                               ),
-                          success: 'Card added to ${lane.name}.',
-                          failure: 'Could not add that card.',
+                          success: context.l10n.tasksBoardCardAdded(lane.name),
+                          failure: context.l10n.tasksBoardAddCardFailed,
                         );
                       },
-                      child: const Text('Add card'),
+                      child: Text(context.l10n.tasksBoardAddCard),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -875,7 +886,10 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Try again')),
+            FilledButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.tasksBoardTryAgain),
+            ),
           ],
         ),
       ),

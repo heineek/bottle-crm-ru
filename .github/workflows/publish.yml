@@ -28,7 +28,7 @@ name: Publish to PyPI
 #
 # Exactly one of 1 and 2 fires per release, so they do not double-publish.
 #
-# See docs/contributing/releasing.md.
+# See docs/EN/contributing/releasing.md.
 on:
   push:
     tags:

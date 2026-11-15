@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   import { tick } from 'svelte';
   import { Plus, X } from '@lucide/svelte';
   import {
@@ -51,7 +52,7 @@
     if (!cond.op || offered.some((o) => o.value === cond.op)) return offered;
     // With the field gone, the field is what is marked; the test reads as it was.
     const label = field
-      ? `${operatorLabel(cond.op, field.type)} (no longer available)`
+      ? m.app_automation_no_longer_available({ label: operatorLabel(cond.op, field.type) })
       : operatorLabel(cond.op);
     return [...offered, { value: cond.op, label }];
   }
@@ -89,16 +90,16 @@
 {#if conditions.length}
   <select
     class="v2-input cr-match"
-    aria-label="How the conditions combine"
+    aria-label={m.app_automation_match_label()}
     bind:value={match}
     aria-invalid={errors.match ? 'true' : undefined}
   >
-    <option value="all">all of these hold</option>
-    <option value="any">any of these hold</option>
+    <option value="all">{m.app_automation_match_all()}</option>
+    <option value="any">{m.app_automation_match_any()}</option>
   </select>
   {#if errors.match}<p class="v2-error">{errors.match}</p>{/if}
 {:else}
-  <p class="v2-hint cr-none">With no conditions it runs every time it is set off.</p>
+  <p class="v2-hint cr-none">{m.app_automation_no_conditions()}</p>
 {/if}
 
 {#each conditions as cond, i (cond)}
@@ -109,13 +110,13 @@
       <select
         id="cond-{i}-field"
         class="v2-input cr-field"
-        aria-label="Condition {i + 1} field"
+        aria-label={m.app_automation_condition_field({ n: i + 1 })}
         value={cond.field}
         onchange={(e) => chooseField(cond, e.currentTarget.value)}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? `cond-${i}-error` : undefined}
       >
-        {#if !cond.field}<option value="">Choose a field</option>{/if}
+        {#if !cond.field}<option value="">{m.app_automation_choose_field()}</option>{/if}
         {#each withStored(fields, cond.field) as o (o.value)}
           <option value={o.value}>{o.label}</option>
         {/each}
@@ -123,13 +124,13 @@
       {#if cond.field}
         <select
           class="v2-input cr-op"
-          aria-label="Condition {i + 1} test"
+          aria-label={m.app_automation_condition_test({ n: i + 1 })}
           value={cond.op}
           onchange={(e) => chooseOp(cond, e.currentTarget.value)}
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? `cond-${i}-error` : undefined}
         >
-          {#if !cond.op}<option value="">Choose a test</option>{/if}
+          {#if !cond.op}<option value="">{m.app_automation_choose_test()}</option>{/if}
           {#each operators(cond, field) as o (o.value)}
             <option value={o.value}>{o.label}</option>
           {/each}
@@ -143,7 +144,7 @@
             bind:value={cond.value}
             people={catalogue?.people ?? []}
             id="cond-{i}-value"
-            label="Condition {i + 1} value"
+            label={m.app_automation_condition_value({ n: i + 1 })}
             invalid={Boolean(error)}
             describedby={error ? `cond-${i}-error` : undefined}
           />
@@ -154,14 +155,14 @@
       <button
         type="button"
         class="v2-btn cr-remove"
-        aria-label="Remove condition {i + 1}"
+        aria-label={m.app_automation_condition_remove({ n: i + 1 })}
         onclick={() => remove(i)}
       >
         <X />
       </button>
     </div>
     {#if cond.field && !field}
-      <p class="v2-muted cr-lost">This field is no longer available. Choose another.</p>
+      <p class="v2-muted cr-lost">{m.app_automation_field_gone()}</p>
     {/if}
     {#if error}<p class="v2-error" id="cond-{i}-error">{error}</p>{/if}
   </div>
@@ -175,10 +176,10 @@
     onclick={add}
     disabled={conditions.length >= limit}
   >
-    <Plus />Add condition
+    <Plus />{m.app_automation_add_condition()}
   </button>
   {#if conditions.length >= limit}
-    <p class="v2-hint">A rule can have at most {limit} conditions.</p>
+    <p class="v2-hint">{m.app_automation_conditions_limit({ limit })}</p>
   {/if}
   {#if errors.list}<p class="v2-error">{errors.list}</p>{/if}
 </div>

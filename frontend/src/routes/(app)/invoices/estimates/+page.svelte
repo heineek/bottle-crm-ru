@@ -18,9 +18,11 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { enhance } from '$app/forms';
   import { money, moneyEach, count, daysSince } from '#lib/v2/format.js';
-  import { ESTIMATE_STATUS_TONE } from '#lib/v2/enums.js';
+  import { ESTIMATE_STATUS_LABEL, ESTIMATE_STATUS_TONE } from '#lib/v2/enums.js';
   import { Plus, FileText } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -34,10 +36,13 @@
     if (!e.valid_until) return null;
     if (!LIVE.includes(e.status)) return null;
     const n = daysSince(e.valid_until);
-    if (n > 0) return { text: `expired ${n}d ago`, urgent: true };
-    if (n === 0) return { text: 'expires today', urgent: true };
-    return { text: `${Math.abs(n)}d left`, urgent: Math.abs(n) <= 7 };
+    if (n > 0) return { text: m.invoices_estimate_expired_ago({ n }), urgent: true };
+    if (n === 0) return { text: m.invoices_estimate_expires_today(), urgent: true };
+    return { text: m.invoices_age_left({ n: Math.abs(n) }), urgent: Math.abs(n) <= 7 };
   }
+
+  const statusLabel = (/** @type {string} */ s) =>
+    Object.hasOwn(ESTIMATE_STATUS_LABEL, s) ? ESTIMATE_STATUS_LABEL[s] : s;
 
   const needsBilling = (e) => e.status === 'Accepted' && !e.converted_invoice;
 
@@ -48,21 +53,24 @@
   const perCurrency = (/** @type {any[]} */ list) => moneyEach(list) || money(0, data.org.currency);
 </script>
 
-<PageHeader title="Estimates">
+<PageHeader title={m.invoices_estimates_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.count)}</span> estimates ·
-    <span class="v2-num">{perCurrency(totals.awaiting_reply)}</span> awaiting a reply
+    {#each messageParts(m.invoices_estimates_sub( { count: slot('count'), awaiting: slot('awaiting') } )) as p, i (i)}{#if p.key === 'count'}<span
+          class="v2-num">{count(totals.count)}</span
+        >{:else if p.key === 'awaiting'}<span class="v2-num"
+          >{perCurrency(totals.awaiting_reply)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     <a class="v2-btn v2-btn-primary" href={resolve('invoices/estimates/new')}
-      ><Plus />New estimate</a
+      ><Plus />{m.invoices_estimates_new_button()}</a
     >
   {/snippet}
 </PageHeader>
 
 {#if page.url.search}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered list.
+    {m.invoices_filtered_note()}
   </p>
 {/if}
 
@@ -74,25 +82,29 @@
   </div>
 {:else if form?.sent}
   <div class="v2-pad" style="padding-top:12px;flex:none">
-    <p class="v2-sub" role="status" style="margin:0">Estimate sent.</p>
+    <p class="v2-sub" role="status" style="margin:0">{m.invoices_estimate_sent()}</p>
   </div>
 {/if}
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
     <StatCard
-      label="Accepted, not billed"
+      label={m.invoices_estimates_stat_accepted()}
       value={perCurrency(totals.accepted_unconverted)}
       tone="clay"
-      detail="Agreed and waiting on an invoice"
+      detail={m.invoices_estimates_stat_accepted_detail()}
     />
-    <StatCard label="Awaiting a reply" value={perCurrency(totals.awaiting_reply)} tone="ink" />
     <StatCard
-      label="Expiring within 7 days"
+      label={m.invoices_estimates_stat_awaiting()}
+      value={perCurrency(totals.awaiting_reply)}
+      tone="ink"
+    />
+    <StatCard
+      label={m.invoices_estimates_stat_expiring()}
       value={count(totals.expiring_within_7d)}
       tone={totals.expiring_within_7d ? 'clay' : 'slate'}
     />
-    <StatCard label="Estimates" value={count(totals.count)} tone="slate" />
+    <StatCard label={m.invoices_estimates_title()} value={count(totals.count)} tone="slate" />
   </div>
 </div>
 
@@ -100,22 +112,24 @@
   page="estimates"
   url={page.url}
   accounts={data.accounts}
-  meta="Accepted but unbilled first, then most recently sent"
+  meta={m.invoices_estimates_meta()}
 />
 
 <div class="v2-scroll">
   {#if data.estimates.length === 0}
     <EmptyState
-      title="No estimates yet"
+      title={m.invoices_estimates_empty_title()}
       body={isOn(data.modules, 'deals')
-        ? 'An estimate is a priced proposal you can turn into an invoice once the customer accepts it. Most start from a deal that already has the amount and the account.'
-        : 'An estimate is a priced proposal you can turn into an invoice once the customer accepts it.'}
+        ? m.invoices_estimates_empty_body_deals()
+        : m.invoices_estimates_empty_body()}
     >
       {#snippet icon()}<FileText size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('invoices/estimates/new')}>New estimate</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('invoices/estimates/new')}
+          >{m.invoices_estimates_new_button()}</a
+        >
         {#if isOn(data.modules, 'deals')}
-          <a class="v2-btn" href={resolve('pipeline')}>Start from a deal</a>
+          <a class="v2-btn" href={resolve('pipeline')}>{m.invoices_estimates_start_from_deal()}</a>
         {/if}
       {/snippet}
     </EmptyState>
@@ -124,12 +138,12 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Estimate</th>
-            <th>Account</th>
-            <th>Status</th>
-            <th>Billed</th>
-            <th class="v2-r">Amount</th>
-            <th class="v2-r">Valid</th>
+            <th>{m.invoices_col_estimate()}</th>
+            <th>{m.invoices_col_account()}</th>
+            <th>{m.common_status()}</th>
+            <th>{m.invoices_col_billed()}</th>
+            <th class="v2-r">{m.invoices_col_amount()}</th>
+            <th class="v2-r">{m.invoices_col_valid()}</th>
           </tr>
         </thead>
         <tbody>
@@ -150,7 +164,7 @@
                   <span class="v2-table-secondary" style="display:block">{e.opportunity.name}</span>
                 {/if}
               </td>
-              <td><Pill tone={ESTIMATE_STATUS_TONE[e.status]}>{e.status}</Pill></td>
+              <td><Pill tone={ESTIMATE_STATUS_TONE[e.status]}>{statusLabel(e.status)}</Pill></td>
               <td>
                 {#if e.converted_invoice}
                   <a
@@ -167,14 +181,14 @@
                   <form method="POST" action="?/convert" use:enhance>
                     <input type="hidden" name="id" value={e.id} />
                     <button class="v2-btn v2-btn-sm v2-btn-primary" type="submit">
-                      Raise invoice
+                      {m.invoices_raise_invoice()}
                     </button>
                   </form>
                 {:else if canSend(e)}
                   <form method="POST" action="?/send" use:enhance>
                     <input type="hidden" name="id" value={e.id} />
                     <button class="v2-btn v2-btn-sm" type="submit">
-                      {e.status === 'Draft' ? 'Send' : 'Send again'}
+                      {e.status === 'Draft' ? m.invoices_send() : m.invoices_send_again()}
                     </button>
                   </form>
                 {:else}
@@ -197,8 +211,10 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{data.estimates.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.invoices_showing_of( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{data.estimates.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   {/if}
 </div>

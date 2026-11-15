@@ -8,12 +8,34 @@
  * numbers, then a counter padded to `number_padding` digits.
  */
 
+import { m } from '#lib/paraglide/messages.js';
+
 /** `Org.NUMBER_DATE_PARTS`, in the order the settings form offers them. */
 export const NUMBER_DATE_PARTS = [
-  { value: 'NONE', label: 'No date, one running count' },
-  { value: 'YEAR', label: 'Year, count restarts each year' },
-  { value: 'MONTH', label: 'Year and month, count restarts each month' },
-  { value: 'DAY', label: 'Full date, count restarts each day' }
+  {
+    value: 'NONE',
+    get label() {
+      return m.invoices_number_date_none();
+    }
+  },
+  {
+    value: 'YEAR',
+    get label() {
+      return m.invoices_number_date_year();
+    }
+  },
+  {
+    value: 'MONTH',
+    get label() {
+      return m.invoices_number_date_month();
+    }
+  },
+  {
+    value: 'DAY',
+    get label() {
+      return m.invoices_number_date_day();
+    }
+  }
 ];
 
 /** How many digits of `YYYYMMDD` each date part keeps. */

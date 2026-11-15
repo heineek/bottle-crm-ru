@@ -9,13 +9,39 @@
 import { error } from '@sveltejs/kit';
 
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 export const SUPPORT_CATEGORIES = [
-  { value: 'technical', label: 'Technical issue' },
-  { value: 'billing', label: 'Billing' },
-  { value: 'account', label: 'Account access' },
-  { value: 'feature_request', label: 'Feature request' },
-  { value: 'other', label: 'Other' }
+  {
+    value: 'technical',
+    get label() {
+      return m.help_category_technical();
+    }
+  },
+  {
+    value: 'billing',
+    get label() {
+      return m.help_category_billing();
+    }
+  },
+  {
+    value: 'account',
+    get label() {
+      return m.help_category_account();
+    }
+  },
+  {
+    value: 'feature_request',
+    get label() {
+      return m.help_category_feature_request();
+    }
+  },
+  {
+    value: 'other',
+    get label() {
+      return m.help_category_other();
+    }
+  }
 ];
 
 /** @param {any} message @param {string} ticketId */
@@ -101,7 +127,7 @@ export async function getSupportTicket({ cookies }, id) {
     // deliberate: a 403 here would confirm the id is real. Without this the
     // page answered 500, which every other v2 detail page already avoids.
     if (err?.status === 404) {
-      error(404, 'That request does not exist, or somebody else opened it.');
+      error(404, m.help_ticket_not_found());
     }
     throw err;
   }

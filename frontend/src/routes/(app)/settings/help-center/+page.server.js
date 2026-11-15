@@ -5,6 +5,7 @@ import {
   updateHelpCenterSettings
 } from '#lib/server/v2/help-center-settings.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies }) {
@@ -26,7 +27,7 @@ export const actions = {
       await updateHelpCenterSettings(event, values);
     } catch (/** @type {any} */ err) {
       if (err?.status === 403) {
-        return fail(403, { update: { error: 'Only an admin can change the help center.' } });
+        return fail(403, { update: { error: m.settings_helpcenter_error_admin_only() } });
       }
       return fail(400, {
         update: { error: saveErrorMessage(err, readableError), values }

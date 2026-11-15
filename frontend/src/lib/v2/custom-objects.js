@@ -1,3 +1,5 @@
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * Browser-safe helpers for custom object pages. Imports nothing from `$app`
  * or `#lib/server`, so Svelte pages and vitest can both use it.
@@ -24,7 +26,10 @@ export const WEB_UPLOAD_MAX_BYTES = 6 * 1024 * 1024 - 64 * 1024;
  */
 export function uploadTooLarge(file) {
   if (file.size <= WEB_UPLOAD_MAX_BYTES) return null;
-  return `${file.name} is ${(file.size / 1_000_000).toFixed(1)} MB. Files must be 6 MB or smaller here.`;
+  return m.app_custom_objects_too_large({
+    name: file.name,
+    size: (file.size / 1_000_000).toFixed(1)
+  });
 }
 
 const BUILT_IN_PATHS = {

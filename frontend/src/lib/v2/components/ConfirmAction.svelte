@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * A destructive action that takes two clicks.
    *
@@ -20,7 +21,13 @@
    *   explain?: string,
    *   hidden?: Record<string, string>
    * }} */
-  let { action, label = 'Delete', confirmLabel = 'Confirm', explain = '', hidden = {} } = $props();
+  let {
+    action,
+    label = m.common_delete(),
+    confirmLabel = m.common_confirm(),
+    explain = '',
+    hidden = {}
+  } = $props();
 
   let armed = $state(false);
   let busy = $state(false);
@@ -50,7 +57,7 @@
     {/if}
     <button class="v2-btn v2-btn-sm" type="submit" disabled={busy}>{confirmLabel}</button>
     <button class="v2-btn v2-btn-sm" type="button" disabled={busy} onclick={() => (armed = false)}>
-      Cancel
+      {m.common_cancel()}
     </button>
   </form>
 {:else}

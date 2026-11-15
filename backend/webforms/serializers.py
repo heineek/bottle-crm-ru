@@ -15,6 +15,8 @@ Two rules run through all of this:
 from urllib.parse import urlparse
 
 from django.db import transaction
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from common.links import api_url
@@ -38,7 +40,7 @@ BUILTIN_SOURCE = {
 ALLOWED_URL_SCHEMES = ("http", "https")
 
 
-NO_SUCH_CUSTOM_FIELD = "No such custom field for this form."
+NO_SUCH_CUSTOM_FIELD = _("No such custom field for this form.")
 
 
 class WebFormFieldSerializer(serializers.ModelSerializer):
@@ -68,7 +70,8 @@ class WebFormFieldSerializer(serializers.ModelSerializer):
     def validate_lead_field(self, value):
         if value and value not in LEAD_FIELD_VALUES:
             raise serializers.ValidationError(
-                f"'{value}' is not a field a web form may collect."
+                gettext("'%(value)s' is not a field a web form may collect.")
+                % {"value": value}
             )
         return value
 
@@ -86,17 +89,21 @@ class WebFormFieldSerializer(serializers.ModelSerializer):
         }
         if sum(1 for value in named.values() if value) != 1:
             raise serializers.ValidationError(
-                "A field must name exactly one of a lead field, a ticket field "
-                "or a custom field."
+                gettext(
+                    "A field must name exactly one of a lead field, a ticket field "
+                    "or a custom field."
+                )
             )
         if not attrs.get("label"):
             # Checked here rather than left to the model: under the view's
             # partial update DRF skips a missing required key, and the write
             # below would then fail on it with a 500.
-            raise serializers.ValidationError({"label": "Give the field a label."})
+            raise serializers.ValidationError(
+                {"label": gettext("Give the field a label.")}
+            )
         if not named.get(attrs.get("source")):
             raise serializers.ValidationError(
-                {"source": "This does not match the field the row names."}
+                {"source": gettext("This does not match the field the row names.")}
             )
 
         custom_field = named[WebFormField.SOURCE_CUSTOM]
@@ -251,7 +258,7 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
         stored = getattr(self.instance, "assign_to_id", None)
         if value is not None and not value.is_active and value.id != stored:
             raise serializers.ValidationError(
-                "This user is deactivated. Choose an active member."
+                gettext("This user is deactivated. Choose an active member.")
             )
         return value
 
@@ -271,7 +278,7 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
         for profile in value:
             if not profile.is_active and profile.id not in stored:
                 raise serializers.ValidationError(
-                    "This user is deactivated. Choose an active member."
+                    gettext("This user is deactivated. Choose an active member.")
                 )
         return value
 
@@ -294,7 +301,7 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
         if target != WebForm.TARGET_LEAD:
             raise serializers.ValidationError(
                 {
-                    "assignment_mode": (
+                    "assignment_mode": gettext(
                         "Rotation is for lead forms only. Tickets from a "
                         "ticket form are assigned by your routing rules."
                     )
@@ -308,7 +315,11 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
             )
         if not has_members:
             raise serializers.ValidationError(
-                {"rotation_members": "Choose at least one member to rotate between."}
+                {
+                    "rotation_members": gettext(
+                        "Choose at least one member to rotate between."
+                    )
+                }
             )
 
     # ---- embed snippets -------------------------------------------------
@@ -373,35 +384,43 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
         parsed = urlparse(value)
         if parsed.scheme.lower() not in ALLOWED_URL_SCHEMES:
             raise serializers.ValidationError(
-                "Enter an http or https URL. Other schemes are not allowed."
+                gettext("Enter an http or https URL. Other schemes are not allowed.")
             )
         return value
 
     def validate_allowed_origins(self, value):
         if not isinstance(value, list):
             raise serializers.ValidationError(
-                'Provide a list of origins, for example ["https://example.com"].'
+                gettext(
+                    'Provide a list of origins, for example ["https://example.com"].'
+                )
             )
         cleaned = []
         for entry in value:
             if not isinstance(entry, str) or not entry.strip():
                 raise serializers.ValidationError(
-                    "Each origin must be a non-empty string."
+                    gettext("Each origin must be a non-empty string.")
                 )
             entry = entry.strip()
             parsed = urlparse(entry)
             if parsed.scheme.lower() not in ALLOWED_URL_SCHEMES or not parsed.netloc:
                 raise serializers.ValidationError(
-                    f"'{entry}' is not a valid origin. Use a scheme and a host, "
-                    f"for example https://example.com."
+                    gettext(
+                        "'%(entry)s' is not a valid origin. Use a scheme and a "
+                        "host, for example https://example.com."
+                    )
+                    % {"entry": entry}
                 )
             if parsed.path not in ("", "/") or parsed.query or parsed.fragment:
                 # An Origin header never carries a path, so an entry with one
                 # can never match. It would look configured while doing
                 # nothing, which is worse than being rejected.
                 raise serializers.ValidationError(
-                    f"'{entry}' has a path. An origin is only a scheme, host "
-                    f"and optional port."
+                    gettext(
+                        "'%(entry)s' has a path. An origin is only a scheme, "
+                        "host and optional port."
+                    )
+                    % {"entry": entry}
                 )
             cleaned.append(f"{parsed.scheme}://{parsed.netloc}")
         return cleaned
@@ -427,7 +446,7 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
             # promises its callers a lead.
             raise serializers.ValidationError(
                 {
-                    "target": (
+                    "target": gettext(
                         "This form backs a legacy web-to-lead API key, so it "
                         "can only create leads."
                     )
@@ -436,7 +455,7 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
         if changed and self.instance.submissions.exists():
             raise serializers.ValidationError(
                 {
-                    "target": (
+                    "target": gettext(
                         "This form already has submissions, so what it creates "
                         "cannot change. Create a new form instead."
                     )
@@ -454,7 +473,7 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
             if changed and self.instance.fields.exists():
                 raise serializers.ValidationError(
                     {
-                        "fields": (
+                        "fields": gettext(
                             "Send the new field list with the target change. "
                             "The current fields were chosen for the old target."
                         )
@@ -468,9 +487,10 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
             if row["source"] not in allowed:
                 raise serializers.ValidationError(
                     {
-                        "fields": (
-                            f"A {target} form cannot collect a {row['source']} field."
+                        "fields": gettext(
+                            "A %(target)s form cannot collect a %(source)s field."
                         )
+                        % {"target": target, "source": row["source"]}
                     }
                 )
             custom_field = row.get("custom_field")
@@ -494,10 +514,13 @@ class WebFormDetailSerializer(serializers.ModelSerializer):
             )
             if not site_key or not secret:
                 raise serializers.ValidationError(
-                    "Turnstile needs both a site key and a secret. Verification "
-                    "fails closed, so a half-configured captcha rejects every "
-                    "submission."
+                    gettext(
+                        "Turnstile needs both a site key and a secret. Verification "
+                        "fails closed, so a half-configured captcha rejects every "
+                        "submission."
+                    )
                 )
+
         return attrs
 
     # ---- writes ---------------------------------------------------------

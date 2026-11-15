@@ -36,6 +36,7 @@
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
 import { getOrgPeopleAndTeams } from './org-people.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** The three goal kinds the backend accepts (common/utils.py GOAL_TYPES). */
 export const GOAL_TYPES = ['REVENUE', 'DEALS_CLOSED', 'ACTIVITIES'];
@@ -101,7 +102,7 @@ const LEADERBOARD_PERIOD = 'MONTHLY';
 /** A person's display name from a nested ProfileSerializer row. */
 function personName(detail) {
   const d = detail?.user_details ?? {};
-  return d.name || d.email || 'Unnamed';
+  return d.name || d.email || m.goals_person_unnamed();
 }
 
 /**
@@ -153,7 +154,7 @@ function toLeaderRow(r) {
   return {
     rank: r.rank,
     goal_id: r.goal_id,
-    user: r.user?.name || 'Unknown',
+    user: r.user?.name || m.goals_person_unknown(),
     // The board ranks every goal type together, so each row says whether its
     // figures are money (and in what) or a count.
     goal_type: r.goal_type,

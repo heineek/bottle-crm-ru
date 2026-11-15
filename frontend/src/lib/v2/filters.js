@@ -25,10 +25,14 @@
  */
 import {
   CASE_PRIORITIES,
+  CASE_PRIORITY_LABEL,
   CASE_STATUSES,
+  CASE_STATUS_LABEL,
   CASE_TYPES,
+  CASE_TYPE_LABEL,
   DOCUMENT_STATUSES,
   ESTIMATE_STATUSES,
+  ESTIMATE_STATUS_LABEL,
   INDUSTRIES,
   INVOICE_STATUSES,
   LEAD_LIST_STATUSES,
@@ -38,10 +42,13 @@ import {
   SOLUTION_STATUS,
   SOLUTION_STATUS_LABEL,
   TASK_PRIORITY,
+  TASK_PRIORITY_LABEL,
   TASK_STATUS,
+  TASK_STATUS_LABEL,
   industryLabel,
   invoiceStatusLabel
 } from './enums.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @typedef {{ key: string, label: string, params: Record<string, string> }} Preset */
 /** @typedef {{ key: string, label: string, type: string, options?: string[], labelFor?: (v: string) => string, gteKey?: string, lteKey?: string, multi?: boolean }} Field */
@@ -51,32 +58,122 @@ import {
 export const FILTERS = {
   tickets: {
     presets: [
-      { key: 'open', label: 'Open, newest first', params: {} },
-      { key: 'mine', label: 'Mine', params: { assigned_to: '@me' } },
-      { key: 'breaching', label: 'Breaching SLA', params: { sla_breached: 'true' } },
-      { key: 'all', label: 'Everything', params: { all: '1' } }
+      {
+        key: 'open',
+        get label() {
+          return m.app_list_filters_open_newest_first();
+        },
+        params: {}
+      },
+      {
+        key: 'mine',
+        get label() {
+          return m.app_list_filters_mine();
+        },
+        params: { assigned_to: '@me' }
+      },
+      {
+        key: 'breaching',
+        get label() {
+          return m.app_list_filters_breaching_sla();
+        },
+        params: { sla_breached: 'true' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_everything();
+        },
+        params: { all: '1' }
+      }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Owner', type: 'person', multi: true },
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person',
+        multi: true
+      },
       // Picking a status replaces the open-queue default (see `ticketListQuery`).
-      { key: 'status', label: 'Status', type: 'select', options: CASE_STATUSES, multi: true },
-      { key: 'priority', label: 'Priority', type: 'select', options: CASE_PRIORITIES },
-      { key: 'case_type', label: 'Type', type: 'select', options: CASE_TYPES },
-      { key: 'sla_breached', label: 'Breaching SLA', type: 'boolean' },
-      { key: 'tags', label: 'Tag', type: 'tag', multi: true }
+      {
+        key: 'status',
+        get label() {
+          return m.common_status();
+        },
+        type: 'select',
+        options: CASE_STATUSES,
+        labelFor: (v) => CASE_STATUS_LABEL[v] ?? v,
+        multi: true
+      },
+      {
+        key: 'priority',
+        get label() {
+          return m.common_priority();
+        },
+        type: 'select',
+        options: CASE_PRIORITIES,
+        labelFor: (v) => CASE_PRIORITY_LABEL[v] ?? v
+      },
+      {
+        key: 'case_type',
+        get label() {
+          return m.app_list_filters_type();
+        },
+        type: 'select',
+        options: CASE_TYPES,
+        labelFor: (v) => CASE_TYPE_LABEL[v] ?? v
+      },
+      {
+        key: 'sla_breached',
+        get label() {
+          return m.app_list_filters_breaching_sla();
+        },
+        type: 'boolean'
+      },
+      {
+        key: 'tags',
+        get label() {
+          return m.app_list_filters_tag();
+        },
+        type: 'tag',
+        multi: true
+      }
     ]
   },
 
   leads: {
     presets: [
-      { key: 'open', label: 'Open leads', params: {} },
-      { key: 'mine', label: 'Mine', params: { assigned_to: '@me' } }
+      {
+        key: 'open',
+        get label() {
+          return m.app_list_filters_open_leads();
+        },
+        params: {}
+      },
+      {
+        key: 'mine',
+        get label() {
+          return m.app_list_filters_mine();
+        },
+        params: { assigned_to: '@me' }
+      }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Owner', type: 'person', multi: true },
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person',
+        multi: true
+      },
       {
         key: 'status',
-        label: 'Status',
+        get label() {
+          return m.common_status();
+        },
         type: 'select',
         options: LEAD_LIST_STATUSES,
         labelFor: (v) => LEAD_STATUS_LABEL[v] ?? v,
@@ -84,71 +181,208 @@ export const FILTERS = {
       },
       {
         key: 'source',
-        label: 'Source',
+        get label() {
+          return m.app_list_filters_source();
+        },
         type: 'select',
         options: LEAD_SOURCES,
         labelFor: (v) => LEAD_SOURCE_LABEL[v] ?? v
       },
-      { key: 'tags', label: 'Tag', type: 'tag', multi: true }
+      {
+        key: 'tags',
+        get label() {
+          return m.app_list_filters_tag();
+        },
+        type: 'tag',
+        multi: true
+      }
     ]
   },
 
   contacts: {
     presets: [
-      { key: 'mine', label: 'Mine', params: { assigned_to: '@me' } },
-      { key: 'inactive', label: 'Including inactive', params: { inactive: '1' } },
-      { key: 'active', label: 'Active contacts', params: {} }
+      {
+        key: 'mine',
+        get label() {
+          return m.app_list_filters_mine();
+        },
+        params: { assigned_to: '@me' }
+      },
+      {
+        key: 'inactive',
+        get label() {
+          return m.app_list_filters_including_inactive();
+        },
+        params: { inactive: '1' }
+      },
+      {
+        key: 'active',
+        get label() {
+          return m.app_list_filters_active_contacts();
+        },
+        params: {}
+      }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Owner', type: 'person', multi: true },
-      { key: 'tags', label: 'Tag', type: 'tag', multi: true },
-      { key: 'city', label: 'City', type: 'text' }
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person',
+        multi: true
+      },
+      {
+        key: 'tags',
+        get label() {
+          return m.app_list_filters_tag();
+        },
+        type: 'tag',
+        multi: true
+      },
+      {
+        key: 'city',
+        get label() {
+          return m.app_list_filters_city();
+        },
+        type: 'text'
+      }
     ]
   },
 
   pipeline: {
     presets: [
-      { key: 'open', label: 'Open deals', params: { open: 'true' } },
-      { key: 'mine', label: 'Mine', params: { assigned_to: '@me' } },
-      { key: 'stalled', label: 'Stalled', params: { rotten: 'true' } },
-      { key: 'all', label: 'All deals', params: {} }
+      {
+        key: 'open',
+        get label() {
+          return m.app_list_filters_open_deals();
+        },
+        params: { open: 'true' }
+      },
+      {
+        key: 'mine',
+        get label() {
+          return m.app_list_filters_mine();
+        },
+        params: { assigned_to: '@me' }
+      },
+      {
+        key: 'stalled',
+        get label() {
+          return m.app_list_filters_stalled();
+        },
+        params: { rotten: 'true' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_deals();
+        },
+        params: {}
+      }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Owner', type: 'person', multi: true },
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person',
+        multi: true
+      },
       // Stages are per pipeline and configured by the org, so the options
       // arrive from the API (FilterBar's `stages` prop), not from an enum.
-      { key: 'stage', label: 'Stage', type: 'stage' },
+      {
+        key: 'stage',
+        get label() {
+          return m.app_list_filters_stage();
+        },
+        type: 'stage'
+      },
       {
         key: 'lead_source',
-        label: 'Source',
+        get label() {
+          return m.app_list_filters_source();
+        },
         type: 'select',
         options: LEAD_SOURCES,
         labelFor: (v) => LEAD_SOURCE_LABEL[v] ?? v
       },
       {
         key: 'amount',
-        label: 'Value',
+        get label() {
+          return m.app_list_filters_value();
+        },
         type: 'number-range',
         gteKey: 'amount__gte',
         lteKey: 'amount__lte'
       },
-      { key: 'tags', label: 'Tag', type: 'tag', multi: true }
+      {
+        key: 'tags',
+        get label() {
+          return m.app_list_filters_tag();
+        },
+        type: 'tag',
+        multi: true
+      }
     ]
   },
 
   tasks: {
     presets: [
-      { key: 'open', label: 'Open tasks', params: {} },
-      { key: 'mine', label: 'My tasks', params: { assigned_to: '@me' } },
-      { key: 'all', label: 'All tasks', params: { all: '1' } }
+      {
+        key: 'open',
+        get label() {
+          return m.app_list_filters_open_tasks();
+        },
+        params: {}
+      },
+      {
+        key: 'mine',
+        get label() {
+          return m.app_list_filters_my_tasks();
+        },
+        params: { assigned_to: '@me' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_tasks();
+        },
+        params: { all: '1' }
+      }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Owner', type: 'person' },
-      { key: 'priority', label: 'Priority', type: 'select', options: TASK_PRIORITY },
-      { key: 'status', label: 'Status', type: 'select', options: TASK_STATUS },
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person'
+      },
+      {
+        key: 'priority',
+        get label() {
+          return m.common_priority();
+        },
+        type: 'select',
+        options: TASK_PRIORITY,
+        labelFor: (v) => TASK_PRIORITY_LABEL[v] ?? v
+      },
+      {
+        key: 'status',
+        get label() {
+          return m.common_status();
+        },
+        type: 'select',
+        options: TASK_STATUS,
+        labelFor: (v) => TASK_STATUS_LABEL[v] ?? v
+      },
       {
         key: 'due_date',
-        label: 'Due date',
+        get label() {
+          return m.common_due_date();
+        },
         type: 'date-range',
         gteKey: 'due_date__gte',
         lteKey: 'due_date__lte'
@@ -158,39 +392,105 @@ export const FILTERS = {
 
   accounts: {
     presets: [
-      { key: 'mine', label: 'Mine', params: { assigned_to: '@me' } },
-      { key: 'all', label: 'All accounts', params: {} }
+      {
+        key: 'mine',
+        get label() {
+          return m.app_list_filters_mine();
+        },
+        params: { assigned_to: '@me' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_accounts();
+        },
+        params: {}
+      }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Owner', type: 'person', multi: true },
-      { key: 'tags', label: 'Tag', type: 'tag', multi: true },
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person',
+        multi: true
+      },
+      {
+        key: 'tags',
+        get label() {
+          return m.app_list_filters_tag();
+        },
+        type: 'tag',
+        multi: true
+      },
       {
         key: 'industry',
-        label: 'Industry',
+        get label() {
+          return m.app_list_filters_industry();
+        },
         type: 'select',
         options: INDUSTRIES,
         labelFor: industryLabel
       },
-      { key: 'city', label: 'City', type: 'text' }
+      {
+        key: 'city',
+        get label() {
+          return m.app_list_filters_city();
+        },
+        type: 'text'
+      }
     ]
   },
 
   invoices: {
     presets: [
-      { key: 'overdue', label: 'Overdue', params: { status: 'Overdue' } },
-      { key: 'draft', label: 'Draft', params: { status: 'Draft' } },
-      { key: 'all', label: 'All invoices', params: {} }
+      {
+        key: 'overdue',
+        get label() {
+          return m.app_list_filters_overdue();
+        },
+        params: { status: 'Overdue' }
+      },
+      {
+        key: 'draft',
+        get label() {
+          return m.app_list_filters_draft();
+        },
+        params: { status: 'Draft' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_invoices();
+        },
+        params: {}
+      }
     ],
     fields: [
       {
         key: 'status',
-        label: 'Status',
+        get label() {
+          return m.common_status();
+        },
         type: 'select',
         options: INVOICE_STATUSES,
         labelFor: invoiceStatusLabel
       },
-      { key: 'account', label: 'Account', type: 'account' },
-      { key: 'assigned_to', label: 'Owner', type: 'person' },
+      {
+        key: 'account',
+        get label() {
+          return m.app_list_filters_account();
+        },
+        type: 'account'
+      },
+      {
+        key: 'assigned_to',
+        get label() {
+          return m.common_owner();
+        },
+        type: 'person'
+      },
       // Invoices uses a SINGLE underscore (`due_date_gte`/`due_date_lte`,
       // `backend/invoices/api_views.py:149-152`). Every other date-range field
       // in this file uses a DOUBLE underscore. Never build this key by
@@ -198,7 +498,9 @@ export const FILTERS = {
       // unfiltered list here while working everywhere else.
       {
         key: 'due_date',
-        label: 'Due date',
+        get label() {
+          return m.common_due_date();
+        },
         type: 'date-range',
         gteKey: 'due_date_gte',
         lteKey: 'due_date_lte'
@@ -208,12 +510,38 @@ export const FILTERS = {
 
   estimates: {
     presets: [
-      { key: 'accepted', label: 'Accepted', params: { status: 'Accepted' } },
-      { key: 'all', label: 'All estimates', params: {} }
+      {
+        key: 'accepted',
+        get label() {
+          return m.app_list_filters_accepted();
+        },
+        params: { status: 'Accepted' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_estimates();
+        },
+        params: {}
+      }
     ],
     fields: [
-      { key: 'status', label: 'Status', type: 'select', options: ESTIMATE_STATUSES },
-      { key: 'account', label: 'Account', type: 'account' }
+      {
+        key: 'status',
+        get label() {
+          return m.common_status();
+        },
+        type: 'select',
+        options: ESTIMATE_STATUSES,
+        labelFor: (v) => ESTIMATE_STATUS_LABEL[v] ?? v
+      },
+      {
+        key: 'account',
+        get label() {
+          return m.app_list_filters_account();
+        },
+        type: 'account'
+      }
       // No Owner field: `EstimateListView.get` (backend/invoices/api_views.py
       // :1028-1036) reads only `status` and `account`, never `assigned_to`.
       // Offering one here would draw a chip that filters nothing underneath it.
@@ -222,19 +550,45 @@ export const FILTERS = {
 
   solutions: {
     presets: [
-      { key: 'published', label: 'Published', params: { visibility: 'published' } },
-      { key: 'drafts', label: 'Drafts', params: { status: 'draft' } },
-      { key: 'all', label: 'All articles, last edited first', params: {} }
+      {
+        key: 'published',
+        get label() {
+          return m.app_list_filters_published();
+        },
+        params: { visibility: 'published' }
+      },
+      {
+        key: 'drafts',
+        get label() {
+          return m.app_list_filters_drafts();
+        },
+        params: { status: 'draft' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_articles_last_edited_first();
+        },
+        params: {}
+      }
     ],
     fields: [
       {
         key: 'status',
-        label: 'Status',
+        get label() {
+          return m.common_status();
+        },
         type: 'select',
         options: SOLUTION_STATUS,
         labelFor: (v) => SOLUTION_STATUS_LABEL[v] ?? v
       },
-      { key: 'tags', label: 'Tag', type: 'tag' }
+      {
+        key: 'tags',
+        get label() {
+          return m.app_list_filters_tag();
+        },
+        type: 'tag'
+      }
     ]
   },
 
@@ -246,8 +600,20 @@ export const FILTERS = {
     // archived documents come back alongside the live ones on a bare URL,
     // which undoes the only thing archiving does.
     presets: [
-      { key: 'active', label: 'Active documents', params: {} },
-      { key: 'all', label: 'Including archived', params: { archived: '1' } }
+      {
+        key: 'active',
+        get label() {
+          return m.app_list_filters_active_documents();
+        },
+        params: {}
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_including_archived();
+        },
+        params: { archived: '1' }
+      }
     ],
     // `tags` and `created_by` are deliberately absent: `DocumentListView.get`
     // (backend/common/views/document_views.py:71-79) reads only `title`,
@@ -255,15 +621,45 @@ export const FILTERS = {
     // `shared_to` is passed straight to `json.loads`, so a plain
     // `?shared_to=<uuid>` throws `JSONDecodeError` and answers 500. Status is
     // the only filter this endpoint actually honours.
-    fields: [{ key: 'status', label: 'Status', type: 'select', options: DOCUMENT_STATUSES }]
+    fields: [
+      {
+        key: 'status',
+        get label() {
+          return m.common_status();
+        },
+        type: 'select',
+        options: DOCUMENT_STATUSES,
+        labelFor: (v) => (v === 'active' ? m.documents_stat_active() : m.documents_stat_archived())
+      }
+    ]
   },
 
   recurring: {
     presets: [
-      { key: 'active', label: 'Active schedules', params: { is_active: 'true' } },
-      { key: 'all', label: 'All schedules', params: {} }
+      {
+        key: 'active',
+        get label() {
+          return m.app_list_filters_active_schedules();
+        },
+        params: { is_active: 'true' }
+      },
+      {
+        key: 'all',
+        get label() {
+          return m.app_list_filters_all_schedules();
+        },
+        params: {}
+      }
     ],
-    fields: [{ key: 'is_active', label: 'Active', type: 'boolean' }]
+    fields: [
+      {
+        key: 'is_active',
+        get label() {
+          return m.app_list_filters_active();
+        },
+        type: 'boolean'
+      }
+    ]
   }
 };
 
@@ -372,15 +768,15 @@ export function activeChips(
       const value =
         field.type === 'number-range'
           ? from && to
-            ? `${from} to ${to}`
+            ? m.app_list_filters_number_range({ from, to })
             : from
-              ? `over ${from}`
-              : `under ${to}`
+              ? m.app_list_filters_number_over({ from })
+              : m.app_list_filters_number_under({ to })
           : from && to
-            ? `${from} to ${to}`
+            ? m.app_list_filters_date_range({ from, to })
             : from
-              ? `from ${from}`
-              : `up to ${to}`;
+              ? m.app_list_filters_date_from({ from })
+              : m.app_list_filters_date_up_to({ to });
       chips.push({
         key: field.key,
         label: field.label,
@@ -404,7 +800,7 @@ export function activeChips(
       if (field.type === 'tag') return nameFrom(lookups.tags ?? [], raw);
       if (field.type === 'account') return nameFrom(lookups.accounts ?? [], raw);
       if (field.type === 'stage') return nameFrom(lookups.stages ?? [], raw);
-      if (field.type === 'boolean') return raw === 'true' ? 'Yes' : 'No';
+      if (field.type === 'boolean') return raw === 'true' ? m.common_yes() : m.common_no();
       return field.labelFor ? field.labelFor(raw) : raw;
     };
     const value = raws.map((raw) => show(/** @type {string} */ (raw))).join(', ');

@@ -1,0 +1,184 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "solutions_not_found": "Такой статьи нет, или она принадлежит другой команде.",
+  "solutions_err_no_publish_id": "Нет статьи для публикации.",
+  "solutions_err_publish": "Не удалось опубликовать статью.",
+  "solutions_err_unpublish": "Не удалось снять статью с публикации.",
+  "solutions_err_save": "Не удалось сохранить статью.",
+  "solutions_err_no_status": "Не указан статус.",
+  "solutions_err_status": "Не удалось изменить статус.",
+  "solutions_err_delete": "Не удалось удалить статью.",
+  "solutions_list_title": "База знаний",
+  "solutions_list_sub_articles": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} статья",
+        "countPlural=few": "{shown} статьи",
+        "countPlural=many": "{shown} статей",
+        "countPlural=other": "{shown} статьи"
+      }
+    }
+  ],
+  "solutions_list_sub_live": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} видна клиентам",
+        "countPlural=few": "{shown} видны клиентам",
+        "countPlural=many": "{shown} видны клиентам",
+        "countPlural=other": "{shown} видны клиентам"
+      }
+    }
+  ],
+  "solutions_new_article": "Новая статья",
+  "solutions_list_totals_note": "Эти цифры учитывают все статьи, а не только показанные.",
+  "solutions_stat_approved_unpublished": "Одобрены, не опубликованы",
+  "solutions_stat_ready": "Готовы к публикации",
+  "solutions_stat_waiting_admin": "Ждут администратора",
+  "solutions_stat_nothing_waiting": "Ничего не ждёт",
+  "solutions_stat_published": "Опубликованы",
+  "solutions_stat_draft": "Черновики",
+  "solutions_stat_total": "Всего",
+  "solutions_filter_meta": "Опубликованную статью читают клиенты. Одобряется она отдельно",
+  "solutions_empty_filtered_title": "Подходящих статей нет",
+  "solutions_empty_title": "Статей пока нет",
+  "solutions_empty_filtered_body": "В базе знаний нет статей под эти фильтры. Сбросьте их, чтобы увидеть все.",
+  "solutions_empty_body_tickets": "Напишите ответ один раз, привяжите его к обращениям, где о нём спрашивают, и больше не набирайте заново. Первая статья обычно получается из только что решённого обращения.",
+  "solutions_empty_body": "Напишите ответ один раз и больше не набирайте заново. Опубликованную статью клиенты читают в портале, а также в публичном центре помощи, когда он включён.",
+  "solutions_clear_filters": "Сбросить фильтры",
+  "solutions_go_to_tickets": "К обращениям",
+  "solutions_col_article": "Статья",
+  "solutions_col_status": "Статус",
+  "solutions_col_visibility": "Видимость",
+  "solutions_col_tickets_solved": "Решено обращений",
+  "solutions_col_author": "Автор",
+  "solutions_col_edited": "Изменено",
+  "solutions_live": "Видна клиентам",
+  "solutions_internal": "Только внутренняя",
+  "solutions_publish": "Опубликовать",
+  "solutions_showing": "Показано {shown} из {total}",
+  "solutions_clear_filters_lower": "сбросить фильтры",
+  "solutions_gate_approved_tickets": "Одобрена, но пока не предлагается в обращениях.",
+  "solutions_gate_approved_unpublished": "Одобрена, но пока не опубликована.",
+  "solutions_gate_publish_last": "Остался последний шаг: публикация.",
+  "solutions_gate_admin_publish": "Опубликовать её должен администратор.",
+  "solutions_gate_reviewed_admin": "Статью уже прочитали. Чтобы её можно было опубликовать, её нужно одобрить.",
+  "solutions_gate_reviewed_waiting": "Ждёт одобрения администратора. До тех пор она остаётся внутренней.",
+  "solutions_gate_draft": "Это черновик. Отправьте его на проверку, когда ответ будет готов: перед публикацией его должен одобрить кто-то кроме вас.",
+  "solutions_approve": "Одобрить",
+  "solutions_send_for_review": "Отправить на проверку",
+  "solutions_detail_unknown_author": "Автор неизвестен",
+  "solutions_detail_edited": "изменена {when}",
+  "solutions_detail_filed_on": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "привязана к {countShown} обращению",
+        "countPlural=few": "привязана к {countShown} обращениям",
+        "countPlural=many": "привязана к {countShown} обращениям",
+        "countPlural=other": "привязана к {countShown} обращениям"
+      }
+    }
+  ],
+  "solutions_detail_not_linked": "пока не привязана к обращениям",
+  "solutions_detail_unpublish": "Снять с публикации",
+  "solutions_detail_delete_confirm": "Удалить навсегда",
+  "solutions_detail_delete_explain": "Статья «{title}» будет удалена навсегда. Это нельзя отменить.",
+  "solutions_detail_not_visible": "Пока не видна",
+  "solutions_detail_filed_against": "Привязана к обращениям",
+  "solutions_detail_not_used": "Пока не используется",
+  "solutions_detail_nobody_attached": "Эту статью никто не привязал к обращению. Либо этот вопрос больше не задают, либо статью трудно найти, пока сотрудник пишет ответ.",
+  "solutions_detail_hidden_tickets": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} другое обращение использует эту статью, но открыть его вы не можете.",
+        "countPlural=few": "{countShown} других обращения используют эту статью, но открыть их вы не можете.",
+        "countPlural=many": "{countShown} других обращений используют эту статью, но открыть их вы не можете.",
+        "countPlural=other": "{countShown} другого обращения используют эту статью, но открыть их вы не можете."
+      }
+    }
+  ],
+  "solutions_detail_rail_article": "Статья",
+  "solutions_detail_status": "Статус",
+  "solutions_detail_visibility": "Видимость",
+  "solutions_detail_published": "Опубликована",
+  "solutions_detail_author": "Автор",
+  "solutions_detail_used_on": "Используется",
+  "solutions_detail_used_count": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} обращение",
+        "countPlural=few": "{countShown} обращения",
+        "countPlural=many": "{countShown} обращений",
+        "countPlural=other": "{countShown} обращения"
+      }
+    }
+  ],
+  "solutions_detail_written": "Написана",
+  "solutions_detail_edited_label": "Изменена",
+  "solutions_detail_how_used": "Как это используется",
+  "solutions_detail_how_used_body": "Опубликованные статьи предлагаются на экране обращения, пока сотрудник пишет ответ. Статья, которую никто не привязал к обращению, обычно отвечает на вопрос, который никто не задавал.",
+  "solutions_form_consequence_live": "Доступна клиентам и предлагается в обращениях.",
+  "solutions_form_consequence_refused": "Так сохранить не получится: статью нужно одобрить до публикации. Выберите статус «Одобрена» или пока оставьте её внутренней.",
+  "solutions_form_consequence_approved": "Проверена, но клиенты её пока не видят. Чтобы открыть доступ, её нужно опубликовать.",
+  "solutions_form_consequence_internal": "Только для внутреннего использования. Сотрудники могут найти её и привязать к обращению.",
+  "solutions_new_sub": "Напишите ответ один раз и привязывайте его к каждому обращению с этим вопросом",
+  "solutions_form_saving": "Сохранение…",
+  "solutions_new_save": "Сохранить статью",
+  "solutions_form_title": "Заголовок",
+  "solutions_new_title_placeholder": "Как исправить зацикливание входа через SSO после смены провайдера",
+  "solutions_form_title_hint": "Опишите симптом так, как о нём сообщил бы клиент, а не способ решения.",
+  "solutions_form_answer": "Ответ",
+  "solutions_new_answer_placeholder": "Что происходит, почему и какие шаги это исправляют.",
+  "solutions_new_answer_short": "Добавьте ещё несколько слов: этот текст сотрудник отправит клиенту.",
+  "solutions_new_answer_hint": "Текст вставляется в ответы как есть, поэтому пишите для человека, у которого возникла проблема.",
+  "solutions_form_tags": "Теги",
+  "solutions_new_tags_lead": "Внутренняя классификация. Клиенты не видят названий тегов, но статьи с общим тегом показываются в портале рядом.",
+  "solutions_new_review_visibility": "Проверка и видимость",
+  "solutions_new_review_lead": "Это два независимых свойства статьи, и форма задаёт их по отдельности.",
+  "solutions_form_review_status": "Статус проверки",
+  "solutions_form_approve_admin": "Одобряет администратор. Только одобренную статью можно опубликовать.",
+  "solutions_new_customer_visibility": "Видимость для клиентов",
+  "solutions_new_internal": "Внутренняя",
+  "solutions_new_published": "Опубликована",
+  "solutions_edit_title": "Редактирование статьи",
+  "solutions_edit_used_on": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "используется в {shown} обращении",
+        "countPlural=few": "используется в {shown} обращениях",
+        "countPlural=many": "используется в {shown} обращениях",
+        "countPlural=other": "используется в {shown} обращения"
+      }
+    }
+  ],
+  "solutions_edit_save": "Сохранить изменения",
+  "solutions_edit_notice_tickets": "Статья опубликована: всё, что вы здесь сохраните, клиенты увидят в портале, а сотрудникам это будет предлагаться в обращениях.",
+  "solutions_edit_notice": "Статья опубликована: всё, что вы здесь сохраните, клиенты увидят в портале.",
+  "solutions_edit_answer_hint": "Текст вставляется в ответы как есть.",
+  "solutions_edit_tags_lead": "Клиенты не видят названий тегов, но статьи с общим тегом показываются в портале рядом.",
+  "solutions_edit_locked": "Опубликованную статью нельзя вернуть на предыдущий этап. Сначала снимите её с публикации.",
+  "solutions_edit_approve_hint": "Одобрение не публикует статью. Для этого на странице статьи есть отдельная кнопка."
+}

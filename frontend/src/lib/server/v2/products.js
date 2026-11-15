@@ -34,6 +34,7 @@
  *   is still listed rather than deleted.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import { viewerIsAdmin } from './organization.js';
 
 /**
@@ -42,20 +43,90 @@ import { viewerIsAdmin } from './organization.js';
  * that could 400 on an unknown code. Kept in this order (org default first).
  */
 export const CURRENCY_CHOICES = [
-  { code: 'USD', label: 'USD, Dollar' },
-  { code: 'EUR', label: 'EUR, Euro' },
-  { code: 'GBP', label: 'GBP, Pound' },
-  { code: 'INR', label: 'INR, Rupee' },
-  { code: 'CAD', label: 'CAD, Dollar' },
-  { code: 'AUD', label: 'AUD, Dollar' },
-  { code: 'JPY', label: 'JPY, Yen' },
-  { code: 'CNY', label: 'CNY, Yuan' },
-  { code: 'CHF', label: 'CHF, Franc' },
-  { code: 'SGD', label: 'SGD, Dollar' },
-  { code: 'AED', label: 'AED, Dirham' },
-  { code: 'BRL', label: 'BRL, Real' },
-  { code: 'MXN', label: 'MXN, Peso' },
-  { code: 'ZAR', label: 'ZAR, Rand' }
+  {
+    code: 'USD',
+    get label() {
+      return m.invoices_currency_usd();
+    }
+  },
+  {
+    code: 'EUR',
+    get label() {
+      return m.invoices_currency_eur();
+    }
+  },
+  {
+    code: 'GBP',
+    get label() {
+      return m.invoices_currency_gbp();
+    }
+  },
+  {
+    code: 'INR',
+    get label() {
+      return m.invoices_currency_inr();
+    }
+  },
+  {
+    code: 'CAD',
+    get label() {
+      return m.invoices_currency_cad();
+    }
+  },
+  {
+    code: 'AUD',
+    get label() {
+      return m.invoices_currency_aud();
+    }
+  },
+  {
+    code: 'JPY',
+    get label() {
+      return m.invoices_currency_jpy();
+    }
+  },
+  {
+    code: 'CNY',
+    get label() {
+      return m.invoices_currency_cny();
+    }
+  },
+  {
+    code: 'CHF',
+    get label() {
+      return m.invoices_currency_chf();
+    }
+  },
+  {
+    code: 'SGD',
+    get label() {
+      return m.invoices_currency_sgd();
+    }
+  },
+  {
+    code: 'AED',
+    get label() {
+      return m.invoices_currency_aed();
+    }
+  },
+  {
+    code: 'BRL',
+    get label() {
+      return m.invoices_currency_brl();
+    }
+  },
+  {
+    code: 'MXN',
+    get label() {
+      return m.invoices_currency_mxn();
+    }
+  },
+  {
+    code: 'ZAR',
+    get label() {
+      return m.invoices_currency_zar();
+    }
+  }
 ];
 
 const CURRENCY_CODES = new Set(CURRENCY_CHOICES.map((c) => c.code));
@@ -76,11 +147,14 @@ function toProduct(p) {
     description: p.description ?? '',
     price: Number(p.price) || 0,
     currency: p.currency ?? null,
-    category: (p.category && String(p.category).trim()) || 'Uncategorised',
+    category: (p.category && String(p.category).trim()) || m.invoices_products_uncategorised(),
     is_active: !!p.is_active,
     used_on: typeof p.used_on === 'number' ? p.used_on : 0
   };
 }
+
+/** Plain objects with the labels resolved for this request's locale. */
+const currencyChoices = () => CURRENCY_CHOICES.map(({ code, label }) => ({ code, label }));
 
 /**
  * Header totals over the whole catalogue (not one page). `categories` counts
@@ -124,7 +198,7 @@ export async function listProducts({ cookies }) {
  * @param {{ cookies: import('@sveltejs/kit').Cookies }} event
  */
 export function getNewProductOptions({ cookies }) {
-  return { can_manage: viewerIsAdmin(cookies), currencies: CURRENCY_CHOICES };
+  return { can_manage: viewerIsAdmin(cookies), currencies: currencyChoices() };
 }
 
 /**
@@ -141,7 +215,7 @@ export async function getProductForEdit({ cookies }, id) {
   const p = toProduct(raw);
   return {
     can_edit: true,
-    currencies: CURRENCY_CHOICES,
+    currencies: currencyChoices(),
     product: {
       id: p.id,
       name: p.name,
@@ -149,7 +223,7 @@ export async function getProductForEdit({ cookies }, id) {
       description: p.description,
       price: p.price,
       currency: p.currency,
-      category: p.category === 'Uncategorised' ? '' : p.category,
+      category: p.category === m.invoices_products_uncategorised() ? '' : p.category,
       is_active: p.is_active,
       used_on: p.used_on
     }

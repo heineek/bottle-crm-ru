@@ -21,6 +21,7 @@
     Menu
   } from '@lucide/svelte';
   import { tabBar, fabAction } from '#lib/v2/nav.js';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: { counts: Record<string, number>, org: { name: string, terminology?: Record<string, string> | null }, is_organization_admin: boolean, modules: import('#lib/v2/modules.js').ModuleRow[] | null, customObjects: any }, children: import('svelte').Snippet }} */
   let { data, children } = $props();
@@ -85,7 +86,7 @@
         class="v2-btn v2-btn-quiet"
         type="button"
         onclick={() => (menuOpen = true)}
-        aria-label="Open menu"
+        aria-label={m.app_layout_open_menu()}
         aria-expanded={menuOpen}
       >
         <Menu />
@@ -97,7 +98,7 @@
         type="button"
         style="margin-left:auto"
         onclick={() => (paletteOpen = true)}
-        aria-label="Search"
+        aria-label={m.common_search()}
       >
         <Search />
       </button>
@@ -105,7 +106,7 @@
 
     {@render children()}
 
-    <nav class="v2-tabbar" aria-label="Sections">
+    <nav class="v2-tabbar" aria-label={m.app_layout_sections_aria()}>
       {#each tabs as tab (tab.href)}
         <a
           href={resolve(asInternalPath(tab.href))}
@@ -141,7 +142,7 @@
         class="v2-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation"
+        aria-label={m.app_layout_navigation_aria()}
         tabindex="-1"
         use:autofocus
         onkeydown={(e) => {

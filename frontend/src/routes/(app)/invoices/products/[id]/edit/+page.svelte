@@ -14,6 +14,8 @@
   import { enhance } from '$app/forms';
   import { ChevronRight, Lock, Trash2 } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
@@ -24,11 +26,11 @@
   let confirming = $state(false);
 </script>
 
-<PageHeader title="Edit product" record center width="62ch">
+<PageHeader title={m.invoices_products_edit_page_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('invoices/products')}>Products</a>
+    <a href={resolve('invoices/products')}>{m.invoices_products_title()}</a>
     <ChevronRight size={12} />
-    <span>{data.product?.name ?? 'Edit'}</span>
+    <span>{data.product?.name ?? m.common_edit()}</span>
   {/snippet}
 </PageHeader>
 
@@ -38,14 +40,14 @@
       <div class="v2-next" role="note">
         <Lock size={17} style="flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">Admins only</div>
+          <div style="font-weight:600">{m.common_admins_only()}</div>
           <div class="v2-sub" style="margin-top:2px">
-            The product catalogue is shared across the org, so only an administrator can change it.
+            {m.invoices_products_change_admin_note()}
           </div>
         </div>
       </div>
       <a class="v2-btn" href={resolve('invoices/products')} style="margin-top:16px"
-        >Back to products</a
+        >{m.invoices_products_back()}</a
       >
     </div>
   {:else}
@@ -63,13 +65,13 @@
       {/if}
 
       <label class="v2-field">
-        <span class="v2-label">Name</span>
+        <span class="v2-label">{m.common_name()}</span>
         <input class="v2-input" name="name" required maxlength="255" value={values.name ?? ''} />
       </label>
 
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <label class="v2-field" style="flex:2;min-width:180px">
-          <span class="v2-label">List price</span>
+          <span class="v2-label">{m.invoices_products_list_price()}</span>
           <input
             class="v2-input"
             name="price"
@@ -81,7 +83,7 @@
           />
         </label>
         <label class="v2-field" style="flex:1;min-width:130px">
-          <span class="v2-label">Currency</span>
+          <span class="v2-label">{m.invoices_currency()}</span>
           <select class="v2-input" name="currency" value={values.currency ?? 'USD'}>
             {#each data.currencies as c (c.code)}
               <option value={c.code}>{c.label}</option>
@@ -92,41 +94,42 @@
 
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <label class="v2-field" style="flex:1;min-width:160px">
-          <span class="v2-label">Category</span>
+          <span class="v2-label">{m.invoices_products_category()}</span>
           <input class="v2-input" name="category" maxlength="100" value={values.category ?? ''} />
         </label>
         <label class="v2-field" style="flex:1;min-width:160px">
-          <span class="v2-label">SKU</span>
+          <span class="v2-label">{m.invoices_products_sku()}</span>
           <input class="v2-input" name="sku" maxlength="100" value={values.sku ?? ''} />
         </label>
       </div>
 
       <label class="v2-field">
-        <span class="v2-label">Availability</span>
+        <span class="v2-label">{m.invoices_products_availability()}</span>
         <select
           class="v2-input"
           name="is_active"
           value={values.is_active === false ? 'false' : 'true'}
         >
-          <option value="true">Sellable, appears in the line-item picker</option>
-          <option value="false">Retired, kept for history, hidden from the picker</option>
+          <option value="true">{m.invoices_products_sellable_option()}</option>
+          <option value="false">{m.invoices_products_retired_option()}</option>
         </select>
         {#if invoicesOn && usedOn > 0}
           <span class="v2-sub" style="font-size:11.5px">
-            On <span class="v2-num">{usedOn}</span>
-            {usedOn === 1 ? 'invoice' : 'invoices'} already. Retiring keeps those intact.
+            {#each messageParts(m.invoices_products_used_on_already( { count: usedOn, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+                  class="v2-num">{usedOn}</span
+                >{:else}{p.text}{/if}{/each}
           </span>
         {/if}
       </label>
 
       <label class="v2-field">
-        <span class="v2-label">Description</span>
+        <span class="v2-label">{m.common_description()}</span>
         <textarea class="v2-input" name="description" rows="3">{values.description ?? ''}</textarea>
       </label>
 
       <div style="display:flex;gap:9px;margin-top:6px;align-items:center">
-        <button class="v2-btn v2-btn-primary" type="submit">Save changes</button>
-        <a class="v2-btn" href={resolve('invoices/products')}>Cancel</a>
+        <button class="v2-btn v2-btn-primary" type="submit">{m.invoices_save_changes()}</button>
+        <a class="v2-btn" href={resolve('invoices/products')}>{m.common_cancel()}</a>
       </div>
     </form>
 
@@ -138,13 +141,14 @@
       <div class="danger">
         {#if !confirming}
           <button class="v2-btn danger-btn" type="button" onclick={() => (confirming = true)}>
-            <Trash2 size={14} /> Delete permanently
+            <Trash2 size={14} />
+            {m.invoices_products_delete_permanently()}
           </button>
           {#if invoicesOn}
             <span class="v2-sub" style="font-size:11.5px">
               {usedOn > 0
-                ? 'This product is on invoices already. Prefer Retire above.'
-                : 'Never invoiced, so it is safe to remove.'}
+                ? m.invoices_products_delete_used_hint()
+                : m.invoices_products_delete_unused_hint()}
             </span>
           {/if}
         {:else}
@@ -154,10 +158,13 @@
             use:enhance
             style="display:flex;gap:8px;align-items:center"
           >
-            <span class="v2-sub" style="font-size:12px">Delete this product for good?</span>
-            <button class="v2-btn danger-btn" type="submit"><Trash2 size={14} /> Delete</button>
+            <span class="v2-sub" style="font-size:12px">{m.invoices_products_delete_confirm()}</span
+            >
+            <button class="v2-btn danger-btn" type="submit"
+              ><Trash2 size={14} /> {m.common_delete()}</button
+            >
             <button class="v2-btn" type="button" onclick={() => (confirming = false)}
-              >Keep it</button
+              >{m.invoices_keep_it()}</button
             >
           </form>
         {/if}

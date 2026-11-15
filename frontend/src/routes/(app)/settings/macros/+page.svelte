@@ -34,7 +34,14 @@
   import SettingsFormPanel from '#lib/v2/components/SettingsFormPanel.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count, relativeDays } from '#lib/v2/format.js';
-  import { MACRO_SCOPE_LABEL, CASE_PRIORITIES } from '#lib/v2/enums.js';
+  import {
+    MACRO_SCOPE_LABEL,
+    CASE_PRIORITIES,
+    CASE_PRIORITY_LABEL,
+    CASE_STATUS_LABEL
+  } from '#lib/v2/enums.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { Plus, TriangleAlert } from '@lucide/svelte';
 
   /** @type {{ data: any, form: any }} */
@@ -56,9 +63,9 @@
     scope = 'personal';
   }
 
-  function openEdit(m) {
-    editing = m;
-    scope = m.scope;
+  function openEdit(mac) {
+    editing = mac;
+    scope = mac.scope;
   }
 
   /**
@@ -70,14 +77,17 @@
    * (403 on someone else's org macro, 404 on someone else's personal one)
    * and would refuse the write even if this returned true by mistake.
    */
-  function canWrite(m) {
-    return m.scope === 'org' ? data.can_create_org : m.owner?.id === data.my_profile_id;
+  function canWrite(mac) {
+    return mac.scope === 'org' ? data.can_create_org : mac.owner?.id === data.my_profile_id;
   }
 
   let totals = $derived(data.totals);
+  let subParts = $derived(
+    messageParts(m.settings_macros_sub({ shared: slot('shared'), yours: slot('yours') }))
+  );
   let byUse = $derived([...data.macros].sort((a, b) => b.usage_count - a.usage_count));
-  let orgMacros = $derived(byUse.filter((m) => m.scope === 'org'));
-  let personalMacros = $derived(byUse.filter((m) => m.scope === 'personal'));
+  let orgMacros = $derived(byUse.filter((mac) => mac.scope === 'org'));
+  let personalMacros = $derived(byUse.filter((mac) => mac.scope === 'personal'));
 
   /**
    * Split a body into text and placeholder segments for rendering.
@@ -91,45 +101,49 @@
     const re = /%[a-zA-Z_][a-zA-Z0-9_]*%/g;
     const out = [];
     let last = 0;
-    let m;
-    while ((m = re.exec(macro.body)) !== null) {
-      if (m.index > last) out.push({ text: macro.body.slice(last, m.index), token: false });
+    let match;
+    while ((match = re.exec(macro.body)) !== null) {
+      if (match.index > last) out.push({ text: macro.body.slice(last, match.index), token: false });
       out.push({
-        text: m[0],
+        text: match[0],
         token: true,
-        known: !macro.unknown_placeholders.includes(m[0])
+        known: !macro.unknown_placeholders.includes(match[0])
       });
-      last = m.index + m[0].length;
+      last = match.index + match[0].length;
     }
     if (last < macro.body.length) out.push({ text: macro.body.slice(last), token: false });
     return out;
   }
 </script>
 
-<PageHeader title="Macros">
+<PageHeader title={m.settings_macros_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(totals.org)}</span> shared ·
-    <span class="v2-num">{count(totals.personal)}</span> yours
+    {#each subParts as p, i (i)}{#if p.key === 'shared'}<span class="v2-num"
+          >{count(totals.org)}</span
+        >{:else if p.key === 'yours'}<span class="v2-num">{count(totals.personal)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if !editing}
-      <button class="v2-btn v2-btn-primary" onclick={openCreate}><Plus />New macro</button>
+      <button class="v2-btn v2-btn-primary" onclick={openCreate}
+        ><Plus />{m.settings_macros_new()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
-    <StatCard label="Shared with everyone" value={count(totals.org)} tone="ink" />
-    <StatCard label="Only yours" value={count(totals.personal)} tone="slate" />
+    <StatCard label={m.settings_macros_stat_shared()} value={count(totals.org)} tone="ink" />
+    <StatCard label={m.settings_macros_stat_yours()} value={count(totals.personal)} tone="slate" />
     <StatCard
-      label="Broken placeholders"
+      label={m.settings_macros_stat_broken()}
       value={count(totals.with_unknown_placeholders)}
       tone={totals.with_unknown_placeholders > 0 ? 'rust' : 'slate'}
-      detail="Sent to customers as typed"
+      detail={m.settings_macros_stat_broken_detail()}
     />
-    <StatCard label="Turned off" value={count(totals.inactive)} tone="slate" />
+    <StatCard label={m.settings_macros_stat_off()} value={count(totals.inactive)} tone="slate" />
   </div>
 </div>
 
@@ -137,10 +151,12 @@
   <div class="v2-pad" style="padding-bottom:32px">
     {#if editing}
       <SettingsFormPanel
-        title={editing === 'new' ? 'New macro' : `Edit ${editing.title}`}
+        title={editing === 'new'
+          ? m.settings_macros_new()
+          : m.settings_macros_edit_title({ title: editing.title })}
         action={editing === 'new' ? '?/create' : '?/update'}
         error={editing === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={editing === 'new' ? 'Add macro' : 'Save macro'}
+        submitLabel={editing === 'new' ? m.settings_macros_add() : m.settings_macros_save()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
@@ -150,7 +166,7 @@
           {/if}
 
           <div class="v2-field">
-            <label for="m-title">Title</label>
+            <label for="m-title">{m.settings_macros_title_label()}</label>
             <input
               id="m-title"
               class="v2-input"
@@ -162,58 +178,56 @@
           </div>
 
           <div class="v2-field">
-            <label for="m-scope">Who sees it</label>
+            <label for="m-scope">{m.settings_macros_scope_label()}</label>
             <select id="m-scope" class="v2-input" name="scope" bind:value={scope}>
-              <option value="personal">Just me</option>
+              <option value="personal">{m.settings_macros_scope_me()}</option>
               {#if data.can_create_org}
-                <option value="org">Everyone in the org</option>
+                <option value="org">{m.settings_macros_scope_org()}</option>
               {/if}
             </select>
             {#if !data.can_create_org}
-              <p class="v2-hint">Only an admin can share a macro with everyone.</p>
+              <p class="v2-hint">{m.settings_macros_scope_hint()}</p>
             {/if}
           </div>
 
           <div class="v2-field v2-sfp-wide">
-            <label for="m-body">Body</label>
+            <label for="m-body">{m.settings_macros_body_label()}</label>
             <textarea id="m-body" class="v2-input" name="body" rows="5"
               >{editing === 'new' ? '' : editing.body}</textarea
             >
             <p class="v2-hint">
-              Placeholders like %customer_name% are substituted when the macro is sent. The seven
-              supported tokens are listed to the right; anything else goes to the customer exactly
-              as typed. Leave it empty for a macro that only changes the ticket.
+              {m.settings_macros_body_hint()}
             </p>
           </div>
 
           <!-- The actions, applied to the ticket right after the reply is
                sent. Blank or nothing selected means "leave it alone". -->
           <div class="v2-field">
-            <label for="m-status">Set status</label>
+            <label for="m-status">{m.settings_macros_set_status()}</label>
             <select id="m-status" class="v2-input" name="set_status">
-              <option value="">No change</option>
+              <option value="">{m.settings_macros_no_change()}</option>
               {#each data.statuses as s (s)}
                 <option value={s} selected={editing !== 'new' && editing.set_status === s}
-                  >{s}</option
+                  >{CASE_STATUS_LABEL[s] ?? s}</option
                 >
               {/each}
             </select>
           </div>
 
           <div class="v2-field">
-            <label for="m-priority">Set priority</label>
+            <label for="m-priority">{m.settings_macros_set_priority()}</label>
             <select id="m-priority" class="v2-input" name="set_priority">
-              <option value="">No change</option>
+              <option value="">{m.settings_macros_no_change()}</option>
               {#each CASE_PRIORITIES as p (p)}
                 <option value={p} selected={editing !== 'new' && editing.set_priority === p}
-                  >{p}</option
+                  >{CASE_PRIORITY_LABEL[p] ?? p}</option
                 >
               {/each}
             </select>
           </div>
 
           <div class="v2-field">
-            <label for="m-assignees">Assign to</label>
+            <label for="m-assignees">{m.settings_macros_assign_label()}</label>
             <select
               id="m-assignees"
               class="v2-input m-multi"
@@ -229,11 +243,11 @@
                 >
               {/each}
             </select>
-            <p class="v2-hint">Replaces whoever the ticket is assigned to.</p>
+            <p class="v2-hint">{m.settings_macros_assign_hint()}</p>
           </div>
 
           <div class="v2-field">
-            <label for="m-tags">Add tags</label>
+            <label for="m-tags">{m.settings_macros_tags_label()}</label>
             <select id="m-tags" class="v2-input m-multi" name="add_tags" multiple size="4">
               {#each editing === 'new' ? data.tags : editing.tag_options as t (t.id)}
                 <option value={t.id} selected={editing !== 'new' && editing.add_tags.includes(t.id)}
@@ -241,7 +255,7 @@
                 >
               {/each}
             </select>
-            <p class="v2-hint">Added to the ticket's own tags.</p>
+            <p class="v2-hint">{m.settings_macros_tags_hint()}</p>
           </div>
         {/snippet}
       </SettingsFormPanel>
@@ -256,27 +270,28 @@
 
     <div class="v2-split-wide">
       <div>
-        <div class="v2-label" style="margin-bottom:10px">Shared with everyone</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_macros_stat_shared()}</div>
         <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:24px">
-          {#each orgMacros as m (m.id)}
-            {@render macro(m)}
+          {#each orgMacros as mac (mac.id)}
+            {@render macro(mac)}
           {/each}
         </div>
 
-        <div class="v2-label" style="margin-bottom:10px">Only yours</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_macros_stat_yours()}</div>
         <div style="display:flex;flex-direction:column;gap:9px">
-          {#each personalMacros as m (m.id)}
-            {@render macro(m)}
+          {#each personalMacros as mac (mac.id)}
+            {@render macro(mac)}
           {/each}
         </div>
         <p class="v2-sub" style="font-size:11.5px;margin-top:11px">
-          Personal macros are visible only to you. Nobody else in the organisation, admins included,
-          sees this list.
+          {m.settings_macros_personal_note()}
         </p>
       </div>
 
       <div>
-        <div class="v2-label" style="margin-bottom:10px">Placeholders that work</div>
+        <div class="v2-label" style="margin-bottom:10px">
+          {m.settings_macros_placeholders_heading()}
+        </div>
         <div class="v2-card" style="overflow:hidden">
           {#each data.placeholders as p (p.token)}
             <div class="v2-setting" style="padding:10px 15px">
@@ -288,23 +303,24 @@
           {/each}
         </div>
         <p class="v2-sub" style="font-size:11.5px;margin-top:11px;line-height:1.5">
-          These seven are the whole set. Anything else between percent signs is left exactly as
-          written and goes out that way. The server does not guess, on purpose, so a typo is visible
-          in the composer rather than a blank in the customer's inbox.
+          {m.settings_macros_placeholders_note()}
         </p>
       </div>
     </div>
   </div>
 </div>
 
-{#snippet macro(m)}
-  <div class="v2-card" style="padding:14px 16px;opacity:{m.is_active ? 1 : 0.62}">
+{#snippet macro(mac)}
+  <div class="v2-card" style="padding:14px 16px;opacity:{mac.is_active ? 1 : 0.62}">
     <div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">
-      <b style="font-size:13.5px">{m.title}</b>
-      {#if !m.is_active}<Pill tone="slate">Off</Pill>{/if}
-      {#if m.unknown_placeholders.length}<Pill tone="rust">Broken placeholder</Pill>{/if}
+      <b style="font-size:13.5px">{mac.title}</b>
+      {#if !mac.is_active}<Pill tone="slate">{m.settings_macros_off()}</Pill>{/if}
+      {#if mac.unknown_placeholders.length}<Pill tone="rust">{m.settings_macros_broken()}</Pill
+        >{/if}
       <span class="v2-sub" style="font-size:11.5px;margin-left:auto">
-        used <span class="v2-num">{count(m.usage_count)}</span> times · {relativeDays(m.updated_at)}
+        {#each messageParts(m.settings_macros_used( { count: mac.usage_count, shown: slot('shown'), when: relativeDays(mac.updated_at) } )) as p, i (i)}{#if p.key}<span
+              class="v2-num">{count(mac.usage_count)}</span
+            >{:else}{p.text}{/if}{/each}
       </span>
     </div>
 
@@ -318,42 +334,47 @@
       show exactly what the customer receives.
     -->
     <!-- prettier-ignore -->
-    <p class="v2-macro-body">{#each segments(m) as seg, i (i)}{#if seg.token}<span class="v2-token" class:v2-token-bad={!seg.known}>{seg.text}</span>{:else}{seg.text}{/if}{/each}</p>
+    <p class="v2-macro-body">{#each segments(mac) as seg, i (i)}{#if seg.token}<span class="v2-token" class:v2-token-bad={!seg.known}>{seg.text}</span>{:else}{seg.text}{/if}{/each}</p>
 
-    {#if m.unknown_placeholders.length}
+    {#if mac.unknown_placeholders.length}
       <div class="v2-macro-flag">
         <TriangleAlert size={14} style="color:var(--v2-rust);flex:none" />
         <span>
-          {m.unknown_placeholders.join(' and ')}
-          {m.unknown_placeholders.length === 1 ? 'is not a placeholder' : 'are not placeholders'},
-          {m.unknown_placeholders.length === 1 ? 'it goes' : 'they go'} to the customer exactly as written.
-          {#if m.usage_count > 0}
-            This macro has been sent
-            <span class="v2-num">{count(m.usage_count)}</span> times.
+          {(mac.unknown_placeholders.length === 1
+            ? m.settings_macros_unknown_one
+            : m.settings_macros_unknown_many)({
+            tokens: mac.unknown_placeholders.join(m.settings_macros_and())
+          })}
+          {#if mac.usage_count > 0}
+            {#each messageParts(m.settings_macros_sent_times( { count: mac.usage_count, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                  class="v2-num">{count(mac.usage_count)}</span
+                >{:else}{p.text}{/if}{/each}
           {/if}
         </span>
       </div>
     {/if}
 
-    {#if m.chips.length}
+    {#if mac.chips.length}
       <div class="v2-macro-acts">
-        <span class="v2-sub">On send:</span>
-        {#each m.chips as chip (chip.key)}
+        <span class="v2-sub">{m.settings_macros_on_send()}</span>
+        {#each mac.chips as chip (chip.key)}
           <Pill tone="slate">{chip.label}</Pill>
         {/each}
       </div>
     {/if}
 
-    {#if m.owner}
+    {#if mac.owner}
       <div class="v2-sub" style="font-size:11px;margin-top:8px">
-        {MACRO_SCOPE_LABEL[m.scope]} · {m.owner.name}
+        {MACRO_SCOPE_LABEL[mac.scope]} · {mac.owner.name}
       </div>
     {/if}
 
-    {#if canWrite(m)}
+    {#if canWrite(mac)}
       <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:10px">
-        <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEdit(m)}>Edit</button>
-        {#if !m.is_active}
+        <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEdit(mac)}
+          >{m.settings_macros_edit()}</button
+        >
+        {#if !mac.is_active}
           <!-- Turning a macro back on restores nothing that was destroyed, so
                unlike "Turn off"/"Delete" this doesn't need the two-click
                confirm. A plain enhanced form posting just the id keeps the
@@ -366,19 +387,19 @@
                admin-only for org / owner-only for personal server-side, so
                this can never write a row `canWrite` above disagrees with. -->
           <form method="POST" action="?/activate" use:enhance>
-            <input type="hidden" name="id" value={m.id} />
-            <button class="v2-btn v2-btn-sm" type="submit">Turn on</button>
+            <input type="hidden" name="id" value={mac.id} />
+            <button class="v2-btn v2-btn-sm" type="submit">{m.settings_macros_turn_on()}</button>
           </form>
-        {:else if m.scope === 'org'}
+        {:else if mac.scope === 'org'}
           <!-- `MacroDetailView.delete` soft-deletes an org macro: it flips
                `is_active` and leaves the row (and its usage count) in place.
                "Turn off", not "Delete", says what actually happens. -->
           <ConfirmAction
             action="?/delete"
-            label="Turn off"
-            confirmLabel="Turn off"
-            explain="Turns it off for everyone. It stops appearing in the picker."
-            hidden={{ id: m.id }}
+            label={m.settings_macros_turn_off()}
+            confirmLabel={m.settings_macros_turn_off()}
+            explain={m.settings_macros_turn_off_explain()}
+            hidden={{ id: mac.id }}
           />
         {:else}
           <!-- A personal macro is hard-deleted, not soft-deactivated: this
@@ -386,10 +407,10 @@
                nothing left to turn back on. -->
           <ConfirmAction
             action="?/delete"
-            label="Delete"
-            confirmLabel="Delete"
-            explain="Deletes it permanently."
-            hidden={{ id: m.id }}
+            label={m.settings_macros_delete()}
+            confirmLabel={m.settings_macros_delete()}
+            explain={m.settings_macros_delete_explain()}
+            hidden={{ id: mac.id }}
           />
         {/if}
       </div>

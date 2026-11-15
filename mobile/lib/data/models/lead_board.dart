@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 
 /// The lead pipeline board: leads grouped by the stages of one `LeadPipeline`.
 ///
@@ -142,7 +143,7 @@ class LeadBoardLane {
     final cards = _cards(json?['leads']);
     return LeadBoardLane(
       id: '',
-      name: 'No stage',
+      name: appL10n.appNoStage,
       count: json?['lead_count'] as int? ?? cards.length,
       cards: cards,
       isUnstaged: true,

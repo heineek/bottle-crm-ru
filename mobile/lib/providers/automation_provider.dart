@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/automation.dart';
 import '../services/api_service.dart';
@@ -12,7 +13,9 @@ final automationCatalogueProvider =
       final response = await ApiService().get(ApiConfig.automationCatalogue);
       final data = response.data;
       if (!response.success || data == null) {
-        throw Exception(response.message ?? 'Could not load the catalogue');
+        throw Exception(
+          response.message ?? appL10n.appMsgCouldNotLoadTheCatalogue,
+        );
       }
       return AutomationCatalogue.fromJson(data);
     }, retry: (_, _) => null);
@@ -24,7 +27,7 @@ class AutomationNotOffered implements Exception {
   const AutomationNotOffered();
 
   @override
-  String toString() => 'Automation rules are not available here.';
+  String toString() => appL10n.appMsgAutomationRulesAreNotAvailableHere;
 }
 
 class AutomationRulesNotifier extends AsyncNotifier<AutomationRulesAnswer> {
@@ -39,7 +42,7 @@ class AutomationRulesNotifier extends AsyncNotifier<AutomationRulesAnswer> {
     if (response.statusCode == 404) throw const AutomationNotOffered();
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load the rules');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotLoadTheRules);
     }
     return AutomationRulesAnswer.fromJson(data);
   }
@@ -55,8 +58,8 @@ class AutomationRulesNotifier extends AsyncNotifier<AutomationRulesAnswer> {
   /// success, else the message to show.
   Future<String?> move(String id, String direction) async {
     final held = shownAutomationRules(state);
-    if (held == null) return 'The rules are still loading.';
-    if (_moving) return 'A move is already in progress.';
+    if (held == null) return appL10n.appMsgTheRulesAreStillLoading;
+    if (_moving) return appL10n.appMsgAMoveIsAlreadyInProgress;
     final step = switch (direction) {
       'up' => -1,
       'down' => 1,
@@ -65,9 +68,11 @@ class AutomationRulesNotifier extends AsyncNotifier<AutomationRulesAnswer> {
     if (step == null) return 'Cannot move a rule $direction.';
     final ids = held.rules.map((r) => r.id).toList();
     final at = ids.indexOf(id);
-    if (at < 0) return 'That rule is no longer in the list.';
+    if (at < 0) return appL10n.appMsgThatRuleIsNoLongerInThe;
     final to = at + step;
-    if (to < 0 || to >= ids.length) return 'That rule cannot move further.';
+    if (to < 0 || to >= ids.length) {
+      return appL10n.appMsgThatRuleCannotMoveFurther;
+    }
     ids.insert(to, ids.removeAt(at));
     _moving = true;
     try {
@@ -75,7 +80,7 @@ class AutomationRulesNotifier extends AsyncNotifier<AutomationRulesAnswer> {
         'ids': ids,
       });
       if (!response.success) {
-        return response.message ?? 'Could not change the order.';
+        return response.message ?? appL10n.appMsgCouldNotChangeTheOrder;
       }
       await refresh();
       return null;
@@ -108,7 +113,7 @@ final automationRuleProvider = FutureProvider.autoDispose
       final response = await ApiService().get(ApiConfig.automationRule(id));
       final data = response.data;
       if (!response.success || data == null) {
-        throw Exception(response.message ?? 'Could not load the rule');
+        throw Exception(response.message ?? appL10n.appMsgCouldNotLoadTheRule);
       }
       return AutomationRule.fromJson(data);
     }, retry: (_, _) => null);
@@ -121,7 +126,7 @@ final automationRunsProvider = FutureProvider.autoDispose
       );
       final data = response.data;
       if (!response.success || data == null) {
-        throw Exception(response.message ?? 'Could not load the runs');
+        throw Exception(response.message ?? appL10n.appMsgCouldNotLoadTheRuns);
       }
       return RunPage.fromJson(data, offset: key.offset);
     }, retry: (_, _) => null);
@@ -153,12 +158,16 @@ class AutomationApi {
     final r = await _api.patch(ApiConfig.automationRule(id), {
       'is_active': false,
     });
-    return r.success ? null : (r.message ?? 'Could not switch the rule off.');
+    return r.success
+        ? null
+        : (r.message ?? appL10n.appMsgCouldNotSwitchTheRuleOff);
   }
 
   Future<String?> delete(String id) async {
     final r = await _api.delete(ApiConfig.automationRule(id));
-    return r.success ? null : (r.message ?? 'Could not delete the rule.');
+    return r.success
+        ? null
+        : (r.message ?? appL10n.appMsgCouldNotDeleteTheRule);
   }
 
   Future<({List<RunStep> steps, String? error})> tryRule(
@@ -171,14 +180,14 @@ class AutomationApi {
     if (r.statusCode == 404) {
       return (
         steps: <RunStep>[],
-        error: 'That record does not exist, or you cannot open it.',
+        error: appL10n.appMsgThatRecordDoesNotExistOrYou,
       );
     }
     final data = r.data;
     if (!r.success || data == null) {
       return (
         steps: <RunStep>[],
-        error: r.message ?? 'Could not try the rule.',
+        error: r.message ?? appL10n.appMsgCouldNotTryTheRule,
       );
     }
     final raw = data['steps'];

@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/approval_rule.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
@@ -42,7 +43,10 @@ class ApprovalRulesScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Rule added' : 'Rule saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsApprovalRulesAdded
+                  : context.l10n.settingsApprovalRulesSaved),
         ),
       ),
     );
@@ -57,9 +61,13 @@ class ApprovalRulesScreen extends ConsumerWidget {
         .read(approvalRulesProvider.notifier)
         .deactivateRule(rule.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Rule turned off')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error ?? context.l10n.settingsApprovalRulesTurnedOffToast,
+        ),
+      ),
+    );
   }
 
   Future<void> _turnOn(
@@ -71,9 +79,11 @@ class ApprovalRulesScreen extends ConsumerWidget {
         .read(approvalRulesProvider.notifier)
         .activateRule(rule.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Rule turned on')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsApprovalRulesTurnedOnToast),
+      ),
+    );
   }
 
   /// Delete, or turn off. Which one is the server's decision, so the dialog
@@ -86,17 +96,17 @@ class ApprovalRulesScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${rule.name}?'),
-        content: const Text(approvalRuleDeleteExplanation),
+        title: Text(context.l10n.settingsApprovalRulesDeleteTitle(rule.name)),
+        content: Text(approvalRuleDeleteExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsApprovalRulesKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -123,7 +133,7 @@ class ApprovalRulesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Approval rules'),
+        title: Text(context.l10n.settingsApprovalRulesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -131,7 +141,7 @@ class ApprovalRulesScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New rule',
+              tooltip: context.l10n.settingsApprovalRulesNewRule,
               onPressed: () => _edit(context, ref, null),
             ),
         ],
@@ -190,22 +200,26 @@ class _Summary extends StatelessWidget {
             spacing: 20,
             runSpacing: 10,
             children: [
-              _Stat(value: '${state.active}', label: 'active'),
+              _Stat(
+                value: '${state.active}',
+                label: context.l10n.settingsApprovalRulesStatActive,
+              ),
               _Stat(
                 value: '${state.count - state.active}',
-                label: 'turned off',
+                label: context.l10n.settingsApprovalRulesStatTurnedOff,
               ),
-              _Stat(value: '${state.pending}', label: 'waiting on them'),
+              _Stat(
+                value: '${state.pending}',
+                label: context.l10n.settingsApprovalRulesStatWaiting,
+              ),
             ],
           ),
           if (state.stranding > 0) ...[
             const SizedBox(height: 14),
             _Warning(
-              text: state.stranding == 1
-                  ? 'One active rule can be cleared by nobody. What it gates '
-                        'cannot be closed by anyone.'
-                  : '${state.stranding} active rules can be cleared by nobody. '
-                        'What they gate cannot be closed by anyone.',
+              text: context.l10n.settingsApprovalRulesStranding(
+                state.stranding,
+              ),
             ),
           ],
         ],
@@ -319,14 +333,14 @@ class _RuleRow extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Gates ${rule.matchSentence}',
+            context.l10n.settingsApprovalRulesGates(rule.matchSentence),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 2),
           Text(
-            'Cleared by ${rule.approverSentence}',
+            context.l10n.settingsApprovalRulesClearedBy(rule.approverSentence),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -337,17 +351,25 @@ class _RuleRow extends StatelessWidget {
             runSpacing: 6,
             children: [
               if (!rule.isActive)
-                StatusBadge(label: 'Turned off', color: AppColors.gray500),
+                StatusBadge(
+                  label: context.l10n.settingsApprovalRulesBadgeTurnedOff,
+                  color: AppColors.gray500,
+                ),
               if (rule.clearableByNobody)
                 StatusBadge(
-                  label: 'Nobody can clear',
+                  label: context.l10n.settingsApprovalRulesBadgeNobody,
                   color: AppColors.danger600,
                 ),
               if (beatenBy != null)
-                StatusBadge(label: 'Never runs', color: AppColors.danger600),
+                StatusBadge(
+                  label: context.l10n.settingsApprovalRulesBadgeNeverRuns,
+                  color: AppColors.danger600,
+                ),
               if (rule.pendingCount > 0)
                 StatusBadge(
-                  label: '${rule.pendingCount} waiting',
+                  label: context.l10n.settingsApprovalRulesBadgeWaiting(
+                    rule.pendingCount,
+                  ),
                   color: AppColors.gray500,
                 ),
             ],
@@ -355,9 +377,7 @@ class _RuleRow extends StatelessWidget {
           if (rule.clearableByNobody) ...[
             const SizedBox(height: 8),
             Text(
-              'This organization has admins and members. There is no manager '
-              'role. With no named approvers, the first ticket this gates '
-              'cannot be closed by anyone. Name approvers, or set it to admin.',
+              context.l10n.settingsApprovalRulesNobodyFlag,
               style: AppTypography.caption.copyWith(
                 color: AppColors.warning600,
               ),
@@ -366,9 +386,7 @@ class _RuleRow extends StatelessWidget {
           if (beatenBy != null) ...[
             const SizedBox(height: 8),
             Text(
-              '${beatenBy!.name} gates exactly the same tickets and was written '
-              'later. One rule gates a close, the most specific match, and the '
-              'newest wins between equals, so this one never runs.',
+              context.l10n.settingsApprovalRulesShadowedFlag(beatenBy!.name),
               style: AppTypography.caption.copyWith(
                 color: AppColors.warning600,
               ),
@@ -384,7 +402,7 @@ class _RuleRow extends StatelessWidget {
                   height: 40,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(context.l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -392,11 +410,13 @@ class _RuleRow extends StatelessWidget {
                   child: rule.isActive
                       ? OutlinedButton(
                           onPressed: onTurnOff,
-                          child: const Text('Turn off'),
+                          child: Text(
+                            context.l10n.settingsApprovalRulesTurnOff,
+                          ),
                         )
                       : OutlinedButton(
                           onPressed: onTurnOn,
-                          child: const Text('Turn on'),
+                          child: Text(context.l10n.settingsApprovalRulesTurnOn),
                         ),
                 ),
                 SizedBox(
@@ -406,7 +426,7 @@ class _RuleRow extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger600,
                     ),
-                    child: const Text('Delete'),
+                    child: Text(context.l10n.commonDelete),
                   ),
                 ),
               ],
@@ -426,9 +446,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
-        'A ticket is gated by one rule, the most specific that matches it. The '
-        'others are fallbacks for the tickets it misses. Whoever asked for the '
-        'close can never be the one who clears it, whatever a rule says.',
+        context.l10n.settingsApprovalRulesFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -455,17 +473,15 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No approval rules',
+              context.l10n.settingsApprovalRulesEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'Tickets close without anyone signing off. Add a rule to '
-                        'gate the closes that need a second pair of eyes.'
-                  : 'Tickets close without anyone signing off. An '
-                        'administrator sets these up.',
+                  ? context.l10n.settingsApprovalRulesEmptyAdmin
+                  : context.l10n.settingsApprovalRulesEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -498,12 +514,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the approval rules',
+              context.l10n.settingsApprovalRulesLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsApprovalRulesTryAgain),
+            ),
           ],
         ),
       ),

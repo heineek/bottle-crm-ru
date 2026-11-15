@@ -1,0 +1,9 @@
+# `flutter gen-l10n` (also run by `flutter pub get`, since pubspec sets
+# `generate: true`). English is the template: every key starts there, and
+# the "message catalogs" group in test/unit/app_language_test.dart fails when
+# another locale misses one.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

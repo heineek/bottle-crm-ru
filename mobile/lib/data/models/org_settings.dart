@@ -15,7 +15,7 @@
 /// allow-list.
 library;
 
-import 'countries.dart';
+import '../../l10n/l10n.dart';
 
 /// Text, select and number fields the edit form may submit.
 ///
@@ -37,6 +37,7 @@ const List<String> editableOrgFields = [
   'default_currency',
   'default_country',
   'timezone',
+  'default_language',
   // Invoice and estimate numbering (#802).
   'invoice_number_prefix',
   'estimate_number_prefix',
@@ -71,6 +72,7 @@ class OrgSettings {
     this.defaultCountry = '',
     this.currencySymbol = '\$',
     this.timezone = 'UTC',
+    this.defaultLanguage = 'en',
     this.csatEnabled = true,
     this.autoCloseChildren = false,
     this.vertical = '',
@@ -105,6 +107,9 @@ class OrgSettings {
   final String defaultCountry;
   final String currencySymbol;
   final String timezone;
+
+  /// For members who chose no language, and for mail and PDFs to customers.
+  final String defaultLanguage;
 
   /// Org-level kill switch. False short-circuits the post-close signal before
   /// any survey email is sent, org-wide, with no per-team exception.
@@ -152,6 +157,7 @@ class OrgSettings {
     defaultCountry: _text(json['default_country']),
     currencySymbol: json['currency_symbol']?.toString() ?? '\$',
     timezone: json['timezone']?.toString() ?? 'UTC',
+    defaultLanguage: json['default_language']?.toString() ?? 'en',
     csatEnabled: json['csat_enabled'] as bool? ?? true,
     autoCloseChildren:
         json['auto_close_children_on_parent_close'] as bool? ?? false,
@@ -250,6 +256,7 @@ Map<String, dynamic> orgSettingsPayload({
   required String defaultCurrency,
   required String defaultCountry,
   required String timezone,
+  String defaultLanguage = 'en',
   required bool csatEnabled,
   required bool autoCloseChildren,
   required String invoiceNumberPrefix,
@@ -272,6 +279,7 @@ Map<String, dynamic> orgSettingsPayload({
   'default_currency': defaultCurrency.trim(),
   'default_country': defaultCountry.trim(),
   'timezone': timezone.trim(),
+  'default_language': defaultLanguage,
   'csat_enabled': csatEnabled,
   'auto_close_children_on_parent_close': autoCloseChildren,
   'invoice_number_prefix': invoiceNumberPrefix.trim(),
@@ -290,11 +298,11 @@ String? orgSettingsProblem({required String email, required String website}) {
   final mail = email.trim();
   if (mail.isNotEmpty &&
       !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(mail)) {
-    return 'That does not look like an email address.';
+    return appL10n.appOrgValidateEmail;
   }
   final site = website.trim();
   if (site.isNotEmpty && !RegExp(r'^https?://.+\..+').hasMatch(site)) {
-    return 'Include the full website address, starting with http:// or https://.';
+    return appL10n.appOrgValidateWebsite;
   }
   return null;
 }
@@ -303,11 +311,11 @@ String? orgSettingsProblem({required String email, required String website}) {
 typedef PickerOption = ({String value, String label});
 
 /// `Org.NUMBER_DATE_PARTS`, labelled as the web's org form labels them.
-const List<PickerOption> numberDatePartOptions = [
-  (value: 'NONE', label: 'No date, one running count'),
-  (value: 'YEAR', label: 'Year, count restarts each year'),
-  (value: 'MONTH', label: 'Year and month, count restarts each month'),
-  (value: 'DAY', label: 'Full date, count restarts each day'),
+List<PickerOption> get numberDatePartOptions => [
+  (value: 'NONE', label: appL10n.appNumberDatePartNone),
+  (value: 'YEAR', label: appL10n.appNumberDatePartYear),
+  (value: 'MONTH', label: appL10n.appNumberDatePartMonth),
+  (value: 'DAY', label: appL10n.appNumberDatePartDay),
 ];
 
 /// How many digits of `YYYYMMDD` each date part keeps.
@@ -360,25 +368,18 @@ String? numberingProblem({
 }) {
   if (!_numberPrefix.hasMatch(invoicePrefix.trim()) ||
       !_numberPrefix.hasMatch(estimatePrefix.trim())) {
-    return 'A number prefix can use letters, numbers, hyphens and underscores '
-        'only.';
+    return appL10n.appNumberingValidatePrefix;
   }
   final width = int.tryParse(padding.trim());
   if (width == null || width < 1 || width > 10) {
-    return 'Counter digits must be from 1 to 10.';
+    return appL10n.appNumberingValidatePadding;
   }
   final first = int.tryParse(start.trim());
   if (datePart == 'NONE' && (first == null || first < 1 || first > 999999999)) {
-    return 'Start invoices at a whole number from 1 to 999,999,999.';
+    return appL10n.appNumberingValidateStart;
   }
   return null;
 }
-
-/// The countries the org form offers: every code the backend `COUNTRIES` set
-/// accepts, as the web's org form does, so any stored country has an option.
-final List<PickerOption> orgCountryOptions = [
-  for (final c in kCountries) (value: c.code, label: c.label),
-];
 
 /// [options], guaranteed to contain [current].
 ///
@@ -397,11 +398,8 @@ List<PickerOption> withCurrent(List<PickerOption> options, String current) {
 }
 
 /// What the CSAT switch really does, in the words the screen uses.
-String csatExplanation(bool enabled) => enabled
-    ? 'A survey goes out after a ticket closes. Turning this off stops every '
-          'survey org-wide, with no per-team exception.'
-    : 'No surveys are sent, anywhere in this organization. Nothing on a ticket '
-          'says so, and there is no per-team exception.';
+String csatExplanation(bool enabled) =>
+    enabled ? appL10n.appCsatExplanationOn : appL10n.appCsatExplanationOff;
 
 /// What the cascade switch really does, which is narrower than it looks.
 ///
@@ -413,15 +411,11 @@ String csatExplanation(bool enabled) => enabled
 /// prompt at all: closing a parent there leaves its children open. Saying "it
 /// controls whether children close" would describe neither client.
 String cascadeDefaultExplanation(bool enabled) => enabled
-    ? 'Closing a parent ticket here starts with "also close linked tickets" '
-          'ticked. You still confirm, and can untick it.'
-    : 'Closing a parent ticket here starts with "also close linked tickets" '
-          'unticked. You still confirm, and can tick it.';
+    ? appL10n.appCascadeDefaultExplanationOn
+    : appL10n.appCascadeDefaultExplanationOff;
 
 /// The footnote both organization screens carry about the cascade switch.
-const String cascadeWebGapNote =
-    'The web app has no close prompt yet, so closing a parent there leaves its '
-    'children open whatever this is set to.';
+String get cascadeWebGapNote => appL10n.appCascadeWebGapNote;
 
 /// A vertical pack as `/api/packs/` lists it.
 class VerticalPack {
@@ -464,16 +458,11 @@ class PackApplyReport {
   }
 
   String get summary {
-    if (created == 0 && skipped == 0) {
-      return 'Nothing to add. This org already has all of it.';
-    }
-    if (skipped == 0) return 'Created $created item${created == 1 ? '' : 's'}.';
-    if (created == 0) {
-      return 'Already had everything from this pack, skipped $skipped '
-          'item${skipped == 1 ? '' : 's'}.';
-    }
-    return 'Created $created item${created == 1 ? '' : 's'}, skipped $skipped '
-        'you already had.';
+    final l10n = appL10n;
+    if (created == 0 && skipped == 0) return l10n.appPackReportNothing;
+    if (skipped == 0) return l10n.appPackReportCreated(created);
+    if (created == 0) return l10n.appPackReportSkipped(skipped);
+    return l10n.appPackReportBoth(created, skipped);
   }
 }
 
@@ -483,10 +472,10 @@ class PackApplyReport {
 /// attached real work to, which the applier deliberately keeps because deleting
 /// one would take that work with it.
 String sampleDataResult({required int deleted, required int retained}) {
+  final l10n = appL10n;
   final head = deleted == 0
-      ? 'No sample data to clear.'
-      : 'Deleted $deleted sample record${deleted == 1 ? '' : 's'}.';
+      ? l10n.appSampleDataNone
+      : l10n.appSampleDataDeleted(deleted);
   if (retained == 0) return head;
-  return '$head Kept $retained record${retained == 1 ? '' : 's'} you have '
-      'since attached real work to.';
+  return '$head ${l10n.appSampleDataKept(retained)}';
 }

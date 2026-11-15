@@ -3,6 +3,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/ticket.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// Sidebar-style card showing ticket SLA status, escalation count, and
 /// watcher count. The same surface the web app shows in its right rail.
@@ -24,6 +26,7 @@ class TicketPropertiesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -36,14 +39,15 @@ class TicketPropertiesCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'PROPERTIES',
+            l10n.ticketsPanelPropsHeading,
             style: AppTypography.overline.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 12),
           _slaRow(
-            label: 'First response',
+            l10n,
+            label: l10n.ticketsPanelPropsFirstResponse,
             deadline: ticket.firstResponseSlaDeadline,
             met: ticket.firstResponseAt != null,
             metAt: ticket.firstResponseAt,
@@ -55,7 +59,8 @@ class TicketPropertiesCard extends StatelessWidget {
           ),
           const Divider(height: 20),
           _slaRow(
-            label: 'Resolution',
+            l10n,
+            label: l10n.ticketsPanelPropsResolution,
             deadline: ticket.resolutionSlaDeadline,
             met: ticket.resolvedAt != null,
             metAt: ticket.resolvedAt,
@@ -68,8 +73,10 @@ class TicketPropertiesCard extends StatelessWidget {
             _iconRow(
               icon: LucideIcons.alertTriangle,
               iconColor: AppColors.danger600,
-              label: 'Escalated',
-              trailing: '${ticket.escalationCount}x',
+              label: l10n.ticketsPanelPropsEscalated,
+              trailing: l10n.ticketsPanelPropsEscalationCount(
+                ticket.escalationCount,
+              ),
               trailingColor: AppColors.danger600,
             ),
           ],
@@ -80,7 +87,9 @@ class TicketPropertiesCard extends StatelessWidget {
               iconColor: isWatching
                   ? AppColors.primary600
                   : AppColors.textSecondary,
-              label: isWatching ? 'You are watching' : 'Watchers',
+              label: isWatching
+                  ? l10n.ticketsPanelPropsWatching
+                  : l10n.ticketsPanelPropsWatchers,
               trailing: '$watcherCount',
               trailingColor: AppColors.textPrimary,
             ),
@@ -90,7 +99,8 @@ class TicketPropertiesCard extends StatelessWidget {
     );
   }
 
-  Widget _slaRow({
+  Widget _slaRow(
+    AppLocalizations l10n, {
     required String label,
     required DateTime? deadline,
     required bool met,
@@ -107,42 +117,44 @@ class TicketPropertiesCard extends StatelessWidget {
     if (met) {
       icon = LucideIcons.checkCircle;
       iconColor = AppColors.success600;
-      stateText = 'Met';
+      stateText = l10n.ticketsPanelPropsMet;
       stateColor = AppColors.success600;
     } else if (breached) {
       icon = LucideIcons.alertCircle;
       iconColor = AppColors.danger600;
-      stateText = deadline != null ? 'Breached' : 'Overdue';
+      stateText = deadline != null
+          ? l10n.ticketsPanelPropsBreached
+          : l10n.ticketsPanelPropsOverdue;
       stateColor = AppColors.danger600;
     } else if (paused) {
       icon = LucideIcons.pauseCircle;
       iconColor = AppColors.warning600;
-      stateText = 'Paused';
+      stateText = l10n.ticketsPanelPropsPaused;
       stateColor = AppColors.warning600;
     } else if (deadline != null) {
       final remaining = deadline.difference(DateTime.now());
       if (remaining.isNegative) {
         icon = LucideIcons.clock;
         iconColor = AppColors.danger600;
-        stateText = 'Overdue';
+        stateText = l10n.ticketsPanelPropsOverdue;
         stateColor = AppColors.danger600;
       } else if (atRisk) {
         // The amber band. Still counts down rather than switching to a word,
         // because how long is left is the thing worth acting on.
         icon = LucideIcons.alertTriangle;
         iconColor = AppColors.warning600;
-        stateText = 'in ${_formatDuration(remaining)}';
+        stateText = l10n.ticketsPanelPropsIn(_formatDuration(l10n, remaining));
         stateColor = AppColors.warning600;
       } else {
         icon = LucideIcons.clock;
         iconColor = AppColors.textSecondary;
-        stateText = 'in ${_formatDuration(remaining)}';
+        stateText = l10n.ticketsPanelPropsIn(_formatDuration(l10n, remaining));
         stateColor = AppColors.textPrimary;
       }
     } else {
       icon = LucideIcons.minusCircle;
       iconColor = AppColors.gray400;
-      stateText = 'Not set';
+      stateText = l10n.ticketsPanelPropsNotSet;
       stateColor = AppColors.textSecondary;
     }
 
@@ -164,7 +176,7 @@ class TicketPropertiesCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                _subtitle(deadline: deadline, met: met, metAt: metAt),
+                _subtitle(l10n, deadline: deadline, met: met, metAt: metAt),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -183,14 +195,19 @@ class TicketPropertiesCard extends StatelessWidget {
     );
   }
 
-  String _subtitle({
+  String _subtitle(
+    AppLocalizations l10n, {
     required DateTime? deadline,
     required bool met,
     required DateTime? metAt,
   }) {
-    if (met && metAt != null) return 'Replied ${_formatDate(metAt)}';
-    if (deadline != null) return 'Due ${_formatDate(deadline)}';
-    return 'No SLA configured';
+    if (met && metAt != null) {
+      return l10n.ticketsPanelPropsReplied(_formatDate(metAt));
+    }
+    if (deadline != null) {
+      return l10n.ticketsPanelPropsDue(_formatDate(deadline));
+    }
+    return l10n.ticketsPanelPropsNoSla;
   }
 
   Widget _iconRow({
@@ -216,29 +233,20 @@ class TicketPropertiesCard extends StatelessWidget {
     );
   }
 
-  String _formatDuration(Duration d) {
-    if (d.inDays > 0) return '${d.inDays}d ${d.inHours.remainder(24)}h';
-    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
-    return '${d.inMinutes}m';
+  String _formatDuration(AppLocalizations l10n, Duration d) {
+    if (d.inDays > 0) {
+      return l10n.ticketsPanelPropsDaysHours(d.inDays, d.inHours.remainder(24));
+    }
+    if (d.inHours > 0) {
+      return l10n.ticketsPanelPropsHoursMinutes(
+        d.inHours,
+        d.inMinutes.remainder(60),
+      );
+    }
+    return l10n.ticketsPanelPropsMinutes(d.inMinutes);
   }
 
-  String _formatDate(DateTime t) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hh = t.hour.toString().padLeft(2, '0');
-    final mm = t.minute.toString().padLeft(2, '0');
-    return '${months[t.month - 1]} ${t.day}, $hh:$mm';
-  }
+  String _formatDate(DateTime t) =>
+      '${localDateFormat('MMM d', 'MMMd').format(t)}, '
+      '${localDateFormat('HH:mm', 'Hm').format(t)}';
 }

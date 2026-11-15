@@ -1,5 +1,6 @@
 """DRF serializers for the macros REST API."""
 
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from common.models import Profile, Tags
@@ -95,7 +96,7 @@ class MacroSerializer(serializers.ModelSerializer):
         for profile in value:
             if not profile.is_active and profile.id not in stored:
                 raise serializers.ValidationError(
-                    "This user is deactivated. Choose an active member."
+                    _("This user is deactivated. Choose an active member.")
                 )
         return value
 
@@ -106,7 +107,7 @@ class MacroSerializer(serializers.ModelSerializer):
         for tag in value:
             if not tag.is_active and tag.id not in stored:
                 raise serializers.ValidationError(
-                    "This tag is archived. Choose an active tag."
+                    _("This tag is archived. Choose an active tag.")
                 )
         return value
 
@@ -129,7 +130,7 @@ class MacroSerializer(serializers.ModelSerializer):
         )
         if not has_body and not has_action:
             raise serializers.ValidationError(
-                {"body": "A macro needs a body, an action, or both."}
+                {"body": _("A macro needs a body, an action, or both.")}
             )
         return attrs
 

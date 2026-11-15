@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/lead_pipeline.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_pipelines_provider.dart';
 import '../../routes/app_router.dart';
@@ -36,7 +37,10 @@ class LeadPipelinesScreen extends ConsumerWidget {
     if (!context.mounted) return;
     _snack(
       context,
-      error ?? (existing == null ? 'Pipeline created' : 'Pipeline saved'),
+      error ??
+          (existing == null
+              ? context.l10n.settingsPipelineCreated
+              : context.l10n.settingsLeadPipelinesSaved),
     );
   }
 
@@ -48,21 +52,17 @@ class LeadPipelinesScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${pipeline.name}?'),
-        content: const Text(
-          'It disappears from the board along with its stages. A pipeline '
-          'that still holds leads cannot be deleted: move them out of its '
-          'stages first.',
-        ),
+        title: Text(context.l10n.settingsPipelineDeleteTitle(pipeline.name)),
+        content: Text(context.l10n.settingsLeadPipelinesDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsPipelineKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -72,7 +72,7 @@ class LeadPipelinesScreen extends ConsumerWidget {
         .read(leadPipelinesProvider.notifier)
         .deletePipeline(pipeline.id);
     if (!context.mounted) return;
-    _snack(context, error ?? 'Pipeline deleted');
+    _snack(context, error ?? context.l10n.settingsPipelineDeleted);
   }
 
   void _snack(BuildContext context, String message) {
@@ -89,7 +89,7 @@ class LeadPipelinesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Lead pipelines'),
+        title: Text(context.l10n.settingsLeadPipelinesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -97,7 +97,7 @@ class LeadPipelinesScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New pipeline',
+              tooltip: context.l10n.settingsPipelineNew,
               onPressed: () => _edit(context, ref, null),
             ),
         ],
@@ -127,8 +127,7 @@ class LeadPipelinesScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Text(
-                    'Open a pipeline to see its stages. Each stage is a lane '
-                    'on the lead board.',
+                    context.l10n.settingsLeadPipelinesFooter,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -142,8 +141,6 @@ class LeadPipelinesScreen extends ConsumerWidget {
     );
   }
 }
-
-String _count(int n, String one, String many) => '$n ${n == 1 ? one : many}';
 
 class _PipelineRow extends StatelessWidget {
   const _PipelineRow({
@@ -191,7 +188,7 @@ class _PipelineRow extends StatelessWidget {
                             ),
                             if (pipeline.isDefault)
                               StatusBadge(
-                                label: 'Default',
+                                label: context.l10n.settingsPipelineDefault,
                                 color: AppColors.primary600,
                               ),
                           ],
@@ -209,8 +206,14 @@ class _PipelineRow extends StatelessWidget {
                         ],
                         const SizedBox(height: 4),
                         Text(
-                          '${_count(pipeline.stageCount, 'stage', 'stages')}, '
-                          '${_count(pipeline.leadCount, 'lead', 'leads')}',
+                          context.l10n.settingsPipelineCounts(
+                            context.l10n.settingsPipelineStageCount(
+                              pipeline.stageCount,
+                            ),
+                            context.l10n.settingsPipelineLeadCount(
+                              pipeline.leadCount,
+                            ),
+                          ),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textTertiary,
                           ),
@@ -239,7 +242,7 @@ class _PipelineRow extends StatelessWidget {
                     height: 44,
                     child: OutlinedButton(
                       onPressed: onRename,
-                      child: const Text('Rename'),
+                      child: Text(context.l10n.settingsPipelineRename),
                     ),
                   ),
                   SizedBox(
@@ -249,7 +252,7 @@ class _PipelineRow extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.danger600,
                       ),
-                      child: const Text('Delete'),
+                      child: Text(context.l10n.commonDelete),
                     ),
                   ),
                 ],
@@ -281,17 +284,15 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No lead pipelines',
+              context.l10n.settingsLeadPipelinesEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'A pipeline sorts leads into stages you move them through. '
-                        'Tap + to create one.'
-                  : 'A pipeline sorts leads into stages you move them through. '
-                        'An administrator sets these up.',
+                  ? context.l10n.settingsLeadPipelinesEmptyAdmin
+                  : context.l10n.settingsLeadPipelinesEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -324,12 +325,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the pipelines',
+              context.l10n.settingsPipelineLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsPipelineTryAgain),
+            ),
           ],
         ),
       ),

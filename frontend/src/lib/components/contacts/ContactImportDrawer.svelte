@@ -5,6 +5,7 @@
   import { Button } from '#lib/components/ui/button/index.js';
   import * as Dialog from '#lib/components/ui/dialog/index.js';
   import ImportFlow from '#lib/components/import/ImportFlow.svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * The contacts list's import dialog: `ImportFlow` in a dialog, refreshing
@@ -33,11 +34,10 @@
     <Dialog.Header>
       <Dialog.Title class="flex items-center gap-2">
         <Upload class="h-4 w-4" />
-        Import contacts
+        {m.app_import_contacts_title()}
       </Dialog.Title>
       <Dialog.Description>
-        Bring in a spreadsheet of contacts. You'll check how its columns match, and nothing is
-        written until you choose Import.
+        {m.app_import_contacts_description()}
       </Dialog.Description>
     </Dialog.Header>
 
@@ -53,7 +53,7 @@
 
     <Dialog.Footer>
       <Button class="max-md:h-11" type="button" variant="outline" onclick={() => (open = false)}>
-        {done ? 'Close' : 'Cancel'}
+        {done ? m.common_close() : m.common_cancel()}
       </Button>
     </Dialog.Footer>
   </Dialog.Content>

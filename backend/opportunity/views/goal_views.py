@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db.models import Case, CharField, F, Q, Value, When
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -91,7 +92,7 @@ class SalesGoalListView(APIView, LimitOffsetPagination):
     def post(self, request, *args, **kwargs):
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can create goals."},
+                {"error": True, "errors": _("Only admins can create goals.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -104,7 +105,7 @@ class SalesGoalListView(APIView, LimitOffsetPagination):
                 created_by=request.profile.user,
             )
             return Response(
-                {"error": False, "message": "Goal Created Successfully"},
+                {"error": False, "message": _("Goal Created Successfully")},
                 status=status.HTTP_201_CREATED,
             )
         return Response(
@@ -132,7 +133,7 @@ class SalesGoalDetailView(APIView):
     @staticmethod
     def _not_found():
         return Response(
-            {"error": True, "errors": "Goal not found."},
+            {"error": True, "errors": _("Goal not found.")},
             status=status.HTTP_404_NOT_FOUND,
         )
 
@@ -149,7 +150,7 @@ class SalesGoalDetailView(APIView):
             return self._not_found()
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can update goals."},
+                {"error": True, "errors": _("Only admins can update goals.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         serializer = SalesGoalCreateSerializer(
@@ -158,7 +159,7 @@ class SalesGoalDetailView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(
-                {"error": False, "message": "Goal Updated Successfully"},
+                {"error": False, "message": _("Goal Updated Successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -172,12 +173,12 @@ class SalesGoalDetailView(APIView):
             return self._not_found()
         if not is_org_admin(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can delete goals."},
+                {"error": True, "errors": _("Only admins can delete goals.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         goal.delete()
         return Response(
-            {"error": False, "message": "Goal Deleted Successfully"},
+            {"error": False, "message": _("Goal Deleted Successfully")},
             status=status.HTTP_200_OK,
         )
 

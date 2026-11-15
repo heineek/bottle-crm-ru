@@ -12,6 +12,7 @@ import zipfile
 from dataclasses import dataclass
 
 import openpyxl
+from django.utils.translation import gettext, gettext_lazy
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_XLSX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
@@ -26,10 +27,10 @@ MAX_COLUMNS = 1000
 # included, is refused.
 _XLSX_BLANK_RUN = 1000
 
-_XLSX_UNREADABLE = (
+_XLSX_UNREADABLE = gettext_lazy(
     "That .xlsx file could not be opened. Save it again, or export it as .csv."
 )
-_XLSX_TOO_LARGE = "That .xlsx file is too large to read."
+_XLSX_TOO_LARGE = gettext_lazy("That .xlsx file is too large to read.")
 
 # The guard our exports put on a cell a spreadsheet would run as a formula
 # (`common/csv_export.py`, the web's `csvCell`): one leading apostrophe. A
@@ -79,10 +80,12 @@ def _build_table(raw_rows, max_rows: int, exact_count: bool) -> Table:
     is exceeded, a run of _XLSX_BLANK_RUN blank rows ends the data, and reading
     more than 4 * max_rows + 1000 rows in all is refused.
     """
-    too_many_rows = f"Too many rows (more than {max_rows}); the limit is {max_rows}."
-    too_many_columns = (
-        f"Too many columns (more than {MAX_COLUMNS}); the limit is {MAX_COLUMNS}."
-    )
+    too_many_rows = gettext(
+        "Too many rows (more than %(max)d); the limit is %(max)d."
+    ) % {"max": max_rows}
+    too_many_columns = gettext(
+        "Too many columns (more than %(max)d); the limit is %(max)d."
+    ) % {"max": MAX_COLUMNS}
     raw_limit = 4 * max_rows + 1000
     headers = None
     width = None
@@ -133,9 +136,12 @@ def _build_table(raw_rows, max_rows: int, exact_count: bool) -> Table:
         if not exact_count and len(rows) > max_rows:
             raise SpreadsheetError(too_many_rows)
     if headers is None:
-        raise SpreadsheetError("The file is empty.")
+        raise SpreadsheetError(gettext("The file is empty."))
     if len(rows) > max_rows:
-        raise SpreadsheetError(f"Too many rows ({len(rows)}); the limit is {max_rows}.")
+        raise SpreadsheetError(
+            gettext("Too many rows (%(count)d); the limit is %(max)d.")
+            % {"count": len(rows), "max": max_rows}
+        )
     return Table(headers=headers, rows=rows)
 
 
@@ -153,7 +159,7 @@ def _read_csv(data: bytes, max_rows: int) -> Table:
     # Postgres refuses NUL in any string parameter, so one would 500 the insert.
     if "\x00" in text:
         raise SpreadsheetError(
-            "The file could not be read: it contains NUL characters."
+            gettext("The file could not be read: it contains NUL characters.")
         )
     try:
         dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t|")
@@ -163,7 +169,7 @@ def _read_csv(data: bytes, max_rows: int) -> Table:
         return _build_table(csv.reader(io.StringIO(text), dialect), max_rows, True)
     except csv.Error:
         # A field over the csv module's size limit lands here.
-        raise SpreadsheetError("The file could not be read.") from None
+        raise SpreadsheetError(gettext("The file could not be read.")) from None
 
 
 def _check_zip(data: bytes) -> None:
@@ -209,9 +215,9 @@ def _read_xlsx(data: bytes, max_rows: int) -> Table:
 def read_table(name: str, data: bytes, max_rows: int) -> Table:
     extension = (name or "").rsplit(".", 1)[-1].lower() if "." in (name or "") else ""
     if extension not in ("csv", "xlsx"):
-        raise SpreadsheetError("Save it as .xlsx or .csv and try again.")
+        raise SpreadsheetError(gettext("Save it as .xlsx or .csv and try again."))
     if not data:
-        raise SpreadsheetError("The file is empty.")
+        raise SpreadsheetError(gettext("The file is empty."))
     if extension == "csv":
         return _read_csv(data, max_rows)
     return _read_xlsx(data, max_rows)
@@ -220,9 +226,9 @@ def read_table(name: str, data: bytes, max_rows: int) -> Table:
 def read_upload(request, max_rows: int) -> Table:
     upload = request.FILES.get("file")
     if not upload:
-        raise SpreadsheetError("No file uploaded (expected field 'file')")
+        raise SpreadsheetError(gettext("No file uploaded (expected field 'file')"))
     # One byte past the cap is enough to refuse without loading the whole body.
     data = upload.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
-        raise SpreadsheetError("File exceeds the 5 MB upload limit")
+        raise SpreadsheetError(gettext("File exceeds the 5 MB upload limit"))
     return read_table(upload.name, data, max_rows)

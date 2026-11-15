@@ -2,21 +2,29 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../services/automation_text.dart';
 import 'rule_sheet.dart';
 import 'rule_value_field.dart';
 
-const _typeLabels = {
-  'set_field': 'Set a field',
-  'assign': 'Assign',
-  'create_task': 'Create a task',
-  'notify': 'Notify',
-  'webhook': 'Send to an endpoint',
+String _typeLabel(AppLocalizations l10n, String type) => switch (type) {
+  'set_field' => l10n.settingsAutomationActionTypeSetField,
+  'assign' => l10n.settingsAutomationActionTypeAssign,
+  'create_task' => l10n.settingsAutomationActionTypeCreateTask,
+  'notify' => l10n.settingsAutomationActionTypeNotify,
+  'webhook' => l10n.settingsAutomationActionTypeWebhook,
+  _ => type,
 };
 
-const _nameHint = "{name} becomes the record's name.";
-const _lostField = 'This field is no longer available. Choose another.';
+/// The values the API stores; only their labels are translated.
 const _priorities = ['Low', 'Medium', 'High'];
+
+String _priorityLabel(AppLocalizations l10n, String p) => switch (p) {
+  'Low' => l10n.settingsAutomationActionPriorityLow,
+  'Medium' => l10n.settingsAutomationActionPriorityMedium,
+  'High' => l10n.settingsAutomationActionPriorityHigh,
+  _ => p,
+};
 
 /// The "For" choice that names the record's parent, or null when the object
 /// has no such choice (deal, ticket and task only).
@@ -215,7 +223,7 @@ class _ActionSheetState extends State<_ActionSheet> {
     final targetOptions = withStored(
       [for (final t in _targets) RuleOption(value: t.value, label: t.label)],
       _v['target'],
-      label: (_) => 'A removed link',
+      label: (_) => context.l10n.settingsAutomationActionRemovedLink,
     );
     final fieldOptions = withStored([
       for (final f in target?.object.fields ?? const <RuleField>[])
@@ -224,18 +232,25 @@ class _ActionSheetState extends State<_ActionSheet> {
     final field = _setField;
     final stored = (_v['field'] ?? '').toString();
     return [
-      _select('On', _v['target']?.toString(), targetOptions, (t) {
-        if (t == _v['target']) return;
-        setState(() {
-          _v['target'] = t;
-          _v['field'] = '';
-          _v['value'] = null;
-          _clear = false;
-          _previous = null;
-        });
-      }),
+      _select(
+        context.l10n.settingsAutomationActionOn,
+        _v['target']?.toString(),
+        targetOptions,
+        (t) {
+          if (t == _v['target']) return;
+          setState(() {
+            _v['target'] = t;
+            _v['field'] = '';
+            _v['value'] = null;
+            _clear = false;
+            _previous = null;
+          });
+        },
+      ),
       const SizedBox(height: 12),
-      _select('Set', stored, fieldOptions, (f) {
+      _select(context.l10n.settingsAutomationActionSet, stored, fieldOptions, (
+        f,
+      ) {
         if (f == stored) return;
         setState(() {
           _v['field'] = f;
@@ -245,13 +260,13 @@ class _ActionSheetState extends State<_ActionSheet> {
         });
       }, key: ValueKey('set-${_v['target']}')),
       if (stored.isNotEmpty && field == null)
-        _note(_lostField)
+        _note(context.l10n.settingsAutomationFieldGone)
       else if (stored.isNotEmpty && field != null) ...[
         const SizedBox(height: 4),
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           controlAffinity: ListTileControlAffinity.leading,
-          title: const Text('Clear it instead'),
+          title: Text(context.l10n.settingsAutomationActionClearInstead),
           value: _clear,
           onChanged: (on) => setState(() {
             _clear = on == true;
@@ -282,12 +297,18 @@ class _ActionSheetState extends State<_ActionSheet> {
   List<Widget> _assignBody() {
     final rotate = _v['mode'] == 'rotate';
     final people = _v['people'] is List ? _v['people'] as List : const [];
-    final modes = withStored(const [
-      RuleOption(value: 'replace', label: 'One person'),
-      RuleOption(value: 'rotate', label: 'In turn'),
+    final l10n = context.l10n;
+    final modes = withStored([
+      RuleOption(
+        value: 'replace',
+        label: l10n.settingsAutomationActionOnePerson,
+      ),
+      RuleOption(value: 'rotate', label: l10n.settingsAutomationActionInTurn),
     ], _v['mode']);
     return [
-      _select('Who', _v['mode']?.toString(), modes, (m) {
+      _select(l10n.settingsAutomationActionWho, _v['mode']?.toString(), modes, (
+        m,
+      ) {
         if (m == _v['mode']) return;
         setState(() {
           _v['mode'] = m;
@@ -298,34 +319,44 @@ class _ActionSheetState extends State<_ActionSheet> {
       }),
       const SizedBox(height: 12),
       if (rotate) ...[
-        _caption('People'),
+        _caption(l10n.settingsAutomationActionPeople),
         _peopleField(
-          'People',
+          l10n.settingsAutomationActionPeople,
           _v['people'],
           (v) => setState(() => _v['people'] = v),
         ),
-        _note('Choose 2 to 20 people; each new record goes to the next one.'),
+        _note(l10n.settingsAutomationActionRotateHint),
       ] else ...[
         if (people.length > 1)
-          _note('One person takes exactly one. Choose who stays.'),
+          _note(l10n.settingsAutomationActionOnePersonHint),
         _personSelect(
-          'Person',
+          l10n.settingsAutomationActionPerson,
           people.length == 1 ? people.first.toString() : null,
           (id) => setState(() => _v['people'] = [id]),
         ),
       ],
-      _note('Replaces current assignees.'),
+      _note(l10n.settingsAutomationActionReplacesAssignees),
     ];
   }
 
   List<Widget> _taskBody() {
+    final l10n = context.l10n;
     final parent = taskParentLabel(widget.object);
     final forOptions = withStored(
       [
-        const RuleOption(value: 'record', label: 'Its assignees'),
+        RuleOption(
+          value: 'record',
+          label: l10n.settingsAutomationActionForAssignees,
+        ),
         if (parent != null) RuleOption(value: 'parent', label: parent),
-        const RuleOption(value: 'owner', label: "The rule's owner"),
-        const RuleOption(value: 'person', label: 'A chosen person'),
+        RuleOption(
+          value: 'owner',
+          label: l10n.settingsAutomationActionForOwner,
+        ),
+        RuleOption(
+          value: 'person',
+          label: l10n.settingsAutomationActionForPerson,
+        ),
       ],
       _v['assign_to'],
       label: recipientLabel,
@@ -335,9 +366,9 @@ class _ActionSheetState extends State<_ActionSheet> {
       TextFormField(
         initialValue: (_v['title'] ?? '').toString(),
         maxLength: 200,
-        decoration: const InputDecoration(
-          labelText: 'Title',
-          helperText: _nameHint,
+        decoration: InputDecoration(
+          labelText: l10n.settingsAutomationActionTitle,
+          helperText: l10n.settingsAutomationActionNameHint('{name}'),
           border: OutlineInputBorder(),
         ),
         onChanged: (t) => setState(() => _v['title'] = t),
@@ -346,10 +377,10 @@ class _ActionSheetState extends State<_ActionSheet> {
       TextFormField(
         initialValue: days?.toString() ?? '',
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          labelText: 'Due in',
-          suffixText: 'days',
-          helperText: 'From 0 to 365. Leave empty for no due date.',
+        decoration: InputDecoration(
+          labelText: l10n.settingsAutomationActionDueIn,
+          suffixText: l10n.settingsAutomationActionDueSuffix,
+          helperText: l10n.settingsAutomationActionDueHelper,
           border: OutlineInputBorder(),
         ),
         onChanged: (t) => setState(() {
@@ -361,16 +392,17 @@ class _ActionSheetState extends State<_ActionSheet> {
       ),
       const SizedBox(height: 12),
       _select(
-        'Priority',
+        l10n.commonPriority,
         _v['priority']?.toString(),
         withStored([
-          for (final p in _priorities) RuleOption(value: p, label: p),
+          for (final p in _priorities)
+            RuleOption(value: p, label: _priorityLabel(l10n, p)),
         ], _v['priority']),
         (p) => setState(() => _v['priority'] = p),
       ),
       const SizedBox(height: 12),
       _select(
-        'For',
+        l10n.settingsAutomationActionFor,
         _v['assign_to']?.toString(),
         forOptions,
         (w) => setState(() {
@@ -381,7 +413,7 @@ class _ActionSheetState extends State<_ActionSheet> {
       if (_v['assign_to'] == 'person') ...[
         const SizedBox(height: 12),
         _personSelect(
-          'Person',
+          l10n.settingsAutomationActionPerson,
           _v['person']?.toString(),
           (id) => setState(() => _v['person'] = id),
         ),
@@ -396,8 +428,9 @@ class _ActionSheetState extends State<_ActionSheet> {
       to,
       label: recipientLabel,
     );
+    final l10n = context.l10n;
     return [
-      _caption('Who'),
+      _caption(l10n.settingsAutomationActionWho),
       for (final o in options)
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
@@ -413,9 +446,9 @@ class _ActionSheetState extends State<_ActionSheet> {
           }),
         ),
       const SizedBox(height: 8),
-      _caption('And these people'),
+      _caption(l10n.settingsAutomationActionAndThesePeople),
       _peopleField(
-        'And these people',
+        l10n.settingsAutomationActionAndThesePeople,
         _v['people'],
         (v) => setState(() => _v['people'] = v),
       ),
@@ -425,20 +458,20 @@ class _ActionSheetState extends State<_ActionSheet> {
         maxLength: 500,
         minLines: 3,
         maxLines: 6,
-        decoration: const InputDecoration(
-          labelText: 'Message',
-          helperText: _nameHint,
+        decoration: InputDecoration(
+          labelText: l10n.settingsAutomationActionMessage,
+          helperText: l10n.settingsAutomationActionNameHint('{name}'),
           border: OutlineInputBorder(),
         ),
         onChanged: (t) => setState(() => _v['message'] = t),
       ),
-      _note('In the app and by email, to active members only.'),
+      _note(l10n.settingsAutomationActionNotifyHint),
     ];
   }
 
   List<Widget> _webhookBody() => [
     _select(
-      'Endpoint',
+      context.l10n.settingsAutomationActionEndpoint,
       _v['endpoint']?.toString(),
       withStored(
         [
@@ -449,7 +482,7 @@ class _ActionSheetState extends State<_ActionSheet> {
             ),
         ],
         _v['endpoint'],
-        label: (_) => 'An endpoint no longer available',
+        label: (_) => context.l10n.settingsAutomationActionEndpointGone,
       ),
       (id) => setState(() => _v['endpoint'] = id),
     ),
@@ -457,16 +490,18 @@ class _ActionSheetState extends State<_ActionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final types = [
       for (final o in withStored([
         for (final t in actionTypes(widget.catalogue, widget.object))
-          RuleOption(value: t, label: _typeLabels[t] ?? t),
+          RuleOption(value: t, label: _typeLabel(l10n, t)),
       ], _a.type))
         o.gone
             ? RuleOption(
                 value: o.value,
-                label:
-                    '${_typeLabels[o.value] ?? o.value} (no longer available)',
+                label: l10n.settingsAutomationNoLongerAvailable(
+                  _typeLabel(l10n, o.value),
+                ),
               )
             : o,
     ];
@@ -476,14 +511,16 @@ class _ActionSheetState extends State<_ActionSheet> {
       'create_task' => _taskBody(),
       'notify' => _notifyBody(),
       'webhook' => _webhookBody(),
-      _ => <Widget>[_note('This action is no longer available.')],
+      _ => <Widget>[_note(l10n.settingsAutomationActionGone)],
     };
     return RuleSheetFrame(
-      title: widget.draft == null ? 'Add action' : 'Edit action',
+      title: widget.draft == null
+          ? l10n.settingsAutomationAddAction
+          : l10n.settingsAutomationActionEditTitle,
       controller: widget.controller,
       onDone: _valid ? _done : null,
       children: [
-        _select('Action', _a.type, types, _pickType),
+        _select(l10n.settingsAutomationActionLabel, _a.type, types, _pickType),
         const SizedBox(height: 12),
         KeyedSubtree(
           key: ValueKey('action-body-${_a.type}'),

@@ -32,11 +32,12 @@
  * An edit form must keep the stored selection when this is true.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** A profile as the pickers label it. */
 function personName(profile) {
   const d = profile?.user_details ?? {};
-  return d.name || d.email || 'Unnamed';
+  return d.name || d.email || m.app_pickers_unnamed();
 }
 
 /**

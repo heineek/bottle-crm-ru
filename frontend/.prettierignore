@@ -12,3 +12,6 @@ bun.lockb
 # .json, so prettier picks the JSON parser and dies on line 1 instead of
 # reporting a formatting diff. That aborts `pnpm run lint` before eslint runs.
 openapi.json
+
+# Inlang keeps its cache and metadata here; only settings.json is source.
+project.inlang/

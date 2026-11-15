@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { addContactNote, deleteContact, getContact } from '#lib/server/v2/contacts.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { loadRelated, relatedActions } from '#lib/server/v2/related-records.js';
 import { recordDuplicates } from '#lib/server/v2/duplicates.js';
 
@@ -37,13 +38,13 @@ export const actions = {
       picked && typeof picked === 'object' && 'size' in picked && picked.size > 0 ? picked : null;
 
     if (!comment && !file) {
-      return fail(400, { message: 'Write a note or attach a file before you save.' });
+      return fail(400, { message: m.contacts_note_empty() });
     }
 
     try {
       await addContactNote({ cookies }, params.id, comment, file);
     } catch (/** @type {any} */ err) {
-      return fail(400, { message: String(err?.message ?? 'Could not save that note.') });
+      return fail(400, { message: String(err?.message ?? m.contacts_note_failed()) });
     }
 
     return { noted: true };
@@ -58,7 +59,7 @@ export const actions = {
       await deleteContact({ cookies }, params.id);
     } catch (/** @type {any} */ err) {
       const code = err?.status >= 400 && err?.status < 500 ? err.status : 400;
-      return fail(code, { deleteError: readableError(err, 'Could not delete this contact.') });
+      return fail(code, { deleteError: readableError(err, m.contacts_delete_failed()) });
     }
     redirect(303, '/contacts');
   }

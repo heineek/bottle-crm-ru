@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getRule, listRuns, RULE_GONE } from '#lib/server/v2/automation.js';
+import { getRule, listRuns, ruleGone } from '#lib/server/v2/automation.js';
 import { UUID } from '#lib/v2/custom-objects.js';
 
 /**
@@ -9,7 +9,7 @@ import { UUID } from '#lib/v2/custom-objects.js';
  */
 export async function load(event) {
   const { id } = event.params;
-  if (!UUID.test(id)) error(404, RULE_GONE);
+  if (!UUID.test(id)) error(404, ruleGone());
   const offset = Math.max(0, Number.parseInt(event.url.searchParams.get('offset') ?? '0', 10) || 0);
   try {
     const rule = await getRule(event, id);

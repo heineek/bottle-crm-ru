@@ -15,6 +15,7 @@ checked in ``common/saved_views.py``.
 
 from django.db.models.functions import Lower
 from django.http import Http404
+from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -55,7 +56,12 @@ class SavedViewListView(APIView):
         if module is not None:
             if module not in LISTS:
                 return Response(
-                    {"module": [f"Choose one of: {', '.join(sorted(LISTS))}."]},
+                    {
+                        "module": [
+                            _("Choose one of: %(lists)s.")
+                            % {"lists": ", ".join(sorted(LISTS))}
+                        ]
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             views = views.filter(module=module)
@@ -89,7 +95,7 @@ class SavedViewDetailView(APIView):
             SavedView, pk, request.profile.org, profile=request.profile
         )
         if view.module in off_lists(request.profile.org):
-            raise Http404("No such saved view.")
+            raise Http404(_("No such saved view."))
         return view
 
     @extend_schema(tags=["Saved views"], responses=SavedViewSerializer)

@@ -16,14 +16,15 @@
   import SettingsCrumb from '#lib/v2/components/SettingsCrumb.svelte';
   import { labelOf } from '#lib/v2/modules.js';
   import { asInternalPath } from '#lib/utils/paths.js';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: any, form?: any }} */
   let { data, form } = $props();
 
   const GROUPS = [
-    { key: 'sell', label: 'Sell' },
-    { key: 'serve', label: 'Serve' },
-    { key: 'bill', label: 'Bill' }
+    { key: 'sell', label: () => m.settings_modules_group_sell() },
+    { key: 'serve', label: () => m.settings_modules_group_serve() },
+    { key: 'bill', label: () => m.settings_modules_group_bill() }
   ];
 
   /** @type {import('#lib/v2/modules.js').ModuleRow[]} */
@@ -48,25 +49,21 @@
   }
 </script>
 
-<PageHeader title="Modules">
+<PageHeader title={m.settings_modules_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    Switch off what this organization does not use. Nothing is deleted: switching a module back on
-    brings everything back as it was.
+    {m.settings_modules_sub()}
   {/snippet}
 </PageHeader>
 
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if data.failed}
-      <EmptyState title="Modules could not be loaded." body="Reload the page to try again.">
+      <EmptyState title={m.settings_modules_failed_title()} body={m.settings_modules_failed_body()}>
         {#snippet icon()}<Boxes size={21} />{/snippet}
       </EmptyState>
     {:else if data.forbidden}
-      <NextAction
-        label="Admins only"
-        text="Only an organization admin can switch modules on or off."
-      />
+      <NextAction label={m.common_admins_only()} text={m.settings_modules_forbidden()} />
     {:else}
       {#snippet refusal()}
         <div class="mod-errors" role="alert">
@@ -78,10 +75,10 @@
           {#if formsLink || mailboxLink}
             <p>
               {#if formsLink}<a href={resolve(asInternalPath('/settings/web-forms'))}
-                  >Open web forms</a
+                  >{m.settings_modules_open_web_forms()}</a
                 >{/if}
               {#if mailboxLink}<a href={resolve(asInternalPath('/settings/inbound-email'))}
-                  >Open inbound email</a
+                  >{m.settings_modules_open_inbound()}</a
                 >{/if}
             </p>
           {/if}
@@ -93,7 +90,7 @@
       {/if}
 
       {#each groups as g (g.key)}
-        <div class="v2-label" style="margin-bottom:10px">{g.label}</div>
+        <div class="v2-label" style="margin-bottom:10px">{g.label()}</div>
         <div class="v2-card" style="overflow:hidden;margin-bottom:22px">
           {#each g.rows as row, i (row.key)}
             {@const blocked = needOff(row)}
@@ -103,15 +100,15 @@
                   <div class="mod-title">
                     <b>{row.label}</b>
                     <Pill tone={row.available ? 'moss' : 'slate'}
-                      >{row.available ? 'On' : 'Off'}</Pill
+                      >{row.available ? m.settings_modules_on() : m.settings_modules_off()}</Pill
                     >
                   </div>
                   <span class="v2-sub" style="font-size:11.5px">{row.covers}</span>
                   {#if blocked && row.needs}
                     <span class="v2-sub" style="font-size:11.5px">
-                      Needs {labelOf(data.modules, row.needs)}.{row.enabled
-                        ? ` It comes back when ${labelOf(data.modules, row.needs)} is switched on.`
-                        : ''}
+                      {row.enabled
+                        ? m.settings_modules_needs_back({ label: labelOf(data.modules, row.needs) })
+                        : m.settings_modules_needs({ label: labelOf(data.modules, row.needs) })}
                     </span>
                   {/if}
                 </div>
@@ -119,8 +116,8 @@
                   {#if row.available}
                     <ConfirmAction
                       action="?/switch"
-                      label="Switch off"
-                      confirmLabel="Switch off"
+                      label={m.settings_modules_switch_off()}
+                      confirmLabel={m.settings_modules_switch_off()}
                       explain={row.stops}
                       hidden={{ key: row.key, on: 'false' }}
                     />
@@ -128,7 +125,9 @@
                     <form method="POST" action="?/switch" use:enhance>
                       <input type="hidden" name="key" value={row.key} />
                       <input type="hidden" name="on" value="true" />
-                      <button class="v2-btn v2-btn-sm" type="submit">Switch on</button>
+                      <button class="v2-btn v2-btn-sm" type="submit"
+                        >{m.settings_modules_switch_on()}</button
+                      >
                     </form>
                   {/if}
                   <div class="mod-order">
@@ -139,7 +138,9 @@
                         <button
                           class="v2-btn v2-btn-sm mod-icon"
                           type="submit"
-                          aria-label="Move {row.label} {direction}"
+                          aria-label={direction === 'up'
+                            ? m.settings_modules_move_up({ label: row.label })
+                            : m.settings_modules_move_down({ label: row.label })}
                           disabled={direction === 'up' ? i === 0 : i === g.rows.length - 1}
                         >
                           {#if direction === 'up'}<ArrowUp size={14} />{:else}<ArrowDown

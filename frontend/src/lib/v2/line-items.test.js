@@ -169,3 +169,21 @@ describe('the tax rate and shipping bounds the server enforces', () => {
     expect(shippingError(12.5)).toBe('');
   });
 });
+
+describe('error messages in the request locale', () => {
+  it('speaks Russian when the request does', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      expect(documentDiscountError('FIXED', 101, 100)).toBe(
+        'Скидка не может превышать промежуточный итог.'
+      );
+      expect(taxRateError(101)).toBe('Ставка налога не может превышать 100.');
+      expect(shippingError(-1)).toBe('Стоимость доставки не может быть отрицательной.');
+    } finally {
+      overwriteGetLocale(base);
+    }
+    expect(shippingError(-1)).toBe('Shipping cannot be negative.');
+  });
+});

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/duplicates_provider.dart';
 
@@ -49,9 +50,9 @@ class DuplicatesPanel extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                found.hits.length == 1
-                    ? 'POSSIBLE DUPLICATE'
-                    : 'POSSIBLE DUPLICATES',
+                context.l10n
+                    .appPossibleDuplicates(found.hits.length)
+                    .toUpperCase(),
                 style: AppTypography.overline.copyWith(
                   color: AppColors.warning700,
                 ),
@@ -79,7 +80,7 @@ class DuplicatesPanel extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  'Same ${hit.matchedLabelText}',
+                                  context.l10n.appDupSame(hit.matchedLabelText),
                                   style: AppTypography.caption.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -98,7 +99,7 @@ class DuplicatesPanel extends ConsumerWidget {
                           onPressed: () => context.push(
                             '/merge/${module.path}/$recordId?with=${hit.id}',
                           ),
-                          child: const Text('Compare'),
+                          child: Text(context.l10n.appCompare),
                         ),
                     ],
                   ),
@@ -107,7 +108,7 @@ class DuplicatesPanel extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    'Only an admin or whoever created one of them can merge these.',
+                    context.l10n.appDupMergeWho,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),

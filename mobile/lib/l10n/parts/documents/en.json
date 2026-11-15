@@ -1,0 +1,64 @@
+{
+  "documentsListTitle": "Documents",
+  "documentsListHideArchived": "Hide archived",
+  "documentsListShowArchived": "Show archived",
+  "documentsListUpload": "Upload",
+  "documentsStatActive": "active",
+  "documentsStatArchived": "archived",
+  "documentsStatUnshared": "shared with nobody",
+  "documentsListArchivedNote": "Archived documents are not shown or counted. Use the eye in the header to include them.",
+  "documentsDownloadFailed": "Could not download that file.",
+  "documentsArchivedBadge": "Archived",
+  "documentsUploadedBy": "Uploaded by {name}",
+  "@documentsUploadedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsManageTooltip": "Manage this document",
+  "documentsEmptyTitle": "No documents",
+  "documentsEmptyAll": "Nothing has been shared with you, and you have uploaded nothing yourself.",
+  "documentsEmptyActive": "Nothing active has been shared with you. There may be archived documents: use the eye in the header.",
+  "documentsLoadError": "Could not load the documents",
+  "documentsTryAgain": "Try again",
+  "documentsFormPickFile": "Pick a file to upload.",
+  "documentsFormSaveFailed": "Could not save this document.",
+  "documentsFormUpdated": "Document updated",
+  "documentsFormUploaded": "Document uploaded",
+  "documentsDeleteTitle": "Delete this document?",
+  "documentsDeleteBody": "The file and the record of it go for good, for everybody it was shared with. To take it out of the way without destroying it, archive it instead.",
+  "documentsKeepIt": "Keep it",
+  "documentsDeleteFailed": "Could not delete this document.",
+  "documentsDeleted": "Document deleted",
+  "documentsFormGone": "That document is not in your list any more. It may have been deleted, archived, or un-shared with you.",
+  "documentsFormForbidden": "Only the person who uploaded a document, or an administrator, can change it. Being able to open a document is not the same as being able to rewrite it for everybody else.",
+  "documentsFormEditTitle": "Edit document",
+  "documentsFormUploadTitle": "Upload document",
+  "documentsFormReplaceFile": "Replace the file",
+  "documentsFormChooseFile": "Choose a file",
+  "documentsFormKeepFileHint": "Leave this alone to keep the current file. Files must be 25 MB or smaller.",
+  "documentsFormSizeHint": "Files must be 25 MB or smaller.",
+  "documentsFormTitleLabel": "Title",
+  "documentsFormTitleHelper": "Must be unique within the organisation",
+  "documentsFormActive": "Active",
+  "documentsFormActiveHint": "Archiving hides a document from the default list. The file and everyone it is shared with stay exactly as they are.",
+  "documentsFormShareWith": "SHARE WITH",
+  "documentsFormShareHint": "Leave everything unticked to keep it to yourself. Administrators can open every document either way.",
+  "documentsFormTeams": "TEAMS",
+  "documentsFormTeamsHint": "A team share reaches whoever is in the team at the time, not whoever is in it today.",
+  "documentsFormListsMissing": "The people and teams list is not available, so sharing cannot be changed right now. Saving keeps everyone this document is shared with.",
+  "documentsFormInactiveShares": "{count, plural, =1{Also shared with one person no longer active. Saving keeps that share.} other{Also shared with {count} people no longer active. Saving keeps those shares.}}",
+  "@documentsFormInactiveShares": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsFormSaveChanges": "Save changes",
+  "documentsFormUpload": "Upload",
+  "documentsFormDelete": "Delete document",
+  "documentsFormFallbackTitle": "Document"
+}

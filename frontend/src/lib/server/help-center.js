@@ -14,6 +14,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import * as env from '$app/env/public';
 import { relayHeaders } from '#lib/server/relay.js';
+import { m } from '#lib/paraglide/messages.js';
 
 const API_BASE_URL = `${env.PUBLIC_DJANGO_API_URL}/api/public/help`;
 
@@ -35,7 +36,7 @@ const SITEMAP_MAX_PAGES = 50;
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const notFound = () => error(404, 'Not found');
+const notFound = () => error(404, m.public_help_not_found());
 
 /**
  * The slug a request should be served under, or a 404/redirect.
@@ -68,7 +69,7 @@ async function call(event, path) {
     headers: { Accept: 'application/json', ...relayHeaders(event) }
   });
   if (response.status === 404) throw notFound();
-  if (response.status === 429) throw error(429, 'Too many requests. Try again shortly.');
+  if (response.status === 429) throw error(429, m.public_help_too_many_requests());
   if (!response.ok) throw new Error(`help center request failed with ${response.status}`);
   return response.json();
 }

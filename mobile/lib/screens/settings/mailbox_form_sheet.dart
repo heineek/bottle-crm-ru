@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/mailbox.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lookup_provider.dart';
 
 /// Add or edit an inbound address.
@@ -119,7 +120,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New address' : 'Edit ${widget.existing!.address}',
+              _isCreate
+                  ? context.l10n.settingsMailboxFormNewTitle
+                  : context.l10n.settingsMailboxFormEditTitle(
+                      widget.existing!.address,
+                    ),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -128,10 +133,10 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               decoration: InputDecoration(
-                labelText: 'Address',
+                labelText: context.l10n.settingsMailboxFormAddress,
                 helperText: _isCreate
                     ? null
-                    : 'Mail to the old address stops becoming tickets.',
+                    : context.l10n.settingsMailboxFormAddressHint,
                 helperMaxLines: 2,
                 border: const OutlineInputBorder(),
               ),
@@ -140,14 +145,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
             DropdownButtonFormField<String>(
               initialValue: _provider,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Provider',
-                helperText:
-                    'Only AWS SES is implemented. Mail to an address using one '
-                    'of the others becomes nothing until that integration '
-                    'exists.',
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsMailboxFormProvider,
+                helperText: context.l10n.settingsMailboxFormProviderHint,
                 helperMaxLines: 4,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final provider in mailboxProviderLabels.keys)
@@ -165,26 +167,22 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
               keyboardType: TextInputType.url,
               autocorrect: false,
               enableSuggestions: false,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'SNS Topic ARN',
                 hintText: 'arn:aws:sns:us-east-1:123456789012:inbound-mail',
-                helperText:
-                    'Mail is accepted only from this exact topic. Left blank, '
-                    'it is set by the first subscription AWS confirms from an '
-                    'AWS account this server allows. Clearing it stops mail '
-                    'until it is set again.',
+                helperText: context.l10n.settingsMailboxFormTopicHint,
                 helperMaxLines: 5,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
-            const _SectionLabel('What a ticket opens as'),
+            _SectionLabel(context.l10n.settingsMailboxFormSectionOpensAs),
             DropdownButtonFormField<String>(
               initialValue: _priority,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Priority',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.commonPriority,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final priority in mailboxPriorities)
@@ -196,12 +194,15 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
             DropdownButtonFormField<String?>(
               initialValue: _caseType,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Type',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsMailboxFormType,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('None')),
+                DropdownMenuItem(
+                  value: null,
+                  child: Text(context.l10n.settingsMailboxFormNone),
+                ),
                 for (final type in mailboxCaseTypes)
                   DropdownMenuItem(value: type, child: Text(type)),
               ],
@@ -211,18 +212,16 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
             DropdownButtonFormField<String?>(
               initialValue: _assigneeId,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Assigned to',
-                helperText:
-                    'Where a ticket goes after that is decided by routing, not '
-                    'by this.',
+              decoration: InputDecoration(
+                labelText: context.l10n.commonAssignedTo,
+                helperText: context.l10n.settingsMailboxFormAssigneeHint,
                 helperMaxLines: 3,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(
+                DropdownMenuItem(
                   value: null,
-                  child: Text('Unassigned, then routed'),
+                  child: Text(context.l10n.settingsMailboxFormUnassigned),
                 ),
                 if (offList != null)
                   DropdownMenuItem(
@@ -230,7 +229,9 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                     child: Text(
                       offList.isActive
                           ? offList.displayName
-                          : '${offList.displayName} (deactivated)',
+                          : context.l10n.settingsMailboxFormDeactivated(
+                              offList.displayName,
+                            ),
                     ),
                   ),
                 for (final person in people)
@@ -246,8 +247,7 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                 _assigneeId == offList.id) ...[
               const SizedBox(height: 8),
               Text(
-                'Deactivated users are not assigned. New tickets from this '
-                'address go to routing until you choose someone else.',
+                context.l10n.settingsMailboxFormDeactivatedHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.warning600,
                 ),
@@ -270,7 +270,7 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -280,7 +280,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add address' : 'Save changes'),
+                      child: Text(
+                        _isCreate
+                            ? context.l10n.settingsMailboxFormAddAddress
+                            : context.l10n.settingsMailboxFormSaveChanges,
+                      ),
                     ),
                   ),
                 ),

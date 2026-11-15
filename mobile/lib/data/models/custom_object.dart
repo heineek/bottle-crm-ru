@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import 'attachment.dart';
 import 'custom_field_definition.dart';
 
@@ -15,10 +16,8 @@ String _str(dynamic v, [String fallback = '']) => v?.toString() ?? fallback;
 
 DateTime? _date(dynamic v) => v is String ? DateTime.tryParse(v) : null;
 
-const objectsTurnedOffNotice =
-    'Creating and editing is turned off for this organization.';
-const objectsLoadFailedNotice =
-    'Custom objects could not be loaded. Try again.';
+String get objectsTurnedOffNotice => appL10n.appObjectsTurnedOff;
+String get objectsLoadFailedNotice => appL10n.appObjectsLoadFailed;
 
 /// Whether a stored custom field value has anything to show.
 bool hasFieldValue(dynamic v) =>
@@ -29,9 +28,9 @@ bool hasFieldValue(dynamic v) =>
 /// A stored custom field value as the user reads it. A dropdown shows its
 /// option label, or the stored value itself when the option is gone.
 String displayValue(ObjectField field, dynamic raw) {
-  if (!hasFieldValue(raw)) return 'None';
+  if (!hasFieldValue(raw)) return appL10n.appValueNone;
   if (raw is bool || field.fieldType == 'checkbox') {
-    return raw == true ? 'Yes' : 'No';
+    return raw == true ? appL10n.commonYes : appL10n.commonNo;
   }
   if (raw is List) return raw.map((e) => e.toString()).join(', ');
   final text = raw.toString();

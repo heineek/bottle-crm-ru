@@ -1,0 +1,335 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "contacts_list_title": "Контакты",
+  "contacts_list_sub_people": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "человек",
+        "countPlural=few": "человека",
+        "countPlural=many": "человек",
+        "countPlural=other": "человека"
+      }
+    }
+  ],
+  "contacts_list_sub_inactive_hidden": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "неактивный скрыт",
+        "countPlural=few": "неактивных скрыто",
+        "countPlural=many": "неактивных скрыто",
+        "countPlural=other": "неактивных скрыто"
+      }
+    }
+  ],
+  "contacts_list_sub_do_not_call": "не звонить",
+  "contacts_list_hide_inactive": "Скрыть неактивных",
+  "contacts_list_show_inactive": "Показать неактивных",
+  "contacts_new_contact": "Новый контакт",
+  "contacts_list_filter_meta": "Сначала недавно добавленные",
+  "contacts_list_empty_title": "Контактов пока нет",
+  "contacts_list_empty_body_leads": "Контакт: человек из компании-клиента. Конвертируйте лид или добавьте контакт вручную и привяжите его к компании, где он работает.",
+  "contacts_list_empty_body": "Контакт: человек из компании-клиента. Добавьте контакт и привяжите его к компании, где он работает.",
+  "contacts_list_go_to_leads": "Перейти к лидам",
+  "contacts_col_name": "Имя",
+  "contacts_col_account": "Компания",
+  "contacts_col_reachable": "Связь",
+  "contacts_no_title": "Должность не указана",
+  "contacts_list_typed_in_title": "Введено вручную, не связано с компанией",
+  "contacts_do_not_call": "Не звонить",
+  "contacts_list_no_phone": "Нет телефона",
+  "contacts_inactive": "Неактивен",
+  "contacts_active": "Активен",
+  "contacts_list_no_email": "Нет email",
+  "contacts_unassigned": "Не назначен",
+  "contacts_list_showing": "Показано {shown} из {total}",
+  "contacts_crumb_new": "Новый",
+  "contacts_new_sub": "Человек из компании-клиента. Всё необязательное можно заполнить потом.",
+  "contacts_form_first_name_required": "Укажите имя.",
+  "contacts_form_last_name_required": "Укажите фамилию.",
+  "contacts_form_email_invalid": "Это не похоже на адрес эл. почты.",
+  "contacts_form_phone_invalid": "От 7 до 25 символов: цифры, пробелы, скобки, точки, дефисы. Без добавочных номеров.",
+  "contacts_form_linkedin_invalid": "Ссылка на LinkedIn начинается с http:// или https://.",
+  "contacts_new_refused": "Сервер отклонил этот контакт",
+  "contacts_edit_refused": "Сервер отклонил изменение",
+  "contacts_form_fields_need_you": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} поле требует внимания",
+        "countPlural=few": "{countShown} поля требуют внимания",
+        "countPlural=many": "{countShown} полей требуют внимания",
+        "countPlural=other": "{countShown} поля требуют внимания"
+      }
+    }
+  ],
+  "contacts_new_nothing_created": "Ничего не создано.",
+  "contacts_edit_nothing_saved": "Ничего не сохранено.",
+  "contacts_field_first_name": "Имя",
+  "contacts_field_last_name": "Фамилия",
+  "contacts_field_title": "Должность",
+  "contacts_field_department": "Отдел",
+  "contacts_field_account": "Компания",
+  "contacts_field_company_typed": "Компания, введённая вручную",
+  "contacts_field_linkedin": "LinkedIn",
+  "contacts_field_address": "Адрес",
+  "contacts_field_city": "Город",
+  "contacts_field_state": "Регион",
+  "contacts_field_postcode": "Индекс",
+  "contacts_field_country": "Страна",
+  "contacts_form_email_hint": "Должен быть уникальным в организации, без учёта регистра.",
+  "contacts_form_not_linked": "Не привязан",
+  "contacts_form_nobody": "Никто",
+  "contacts_form_not_recorded": "Не указана",
+  "contacts_new_account_hint": "Также добавит человека в список людей компании {name}.",
+  "contacts_form_accounts_showing": [
+    {
+      "declarations": ["input total", "local totalPlural = total: plural"],
+      "selectors": ["totalPlural"],
+      "match": {
+        "totalPlural=one": "Показано {shown} из {totalCount} компании.",
+        "totalPlural=few": "Показано {shown} из {totalCount} компаний.",
+        "totalPlural=many": "Показано {shown} из {totalCount} компаний.",
+        "totalPlural=other": "Показано {shown} из {totalCount} компании."
+      }
+    }
+  ],
+  "contacts_new_account_empty_hint": "Можно оставить пустым и указать позже.",
+  "contacts_new_company_hint": "Нужно, только если привязать компанию нельзя: запись импортирована или компанию ещё никто не создал.",
+  "contacts_new_dnc_hint": "Отметьте, если человек уже просил ему не звонить.",
+  "contacts_new_submit": "Создать контакт",
+  "contacts_new_failed": "Не удалось создать контакт.",
+  "contacts_edit_title": "Изменить «{name}»",
+  "contacts_edit_sub_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} сделка",
+        "countPlural=few": "{countShown} сделки",
+        "countPlural=many": "{countShown} сделок",
+        "countPlural=other": "{countShown} сделки"
+      }
+    }
+  ],
+  "contacts_edit_sub_tickets": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} обращение",
+        "countPlural=few": "{countShown} обращения",
+        "countPlural=many": "{countShown} обращений",
+        "countPlural=other": "{countShown} обращения"
+      }
+    }
+  ],
+  "contacts_edit_no_related": "Связанных записей пока нет",
+  "contacts_edit_saved": "Сохранено.",
+  "contacts_edit_saved_body": "Контакт «{name}» обновлён.",
+  "contacts_edit_back": "Назад к контакту",
+  "contacts_edit_account_hint": "Также добавит человека в список людей этой компании.",
+  "contacts_edit_owners_hint": "Ответственных у контакта: {count}. Здесь показан первый; если его изменить, заменятся все, а если не трогать, все останутся.",
+  "contacts_edit_company_hint": "Свободный текст, сохраняется для импортированных записей. Если он расходится с привязанной компанией, в остальной CRM используется компания.",
+  "contacts_edit_dnc_hint": "Человек просил не звонить. Номер остаётся в записи.",
+  "contacts_edit_active_label": "Ещё работает здесь",
+  "contacts_edit_active_hint": "Снимите отметку, когда человек уходит. Он останется в истории компании и пропадёт из рабочего списка.",
+  "contacts_edit_untouched_owners": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} ответственный",
+        "countPlural=few": "{countShown} ответственных",
+        "countPlural=many": "{countShown} ответственных",
+        "countPlural=other": "{countShown} ответственных"
+      }
+    }
+  ],
+  "contacts_edit_untouched_teams": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} команда",
+        "countPlural=few": "{countShown} команды",
+        "countPlural=many": "{countShown} команд",
+        "countPlural=other": "{countShown} команды"
+      }
+    }
+  ],
+  "contacts_edit_untouched_tags": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} тег",
+        "countPlural=few": "{countShown} тега",
+        "countPlural=many": "{countShown} тегов",
+        "countPlural=other": "{countShown} тега"
+      }
+    }
+  ],
+  "contacts_edit_untouched_links": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} связь с другой компанией",
+        "countPlural=few": "{countShown} связи с другими компаниями",
+        "countPlural=many": "{countShown} связей с другими компаниями",
+        "countPlural=other": "{countShown} связи с другими компаниями"
+      }
+    }
+  ],
+  "contacts_edit_untouched_note": "Эта форма не меняет у контакта следующее: {list}. Это редактируется в своих разделах.",
+  "contacts_edit_submit": "Сохранить изменения",
+  "contacts_edit_failed": "Не удалось сохранить контакт.",
+  "contacts_merge_title": "Объединение контактов",
+  "contacts_detail_attached": "Прикреплено",
+  "contacts_detail_today": "Сегодня",
+  "contacts_detail_yesterday": "Вчера",
+  "contacts_detail_headline_inactive_at": "Контакт {name} отмечен как неактивный в компании {account}. Узнайте, кто его заменил, до следующего разговора.",
+  "contacts_detail_headline_inactive": "Контакт {name} отмечен как неактивный. Узнайте, кто его заменил, до следующего разговора.",
+  "contacts_detail_headline_unreachable_dnc": "В записи нет способа связаться с контактом {name}: нет email, и он просил не звонить.",
+  "contacts_detail_headline_unreachable": "В записи нет способа связаться с контактом {name}: нет ни email, ни телефона.",
+  "contacts_detail_headline_unowned_deal": "Контакт {name} участвует в сделке «{deal}» на сумму {amount}, а у записи нет владельца.",
+  "contacts_detail_headline_unowned_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Контакт {name} участвует в {countShown} открытой сделке на сумму {amount}, а у записи нет владельца.",
+        "countPlural=few": "Контакт {name} участвует в {countShown} открытых сделках на сумму {amount}, а у записи нет владельца.",
+        "countPlural=many": "Контакт {name} участвует в {countShown} открытых сделках на сумму {amount}, а у записи нет владельца.",
+        "countPlural=other": "Контакт {name} участвует в {countShown} открытых сделках на сумму {amount}, а у записи нет владельца."
+      }
+    }
+  ],
+  "contacts_detail_headline_overdue": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} задача с контактом {name} просрочена.",
+        "countPlural=few": "{countShown} задачи с контактом {name} просрочены.",
+        "countPlural=many": "{countShown} задач с контактом {name} просрочено.",
+        "countPlural=other": "{countShown} задачи с контактом {name} просрочены."
+      }
+    }
+  ],
+  "contacts_detail_no_account": "Без компании",
+  "contacts_detail_sub_updated": "обновлён {when}",
+  "contacts_detail_dnc_title": "Человек просил ему не звонить",
+  "contacts_detail_call": "Позвонить",
+  "contacts_detail_delete_confirm": "Удалить навсегда",
+  "contacts_detail_delete_explain": "Контакт {name} будет удалён навсегда. Это действие нельзя отменить.",
+  "contacts_detail_needs_you": "Требует внимания",
+  "contacts_detail_out_of_date": "Устарело",
+  "contacts_detail_edit_action": "Изменить контакт",
+  "contacts_detail_deals_title": "Сделки с этим контактом",
+  "contacts_detail_deals_open": "в открытых",
+  "contacts_detail_deal_closed": "закрыта {date}",
+  "contacts_detail_deal_due": "срок {date}",
+  "contacts_detail_deals_empty": "Этот человек не указан ни в одной сделке. Добавьте его в сделку, в которой он действительно участвует. Сделки его компании сюда не относятся.",
+  "contacts_detail_tasks_title": "Задачи",
+  "contacts_detail_tasks_overdue": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} просрочена",
+        "countPlural=few": "{countShown} просрочены",
+        "countPlural=many": "{countShown} просрочено",
+        "countPlural=other": "{countShown} просрочено"
+      }
+    }
+  ],
+  "contacts_detail_task_done": "готово",
+  "contacts_detail_task_late": "+{count} дн.",
+  "contacts_detail_task_no_due": "без срока",
+  "contacts_detail_tasks_empty": "Нет открытых задач с этим человеком.",
+  "contacts_detail_tickets_title": "Обращения",
+  "contacts_detail_tickets_open": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "открытое",
+        "countPlural=few": "открытых",
+        "countPlural=many": "открытых",
+        "countPlural=other": "открытых"
+      }
+    }
+  ],
+  "contacts_detail_tickets_empty": "Обращений нет.",
+  "contacts_detail_about": "О контакте",
+  "contacts_detail_activity": "Активность",
+  "contacts_detail_activity_filter": "Фильтр активности",
+  "contacts_detail_filter_all": "Все",
+  "contacts_detail_filter_files": "Файлы",
+  "contacts_detail_note_placeholder": "Запишите звонок, ответ, что сказал человек…",
+  "contacts_detail_saving": "Сохранение…",
+  "contacts_detail_add_note": "Добавить заметку",
+  "contacts_detail_attach_file": "Прикрепить файл",
+  "contacts_detail_remove_file": "Убрать файл",
+  "contacts_detail_activity_empty": "Пока ничего не записано. Первая заметка появится здесь.",
+  "contacts_detail_rail_contact": "Контакт",
+  "contacts_detail_rail_title": "Должность",
+  "contacts_detail_rail_also_at": "Также в",
+  "contacts_detail_rail_profile": "Профиль",
+  "contacts_detail_rail_added": "Добавлен",
+  "contacts_detail_colleagues_at": "Также в компании {name}",
+  "contacts_detail_colleagues_here": "Также в этой компании",
+  "contacts_note_empty": "Перед сохранением напишите заметку или прикрепите файл.",
+  "contacts_note_failed": "Не удалось сохранить заметку.",
+  "contacts_delete_failed": "Не удалось удалить контакт.",
+  "contacts_owner_unknown": "Неизвестно",
+  "contacts_attachment_fallback": "Вложение",
+  "contacts_event_added": "Контакт добавлен",
+  "contacts_not_found": "Такого контакта нет, или у вас нет к нему доступа."
+}

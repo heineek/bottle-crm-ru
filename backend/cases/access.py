@@ -28,6 +28,7 @@ watcher clause that was missing from reads is not quietly added to writes.
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.http import Http404
+from django.utils.translation import gettext_lazy
 from rest_framework.exceptions import PermissionDenied
 
 from cases.models import Case
@@ -39,7 +40,7 @@ from cases.models import Case
 # imports keep working and so the cases access rules still read in one place.
 from common.permissions import is_org_admin  # noqa: F401
 
-_DENIED = "You do not have Permission to perform this action"
+_DENIED = gettext_lazy("You do not have Permission to perform this action")
 
 
 def visible_cases_qs(profile):

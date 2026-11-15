@@ -108,6 +108,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../support/automation_fixtures.dart';
+import 'package:bottle_crm/l10n/app_localizations.dart';
+import 'package:bottle_crm/providers/language_provider.dart';
+import 'package:bottle_crm/screens/settings/language_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 /// The newest screens, rendered at a real phone.
 ///
@@ -2733,6 +2737,44 @@ void main() {
 
       expect(find.textContaining('revoked by hand'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('language at 390px', () {
+    Widget languageApp(_FakeLanguage fake) => ProviderScope(
+      overrides: [languageProvider.overrideWith(() => fake)],
+      child: const MaterialApp(
+        locale: Locale('ru'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: LanguageScreen(),
+      ),
+    );
+
+    testWidgets('renders in Russian without overflowing', (tester) async {
+      await pump(tester, languageApp(_FakeLanguage()));
+      expect(find.text('Автоматически'), findsOneWidget);
+      expect(find.text('Русский'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('fits with the system font scaled up', (tester) async {
+      await pump(tester, languageApp(_FakeLanguage()), textScale: 1.5);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('tapping a language saves it', (tester) async {
+      final fake = _FakeLanguage();
+      await pump(tester, languageApp(fake));
+      await tester.tap(find.text('English'));
+      await tester.pumpAndSettle();
+      expect(fake.saved, ['en']);
     });
   });
 
@@ -5965,4 +6007,20 @@ class _FakeObjectLead extends LeadsNotifier {
     }),
     canDelete: true,
   );
+}
+
+class _FakeLanguage extends LanguageNotifier {
+  final saved = <String?>[];
+
+  @override
+  String build() => 'ru';
+
+  @override
+  String? get chosen => null;
+
+  @override
+  Future<String?> choose(String? language) async {
+    saved.add(language);
+    return null;
+  }
 }

@@ -5,6 +5,7 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import { TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: any, form: any }} */
   let { data, form: result } = $props();
@@ -26,7 +27,7 @@
   let linkFields = $derived(data.linkFields);
 </script>
 
-<PageHeader title="Edit {record.name}" center>
+<PageHeader title={m.app_objects_edit_title({ name: record.name })} center>
   {#snippet crumb()}
     <a href={resolve(asInternalPath(`/objects/${def.key}`))}>{def.label_plural}</a> ›
     <a href={resolve(asInternalPath(recordPath))}>{record.name}</a> ›
@@ -54,7 +55,7 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this record</div>
+          <div style="font-weight:600">{m.app_objects_refused()}</div>
           <div class="v2-sub" style="margin-top:2px;white-space:pre-line">{result.error}</div>
         </div>
       </div>
@@ -81,8 +82,8 @@
     />
 
     <div class="actions">
-      <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>Save</button>
-      <a class="v2-btn" href={resolve(asInternalPath(recordPath))}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>{m.common_save()}</button>
+      <a class="v2-btn" href={resolve(asInternalPath(recordPath))}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>

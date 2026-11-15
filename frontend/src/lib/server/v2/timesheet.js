@@ -23,6 +23,7 @@
  * entry. Nothing below should be read as having re-checked that.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The caller's timesheet for a Mon..Sun week, shaped for the page.
@@ -57,7 +58,7 @@ export async function getTimesheet({ cookies }, { start, end } = {}) {
  * @returns {Promise<any>} the stopped entry
  */
 export async function stopTimer({ cookies }, entryId) {
-  if (!entryId) throw new Error('Which time entry? No entry id was given.');
+  if (!entryId) throw new Error(m.timesheet_error_no_entry());
 
   return await apiRequest(`/time-entries/${entryId}/stop/`, { method: 'POST' }, { cookies });
 }
@@ -117,7 +118,7 @@ export async function getTimeReport({ cookies }, filters = {}) {
  * @returns {Promise<any[]>}
  */
 export async function listTicketTime({ cookies }, ticketId) {
-  if (!ticketId) throw new Error('Which ticket? No ticket id was given.');
+  if (!ticketId) throw new Error(m.timesheet_error_no_ticket());
 
   const entries = await apiRequest(`/cases/${ticketId}/time-entries/`, {}, { cookies });
   return Array.isArray(entries) ? entries : [];
@@ -136,7 +137,7 @@ export async function listTicketTime({ cookies }, ticketId) {
  * @returns {Promise<any>} the started entry
  */
 export async function startTicketTimer({ cookies }, ticketId) {
-  if (!ticketId) throw new Error('Which ticket? No ticket id was given.');
+  if (!ticketId) throw new Error(m.timesheet_error_no_ticket());
 
   return await apiRequest(
     `/cases/${ticketId}/time-entries/start/`,
@@ -170,14 +171,14 @@ export async function startTicketTimer({ cookies }, ticketId) {
  * @returns {Promise<any>} the created entry
  */
 export async function logTicketTime({ cookies }, ticketId, entry) {
-  if (!ticketId) throw new Error('Which ticket? No ticket id was given.');
+  if (!ticketId) throw new Error(m.timesheet_error_no_ticket());
 
   const minutes = Number(entry.minutes);
   if (!Number.isInteger(minutes) || minutes < 1 || minutes > MAX_ENTRY_MINUTES) {
-    throw new Error(`Minutes must be a whole number between 1 and ${MAX_ENTRY_MINUTES}.`);
+    throw new Error(m.timesheet_error_minutes({ max: MAX_ENTRY_MINUTES }));
   }
   const description = (entry.description ?? '').trim();
-  if (!description) throw new Error('Say what the time was spent on.');
+  if (!description) throw new Error(m.timesheet_error_description());
 
   const ended = new Date();
   const started = new Date(ended.getTime() - minutes * 60000);
@@ -194,7 +195,7 @@ export async function logTicketTime({ cookies }, ticketId, entry) {
   // difference between an invoice line worth something and one worth 0.00.
   if (entry.hourlyRate !== null && entry.hourlyRate !== undefined && entry.hourlyRate !== '') {
     const rate = Number(entry.hourlyRate);
-    if (!Number.isFinite(rate) || rate < 0) throw new Error('The rate must be a positive number.');
+    if (!Number.isFinite(rate) || rate < 0) throw new Error(m.timesheet_error_rate());
     body.hourly_rate = rate.toFixed(2);
   }
   if (entry.currency) body.currency = entry.currency;
@@ -219,7 +220,7 @@ export async function logTicketTime({ cookies }, ticketId, entry) {
  * @returns {Promise<any>} the updated entry
  */
 export async function setEntryBillable({ cookies }, entryId, billable) {
-  if (!entryId) throw new Error('Which time entry? No entry id was given.');
+  if (!entryId) throw new Error(m.timesheet_error_no_entry());
 
   return await apiRequest(
     `/time-entries/${entryId}/`,
@@ -241,7 +242,7 @@ export async function setEntryBillable({ cookies }, entryId, billable) {
  * @returns {Promise<null>}
  */
 export async function deleteEntry({ cookies }, entryId) {
-  if (!entryId) throw new Error('Which time entry? No entry id was given.');
+  if (!entryId) throw new Error(m.timesheet_error_no_entry());
 
   return await apiRequest(`/time-entries/${entryId}/`, { method: 'DELETE' }, { cookies });
 }

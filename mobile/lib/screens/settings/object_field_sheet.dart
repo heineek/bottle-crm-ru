@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/custom_field_definition.dart';
 import '../../data/models/custom_object.dart';
 import '../../providers/custom_objects_provider.dart';
 import 'options_editor.dart';
 
-const objectFieldTypeLabels = {
-  'text': 'Text',
-  'textarea': 'Long text',
-  'number': 'Number',
-  'dropdown': 'Dropdown',
-  'date': 'Date',
-  'checkbox': 'Checkbox',
-  'link': 'Link',
+Map<String, String> get objectFieldTypeLabels => {
+  'text': appL10n.settingsObjectFieldTypeText,
+  'textarea': appL10n.settingsObjectFieldTypeTextarea,
+  'number': appL10n.settingsObjectFieldTypeNumber,
+  'dropdown': appL10n.settingsObjectFieldTypeDropdown,
+  'date': appL10n.settingsObjectFieldTypeDate,
+  'checkbox': appL10n.settingsObjectFieldTypeCheckbox,
+  'link': appL10n.settingsObjectFieldTypeLink,
 };
 
 String linkTargetLabel(List<LinkTarget> targets, String? key) {
@@ -120,13 +121,11 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
     final key = _key.text.trim();
     String? problem;
     if (label.isEmpty) {
-      problem = 'Give the field a label.';
+      problem = context.l10n.settingsObjectFieldLabelRequired;
     } else if (_creating && !_keyPattern.hasMatch(key)) {
-      problem =
-          'The key starts with a letter and uses only lowercase letters, '
-          'numbers and underscores.';
+      problem = context.l10n.settingsObjectFieldKeyInvalid;
     } else if (_creating && _isLink && _target == null) {
-      problem = 'Choose what the field links to.';
+      problem = context.l10n.settingsObjectFieldTargetRequired;
     }
     if (problem != null) {
       setState(() => _error = problem);
@@ -165,6 +164,7 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
   @override
   Widget build(BuildContext context) {
     final existing = widget.existing;
+    final l10n = context.l10n;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -178,7 +178,9 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _creating ? 'New field' : 'Edit ${existing!.label}',
+              _creating
+                  ? l10n.settingsObjectFieldNewTitle
+                  : l10n.settingsObjectsEditTitle(existing!.label),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -187,8 +189,8 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
               onChanged: _onLabelChanged,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 128,
-              decoration: const InputDecoration(
-                labelText: 'Label',
+              decoration: InputDecoration(
+                labelText: l10n.settingsObjectFieldLabel,
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -202,11 +204,9 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
                 ],
-                decoration: const InputDecoration(
-                  labelText: 'Key',
-                  helperText:
-                      'Lowercase letters, numbers and underscores. '
-                      'Cannot be changed later.',
+                decoration: InputDecoration(
+                  labelText: l10n.settingsObjectsKey,
+                  helperText: l10n.settingsObjectFieldKeyHelper,
                   helperMaxLines: 2,
                   border: OutlineInputBorder(),
                   counterText: '',
@@ -216,8 +216,8 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
               DropdownButtonFormField<String>(
                 initialValue: _fieldType,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Type',
+                decoration: InputDecoration(
+                  labelText: l10n.settingsObjectFieldType,
                   border: OutlineInputBorder(),
                 ),
                 items: [
@@ -228,7 +228,7 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
               ),
             ] else
               _Fixed(
-                label: 'Key and type',
+                label: l10n.settingsObjectFieldKeyAndType,
                 value:
                     '${existing!.key}, '
                     '${objectFieldTypeLabels[existing.fieldType] ?? existing.fieldType}',
@@ -239,8 +239,8 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
                 DropdownButtonFormField<String>(
                   initialValue: _target,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Links to',
+                  decoration: InputDecoration(
+                    labelText: l10n.settingsObjectFieldLinksTo,
                     border: OutlineInputBorder(),
                   ),
                   items: [
@@ -256,25 +256,32 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
                 DropdownButtonFormField<bool>(
                   initialValue: _many,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'How many',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.settingsObjectFieldHowMany,
+                    border: const OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: false, child: Text('One record')),
+                  items: [
+                    DropdownMenuItem(
+                      value: false,
+                      child: Text(l10n.settingsObjectFieldOneRecord),
+                    ),
                     DropdownMenuItem(
                       value: true,
-                      child: Text('Several records'),
+                      child: Text(l10n.settingsObjectFieldSeveralRecords),
                     ),
                   ],
                   onChanged: (v) => setState(() => _many = v ?? _many),
                 ),
               ] else
                 _Fixed(
-                  label: 'Links to',
-                  value:
-                      '${linkTargetLabel(widget.linkTargets, existing!.target)}, '
-                      '${existing.many == true ? 'several records' : 'one record'}',
+                  label: l10n.settingsObjectFieldLinksTo,
+                  value: existing!.many == true
+                      ? l10n.settingsObjectFieldLinkSeveralRecords(
+                          linkTargetLabel(widget.linkTargets, existing.target),
+                        )
+                      : l10n.settingsObjectFieldLinkOneRecord(
+                          linkTargetLabel(widget.linkTargets, existing.target),
+                        ),
                 ),
             ],
             if (_fieldType == 'dropdown') ...[
@@ -293,8 +300,8 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
               controller: _order,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Order',
+              decoration: InputDecoration(
+                labelText: l10n.settingsObjectFieldOrder,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -305,10 +312,8 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
                   contentPadding: EdgeInsets.zero,
                   value: _isRequired,
                   onChanged: (v) => setState(() => _isRequired = v),
-                  title: const Text('Required'),
-                  subtitle: const Text(
-                    'A record cannot be saved without a value.',
-                  ),
+                  title: Text(l10n.settingsObjectsRequired),
+                  subtitle: Text(l10n.settingsObjectFieldRequiredHint),
                 ),
               ),
             if (_error != null) ...[
@@ -330,7 +335,7 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
                       onPressed: _saving
                           ? null
                           : () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -340,7 +345,11 @@ class _ObjectFieldSheetState extends State<ObjectFieldSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _saving ? null : _submit,
-                      child: Text(_creating ? 'Add field' : 'Save field'),
+                      child: Text(
+                        _creating
+                            ? l10n.settingsObjectFieldAdd
+                            : l10n.settingsObjectFieldSave,
+                      ),
                     ),
                   ),
                 ),
@@ -372,7 +381,7 @@ class _Fixed extends StatelessWidget {
         Text(value, style: AppTypography.body),
         const SizedBox(height: 2),
         Text(
-          'Fixed after creation.',
+          context.l10n.settingsObjectsFixed,
           style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
         ),
       ],

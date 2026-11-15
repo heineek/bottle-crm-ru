@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../../services/org_date.dart';
 import 'attachment.dart';
 import 'comment.dart';
@@ -10,17 +11,25 @@ enum OpportunityType {
   // Sentinel, backend stores this as null (the column is blank=True,null=True).
   // The picker shows this as "Not Specified"; toJson translates it to null so
   // we don't auto-stamp NEW_BUSINESS on deals the user never categorized.
-  unspecified('', 'Not Specified'),
-  newBusiness('NEW_BUSINESS', 'New Business'),
-  existingBusiness('EXISTING_BUSINESS', 'Existing Business'),
-  renewal('RENEWAL', 'Renewal'),
-  upsell('UPSELL', 'Upsell'),
-  crossSell('CROSS_SELL', 'Cross Sell');
+  unspecified(''),
+  newBusiness('NEW_BUSINESS'),
+  existingBusiness('EXISTING_BUSINESS'),
+  renewal('RENEWAL'),
+  upsell('UPSELL'),
+  crossSell('CROSS_SELL');
 
   final String value;
-  final String label;
 
-  const OpportunityType(this.value, this.label);
+  const OpportunityType(this.value);
+
+  String get label => switch (this) {
+    unspecified => appL10n.appOpportunityTypeUnspecified,
+    newBusiness => appL10n.appOpportunityTypeNewBusiness,
+    existingBusiness => appL10n.appOpportunityTypeExistingBusiness,
+    renewal => appL10n.appOpportunityTypeRenewal,
+    upsell => appL10n.appOpportunityTypeUpsell,
+    crossSell => appL10n.appOpportunityTypeCrossSell,
+  };
 
   static OpportunityType fromString(String? value) {
     if (value == null || value.isEmpty) return OpportunityType.unspecified;
@@ -33,20 +42,31 @@ enum OpportunityType {
 
 /// Opportunity lead source enumeration (different from Lead's source)
 enum OpportunitySource {
-  none('NONE', 'None'),
-  call('CALL', 'Call'),
-  email('EMAIL', 'Email'),
-  existingCustomer('EXISTING CUSTOMER', 'Existing Customer'),
-  partner('PARTNER', 'Partner'),
-  publicRelations('PUBLIC RELATIONS', 'Public Relations'),
-  campaign('CAMPAIGN', 'Campaign'),
-  website('WEBSITE', 'Website'),
-  other('OTHER', 'Other');
+  none('NONE'),
+  call('CALL'),
+  email('EMAIL'),
+  existingCustomer('EXISTING CUSTOMER'),
+  partner('PARTNER'),
+  publicRelations('PUBLIC RELATIONS'),
+  campaign('CAMPAIGN'),
+  website('WEBSITE'),
+  other('OTHER');
 
   final String value;
-  final String label;
 
-  const OpportunitySource(this.value, this.label);
+  const OpportunitySource(this.value);
+
+  String get label => switch (this) {
+    none => appL10n.appOpportunitySourceNone,
+    call => appL10n.appOpportunitySourceCall,
+    email => appL10n.appOpportunitySourceEmail,
+    existingCustomer => appL10n.appOpportunitySourceExistingCustomer,
+    partner => appL10n.appOpportunitySourcePartner,
+    publicRelations => appL10n.appOpportunitySourcePublicRelations,
+    campaign => appL10n.appOpportunitySourceCampaign,
+    website => appL10n.appOpportunitySourceWebsite,
+    other => appL10n.appOpportunitySourceOther,
+  };
 
   static OpportunitySource fromString(String? value) {
     if (value == null) return OpportunitySource.none;
@@ -296,7 +316,7 @@ class Deal {
     //   - assignedToRaw: the original profile maps (used by detail rendering)
     //   - assignedToName: a single display name for the *first* assignee
     //     (used by the list card where there's no room for more than one).
-    String assignedToName = 'Unassigned';
+    String? assignedToName;
     List<String> assignedToIds = [];
     List<Map<String, dynamic>> assignedToRaw = [];
     if (json['assigned_to'] != null) {
@@ -306,7 +326,7 @@ class Deal {
           assignedToRaw.add(item);
           final id = item['id']?.toString() ?? '';
           if (id.isNotEmpty) assignedToIds.add(id);
-          if (assignedToName == 'Unassigned') {
+          if (assignedToName == null) {
             // Prefer the detail-endpoint user_details.name; fall back to
             // legacy fields when the response shape is the list endpoint's.
             final userDetails = item['user_details'];
@@ -325,9 +345,11 @@ class Deal {
             if (name.isNotEmpty) {
               assignedToName = name;
             } else if (email.isNotEmpty) {
-              assignedToName = email.split('@').first;
+              final local = email.split('@').first;
+              assignedToName = local.isEmpty
+                  ? appL10n.appAssigneeFallback
+                  : local;
             }
-            if (assignedToName.isEmpty) assignedToName = 'Assigned';
           }
         }
       }
@@ -413,10 +435,12 @@ class Deal {
     }
 
     // Parse account/company name and ID
-    String companyName = 'No Account';
+    String companyName = appL10n.appDealNoAccount;
     String? accountId;
     if (json['account'] != null && json['account'] is Map<String, dynamic>) {
-      companyName = json['account']['name'] as String? ?? 'No Account';
+      companyName =
+          json['account']['name'] as String? ?? appL10n.appDealNoAccount;
+
       accountId = json['account']['id']?.toString();
     }
 
@@ -503,7 +527,8 @@ class Deal {
       companyName: companyName,
       accountId: accountId,
       products: products,
-      assignedTo: assignedToName,
+      assignedTo: assignedToName ?? appL10n.appUnassigned,
+
       assignedToIds: assignedToIds,
       assignedToRaw: assignedToRaw,
       priority: Priority.medium, // API doesn't have priority, default to medium

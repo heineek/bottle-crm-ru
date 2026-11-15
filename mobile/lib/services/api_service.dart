@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import 'app_language.dart';
 
 /// Callback invoked when the access token has aged out (or, as a fallback, when
 /// a request comes back 401). Should hit the refresh endpoint and update the
@@ -195,6 +197,8 @@ class ApiService {
   /// Build request headers
   Map<String, String> _buildHeaders({bool requiresAuth = true}) {
     final headers = Map<String, String>.from(ApiConfig.defaultHeaders);
+    // So API errors read in the language the screen around them is in.
+    headers['Accept-Language'] = currentLanguage;
 
     if (requiresAuth && _accessToken != null) {
       headers['Authorization'] = 'Bearer $_accessToken';
@@ -233,11 +237,10 @@ class ApiService {
   /// reaches here has the same answer. A malformed body does not arrive here:
   /// `_parseResponse` swallows that and returns null. The original exception
   /// still goes to `debugPrint` for whoever is debugging.
-  String _networkErrorMessage(Object error) =>
-      'Cannot reach the server. Check your connection and try again.';
+  String _networkErrorMessage(Object error) => appL10n.appNetworkError;
 
   String _extractErrorMessage(dynamic data, int statusCode) {
-    if (data == null) return 'Request failed with status $statusCode';
+    if (data == null) return appL10n.appRequestFailedStatus(statusCode);
 
     if (data is Map<String, dynamic>) {
       // Check common error field names
@@ -276,7 +279,7 @@ class ApiService {
       if (fromFields != null) return fromFields;
     }
 
-    return 'Request failed with status $statusCode';
+    return appL10n.appRequestFailedStatus(statusCode);
   }
 
   /// Turn `{"field_name": ["message"]}` into `Field name: message`, one line

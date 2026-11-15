@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createSupportTicket, SUPPORT_CATEGORIES } from '#lib/server/v2/support.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 export function load() {
   return { categories: SUPPORT_CATEGORIES };
@@ -22,7 +23,7 @@ export const actions = {
         subject,
         category,
         body,
-        error: 'Add a subject, choose a category, and describe what you need help with.'
+        error: m.help_new_invalid()
       });
     }
 
@@ -38,9 +39,7 @@ export const actions = {
         category,
         body,
         error:
-          error?.status === 404
-            ? 'This deployment has no BottleCRM support queue. The help page lists the ways to reach us.'
-            : readableError(error, 'Could not open this support ticket.')
+          error?.status === 404 ? m.help_new_no_queue() : readableError(error, m.help_new_failed())
       });
     }
     redirect(303, `/help/${ticket.id}`);

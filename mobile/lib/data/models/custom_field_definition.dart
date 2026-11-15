@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// Per-org schema row describing a single custom field on an entity.
 ///
 /// Mirrors `common.models.CustomFieldDefinition` on the backend. The form
@@ -83,20 +85,27 @@ class CustomFieldOption {
 }
 
 enum CustomFieldType {
-  text('text', 'Text'),
-  textarea('textarea', 'Long text'),
-  number('number', 'Number'),
-  dropdown('dropdown', 'Dropdown'),
-  date('date', 'Date'),
-  checkbox('checkbox', 'Checkbox');
+  text('text'),
+  textarea('textarea'),
+  number('number'),
+  dropdown('dropdown'),
+  date('date'),
+  checkbox('checkbox');
 
   final String value;
 
+  const CustomFieldType(this.value);
+
   /// Matches `FIELD_TYPE_LABEL` in `frontend/src/lib/v2/enums.js`, so the two
   /// clients name the same type the same way.
-  final String label;
-
-  const CustomFieldType(this.value, this.label);
+  String get label => switch (this) {
+    text => appL10n.appCustomFieldTypeText,
+    textarea => appL10n.appCustomFieldTypeTextarea,
+    number => appL10n.appCustomFieldTypeNumber,
+    dropdown => appL10n.appCustomFieldTypeDropdown,
+    date => appL10n.appCustomFieldTypeDate,
+    checkbox => appL10n.appCustomFieldTypeCheckbox,
+  };
 
   static CustomFieldType fromString(String? value) {
     return CustomFieldType.values.firstWhere(
@@ -114,17 +123,20 @@ enum CustomFieldType {
 /// `TARGET_MODEL_LABEL` in `frontend/src/lib/v2/enums.js`.
 /// `CustomFieldDefinitionSerializer` rejects anything outside this set, so
 /// offering a wider list would only produce a 400.
-const Map<String, String> customFieldTargets = {
-  'Account': 'Accounts',
-  'Case': 'Tickets',
-  'Contact': 'Contacts',
-  'Estimate': 'Estimates',
-  'Invoice': 'Invoices',
-  'Lead': 'Leads',
-  'Opportunity': 'Deals',
-  'RecurringInvoice': 'Recurring invoices',
-  'Task': 'Tasks',
-};
+Map<String, String> get customFieldTargets {
+  final l10n = appL10n;
+  return {
+    'Account': l10n.appTargetAccounts,
+    'Case': l10n.appTargetTickets,
+    'Contact': l10n.appTargetContacts,
+    'Estimate': l10n.appTargetEstimates,
+    'Invoice': l10n.appTargetInvoices,
+    'Lead': l10n.appTargetLeads,
+    'Opportunity': l10n.appTargetDeals,
+    'RecurringInvoice': l10n.appTargetRecurringInvoices,
+    'Task': l10n.appTargetTasks,
+  };
+}
 
 /// The module that serves each target; Account and Contact are always on.
 /// Twin of `TARGET_MODULES` in `frontend/src/lib/v2/modules.js`.
@@ -196,30 +208,30 @@ String? validateCustomFieldDraft({
   required CustomFieldType fieldType,
   required List<CustomFieldOption> options,
 }) {
-  if (label.trim().isEmpty) return 'Give the field a label.';
+  final l10n = appL10n;
+  if (label.trim().isEmpty) return l10n.appCustomFieldValidateLabel;
   if (isCreate) {
-    if (key.trim().isEmpty) return 'Give the field a key.';
+    if (key.trim().isEmpty) return l10n.appCustomFieldValidateKey;
     if (!isValidCustomFieldKey(key.trim())) {
-      return 'A key is lowercase letters, numbers and underscores, '
-          'starting with a letter. No hyphens or spaces.';
+      return l10n.appCustomFieldValidateKeyFormat;
     }
     if (!customFieldTargets.containsKey(targetModel)) {
-      return 'Choose the record type this field belongs to.';
+      return l10n.appCustomFieldValidateTarget;
     }
   }
   if (fieldType == CustomFieldType.dropdown) {
     final rows = options.where((o) => o.label.trim().isNotEmpty).toList();
-    if (rows.isEmpty) return 'A dropdown needs at least one option.';
+    if (rows.isEmpty) return l10n.appCustomFieldValidateNoOptions;
     final seen = <String>{};
     for (final row in rows) {
       final value = row.value.isNotEmpty
           ? row.value
           : slugifyOptionValue(row.label);
       if (value.isEmpty) {
-        return 'An option needs at least one letter or number in its name.';
+        return l10n.appCustomFieldValidateOptionName;
       }
       if (!seen.add(value)) {
-        return 'Two options would both be stored as "$value". Rename one.';
+        return l10n.appCustomFieldValidateOptionDuplicate(value);
       }
     }
   }

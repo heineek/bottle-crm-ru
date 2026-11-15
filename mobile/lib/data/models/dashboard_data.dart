@@ -1,6 +1,7 @@
 // Dashboard data models for BottleCRM
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/l10n.dart';
 import 'deal_pipeline.dart';
 
 /// Urgent counts from dashboard API
@@ -231,11 +232,12 @@ class DashboardActivity {
     final now = DateTime.now();
     final diff = now.difference(createdAt);
 
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).floor()}w ago';
+    final l10n = appL10n;
+    if (diff.inMinutes < 1) return l10n.appRelativeJustNow;
+    if (diff.inMinutes < 60) return l10n.appRelativeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.appRelativeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l10n.appRelativeDaysAgo(diff.inDays);
+    return l10n.appRelativeWeeksAgo((diff.inDays / 7).floor());
   }
 
   factory DashboardActivity.fromJson(Map<String, dynamic> json) {

@@ -12,11 +12,14 @@ declare global {
       user?: any; // You might want to replace 'any' with a more specific type for user
       org?: any; // You might want to replace 'any' with a more specific type for org
       org_name?: string;
+      /** Decided once per request in hooks.server.js (#lib/i18n/locale.js). */
+      locale?: string;
       org_settings?: {
         default_currency?: string;
         currency_symbol?: string;
         default_country?: string | null;
         timezone?: string;
+        default_language?: string;
       };
       profile?: {
         role?: string;

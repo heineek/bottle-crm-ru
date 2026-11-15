@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, getDealForEdit, updateDeal } from '#lib/server/v2/deals.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load(event) {
@@ -44,7 +45,7 @@ export const actions = {
     } catch (/** @type {any} */ err) {
       // The API's field errors are the ones that count: this form's own
       // checks are a UX hint and the serializer is the rule.
-      return fail(400, { values, error: String(err?.message ?? 'Could not save the deal.') });
+      return fail(400, { values, error: String(err?.message ?? m.pipeline_edit_save_failed()) });
     }
 
     return { saved: true };

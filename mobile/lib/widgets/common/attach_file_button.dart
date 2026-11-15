@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 
 /// "Attach a file", on every detail screen that lists attachments.
@@ -12,12 +13,12 @@ class AttachFileButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     this.isUploading = false,
-    this.label = 'Attach a file',
+    this.label,
   });
 
   final VoidCallback onPressed;
   final bool isUploading;
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,11 @@ class AttachFileButton extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(LucideIcons.paperclip, size: 16),
-      label: Text(isUploading ? 'Uploading…' : label),
+      label: Text(
+        isUploading
+            ? context.l10n.appUploading
+            : label ?? context.l10n.appAttachFile,
+      ),
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary600,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -32,6 +32,7 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import { relativeTime } from '#lib/v2/format.js';
   import { BookOpen, LifeBuoy, Plus, Bug, Mail, ArrowUpRight, ClipboardList } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /** @type {{ data: any }} */
   let { data } = $props();
@@ -44,26 +45,26 @@
     closed: 'slate'
   };
 
-  const SELF_SERVE = [
+  let SELF_SERVE = $derived([
     {
       href: '/solutions',
       icon: BookOpen,
-      title: 'Knowledge base',
-      body: 'The answers your team has already written down, including the ones customers can read.'
+      title: m.help_card_kb_title(),
+      body: m.help_card_kb_body()
     },
     {
       href: '/tickets',
       icon: LifeBuoy,
-      title: 'Your tickets',
-      body: 'Everything open, and who it is waiting on. Most "no one replied" turns out to be a ticket assigned to nobody.'
+      title: m.help_card_tickets_title(),
+      body: m.help_card_tickets_body()
     },
     {
       href: '/settings',
       icon: ClipboardList,
-      title: 'Settings',
-      body: 'Routing, escalation, business hours and inbound email. Each page reports what its rules are actually doing, not just what they are set to.'
+      title: m.help_card_settings_title(),
+      body: m.help_card_settings_body()
     }
-  ];
+  ]);
 
   /**
    * These hrefs leave the app, so they are rendered as-is.
@@ -75,22 +76,22 @@
    * render. Every other external link in this codebase is written straight
    * onto the anchor for the same reason.
    */
-  const CONTACT = [
+  let CONTACT = $derived([
     {
       href: 'https://github.com/django-crm/Django-CRM/issues',
       icon: Bug,
-      title: 'Report a bug',
-      body: 'Public issue tracker. Fastest route for anything reproducible.',
+      title: m.help_card_bug_title(),
+      body: m.help_card_bug_body(),
       newTab: true
     },
     {
       href: 'mailto:support@bottlecrm.io',
       icon: Mail,
-      title: 'Email support',
-      body: 'For anything involving your data, billing or an account you cannot get into.',
+      title: m.help_card_email_title(),
+      body: m.help_card_email_body(),
       newTab: false
     }
-  ];
+  ]);
 
   /**
    * The four facts a first reply always asks for. Browser and window come from
@@ -102,19 +103,23 @@
   $effect(() => {
     if (data.available) return;
     const ua = navigator.userAgent;
-    const m = ua.match(/(Firefox|Edg|Chrome|Safari)\/([\d.]+)/);
-    browser = m ? `${m[1] === 'Edg' ? 'Edge' : m[1]} ${m[2].split('.')[0]}` : 'Unknown browser';
+    const hit = ua.match(/(Firefox|Edg|Chrome|Safari)\/([\d.]+)/);
+    browser = hit
+      ? `${hit[1] === 'Edg' ? 'Edge' : hit[1]} ${hit[2].split('.')[0]}`
+      : m.help_unknown_browser();
     windowSize = `${window.innerWidth}×${window.innerHeight}`;
   });
 </script>
 
-<PageHeader title="Help" center width="920px">
+<PageHeader title={m.help_title()} center width="920px">
   {#snippet sub()}
-    Fix it yourself, or reach someone who can
+    {m.help_subtitle()}
   {/snippet}
   {#snippet actions()}
     {#if data.available}
-      <a class="v2-btn v2-btn-primary" href={resolve('help/new')}><Plus />New ticket</a>
+      <a class="v2-btn v2-btn-primary" href={resolve('help/new')}
+        ><Plus />{m.help_new_ticket_button()}</a
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -124,7 +129,7 @@
     class="v2-pad"
     style="padding-top:18px;padding-bottom:32px;max-width:920px;margin-inline:auto"
   >
-    <div class="v2-label" style="margin-bottom:10px">Start here</div>
+    <div class="v2-label" style="margin-bottom:10px">{m.help_start_here()}</div>
     <div class="cards">
       {#each SELF_SERVE as card (card.href)}
         <a class="v2-card card" href={resolve(asInternalPath(card.href))}>
@@ -138,15 +143,12 @@
     </div>
 
     {#if data.available}
-      <div class="v2-label" style="margin:26px 0 10px">Your support tickets</div>
+      <div class="v2-label" style="margin:26px 0 10px">{m.help_your_tickets()}</div>
       {#if data.tickets.length === 0}
-        <EmptyState
-          title="No support tickets"
-          body="When you need help with BottleCRM, open a ticket here. Replies and status changes stay attached to it."
-        >
+        <EmptyState title={m.help_empty_title()} body={m.help_empty_body()}>
           {#snippet icon()}<LifeBuoy size={21} />{/snippet}
           {#snippet actions()}
-            <a class="v2-btn v2-btn-primary" href={resolve('help/new')}>Open a ticket</a>
+            <a class="v2-btn v2-btn-primary" href={resolve('help/new')}>{m.help_open_ticket()}</a>
           {/snippet}
         </EmptyState>
       {:else}
@@ -154,11 +156,11 @@
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Ticket</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Messages</th>
-                <th class="v2-r">Updated</th>
+                <th>{m.help_col_ticket()}</th>
+                <th>{m.help_col_category()}</th>
+                <th>{m.help_col_status()}</th>
+                <th>{m.help_col_messages()}</th>
+                <th class="v2-r">{m.help_col_updated()}</th>
               </tr>
             </thead>
             <tbody>
@@ -185,7 +187,7 @@
         </div>
       {/if}
     {:else}
-      <div class="v2-label" style="margin:26px 0 10px">If that did not do it</div>
+      <div class="v2-label" style="margin:26px 0 10px">{m.help_if_not()}</div>
       <div class="cards">
         {#each CONTACT as card (card.href)}
           <a
@@ -205,27 +207,23 @@
         {/each}
       </div>
 
-      <div class="v2-label" style="margin:26px 0 10px">What to include when you write</div>
+      <div class="v2-label" style="margin:26px 0 10px">{m.help_include_title()}</div>
       <div class="v2-card" style="padding:16px 18px">
         <p class="lead">
-          Four things turn a two-day exchange into one message. The first two are already known.
+          {m.help_include_lead()}
         </p>
         <dl class="facts">
-          <dt>Browser</dt>
+          <dt>{m.help_fact_browser()}</dt>
           <dd class="v2-num">{browser}</dd>
-          <dt>Window size</dt>
+          <dt>{m.help_fact_window()}</dt>
           <dd class="v2-num">{windowSize}</dd>
-          <dt>What you expected</dt>
-          <dd>The thing you were trying to do, in one sentence.</dd>
-          <dt>What happened instead</dt>
-          <dd>
-            The exact wording of any error. "It didn't work" and "Something went wrong" are the same
-            message to us.
-          </dd>
+          <dt>{m.help_fact_expected()}</dt>
+          <dd>{m.help_fact_expected_body()}</dd>
+          <dt>{m.help_fact_happened()}</dt>
+          <dd>{m.help_fact_happened_body()}</dd>
         </dl>
         <p class="fine">
-          Please do not paste screenshots containing an invoice link, an API token or a survey URL.
-          Each of those is a working credential for whoever ends up holding it.
+          {m.help_fine_print()}
         </p>
       </div>
     {/if}

@@ -1,4 +1,5 @@
 <script>
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * The line-item card the invoice and estimate builders share: add from the
    * catalogue, type a line, set quantity and price, remove a line.
@@ -48,17 +49,17 @@
 
 <div class="v2-card" style="padding:16px 18px;margin-top:14px">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-    <div class="v2-label">Lines</div>
+    <div class="v2-label">{m.app_line_items_editor_lines()}</div>
     <select
       class="catalogue"
       value=""
-      aria-label="Add a line from the catalogue"
+      aria-label={m.app_line_items_editor_catalogue_label()}
       onchange={(e) => {
         addProduct(e.currentTarget.value);
         e.currentTarget.value = '';
       }}
     >
-      <option value="">Add from catalogue…</option>
+      <option value="">{m.app_line_items_editor_catalogue_placeholder()}</option>
       {#each products as p (p.id)}
         <option value={p.id}>{p.name}, {money(p.price, currency)}</option>
       {/each}
@@ -71,22 +72,22 @@
         <input
           class="line-name"
           bind:value={item.name}
-          placeholder="Description"
-          aria-label="Line description"
+          placeholder={m.common_description()}
+          aria-label={m.app_line_items_editor_description_label()}
         />
         <input
           class="line-desc"
           bind:value={item.description}
-          placeholder="Detail the customer sees under the name (optional)"
-          aria-label="Line detail"
+          placeholder={m.app_line_items_editor_detail_placeholder()}
+          aria-label={m.app_line_items_editor_detail_label()}
         />
       </div>
       <label class="line-n">
-        <span>Qty</span>
+        <span>{m.app_line_items_editor_qty()}</span>
         <input type="number" min="0" step="1" bind:value={item.quantity} />
       </label>
       <label class="line-n">
-        <span>Unit price</span>
+        <span>{m.app_line_items_editor_unit_price()}</span>
         <input type="number" min="0" step="0.01" bind:value={item.unit_price} />
       </label>
       <div class="line-total v2-num">
@@ -94,9 +95,12 @@
         {#if num(item.discount_value)}
           <!-- Carried from the deal the line came from; it counts toward the total. -->
           <span class="line-off">
-            less {item.discount_type === 'PERCENTAGE'
-              ? `${num(item.discount_value)}%`
-              : money(num(item.discount_value), currency)}
+            {m.app_line_items_editor_less({
+              amount:
+                item.discount_type === 'PERCENTAGE'
+                  ? `${num(item.discount_value)}%`
+                  : money(num(item.discount_value), currency)
+            })}
           </span>
         {/if}
       </div>
@@ -104,8 +108,8 @@
         type="button"
         class="line-del"
         onclick={() => removeLine(i)}
-        aria-label="Remove this line"
-        title="Remove this line"
+        aria-label={m.app_line_items_editor_remove()}
+        title={m.app_line_items_editor_remove()}
       >
         <Trash2 size={14} />
       </button>
@@ -117,7 +121,7 @@
   {/each}
 
   <button type="button" class="v2-btn v2-btn-sm" style="margin-top:10px" onclick={addLine}>
-    <Plus size={13} />Add a line
+    <Plus size={13} />{m.app_line_items_editor_add()}
   </button>
 </div>
 

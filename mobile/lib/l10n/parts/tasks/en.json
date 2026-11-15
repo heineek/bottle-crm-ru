@@ -1,0 +1,311 @@
+{
+  "tasksToday": "Today",
+  "tasksTomorrow": "Tomorrow",
+  "tasksYesterday": "Yesterday",
+  "tasksMarkedIncomplete": "Task marked as incomplete",
+  "tasksCompleted": "Task completed",
+  "tasksUpdateFailed": "Failed to update task",
+  "tasksDeleteTitle": "Delete Task?",
+  "tasksDeleted": "Task deleted",
+  "tasksDeleteFailed": "Failed to delete task",
+  "tasksLoadFailed": "Failed to load task",
+  "tasksEditTask": "Edit Task",
+  "tasksCustomFields": "Custom Fields",
+  "tasksBoards": "Boards",
+  "tasksRelatedKindAccount": "Account",
+  "tasksRelatedKindLead": "Lead",
+  "tasksRelatedKindOpportunity": "Opportunity",
+  "tasksRelatedKindTicket": "Ticket",
+  "tasksListTitle": "Tasks",
+  "tasksListLoadFailed": "Failed to load tasks",
+  "tasksListSearchHint": "Search task title",
+  "tasksListOverdue": "Overdue",
+  "tasksListDueToday": "Due today",
+  "tasksListAnyone": "Anyone",
+  "tasksListStatusCount": "{count, plural, other{{count} statuses}}",
+  "@tasksListStatusCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListClear": "Clear",
+  "tasksListSummaryOverdue": "{count} overdue",
+  "@tasksListSummaryOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListSummaryToday": "{count} today",
+  "@tasksListSummaryToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListSummaryUpcoming": "{count} upcoming",
+  "@tasksListSummaryUpcoming": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListSummaryTotal": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@tasksListSummaryTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListGroupUpcoming": "Upcoming",
+  "tasksListGroupNoDueDate": "No Due Date",
+  "tasksListGroupCompleted": "Completed",
+  "tasksListNoTasksForDate": "No tasks for this date",
+  "tasksListAddATask": "Add a task",
+  "tasksListNoMatching": "No matching tasks",
+  "tasksListAllCaughtUp": "All caught up!",
+  "tasksListNoMatchingHint": "Try adjusting your search or filters.",
+  "tasksListAllCaughtUpHint": "No pending tasks. Create a new task to get started.",
+  "tasksListClearFilters": "Clear filters",
+  "tasksListAddTask": "Add Task",
+  "tasksListDeleteConfirm": "Are you sure you want to delete \"{title}\"?",
+  "@tasksListDeleteConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksListFilterByOwner": "Filter by Owner",
+  "tasksListMyTasks": "My tasks",
+  "tasksListMe": "Me",
+  "tasksListFilterByStatus": "Filter by Status",
+  "tasksListAllStatuses": "All statuses",
+  "tasksListFilterByPriority": "Filter by Priority",
+  "tasksListAllPriorities": "All priorities",
+  "tasksFormUpdated": "Task updated successfully",
+  "tasksFormCreated": "Task created successfully",
+  "tasksFormSaveFailed": "Failed to save task",
+  "tasksFormNewTitle": "New Task",
+  "tasksFormSectionDetails": "Task Details",
+  "tasksFormSectionStatusPriority": "Status & Priority",
+  "tasksFormDueDate": "Due Date",
+  "tasksFormSectionPeople": "People",
+  "tasksFormSectionLinkedRecord": "Linked Record",
+  "tasksFormNotesHint": "Add any additional details about this task...",
+  "tasksFormUpdateButton": "Update Task",
+  "tasksFormCreateButton": "Create Task",
+  "tasksFormTitleLabel": "Task Title",
+  "tasksFormTitleHint": "What needs to be done?",
+  "tasksFormTitleRequired": "Task title is required",
+  "tasksFormAddDueDate": "Add Due Date",
+  "tasksFormNoOneAssigned": "No one assigned",
+  "tasksFormNoUsersFound": "No users found",
+  "tasksFormSelected": "Selected",
+  "tasksFormLinkedRecord": "Linked record",
+  "tasksFormNotLinked": "Not linked",
+  "tasksFormLinkTo": "Link to…",
+  "tasksFormSelectKind": "{kind, select, account{Select Account} lead{Select Lead} opportunity{Select Opportunity} ticket{Select Ticket} other{Select a record}}",
+  "@tasksFormSelectKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksFormKindLoadFailed": "{kind, select, account{Could not load accounts} lead{Could not load leads} opportunity{Could not load opportunitys} ticket{Could not load tickets} other{Could not load records}}",
+  "@tasksFormKindLoadFailed": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksFormKindLoadFailedHint": "Close this and try again once you are back online.",
+  "tasksFormKindEmpty": "{kind, select, account{No accounts yet} lead{No leads yet} opportunity{No opportunitys yet} ticket{No tickets yet} other{No records yet}}",
+  "@tasksFormKindEmpty": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksFormKindEmptyHint": "Create one first, then link this task to it.",
+  "tasksDetailNotFound": "Task not found",
+  "tasksDetailMayBeDeleted": "This task may have been deleted",
+  "tasksDetailNoDueDate": "No due date",
+  "tasksDetailTeams": "Teams",
+  "tasksDetailAttachments": "Attachments",
+  "tasksDetailNoFiles": "No files yet.",
+  "tasksDetailDetails": "Details",
+  "tasksDetailCreated": "Created",
+  "tasksDetailCreatedBy": "Created by",
+  "tasksDetailLastUpdated": "Last Updated",
+  "tasksDetailSelectedAccount": "Selected account",
+  "tasksDetailSelectedLead": "Selected lead",
+  "tasksDetailSelectedDeal": "Selected deal",
+  "tasksDetailSelectedTicket": "Selected ticket",
+  "tasksDetailRelatedTo": "Related To",
+  "tasksDetailUnassigned": "Unassigned",
+  "tasksDetailComments": "Comments",
+  "tasksDetailNoComments": "No comments yet. Use the box below to add one.",
+  "tasksDetailCommentHint": "Add a comment…",
+  "tasksDetailReopen": "Reopen",
+  "tasksDetailComplete": "Complete",
+  "tasksDetailReopenTask": "Reopen Task",
+  "tasksDetailCompleteTask": "Complete Task",
+  "tasksDetailDeleteTask": "Delete Task",
+  "tasksDetailDeleteBody": "This action cannot be undone. Are you sure you want to delete this task?",
+  "tasksDetailCommentFailed": "Failed to add comment",
+  "tasksDetailDeleteCommentTitle": "Delete comment?",
+  "tasksDetailCannotBeUndone": "This cannot be undone.",
+  "tasksDetailDeleteFailed": "Delete failed",
+  "tasksDetailDeleteAttachmentTitle": "Delete attachment?",
+  "tasksDetailRemoveFile": "Remove \"{name}\"?",
+  "@tasksDetailRemoveFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksDetailDownloadFailed": "Could not download that file.",
+  "tasksDetailMonthsAgo": "{count}mo ago",
+  "@tasksDetailMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailDaysAgo": "{count}d ago",
+  "@tasksDetailDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailHoursAgo": "{count}h ago",
+  "@tasksDetailHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailMinutesAgo": "{count}m ago",
+  "@tasksDetailMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailJustNow": "Just now",
+  "tasksDetailDueToday": "Due Today",
+  "tasksDetailDueTomorrow": "Due Tomorrow",
+  "tasksDetailDueYesterday": "Due Yesterday",
+  "tasksDetailDaysOverdue": "{count, plural, =1{1 day overdue} other{{count} days overdue}}",
+  "@tasksDetailDaysOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailDueOn": "Due {date}",
+  "@tasksDetailDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardCardFab": "Card",
+  "tasksBoardDefaultTitle": "Board",
+  "tasksBoardNoBoards": "No boards yet",
+  "tasksBoardNoBoardsHint": "A board is a set of lanes you move cards through. You will own the one you create, and it starts with To Do, In Progress and Done.",
+  "tasksBoardCreateABoard": "Create a board",
+  "tasksBoardNoLanes": "This board has no lanes",
+  "tasksBoardNoLanesManage": "Add one and cards have somewhere to go.",
+  "tasksBoardNoLanesAsk": "Ask the board owner to add one. Cards need a lane to live in.",
+  "tasksBoardAddALane": "Add a lane",
+  "tasksBoardLaneChip": "Lane",
+  "tasksBoardLaneEmpty": "Nothing in {name}.",
+  "@tasksBoardLaneEmpty": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardMoveFailed": "Could not move that card.",
+  "tasksBoardMoveTo": "Move to",
+  "tasksBoardDeleteCard": "Delete card",
+  "tasksBoardMovedTo": "Moved to {name}.",
+  "@tasksBoardMovedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardDeleteCardTitle": "Delete card?",
+  "tasksBoardDeleteCardBody": "\"{title}\" will be removed from this board.",
+  "@tasksBoardDeleteCardBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardCardDeleted": "Card deleted.",
+  "tasksBoardDeleteCardFailed": "Could not delete that card.",
+  "tasksBoardCardCount": "{count, plural, =1{1 card} other{{count} cards}}",
+  "@tasksBoardCardCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksBoardNewBoard": "New board",
+  "tasksBoardNewBoardHint": "Product launch",
+  "tasksBoardCreateBoard": "Create board",
+  "tasksBoardBoardCreated": "Board created.",
+  "tasksBoardCreateBoardFailed": "Could not create that board.",
+  "tasksBoardNewLane": "New lane",
+  "tasksBoardNewLaneHint": "In Review",
+  "tasksBoardAddLane": "Add lane",
+  "tasksBoardLaneAdded": "Lane added.",
+  "tasksBoardAddLaneFailed": "Could not add that lane.",
+  "tasksBoardNameRequired": "Give it a name first.",
+  "tasksBoardNewCardIn": "New card in {lane}",
+  "@tasksBoardNewCardIn": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardCardTitle": "Title",
+  "tasksBoardCardTitleRequired": "A card needs a title.",
+  "tasksBoardCardAdded": "Card added to {lane}.",
+  "@tasksBoardCardAdded": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardAddCardFailed": "Could not add that card.",
+  "tasksBoardAddCard": "Add card",
+  "tasksBoardTryAgain": "Try again"
+}

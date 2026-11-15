@@ -124,6 +124,10 @@ class ApiConfig {
   /// use one vocabulary (see `common/org_time.py`).
   static String get timezones => '$apiBaseUrl/org/timezones/';
 
+  /// Languages, countries and currencies, named in the caller's language.
+  /// Like [timezones], signed in but org-free.
+  static String get orgLocales => '$apiBaseUrl/org/locales/';
+
   /// The org's own settings. GET is open to any member (the company profile is
   /// not a secret), PATCH is admin-only. Always acts on the caller's own org:
   /// there is no id in the path, so there is nothing to scope.

@@ -1,3 +1,5 @@
+import '../../l10n/l10n.dart';
+
 /// A contact: a person at an account.
 ///
 /// Like `Account`, this sits beside the four-field `ContactLookup` that the
@@ -76,7 +78,7 @@ class Contact {
 
   String get fullName {
     final name = '${firstName.trim()} ${lastName.trim()}'.trim();
-    return name.isEmpty ? (email ?? 'Unnamed contact') : name;
+    return name.isEmpty ? (email ?? appL10n.appUnnamedContact) : name;
   }
 
   String get initials {
@@ -225,7 +227,7 @@ class ContactAccountLink {
             id: row['id']?.toString() ?? '',
             name: (row['name'] as String?)?.trim().isNotEmpty == true
                 ? (row['name'] as String).trim()
-                : 'Unnamed account',
+                : appL10n.appUnnamedAccount,
           ),
         )
         .toList(growable: false);

@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -225,7 +225,7 @@
           <tr>
             <td style="padding: 24px 0; text-align: center;">
               <p style="margin: 0; font-size: 13px; font-weight: 400; color: #757575; line-height: 1.5;">
-                Sent by BottleCRM
+                {% translate "Sent by BottleCRM" %}
               </p>
             </td>
           </tr>

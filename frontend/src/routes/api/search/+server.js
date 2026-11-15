@@ -1,4 +1,5 @@
 import { search } from '#lib/server/v2/search.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * ⌘K palette search. The palette runs in the browser and the access token is an
@@ -12,6 +13,9 @@ export async function GET({ url, cookies }) {
   try {
     return Response.json(await search({ cookies }, q));
   } catch (/** @type {any} */ err) {
-    return Response.json({ results: [], error: err?.message || 'Search failed' }, { status: 400 });
+    return Response.json(
+      { results: [], error: err?.message || m.app_api_search_failed() },
+      { status: 400 }
+    );
   }
 }
