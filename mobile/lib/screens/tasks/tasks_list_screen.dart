@@ -7,10 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/tasks_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 import '../../widgets/cards/task_row.dart';
 import '../../widgets/common/common.dart';
 
@@ -184,7 +186,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Tasks'),
+        title: Text(context.l10n.tasksListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -201,7 +203,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
           // The board is a different record type, not another view of these
           // tasks, so it is a place to go rather than a mode to toggle.
           IconButton(
-            tooltip: 'Boards',
+            tooltip: context.l10n.tasksBoards,
             icon: const Icon(LucideIcons.squareKanban, size: 22),
             onPressed: () => context.push(AppRoutes.taskBoard),
           ),
@@ -241,7 +243,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
                 color: AppColors.danger500,
               ),
               const SizedBox(height: 16),
-              Text('Failed to load tasks', style: AppTypography.h3),
+              Text(context.l10n.tasksListLoadFailed, style: AppTypography.h3),
               const SizedBox(height: 8),
               Text(
                 error,
@@ -252,7 +254,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
               ),
               const SizedBox(height: 24),
               PrimaryButton(
-                label: 'Retry',
+                label: context.l10n.commonRetry,
                 icon: LucideIcons.refreshCw,
                 onPressed: () {
                   ref.read(tasksProvider.notifier).refresh();
@@ -283,7 +285,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
         style: AppTypography.body,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search task title',
+          hintText: context.l10n.tasksListSearchHint,
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -334,8 +336,8 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
             if (_activeView != null) ...[
               _TaskFilterChip(
                 label: _activeView == AppRoutes.viewOverdue
-                    ? 'Overdue'
-                    : 'Due today',
+                    ? context.l10n.tasksListOverdue
+                    : context.l10n.tasksListDueToday,
                 isActive: true,
                 icon: LucideIcons.alertTriangle,
                 onTap: _clearAllFilters,
@@ -343,7 +345,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
               const SizedBox(width: 6),
             ],
             _TaskFilterChip(
-              label: _filters.assignedToLabel ?? 'Anyone',
+              label: _filters.assignedToLabel ?? context.l10n.tasksListAnyone,
               isActive: _filters.assignedToId != null,
               icon: LucideIcons.user,
               onTap: _showAssigneeFilter,
@@ -354,16 +356,16 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
               // show, and printing one of them would name a filter narrower
               // than the list actually is.
               label: switch (_filters.statuses.length) {
-                0 => 'Status',
+                0 => context.l10n.commonStatus,
                 1 => _filters.statuses.first.label,
-                final n => '$n statuses',
+                final n => context.l10n.tasksListStatusCount(n),
               },
               isActive: _filters.statuses.isNotEmpty,
               onTap: _showStatusFilter,
             ),
             const SizedBox(width: 6),
             _TaskFilterChip(
-              label: _filters.priority?.label ?? 'Priority',
+              label: _filters.priority?.label ?? context.l10n.commonPriority,
               isActive: _filters.priority != null,
               onTap: _showPriorityFilter,
             ),
@@ -386,7 +388,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
                       Icon(LucideIcons.x, size: 12, color: AppColors.danger600),
                       const SizedBox(width: 3),
                       Text(
-                        'Clear',
+                        context.l10n.tasksListClear,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.danger600,
                           fontWeight: FontWeight.w600,
@@ -406,12 +408,13 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
   /// Compact summary line so overdue/today counts are visible without scrolling
   /// past the Completed accordion.
   Widget _buildHeaderSummary(int overdue, int today, int upcoming, int total) {
+    final l10n = context.l10n;
     final parts = <String>[];
-    if (overdue > 0) parts.add('$overdue overdue');
-    if (today > 0) parts.add('$today today');
-    if (upcoming > 0) parts.add('$upcoming upcoming');
+    if (overdue > 0) parts.add(l10n.tasksListSummaryOverdue(overdue));
+    if (today > 0) parts.add(l10n.tasksListSummaryToday(today));
+    if (upcoming > 0) parts.add(l10n.tasksListSummaryUpcoming(upcoming));
     final summary = parts.isEmpty
-        ? '$total task${total == 1 ? '' : 's'}'
+        ? l10n.tasksListSummaryTotal(total)
         : parts.join(' · ');
     return Container(
       width: double.infinity,
@@ -646,7 +649,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
 
             if (overdueTasks.isNotEmpty)
               TaskGroup(
-                title: 'Overdue',
+                title: context.l10n.tasksListOverdue,
                 variant: 'danger',
                 tasks: overdueTasks,
                 onToggle: _toggleTask,
@@ -657,7 +660,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
 
             if (todayTasks.isNotEmpty)
               TaskGroup(
-                title: 'Today',
+                title: context.l10n.tasksToday,
                 variant: 'warning',
                 tasks: todayTasks,
                 onToggle: _toggleTask,
@@ -668,7 +671,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
 
             if (upcomingTasks.isNotEmpty)
               TaskGroup(
-                title: 'Upcoming',
+                title: context.l10n.tasksListGroupUpcoming,
                 variant: 'default',
                 tasks: upcomingTasks,
                 onToggle: _toggleTask,
@@ -679,7 +682,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
 
             if (noDueDateTasks.isNotEmpty)
               TaskGroup(
-                title: 'No Due Date',
+                title: context.l10n.tasksListGroupNoDueDate,
                 variant: 'default',
                 tasks: noDueDateTasks,
                 onToggle: _toggleTask,
@@ -690,7 +693,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
 
             if (completedTasks.isNotEmpty)
               TaskGroup(
-                title: 'Completed',
+                title: context.l10n.tasksListGroupCompleted,
                 variant: 'default',
                 tasks: completedTasks,
                 // Collapsed by default so it does not bury the live work, but
@@ -740,7 +743,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No tasks for this date',
+              context.l10n.tasksListNoTasksForDate,
               style: AppTypography.label.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -749,7 +752,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
             GestureDetector(
               onTap: () => _navigateToCreateTask(forDay: _selectedDay),
               child: Text(
-                'Add a task',
+                context.l10n.tasksListAddATask,
                 style: AppTypography.label.copyWith(
                   color: AppColors.primary600,
                 ),
@@ -784,14 +787,16 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              isFiltered ? 'No matching tasks' : 'All caught up!',
+              isFiltered
+                  ? context.l10n.tasksListNoMatching
+                  : context.l10n.tasksListAllCaughtUp,
               style: AppTypography.h2.copyWith(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
               isFiltered
-                  ? 'Try adjusting your search or filters.'
-                  : 'No pending tasks. Create a new task to get started.',
+                  ? context.l10n.tasksListNoMatchingHint
+                  : context.l10n.tasksListAllCaughtUpHint,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -799,7 +804,9 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              label: isFiltered ? 'Clear filters' : 'Add Task',
+              label: isFiltered
+                  ? context.l10n.tasksListClearFilters
+                  : context.l10n.tasksListAddTask,
               icon: isFiltered ? LucideIcons.x : LucideIcons.plus,
               onPressed: isFiltered ? _clearAllFilters : _navigateToCreateTask,
             ),
@@ -813,30 +820,16 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
     final now = DateTime.now();
 
     if (_isSameDay(_selectedDay, now)) {
-      return 'Today';
+      return context.l10n.tasksToday;
     } else if (_isSameDay(_selectedDay, now.add(const Duration(days: 1)))) {
-      return 'Tomorrow';
+      return context.l10n.tasksTomorrow;
     } else if (_isSameDay(
       _selectedDay,
       now.subtract(const Duration(days: 1)),
     )) {
-      return 'Yesterday';
+      return context.l10n.tasksYesterday;
     } else {
-      final months = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
-      return '${months[_selectedDay.month - 1]} ${_selectedDay.day}';
+      return localDateFormat('MMMM d', 'MMMMd').format(_selectedDay);
     }
   }
 
@@ -862,7 +855,9 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              task.completed ? 'Task marked as incomplete' : 'Task completed',
+              task.completed
+                  ? context.l10n.tasksMarkedIncomplete
+                  : context.l10n.tasksCompleted,
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -870,7 +865,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to update task'),
+            content: Text(response.message ?? context.l10n.tasksUpdateFailed),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -887,16 +882,19 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Task?'),
-        content: Text('Are you sure you want to delete "${task.title}"?'),
+        title: Text(context.l10n.tasksDeleteTitle),
+        content: Text(context.l10n.tasksListDeleteConfirm(task.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -910,15 +908,15 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
       if (mounted) {
         if (response.success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Task deleted'),
+            SnackBar(
+              content: Text(context.l10n.tasksDeleted),
               behavior: SnackBarBehavior.floating,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(response.message ?? 'Failed to delete task'),
+              content: Text(response.message ?? context.l10n.tasksDeleteFailed),
               behavior: SnackBarBehavior.floating,
               backgroundColor: AppColors.danger600,
             ),
@@ -947,10 +945,10 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _TaskFilterSheet(
-        title: 'Filter by Owner',
+        title: context.l10n.tasksListFilterByOwner,
         options: [
           _TaskFilterOption(
-            label: 'Anyone',
+            label: context.l10n.tasksListAnyone,
             isSelected: _filters.assignedToId == null,
             onTap: () {
               _applyFilters(_filters.cleared(assignedTo: true));
@@ -959,13 +957,13 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
           ),
           if (profileId != null)
             _TaskFilterOption(
-              label: 'My tasks',
+              label: context.l10n.tasksListMyTasks,
               isSelected: _filters.assignedToId == profileId,
               onTap: () {
                 _applyFilters(
                   _filters.copyWith(
                     assignedToId: profileId,
-                    assignedToLabel: 'Me',
+                    assignedToLabel: context.l10n.tasksListMe,
                   ),
                 );
                 Navigator.pop(context);
@@ -984,10 +982,10 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _TaskFilterSheet(
-        title: 'Filter by Status',
+        title: context.l10n.tasksListFilterByStatus,
         options: [
           _TaskFilterOption(
-            label: 'All statuses',
+            label: context.l10n.tasksListAllStatuses,
             isSelected: _filters.status == null,
             onTap: () {
               _applyFilters(_filters.cleared(status: true));
@@ -1017,10 +1015,10 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _TaskFilterSheet(
-        title: 'Filter by Priority',
+        title: context.l10n.tasksListFilterByPriority,
         options: [
           _TaskFilterOption(
-            label: 'All priorities',
+            label: context.l10n.tasksListAllPriorities,
             isSelected: _filters.priority == null,
             onTap: () {
               _applyFilters(_filters.cleared(priority: true));
