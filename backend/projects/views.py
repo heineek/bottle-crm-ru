@@ -7,6 +7,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -43,7 +45,7 @@ from projects.serializer import (
     replace_rates,
 )
 
-NOT_FOUND = {"error": True, "errors": "Project not found."}
+NOT_FOUND = {"error": True, "errors": gettext_lazy("Project not found.")}
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
 _ATTACHMENT = "project_attachment"
@@ -73,9 +75,9 @@ def _int_param(params, name, default):
     try:
         value = int(raw)
     except (TypeError, ValueError):
-        raise serializers.ValidationError({name: ["Send a whole number."]}) from None
+        raise serializers.ValidationError({name: [_("Send a whole number.")]}) from None
     if value < 0:
-        raise serializers.ValidationError({name: ["Send a number of 0 or more."]})
+        raise serializers.ValidationError({name: [_("Send a number of 0 or more.")]})
     return value
 
 
@@ -312,7 +314,7 @@ class ProjectDetailView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": "You do not have Permission to perform this action",
+                    "errors": _("You do not have Permission to perform this action"),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -347,7 +349,7 @@ class ProjectFromDealView(APIView):
         deal = get_visible_deal(request.profile, deal_id)
         if deal is None:
             return Response(
-                {"error": True, "errors": "Opportunity not found."},
+                {"error": True, "errors": _("Opportunity not found.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         account = deal.account
@@ -440,7 +442,7 @@ def _billing_refusal(request):
     if access.may_bill_project(request.profile):
         return None
     return Response(
-        {"error": True, "message": "Only admins can bill a project."},
+        {"error": True, "message": _("Only admins can bill a project.")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -491,15 +493,15 @@ class InvoiceAmountSerializer(serializers.Serializer):
         amount, percent = attrs.get("amount"), attrs.get("percent")
         if (amount is None) == (percent is None):
             raise serializers.ValidationError(
-                {"amount": ["Send either an amount or a percent."]}
+                {"amount": [_("Send either an amount or a percent.")]}
             )
         if amount is not None and amount <= 0:
             raise serializers.ValidationError(
-                {"amount": ["The amount must be more than 0."]}
+                {"amount": [_("The amount must be more than 0.")]}
             )
         if percent is not None and not (0 < percent <= 100):
             raise serializers.ValidationError(
-                {"percent": ["The percent must be more than 0 and at most 100."]}
+                {"percent": [_("The percent must be more than 0 and at most 100.")]}
             )
         return attrs
 
@@ -543,7 +545,7 @@ class ProjectInvoiceAmountView(APIView):
                     {
                         "error": True,
                         "errors": {
-                            "percent": ["Set the project's budget amount first."]
+                            "percent": [_("Set the project's budget amount first.")]
                         },
                     },
                     status=status.HTTP_400_BAD_REQUEST,
@@ -584,7 +586,7 @@ class ProjectInvoiceAmountView(APIView):
         )
 
 
-_MONTH_FORMAT = "Send a month as YYYY-MM."
+_MONTH_FORMAT = gettext_lazy("Send a month as YYYY-MM.")
 
 
 class ProjectRetainerBillBody(serializers.Serializer):

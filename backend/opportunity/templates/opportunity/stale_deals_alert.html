@@ -1,19 +1,20 @@
 {% extends 'root_email_template_new.html' %}
+{% load i18n %}
 
 {% block heading %}
-Hello {{ user.get_username }}
+{% blocktranslate trimmed with name=user.get_username %}Hello {{ name }}{% endblocktranslate %}
 {% endblock heading %}
 
 {% block content_body %}
-<p><strong>{{ deal_count }}</strong> of your deal{{ deal_count|pluralize }} just went stale, past the time {{ deal_count|pluralize:"its stage expects,their stages expect" }}:</p>
+<p>{% blocktranslate trimmed count deal_count=deal_count %}<strong>{{ deal_count }}</strong> of your deals just went stale, past the time its stage expects:{% plural %}<strong>{{ deal_count }}</strong> of your deals just went stale, past the time their stages expect:{% endblocktranslate %}</p>
 
 <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
   <thead>
     <tr style="background:#f0f0f0;">
-      <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #ddd;">Deal</th>
-      <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #ddd;">Stage</th>
-      <th style="text-align:center;padding:8px 12px;border-bottom:2px solid #ddd;">Days in Stage</th>
-      <th style="text-align:center;padding:8px 12px;border-bottom:2px solid #ddd;">Expected</th>
+      <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #ddd;">{% translate "Deal" %}</th>
+      <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #ddd;">{% translate "Stage" %}</th>
+      <th style="text-align:center;padding:8px 12px;border-bottom:2px solid #ddd;">{% translate "Days in Stage" %}</th>
+      <th style="text-align:center;padding:8px 12px;border-bottom:2px solid #ddd;">{% translate "Expected" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -21,19 +22,19 @@ Hello {{ user.get_username }}
     <tr>
       <td style="padding:8px 12px;border-bottom:1px solid #eee;">{{ deal.name }}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #eee;">{{ deal.stage }}</td>
-      <td style="text-align:center;padding:8px 12px;border-bottom:1px solid #eee;color:#dc2626;font-weight:600;">{{ deal.days_in_stage }}d</td>
-      <td style="text-align:center;padding:8px 12px;border-bottom:1px solid #eee;">{{ deal.expected_days }}d</td>
+      <td style="text-align:center;padding:8px 12px;border-bottom:1px solid #eee;color:#dc2626;font-weight:600;">{% blocktranslate trimmed with days=deal.days_in_stage %}{{ days }}d{% endblocktranslate %}</td>
+      <td style="text-align:center;padding:8px 12px;border-bottom:1px solid #eee;">{% blocktranslate trimmed with days=deal.expected_days %}{{ days }}d{% endblocktranslate %}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 
-<p>Each deal is emailed about once in each stage.{% if still_waiting %} {{ still_waiting }} more stale deal{{ still_waiting|pluralize }} from earlier {{ still_waiting|pluralize:"is,are" }} still waiting.{% endif %}</p>
+<p>{% translate "Each deal is emailed about once in each stage." %}{% if still_waiting %} {% blocktranslate trimmed count still_waiting=still_waiting %}{{ still_waiting }} more stale deal from earlier is still waiting.{% plural %}{{ still_waiting }} more stale deals from earlier are still waiting.{% endblocktranslate %}{% endif %}</p>
 {% endblock content_body %}
 
 {% block button_link %}
 <div style="margin-bottom:20px">
     <a href="{{ url }}"
-        style="display:block;width:200px;background:#dc2626;padding:10px;text-align:center;color:#fff;font-size:1rem;font-weight:600;margin:0px auto;margin-bottom:20px;border-radius:5px;text-decoration:none">View Stale Deals</a>
+        style="display:block;width:200px;background:#dc2626;padding:10px;text-align:center;color:#fff;font-size:1rem;font-weight:600;margin:0px auto;margin-bottom:20px;border-radius:5px;text-decoration:none">{% translate "View Stale Deals" %}</a>
 </div>
 {% endblock button_link %}

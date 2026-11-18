@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Model
+from django.utils.translation import gettext_lazy
 
 from common import object_registry
 from common.modules import available_modules, model_module
@@ -200,40 +201,46 @@ def interaction_data(interaction):
 
 # Named by the registry's entries (`ObjectEntry.webhook`).
 LEAD_WEBHOOK = WebhookSpec(
-    "lead", "Leads", ("lead.created", "lead.updated", "lead.deleted"), lead_data
+    "lead",
+    gettext_lazy("Leads"),
+    ("lead.created", "lead.updated", "lead.deleted"),
+    lead_data,
 )
 CONTACT_WEBHOOK = WebhookSpec(
     "contact",
-    "Contacts",
+    gettext_lazy("Contacts"),
     ("contact.created", "contact.updated", "contact.deleted"),
     contact_data,
 )
 ACCOUNT_WEBHOOK = WebhookSpec(
     "account",
-    "Accounts",
+    gettext_lazy("Accounts"),
     ("account.created", "account.updated", "account.deleted"),
     account_data,
 )
 DEAL_WEBHOOK = WebhookSpec(
     "deal",
-    "Deals",
+    gettext_lazy("Deals"),
     ("deal.created", "deal.updated", "deal.deleted", "deal.won", "deal.lost"),
     deal_data,
 )
 TICKET_WEBHOOK = WebhookSpec(
     "ticket",
-    "Tickets",
+    gettext_lazy("Tickets"),
     ("ticket.created", "ticket.updated", "ticket.comment_added"),
     ticket_data,
 )
 INVOICE_WEBHOOK = WebhookSpec(
     "invoice",
-    "Invoices",
+    gettext_lazy("Invoices"),
     ("invoice.created", "invoice.updated", "invoice.paid"),
     invoice_data,
 )
 TASK_WEBHOOK = WebhookSpec(
-    "task", "Tasks", ("task.created", "task.updated", "task.deleted"), task_data
+    "task",
+    gettext_lazy("Tasks"),
+    ("task.created", "task.updated", "task.deleted"),
+    task_data,
 )
 
 # Webhook sources that are not record objects, so the registry does not list
@@ -243,10 +250,16 @@ NON_OBJECT_WEBHOOKS = (
     (
         "interactions.Interaction",
         WebhookSpec(
-            "interaction", "Interactions", ("interaction.created",), interaction_data
+            "interaction",
+            gettext_lazy("Interactions"),
+            ("interaction.created",),
+            interaction_data,
         ),
     ),
-    ("common.Comment", WebhookSpec("ticket", "Tickets", (), comment_data)),
+    (
+        "common.Comment",
+        WebhookSpec("ticket", gettext_lazy("Tickets"), (), comment_data),
+    ),
 )
 
 

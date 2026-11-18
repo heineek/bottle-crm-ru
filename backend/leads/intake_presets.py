@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from common.custom_fields import validate_payload
@@ -178,9 +179,11 @@ def clean_mapping(rows, org, stored=None) -> list[dict]:
     off, because both clients resend the whole mapping on every save.
     """
     if not isinstance(rows, list):
-        raise serializers.ValidationError("Send a list of {from, to} rows.")
+        raise serializers.ValidationError(_("Send a list of {from, to} rows."))
     if len(rows) > MAPPING_MAX_ROWS:
-        raise serializers.ValidationError(f"Use at most {MAPPING_MAX_ROWS} rows.")
+        raise serializers.ValidationError(
+            _("Use at most %(max)s rows.") % {"max": MAPPING_MAX_ROWS}
+        )
     custom = set(
         CustomFieldDefinition.objects.filter(
             org=org, target_model="Lead", is_active=True
@@ -196,7 +199,9 @@ def clean_mapping(rows, org, stored=None) -> list[dict]:
     cleaned = []
     for number, row in enumerate(rows, start=1):
         if not isinstance(row, dict):
-            raise serializers.ValidationError(f"Row {number} is not a from, to pair.")
+            raise serializers.ValidationError(
+                _("Row %(number)s is not a from, to pair.") % {"number": number}
+            )
         source, target = row.get("from"), row.get("to")
         if (
             not isinstance(source, str)
@@ -204,8 +209,11 @@ def clean_mapping(rows, org, stored=None) -> list[dict]:
             or len(source) > PATH_MAX_LENGTH
         ):
             raise serializers.ValidationError(
-                f"Row {number}: name the field in the post, up to "
-                f"{PATH_MAX_LENGTH} characters."
+                _(
+                    "Row %(number)s: name the field in the post, up to "
+                    "%(max)s characters."
+                )
+                % {"number": number, "max": PATH_MAX_LENGTH}
             )
         if not isinstance(target, str) or not (
             target in LEAD_FIELD_VALUES
@@ -215,7 +223,11 @@ def clean_mapping(rows, org, stored=None) -> list[dict]:
             )
         ):
             raise serializers.ValidationError(
-                f"Row {number}: choose a lead field or one of your lead custom fields."
+                _(
+                    "Row %(number)s: choose a lead field or one of your lead "
+                    "custom fields."
+                )
+                % {"number": number}
             )
         cleaned.append({"from": source.strip(), "to": target})
     return cleaned

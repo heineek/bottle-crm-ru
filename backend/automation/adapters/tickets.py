@@ -1,3 +1,5 @@
+from django.utils.translation import gettext_lazy as _
+
 from automation.adapters import same_org
 from automation.objects import Adapter, FieldSpec, model_choices
 from cases.models import Case
@@ -9,18 +11,18 @@ class TicketAdapter(Adapter):
     parent_key = "account"
     route = "/tickets/{id}"
     FIELDS = (
-        FieldSpec("name", "Subject", "text"),
+        FieldSpec("name", _("Subject"), "text"),
         # Duplicate is set only by a merge, which moves the ticket's thread.
         FieldSpec(
             "status",
-            "Status",
+            _("Status"),
             "choice",
             model_choices(Case, "status", unsettable={"Duplicate"}),
         ),
-        FieldSpec("priority", "Priority", "choice", model_choices(Case, "priority")),
-        FieldSpec("case_type", "Type", "choice", model_choices(Case, "case_type")),
-        FieldSpec("closed_on", "Closed on", "date"),
-        FieldSpec("assigned_to", "Assigned to", "people"),
+        FieldSpec("priority", _("Priority"), "choice", model_choices(Case, "priority")),
+        FieldSpec("case_type", _("Type"), "choice", model_choices(Case, "case_type")),
+        FieldSpec("closed_on", _("Closed on"), "date"),
+        FieldSpec("assigned_to", _("Assigned to"), "people"),
     )
 
     def name(self, record):

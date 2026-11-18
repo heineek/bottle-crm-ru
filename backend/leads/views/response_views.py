@@ -1,5 +1,6 @@
 """``GET /api/leads/response-times/``: how fast each person answers new leads."""
 
+from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
@@ -26,7 +27,12 @@ def _days(value):
         days = None
     if days is None or not MIN_DAYS <= days <= MAX_DAYS:
         raise ValidationError(
-            {"days": [f"Choose a whole number of days from {MIN_DAYS} to {MAX_DAYS}."]}
+            {
+                "days": [
+                    _("Choose a whole number of days from %(min)s to %(max)s.")
+                    % {"min": MIN_DAYS, "max": MAX_DAYS}
+                ]
+            }
         )
     return days
 

@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -17,12 +18,14 @@ FUTURE_SLACK = timedelta(minutes=5)
 # The largest value the integer column holds on PostgreSQL.
 MAX_DURATION = 2_147_483_647
 
-ENQUIRY_REFUSED = "Enquiries are recorded when a lead arrives; they cannot be logged."
-KIND_FIXED = "The kind of an interaction cannot be changed."
-RECORD_FIXED = "The record an interaction is on cannot be changed."
-ONE_RECORD = "Name exactly one record: lead, contact, account, opportunity or case."
-TOO_LATE = "This is more than five minutes in the future."
-CALLS_ONLY = "Only a call has an outcome."
+ENQUIRY_REFUSED = _(
+    "Enquiries are recorded when a lead arrives; they cannot be logged."
+)
+KIND_FIXED = _("The kind of an interaction cannot be changed.")
+RECORD_FIXED = _("The record an interaction is on cannot be changed.")
+ONE_RECORD = _("Name exactly one record: lead, contact, account, opportunity or case.")
+TOO_LATE = _("This is more than five minutes in the future.")
+CALLS_ONLY = _("Only a call has an outcome.")
 
 
 class InteractionPersonSerializer(serializers.Serializer):

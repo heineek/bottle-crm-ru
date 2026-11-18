@@ -1,34 +1,39 @@
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from common.base import BaseOrgModel
 
 KIND_CHOICES = (
-    ("call", "Call"),
-    ("meeting", "Meeting"),
-    ("email", "Email"),
-    ("whatsapp", "WhatsApp"),
-    ("sms", "SMS"),
-    ("enquiry", "Enquiry"),
+    ("call", pgettext_lazy("interaction kind", "Call")),
+    ("meeting", pgettext_lazy("interaction kind", "Meeting")),
+    ("email", pgettext_lazy("interaction kind", "Email")),
+    ("whatsapp", pgettext_lazy("interaction kind", "WhatsApp")),
+    ("sms", pgettext_lazy("interaction kind", "SMS")),
+    ("enquiry", pgettext_lazy("interaction kind", "Enquiry")),
 )
 # Every kind but `enquiry`. An outbound one is a response, whoever logged it.
 OUTBOUND_KINDS = frozenset({"call", "meeting", "email", "whatsapp", "sms"})
-DIRECTION_CHOICES = (("inbound", "Inbound"), ("outbound", "Outbound"))
+DIRECTION_CHOICES = (
+    ("inbound", pgettext_lazy("interaction direction", "Inbound")),
+    ("outbound", pgettext_lazy("interaction direction", "Outbound")),
+)
 CALL_OUTCOMES = (
-    ("connected", "Connected"),
-    ("no_answer", "No answer"),
-    ("voicemail", "Voicemail"),
-    ("busy", "Busy"),
-    ("wrong_number", "Wrong number"),
+    ("connected", pgettext_lazy("call outcome", "Connected")),
+    ("no_answer", pgettext_lazy("call outcome", "No answer")),
+    ("voicemail", pgettext_lazy("call outcome", "Voicemail")),
+    ("busy", pgettext_lazy("call outcome", "Busy")),
+    ("wrong_number", pgettext_lazy("call outcome", "Wrong number")),
 )
 # Each value is also the name of the link it points through.
 HOME_CHOICES = (
-    ("lead", "Lead"),
-    ("contact", "Contact"),
-    ("account", "Account"),
-    ("opportunity", "Deal"),
-    ("case", "Ticket"),
+    ("lead", _("Lead")),
+    ("contact", _("Contact")),
+    ("account", _("Account")),
+    ("opportunity", _("Deal")),
+    ("case", _("Ticket")),
 )
 
 

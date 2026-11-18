@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html>
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <style>
@@ -17,47 +17,47 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Estimate from {{ org.name }}</h1>
+            <h1>{% blocktranslate with org=org.name %}Estimate from {{ org }}{% endblocktranslate %}</h1>
         </div>
         <div class="content">
-            <p>Dear {{ estimate.client_name }},</p>
-            <p>Please find attached your estimate <strong>#{{ estimate.estimate_number }}</strong>.</p>
+            <p>{% blocktranslate with name=estimate.client_name %}Dear {{ name }},{% endblocktranslate %}</p>
+            <p>{% blocktranslate with number=estimate.estimate_number %}Please find attached your estimate <strong>#{{ number }}</strong>.{% endblocktranslate %}</p>
 
             <div class="details">
                 <div class="details-row">
-                    <span>Estimate Number:</span>
+                    <span>{% translate "Estimate Number" %}:</span>
                     <span>#{{ estimate.estimate_number }}</span>
                 </div>
                 {% if estimate.title %}
                 <div class="details-row">
-                    <span>Description:</span>
+                    <span>{% translate "Description" %}:</span>
                     <span>{{ estimate.title }}</span>
                 </div>
                 {% endif %}
                 <div class="details-row">
-                    <span>Date:</span>
-                    <span>{{ estimate.issue_date|date:"F d, Y" }}</span>
+                    <span>{% translate "Date" %}:</span>
+                    <span>{{ estimate.issue_date|date:_("F d, Y") }}</span>
                 </div>
                 {% if estimate.expiry_date %}
                 <div class="details-row">
-                    <span>Valid Until:</span>
-                    <span>{{ estimate.expiry_date|date:"F d, Y" }}</span>
+                    <span>{% translate "Valid Until" %}:</span>
+                    <span>{{ estimate.expiry_date|date:_("F d, Y") }}</span>
                 </div>
                 {% endif %}
                 <div class="details-row total">
-                    <span>Total:</span>
+                    <span>{% translate "Total" %}:</span>
                     <span>{{ estimate.currency }} {{ estimate.total_amount }}</span>
                 </div>
             </div>
 
             {% if public_url %}
             <p style="text-align: center; margin: 30px 0;">
-                <a href="{{ public_url }}" class="button">View Estimate Online</a>
+                <a href="{{ public_url }}" class="button">{% translate "View Estimate Online" %}</a>
             </p>
             {% endif %}
 
-            <p>If you have any questions or would like to proceed with this estimate, please don't hesitate to contact us.</p>
-            <p>Thank you for considering our services!</p>
+            <p>{% translate "If you have any questions or would like to proceed with this estimate, please don't hesitate to contact us." %}</p>
+            <p>{% translate "Thank you for considering our services!" %}</p>
         </div>
         <div class="footer">
             <p>{{ org.name }}</p>

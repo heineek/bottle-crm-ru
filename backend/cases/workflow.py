@@ -4,6 +4,8 @@ Case workflow configuration.
 Defines SLA defaults by priority.
 """
 
+from django.utils.translation import gettext, gettext_noop
+
 # Terminal statuses
 TERMINAL_STATUSES = {"Closed", "Rejected", "Duplicate"}
 
@@ -101,7 +103,8 @@ def resolve_next_response_targets(org_id):
     return targets
 
 
-DUPLICATE_BY_MERGE_ONLY = (
+# English here, translated where it is sent: `gettext(DUPLICATE_BY_MERGE_ONLY)`.
+DUPLICATE_BY_MERGE_ONLY = gettext_noop(
     "A ticket becomes Duplicate only by merging it into another ticket."
 )
 
@@ -119,11 +122,11 @@ def duplicate_refusal(old_status, new_status):
     Returns ``{"status": message}`` or None, the shape ``close_refusal`` uses.
     """
     if new_status == "Duplicate" and old_status != "Duplicate":
-        return {"status": DUPLICATE_BY_MERGE_ONLY}
+        return {"status": gettext(DUPLICATE_BY_MERGE_ONLY)}
     return None
 
 
-MERGED_STATUS_LOCKED = (
+MERGED_STATUS_LOCKED = gettext_noop(
     "This ticket is merged into another. Unmerge it first to change its status."
 )
 
@@ -144,5 +147,5 @@ def merged_status_refusal(case, new_status):
     Returns ``{"status": message}`` or None, the shape ``close_refusal`` uses.
     """
     if case is not None and case.merged_into_id and new_status != case.status:
-        return {"status": MERGED_STATUS_LOCKED}
+        return {"status": gettext(MERGED_STATUS_LOCKED)}
     return None

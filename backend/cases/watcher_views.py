@@ -20,6 +20,7 @@ people-only `Profile.objects` does not filter.
 
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -55,7 +56,7 @@ class WatchView(APIView):
         case = get_object_or_404(_visible_cases_qs(request.profile), pk=pk)
         if request.profile.is_app:
             return Response(
-                {"error": True, "errors": "An app member cannot watch a ticket."},
+                {"error": True, "errors": _("An app member cannot watch a ticket.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         try:

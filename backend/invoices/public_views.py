@@ -12,6 +12,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -162,7 +163,7 @@ class PublicInvoiceView(APIView):
 
         if not invoice or not module_is_available(invoice.org, "invoices"):
             return Response(
-                {"error": True, "message": "Invoice not found or link expired"},
+                {"error": True, "message": _("Invoice not found or link expired")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -277,7 +278,7 @@ class PublicInvoicePDFView(APIView):
 
         if not invoice or not module_is_available(invoice.org, "invoices"):
             return Response(
-                {"error": True, "message": "Invoice not found or link expired"},
+                {"error": True, "message": _("Invoice not found or link expired")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -291,13 +292,13 @@ class PublicInvoicePDFView(APIView):
         except ImportError:
             logger.exception("PDF generation library not available")
             return Response(
-                {"error": True, "message": "PDF generation unavailable"},
+                {"error": True, "message": _("PDF generation unavailable")},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         except Exception:
             logger.exception("Failed to generate invoice PDF")
             return Response(
-                {"error": True, "message": "Failed to generate PDF"},
+                {"error": True, "message": _("Failed to generate PDF")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -321,7 +322,7 @@ class PublicEstimateView(APIView):
 
         if not estimate or not module_is_available(estimate.org, "invoices"):
             return Response(
-                {"error": True, "message": "Estimate not found or link expired"},
+                {"error": True, "message": _("Estimate not found or link expired")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -426,7 +427,7 @@ class PublicEstimatePDFView(APIView):
 
         if not estimate or not module_is_available(estimate.org, "invoices"):
             return Response(
-                {"error": True, "message": "Estimate not found or link expired"},
+                {"error": True, "message": _("Estimate not found or link expired")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -440,13 +441,13 @@ class PublicEstimatePDFView(APIView):
         except ImportError:
             logger.exception("PDF generation library not available")
             return Response(
-                {"error": True, "message": "PDF generation unavailable"},
+                {"error": True, "message": _("PDF generation unavailable")},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         except Exception:
             logger.exception("Failed to generate estimate PDF")
             return Response(
-                {"error": True, "message": "Failed to generate PDF"},
+                {"error": True, "message": _("Failed to generate PDF")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -493,7 +494,7 @@ class PublicEstimateAcceptView(APIView):
 
         if not estimate or not module_is_available(estimate.org, "invoices"):
             return Response(
-                {"error": True, "message": "Estimate not found or link expired"},
+                {"error": True, "message": _("Estimate not found or link expired")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -501,7 +502,7 @@ class PublicEstimateAcceptView(APIView):
             return Response(
                 {
                     "error": True,
-                    "message": "Estimate cannot be accepted in current state",
+                    "message": _("Estimate cannot be accepted in current state"),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -513,10 +514,11 @@ class PublicEstimateAcceptView(APIView):
             return Response(
                 {
                     "error": True,
-                    "message": (
-                        f"This estimate expired on {estimate.expiry_date} and can "
+                    "message": _(
+                        "This estimate expired on %(date)s and can "
                         "no longer be accepted. Please request an updated quote."
-                    ),
+                    )
+                    % {"date": estimate.expiry_date},
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -529,7 +531,9 @@ class PublicEstimateAcceptView(APIView):
             return Response(
                 {
                     "error": True,
-                    "message": "Your name and email are required to accept this estimate.",
+                    "message": _(
+                        "Your name and email are required to accept this estimate."
+                    ),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -537,7 +541,7 @@ class PublicEstimateAcceptView(APIView):
             validate_email(email)
         except ValidationError:
             return Response(
-                {"error": True, "message": "Please enter a valid email address."},
+                {"error": True, "message": _("Please enter a valid email address.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -563,7 +567,9 @@ class PublicEstimateAcceptView(APIView):
         )
         notify_accepted(estimate)
 
-        return Response({"error": False, "message": "Estimate accepted successfully"})
+        return Response(
+            {"error": False, "message": _("Estimate accepted successfully")}
+        )
 
 
 class PublicEstimateDeclineView(APIView):
@@ -588,7 +594,7 @@ class PublicEstimateDeclineView(APIView):
 
         if not estimate or not module_is_available(estimate.org, "invoices"):
             return Response(
-                {"error": True, "message": "Estimate not found or link expired"},
+                {"error": True, "message": _("Estimate not found or link expired")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -596,7 +602,7 @@ class PublicEstimateDeclineView(APIView):
             return Response(
                 {
                     "error": True,
-                    "message": "Estimate cannot be declined in current state",
+                    "message": _("Estimate cannot be declined in current state"),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -606,4 +612,4 @@ class PublicEstimateDeclineView(APIView):
         estimate.save(update_fields=["status", "declined_at", "updated_at"])
         notify_declined(estimate)
 
-        return Response({"error": False, "message": "Estimate declined"})
+        return Response({"error": False, "message": _("Estimate declined")})

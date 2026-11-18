@@ -31,6 +31,8 @@ from typing import Any
 
 from django.db import IntegrityError, transaction
 from django.db.models.functions import Lower
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from automation.capture import suppress_rules
 from common.custom_fields import validate_payload as validate_custom_fields_payload
@@ -40,6 +42,7 @@ from common.import_mapping import (
     SKIP_ROW,
     MappedPreview,
     SkippedRow,
+    choice_lookup,
     describe_columns,
     describe_fields,
     mapped_records,
@@ -82,36 +85,36 @@ HEADER_ALIASES = {
 # creator, ids, `is_active`) is here, so a mapping can never set it. None is
 # required: a row needs a first or last name, which either column gives.
 LEAD_FIELDS: tuple[tuple[str, str, bool], ...] = (
-    ("title", "Lead title", False),
-    ("salutation", "Salutation", False),
-    ("first_name", "First name", False),
-    ("last_name", "Last name", False),
-    ("email", "Email", False),
-    ("phone", "Phone", False),
-    ("job_title", "Job title", False),
-    ("website", "Website", False),
-    ("linkedin_url", "LinkedIn URL", False),
-    ("status", "Status", False),
-    ("source", "Source", False),
-    ("industry", "Industry", False),
-    ("rating", "Rating", False),
-    ("opportunity_amount", "Deal value", False),
-    ("currency", "Currency", False),
-    ("probability", "Win probability (%)", False),
-    ("close_date", "Expected close date", False),
-    ("address_line", "Address", False),
-    ("city", "City", False),
-    ("state", "State", False),
-    ("postcode", "Postal code", False),
-    ("country", "Country", False),
-    ("last_contacted", "Last contacted", False),
-    ("next_follow_up", "Next follow-up", False),
-    ("description", "Notes", False),
-    ("company_name", "Company", False),
-    ("assigned_emails", "Assigned to (emails)", False),
-    ("team_names", "Teams", False),
-    ("tags", "Tags", False),
-    (FULL_NAME, "Full name (split into first and last)", False),
+    ("title", gettext_lazy("Lead title"), False),
+    ("salutation", gettext_lazy("Salutation"), False),
+    ("first_name", gettext_lazy("First name"), False),
+    ("last_name", gettext_lazy("Last name"), False),
+    ("email", gettext_lazy("Email"), False),
+    ("phone", gettext_lazy("Phone"), False),
+    ("job_title", gettext_lazy("Job title"), False),
+    ("website", gettext_lazy("Website"), False),
+    ("linkedin_url", gettext_lazy("LinkedIn URL"), False),
+    ("status", gettext_lazy("Status"), False),
+    ("source", gettext_lazy("Source"), False),
+    ("industry", gettext_lazy("Industry"), False),
+    ("rating", gettext_lazy("Rating"), False),
+    ("opportunity_amount", gettext_lazy("Deal value"), False),
+    ("currency", gettext_lazy("Currency"), False),
+    ("probability", gettext_lazy("Win probability (%)"), False),
+    ("close_date", gettext_lazy("Expected close date"), False),
+    ("address_line", gettext_lazy("Address"), False),
+    ("city", gettext_lazy("City"), False),
+    ("state", gettext_lazy("State"), False),
+    ("postcode", gettext_lazy("Postal code"), False),
+    ("country", gettext_lazy("Country"), False),
+    ("last_contacted", gettext_lazy("Last contacted"), False),
+    ("next_follow_up", gettext_lazy("Next follow-up"), False),
+    ("description", gettext_lazy("Notes"), False),
+    ("company_name", gettext_lazy("Company"), False),
+    ("assigned_emails", gettext_lazy("Assigned to (emails)"), False),
+    ("team_names", gettext_lazy("Teams"), False),
+    ("tags", gettext_lazy("Tags"), False),
+    (FULL_NAME, gettext_lazy("Full name (split into first and last)"), False),
 )
 
 # Headers that guess each field; every field also matches its own name, ranked
@@ -158,15 +161,12 @@ LEAD_SYNONYMS: dict[str, tuple[str, ...]] = {
 
 MAX_ROWS = 5000
 
-# Choice cells match on the stored value or its label, case-insensitively, so
-# "In Process" and "in process" both land as "in process". Anything else is
-# passed through unchanged for the serializer to reject.
-CHOICE_MAPS = {
-    f.name: {
-        str(text).lower(): value
-        for value, label in f.choices
-        for text in (value, label)
-    }
+# Choice cells match on the stored value or its label in any language,
+# case-insensitively, so "In Process" and its translated label both land as
+# "in process".
+# Anything else is passed through unchanged for the serializer to reject.
+CHOICE_FIELDS = {
+    f.name: tuple(f.choices)
     for f in Lead._meta.get_fields()
     if f.name in FIELD_HEADERS and getattr(f, "choices", None)
 }
@@ -263,18 +263,20 @@ def parse_and_validate(file_bytes: bytes, request, legacy=False) -> ImportResult
     text = _decode(file_bytes)
     if text is None:
         return _header_error(
-            "File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+            _(
+                "File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+            )
         )
     # Python's csv module accepts NUL since 3.11, and Postgres refuses it in
     # any string parameter, so one would 500 the reference lookups below.
     if "\x00" in text:
-        return _header_error("CSV could not be read: it contains NUL characters")
+        return _header_error(_("CSV could not be read: it contains NUL characters"))
     try:
         rows = list(csv.reader(io.StringIO(text)))
     except csv.Error as exc:
-        return _header_error(f"CSV could not be read: {exc}")
+        return _header_error(_("CSV could not be read: %(error)s") % {"error": exc})
     if not rows:
-        return _header_error("CSV is empty")
+        return _header_error(_("CSV is empty"))
 
     headers = [(h or "").strip().lower() for h in rows[0]]
     headers = [HEADER_ALIASES.get(h, h) for h in headers]
@@ -282,18 +284,29 @@ def parse_and_validate(file_bytes: bytes, request, legacy=False) -> ImportResult
         {h for h in headers if h in KNOWN_HEADERS and headers.count(h) > 1}
     )
     if repeated:
-        return _header_error(f"Header(s) given more than once: {', '.join(repeated)}")
+        return _header_error(
+            _("Header(s) given more than once: %(headers)s")
+            % {"headers": ", ".join(repeated)}
+        )
     if not legacy:
         missing = [h for h in REQUIRED_HEADERS if h not in headers]
         if missing:
-            return _header_error(f"Missing required header(s): {', '.join(missing)}")
+            return _header_error(
+                _("Missing required header(s): %(headers)s")
+                % {"headers": ", ".join(missing)}
+            )
         unknown = [h for h in headers if h and h not in KNOWN_HEADERS]
         if unknown:
-            return _header_error(f"Unknown header(s): {', '.join(unknown)}")
+            return _header_error(
+                _("Unknown header(s): %(headers)s") % {"headers": ", ".join(unknown)}
+            )
 
     data_rows = rows[1:]
     if len(data_rows) > MAX_ROWS:
-        return _header_error(f"Too many rows ({len(data_rows)}); limit is {MAX_ROWS}")
+        return _header_error(
+            _("Too many rows (%(count)s); limit is %(limit)s")
+            % {"count": len(data_rows), "limit": MAX_ROWS}
+        )
 
     refusal = _custom_field_refusal(org)
     if refusal:
@@ -309,7 +322,9 @@ def parse_and_validate(file_bytes: bytes, request, legacy=False) -> ImportResult
                 RowError(
                     idx,
                     "",
-                    "Row has more cells than the header; quote values that contain commas",
+                    _(
+                        "Row has more cells than the header; quote values that contain commas"
+                    ),
                 )
             )
             continue
@@ -350,13 +365,13 @@ def _custom_field_refusal(org) -> str | None:
     The create API refuses a lead missing a required custom field, and a file
     has no way to supply one, so an import would be a way around it.
     """
-    _, cf_errors = validate_custom_fields_payload("Lead", {}, org)
+    _payload, cf_errors = validate_custom_fields_payload("Lead", {}, org)
     if not cf_errors:
         return None
-    return (
+    return _(
         "Your organisation requires custom field(s) on every lead that CSV "
-        f"import cannot set: {', '.join(sorted(cf_errors))}"
-    )
+        "import cannot set: %(fields)s"
+    ) % {"fields": ", ".join(sorted(cf_errors))}
 
 
 def _reference_maps(parsed, org) -> tuple[dict[str, str], ...]:
@@ -393,8 +408,8 @@ def _reference_maps(parsed, org) -> tuple[dict[str, str], ...]:
     return profiles, teams, Tags.archived_errors(org, tag_names)
 
 
-_NEEDS_NAME = "A lead needs a first or last name"
-_EMAIL_EXISTS = "A lead with this email already exists"
+_NEEDS_NAME = gettext_lazy("A lead needs a first or last name")
+_EMAIL_EXISTS = gettext_lazy("A lead with this email already exists")
 
 
 def _source_lookup(request) -> dict[str, str]:
@@ -418,7 +433,9 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
         if not any(record.get(h) for h in ("first_name", "last_name", "title")):
             errors.append(
                 RowError(
-                    idx, "first_name", "A lead needs a first name, last name or title"
+                    idx,
+                    "first_name",
+                    _("A lead needs a first name, last name or title"),
                 )
             )
     elif not record.get("first_name") and not record.get("last_name"):
@@ -427,9 +444,11 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
     # A blank cell means "not supplied", so the model default applies, the
     # same as leaving the field off a create request.
     data = {h: v for h, v in record.items() if h in FIELD_HEADERS and v}
-    for name, choices in CHOICE_MAPS.items():
+    for name, choices in CHOICE_FIELDS.items():
         if name in data:
-            data[name] = choices.get(data[name].lower(), data[name])
+            data[name] = choice_lookup(choices).get(
+                data[name].strip().lower(), data[name]
+            )
 
     if "source" in data:
         data["source"] = _source_lookup(request).get(
@@ -441,8 +460,11 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
             RowError(
                 idx,
                 "status",
-                f"A lead cannot be imported as {data['status']}. Import it, "
-                "then convert it so its account, contact and deal are created.",
+                _(
+                    "A lead cannot be imported as %(status)s. Import it, "
+                    "then convert it so its account, contact and deal are created."
+                )
+                % {"status": data["status"]},
             )
         )
 
@@ -450,7 +472,11 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
     prior = seen_emails.get(email.lower()) if email else None
     if prior:
         errors.append(
-            RowError(idx, "email", f"Duplicate email also used by row {prior}")
+            RowError(
+                idx,
+                "email",
+                _("Duplicate email also used by row %(row)s") % {"row": prior},
+            )
         )
 
     serializer = LeadCreateSerializer(
@@ -468,7 +494,8 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
                 RowError(
                     idx,
                     "assigned_emails",
-                    f"No active user '{email_ref}' in your organisation",
+                    _("No active user '%(email)s' in your organisation")
+                    % {"email": email_ref},
                 )
             )
         elif pk not in assigned_ids:
@@ -479,7 +506,11 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
         pk = teams.get(name.lower())
         if pk is None:
             errors.append(
-                RowError(idx, "team_names", f"No team '{name}' in your organisation")
+                RowError(
+                    idx,
+                    "team_names",
+                    _("No team '%(name)s' in your organisation") % {"name": name},
+                )
             )
         elif pk not in team_ids:
             team_ids.append(pk)
@@ -488,7 +519,14 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
     for name in tag_names:
         name_error = Tags.name_error(name)
         if name_error:
-            errors.append(RowError(idx, "tags", f"Tag '{name}': {name_error}"))
+            errors.append(
+                RowError(
+                    idx,
+                    "tags",
+                    _("Tag '%(name)s': %(error)s")
+                    % {"name": name, "error": name_error},
+                )
+            )
         elif archived_error := archived.get(Tags.slug_for(name)):
             errors.append(RowError(idx, "tags", archived_error))
 
@@ -503,7 +541,7 @@ def _validate_row(idx, record, request, profiles, teams, seen_emails, legacy, ar
     )
 
 
-_CONCURRENT_CONFLICT = (
+_CONCURRENT_CONFLICT = gettext_lazy(
     "A lead was created at the same time that conflicts with this "
     "import (likely a duplicate email). Run the preview again."
 )
@@ -517,7 +555,7 @@ def commit_rows(file_bytes: bytes, request, legacy=False) -> dict[str, Any]:
     if result.errors:
         return {
             "error": True,
-            "message": "Fix the invalid rows before importing",
+            "message": _("Fix the invalid rows before importing"),
             "errors": [e.to_dict() for e in result.errors],
             "created": 0,
         }
@@ -554,7 +592,9 @@ def _get_or_create_tag(name: str, org, cache: dict[str, Tags]) -> Tags:
     # SELECT-then-INSERT race when two imports name the same new tag.
     slug = Tags.slug_for(name)
     if slug not in cache:
-        tag, _ = Tags.objects.get_or_create(slug=slug, org=org, defaults={"name": name})
+        tag, _created = Tags.objects.get_or_create(
+            slug=slug, org=org, defaults={"name": name}
+        )
         cache[slug] = tag
     return cache[slug]
 
@@ -615,13 +655,16 @@ def preview_mapped(table: Table, mapping: list[str | None], request) -> MappedPr
             )
             continue
         if email in seen_emails:
-            message = f"Duplicate email also used by row {seen_emails[email]}"
+            message = _("Duplicate email also used by row %(row)s") % {
+                "row": seen_emails[email]
+            }
             skipped.append(SkippedRow(row, "email", message, cells, SKIP_DUPLICATE))
             continue
 
         removed: set[str] = set()
         status = record.get("status", "")
-        if CHOICE_MAPS["status"].get(status.lower(), status) in IRREVERSIBLE_STATUSES:
+        lookup = choice_lookup(CHOICE_FIELDS["status"])
+        if lookup.get(status.strip().lower(), status) in IRREVERSIBLE_STATUSES:
             removed.add("status")
         kept = {k: v for k, v in record.items() if k not in removed}
         errors, validated = _validate_row(
@@ -667,8 +710,10 @@ def preview_mapped(table: Table, mapping: list[str | None], request) -> MappedPr
     )
 
 
-_PHONE_EXISTS = "A lead with this phone number already exists in your organization"
-_NAME_EXISTS = (
+_PHONE_EXISTS = gettext_lazy(
+    "A lead with this phone number already exists in your organization"
+)
+_NAME_EXISTS = gettext_lazy(
     "A lead with this name already exists; add an email or phone to confirm "
     "it's a different person"
 )
@@ -726,8 +771,8 @@ def _duplicate(data, seen_phones, seen_names, phones, names) -> tuple[str, str] 
         if normalized in seen_phones:
             return (
                 "phone",
-                "Duplicate phone number also used by row "
-                f"{seen_phones[normalized]} in this file",
+                _("Duplicate phone number also used by row %(row)s in this file")
+                % {"row": seen_phones[normalized]},
             )
         if normalized in phones:
             return "phone", _PHONE_EXISTS
@@ -736,8 +781,11 @@ def _duplicate(data, seen_phones, seen_names, phones, names) -> tuple[str, str] 
         if key in seen_names:
             return (
                 "first_name",
-                f"Same name as row {seen_names[key]} in this file; add an email "
-                "or phone to either row to confirm they're different people",
+                _(
+                    "Same name as row %(row)s in this file; add an email "
+                    "or phone to either row to confirm they're different people"
+                )
+                % {"row": seen_names[key]},
             )
         if key in names:
             return "first_name", _NAME_EXISTS
@@ -766,7 +814,7 @@ def commit_mapped(table: Table, mapping: list[str | None], request) -> dict[str,
     if not preview.valid:
         return {
             "error": True,
-            "message": "Nothing in this file can be imported.",
+            "message": _("Nothing in this file can be imported."),
             "skipped": report["skipped"],
             "created": 0,
         }

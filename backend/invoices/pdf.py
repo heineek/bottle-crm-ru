@@ -14,6 +14,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import escape
 
+from common.locale import language_for_org
 from invoices.proposals import estimate_deposit
 
 try:
@@ -468,7 +469,7 @@ def format_currency(amount, currency="USD"):
     return f"{sign}{symbol}{abs(amount):,.2f}"
 
 
-def generate_invoice_pdf(invoice, include_payments=True):
+def _invoice_pdf(invoice, include_payments):
     """
     Generate a PDF for an invoice.
 
@@ -598,7 +599,7 @@ def _write_pdf(html_content, css_content):
     return pdf_buffer.getvalue()
 
 
-def generate_estimate_pdf(estimate):
+def _estimate_pdf(estimate):
     """
     Generate a PDF for an estimate.
 
@@ -655,7 +656,7 @@ def generate_estimate_pdf(estimate):
     return _write_pdf(html_content, _default_css_for(estimate.org))
 
 
-def generate_statement_pdf(account, statement):
+def _statement_pdf(account, statement):
     """A PDF of ``statement`` (from `invoices.statements.build_statement`)
     for ``account``, in the org's default template's colors.
 
@@ -702,6 +703,25 @@ def generate_statement_pdf(account, statement):
     }
     html_content = render_to_string("invoices/pdf/statement.html", context)
     return _write_pdf(html_content, _default_css_for(account.org))
+
+
+# A PDF is the customer's document, so it is written in the org's language
+# whoever renders it: a member's download is the copy the customer is sent.
+
+
+def generate_invoice_pdf(invoice, include_payments=True):
+    with language_for_org(invoice.org):
+        return _invoice_pdf(invoice, include_payments)
+
+
+def generate_estimate_pdf(estimate):
+    with language_for_org(estimate.org):
+        return _estimate_pdf(estimate)
+
+
+def generate_statement_pdf(account, statement):
+    with language_for_org(account.org):
+        return _statement_pdf(account, statement)
 
 
 def render_invoice_template(template_html, context):

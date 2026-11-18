@@ -10,8 +10,10 @@ import logging
 
 from celery import shared_task
 from django.template.loader import render_to_string
+from django.utils.translation import gettext
 
 from common.links import frontend_url
+from common.locale import language_for_user, resolve_language
 from common.tasks import set_rls_context
 from leads.intake import converted_contact
 from leads.tasks import send_email
@@ -31,7 +33,8 @@ def send_webform_submission_email(submission_id, org_id):
     (`Profile.lead_alerts_email`), or, once the lead is converted, those of
     the contact it became; the form's active `assign_to` on a ticket form. One
     message to the union, so an assignee who is also a notify recipient
-    receives one email rather than two.
+    receives one email rather than two, and one per language within it: each
+    member reads it in their own (`common.locale.language_for_user`).
 
     Rejected submissions notify nobody. Telling an org about every bot that
     hits their form is how they learn to ignore the notification, and then to
@@ -45,7 +48,7 @@ def send_webform_submission_email(submission_id, org_id):
 
     submission = (
         WebFormSubmission.objects.filter(id=submission_id, org_id=org_id)
-        .select_related("form", "lead", "case", "form__assign_to")
+        .select_related("form", "form__org", "lead", "case", "form__assign_to")
         .first()
     )
     if submission is None:
@@ -88,40 +91,49 @@ def send_webform_submission_email(submission_id, org_id):
             .select_related("user")
         )
 
-    recipients = sorted(
-        {
-            profile.user.email
-            for profile in profiles
-            if getattr(profile, "user", None) and profile.user.email
-        }
-    )
-    if not recipients:
+    users = {
+        profile.user.email: profile.user
+        for profile in profiles
+        if getattr(profile, "user", None) and profile.user.email
+    }
+    if not users:
         logger.info("Web form %s has no notification recipients.", form.id)
         return
 
+    by_language = {}
+    for email in sorted(users):
+        language = resolve_language(user=users[email], org=form.org)
+        by_language.setdefault(language, []).append(email)
+
     if submission.case_id:
         record_url = frontend_url(f"/tickets/{submission.case_id}")
-        subject = f"New ticket: {form.name}"
     else:
         record = (
             f"/contacts/{contact.id}" if contact else f"/leads/{submission.lead_id}"
         )
         record_url = frontend_url(record)
-        subject = f"New submission: {form.name}"
-    html_content = render_to_string(
-        "webforms/submission_email.html",
-        {
-            "form": form,
-            "submission": submission,
-            "lead": submission.lead,
-            "case": submission.case,
-            "contact": contact,
-            "record_url": record_url,
-            "is_duplicate": (submission.status == WebFormSubmission.ACCEPTED_DUPLICATE),
-        },
-    )
-    send_email(
-        subject=subject,
-        html_content=html_content,
-        recipients=recipients,
-    )
+    for recipients in by_language.values():
+        with language_for_user(users[recipients[0]], form.org):
+            if submission.case_id:
+                subject = gettext("New ticket: %(form)s") % {"form": form.name}
+            else:
+                subject = gettext("New submission: %(form)s") % {"form": form.name}
+            html_content = render_to_string(
+                "webforms/submission_email.html",
+                {
+                    "form": form,
+                    "submission": submission,
+                    "lead": submission.lead,
+                    "case": submission.case,
+                    "contact": contact,
+                    "record_url": record_url,
+                    "is_duplicate": (
+                        submission.status == WebFormSubmission.ACCEPTED_DUPLICATE
+                    ),
+                },
+            )
+        send_email(
+            subject=subject,
+            html_content=html_content,
+            recipients=recipients,
+        )

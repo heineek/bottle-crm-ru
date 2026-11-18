@@ -24,6 +24,8 @@ Who may call them follows `cases.access`, the same as the ticket detail view:
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -214,7 +216,7 @@ class CaseLinkParentView(APIView):
             # Detach.
             if case.parent_id is None:
                 return Response(
-                    {"detail": "Case is not linked to a parent."},
+                    {"detail": _("Case is not linked to a parent.")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             case.parent = None
@@ -243,7 +245,7 @@ class CaseLinkParentView(APIView):
         # and put the caller's ticket under somebody else's.
         if parent is None or not has_case_read_access(request.profile, parent):
             return Response(
-                {"parent_id": "Parent case not found in this organization."},
+                {"parent_id": _("Parent case not found in this organization.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # Self-parent, merged either end, cycle and depth, all four in
@@ -345,10 +347,6 @@ def _close(case):
     case.save(update_fields=["status", "closed_on", "resolved_at", "updated_at"])
 
 
-def _ticket_count(n):
-    return f"{n} linked ticket{'' if n == 1 else 's'}"
-
-
 class CaseCloseWithChildrenView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
@@ -381,10 +379,10 @@ class CaseCloseWithChildrenView(APIView):
         case = lock_case_or_404(request.profile, pk)
         assert_case_write_access(request.profile, case)
         if case.merged_into_id:
-            return _refused({"status": MERGED_STATUS_LOCKED})
+            return _refused({"status": _(MERGED_STATUS_LOCKED)})
         if case.status == "Duplicate":
             return Response(
-                {"detail": "Cannot close a merged case."},
+                {"detail": _("Cannot close a merged case.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         resolution_comment = (request.data.get("resolution_comment") or "").strip()
@@ -416,9 +414,16 @@ class CaseCloseWithChildrenView(APIView):
         if not_writable:
             n = len(not_writable)
             return _refused(
-                f"{_ticket_count(n)} under this one {'is' if n == 1 else 'are'} "
-                "not yours to close, so nothing was closed. Close this ticket "
-                "on its own, or ask an admin to close them all.",
+                ngettext(
+                    "%(count)s linked ticket under this one is not yours to close, "
+                    "so nothing was closed. Close this ticket on its own, or ask "
+                    "an admin to close them all.",
+                    "%(count)s linked tickets under this one are not yours to "
+                    "close, so nothing was closed. Close this ticket on its own, "
+                    "or ask an admin to close them all.",
+                    n,
+                )
+                % {"count": n},
             )
 
         # Named: every descendant left here is one the caller may write, and
@@ -436,8 +441,14 @@ class CaseCloseWithChildrenView(APIView):
         if gated:
             names = ", ".join(f'"{d.name}"' for d in gated)
             return _refused(
-                f"{_ticket_count(len(gated))} under this one need an approval "
-                f"before closing ({names}), so nothing was closed.",
+                ngettext(
+                    "%(count)s linked ticket under this one need an approval "
+                    "before closing (%(names)s), so nothing was closed.",
+                    "%(count)s linked tickets under this one need an approval "
+                    "before closing (%(names)s), so nothing was closed.",
+                    len(gated),
+                )
+                % {"count": len(gated), "names": names},
             )
 
         if case.status != "Closed":

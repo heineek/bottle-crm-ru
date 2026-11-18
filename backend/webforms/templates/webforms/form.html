@@ -1,4 +1,4 @@
-{% comment %}
+{% load i18n %}{% comment %}
 Self-contained HTML for the iframe embed.
 
 No external assets and no framework: this is served onto someone else's site
@@ -11,8 +11,11 @@ break out of the quoting; building a bare `var url = "{{ submit_url }}"` would
 put template output inside a script block, which is where escaping bugs live.
 
 NEVER reference `form.captcha_secret` here. Only `captcha_site_key` is public.
-{% endcomment %}<!doctype html>
-<html lang="en">
+
+The system messages the script shows ride on `data-msg-*` attributes for the
+same reason. Labels, placeholders and the button are tenant text: never translated.
+{% endcomment %}<!doctype html>{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -57,7 +60,11 @@ NEVER reference `form.captcha_secret` here. Only `captcha_site_key` is public.
 </style>
 </head>
 <body>
-<form id="wf-form" data-submit-url="{{ submit_url }}" novalidate>
+<form id="wf-form" data-submit-url="{{ submit_url }}"
+      data-msg-thanks="{% translate 'Thanks.' %}"
+      data-msg-failed="{% translate 'Sorry, that could not be sent. Please try again.' %}"
+      data-msg-offline="{% translate 'Could not reach the server. Please check your connection and try again.' %}"
+      novalidate>
   {% for field in fields %}
     <div class="wf-row">
       <label for="wf-{{ forloop.counter }}">
@@ -76,7 +83,7 @@ NEVER reference `form.captcha_secret` here. Only `captcha_site_key` is public.
   {% endfor %}
 
   <div class="wf-hp" aria-hidden="true">
-    <label for="wf-hp">Leave this field empty</label>
+    <label for="wf-hp">{% translate "Leave this field empty" %}</label>
     <input id="wf-hp" type="text" name="{{ honeypot }}" tabindex="-1" autocomplete="off">
   </div>
 
@@ -127,7 +134,7 @@ NEVER reference `form.captcha_secret` here. Only `captcha_site_key` is public.
   // of those keys match a field.
   function showErrors(body) {
     if (!body || typeof body !== 'object') {
-      showGeneral('Sorry, that could not be sent. Please try again.');
+      showGeneral(form.dataset.msgFailed);
       return;
     }
     var leftover = [];
@@ -168,7 +175,7 @@ NEVER reference `form.captcha_secret` here. Only `captcha_site_key` is public.
             return;
           }
           form.hidden = true;
-          done.textContent = body.message || 'Thanks.';
+          done.textContent = body.message || form.dataset.msgThanks;
           done.hidden = false;
           reportHeight();
           return;
@@ -181,7 +188,8 @@ NEVER reference `form.captcha_secret` here. Only `captcha_site_key` is public.
         // Offline, DNS, a CORS refusal, or a response that is not JSON. Saying
         // nothing here left an offline visitor with the same silence a
         // throttled one used to get.
-        showGeneral('Could not reach the server. Please check your connection and try again.');
+        showGeneral(form.dataset.msgOffline);
+
         button.disabled = false;
         reportHeight();
       });

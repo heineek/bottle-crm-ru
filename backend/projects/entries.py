@@ -1,6 +1,7 @@
 """Time entry rules that belong to projects: the rate that fills itself and
 the optional task an entry names."""
 
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from common.validators import validate_uuid
@@ -35,5 +36,7 @@ def task_on_project(project, data, profile):
     validate_uuid(value, "task")
     task = visible_tasks_qs(profile).filter(pk=value, project=project).first()
     if task is None:
-        raise serializers.ValidationError({"task": ["Choose a task on this project."]})
+        raise serializers.ValidationError(
+            {"task": [_("Choose a task on this project.")]}
+        )
     return task

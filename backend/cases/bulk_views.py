@@ -4,6 +4,7 @@ import uuid
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -43,7 +44,8 @@ def _oversized_batch(raw):
         return Response(
             {
                 "error": True,
-                "errors": f"Select at most {MAX_BULK_IDS} tickets at a time.",
+                "errors": _("Select at most %(max)s tickets at a time.")
+                % {"max": MAX_BULK_IDS},
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -145,19 +147,23 @@ class BulkUpdateCasesView(APIView):
         fields = request.data.get("fields") or {}
         if not ids:
             return Response(
-                {"error": True, "errors": "ids required"},
+                {"error": True, "errors": _("ids required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not fields:
             return Response(
-                {"error": True, "errors": "fields required"},
+                {"error": True, "errors": _("fields required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         unknown = set(fields) - ALLOWED_FIELDS - ALLOWED_M2M
         if unknown:
             return Response(
-                {"error": True, "errors": f"Unsupported fields: {sorted(unknown)}"},
+                {
+                    "error": True,
+                    "errors": _("Unsupported fields: %(fields)s")
+                    % {"fields": sorted(unknown)},
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -176,13 +182,17 @@ class BulkUpdateCasesView(APIView):
             if value is None and model_field.null:
                 continue
             return Response(
-                {"error": True, "errors": f"Invalid value for '{field_name}'"},
+                {
+                    "error": True,
+                    "errors": _("Invalid value for '%(field)s'")
+                    % {"field": field_name},
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if fields.get("status") == "Duplicate":
             return Response(
-                {"error": True, "errors": DUPLICATE_BY_MERGE_ONLY},
+                {"error": True, "errors": _(DUPLICATE_BY_MERGE_ONLY)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -193,7 +203,7 @@ class BulkUpdateCasesView(APIView):
             closed_on = fields["closed_on"]
             if closed_on is not None and not isinstance(closed_on, str):
                 return Response(
-                    {"error": True, "errors": "Invalid value for 'closed_on'"},
+                    {"error": True, "errors": _("Invalid value for 'closed_on'")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -285,7 +295,7 @@ class BulkDeleteCasesView(APIView):
         ids = _valid_ids(request.data.get("ids"))
         if not ids:
             return Response(
-                {"error": True, "errors": "ids required"},
+                {"error": True, "errors": _("ids required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         org = request.profile.org

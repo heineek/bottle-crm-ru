@@ -11,6 +11,7 @@ profile's own org.
 """
 
 from django.db.models.signals import post_save, pre_delete
+from django.utils.translation import gettext_noop
 
 from automation.models import AutomationRule
 from common import notifications
@@ -36,14 +37,24 @@ CODES = {
     NOT_MEMBER: "not_member",
     DELETED_USER: "deleted_user",
 }
+# Stored in English in a notification's data; the rules list translates each
+# one as it shows it.
 SENTENCES = {
-    "not_admin": "Paused because the admin who switched it on is no longer an admin.",
-    "deactivated": "Paused because the admin who switched it on was deactivated.",
-    "left": "Paused because the admin who switched it on left the organization.",
-    "not_member": (
+    "not_admin": gettext_noop(
+        "Paused because the admin who switched it on is no longer an admin."
+    ),
+    "deactivated": gettext_noop(
+        "Paused because the admin who switched it on was deactivated."
+    ),
+    "left": gettext_noop(
+        "Paused because the admin who switched it on left the organization."
+    ),
+    "not_member": gettext_noop(
         "Paused because the person who switched it on is not a member of this organization."
     ),
-    "deleted_user": "Paused because the user who switched it on was deleted.",
+    "deleted_user": gettext_noop(
+        "Paused because the user who switched it on was deleted."
+    ),
 }
 
 

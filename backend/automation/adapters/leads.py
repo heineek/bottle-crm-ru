@@ -1,5 +1,7 @@
 from dataclasses import replace
 
+from django.utils.translation import gettext_lazy as _
+
 from automation.objects import Adapter, Choice, FieldSpec, model_choices
 from leads.models import Lead, LeadStage
 from leads.sources import org_sources
@@ -19,32 +21,32 @@ def source_choices(org):
 class LeadAdapter(Adapter):
     route = "/leads/{id}"
     FIELDS = (
-        FieldSpec("title", "Title", "text"),
-        FieldSpec("first_name", "First name", "text"),
-        FieldSpec("last_name", "Last name", "text"),
-        FieldSpec("email", "Email", "text"),
-        FieldSpec("phone", "Phone", "text"),
-        FieldSpec("company_name", "Company", "text"),
-        FieldSpec("job_title", "Job title", "text"),
-        FieldSpec("website", "Website", "text"),
-        FieldSpec("city", "City", "text"),
-        FieldSpec("country", "Country", "choice", model_choices(Lead, "country")),
+        FieldSpec("title", _("Title"), "text"),
+        FieldSpec("first_name", _("First name"), "text"),
+        FieldSpec("last_name", _("Last name"), "text"),
+        FieldSpec("email", _("Email"), "text"),
+        FieldSpec("phone", _("Phone"), "text"),
+        FieldSpec("company_name", _("Company"), "text"),
+        FieldSpec("job_title", _("Job title"), "text"),
+        FieldSpec("website", _("Website"), "text"),
+        FieldSpec("city", _("City"), "text"),
+        FieldSpec("country", _("Country"), "choice", model_choices(Lead, "country")),
         # Conversion creates an account, contact and deal, so it is never an edit.
         FieldSpec(
             "status",
-            "Status",
+            _("Status"),
             "choice",
             model_choices(Lead, "status", unsettable={"converted"}),
         ),
-        FieldSpec("source", "Source", "choice"),
-        FieldSpec("industry", "Industry", "choice", model_choices(Lead, "industry")),
-        FieldSpec("rating", "Rating", "choice", model_choices(Lead, "rating")),
-        FieldSpec("stage", "Stage", "choice", settable=False),
-        FieldSpec("opportunity_amount", "Estimated value", "number"),
-        FieldSpec("probability", "Probability", "number"),
-        FieldSpec("close_date", "Expected close date", "date"),
-        FieldSpec("next_follow_up", "Next follow-up", "date"),
-        FieldSpec("assigned_to", "Assigned to", "people"),
+        FieldSpec("source", _("Source"), "choice"),
+        FieldSpec("industry", _("Industry"), "choice", model_choices(Lead, "industry")),
+        FieldSpec("rating", _("Rating"), "choice", model_choices(Lead, "rating")),
+        FieldSpec("stage", _("Stage"), "choice", settable=False),
+        FieldSpec("opportunity_amount", _("Estimated value"), "number"),
+        FieldSpec("probability", _("Probability"), "number"),
+        FieldSpec("close_date", _("Expected close date"), "date"),
+        FieldSpec("next_follow_up", _("Next follow-up"), "date"),
+        FieldSpec("assigned_to", _("Assigned to"), "people"),
     )
 
     def own_fields(self, org):

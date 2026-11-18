@@ -9,6 +9,7 @@ one edit rather than an audit of every view.
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -125,7 +126,9 @@ class PortalBaseView(APIView):
         Telling the two apart would confirm that a case id belongs to somebody
         else in this org.
         """
-        return Response({"error": "Case not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": _("Case not found")}, status=status.HTTP_404_NOT_FOUND
+        )
 
 
 class PortalCaseListView(PortalBaseView, CappedLimitOffsetPagination):
@@ -151,7 +154,7 @@ class PortalCaseListView(PortalBaseView, CappedLimitOffsetPagination):
         if requested_status is not None:
             if requested_status not in VALID_STATUSES:
                 return Response(
-                    {"error": "Unknown status."}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": _("Unknown status.")}, status=status.HTTP_400_BAD_REQUEST
                 )
             queryset = queryset.filter(status=requested_status)
 
@@ -248,7 +251,7 @@ class PortalArticleView(PortalBaseView):
         # the reason `PortalBaseView._not_found` gives about cases: telling
         # them apart confirms that a draft with this id exists.
         return Response(
-            {"error": "Article not found"}, status=status.HTTP_404_NOT_FOUND
+            {"error": _("Article not found")}, status=status.HTTP_404_NOT_FOUND
         )
 
 

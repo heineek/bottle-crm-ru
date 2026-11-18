@@ -16,10 +16,11 @@ from dataclasses import dataclass, field, replace
 from datetime import timedelta
 
 from crum import impersonate
+from django.conf import settings
 from django.core.cache import cache
 from django.db import connection, transaction
 from django.db.models import Q
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from automation.actions import RunContext, StepFailed, StepSkipped, plan_action
 from automation.capture import UPDATED
@@ -80,10 +81,14 @@ def current_chain():
 
 
 def process(changes) -> None:
-    """Run the rules each of `changes` sets off. Never raises."""
+    """Run the rules each of `changes` sets off. Never raises.
+
+    In the source language, whatever the language of whoever made the change:
+    a run's steps and reason are stored text, read later by any admin.
+    """
     for change in changes:
         try:
-            with _as_org(change.org_id):
+            with _as_org(change.org_id), translation.override(settings.LANGUAGE_CODE):
                 _start(change)
         except Exception:
             # Logged without the record's data.

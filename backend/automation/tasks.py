@@ -14,6 +14,7 @@ from automation.limits import RUN_RETENTION_DAYS
 from automation.models import FAILED, AutomationRun
 from automation.validation import active_people
 from common.links import frontend_url
+from common.locale import language_for_user
 from common.models import Org
 from common.tasks import clear_rls_context, set_rls_context
 
@@ -52,20 +53,27 @@ def send_member_email(profile_ids, subject, text, path, org_id, run_id=None, ste
     """Email `text` and a link to `path` to each active member of the org in `profile_ids`.
 
     `text` is a member's own words: the HTML part escapes it and the plain part
-    carries it as written. A failed send marks the run's step failed.
+    carries it as written. Only the template's own text follows each member's
+    language. A failed send marks the run's step failed.
     """
     set_rls_context(org_id)
     try:
         context = {"text": text, "url": frontend_url(path)}
-        body = render_to_string("automation/member_email.txt", context)
-        html = render_to_string("automation/member_email.html", context)
-        people = active_people(org_id).filter(pk__in=profile_ids).select_related("user")
+        people = (
+            active_people(org_id)
+            .filter(pk__in=profile_ids)
+            .select_related("user", "org")
+        )
         failed = False
         for profile in people:
             if not profile.user.email:
                 continue
+            with language_for_user(profile.user, profile.org):
+                body = render_to_string("automation/member_email.txt", context)
+                html = render_to_string("automation/member_email.html", context)
             message = EmailMultiAlternatives(subject, body, to=[profile.user.email])
             message.attach_alternative(html, "text/html")
+
             try:
                 message.send()
             except Exception as exc:

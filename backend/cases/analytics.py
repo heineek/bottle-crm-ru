@@ -20,6 +20,7 @@ from uuid import UUID
 
 from django.db.models import Q, QuerySet
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from cases.workflow import (
     TERMINAL_STATUSES,
@@ -717,7 +718,7 @@ def case_ids_for_metric(
             data = compute_frt(qs, from_dt, to_dt)
             return [UUID(s) for s in data["breach_case_ids"]]
         if bucket:
-            raise ValueError(f"unknown frt bucket: {bucket}")
+            raise ValueError(_("unknown frt bucket: %(bucket)s") % {"bucket": bucket})
         return in_window.values_list("id", flat=True)
 
     if metric == "mttr":
@@ -742,7 +743,7 @@ def case_ids_for_metric(
                 UUID(s) for s in compute_sla(qs, from_dt, to_dt)["nrt_breach_case_ids"]
             ]
         if bucket:
-            raise ValueError(f"unknown sla bucket: {bucket}")
+            raise ValueError(_("unknown sla bucket: %(bucket)s") % {"bucket": bucket})
         return qs.filter(created_at__gte=from_dt, created_at__lt=to_dt).values_list(
             "id", flat=True
         )
@@ -750,7 +751,7 @@ def case_ids_for_metric(
     if metric == "backlog":
         # Bucket is a YYYY-MM-DD date. Return cases open at end of that day.
         if not bucket:
-            raise ValueError("backlog drilldown requires a bucket=YYYY-MM-DD")
+            raise ValueError(_("backlog drilldown requires a bucket=YYYY-MM-DD"))
         target = date.fromisoformat(bucket)
         end_of_day = _day_start(target + timedelta(days=1))
         return qs.filter(
@@ -761,7 +762,7 @@ def case_ids_for_metric(
     if metric == "agents":
         # Bucket = profile_id (uuid string).
         if not bucket:
-            raise ValueError("agents drilldown requires a bucket=<profile_id>")
+            raise ValueError(_("agents drilldown requires a bucket=<profile_id>"))
         profile_id = UUID(bucket)
         return (
             qs.filter(
@@ -773,7 +774,7 @@ def case_ids_for_metric(
             .distinct()
         )
 
-    raise ValueError(f"unknown metric: {metric}")
+    raise ValueError(_("unknown metric: %(metric)s") % {"metric": metric})
 
 
 # ---------------------------------------------------------------------------

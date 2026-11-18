@@ -22,15 +22,16 @@ invoice or estimate endpoint through :func:`get_invoice_or_error` /
 """
 
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.response import Response
 
 from common.permissions import is_org_admin
 from invoices.models import Estimate, Invoice, RecurringInvoice
 
-INVOICE_NOT_FOUND = "Invoice not found"
-ESTIMATE_NOT_FOUND = "Estimate not found"
-RECURRING_NOT_FOUND = "Recurring invoice not found"
+INVOICE_NOT_FOUND = _("Invoice not found")
+ESTIMATE_NOT_FOUND = _("Estimate not found")
+RECURRING_NOT_FOUND = _("Recurring invoice not found")
 
 
 def has_object_access(request, obj):

@@ -12,6 +12,7 @@ from __future__ import annotations
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -87,7 +88,7 @@ class CaseMergeTargetsView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": (
+                    "errors": _(
                         "You must be an admin, or the creator of this ticket, "
                         "to merge it."
                     ),
@@ -154,7 +155,7 @@ class CaseMergeView(APIView):
 
         if pk == into_id:
             return Response(
-                {"error": True, "errors": "Cannot merge a ticket into itself."},
+                {"error": True, "errors": _("Cannot merge a ticket into itself.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -178,7 +179,7 @@ class CaseMergeView(APIView):
                 or not has_case_read_access(request.profile, target)
             ):
                 return Response(
-                    {"error": True, "errors": "Ticket not found."},
+                    {"error": True, "errors": _("Ticket not found.")},
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
@@ -186,7 +187,7 @@ class CaseMergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": (
+                        "errors": _(
                             "You must be an admin, or the creator of both "
                             "tickets, to merge them."
                         ),
@@ -200,7 +201,7 @@ class CaseMergeView(APIView):
                     return Response(
                         {
                             "error": False,
-                            "message": "Tickets already merged.",
+                            "message": _("Tickets already merged."),
                             "already_merged": True,
                             "target_case": CaseSerializer(
                                 target,
@@ -216,7 +217,9 @@ class CaseMergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": "Source ticket is already merged into a different ticket.",
+                        "errors": _(
+                            "Source ticket is already merged into a different ticket."
+                        ),
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -226,7 +229,7 @@ class CaseMergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": "Target ticket has already been merged elsewhere.",
+                        "errors": _("Target ticket has already been merged elsewhere."),
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -325,7 +328,7 @@ class CaseMergeView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Tickets merged",
+                "message": _("Tickets merged"),
                 "target_case": CaseSerializer(
                     target, context=parent_access_context(request.profile, [target])
                 ).data,

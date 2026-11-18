@@ -31,9 +31,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy
 
 from common import notifications
 from common.actor import current_actor
+from common.locale import language_for_user
 from common.models import DeviceToken, Profile
 from common.push import push_configured, send_push
 from common.tasks import clear_rls_context, set_rls_context
@@ -47,10 +49,10 @@ WAITING = "lead.waiting"
 
 PUSH_TITLE = "BottleCRM"
 PUSH_TEXT = {
-    ASSIGNED: "New lead assigned: {name}{source}",
-    CREATED: "New lead: {name}{source}",
-    ENQUIRED: "{name} enquired again{source}",
-    WAITING: "{name} is waiting for a reply",
+    ASSIGNED: gettext_lazy("New lead assigned: %(name)s%(source)s"),
+    CREATED: gettext_lazy("New lead: %(name)s%(source)s"),
+    ENQUIRED: gettext_lazy("%(name)s enquired again%(source)s"),
+    WAITING: gettext_lazy("%(name)s is waiting for a reply"),
 }
 NAME_MAX = 100
 # Long enough for a web form's rotation, and an automation rule, which runs
@@ -106,7 +108,10 @@ def source_label(lead):
 
 
 def push_body(verb, name, source):
-    return PUSH_TEXT[verb].format(name=name, source=f" ({source})" if source else "")
+    return str(PUSH_TEXT[verb]) % {
+        "name": name,
+        "source": f" ({source})" if source else "",
+    }
 
 
 def _members(profiles):
@@ -149,12 +154,14 @@ def _alert(recipients, verb, lead, record, link, name, actor=None, pushing=None)
             data={"source": source},
         )
         if pushing and profile.lead_alerts_push and _has_phone(profile):
+            with language_for_user(profile.user, profile.org):
+                body = push_body(verb, name, source)
             transaction.on_commit(
                 partial(
                     send_push.delay,
                     str(profile.pk),
                     PUSH_TITLE,
-                    push_body(verb, name, source),
+                    body,
                     link,
                     verb=verb,
                 ),

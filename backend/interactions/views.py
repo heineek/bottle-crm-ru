@@ -6,6 +6,7 @@ own scope as well as `interactions:*`.
 """
 
 from django.http import Http404
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -44,9 +45,11 @@ from interactions.service import (
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
 
-READ_ONLY = "Enquiries, and interactions written by an integration, cannot be changed."
-NOT_YOURS = "Only the person who logged this, or an admin, can change it."
-NOT_FOUND = "No such record."
+READ_ONLY = _(
+    "Enquiries, and interactions written by an integration, cannot be changed."
+)
+NOT_YOURS = _("Only the person who logged this, or an admin, can change it.")
+NOT_FOUND = _("No such record.")
 
 
 def _refuse(errors, code=status.HTTP_400_BAD_REQUEST):

@@ -20,6 +20,7 @@ Routes (all under /api/macros/):
 from django.db import transaction
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -80,10 +81,10 @@ def _usable_or_response(request, pk):
     """
     macro = get_object_or_404(Macro, pk=pk, org=request.profile.org)
     if macro.scope == Macro.SCOPE_PERSONAL and macro.owner_id != request.profile.id:
-        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND)
     if not macro.is_active:
         return Response(
-            {"error": "Macro is inactive."},
+            {"error": _("Macro is inactive.")},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return macro
@@ -139,11 +140,11 @@ def _resolve_scope_and_owner(profile, payload, instance=None):
         getattr(instance, "scope", None) or Macro.SCOPE_ORG,
     )
     if desired_scope not in (Macro.SCOPE_ORG, Macro.SCOPE_PERSONAL):
-        raise ValueError("scope must be 'org' or 'personal'.")
+        raise ValueError(_("scope must be 'org' or 'personal'."))
 
     if desired_scope == Macro.SCOPE_ORG:
         if not may_configure(profile):
-            raise ValueError("Only admins can manage org-scope macros.")
+            raise ValueError(_("Only admins can manage org-scope macros."))
         return desired_scope, None
     return desired_scope, profile
 
@@ -215,7 +216,7 @@ class MacroDetailView(APIView):
             # An org macro IS visible to this non-admin; the refusal is an
             # authorization one (403), not a hidden object.
             return Response(
-                {"error": "Only admins can edit org-scope macros."},
+                {"error": _("Only admins can edit org-scope macros.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if macro.scope == Macro.SCOPE_PERSONAL and macro.owner_id != request.profile.id:
@@ -224,7 +225,7 @@ class MacroDetailView(APIView):
             # a 403 either, or the id space leaks which rows are somebody else's
             # personal macros. Mirror the GET: 404.
             return Response(
-                {"detail": "Not found."},
+                {"detail": _("Not found.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return macro
@@ -234,7 +235,9 @@ class MacroDetailView(APIView):
         macro = get_object_or_404(Macro, pk=pk, org=request.profile.org)
         # Visibility: same rule as the list filter.
         if macro.scope == Macro.SCOPE_PERSONAL and macro.owner_id != request.profile.id:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND
+            )
         return Response(_serialize(request, macro))
 
     @extend_schema(
@@ -320,7 +323,7 @@ class MacroRenderView(APIView):
         case_id = request.data.get("case_id")
         if not case_id:
             return Response(
-                {"error": "case_id is required."},
+                {"error": _("case_id is required.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # The rendered text carries the case's subject and its contact's name
@@ -391,7 +394,7 @@ class MacroApplyView(APIView):
         carried = macro.action_keys()
         if not carried:
             return Response(
-                {"error": "This macro has no actions to apply."},
+                {"error": _("This macro has no actions to apply.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         only = request.data.get("only")
@@ -399,21 +402,24 @@ class MacroApplyView(APIView):
             selected = carried
         elif not isinstance(only, list) or any(key not in ACTION_KEYS for key in only):
             return Response(
-                {"error": "only must be a list of: " + ", ".join(ACTION_KEYS) + "."},
+                {
+                    "error": _("only must be a list of: %(keys)s.")
+                    % {"keys": ", ".join(ACTION_KEYS)}
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         else:
             selected = [key for key in carried if key in only]
             if not selected:
                 return Response(
-                    {"error": "None of the chosen actions are on this macro."},
+                    {"error": _("None of the chosen actions are on this macro.")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
         case_id = request.data.get("case_id")
         if not case_id:
             return Response(
-                {"error": "case_id is required."},
+                {"error": _("case_id is required.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # A case the caller may not open, another org's and a malformed id all
@@ -446,8 +452,10 @@ class MacroApplyView(APIView):
                 skipped.append(
                     {
                         "action": "assignees",
-                        "reason": "Everyone this macro assigns is deactivated, "
-                        "so the assignees were left as they were.",
+                        "reason": _(
+                            "Everyone this macro assigns is deactivated, "
+                            "so the assignees were left as they were."
+                        ),
                     }
                 )
         if "tags" in selected:
@@ -463,8 +471,10 @@ class MacroApplyView(APIView):
                 skipped.append(
                     {
                         "action": "tags",
-                        "reason": "Every tag this macro adds is archived, "
-                        "so no tags were added.",
+                        "reason": _(
+                            "Every tag this macro adds is archived, "
+                            "so no tags were added."
+                        ),
                     }
                 )
 
@@ -479,7 +489,7 @@ class MacroApplyView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Macro applied" if data else "Nothing was applied",
+                "message": _("Macro applied") if data else _("Nothing was applied"),
                 "applied": [key for key in selected if key not in skipped_keys],
                 "skipped": skipped,
             },

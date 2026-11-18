@@ -158,12 +158,12 @@ public, and there is a test that says so.
           form.hidden = true;
           // textContent, never innerHTML: `body.message` is org-authored copy
           // rendering on someone else's domain.
-          done.textContent = body.message || "Thanks.";
+          done.textContent = body.message || CONFIG.messages.thanks;
           done.hidden = false;
           return;
         }
         if (!body || typeof body !== "object") {
-          showGeneral("Sorry, that could not be sent. Please try again.");
+          showGeneral(CONFIG.messages.failed);
           button.disabled = false;
           return;
         }
@@ -178,7 +178,8 @@ public, and there is a test that says so.
       })
       .catch(function () {
         // Offline, DNS, a CORS refusal, or a response that is not JSON.
-        showGeneral("Could not reach the server. Please check your connection and try again.");
+        showGeneral(CONFIG.messages.offline);
+
         button.disabled = false;
       });
   });

@@ -7,6 +7,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.timesince import timesince
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from accounts.models import Account
 from common.base import (
@@ -37,14 +38,14 @@ from opportunity.workflow import (
 
 # Amount source choices for Opportunity
 AMOUNT_SOURCE_CHOICES = (
-    ("MANUAL", "Manual"),
-    ("CALCULATED", "Calculated from Products"),
+    ("MANUAL", _("Manual")),
+    ("CALCULATED", _("Calculated from Products")),
 )
 
 # Discount type choices
 DISCOUNT_TYPES = (
-    ("PERCENTAGE", "Percentage (%)"),
-    ("FIXED", "Fixed Amount"),
+    ("PERCENTAGE", _("Percentage (%)")),
+    ("FIXED", _("Fixed Amount")),
 )
 
 
@@ -322,7 +323,7 @@ class Opportunity(AssignableMixin, BaseModel):
 
     @property
     def created_on_arrow(self):
-        return timesince(self.created_at) + " ago"
+        return _("%(time)s ago") % {"time": timesince(self.created_at)}
 
     def clean(self):
         """Validate opportunity data against the kind of stage it sits in."""
@@ -520,7 +521,9 @@ class OpportunityLineItem(BaseModel):
     total = models.DecimalField(_("Total"), max_digits=12, decimal_places=2, default=0)
 
     # Display order
-    order = models.PositiveIntegerField(_("Order"), default=0)
+    order = models.PositiveIntegerField(
+        pgettext_lazy("sort position", "Order"), default=0
+    )
 
     # Organization (for RLS)
     org = models.ForeignKey(

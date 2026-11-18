@@ -12,6 +12,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Iterable, List, Tuple
 
+from django.utils.translation import gettext as _
+
 GROUPINGS = ("entry", "person", "task", "single")
 
 
@@ -59,31 +61,34 @@ def build_invoice_lines_from_entries(
     """
     if group_by not in GROUPINGS:
         raise TimeEntryInvoicingError(
-            f"group_by must be one of {', '.join(GROUPINGS)}."
+            _("group_by must be one of %(choices)s.")
+            % {"choices": ", ".join(GROUPINGS)}
         )
     entries = sorted(entries, key=lambda e: (e.started_at, str(e.id)))
     if not entries:
-        raise TimeEntryInvoicingError("No time entries supplied.")
+        raise TimeEntryInvoicingError(_("No time entries supplied."))
 
     currencies = {e.currency for e in entries}
     if len(currencies) > 1:
         raise TimeEntryInvoicingError(
-            f"Cannot invoice entries in multiple currencies: {sorted(currencies)}."
+            _("Cannot invoice entries in multiple currencies: %(currencies)s.")
+            % {"currencies": sorted(currencies)}
         )
     currency = next(iter(currencies))
 
     for entry in entries:
         if entry.invoice_id is not None:
             raise TimeEntryInvoicingError(
-                f"Time entry {entry.id} has already been invoiced."
+                _("Time entry %(id)s has already been invoiced.") % {"id": entry.id}
             )
         if entry.ended_at is None:
             raise TimeEntryInvoicingError(
-                f"Time entry {entry.id} is still running and cannot be invoiced."
+                _("Time entry %(id)s is still running and cannot be invoiced.")
+                % {"id": entry.id}
             )
         if not entry.billable:
             raise TimeEntryInvoicingError(
-                f"Time entry {entry.id} is not marked billable."
+                _("Time entry %(id)s is not marked billable.") % {"id": entry.id}
             )
 
     # (label, minutes, rate) per line, in the order lines first appear.

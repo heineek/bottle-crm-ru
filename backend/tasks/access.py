@@ -28,6 +28,7 @@ creator and grant itself delete.
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.http import Http404
+from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import PermissionDenied
 
 # Re-exported, not redefined, the same arrangement `cases.access` uses. This
@@ -37,7 +38,7 @@ from rest_framework.exceptions import PermissionDenied
 from common.permissions import is_org_admin  # noqa: F401
 from tasks.models import Task
 
-_DENIED = "You do not have Permission to perform this action"
+_DENIED = _("You do not have Permission to perform this action")
 
 
 def visible_tasks_qs(profile):

@@ -37,6 +37,7 @@ from datetime import datetime, timedelta
 from django.db import IntegrityError, transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -186,7 +187,9 @@ def _parse_date(value):
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"Invalid date {value!r}; expected YYYY-MM-DD.") from exc
+        raise ValueError(
+            _("Invalid date %(value)s; expected YYYY-MM-DD.") % {"value": repr(value)}
+        ) from exc
 
 
 def _report_entries(request):
@@ -209,7 +212,7 @@ def _report_entries(request):
     if target:
         if target != str(profile.id) and not is_org_admin(profile):
             raise TimeReportParamError(
-                "Only admins can report on another profile's time.",
+                _("Only admins can report on another profile's time."),
                 status.HTTP_403_FORBIDDEN,
             )
         entries = entries.filter(profile_id=target)
@@ -227,7 +230,7 @@ def _report_entries(request):
     billable = request.query_params.get("billable")
     if billable is not None:
         if billable not in ("true", "false"):
-            raise TimeReportParamError("billable must be 'true' or 'false'.")
+            raise TimeReportParamError(_("billable must be 'true' or 'false'."))
         entries = entries.filter(billable=(billable == "true"))
 
     try:
@@ -242,7 +245,7 @@ def _report_entries(request):
         end = timezone.localdate()
         start = end - timedelta(days=DEFAULT_REPORT_DAYS - 1)
     if end < start:
-        raise TimeReportParamError("end must be on or after start.")
+        raise TimeReportParamError(_("end must be on or after start."))
 
     entries = entries.filter(started_at__date__gte=start, started_at__date__lte=end)
     return entries, start, end
@@ -268,7 +271,7 @@ def _billable(data):
         return value
     if isinstance(value, str) and value.lower() in ("true", "false"):
         return value.lower() == "true"
-    raise ValidationError({"billable": ["Send true or false."]})
+    raise ValidationError({"billable": [_("Send true or false.")]})
 
 
 def create_entry(request, *, case=None, project=None):
@@ -321,7 +324,7 @@ def start_timer(request, *, case=None, project=None):
     if running is not None:
         return Response(
             {
-                "detail": "You already have a running timer.",
+                "detail": _("You already have a running timer."),
                 "running_entry_id": str(running.id),
                 "running_case_id": str(running.case_id) if running.case_id else None,
                 "running_project_id": (
@@ -464,15 +467,17 @@ class TimeEntryDetailView(APIView):
     def put(self, request, pk):
         entry = self._get_entry(request, pk)
         if entry is None:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND
+            )
         if entry is False:
             return Response(
-                {"detail": "Not authorized to edit this entry."},
+                {"detail": _("Not authorized to edit this entry.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if entry.invoice_id is not None:
             return Response(
-                {"detail": "Cannot edit an entry that has been invoiced."},
+                {"detail": _("Cannot edit an entry that has been invoiced.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         serializer = TimeEntryUpdateSerializer(entry, data=request.data, partial=True)
@@ -482,7 +487,7 @@ class TimeEntryDetailView(APIView):
             if entry.project is None:
                 if request.data.get("task") not in (None, ""):
                     return Response(
-                        {"task": ["Only time on a project can name a task."]},
+                        {"task": [_("Only time on a project can name a task.")]},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
@@ -508,15 +513,17 @@ class TimeEntryDetailView(APIView):
     def delete(self, request, pk):
         entry = self._get_entry(request, pk)
         if entry is None:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND
+            )
         if entry is False:
             return Response(
-                {"detail": "Not authorized to delete this entry."},
+                {"detail": _("Not authorized to delete this entry.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if entry.invoice_id is not None:
             return Response(
-                {"detail": "Cannot delete an entry that has been invoiced."},
+                {"detail": _("Cannot delete an entry that has been invoiced.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         entry.delete()
@@ -537,15 +544,17 @@ class TimeEntryStopView(APIView):
             .first()
         )
         if entry is None:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND
+            )
         if entry.profile_id != request.profile.id and not is_org_admin(request.profile):
             return Response(
-                {"detail": "Not authorized to stop this entry."},
+                {"detail": _("Not authorized to stop this entry.")},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if entry.ended_at is not None:
             return Response(
-                {"detail": "Timer is already stopped."},
+                {"detail": _("Timer is already stopped.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         entry.ended_at = timezone.now()
@@ -593,7 +602,7 @@ class TimesheetView(APIView):
         if profile_param and profile_param != str(request.profile.id):
             if not is_org_admin(request.profile):
                 return Response(
-                    {"detail": "Only admins can view another profile's timesheet."},
+                    {"detail": _("Only admins can view another profile's timesheet.")},
                     status=status.HTTP_403_FORBIDDEN,
                 )
             target_profile_id = profile_param
@@ -610,7 +619,7 @@ class TimesheetView(APIView):
             end = start + timedelta(days=6)
         if end < start:
             return Response(
-                {"detail": "end must be on or after start."},
+                {"detail": _("end must be on or after start.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

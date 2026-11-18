@@ -25,6 +25,7 @@ from urllib.parse import urlsplit
 from django.db.models import Count, Max, Q
 from django.http import Http404
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_noop
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -55,9 +56,8 @@ from common.permissions import HasOrgContext, IsOrgAdmin
 from webhooks.models import JSON, WebhookEndpoint
 
 TAGS = ["Automation"]
-OVER_LIMIT = "Over your plan's limit"
-NEEDS_ATTENTION = "Needs attention"
-PAUSED = "Paused"
+OVER_LIMIT = gettext_noop("Over your plan's limit")
+PAUSED = gettext_noop("Paused")
 RECENT = timedelta(days=7)
 
 # The type each rule key is stored as. The plan judges a switch-on before the
@@ -125,23 +125,27 @@ def _status(org, rule, plan):
     """`(status, status_text)` for one rule; `plan` is `runnable`'s answer."""
     if not rule.is_active:
         if rule.paused_reason:
-            return "paused", SENTENCES.get(rule.paused_reason, PAUSED)
-        return "off", "Off"
+            return "paused", gettext(SENTENCES.get(rule.paused_reason, PAUSED))
+        return "off", gettext("Off")
     # An owner changed by a path that skips the pausing signals.
     if not _may_act(rule):
-        return "paused", SENTENCES.get(owner_problem(rule), PAUSED)
+        return "paused", gettext(SENTENCES.get(owner_problem(rule), PAUSED))
     # The rule stays in the active-rule list passed to `runnable`; only its
     # status changes, and `is_active` is left alone so it resumes on its own.
     module = switched_off_module(org, rule.object_key)
     if module is not None:
-        return "paused", f"Paused: {module_label(org, module)} is switched off"
+        return "paused", gettext("Paused: %(module)s is switched off") % {
+            "module": module_label(org, module)
+        }
     if rule.id not in plan.rule_ids:
-        return "over_limit", plan.statuses.get(rule.id, OVER_LIMIT)
+        return "over_limit", gettext(plan.statuses.get(rule.id, OVER_LIMIT))
     errors = validate_rule(org, {key: getattr(rule, key) for key in RULE_KEYS})
     if errors:
         first = next(iter(errors.values()))[0]
-        return "needs_attention", f"{NEEDS_ATTENTION}: {first}"
-    return "on", "On"
+        return "needs_attention", gettext("Needs attention: %(error)s") % {
+            "error": first
+        }
+    return "on", gettext("On")
 
 
 def _recent_runs(org):
@@ -204,18 +208,18 @@ def _record_or_404(org, rule, data):
     try:
         pk = uuid.UUID(str(value))
     except ValueError:
-        raise Http404("No such record.") from None
+        raise Http404(gettext("No such record.")) from None
     adapter = adapter_for(org, rule.object_key)
     record = adapter.load(org, pk) if adapter is not None else None
     if record is None:
-        raise Http404("No such record.")
+        raise Http404(gettext("No such record."))
     return record
 
 
 def _reordered(rules, ids):
     """`rules` in the order `ids` names them, the rest after; or an error."""
     if not isinstance(ids, list):
-        return None, "Send a list of rule ids."
+        return None, gettext("Send a list of rule ids.")
     by_id = {rule.id: rule for rule in rules}
     named = []
     for value in ids:
@@ -224,10 +228,11 @@ def _reordered(rules, ids):
         except ValueError:
             pk = None
         if pk not in by_id:
-            return None, "Each id must be one of this org's rules."
+            return None, gettext("Each id must be one of this org's rules.")
         named.append(pk)
     if len(set(named)) != len(named):
-        return None, "Name each rule once."
+        return None, gettext("Name each rule once.")
+
     rest = [rule for rule in rules if rule.id not in set(named)]
     return [by_id[pk] for pk in named] + rest, None
 

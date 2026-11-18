@@ -5,6 +5,8 @@ Not gated by a module: deals and contacts read the same list.
 
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -18,8 +20,8 @@ from leads.sources import derive_key, org_sources
 
 LABEL_MAX = 64  # a key is the label lowercased, and a key holds 64
 
-ADMIN_ONLY = "Only admins can change lead sources"
-DUPLICATE = "A source with this name already exists."
+ADMIN_ONLY = gettext_lazy("Only admins can change lead sources")
+DUPLICATE = gettext_lazy("A source with this name already exists.")
 
 
 def _row(source) -> dict:
@@ -60,7 +62,7 @@ class SourceCreateSerializer(serializers.Serializer):
 
     def validate_label(self, value):
         if not derive_key(value):
-            raise serializers.ValidationError("This field may not be blank.")
+            raise serializers.ValidationError(_("This field may not be blank."))
         return value
 
 
@@ -70,7 +72,7 @@ class SourceUpdateSerializer(serializers.Serializer):
 
     def validate_label(self, value):
         if not derive_key(value):
-            raise serializers.ValidationError("This field may not be blank.")
+            raise serializers.ValidationError(_("This field may not be blank."))
         return value
 
 
@@ -179,7 +181,7 @@ class LeadSourceOrderView(APIView):
         unknown = [k for k in keys if k not in by_key]
         if unknown or len(set(keys)) != len(keys):
             return _refuse(
-                {"keys": ["Send each of this organisation's source keys once."]}
+                {"keys": [_("Send each of this organisation's source keys once.")]}
             )
         # Keys left out follow the listed ones in their current order.
         rest = [s.key for s in sources if s.key not in set(keys)]

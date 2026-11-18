@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
-    <title>Estimate {{ estimate.estimate_number }}</title>
+    <title>{% blocktranslate with number=estimate.estimate_number %}Estimate {{ number }}{% endblocktranslate %}</title>
 </head>
 <body>
     <div class="invoice-container">
@@ -16,7 +16,7 @@
                 {% endif %}
             </div>
             <div class="invoice-title">
-                <h1>Estimate</h1>
+                <h1>{% translate "Estimate" %}</h1>
                 <div class="invoice-number">#{{ estimate.estimate_number }}</div>
             </div>
         </div>
@@ -24,7 +24,7 @@
         <!-- Addresses -->
         <div class="addresses">
             <div class="address-block from-address">
-                <h3>From</h3>
+                <h3>{% translate "From" %}</h3>
                 <p class="company-name">{{ org.name }}</p>
                 {% if org.address_line %}
                 <p>{{ org.address_line }}</p>
@@ -40,7 +40,7 @@
                 {% endif %}
             </div>
             <div class="address-block to-address">
-                <h3>Prepared For</h3>
+                <h3>{% translate "Prepared For" %}</h3>
                 <p class="company-name">{{ estimate.client_name }}</p>
                 {% if estimate.client_email %}
                 <p>{{ estimate.client_email }}</p>
@@ -66,28 +66,28 @@
         <!-- Estimate Details -->
         <div class="invoice-details">
             <div class="details-row">
-                <span class="details-label">Estimate Date:</span>
-                <span class="details-value">{{ estimate.issue_date|date:"F d, Y" }}</span>
+                <span class="details-label">{% translate "Estimate Date" %}:</span>
+                <span class="details-value">{{ estimate.issue_date|date:_("F d, Y") }}</span>
             </div>
             {% if estimate.expiry_date %}
             <div class="details-row">
-                <span class="details-label">Valid Until:</span>
+                <span class="details-label">{% translate "Valid Until" %}:</span>
                 <span class="details-value">
-                    {{ estimate.expiry_date|date:"F d, Y" }}
-                    {% if is_expired %}<span style="color: #dc2626;"> (Expired)</span>{% endif %}
+                    {{ estimate.expiry_date|date:_("F d, Y") }}
+                    {% if is_expired %}<span style="color: #dc2626;"> ({% translate "Expired" context "estimate status" %})</span>{% endif %}
                 </span>
             </div>
             {% endif %}
             {% if estimate.title %}
             <div class="details-row">
-                <span class="details-label">Reference:</span>
+                <span class="details-label">{% translate "Reference" %}:</span>
                 <span class="details-value">{{ estimate.title }}</span>
             </div>
             {% endif %}
             <div class="details-row">
-                <span class="details-label">Status:</span>
+                <span class="details-label">{% translate "Status" %}:</span>
                 <span class="details-value">
-                    <span class="status-badge {{ status_class }}">{{ estimate.status }}</span>
+                    <span class="status-badge {{ status_class }}">{{ estimate.get_status_display }}</span>
                 </span>
             </div>
         </div>
@@ -102,11 +102,11 @@
         <table class="line-items">
             <thead>
                 <tr>
-                    <th style="width: 40%">Description</th>
-                    <th style="width: 15%">Quantity</th>
-                    <th style="width: 15%">Unit Price</th>
-                    <th style="width: 15%">Tax</th>
-                    <th style="width: 15%">Amount</th>
+                    <th style="width: 40%">{% translate "Description" %}</th>
+                    <th style="width: 15%">{% translate "Quantity" %}</th>
+                    <th style="width: 15%">{% translate "Unit Price" %}</th>
+                    <th style="width: 15%">{% translate "Tax" %}</th>
+                    <th style="width: 15%">{% translate "Amount" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -125,7 +125,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 20px;">No line items</td>
+                    <td colspan="5" style="text-align: center; padding: 20px;">{% translate "No line items" %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -135,13 +135,13 @@
         <div class="totals-section">
             <div class="totals-table">
                 <div class="totals-row">
-                    <span class="totals-label">Subtotal</span>
+                    <span class="totals-label">{% translate "Subtotal" %}</span>
                     <span class="totals-value">{{ subtotal }}</span>
                 </div>
                 {% if estimate.discount_amount and estimate.discount_amount > 0 %}
                 <div class="totals-row">
                     <span class="totals-label">
-                        Discount
+                        {% translate "Discount" %}
                         {% if estimate.discount_type == 'PERCENTAGE' %}({{ estimate.discount_value }}%){% endif %}
                     </span>
                     <span class="totals-value">-{{ discount_amount }}</span>
@@ -150,19 +150,19 @@
                 {% if estimate.tax_amount and estimate.tax_amount > 0 %}
                 <div class="totals-row">
                     <span class="totals-label">
-                        Tax
+                        {% translate "Tax" %}
                         {% if estimate.tax_rate %}({{ estimate.tax_rate }}%){% endif %}
                     </span>
                     <span class="totals-value">{{ tax_amount }}</span>
                 </div>
                 {% endif %}
                 <div class="totals-row grand-total">
-                    <span class="totals-label">Total</span>
+                    <span class="totals-label">{% translate "Total" %}</span>
                     <span class="totals-value">{{ total_amount }}</span>
                 </div>
                 {% if deposit %}
                 <div class="totals-row deposit">
-                    <span class="totals-label">Deposit on acceptance ({{ deposit.percent }}%)</span>
+                    <span class="totals-label">{% blocktranslate with percent=deposit.percent trimmed %}Deposit on acceptance ({{ percent }}%){% endblocktranslate %}</span>
                     <span class="totals-value">{{ deposit.amount }}</span>
                 </div>
                 {% endif %}
@@ -172,7 +172,7 @@
         <!-- Notes -->
         {% if estimate.notes %}
         <div class="notes-section">
-            <h3>Notes</h3>
+            <h3>{% translate "Notes" %}</h3>
             <p>{{ estimate.notes|linebreaks }}</p>
         </div>
         {% endif %}
@@ -180,33 +180,33 @@
         <!-- Terms -->
         {% if estimate.terms %}
         <div class="notes-section">
-            <h3>Terms & Conditions</h3>
+            <h3>{% translate "Terms & Conditions" %}</h3>
             <p>{{ estimate.terms|linebreaks }}</p>
         </div>
         {% endif %}
 
         <!-- Acceptance Notice -->
         <div class="payment-info">
-            <h3>Acceptance</h3>
+            <h3>{% translate "Acceptance" %}</h3>
             <p style="color: #0369a1; font-size: 9pt;">
-                This estimate is valid {% if estimate.expiry_date %}until {{ estimate.expiry_date|date:"F d, Y" }}{% else %}for 30 days from the date above{% endif %}.
-                To accept this estimate, please contact us or sign below.
+                {% if estimate.expiry_date %}{% blocktranslate trimmed with date=estimate.expiry_date|date:_("F d, Y") %}This estimate is valid until {{ date }}.{% endblocktranslate %}{% else %}{% translate "This estimate is valid for 30 days from the date above." %}{% endif %}
+                {% translate "To accept this estimate, please contact us or sign below." %}
             </p>
             <div style="margin-top: 30px; display: flex; justify-content: space-between;">
                 <div style="width: 45%;">
                     <div style="border-bottom: 1px solid #333; height: 40px;"></div>
-                    <p style="font-size: 8pt; color: #666; margin-top: 5px;">Signature</p>
+                    <p style="font-size: 8pt; color: #666; margin-top: 5px;">{% translate "Signature" %}</p>
                 </div>
                 <div style="width: 45%;">
                     <div style="border-bottom: 1px solid #333; height: 40px;"></div>
-                    <p style="font-size: 8pt; color: #666; margin-top: 5px;">Date</p>
+                    <p style="font-size: 8pt; color: #666; margin-top: 5px;">{% translate "Date" %}</p>
                 </div>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <p>Thank you for considering our services!</p>
+            <p>{% translate "Thank you for considering our services!" %}</p>
             {% if org.name %}
             <p>{{ org.name }}</p>
             {% endif %}

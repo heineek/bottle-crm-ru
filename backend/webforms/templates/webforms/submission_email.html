@@ -1,4 +1,4 @@
-{% comment %}
+{% load i18n %}{% comment %}
 Sent to a form's notification recipients when a submission is accepted.
 
 Every value in `submission.payload` is submitter-controlled. Django autoescapes
@@ -10,22 +10,30 @@ not switch the table to `{% autoescape off %}`.
   <body style="font-family: system-ui, sans-serif; color: #111827; margin: 0; padding: 24px;">
     <p style="margin: 0 0 16px;">
       {% if case %}
-        A new ticket was opened through <strong>{{ form.name }}</strong>.
+        {% blocktranslate trimmed with name=form.name %}
+          A new ticket was opened through <strong>{{ name }}</strong>.
+        {% endblocktranslate %}
       {% else %}
-        A new submission arrived through <strong>{{ form.name }}</strong>.
+        {% blocktranslate trimmed with name=form.name %}
+          A new submission arrived through <strong>{{ name }}</strong>.
+        {% endblocktranslate %}
       {% endif %}
     </p>
 
     {% if contact %}
       <p style="margin: 0 0 16px; padding: 12px; background: #fffbeb; border-radius: 6px; color: #92400e;">
-        They are already a contact, so the submission was added to their
-        contact record rather than creating a lead.
+        {% blocktranslate trimmed %}
+          They are already a contact, so the submission was added to their
+          contact record rather than creating a lead.
+        {% endblocktranslate %}
       </p>
     {% elif is_duplicate %}
       <p style="margin: 0 0 16px; padding: 12px; background: #fffbeb; border-radius: 6px; color: #92400e;">
-        This address already had a lead, so the details were merged into it
-        rather than creating a second record. Any field that was already filled
-        in was left as it was.
+        {% blocktranslate trimmed %}
+          This address already had a lead, so the details were merged into it
+          rather than creating a second record. Any field that was already filled
+          in was left as it was.
+        {% endblocktranslate %}
       </p>
     {% endif %}
 
@@ -46,7 +54,7 @@ not switch the table to `{% autoescape off %}`.
       <p style="margin: 0;">
         <a href="{{ record_url }}"
            style="display: inline-block; padding: 10px 16px; background: #2563eb; color: #ffffff; border-radius: 6px; text-decoration: none;">
-          {% if case %}Open the ticket{% elif contact %}Open the contact{% else %}Open the lead{% endif %}
+          {% if case %}{% translate "Open the ticket" %}{% elif contact %}{% translate "Open the contact" %}{% else %}{% translate "Open the lead" %}{% endif %}
         </a>
       </p>
     {% endif %}

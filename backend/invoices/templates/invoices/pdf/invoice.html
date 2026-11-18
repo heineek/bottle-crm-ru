@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice {{ invoice.invoice_number }}</title>
+    <title>{% blocktranslate with number=invoice.invoice_number %}Invoice {{ number }}{% endblocktranslate %}</title>
     <link rel="stylesheet" href="invoice.css">
 </head>
 <body>
@@ -24,18 +24,18 @@
                 </p>
                 {% endif %}
                 {% if org.phone %}
-                <p>Tel: {{ org.phone }}</p>
+                <p>{% translate "Tel" %}: {{ org.phone }}</p>
                 {% endif %}
                 {% if org.email %}
-                <p>Email: <a href="mailto:{{ org.email }}">{{ org.email }}</a></p>
+                <p>{% translate "Email" %}: <a href="mailto:{{ org.email }}">{{ org.email }}</a></p>
                 {% endif %}
                 {% if org.website %}
-                <p>Web: <a href="{{ org.website }}">{{ org.website }}</a></p>
+                <p>{% translate "Web" %}: <a href="{{ org.website }}">{{ org.website }}</a></p>
                 {% endif %}
             </div>
 
             <div class="invoice-branding">
-                <div class="invoice-title">Invoice</div>
+                <div class="invoice-title">{% translate "Invoice" %}</div>
                 {% if org.logo %}
                 <div class="logo-container">
                     <img src="{{ org.logo.url }}" alt="{{ org.name }}" class="logo">
@@ -69,42 +69,42 @@
             <div class="invoice-meta">
                 {% if invoice.invoice_title %}
                 <div class="meta-row">
-                    <span class="meta-label">Reference:</span>
+                    <span class="meta-label">{% translate "Reference" %}:</span>
                     <span class="meta-value">{{ invoice.invoice_title }}</span>
                 </div>
                 {% endif %}
                 <div class="meta-row">
-                    <span class="meta-label">Invoice #:</span>
+                    <span class="meta-label">{% translate "Invoice #" %}:</span>
                     <span class="meta-value">{{ invoice.invoice_number }}</span>
                 </div>
                 {% if invoice.po_number %}
                 <div class="meta-row">
-                    <span class="meta-label">PO Number:</span>
+                    <span class="meta-label">{% translate "PO Number" %}:</span>
                     <span class="meta-value">{{ invoice.po_number }}</span>
                 </div>
                 {% endif %}
                 {% if invoice.billing_period %}
                 <div class="meta-row">
-                    <span class="meta-label">Billing Period:</span>
+                    <span class="meta-label">{% translate "Billing Period" %}:</span>
                     <span class="meta-value">{{ invoice.billing_period }}</span>
                 </div>
                 {% endif %}
                 {% if invoice.payment_terms %}
                 <div class="meta-row">
-                    <span class="meta-label">Terms:</span>
+                    <span class="meta-label">{% translate "Terms" %}:</span>
                     <span class="meta-value">{{ invoice.get_payment_terms_display }}</span>
                 </div>
                 {% endif %}
                 {% if invoice.issue_date %}
                 <div class="meta-row">
-                    <span class="meta-label">Invoice Date:</span>
-                    <span class="meta-value">{{ invoice.issue_date|date:"F d, Y" }}</span>
+                    <span class="meta-label">{% translate "Invoice Date" %}:</span>
+                    <span class="meta-value">{{ invoice.issue_date|date:_("F d, Y") }}</span>
                 </div>
                 {% endif %}
                 {% if invoice.due_date %}
                 <div class="meta-row">
-                    <span class="meta-label">Due Date:</span>
-                    <span class="meta-value">{{ invoice.due_date|date:"F d, Y" }}</span>
+                    <span class="meta-label">{% translate "Due Date" %}:</span>
+                    <span class="meta-value">{{ invoice.due_date|date:_("F d, Y") }}</span>
                 </div>
                 {% endif %}
             </div>
@@ -114,10 +114,10 @@
         <table class="line-items-table">
             <thead>
                 <tr>
-                    <th class="desc-col">Description</th>
-                    <th class="qty-col">Quantity</th>
-                    <th class="price-col">Price</th>
-                    <th class="total-col">Total</th>
+                    <th class="desc-col">{% translate "Description" %}</th>
+                    <th class="qty-col">{% translate "Quantity" %}</th>
+                    <th class="price-col">{% translate "Price" %}</th>
+                    <th class="total-col">{% translate "Total" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -139,7 +139,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="no-items">No line items</td>
+                    <td colspan="4" class="no-items">{% translate "No line items" %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -150,34 +150,34 @@
             <table class="totals-table">
                 <tbody>
                     <tr>
-                        <td class="totals-label">Subtotal</td>
+                        <td class="totals-label">{% translate "Subtotal" %}</td>
                         <td class="totals-value">{{ subtotal }}</td>
                     </tr>
                     <tr>
-                        <td class="totals-label">Shipping</td>
+                        <td class="totals-label">{% translate "Shipping" %}</td>
                         <td class="totals-value">{{ shipping_amount }}</td>
                     </tr>
                     {% if invoice.discount_amount and invoice.discount_amount > 0 %}
                     <tr>
-                        <td class="totals-label">Discount</td>
+                        <td class="totals-label">{% translate "Discount" %}</td>
                         <td class="totals-value">-{{ discount_amount }}</td>
                     </tr>
                     {% endif %}
                     <tr>
-                        <td class="totals-label">Tax</td>
+                        <td class="totals-label">{% translate "Tax" %}</td>
                         <td class="totals-value">{{ tax_amount }}</td>
                     </tr>
                     <tr class="grand-total">
-                        <td class="totals-label">Total</td>
+                        <td class="totals-label">{% translate "Total" %}</td>
                         <td class="totals-value">{{ total_amount }}</td>
                     </tr>
                     {% if invoice.amount_paid and invoice.amount_paid > 0 %}
                     <tr>
-                        <td class="totals-label">Amount Paid</td>
+                        <td class="totals-label">{% translate "Amount Paid" %}</td>
                         <td class="totals-value paid">-{{ amount_paid }}</td>
                     </tr>
                     <tr class="amount-due">
-                        <td class="totals-label">Amount Due</td>
+                        <td class="totals-label">{% translate "Amount Due" %}</td>
                         <td class="totals-value">{{ amount_due }}</td>
                     </tr>
                     {% endif %}
@@ -188,14 +188,14 @@
         <!-- Notes Section -->
         {% if invoice.notes %}
         <div class="footer-notes">
-            <h4>Description:</h4>
+            <h4>{% translate "Description" %}:</h4>
             <p>{{ invoice.notes|linebreaks }}</p>
         </div>
         {% endif %}
 
         <!-- Footer Section -->
         <div class="sign-off">
-            <p>Yours Sincerely,</p>
+            <p>{% translate "Yours Sincerely," %}</p>
             <br>
             <p class="sign-company">{{ org.company_name|default:org.name }}</p>
             {% if invoice.client_name %}
@@ -206,9 +206,9 @@
         <!-- Copyright Footer -->
         <div class="copyright">
             {% if org.tax_id %}
-            <p>Tax ID: {{ org.tax_id }}</p>
+            <p>{% translate "Tax ID" %}: {{ org.tax_id }}</p>
             {% endif %}
-            <p>Copyright &copy; {% now "Y" %}. {{ org.company_name|default:org.name }}. All rights reserved.</p>
+            {% now "Y" as year %}<p>{% blocktranslate trimmed with name=org.company_name|default:org.name %}Copyright &copy; {{ year }}. {{ name }}. All rights reserved.{% endblocktranslate %}</p>
         </div>
     </div>
 </body>

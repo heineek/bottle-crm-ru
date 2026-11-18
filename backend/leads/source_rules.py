@@ -6,6 +6,8 @@ holds (retired or not, because both clients resend it on every save), and,
 for phone builds that predate editable sources, what those builds can send.
 """
 
+from django.utils.translation import gettext_lazy
+
 from leads.sources import source_keys
 
 # Exactly the keys the old phone builds read back (mobile/lib/data/models at
@@ -39,7 +41,7 @@ LEGACY_PHONE_ALIASES = {
     "OTHER": "other",
 }
 
-NOT_A_SOURCE = "Choose one of your lead sources."
+NOT_A_SOURCE = gettext_lazy("Choose one of your lead sources.")
 
 
 def check_source(value, org, stored, legacy_phone=False, picker_keys=LEAD_PICKER_KEYS):

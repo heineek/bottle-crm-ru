@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -351,8 +353,11 @@ class TaskMoveView(APIView):
                     return Response(
                         {
                             "error": True,
-                            "errors": f"This task is in the {task.stage.pipeline.name} "
-                            "pipeline. Move it to one of that pipeline's stages.",
+                            "errors": _(
+                                "This task is in the %(pipeline)s pipeline. "
+                                "Move it to one of that pipeline's stages."
+                            )
+                            % {"pipeline": task.stage.pipeline.name},
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -365,7 +370,10 @@ class TaskMoveView(APIView):
                     if current_count >= stage.wip_limit:
                         return Response(
                             {
-                                "error": f"Stage '{stage.name}' has reached its WIP limit of {stage.wip_limit}"
+                                "error": _(
+                                    "Stage '%(stage)s' has reached its WIP limit of %(limit)s"
+                                )
+                                % {"stage": stage.name, "limit": stage.wip_limit}
                             },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
@@ -407,7 +415,7 @@ class TaskMoveView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Task moved successfully",
+                "message": _("Task moved successfully"),
                 "task": TaskKanbanCardSerializer(
                     task, context={"request": request}
                 ).data,
@@ -465,7 +473,7 @@ class TaskPipelineListCreateView(APIView):
         # Only admins can create pipelines
         if not may_configure(request.profile):
             return Response(
-                {"error": "Only admins can create pipelines"},
+                {"error": _("Only admins can create pipelines")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -549,7 +557,7 @@ class TaskPipelineDetailView(APIView):
         """Update pipeline."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         pipeline = lock_pipeline(TaskPipeline, request.profile.org, pk)
@@ -578,7 +586,7 @@ class TaskPipelineDetailView(APIView):
         """Delete pipeline (soft delete by setting is_active=False)."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         pipeline = lock_pipeline(TaskPipeline, request.profile.org, pk)
@@ -588,7 +596,12 @@ class TaskPipelineDetailView(APIView):
         if task_count > 0:
             return Response(
                 {
-                    "error": f"Cannot delete pipeline with {task_count} tasks. Move tasks first."
+                    "error": ngettext(
+                        "Cannot delete pipeline with %(count)s tasks. Move tasks first.",
+                        "Cannot delete pipeline with %(count)s tasks. Move tasks first.",
+                        task_count,
+                    )
+                    % {"count": task_count}
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -614,7 +627,7 @@ class TaskStageCreateView(APIView):
         """Add a new stage to pipeline."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         org = request.profile.org
@@ -650,7 +663,7 @@ class TaskStageDetailView(APIView):
         """Update stage."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         stage = get_object_or_404(
@@ -672,7 +685,7 @@ class TaskStageDetailView(APIView):
         """Delete stage."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         stage = get_object_or_404(
@@ -684,7 +697,12 @@ class TaskStageDetailView(APIView):
         if task_count > 0:
             return Response(
                 {
-                    "error": f"Cannot delete stage with {task_count} tasks. Move tasks first."
+                    "error": ngettext(
+                        "Cannot delete stage with %(count)s tasks. Move tasks first.",
+                        "Cannot delete stage with %(count)s tasks. Move tasks first.",
+                        task_count,
+                    )
+                    % {"count": task_count}
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -717,7 +735,7 @@ class TaskStageReorderView(APIView):
         """Reorder stages by providing ordered list of stage IDs."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         org = request.profile.org
@@ -740,8 +758,10 @@ class TaskStageReorderView(APIView):
         if len(stage_ids) != len(set(stage_ids)) or set(stage_ids) != current:
             return Response(
                 {
-                    "error": "Send every stage of this pipeline exactly once, "
-                    "in the new order."
+                    "error": _(
+                        "Send every stage of this pipeline exactly once, "
+                        "in the new order."
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -749,4 +769,4 @@ class TaskStageReorderView(APIView):
         for order, stage_id in enumerate(stage_ids):
             pipeline.stages.filter(id=stage_id).update(order=order)
 
-        return Response({"message": "Stages reordered successfully"})
+        return Response({"message": _("Stages reordered successfully")})

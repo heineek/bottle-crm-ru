@@ -1,23 +1,29 @@
 """Each org's list of lead sources, and the defaults every org starts with."""
 
+from django.utils.translation import pgettext_lazy
+
+from common.locale import language_for_org
 from leads.models import LeadSource
 
 DEFAULT_SOURCES = [
-    ("call", "Call"),
-    ("email", "Email"),
-    ("existing customer", "Existing customer"),
-    ("partner", "Partner"),
-    ("public relations", "Public relations"),
-    ("campaign", "Campaign"),
-    ("other", "Other"),
-    ("web form", "Web form"),
-    ("meta ads", "Meta ads"),
-    ("google ads", "Google ads"),
-    ("linkedin ads", "LinkedIn ads"),
-    ("directory or marketplace", "Directory or marketplace"),
-    ("whatsapp", "WhatsApp"),
-    ("referral", "Referral"),
-    ("walk-in", "Walk-in"),
+    ("call", pgettext_lazy("lead source", "Call")),
+    ("email", pgettext_lazy("lead source", "Email")),
+    ("existing customer", pgettext_lazy("lead source", "Existing customer")),
+    ("partner", pgettext_lazy("lead source", "Partner")),
+    ("public relations", pgettext_lazy("lead source", "Public relations")),
+    ("campaign", pgettext_lazy("lead source", "Campaign")),
+    ("other", pgettext_lazy("lead source", "Other")),
+    ("web form", pgettext_lazy("lead source", "Web form")),
+    ("meta ads", pgettext_lazy("lead source", "Meta ads")),
+    ("google ads", pgettext_lazy("lead source", "Google ads")),
+    ("linkedin ads", pgettext_lazy("lead source", "LinkedIn ads")),
+    (
+        "directory or marketplace",
+        pgettext_lazy("lead source", "Directory or marketplace"),
+    ),
+    ("whatsapp", pgettext_lazy("lead source", "WhatsApp")),
+    ("referral", pgettext_lazy("lead source", "Referral")),
+    ("walk-in", pgettext_lazy("lead source", "Walk-in")),
 ]
 
 
@@ -37,11 +43,14 @@ def org_sources(org, create=True) -> list[LeadSource]:
     """
     sources = list(LeadSource.objects.filter(org=org))
     present = {source.key for source in sources}
-    missing = [
-        LeadSource(org=org, key=key, label=label, order=order)
-        for order, (key, label) in enumerate(DEFAULT_SOURCES)
-        if key not in present
-    ]
+    # A default's label is the org's own data once saved, so it is written
+    # in the org's language, never the requester's.
+    with language_for_org(org):
+        missing = [
+            LeadSource(org=org, key=key, label=str(label), order=order)
+            for order, (key, label) in enumerate(DEFAULT_SOURCES)
+            if key not in present
+        ]
     if not missing:
         return sources
     if not create:

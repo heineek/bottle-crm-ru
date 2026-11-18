@@ -12,7 +12,9 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
 from django.db.models import Sum
-from django.utils import timezone
+from django.utils import dateformat, timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from cases.services.billing import attach_entries_to_invoice
 from cases.time_reports import hours
@@ -28,10 +30,12 @@ RETAINER = "retainer"
 CENTS = Decimal("0.01")
 ZERO = Decimal("0.00")
 
-NOT_A_RETAINER = "This project is not on a retainer."
-ALREADY_BILLED = "This month is already billed."
-ENDED = "This retainer has ended."
-NOT_RUNNING = "This retainer is not running. Make the project active to bill it."
+NOT_A_RETAINER = gettext_lazy("This project is not on a retainer.")
+ALREADY_BILLED = gettext_lazy("This month is already billed.")
+ENDED = gettext_lazy("This retainer has ended.")
+NOT_RUNNING = gettext_lazy(
+    "This retainer is not running. Make the project active to bill it."
+)
 
 
 def month_of(day):
@@ -116,7 +120,9 @@ def refusal(project, today):
         return ENDED if project.status == "active" else NOT_RUNNING
     if month > month_of(today):
         if project.start_date and month == month_of(project.start_date):
-            return f"This retainer starts in {month:%B %Y}."
+            return _("This retainer starts in %(month)s.") % {
+                "month": dateformat.format(month, "F Y")
+            }
         return ALREADY_BILLED
     return None
 

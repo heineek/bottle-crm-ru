@@ -1,8 +1,10 @@
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 
 from common.links import frontend_url
+from common.locale import language_for_user
 from common.models import Profile
 from common.tasks import set_rls_context
 from tasks.models import BoardTask, Task
@@ -13,23 +15,23 @@ def _send_assignment_emails(recipients, org_id, title, created_by, url):
     for profile_id in recipients:
         profile = (
             Profile.objects.filter(id=profile_id, org_id=org_id, is_active=True)
-            .select_related("user")
+            .select_related("user", "org")
             .first()
         )
         if profile is None or not profile.user.email:
             continue
-        html_content = render_to_string(
-            "tasks_email_template.html",
-            context={
-                "task_title": title,
-                "task_created_by": created_by,
-                "url": url,
-                "user": profile.user,
-            },
-        )
-        msg = EmailMessage(
-            "Assigned a task for you.", html_content, to=[profile.user.email]
-        )
+        with language_for_user(profile.user, profile.org):
+            html_content = render_to_string(
+                "tasks_email_template.html",
+                context={
+                    "task_title": title,
+                    "task_created_by": created_by,
+                    "url": url,
+                    "user": profile.user,
+                },
+            )
+            subject = _("Assigned a task for you.")
+        msg = EmailMessage(subject, html_content, to=[profile.user.email])
         msg.content_subtype = "html"
         msg.send()
 

@@ -2,6 +2,7 @@
 Solution (Knowledge Base) Serializers
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -140,15 +141,16 @@ class SolutionCreateUpdateSerializer(serializers.ModelSerializer):
             if "status" in attrs and "is_published" not in attrs:
                 raise serializers.ValidationError(
                     {
-                        "status": (
+                        "status": _(
                             "This article is published, so it cannot be moved back "
-                            f"to '{new_status}'. Unpublish it first."
+                            "to '%(status)s'. Unpublish it first."
                         )
+                        % {"status": new_status}
                     }
                 )
             raise serializers.ValidationError(
                 {
-                    "is_published": (
+                    "is_published": _(
                         "Only approved solutions can be published. Please set status "
                         "to 'approved' first."
                     )

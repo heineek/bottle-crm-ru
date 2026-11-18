@@ -1,3 +1,4 @@
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -87,14 +88,14 @@ class StageAgingConfigView(APIView):
         """
         if not may_configure(request.profile):
             return Response(
-                {"error": True, "errors": "Only admins can update aging config"},
+                {"error": True, "errors": _("Only admins can update aging config")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         configs_data = request.data
         if not isinstance(configs_data, list):
             return Response(
-                {"error": True, "errors": "Expected a list of stage configs"},
+                {"error": True, "errors": _("Expected a list of stage configs")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -136,6 +137,6 @@ class StageAgingConfigView(APIView):
             results.append(_row(stage))
 
         return Response(
-            {"error": False, "message": "Aging config updated", "configs": results},
+            {"error": False, "message": _("Aging config updated"), "configs": results},
             status=status.HTTP_200_OK,
         )

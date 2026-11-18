@@ -4,6 +4,8 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -330,7 +332,9 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         max_value=Decimal("744"),
         required=False,
         allow_null=True,
-        error_messages={"max_value": "At most 744 hours, the hours in a month."},
+        error_messages={
+            "max_value": gettext_lazy("At most 744 hours, the hours in a month.")
+        },
     )
     retainer_overage_rate = serializers.DecimalField(
         max_digits=10,
@@ -371,9 +375,9 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         # resolves nothing.
         org = profile.org if profile else None
         self.fields["account"].queryset = Account.objects.filter(org=org)
-        self.fields["account"].error_messages["does_not_exist"] = "No such account."
+        self.fields["account"].error_messages["does_not_exist"] = _("No such account.")
         self.fields["deal"].queryset = Opportunity.objects.filter(org=org)
-        self.fields["deal"].error_messages["does_not_exist"] = "No such deal."
+        self.fields["deal"].error_messages["does_not_exist"] = _("No such deal.")
         if profile is not None and not is_org_admin(profile):
             locked = ADMIN_ONLY_FIELDS
             if self.instance is not None:
@@ -388,7 +392,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = (value or "").strip()
         if not value:
-            raise serializers.ValidationError("A project needs a name.")
+            raise serializers.ValidationError(_("A project needs a name."))
         return value
 
     def validate_account(self, account):
@@ -397,7 +401,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         if self.instance is not None and account.pk == self.instance.account_id:
             return account
         if not has_account_access(self.profile, account):
-            raise serializers.ValidationError("No such account.")
+            raise serializers.ValidationError(_("No such account."))
         return account
 
     def validate_deal(self, deal):
@@ -410,7 +414,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 module_off_message(self.profile.org, "deals")
             )
         if not has_deal_access(self.profile, deal):
-            raise serializers.ValidationError("No such deal.")
+            raise serializers.ValidationError(_("No such deal."))
         return deal
 
     def validate_description(self, value):
@@ -421,7 +425,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         due = attrs.get("due_date", getattr(self.instance, "due_date", None))
         if start and due and due < start:
             raise serializers.ValidationError(
-                {"due_date": "The due date cannot be before the start date."}
+                {"due_date": _("The due date cannot be before the start date.")}
             )
         if not attrs.get("currency") and (self.instance is None or "currency" in attrs):
             attrs["currency"] = (
@@ -438,7 +442,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError(
                 {
-                    "currency": (
+                    "currency": _(
                         "The currency cannot change once the project has time or "
                         "invoices."
                     )
@@ -454,13 +458,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             return
         errors = {}
         if saved("retainer_fee") is None:
-            errors["retainer_fee"] = ["Set the monthly fee."]
+            errors["retainer_fee"] = [_("Set the monthly fee.")]
         if (
             saved("retainer_hours") is not None
             and saved("retainer_overage_rate") is None
         ):
             errors["retainer_overage_rate"] = [
-                "Set the rate for hours over the allowance."
+                _("Set the rate for hours over the allowance.")
             ]
         if errors:
             raise serializers.ValidationError(errors)
@@ -512,10 +516,13 @@ def active_members(org, ids, field, keep=()):
     for i in dict.fromkeys(ids):
         person = found.get(i)
         if person is None:
-            errors.append("Choose people who are members of this organization.")
+            errors.append(_("Choose people who are members of this organization."))
         elif not person.is_active and i not in keep:
             name = person.user.name or person.user.email
-            errors.append(f"{name} is not an active member of this organization.")
+            errors.append(
+                _("%(name)s is not an active member of this organization.")
+                % {"name": name}
+            )
     if errors:
         raise serializers.ValidationError({field: list(dict.fromkeys(errors))})
     return [found[i] for i in ids]
@@ -533,12 +540,12 @@ def parse_rates(org, value, keep=()):
     if value is None:
         return []
     if not isinstance(value, list):
-        raise serializers.ValidationError({"rates": ["Send a list of rates."]})
+        raise serializers.ValidationError({"rates": [_("Send a list of rates.")]})
     ids, amounts = [], []
     for row in value:
         if not isinstance(row, dict) or "profile" not in row:
             raise serializers.ValidationError(
-                {"rates": ["Each rate needs a profile and an hourly_rate."]}
+                {"rates": [_("Each rate needs a profile and an hourly_rate.")]}
             )
         ids.append(str(uuid.UUID(str(validate_uuid(row["profile"], "rates")))))
         try:
@@ -547,7 +554,7 @@ def parse_rates(org, value, keep=()):
             raise serializers.ValidationError({"rates": exc.detail}) from None
     if len(set(ids)) != len(ids):
         raise serializers.ValidationError(
-            {"rates": ["Send at most one rate per person."]}
+            {"rates": [_("Send at most one rate per person.")]}
         )
     return list(zip(active_members(org, ids, "rates", keep), amounts))
 

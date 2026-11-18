@@ -6,6 +6,8 @@ Supports both status-based (default) and custom pipeline-based kanban boards.
 from django.db import transaction
 from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -334,14 +336,18 @@ class LeadMoveView(APIView):
         # list with its account, contact and deal already created.
         if lead.status in IRREVERSIBLE_STATUSES:
             return Response(
-                {"error": True, "errors": f"A {lead.status} lead cannot be moved."},
+                # The one irreversible status is "converted", spelled out so the
+                # sentence translates.
+                {"error": True, "errors": _("A converted lead cannot be moved.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if data.get("status") in IRREVERSIBLE_STATUSES:
             return Response(
                 {
                     "error": True,
-                    "errors": "Convert a lead from its own page, not from the board.",
+                    "errors": _(
+                        "Convert a lead from its own page, not from the board."
+                    ),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -371,8 +377,11 @@ class LeadMoveView(APIView):
                     return Response(
                         {
                             "error": True,
-                            "errors": f"This lead is in the {lead.stage.pipeline.name} "
-                            "pipeline. Move it to one of that pipeline's stages.",
+                            "errors": _(
+                                "This lead is in the %(pipeline)s "
+                                "pipeline. Move it to one of that pipeline's stages."
+                            )
+                            % {"pipeline": lead.stage.pipeline.name},
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -381,8 +390,11 @@ class LeadMoveView(APIView):
                     return Response(
                         {
                             "error": True,
-                            "errors": f"Stage '{stage.name}' converts the lead. "
-                            "Convert it from its own page instead.",
+                            "errors": _(
+                                "Stage '%(stage)s' converts the lead. "
+                                "Convert it from its own page instead."
+                            )
+                            % {"stage": stage.name},
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -405,7 +417,10 @@ class LeadMoveView(APIView):
                         return Response(
                             {
                                 "error": True,
-                                "errors": f"Stage '{stage.name}' has reached its WIP limit of {stage.wip_limit}",
+                                "errors": _(
+                                    "Stage '%(stage)s' has reached its WIP limit of %(limit)s"
+                                )
+                                % {"stage": stage.name, "limit": stage.wip_limit},
                             },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
@@ -441,7 +456,7 @@ class LeadMoveView(APIView):
         return Response(
             {
                 "error": False,
-                "message": "Lead moved successfully",
+                "message": _("Lead moved successfully"),
                 "lead": LeadKanbanCardSerializer(
                     lead, context={"request": request}
                 ).data,
@@ -507,7 +522,7 @@ class LeadPipelineListCreateView(APIView):
         # Only admins can create pipelines
         if not may_configure(request.profile):
             return Response(
-                {"error": "Only admins can create pipelines"},
+                {"error": _("Only admins can create pipelines")},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -609,7 +624,7 @@ class LeadPipelineDetailView(APIView):
         """Update pipeline."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         org = request.profile.org
@@ -636,7 +651,7 @@ class LeadPipelineDetailView(APIView):
         """Delete pipeline (soft delete by setting is_active=False)."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         pipeline = lock_pipeline(LeadPipeline, request.profile.org, pk)
@@ -647,8 +662,14 @@ class LeadPipelineDetailView(APIView):
         if lead_count > 0:
             return Response(
                 {
-                    "error": f"This pipeline still has {lead_count} lead(s). "
-                    "Move them out of its stages first."
+                    "error": ngettext(
+                        "This pipeline still has %(count)d lead(s). "
+                        "Move them out of its stages first.",
+                        "This pipeline still has %(count)d lead(s). "
+                        "Move them out of its stages first.",
+                        lead_count,
+                    )
+                    % {"count": lead_count}
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -674,7 +695,7 @@ class LeadStageCreateView(APIView):
         """Add a new stage to pipeline."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         org = request.profile.org
@@ -719,7 +740,7 @@ class LeadStageDetailView(APIView):
         """Update stage."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         stage = get_object_or_404(
@@ -743,7 +764,7 @@ class LeadStageDetailView(APIView):
         """Delete stage."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         stage = get_object_or_404(
@@ -755,8 +776,14 @@ class LeadStageDetailView(APIView):
         if lead_count > 0:
             return Response(
                 {
-                    "error": f"This stage still has {lead_count} lead(s). "
-                    "Move them to another stage first."
+                    "error": ngettext(
+                        "This stage still has %(count)d lead(s). "
+                        "Move them to another stage first.",
+                        "This stage still has %(count)d lead(s). "
+                        "Move them to another stage first.",
+                        lead_count,
+                    )
+                    % {"count": lead_count}
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -788,7 +815,7 @@ class LeadStageReorderView(APIView):
         """Reorder stages by providing ordered list of stage IDs."""
         if not may_configure(request.profile):
             return Response(
-                {"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN
+                {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
 
         org = request.profile.org
@@ -811,8 +838,10 @@ class LeadStageReorderView(APIView):
         if len(stage_ids) != len(set(stage_ids)) or set(stage_ids) != current:
             return Response(
                 {
-                    "error": "Send every stage of this pipeline exactly once, "
-                    "in the new order."
+                    "error": _(
+                        "Send every stage of this pipeline exactly once, "
+                        "in the new order."
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -820,4 +849,4 @@ class LeadStageReorderView(APIView):
         for order, stage_id in enumerate(stage_ids):
             pipeline.stages.filter(id=stage_id).update(order=order)
 
-        return Response({"message": "Stages reordered successfully"})
+        return Response({"message": _("Stages reordered successfully")})

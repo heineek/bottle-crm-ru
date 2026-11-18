@@ -28,6 +28,7 @@ so no route here lists, changes or takes it over, and the cap does not count it.
 
 from django.db import transaction
 from django.http import Http404
+from django.utils.translation import gettext, ngettext
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -123,7 +124,12 @@ class WebhookListCreateView(WebhookBaseView):
         org = request.profile.org
         if _admin_endpoints(org).count() >= MAX_ENDPOINTS_PER_ORG:
             return _error(
-                f"An organization can have at most {MAX_ENDPOINTS_PER_ORG} webhooks."
+                ngettext(
+                    "An organization can have at most %(count)s webhook.",
+                    "An organization can have at most %(count)s webhooks.",
+                    MAX_ENDPOINTS_PER_ORG,
+                )
+                % {"count": MAX_ENDPOINTS_PER_ORG}
             )
         serializer = WebhookEndpointSerializer(data=request.data, context={"org": org})
         serializer.is_valid(raise_exception=True)
@@ -157,7 +163,7 @@ class WebhookDetailView(WebhookBaseView):
                 .first()
             )
             if endpoint is None:
-                raise Http404("No such webhook endpoint.")
+                raise Http404(gettext("No such webhook endpoint."))
             was_active, previous_creator_id = endpoint.is_active, endpoint.created_by_id
             serializer = WebhookEndpointSerializer(
                 endpoint,
@@ -200,7 +206,7 @@ class WebhookTestView(WebhookBaseView):
     def post(self, request, pk):
         endpoint = self.get_endpoint(request, pk)
         if not endpoint.is_active:
-            return _error("Turn the webhook on before sending a test.")
+            return _error(gettext("Turn the webhook on before sending a test."))
         payload = envelope(
             endpoint.org_id, events.PING, {"endpoint_id": str(endpoint.id)}
         )
@@ -276,10 +282,10 @@ class WebhookRedeliverView(WebhookBaseView):
             WebhookDelivery, pk, request.profile.org, endpoint__app__isnull=True
         )
         if original.status == PENDING:
-            return _error("This delivery is still being attempted.")
+            return _error(gettext("This delivery is still being attempted."))
         endpoint = original.endpoint
         if not endpoint.is_active:
-            return _error("Turn the webhook on before redelivering.")
+            return _error(gettext("Turn the webhook on before redelivering."))
         delivery = queue_delivery(endpoint, original.event, original.payload)
         return Response(
             WebhookDeliverySerializer(delivery).data, status=status.HTTP_202_ACCEPTED

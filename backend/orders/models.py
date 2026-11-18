@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from common.base import BaseOrgModel
 from common.utils import COUNTRIES
@@ -9,10 +10,10 @@ from common.utils import COUNTRIES
 # =============================================================================
 
 ORDER_STATUS = (
-    ("DRAFT", "Draft"),
-    ("ACTIVATED", "Activated"),
-    ("COMPLETED", "Completed"),
-    ("CANCELLED", "Cancelled"),
+    ("DRAFT", pgettext_lazy("order status", "Draft")),
+    ("ACTIVATED", pgettext_lazy("order status", "Activated")),
+    ("COMPLETED", pgettext_lazy("order status", "Completed")),
+    ("CANCELLED", pgettext_lazy("order status", "Cancelled")),
 )
 
 

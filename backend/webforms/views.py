@@ -21,6 +21,7 @@ import datetime
 
 from django.db.models import Count
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -70,7 +71,7 @@ def _may_write(request):
 
 def _admin_required():
     return Response(
-        {"error": True, "errors": "Admin access required"},
+        {"error": True, "errors": gettext("Admin access required")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -218,19 +219,19 @@ class WebFormPublishView(WebFormBaseView):
 
         if form.is_published:
             return Response(
-                {"error": True, "errors": "This form is already published."},
+                {"error": True, "errors": gettext("This form is already published.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if form.target == WebForm.TARGET_TICKET:
             has_email = form.fields.filter(ticket_field=REQUIRED_TICKET_FIELD)
-            missing_email = (
+            missing_email = gettext(
                 "Add an email field before publishing. It is how each ticket "
                 "finds its contact, or creates one."
             )
         else:
             has_email = form.fields.filter(lead_field=REQUIRED_LEAD_FIELD)
-            missing_email = (
+            missing_email = gettext(
                 "Add an email field before publishing. It is what lets a "
                 "repeat submission update the existing lead instead of failing."
             )
@@ -244,7 +245,7 @@ class WebFormPublishView(WebFormBaseView):
             return Response(
                 {
                     "error": True,
-                    "errors": (
+                    "errors": gettext(
                         "This form redirects on success but has no redirect URL set."
                     ),
                 },
@@ -256,10 +257,10 @@ class WebFormPublishView(WebFormBaseView):
             return Response(
                 {
                     "error": True,
-                    "errors": (
-                        f"{module_off_message(org, form.target_module)} "
-                        "Switch it on before publishing this form."
-                    ),
+                    "errors": gettext(
+                        "%(reason)s Switch it on before publishing this form."
+                    )
+                    % {"reason": module_off_message(org, form.target_module)},
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -278,7 +279,7 @@ class WebFormUnpublishView(WebFormBaseView):
 
         if not form.is_published:
             return Response(
-                {"error": True, "errors": "This form is not published."},
+                {"error": True, "errors": gettext("This form is not published.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

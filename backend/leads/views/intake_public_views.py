@@ -40,6 +40,8 @@ from urllib.parse import parse_qsl
 from django.core.exceptions import RequestDataTooBig
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -67,14 +69,14 @@ MAX_DEPTH = 32
 MAX_FORM_FIELDS = 500
 ERROR_MAX = 1000
 
-NOT_FOUND = "Not found."
-TOO_LARGE = "The body is larger than 64 KB."
-WRONG_KEY = "Wrong key."
-LEADS_OFF = "Leads are switched off for this organization."
-NOTHING = "The post has no lead fields in it."
-NOT_SAVED = "The lead could not be saved. Try again."
+NOT_FOUND = gettext_lazy("Not found.")
+TOO_LARGE = gettext_lazy("The body is larger than 64 KB.")
+WRONG_KEY = gettext_lazy("Wrong key.")
+LEADS_OFF = gettext_lazy("Leads are switched off for this organization.")
+NOTHING = gettext_lazy("The post has no lead fields in it.")
+NOT_SAVED = gettext_lazy("The lead could not be saved. Try again.")
 RATE_LIMITED = "rate limited"
-TOO_MANY = "Too many posts. Try again later."
+TOO_MANY = gettext_lazy("Too many posts. Try again later.")
 REFUSED_RATE = "60/min"
 KEPT_RESULTS = ("created", "merged", "duplicate")
 
@@ -214,7 +216,7 @@ class LeadIntakePostView(APIView):
             return _answer(
                 status.HTTP_400_BAD_REQUEST,
                 result="rejected",
-                detail="Some values in the post could not be saved.",
+                detail=_("Some values in the post could not be saved."),
                 errors=errors,
             )
         if not (reading.values or reading.custom_fields or reading.enquiry_text):
@@ -330,6 +332,7 @@ def _refuse(intake, code, message, payload=None):
 def _log(intake, result, *, lead=None, external_id="", error="", payload=None):
     """Record one delivery, move the intake's stamps, and drop its old events."""
     now = timezone.now()
+    error = str(error)
     LeadIntakeEvent.objects.create(
         org_id=intake.org_id,
         intake=intake,
@@ -353,7 +356,7 @@ def _read_body(request):
     try:
         declared = int(request.META.get("CONTENT_LENGTH") or 0)
     except ValueError:
-        return None, (status.HTTP_400_BAD_REQUEST, "Content-Length is not a number.")
+        return None, (status.HTTP_400_BAD_REQUEST, _("Content-Length is not a number."))
     if declared > MAX_BODY:
         return None, (status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, TOO_LARGE)
     try:
@@ -371,14 +374,14 @@ def _parse(raw, content_type):
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
-        return None, "The body is not UTF-8."
+        return None, _("The body is not UTF-8.")
     if media == "application/x-www-form-urlencoded":
         try:
             pairs = parse_qsl(
                 text, keep_blank_values=True, max_num_fields=MAX_FORM_FIELDS
             )
         except ValueError:
-            return None, f"Send at most {MAX_FORM_FIELDS} fields."
+            return None, _("Send at most %(max)s fields.") % {"max": MAX_FORM_FIELDS}
         body = {}
         for key, value in pairs:
             body.setdefault(key, []).append(value)
@@ -387,15 +390,15 @@ def _parse(raw, content_type):
         try:
             body = json.loads(text, parse_constant=_refuse_constant)
         except (ValueError, RecursionError):
-            return None, "The body is not valid JSON."
+            return None, _("The body is not valid JSON.")
     else:
-        return None, "Send the body as JSON or form-encoded."
+        return None, _("Send the body as JSON or form-encoded.")
     if not isinstance(body, dict):
-        return None, "The body must be a JSON object."
+        return None, _("The body must be a JSON object.")
     try:
         return _clean(body, 0), None
     except _TooDeep:
-        return None, "The body is nested too deeply."
+        return None, _("The body is nested too deeply.")
 
 
 def _refuse_constant(name):

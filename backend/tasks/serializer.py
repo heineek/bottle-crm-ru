@@ -1,4 +1,5 @@
 from django.db.models import Count, Q
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -402,7 +403,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         if project is None or project.pk == getattr(self.instance, "project_id", None):
             return project
         if not visible_projects_qs(self.profile).filter(pk=project.pk).exists():
-            raise serializers.ValidationError("No such project.")
+            raise serializers.ValidationError(_("No such project."))
         return project
 
     def validate(self, attrs):
@@ -446,11 +447,12 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         if len(set_parents) > 1:
             raise serializers.ValidationError(
                 {
-                    "account": (
+                    "account": _(
                         "A task can only be linked to one parent entity "
-                        f"(Account, Opportunity, Case, Lead, or Project). "
-                        f"Currently set: {', '.join(set_parents)}"
+                        "(Account, Opportunity, Case, Lead, or Project). "
+                        "Currently set: %(parents)s"
                     )
+                    % {"parents": ", ".join(set_parents)}
                 }
             )
         return attrs
@@ -569,7 +571,8 @@ class TaskStageSerializer(serializers.ModelSerializer):
         allowed = [choice for choice, _ in Task.STATUS_CHOICES]
         if value not in allowed:
             raise serializers.ValidationError(
-                f"maps_to_status must be one of {', '.join(allowed)}, or empty."
+                _("maps_to_status must be one of %(statuses)s, or empty.")
+                % {"statuses": ", ".join(allowed)}
             )
         return value
 
@@ -732,6 +735,6 @@ class TaskMoveSerializer(serializers.Serializer):
         # Must provide either stage_id or status
         if not attrs.get("stage_id") and not attrs.get("status"):
             raise serializers.ValidationError(
-                "Either stage_id or status must be provided"
+                _("Either stage_id or status must be provided")
             )
         return attrs

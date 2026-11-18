@@ -9,6 +9,7 @@ import secrets
 from datetime import timedelta
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -34,7 +35,7 @@ def new_key() -> str:
 
 def _admin_required():
     return Response(
-        {"error": True, "errors": "Admin access required"},
+        {"error": True, "errors": _("Admin access required")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -150,7 +151,7 @@ class LeadIntakeSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = " ".join(value.split())
         if not value:
-            raise serializers.ValidationError("This field may not be blank.")
+            raise serializers.ValidationError(_("This field may not be blank."))
         return value
 
     def validate_mapping(self, value):
@@ -168,7 +169,7 @@ class LeadIntakeSerializer(serializers.ModelSerializer):
         stored = getattr(self.instance, "assignee_id", None)
         if value is not None and not value.is_active and value.id != stored:
             raise serializers.ValidationError(
-                "This user is deactivated. Choose an active member."
+                _("This user is deactivated. Choose an active member.")
             )
         return value
 
@@ -377,7 +378,7 @@ class LeadIntakeTestView(APIView):
         org = request.profile.org
         intake = get_scoped_or_404(LeadIntake, pk, org)
         if not intake.is_active:
-            return _invalid({"is_active": ["Switch the webhook on first."]})
+            return _invalid({"is_active": [_("Switch the webhook on first.")]})
         event = LeadIntakeEvent.objects.create(
             org=org, intake=intake, result="test", payload={"test": True}
         )

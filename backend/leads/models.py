@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from common.base import SAMPLE_DATA_HELP_TEXT, AssignableMixin, BaseModel, BaseOrgModel
 from common.models import Org, Profile, Tags, Teams
@@ -90,7 +91,7 @@ class Lead(AssignableMixin, BaseModel):
         max_length=10,
         blank=True,
         null=True,
-        choices=[("HOT", "Hot"), ("WARM", "Warm"), ("COLD", "Cold")],
+        choices=[("HOT", _("Hot")), ("WARM", _("Warm")), ("COLD", _("Cold"))],
     )
     opportunity_amount = models.DecimalField(
         _("Deal Value"), decimal_places=2, max_digits=12, blank=True, null=True
@@ -342,9 +343,9 @@ class LeadStage(BaseModel):
     """
 
     STAGE_TYPE_CHOICES = [
-        ("open", "Open"),  # Active stages (assigned, in process)
-        ("won", "Won"),  # Converted/closed-won
-        ("lost", "Lost"),  # Recycled/closed-lost
+        ("open", pgettext_lazy("lead stage type", "Open")),
+        ("won", pgettext_lazy("lead stage type", "Won")),  # Converted/closed-won
+        ("lost", pgettext_lazy("lead stage type", "Lost")),  # Recycled/closed-lost
     ]
 
     pipeline = models.ForeignKey(
@@ -444,8 +445,8 @@ class LeadIntake(BaseOrgModel):
 
     PRESET_GENERIC = "generic"
     PRESET_CHOICES = (
-        (PRESET_GENERIC, "Generic"),
-        ("google_ads", "Google Ads lead form"),
+        (PRESET_GENERIC, pgettext_lazy("lead webhook preset", "Generic")),
+        ("google_ads", _("Google Ads lead form")),
         ("tally", "Tally"),
         ("gravity_forms", "Gravity Forms"),
     )
@@ -497,11 +498,11 @@ class LeadIntakeEvent(BaseOrgModel):
     EVENT_DAYS = 30
 
     RESULT_CHOICES = (
-        ("created", "Created"),
-        ("merged", "Merged"),
-        ("duplicate", "Duplicate"),
-        ("test", "Test"),
-        ("rejected", "Rejected"),
+        ("created", pgettext_lazy("lead webhook delivery", "Created")),
+        ("merged", pgettext_lazy("lead webhook delivery", "Merged")),
+        ("duplicate", pgettext_lazy("lead webhook delivery", "Duplicate")),
+        ("test", pgettext_lazy("lead webhook delivery", "Test")),
+        ("rejected", pgettext_lazy("lead webhook delivery", "Rejected")),
     )
 
     intake = models.ForeignKey(

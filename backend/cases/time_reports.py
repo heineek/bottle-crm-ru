@@ -29,6 +29,8 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from rest_framework import status
 
 GROUPINGS = ("agent", "ticket", "project", "account")
@@ -50,7 +52,11 @@ _ANNOTATIONS = {
 }
 
 # Time on no ticket, no project or no account is one named row, not dropped.
-_NONE_NAMES = {"ticket": "No ticket", "project": "No project", "account": "No account"}
+_NONE_NAMES = {
+    "ticket": gettext_lazy("No ticket"),
+    "project": gettext_lazy("No project"),
+    "account": gettext_lazy("No account"),
+}
 
 _BILLABLE = Q(billable=True) & Q(hourly_rate__isnull=False)
 
@@ -126,7 +132,8 @@ def build_report(entries, group_by):
     """
     if group_by not in _GROUP_FIELDS:
         raise TimeReportParamError(
-            f"group_by must be one of {', '.join(GROUPINGS)}, not {group_by!r}."
+            _("group_by must be one of %(groupings)s, not %(value)s.")
+            % {"groupings": ", ".join(GROUPINGS), "value": repr(group_by)}
         )
 
     fields = _GROUP_FIELDS[group_by]
@@ -188,8 +195,8 @@ def _row_name(group_by, row, fields):
         # `User.name` is never blank (it falls back to the email local-part on
         # first save), but an entry can outlive nothing here, so the email is
         # the backstop rather than an empty cell.
-        return row[fields[1]] or row[fields[2]] or "Unknown agent"
-    return row[fields[1]] or _NONE_NAMES[group_by]
+        return row[fields[1]] or row[fields[2]] or _("Unknown agent")
+    return row[fields[1]] or str(_NONE_NAMES[group_by])
 
 
 def csv_rows(entries, show_invoices=True):

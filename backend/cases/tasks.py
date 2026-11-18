@@ -13,6 +13,8 @@ from django.core.signing import TimestampSigner
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from cases.inbound.generated import catch_all_topic, generated_domain
 from cases.inbound.threading import _SUBJECT_FALLBACK_RE as _SUBJECT_TAG_RE
@@ -22,6 +24,7 @@ from cases.models import EmailMessage as EmailMessageRecord
 from cases.notifications import case_link
 from cases.workflow import TERMINAL_STATUSES
 from common.links import frontend_url
+from common.locale import language_for_org, language_for_user
 from common.models import Activity, Comment, Org, Profile
 from common.modules import module_is_available, module_on_since
 from common.tasks import clear_rls_context, set_rls_context
@@ -46,8 +49,8 @@ CSAT_RATING_MIN = 1
 CSAT_RATING_MAX = 5
 # The ends of the scale, labelled. Mirrors SCALE_ENDS in the survey page so the
 # email and the page it links to describe the same 1 and the same 5.
-CSAT_SCALE_LOW_LABEL = "Not good"
-CSAT_SCALE_HIGH_LABEL = "Great"
+CSAT_SCALE_LOW_LABEL = gettext_lazy("Not good")
+CSAT_SCALE_HIGH_LABEL = gettext_lazy("Great")
 
 # Cap a single case at 3 escalations total. Past that, a human needs to step in.
 ESCALATION_COUNT_CAP = 3
@@ -63,9 +66,11 @@ def send_email_to_assigned_user(recipients, case_id, org_id):
     created_by = case.created_by
     for profile_id in recipients:
         recipients_list = []
-        profile = Profile.objects.filter(
-            id=profile_id, org_id=org_id, is_active=True
-        ).first()
+        profile = (
+            Profile.objects.filter(id=profile_id, org_id=org_id, is_active=True)
+            .select_related("user", "org")
+            .first()
+        )
         if profile:
             recipients_list.append(profile.user.email)
             context = {}
@@ -73,10 +78,11 @@ def send_email_to_assigned_user(recipients, case_id, org_id):
             context["user"] = profile.user
             context["case"] = case
             context["created_by"] = created_by
-            subject = "Assigned to case."
-            html_content = render_to_string(
-                "assigned_to/cases_assigned.html", context=context
-            )
+            with language_for_user(profile.user, profile.org):
+                subject = _("Assigned to case.")
+                html_content = render_to_string(
+                    "assigned_to/cases_assigned.html", context=context
+                )
 
             msg = EmailMessage(subject, html_content, to=recipients_list)
             msg.content_subtype = "html"
@@ -360,10 +366,12 @@ def send_csat_survey(case_id, org_id):
     # the template existed in production. It never existed anywhere, so every
     # survey ever sent took the fallback and nobody found out. A template that
     # fails to render is now a task failure that Celery logs.
-    html = render_to_string("csat/survey_email.html", context=context)
+    with language_for_org(case.org):
+        html = render_to_string("csat/survey_email.html", context=context)
+        subject = _("How did we do?, %(case)s") % {"case": case.name}
 
     msg = EmailMessage(
-        subject=f"How did we do?, {case.name}",
+        subject=subject,
         body=html,
         to=[contact.email],
     )
@@ -537,11 +545,15 @@ def _claim_thread_root(case, msgid_domain):
 
 def _author_name(comment, org_name):
     if comment.commented_by_id:
-        return comment.commented_by.user.name or f"{org_name} support"
+        return comment.commented_by.user.name or _support_label(org_name)
     contact = comment.commented_by_contact
     if contact is not None:
-        return f"{contact.first_name} {contact.last_name}".strip() or "A contact"
-    return f"{org_name} support"
+        return f"{contact.first_name} {contact.last_name}".strip() or _("A contact")
+    return _support_label(org_name)
+
+
+def _support_label(org_name):
+    return _("%(org)s support") % {"org": org_name}
 
 
 @shared_task
@@ -639,12 +651,16 @@ def notify_portal_contacts(
     if not case.external_thread_id:
         references = _safe_ids([_claim_thread_root(case, msgid_domain), *references])
     mailbox = _reply_to_mailbox(case)
-    if comment is not None:
-        author_name = _author_name(comment, org_name)
-        body_text = comment.comment
-    else:
-        author_name = ""
-        body_text = f"Your request is now {case.status}."
+    # Mail to a customer is in the org's language; the subject stays English
+    # because inbound threading matches its `[Case #...]` tag.
+    with language_for_org(case.org):
+        status_label = str(case.get_status_display())
+        if comment is not None:
+            author_name = _author_name(comment, org_name)
+            body_text = comment.comment
+        else:
+            author_name = ""
+            body_text = _("Your request is now %(status)s.") % {"status": status_label}
 
     headers = {}
     if in_reply_to:
@@ -654,20 +670,21 @@ def notify_portal_contacts(
 
     sent = 0
     for contact in recipients:
-        html = render_to_string(
-            "portal/case_update_email.html",
-            {
-                "contact_name": contact.first_name or "",
-                "case_name": case.name,
-                "case_status": case.status,
-                "kind": kind,
-                "author_name": author_name,
-                "reply_text": body_text,
-                "reply_by_email": mailbox is not None,
-                "link": link,
-                "org_name": org_name,
-            },
-        )
+        with language_for_org(case.org):
+            html = render_to_string(
+                "portal/case_update_email.html",
+                {
+                    "contact_name": contact.first_name or "",
+                    "case_name": case.name,
+                    "case_status": status_label,
+                    "kind": kind,
+                    "author_name": author_name,
+                    "reply_text": body_text,
+                    "reply_by_email": mailbox is not None,
+                    "link": link,
+                    "org_name": org_name,
+                },
+            )
         message_id = make_msgid(domain=msgid_domain)
         msg = EmailMessage(
             subject,

@@ -1,4 +1,5 @@
 from django.db.models import Count, Q
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -203,7 +204,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
             raise serializers.ValidationError(
-                "Another lead in this organisation already uses that email address."
+                _("Another lead in this organisation already uses that email address.")
             )
         return value
 
@@ -237,16 +238,24 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         if current not in IRREVERSIBLE_STATUSES:
             return value
 
+        # "converted" is the only irreversible status, so it is spelled out
+        # rather than interpolated: a status code inside a translated sentence
+        # would not read.
         if value == current:
             raise serializers.ValidationError(
-                f"This lead is already {current}. Converting it again would "
-                "create a second opportunity against the same account."
+                _(
+                    "This lead is already converted. Converting it again would "
+                    "create a second opportunity against the same account."
+                )
             )
         raise serializers.ValidationError(
-            f"A {current} lead cannot be changed back to '{value}'. The "
-            "account, contact and opportunity created by the conversion are "
-            "not removed, so the lead would reopen with duplicates already "
-            "downstream of it."
+            _(
+                "A converted lead cannot be changed back to '%(status)s'. The "
+                "account, contact and opportunity created by the conversion are "
+                "not removed, so the lead would reopen with duplicates already "
+                "downstream of it."
+            )
+            % {"status": value}
         )
 
     class Meta:
@@ -433,7 +442,7 @@ class LeadStageSerializer(serializers.ModelSerializer):
             clash = clash.exclude(pk=self.instance.pk)
         if clash.exists():
             raise serializers.ValidationError(
-                "This pipeline already has a stage with that name."
+                _("This pipeline already has a stage with that name.")
             )
         return value
 
@@ -449,7 +458,7 @@ class LeadStageSerializer(serializers.ModelSerializer):
         unchanged = self.instance is not None and self.instance.maps_to_status == value
         if value in IRREVERSIBLE_STATUSES and not unchanged:
             raise serializers.ValidationError(
-                "A stage cannot convert a lead. Convert it from the lead's own page."
+                _("A stage cannot convert a lead. Convert it from the lead's own page.")
             )
         return value
 
@@ -591,6 +600,6 @@ class LeadMoveSerializer(serializers.Serializer):
         # lead back out of its pipeline to the board's "No stage" group.
         if "stage_id" not in attrs and not attrs.get("status"):
             raise serializers.ValidationError(
-                "Either stage_id or status must be provided"
+                _("Either stage_id or status must be provided")
             )
         return attrs

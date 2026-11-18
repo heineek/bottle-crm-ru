@@ -15,6 +15,7 @@ from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.utils.functional import lazy
 from rest_framework.exceptions import ValidationError
 
 from common.models import CustomFieldDefinition, Profile
@@ -52,10 +53,15 @@ class FieldSpec:
     settable: bool = True
 
 
+# Lazy, so a translated choice label is read in each request's language rather
+# than frozen in the language active when an adapter's `FIELDS` was built.
+_stripped = lazy(lambda label: str(label).strip(), str)
+
+
 def model_choices(model, field, *, unsettable=()):
     """The model field's choices; `unsettable` values are offered but not set."""
     return tuple(
-        Choice(str(value), str(label).strip(), settable=value not in unsettable)
+        Choice(str(value), _stripped(label), settable=value not in unsettable)
         for value, label in model._meta.get_field(field).flatchoices
     )
 

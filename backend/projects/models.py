@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import F, Q
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from accounts.models import Account
 from common.base import SAMPLE_DATA_HELP_TEXT, BaseOrgModel
@@ -8,24 +9,24 @@ from common.models import Profile, Tags
 from common.utils import CURRENCY_CODES
 
 STATUS_CHOICES = (
-    ("active", "Active"),
-    ("on_hold", "On hold"),
-    ("completed", "Completed"),
-    ("cancelled", "Cancelled"),
+    ("active", pgettext_lazy("project status", "Active")),
+    ("on_hold", pgettext_lazy("project status", "On hold")),
+    ("completed", pgettext_lazy("project status", "Completed")),
+    ("cancelled", pgettext_lazy("project status", "Cancelled")),
 )
 
 # What an estimate or a pack may start a project as. A retainer needs its fee
 # and months, which only the project form sets (`projects.retainers`).
 STARTING_BILLING_TYPES = (
-    ("time_and_materials", "Time and materials"),
-    ("fixed_fee", "Fixed fee"),
-    ("non_billable", "Non-billable"),
+    ("time_and_materials", _("Time and materials")),
+    ("fixed_fee", _("Fixed fee")),
+    ("non_billable", _("Non-billable")),
 )
 
-BILLING_TYPES = STARTING_BILLING_TYPES + (("retainer", "Retainer"),)
+BILLING_TYPES = STARTING_BILLING_TYPES + (("retainer", _("Retainer")),)
 
 # The highest budget level already notified, per kind (see projects.burn).
-ALERT_LEVELS = ((0, "None"), (80, "80%"), (100, "100%"))
+ALERT_LEVELS = ((0, pgettext_lazy("budget alert", "None")), (80, "80%"), (100, "100%"))
 
 
 class Project(BaseOrgModel):

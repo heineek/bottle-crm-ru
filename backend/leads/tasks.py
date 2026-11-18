@@ -7,8 +7,10 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db.models import F, Q
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from common.links import frontend_url
+from common.locale import language_for_user, resolve_language
 from common.models import Org, Profile
 from common.modules import module_is_available
 from common.push import push_configured
@@ -77,10 +79,11 @@ def send_email_to_assigned_user(recipients, lead_id, org_id, source=""):
             context["lead"] = lead
             context["created_by"] = created_by
             context["source"] = source
-            subject = "Assigned a lead for you. "
-            html_content = render_to_string(
-                "assigned_to/leads_assigned.html", context=context
-            )
+            with language_for_user(profile.user, lead.org):
+                subject = _("Assigned a lead for you. ")
+                html_content = render_to_string(
+                    "assigned_to/leads_assigned.html", context=context
+                )
             msg = EmailMessage(subject, html_content, to=recipients_list)
             msg.content_subtype = "html"
             try:
@@ -115,29 +118,35 @@ def send_enquired_again_email(org_id, lead_id=None, contact_id=None, channel_lab
     owners = record.assigned_to.filter(
         org_id=org_id, is_active=True, user__is_active=True, lead_alerts_email=True
     ).select_related("user")
-    recipients = sorted({p.user.email for p in owners if p.user and p.user.email})
-    if not recipients:
-        return
+    # One mail per language, so each owner reads it in their own.
+    by_language = {}
+    for p in owners:
+        if p.user and p.user.email:
+            language = resolve_language(user=p.user, org=record.org)
+            by_language.setdefault(language, (p.user, set()))[1].add(p.user.email)
     # Collapsed to one line: a name with a newline in it would make the
     # subject an invalid header and the mail would never go.
-    name = " ".join(
+    full_name = " ".join(
         " ".join(filter(None, [record.first_name, record.last_name])).split()
     )[:100]
-    name = name or "Someone"
-    html_content = render_to_string(
-        "leads/enquired_again_email.html",
-        {
-            "name": name,
-            "channel_label": channel_label,
-            "record_url": frontend_url(path),
-            "is_contact": not lead_id,
-        },
-    )
-    send_email(
-        subject=f"{name} enquired again",
-        html_content=html_content,
-        recipients=recipients,
-    )
+    for _language, (user, emails) in sorted(by_language.items()):
+        with language_for_user(user, record.org):
+            name = full_name or _("Someone")
+            html_content = render_to_string(
+                "leads/enquired_again_email.html",
+                {
+                    "name": name,
+                    "channel_label": channel_label,
+                    "record_url": frontend_url(path),
+                    "is_contact": not lead_id,
+                },
+            )
+            subject = _("%(name)s enquired again") % {"name": name}
+        send_email(
+            subject=subject,
+            html_content=html_content,
+            recipients=sorted(emails),
+        )
 
 
 @shared_task
