@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * An invoice, as its customer sees it.
    *
@@ -37,9 +37,9 @@
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
   import { money, longDate } from '#lib/v2/format.js';
   import { Download, CheckCircle2 } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: { invoice: any, token: string } }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let inv = $derived(data.invoice);
   let token = $derived(data.token);
@@ -47,7 +47,7 @@
   /** Whole days from today to the due date. Negative means it has passed. */
   let daysToDue = $derived.by(() => {
     if (!inv.due_date) return null;
-    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     return Math.round((startOfDay(new Date(inv.due_date)) - startOfDay(new Date())) / 86400000);
   });
 
@@ -84,7 +84,9 @@
 
 <svelte:head>
   <!-- The number is the thing a customer searches their inbox for. -->
-  <title>{m.public_portal_invoice_title({ number: inv.invoice_number, org: inv.org.name })}</title>
+  <title
+    >{m.public_portal_invoice_title({ number: inv.invoice_number, org: inv.org.name ?? '' })}</title
+  >
 </svelte:head>
 
 <PortalShell>

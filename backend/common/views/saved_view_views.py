@@ -1,7 +1,7 @@
 """Saved list views (G29): a profile's named filters for one list.
 
 Routes (under /api/saved-views/):
-    GET    /?module=<list>   the caller's own views, for one list or for all six
+    GET    /?module=<list>   the caller's own views, for one list or for all
     POST   /                 save one
     GET    /<id>/            one of the caller's views
     PATCH  /<id>/            rename it, or replace its filters
@@ -16,9 +16,8 @@ checked in ``common/saved_views.py``.
 from django.db.models.functions import Lower
 from django.http import Http404
 from django.utils.translation import gettext as _
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,10 +26,10 @@ from common.lookups import get_scoped_or_404
 from common.models import SavedView
 from common.permissions import HasOrgContext
 from common.saved_views import (
-    LISTS,
     MAX_VIEWS_PER_LIST,
     SavedViewSerializer,
-    off_lists,
+    is_built_in_list,
+    saved_lists,
 )
 
 
@@ -41,25 +40,31 @@ class SavedViewListView(APIView):
         tags=["Saved views"],
         operation_id="saved_views_list",
         parameters=[
-            OpenApiParameter(
-                "module", str, enum=sorted(LISTS), description="Only this list's views."
-            )
+            OpenApiParameter("module", str, description="Only this list's views.")
         ],
-        responses=OpenApiTypes.OBJECT,
+        responses=inline_serializer(
+            name="SavedViewListResponse",
+            fields={
+                "saved_views": SavedViewSerializer(many=True),
+                "limit": serializers.IntegerField(),
+            },
+        ),
     )
     def get(self, request):
         profile = request.profile
-        views = SavedView.objects.filter(org=profile.org, profile=profile).exclude(
-            module__in=off_lists(profile.org)
+        lists = saved_lists(profile.org)
+        views = SavedView.objects.filter(
+            org=profile.org, profile=profile, module__in=list(lists)
         )
         module = request.query_params.get("module")
         if module is not None:
-            if module not in LISTS:
+            # A built-in list whose module is off answers an empty list.
+            if module not in lists and not is_built_in_list(module):
                 return Response(
                     {
                         "module": [
                             _("Choose one of: %(lists)s.")
-                            % {"lists": ", ".join(sorted(LISTS))}
+                            % {"lists": ", ".join(sorted(lists))}
                         ]
                     },
                     status=status.HTTP_400_BAD_REQUEST,
@@ -94,7 +99,7 @@ class SavedViewDetailView(APIView):
         view = get_scoped_or_404(
             SavedView, pk, request.profile.org, profile=request.profile
         )
-        if view.module in off_lists(request.profile.org):
+        if view.module not in saved_lists(request.profile.org):
             raise Http404(_("No such saved view."))
         return view
 

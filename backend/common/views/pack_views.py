@@ -7,19 +7,53 @@ body field. Org.vertical is descriptive and is never read here for access contro
 """
 
 from django.utils.translation import gettext as _
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.packs.applier import apply_pack, clear_sample_data
+from common.apps_catalogue import AppConflict, install_app
+from common.models import PackApplication
+from common.packs.applier import clear_sample_data
 from common.packs.loader import get_pack, get_registry
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
+
+
+def _skipped():
+    return inline_serializer(
+        name="PackSkippedItem",
+        many=True,
+        fields={
+            "type": serializers.CharField(),
+            "name": serializers.CharField(),
+            "reason": serializers.CharField(),
+        },
+    )
+
+
+_REPORT = inline_serializer(
+    name="PackApplyReport",
+    fields={
+        "created": inline_serializer(
+            name="PackCreatedItem",
+            many=True,
+            fields={"type": serializers.CharField(), "name": serializers.CharField()},
+        ),
+        "skipped": _skipped(),
+        # Nothing records a failure today, so it is always empty.
+        "failed": _skipped(),
+    },
+)
+
+
+def _counts():
+    return serializers.DictField(child=serializers.IntegerField())
 
 
 def _require_admin(request):
     """Return a 403 Response if the caller is not an org admin, else None."""
-    if not is_org_admin(getattr(request, "profile", None)):
+    if not may_configure(getattr(request, "profile", None)):
         return Response(
             {"error": True, "errors": _("Only an organization admin can do this.")},
             status=status.HTTP_403_FORBIDDEN,
@@ -39,6 +73,25 @@ class PackListView(APIView):
     # applies. This is not anonymous.
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        responses={
+            200: inline_serializer(
+                name="PackListResponse",
+                fields={
+                    "packs": inline_serializer(
+                        name="PackSummary",
+                        many=True,
+                        fields={
+                            "id": serializers.CharField(),
+                            "name": serializers.CharField(),
+                            "description": serializers.CharField(),
+                            "version": serializers.IntegerField(),
+                        },
+                    )
+                },
+            )
+        }
+    )
     def get(self, request):
         packs = [
             {
@@ -53,26 +106,54 @@ class PackListView(APIView):
 
 
 class PackApplyView(APIView):
+    """Installs the app with sample data, for phones in the stores that still
+    apply packs, and answers with the run's report as apply did. An app already
+    installed adds nothing; ``/api/apps/`` updates it."""
+
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        request=None,
+        responses={
+            200: inline_serializer(name="PackApplyResponse", fields={"report": _REPORT})
+        },
+    )
     def post(self, request, pack_id):
         denied = _require_admin(request)
         if denied:
             return denied
         # Registry lookup only. pack_id is a dict key, never a path segment.
-        pack = get_pack(pack_id)
-        if pack is None:
+        if get_pack(pack_id) is None:
             return Response(
                 {"error": True, "errors": _("Unknown pack.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        report = apply_pack(request.profile.org, pack, request.profile)
+        org = request.profile.org
+        try:
+            install_app(org, pack_id, request.profile, True, request=request)
+        except AppConflict:
+            return Response({"report": {"created": [], "skipped": [], "failed": []}})
+        run = PackApplication.objects.filter(org=org, pack_id=pack_id).first()
+        report = {key: run.result[key] for key in ("created", "skipped", "failed")}
         return Response({"report": report})
 
 
 class PackSampleDataView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        responses={
+            200: inline_serializer(
+                name="PackSampleDataClearResponse",
+                fields={
+                    "deleted": serializers.IntegerField(),
+                    "deleted_by_type": _counts(),
+                    "retained_by_type": _counts(),
+                    "switched_off_by_type": _counts(),
+                },
+            )
+        }
+    )
     def delete(self, request):
         denied = _require_admin(request)
         if denied:

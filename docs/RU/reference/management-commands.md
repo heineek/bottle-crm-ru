@@ -107,7 +107,7 @@ uv run python manage.py devlogin <email> --create
 (токен, выпущенный таким образом, уже содержит claim `org_id`, поэтому дополнительный вызов
 переключения организации не нужен), и фрагмент `localStorage.setItem(...)` для консоли браузера. Один
 этот фрагмент **не** выполняет вход в само приложение на SvelteKit; какие cookie на самом деле
-проверяет `hooks.server.js`, описано в разделе
+проверяет `hooks.server.ts`, описано в разделе
 [Использование токенов в браузере](../getting-started/first-sign-in.md#using-the-tokens-in-the-browser).
 Полное пошаговое описание, включая то, что происходит вообще без `--org`, приведено в разделе
 [Первый вход: локальная разработка](../getting-started/first-sign-in.md#local-development-devlogin).

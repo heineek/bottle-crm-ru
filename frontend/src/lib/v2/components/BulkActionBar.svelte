@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { enhance } from '$app/forms';
   import {
@@ -10,16 +10,19 @@
     CASE_TYPE_LABEL
   } from '#lib/v2/enums.js';
 
-  /**
-   * @type {{
-   *   ids: string[],
-   *   people: {id:string,name:string}[],
-   *   tags: {id:string,name:string}[],
-   *   onclear: () => void,
-   *   ondone: () => void
-   * }}
-   */
-  let { ids, people, tags, onclear, ondone } = $props();
+  let {
+    ids,
+    people,
+    tags,
+    onclear,
+    ondone
+  }: {
+    ids: string[];
+    people: { id: string; name: string }[];
+    tags: { id: string; name: string }[];
+    onclear: () => void;
+    ondone: () => void;
+  } = $props();
 
   // Which action the agent picked in the menu. '' means the menu is showing.
   let action = $state('');
@@ -43,9 +46,12 @@
     { key: 'delete', label: m.common_delete() }
   ]);
 
-  /** @type {Record<string, string>} */
-  const OPTION_LABEL = { ...CASE_STATUS_LABEL, ...CASE_PRIORITY_LABEL, ...CASE_TYPE_LABEL };
-  const optionLabel = (/** @type {string} */ v) => OPTION_LABEL[v] ?? v;
+  const OPTION_LABEL: Record<string, string> = {
+    ...CASE_STATUS_LABEL,
+    ...CASE_PRIORITY_LABEL,
+    ...CASE_TYPE_LABEL
+  };
+  const optionLabel = (v: string) => OPTION_LABEL[v] ?? v;
 
   function reset() {
     action = '';

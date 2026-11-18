@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/board.dart';
 import '../services/api_service.dart';
 
@@ -63,13 +64,11 @@ class BoardNotifier extends AsyncNotifier<BoardData> {
         listResponse.message ?? appL10n.appMsgCouldNotLoadYourBoards,
       );
     }
-    final rows = listResponse.data!['results'];
-    final boards = rows is List
-        ? rows
-              .whereType<Map<String, dynamic>>()
-              .map(BoardSummary.fromJson)
-              .toList()
-        : <BoardSummary>[];
+    final rows = api.BoardListResponse.fromJson(listResponse.data!).results;
+    final boards = [
+      for (final row in rows ?? const <api.BoardList>[])
+        BoardSummary.fromJson(row.json),
+    ];
     if (boards.isEmpty) return const BoardData();
 
     final active = boards.firstWhere(
@@ -122,7 +121,7 @@ class BoardNotifier extends AsyncNotifier<BoardData> {
     final response = await _apiService.post(ApiConfig.boards, {'name': name});
     if (response.success) {
       // Open what was just created rather than whatever sorts first.
-      final id = response.data?['id']?.toString();
+      final id = api.Board.fromJson(response.data ?? const {}).id;
       if (id != null && id.isNotEmpty) _selectedId = id;
       await refresh();
     }

@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../data/api/schema.g.dart' as api;
 import '../../data/models/attachment.dart';
 import '../../data/models/ticket.dart';
 import '../../data/models/comment.dart';
+import '../../data/models/custom_field_definition.dart';
 import 'close_with_children_dialog.dart';
 import 'macro_picker_sheet.dart';
 import '../../data/models/macro.dart';
@@ -397,6 +399,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
   }
 
   Widget _buildOverview(Ticket c) {
+    final customFieldDefinitions =
+        _detail?.customFieldDefinitions ?? const <CustomFieldDefinition>[];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -417,7 +421,11 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           ],
           if (ref.watch(moduleOnProvider('timesheet'))) ...[
             const SizedBox(height: 16),
-            TicketTimePanel(ticketId: c.id, canLogTime: _canWrite),
+            TicketTimePanel(
+              ticketId: c.id,
+              canLogTime: _canWrite,
+              accountId: c.accountId,
+            ),
           ],
           const SizedBox(height: 16),
           if (ref.watch(moduleOnProvider('knowledge_base')))
@@ -504,6 +512,16 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                       ),
                     ),
                 ],
+              ),
+            ),
+          ],
+          if (CustomFieldsDisplay.shows(customFieldDefinitions)) ...[
+            const SizedBox(height: 16),
+            _card(
+              title: context.l10n.ticketsDetailCustomFields,
+              child: CustomFieldsDisplay(
+                definitions: customFieldDefinitions,
+                values: c.customFields,
               ),
             ),
           ],
@@ -887,27 +905,22 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     // `internal_notes` arrays, re-fold them into the existing _detail
     // instead of refetching the whole envelope + watchers + tree (which
     // is what made the screen feel like a full reload).
-    final data = response.data;
+    final body = response.data;
     final current = _detail;
-    if (data != null && current != null) {
-      final tagged = <_TaggedCommentLocal>[];
-      for (final c in (data['comments'] as List<dynamic>? ?? [])) {
-        if (c is Map<String, dynamic>) {
-          tagged.add(
-            _TaggedCommentLocal(
-              comment: Comment.fromJson(c),
-              isInternal: false,
-            ),
-          );
-        }
-      }
-      for (final c in (data['internal_notes'] as List<dynamic>? ?? [])) {
-        if (c is Map<String, dynamic>) {
-          tagged.add(
-            _TaggedCommentLocal(comment: Comment.fromJson(c), isInternal: true),
-          );
-        }
-      }
+    if (body != null && current != null) {
+      final data = api.CaseCommentAttachmentResponse.fromJson(body);
+      final tagged = <_TaggedCommentLocal>[
+        for (final c in data.comments ?? const <api.Comment>[])
+          _TaggedCommentLocal(
+            comment: Comment.fromJson(c.json),
+            isInternal: false,
+          ),
+        for (final c in data.internalNotes ?? const <api.Comment>[])
+          _TaggedCommentLocal(
+            comment: Comment.fromJson(c.json),
+            isInternal: true,
+          ),
+      ];
       tagged.sort(
         (a, b) => b.comment.commentedOn.compareTo(a.comment.commentedOn),
       );
@@ -926,10 +939,12 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           attachments: current.attachments,
           commentPermission: current.commentPermission,
           canMerge: current.canMerge,
+          approvalRule: current.approvalRule,
           internalCommentIds: tagged
               .where((t) => t.isInternal)
               .map((t) => t.comment.id)
               .toSet(),
+          customFieldDefinitions: current.customFieldDefinitions,
         );
       });
     } else {
@@ -1050,14 +1065,15 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
       return;
     }
 
-    final attachmentsData = result.data?['attachments'];
-    if (attachmentsData is List && _detail != null) {
+    final attachmentsData = api.CaseCommentAttachmentResponse.fromJson(
+      result.data ?? const {},
+    ).attachments;
+    if (attachmentsData != null && _detail != null) {
       setState(() {
         _detail = _detail!.copyWith(
-          attachments: attachmentsData
-              .whereType<Map<String, dynamic>>()
-              .map(Attachment.fromJson)
-              .toList(),
+          attachments: [
+            for (final a in attachmentsData) Attachment.fromJson(a.json),
+          ],
         );
       });
     } else {
@@ -2714,18 +2730,27 @@ class _ActivityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final action = activity['action'] as String? ?? '';
-    final actionDisplay = activity['action_display'] as String? ?? action;
-    final freeText = (activity['description'] as String?) ?? '';
-    final metadata = activity['metadata'] is Map<String, dynamic>
-        ? activity['metadata'] as Map<String, dynamic>
+    final w = api.Activity.fromJson(activity);
+    final action = w.action ?? '';
+    final actionDisplay = w.actionDisplay ?? action;
+    final freeText = w.description ?? '';
+    final meta = w.metadata;
+    final metadata = meta is Map<String, dynamic>
+        ? meta
         : const <String, dynamic>{};
 
+    // The fallbacks are not in the schema: until 1.2 (2026-08-08) the
+    // dashboard's activity serializer shadowed `Activity`, so this timeline
+    // got a flat `user.email`, `humanized_time` and `timestamp` instead of
+    // `user.user_details.email` and `created_at`.
+    final legacyUser = activity['user'];
     final userEmail =
-        activity['user_email'] as String? ??
-        ((activity['user'] as Map<String, dynamic>?)?['email'] as String?);
+        w.user?.userDetails?.email ??
+        (legacyUser is Map<String, dynamic>
+            ? legacyUser['email'] as String?
+            : null);
     final humanized = activity['humanized_time'] as String?;
-    final timestampRaw = activity['timestamp'] ?? activity['created_at'];
+    final timestampRaw = activity['timestamp'] ?? w.createdAt;
     DateTime? timestamp;
     if (timestampRaw is String) timestamp = DateTime.tryParse(timestampRaw);
 

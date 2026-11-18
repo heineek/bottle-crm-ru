@@ -1,3 +1,4 @@
+import '../api/schema.g.dart' as api;
 import 'auth_response.dart';
 
 /// User's profile within the current organization.
@@ -25,6 +26,10 @@ class Profile {
   /// payload from a build older than this field.
   final DateTime? lastLogin;
 
+  /// The two lead alert switches, which default to on.
+  final bool leadAlertsEmail;
+  final bool leadAlertsPush;
+
   const Profile({
     required this.id,
     required this.user,
@@ -38,34 +43,37 @@ class Profile {
     this.isActive = true,
     this.teams = const [],
     this.lastLogin,
+    this.leadAlertsEmail = true,
+    this.leadAlertsPush = true,
   });
 
+  /// Reads a `ProfileDetail`. A profile without an id or user throws.
   factory Profile.fromJson(Map<String, dynamic> json) {
+    final w = api.ProfileDetail.fromJson(json);
+    final org = w.org;
     return Profile(
-      id: json['id'] as String,
-      user: AuthUser.fromJson(json['user'] as Map<String, dynamic>),
-      org: json['org'] is Map<String, dynamic>
-          ? Organization.fromJson(json['org'] as Map<String, dynamic>)
-          : null,
-      role: json['role'] as String?,
-      isOrganizationAdmin: json['is_organization_admin'] as bool? ?? false,
-      hasSalesAccess: json['has_sales_access'] as bool? ?? false,
-      hasMarketingAccess: json['has_marketing_access'] as bool? ?? false,
-      phone: json['phone'] as String?,
-      dateOfJoining: json['date_of_joining'] != null
-          ? DateTime.tryParse(json['date_of_joining'] as String)
-          : null,
-      isActive: json['is_active'] as bool? ?? true,
-      teams:
-          (json['teams'] as List?)?.map((t) => t.toString()).toList() ??
-          const [],
-      lastLogin: json['last_login'] != null
-          ? DateTime.tryParse(json['last_login'] as String)
-          : null,
+      id: w.id!,
+      user: AuthUser.fromJson(w.user!.json),
+      org: org == null ? null : Organization.fromJson(org.json),
+      role: w.role,
+      isOrganizationAdmin: w.isOrganizationAdmin ?? false,
+      hasSalesAccess: w.hasSalesAccess ?? false,
+      hasMarketingAccess: w.hasMarketingAccess ?? false,
+      phone: w.phone,
+      dateOfJoining: DateTime.tryParse(w.dateOfJoining ?? ''),
+      isActive: w.isActive ?? true,
+      teams: w.teams ?? const [],
+      lastLogin: DateTime.tryParse(w.lastLogin ?? ''),
+      leadAlertsEmail: w.leadAlertsEmail ?? true,
+      leadAlertsPush: w.leadAlertsPush ?? true,
     );
   }
 
-  Profile copyWith({String? phone}) {
+  Profile copyWith({
+    String? phone,
+    bool? leadAlertsEmail,
+    bool? leadAlertsPush,
+  }) {
     return Profile(
       id: id,
       user: user,
@@ -79,6 +87,8 @@ class Profile {
       isActive: isActive,
       teams: teams,
       lastLogin: lastLogin,
+      leadAlertsEmail: leadAlertsEmail ?? this.leadAlertsEmail,
+      leadAlertsPush: leadAlertsPush ?? this.leadAlertsPush,
     );
   }
 }

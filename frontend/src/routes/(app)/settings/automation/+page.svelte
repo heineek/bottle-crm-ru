@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Automation rules: what the organization does for itself when a record is
    * created or changes. Admins only; the server answers a member with a 403,
@@ -25,17 +25,18 @@
   } from '#lib/v2/automation.js';
   import { ArrowUp, ArrowDown, Plus } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { Tone } from '#lib/v2/enums.js';
+  import type { components } from '#lib/api-schema.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let rules = $derived(data.rules ?? []);
-  let paused = $derived(rules.filter((/** @type {any} */ r) => r.status === 'paused'));
+  let paused = $derived(rules.filter((r) => r.status === 'paused'));
 
-  /** @param {any} rule */
-  function statusOf(rule) {
+  function statusOf(rule: components['schemas']['RuleRow']) {
     return (
-      /** @type {Record<string, {label: string, tone: any}>} */ (STATUS)[rule.status] ?? {
+      (STATUS as Record<string, { label: string; tone: Tone }>)[rule.status] ?? {
         label: rule.status,
         tone: 'slate'
       }
@@ -73,8 +74,8 @@
               label={m.settings_automation_paused_label()}
               tone="rust"
               text={modulePausedNote(r)}
-              action={m.settings_automation_open_modules()}
-              href="/settings/modules"
+              action="m.settings_automation_open_modules()"
+              href="/settings/apps"
             />
           {:else}
             <NextAction

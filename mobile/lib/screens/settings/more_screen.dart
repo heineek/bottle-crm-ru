@@ -212,6 +212,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
       'goals',
       'knowledge_base',
       'documents',
+      'projects',
       'invoices',
       'timesheet',
     ];
@@ -257,6 +258,12 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
       label: context.l10n.settingsMoreDocuments,
       description: context.l10n.settingsMoreDocumentsBody,
       onTap: () => context.push(AppRoutes.documents),
+    ),
+    'projects' => MenuRow(
+      icon: LucideIcons.folderKanban,
+      label: context.l10n.settingsMoreProjects,
+      description: context.l10n.settingsMoreProjectsBody,
+      onTap: () => context.push(AppRoutes.projects),
     ),
     'invoices' => MenuRow(
       icon: LucideIcons.receipt,

@@ -21,6 +21,10 @@ nav:
       - Первый вход: getting-started/first-sign-in.md
       - Демоданные и отраслевые пакеты: getting-started/demo-data.md
       - Модули: getting-started/modules.md
+      - Отраслевые приложения: features/industry-apps.md
+      - Частные приложения: features/private-apps.md
+      - Проекты: features/projects.md
+      - Предложения: features/proposals.md
   - Развёртывание на своём сервере:
       - Требования: self-hosting/requirements.md
       - Docker: self-hosting/docker.md
@@ -46,6 +50,7 @@ nav:
       - Токены и API-ключи: api/tokens-and-api-keys.md
       - Модули: api/modules.md
       - Лиды: api/leads.md
+      - Взаимодействия: api/interactions.md
       - Компании: api/accounts.md
       - Контакты: api/contacts.md
       - Сделки: api/opportunities.md
@@ -61,6 +66,9 @@ nav:
   - Интеграции:
       - ИИ-агенты: integrations/ai-agents.md
       - Веб-формы (web-to-lead): integrations/web-forms.md
+      - Сбор лидов: features/lead-capture.md
+      - Ответы на лиды: features/answering-leads.md
+      - Оповещения о лидах: features/lead-alerts.md
       - Входящая почта: integrations/inbound-email.md
       - Вебхуки: integrations/webhooks.md
       - Правила автоматизации: integrations/automation.md

@@ -33,6 +33,16 @@ edit-run-edit loop, drop coverage and stop at the first failure:
 uv run pytest --no-cov -x
 ```
 
+For the whole suite, spread it across your CPU cores with `pytest-xdist`, as CI does. It cuts a
+full run to about a quarter of the time:
+
+```bash
+uv run pytest -n auto --no-cov
+```
+
+Parallel workers must collect identical tests, so a parametrized value can never be random (a
+`uuid4()` in a `parametrize` list fails collection); use a fixed literal instead.
+
 `--strict-markers` (also set in `addopts`) means a typo'd **custom** marker fails the run immediately
 rather than being silently ignored. Every custom marker you use has to be declared in `pytest.ini`'s
 `markers` list. It doesn't touch markers a plugin registers itself, like `@pytest.mark.django_db`
@@ -79,6 +89,34 @@ build the test database. See [PostgreSQL and RLS](../self-hosting/postgresql-and
 for setting that role up, and for `manage.py manage_rls --test`, which checks isolation on a real
 database outside the suite.
 
+## The schema contract
+
+The web app's API types are generated from the OpenAPI schema, so a schema that is missing or
+wrong becomes a wrong type there. An autouse fixture, `_schema_contract` in
+`backend/common/testing.py` (re-exported by `backend/conftest.py`), checks every JSON response a test
+receives from an `/api/` endpoint against that schema (`backend/common/schema_contract.py`). The
+schema is generated from the running URLconf, so a downstream suite that imports the fixture checks
+its own endpoints as well. A response the schema does not describe, or describes
+wrongly, fails the test with a teardown error that starts `SCHEMA-GAP`, followed by the operation,
+the place in the body and what is wrong.
+
+Fix it by describing what the view returns: `@extend_schema(responses=...)`, usually an
+`inline_serializer(name="<Thing>Response", ...)` envelope, or a typed `SerializerMethodField`. Do
+not change the view to fit the schema. There is no allowlist: every operation a test calls has to
+conform, so a new endpoint ships with its response described.
+
+Two things to know:
+
+- **Only exercised operations are checked, and CI makes sure that is all of them.** The SQLite run
+  passes `--contract-coverage`, which fails an otherwise green run and lists every JSON success
+  reply in the schema that no test response was checked against. Run it locally the same way:
+  `uv run pytest --no-cov --contract-coverage`.
+- **Every field of a model serializer's response is required**, since a `ModelSerializer` always
+  sends every field. The `AutoSchema` subclass in `backend/common/custom_openapi.py` marks them so.
+  A model serializer that leaves a key out for some callers lists it in
+  `CONDITIONAL_RESPONSE_FIELDS` there. Plain serializers, `inline_serializer` envelopes included,
+  keep their own `required` flags: a key the view sometimes omits is `required=False`.
+
 ## What CI runs
 
 `.github/workflows/tests.yml` runs the backend suite three ways:
@@ -86,7 +124,7 @@ database outside the suite.
 1. **SQLite**, the fast run that produces coverage, after the migration check:
    ```bash
    uv run python manage.py makemigrations --check --dry-run
-   uv run pytest -m "not postgres_only" --tb=short -v
+   uv run pytest -m "not postgres_only" --tb=short -v --contract-coverage
    ```
 2. **PostgreSQL as the superuser**: the whole suite minus `postgres_only`, for what SQLite cannot
    see (declared string lengths, constraints, real type coercion). RLS is inert under a superuser,

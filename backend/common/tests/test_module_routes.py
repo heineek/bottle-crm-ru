@@ -95,9 +95,16 @@ ROUTE_CASES = [
     ("api/cases/<uid:pk>/solution-suggestions/", (CU, "api_cases"), Requires(("tickets", "knowledge_base"))),
     ("api/cases/<uid:pk>/time-entries/start/", (CU, "api_cases"), Requires(("tickets", "timesheet"))),
     ("api/cases/<uid:pk>/time-summary/", (CU, "api_cases"), Requires(("tickets", "timesheet"))),
+    ("api/cases/mailboxes/<uid:pk>/", (CU, "api_cases"), Requires(any_of=("tickets", "leads"))),
+    ("api/cases/inbound/email/", (CU, "api_cases"), Requires(any_of=("tickets", "leads"))),
     ("api/invoices/products/<uuid:pk>/", (CU, "api_invoices"), Requires(any_of=("invoices", "deals"))),
     ("api/invoices/from-opportunity/<uuid:opportunity_id>/", (CU, "api_invoices"), Requires(("invoices", "deals"))),
-    ("api/invoices/from-time-entries/", (CU, "api_invoices"), Requires(("invoices", "tickets", "timesheet"))),
+    ("api/invoices/from-time-entries/", (CU, "api_invoices"), Requires(("invoices", "timesheet"), any_of=("tickets", "projects"))),
+    ("api/projects/<uid:pk>/time-entries/start/", (CU, "api_projects"), Requires(("projects", "timesheet"))),
+    ("api/projects/<uid:pk>/unbilled/", (CU, "api_projects"), Requires(("projects", "invoices", "timesheet"))),
+    ("api/projects/<uid:pk>/invoice-amount/", (CU, "api_projects"), Requires(("projects", "invoices"))),
+    ("api/projects/<uid:pk>/retainer/bill/", (CU, "api_projects"), Requires(("projects", "invoices"))),
+    ("api/projects/from-deal/<uid:deal_id>/", (CU, "api_projects"), Requires(("projects", "deals"))),
     ("api/documents/<uid:pk>/download/", (CU, "api_common"), Requires(("documents",))),
     ("api/profile/calendar-feed/", (CU, "api_common"), Requires(("tasks",))),
     ("api/public/calendar/<str:token>.ics", (CU, "api_common"), Requires(("tasks",))),
@@ -108,13 +115,15 @@ ROUTE_CASES = [
     ("api/schema/redoc/", (), CORE),
     # One route per module namespace.
     ("api/leads/kanban/", (CU, "api_leads"), Requires(("leads",))),
+    ("api/leads/sources/order/", (CU, "api_leads"), CORE),
     ("api/opportunities/<uid:pk>/", (CU, "api_opportunities"), Requires(("deals",))),
     ("api/tasks/", (CU, "api_tasks"), Requires(("tasks",))),
     ("api/boards/<uid:pk>/", (CU, "api_boards"), Requires(("tasks",))),
     ("api/cases/<uid:pk>/", (CU, "api_cases"), Requires(("tickets",))),
     ("api/business-hours/calendar/", (CU, "api_business_hours"), Requires(("tickets",))),
     ("api/macros/", (CU, "api_macros"), Requires(("tickets",))),
-    ("api/time-entries/timesheet/", (CU, "api_time_entries"), Requires(("tickets", "timesheet"))),
+    ("api/time-entries/timesheet/", (CU, "api_time_entries"), Requires(("timesheet",), any_of=("tickets", "projects"))),
+    ("api/projects/<uid:pk>/", (CU, "api_projects"), Requires(("projects",))),
     ("api/invoices/<uuid:pk>/", (CU, "api_invoices"), Requires(("invoices",))),
     ("api/public/help/<str:slug>/", ("public_help",), Requires(("knowledge_base",))),
     ("api/public/estimate/<str:token>/accept/", ("public_invoices",), Requires(("invoices",))),
@@ -125,9 +134,11 @@ ROUTE_CASES = [
     ("api/auth/magic-link/verify/", (CU, "api_common"), CORE),
     ("api/custom-fields/<uid:pk>/", (CU, "api_common"), CORE),
     ("api/dashboard/today/", (CU, "api_common"), CORE),
+    ("api/devices/", (CU, "api_common"), CORE),
     ("api/notifications/read-all/", (CU, "api_common"), CORE),
     ("api/org/modules/", (CU, "api_common"), CORE),
     ("api/packs/<str:pack_id>/apply/", (CU, "api_common"), CORE),
+    ("api/apps/<str:app_id>/install/", (CU, "api_common"), CORE),
     ("api/profile/tokens/<uuid:pk>/", (CU, "api_common"), CORE),
     ("api/saved-views/", (CU, "api_common"), CORE),
     ("api/search/", (CU,), CORE),
@@ -270,7 +281,7 @@ def test_a_need_names_the_module_that_is_off(admin_client, org_a, ticket):
     cases = (
         ("deals", "/api/opportunities/goals/", "deals"),
         ("goals", "/api/opportunities/goals/", "goals"),
-        ("tickets", "/api/time-entries/timesheet/", "tickets"),
+        ("timesheet", "/api/time-entries/timesheet/", "timesheet"),
         ("knowledge_base", suggestions, "knowledge_base"),
     )
     for off, url, named in cases:
@@ -281,6 +292,17 @@ def test_a_need_names_the_module_that_is_off(admin_client, org_a, ticket):
         assert response.status_code == 404, url
         assert response.json() == module_off_body(org_a, named)
     assert admin_client.get(f"/api/cases/{ticket.id}/").status_code == 200
+
+
+def test_time_routes_need_tickets_or_projects(admin_client, org_a):
+    url = "/api/time-entries/timesheet/"
+    for off in ("tickets", "projects"):
+        set_modules_off(org_a, off)
+        assert admin_client.get(url).status_code == 200, off
+    set_modules_off(org_a, "tickets", "projects")
+    response = admin_client.get(url)
+    assert response.status_code == 404
+    assert response.json() == module_off_body(org_a, "tickets")
 
 
 def test_products_stay_while_deals_or_invoices_is_on(admin_client, org_a):

@@ -102,7 +102,8 @@ refresh-токены. Это стоит знать, прежде чем меня
 
 ## Токены публичных ссылок в логах {#public-link-tokens-in-logs}
 
-Четыре вида ссылок несут свои учётные данные в сегменте пути. Любой, у кого есть URL, может
+Четыре вида ссылок несут свои учётные данные в сегменте пути, а вебхук лидов может принимать свой
+ключ как параметр запроса `?key=`. Любой, у кого есть URL, может
 воспользоваться им без входа, поэтому строка лога, записавшая путь, передаёт учётные данные каждому,
 кто может прочитать этот лог, или туда, куда этот лог отправляется.
 
@@ -112,6 +113,7 @@ refresh-токены. Это стоит знать, прежде чем меня
 | Опрос удовлетворённости | `/api/public/csat/<token>/` | `/csat/<token>` |
 | Счёт | `/api/public/invoice/<token>/`, `.../pdf/` | `/portal/invoice/<token>` |
 | Коммерческое предложение | `/api/public/estimate/<token>/`, `.../pdf/`, `.../accept/`, `.../decline/` | `/portal/estimate/<token>` |
+| Ключ вебхука лидов, когда отправитель умеет передавать только URL | `/api/public/leads/<id>/?key=<key>` | нет |
 
 Начиная с django-crm 1.13.0 приложение пишет `[Filtered]` вместо токена везде, где логирует путь: в
 логе запросов Django (`Not Found: <path>`, `Too Many Requests: <path>`), в событиях Sentry и в журнале
@@ -131,6 +133,7 @@ refresh-токены. Это стоит знать, прежде чем меня
 # BottleCRM: public-link tokens are credentials; log them as [Filtered].
 map $request_uri $bottlecrm_log_uri {
     "~^((?:/api/public/(?:calendar|csat|invoice|estimate)|/portal/(?:invoice|estimate)|/csat)/)[^/?]+(.*)$" "$1[Filtered]$2";
+    "~^(/api/public/leads/[^?]*\?(?:[^#]*&)?key=)[^&#]*(.*)$" "$1[Filtered]$2";
     default $request_uri;
 }
 

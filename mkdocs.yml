@@ -60,6 +60,10 @@ nav:
       - First sign-in: getting-started/first-sign-in.md
       - Demo data and packs: getting-started/demo-data.md
       - Modules: getting-started/modules.md
+      - Industry apps: features/industry-apps.md
+      - Private apps: features/private-apps.md
+      - Projects: features/projects.md
+      - Proposals: features/proposals.md
   - Self-hosting:
       - Requirements: self-hosting/requirements.md
       - Docker: self-hosting/docker.md
@@ -85,6 +89,7 @@ nav:
       - Tokens and API keys: api/tokens-and-api-keys.md
       - Modules: api/modules.md
       - Leads: api/leads.md
+      - Interactions: api/interactions.md
       - Accounts: api/accounts.md
       - Contacts: api/contacts.md
       - Opportunities: api/opportunities.md
@@ -100,6 +105,9 @@ nav:
   - Integrations:
       - AI agents: integrations/ai-agents.md
       - Web forms: integrations/web-forms.md
+      - Lead capture: features/lead-capture.md
+      - Answering leads: features/answering-leads.md
+      - Lead alerts: features/lead-alerts.md
       - Inbound email: integrations/inbound-email.md
       - Webhooks: integrations/webhooks.md
       - Automation rules: integrations/automation.md

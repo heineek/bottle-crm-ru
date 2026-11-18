@@ -1,3 +1,4 @@
+import '../api/schema.g.dart' as api;
 import 'countries.dart';
 import 'org_settings.dart';
 
@@ -9,14 +10,14 @@ class OrgLocales {
 
   const OrgLocales({required this.countries});
 
+  /// Reads an `OrgLocalesResponse`.
   factory OrgLocales.fromJson(Map<String, dynamic> json) {
-    final raw = json['countries'];
+    final w = api.OrgLocalesResponse.fromJson(json);
     return OrgLocales(
       countries: [
-        if (raw is List)
-          for (final c in raw)
-            if (c is Map && c['code'] is String && c['name'] is String)
-              (value: c['code'] as String, label: c['name'] as String),
+        for (final c in w.countries ?? const <api.CountryOption>[])
+          if ((c.code ?? '').isNotEmpty && c.name != null)
+            (value: c.code!, label: c.name!),
       ],
     );
   }

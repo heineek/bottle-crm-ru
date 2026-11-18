@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { untrack, tick } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
@@ -8,9 +8,9 @@
   import { TriangleAlert, Users, Lock } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   /**
    * Rename, archive, and re-share, the mutations that used to be reachable by
@@ -29,13 +29,13 @@
   // subscribing the form fields to later `data` changes (there are none, an
   // edit page loads one document).
   const init = untrack(() => {
-    const prev = result?.values ?? {};
-    const doc = data.document ?? {};
+    const prev = result?.values;
+    const doc = data.document;
     return {
-      title: prev.title ?? doc.title ?? '',
-      status: prev.status ?? doc.status ?? 'active',
-      shared_to: (prev.shared_to ?? doc.shared_to ?? []).map(String),
-      teams: (prev.teams ?? doc.teams ?? []).map(String)
+      title: prev?.title ?? doc?.title ?? '',
+      status: prev?.status ?? doc?.status ?? 'active',
+      shared_to: (prev?.shared_to ?? doc?.shared_to ?? []).map(String),
+      teams: (prev?.teams ?? doc?.teams ?? []).map(String)
     };
   });
 
@@ -50,24 +50,23 @@
   // silent one. Empty means the stored file is kept.
   let newFileName = $state('');
 
-  function onFile(/** @type {Event} */ ev) {
-    const input = /** @type {HTMLInputElement} */ (ev.currentTarget);
+  function onFile(ev: Event) {
+    const input = ev.currentTarget as HTMLInputElement;
     newFileName = input.files?.[0]?.name ?? '';
   }
 
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state({} as Record<string, boolean>);
   let submitted = $state(false);
   let confirmingDelete = $state(false);
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!title.trim()) e.title = m.documents_edit_error_title();
     return e;
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   let reach = $derived(sharedTo.size + sharedTeams.size);
 
@@ -76,11 +75,11 @@
   // from "sharing changed" (a PUT). From the stored document, never from a
   // rejected submit's echo, so a retry still compares against the record.
   let originalShares = $derived.by(() => {
-    const active = new Set((data.people ?? []).map((/** @type {any} */ p) => String(p.id)));
+    const active = new Set((data.people ?? []).map((p) => String(p.id)));
     return (data.document?.shared_to ?? []).map(String).filter((id) => active.has(id));
   });
   let originalTeams = $derived.by(() => {
-    const known = new Set((data.teams ?? []).map((/** @type {any} */ t) => String(t.id)));
+    const known = new Set((data.teams ?? []).map((t) => String(t.id)));
     return (data.document?.teams ?? []).map(String).filter((id) => known.has(id));
   });
   // Shares with no checkbox (people deactivated since, as the picker lists
@@ -90,19 +89,17 @@
   // Not counted when the list failed to load, when everybody would look inactive.
   let inactiveShares = $derived(data.options_failed ? 0 : keptShares.length);
 
-  function toggle(/** @type {SvelteSet<string>} */ set, /** @type {string} */ id) {
+  function toggle(set: SvelteSet<string>, id: string) {
     if (set.has(id)) set.delete(id);
     else set.add(id);
   }
 
-  /** @type {import('./$types').SubmitFunction} */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
     }
   };

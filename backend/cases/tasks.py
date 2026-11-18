@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
+from cases.inbound.generated import catch_all_topic, generated_domain
 from cases.inbound.threading import _SUBJECT_FALLBACK_RE as _SUBJECT_TAG_RE
 from cases.inbound.threading import short_case_id
 from cases.models import Case, CsatSurvey, EscalationPolicy, InboundMailbox, TimeEntry
@@ -27,6 +28,7 @@ from common.locale import language_for_org, language_for_user
 from common.models import Activity, Comment, Org, Profile
 from common.modules import module_is_available, module_on_since
 from common.tasks import clear_rls_context, set_rls_context
+from projects.burn import check_budget_alerts
 
 logger = logging.getLogger(__name__)
 
@@ -450,12 +452,21 @@ def _reply_to_mailbox(case):
 
     The one the case's latest inbound email came through; else the org's only
     mailbox. Only a mailbox that can take mail counts: active, and an SES one
-    with its topic pinned, since the webhook refuses everything else and a
-    reply sent there would be lost. Always this case's org.
+    with its topic pinned (or a generated one while the server's catch-all
+    receives for its domain), since the webhook refuses everything else and a
+    reply sent there would be lost. A lead address never counts: a reply sent
+    there would become a lead. Always this case's org.
     """
+    can_receive = ~Q(topic_arn="")
+    if generated_domain() and catch_all_topic():
+        can_receive |= Q(is_generated=True)
     receiving = InboundMailbox.objects.filter(
-        org_id=case.org_id, is_active=True, provider="ses"
-    ).exclude(topic_arn="")
+        can_receive,
+        org_id=case.org_id,
+        is_active=True,
+        provider="ses",
+        creates=InboundMailbox.CREATES_TICKETS,
+    )
     last_mailbox_id = (
         EmailMessageRecord.objects.filter(
             org_id=case.org_id,
@@ -729,7 +740,8 @@ TIME_ENTRY_AUTO_STOP_HOURS = 12
 def auto_stop_stale_timers(threshold_hours=TIME_ENTRY_AUTO_STOP_HOURS):
     """Stop running TimeEntry rows whose started_at is older than
     ``threshold_hours``. Sets ``auto_stopped=True`` and recomputes
-    ``duration_minutes`` via the model save() path. Skips an org with Timesheet
+    ``duration_minutes`` via the model save() path, then runs the budget check
+    for each project whose timer it stopped. Skips an org with Timesheet
     off, and leaves running a timer that went stale while it was off.
 
     Returns the number of timers stopped. Walks every org through the
@@ -756,11 +768,16 @@ def auto_stop_stale_timers(threshold_hours=TIME_ENTRY_AUTO_STOP_HOURS):
                     stale = stale.filter(
                         started_at__gte=since - timedelta(hours=threshold_hours)
                     )
-                for entry in list(stale):
+                projects = {}
+                for entry in list(stale.select_related("project")):
                     entry.ended_at = now
                     entry.auto_stopped = True
                     entry.save()
                     stopped += 1
+                    if entry.project is not None:
+                        projects[entry.project_id] = entry.project
+                for project in projects.values():
+                    check_budget_alerts(project)
             except Exception:  # pragma: no cover
                 logger.exception("auto_stop_stale_timers failed for org=%s", org.id)
     finally:

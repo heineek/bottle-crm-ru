@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
   /**
    * One custom object's settings: its names, who sees its records, and its
-   * fields. Without the plan only archive, restore and delete for good are
-   * offered; everything else reads as plain text. The server refuses what
-   * the page hides.
+   * fields. When the object's shape is locked (`customizable` is false) only
+   * who sees its records, the board, switching fields off or on, archive,
+   * restore and delete are offered; the rest reads as plain text. The server
+   * refuses what the page hides.
    */
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
@@ -14,27 +15,34 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { FIELD_TYPE_LABEL } from '#lib/v2/enums.js';
+  import { billingHref } from '#lib/v2/billing.js';
+  import { boardFieldOptions } from '#lib/v2/object-board.js';
   import { ChevronLeft, Plus } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
+  import type { ObjectField, ObjectRef } from '#lib/server/v2/custom-objects.js';
 
-  const TYPE_LABEL = /** @type {Record<string, string>} */ ({
-    ...FIELD_TYPE_LABEL,
-    link: m.settings_objects_type_link()
-  });
+  const TYPE_LABEL = { ...FIELD_TYPE_LABEL, link: m.settings_objects_type_link() } as Record<
+    string,
+    string
+  >;
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let def = $derived(data.definition);
-  let plan = $derived(data.customObjects?.has_custom_objects === true);
-  let canWrite = $derived(data.can_edit && plan);
-  let linkTargets = $derived(/** @type {any[]} */ (data.customObjects?.link_targets ?? []));
+  let canWrite = $derived(data.can_edit && def.writable);
+  let canCustomize = $derived(data.can_edit && def.customizable);
+  let plansHref = $derived(billingHref(data));
+  let linkTargets: ObjectRef[] = $derived(data.customObjects?.link_targets ?? []);
+
+  let boardOptions = $derived(boardFieldOptions(data.fields));
+  let boardField = $derived(def.board_field);
 
   let editingObject = $state(false);
   // `null` when closed, `'new'` when adding, or the field being edited.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<'new' | ObjectField | null>(null);
   let fieldType = $state('text');
-  let optionRows = $state(/** @type {{ value: string, label: string }[]} */ ([]));
+  let optionRows = $state<{ value: string; label: string }[]>([]);
 
   function openNewField() {
     editing = 'new';
@@ -42,22 +50,23 @@
     optionRows = [];
   }
 
-  /** @param {any} f */
-  function openEditField(f) {
+  function openEditField(f: ObjectField) {
     editing = f;
     fieldType = f.field_type;
-    optionRows = (f.options ?? []).map((/** @type {any} */ o) => ({
+    optionRows = (f.options ?? []).map((o) => ({
       value: o.value,
       label: o.label
     }));
   }
 
-  /** @param {string} target */
-  const targetLabel = (target) => linkTargets.find((t) => t.key === target)?.label_plural ?? target;
+  const targetLabel = (target: string | null) =>
+    linkTargets.find((t) => t.key === target)?.label_plural ?? target;
 
+  // `fieldOff` and `fieldOn` are `true` after a success and `{ error }` after a refusal.
   let rowErrors = $derived(
-    [form?.fieldOff?.error, form?.fieldOn?.error, form?.restore?.error, form?.archive?.error]
-      .concat([form?.destroy?.error])
+    [form?.fieldOff, form?.fieldOn]
+      .map((outcome) => (typeof outcome === 'object' ? outcome.error : undefined))
+      .concat([form?.restore?.error, form?.archive?.error, form?.destroy?.error])
       .filter(Boolean)
   );
 </script>
@@ -102,9 +111,12 @@
       <p class="v2-error" style="margin:0 0 12px">{message}</p>
     {/each}
 
-    {#if data.can_edit && data.customObjects?.has_custom_objects === false}
+    {#if data.can_edit && !def.customizable}
       <p class="v2-sub" style="font-size:12.5px;margin:0 0 16px;max-width:66ch">
-        {m.settings_objects_no_plan()}
+        {m.settings_objects_plan_excludes()}
+        {#if plansHref}
+          <a href={resolve(asInternalPath(plansHref))}>{m.settings_objects_see_plans()}</a>
+        {/if}
       </p>
     {/if}
 
@@ -118,44 +130,48 @@
         ondone={() => (editingObject = false)}
       >
         {#snippet fields()}
-          <div class="v2-field">
-            <label for="o-label">{m.settings_objects_label_singular()}</label>
-            <input
-              id="o-label"
-              class="v2-input"
-              name="label"
-              maxlength="64"
-              required
-              value={def.label}
-            />
-          </div>
-          <div class="v2-field">
-            <label for="o-plural">{m.settings_objects_label_plural()}</label>
-            <input
-              id="o-plural"
-              class="v2-input"
-              name="label_plural"
-              maxlength="64"
-              required
-              value={def.label_plural}
-            />
-          </div>
-          <div class="v2-field">
-            <label for="o-name-label">{m.settings_objects_name_label_label()}</label>
-            <input
-              id="o-name-label"
-              class="v2-input"
-              name="name_label"
-              maxlength="64"
-              value={def.name_label ?? ''}
-            />
-          </div>
-          <div class="v2-field v2-sfp-wide">
-            <label for="o-desc">{m.settings_objects_description_label()}</label>
-            <textarea id="o-desc" class="v2-input" name="description" rows="2"
-              >{def.description ?? ''}</textarea
-            >
-          </div>
+          {#if !def.customizable}
+            <input type="hidden" name="customizable" value="false" />
+          {:else}
+            <div class="v2-field">
+              <label for="o-label">{m.settings_objects_label_singular()}</label>
+              <input
+                id="o-label"
+                class="v2-input"
+                name="label"
+                maxlength="64"
+                required
+                value={def.label}
+              />
+            </div>
+            <div class="v2-field">
+              <label for="o-plural">{m.settings_objects_label_plural()}</label>
+              <input
+                id="o-plural"
+                class="v2-input"
+                name="label_plural"
+                maxlength="64"
+                required
+                value={def.label_plural}
+              />
+            </div>
+            <div class="v2-field">
+              <label for="o-name-label">{m.settings_objects_name_label_label()}</label>
+              <input
+                id="o-name-label"
+                class="v2-input"
+                name="name_label"
+                maxlength="64"
+                value={def.name_label ?? ''}
+              />
+            </div>
+            <div class="v2-field v2-sfp-wide">
+              <label for="o-desc">{m.settings_objects_description_label()}</label>
+              <textarea id="o-desc" class="v2-input" name="description" rows="2"
+                >{def.description ?? ''}</textarea
+              >
+            </div>
+          {/if}
           <fieldset class="v2-field v2-sfp-wide" style="border:0;padding:0;margin:0">
             <legend class="v2-label" style="padding:0">{m.settings_objects_access_legend()}</legend>
             <label class="o-choice">
@@ -213,32 +229,69 @@
       </div>
     {/if}
 
+    {#if data.can_edit && def.is_active}
+      <form
+        class="v2-card o-board"
+        method="POST"
+        action="?/board"
+        use:enhance={() =>
+          async ({ update }) =>
+            update({ reset: false })}
+      >
+        <div class="v2-field" style="margin:0">
+          <label for="o-board">{m.settings_objects_board_label()}</label>
+          <select
+            id="o-board"
+            class="v2-input"
+            name="board_field"
+            disabled={!def.writable}
+            value={boardOptions.some((o) => o.value === boardField) ? boardField : ''}
+          >
+            <option value="">{m.settings_objects_board_none()}</option>
+            {#each boardOptions as o (o.value)}
+              <option value={o.value}>{o.label}</option>
+            {/each}
+          </select>
+          <p class="v2-hint">
+            {boardOptions.length > 0
+              ? m.settings_objects_board_hint()
+              : m.settings_objects_board_hint_empty()}
+          </p>
+          {#if form?.board?.error}<p class="v2-error" role="alert">{form.board.error}</p>{/if}
+        </div>
+        <button class="v2-btn" type="submit" disabled={!def.writable}
+          >{m.settings_objects_board_save()}</button
+        >
+      </form>
+    {/if}
+
     <div class="o-fields-head">
       <h2 class="v2-label" style="margin:0">{m.settings_objects_fields_heading()}</h2>
-      {#if canWrite && !editing}
+      {#if canCustomize && !editing}
         <button class="v2-btn v2-btn-sm o-add" type="button" onclick={openNewField}>
           <Plus />{m.settings_objects_new_field()}
         </button>
       {/if}
     </div>
 
-    {#if editing && canWrite}
+    {#if editing && canCustomize}
+      {@const current = editing}
       <SettingsFormPanel
-        title={editing === 'new'
+        title={current === 'new'
           ? m.settings_objects_new_field()
-          : m.settings_objects_edit_field_title({ label: editing.label })}
-        action={editing === 'new' ? '?/createField' : '?/updateField'}
-        error={editing === 'new' ? form?.createField?.error : form?.updateField?.error}
-        submitLabel={editing === 'new'
+          : m.settings_objects_edit_field_title({ label: current.label })}
+        action={current === 'new' ? '?/createField' : '?/updateField'}
+        error={current === 'new' ? form?.createField?.error : form?.updateField?.error}
+        submitLabel={current === 'new'
           ? m.settings_objects_add_field()
           : m.settings_objects_save_field()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
         {#snippet fields()}
-          {#if editing !== 'new'}
-            <input type="hidden" name="field_key" value={editing.key} />
-            <input type="hidden" name="field_type" value={editing.field_type} />
+          {#if current !== 'new'}
+            <input type="hidden" name="field_key" value={current.key} />
+            <input type="hidden" name="field_type" value={current.field_type} />
           {/if}
 
           <div class="v2-field">
@@ -249,13 +302,13 @@
               name="label"
               maxlength="128"
               required
-              value={editing === 'new' ? '' : editing.label}
+              value={current === 'new' ? '' : current.label}
             />
           </div>
 
           <div class="v2-field">
             <label for="f-key">{m.settings_objects_key_label()}</label>
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <input
                 id="f-key"
                 class="v2-input"
@@ -269,27 +322,27 @@
                 {m.settings_objects_key_hint()}
               </p>
             {:else}
-              <code class="o-key">{editing.key}</code>
+              <code class="o-key">{current.key}</code>
               <p class="v2-hint">{m.settings_objects_fixed()}</p>
             {/if}
           </div>
 
           <div class="v2-field">
             <label for="f-type">{m.settings_objects_type_label()}</label>
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <select id="f-type" class="v2-input" name="field_type" bind:value={fieldType}>
                 {#each Object.entries(TYPE_LABEL) as [value, label] (value)}
                   <option {value}>{label}</option>
                 {/each}
               </select>
             {:else}
-              <div style="font-size:13px">{TYPE_LABEL[editing.field_type]}</div>
+              <div style="font-size:13px">{TYPE_LABEL[current.field_type]}</div>
               <p class="v2-hint">{m.settings_objects_fixed()}</p>
             {/if}
           </div>
 
           {#if fieldType === 'link'}
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <div class="v2-field">
                 <label for="f-target">{m.settings_objects_links_to()}</label>
                 <select id="f-target" class="v2-input" name="target" required>
@@ -309,9 +362,13 @@
               <div class="v2-field">
                 <label for="f-linked">{m.settings_objects_links_to()}</label>
                 <div id="f-linked" style="font-size:13px">
-                  {editing.many
-                    ? m.settings_objects_link_summary_many({ target: targetLabel(editing.target) })
-                    : m.settings_objects_link_summary_one({ target: targetLabel(editing.target) })}
+                  {current.many
+                    ? m.settings_objects_link_summary_many({
+                        target: targetLabel(current.target) ?? ''
+                      })
+                    : m.settings_objects_link_summary_one({
+                        target: targetLabel(current.target) ?? ''
+                      })}
                 </div>
                 <p class="v2-hint">{m.settings_objects_fixed()}</p>
               </div>
@@ -359,7 +416,7 @@
               type="number"
               name="display_order"
               min="0"
-              value={editing === 'new' ? '' : editing.display_order}
+              value={current === 'new' ? '' : current.display_order}
             />
           </div>
 
@@ -372,7 +429,7 @@
                   type="checkbox"
                   name="is_required"
                   value="true"
-                  checked={editing !== 'new' && editing.is_required}
+                  checked={current !== 'new' && current.is_required}
                 />
                 {m.settings_objects_required_hint()}
               </label>
@@ -400,11 +457,11 @@
                 {TYPE_LABEL[f.field_type] ?? f.field_type}
                 {#if f.field_type === 'link'}
                   · {f.many
-                    ? m.settings_objects_link_row_many({ target: targetLabel(f.target) })
-                    : m.settings_objects_link_row_one({ target: targetLabel(f.target) })}
+                    ? m.settings_objects_link_row_many({ target: targetLabel(f.target) ?? '' })
+                    : m.settings_objects_link_row_one({ target: targetLabel(f.target) ?? '' })}
                 {/if}
                 {#if f.options}
-                  · {f.options.map((/** @type {any} */ o) => o.label).join(', ')}
+                  · {f.options.map((o) => o.label).join(', ')}
                 {/if}
               </span>
             </div>
@@ -415,9 +472,11 @@
             {/if}
             {#if canWrite}
               <div class="o-actions">
-                <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEditField(f)}>
-                  {m.settings_objects_edit()}
-                </button>
+                {#if canCustomize}
+                  <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEditField(f)}>
+                    {m.settings_objects_edit()}
+                  </button>
+                {/if}
                 {#if f.is_active}
                   <ConfirmAction
                     action="?/fieldOff"
@@ -444,6 +503,23 @@
 </div>
 
 <style>
+  .o-board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    padding: 12px 16px;
+    margin-top: 16px;
+  }
+  .o-board .v2-field {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  @media (max-width: 767px) {
+    .o-board .v2-btn {
+      min-height: 44px;
+    }
+  }
   .o-back {
     display: inline-flex;
     align-items: center;

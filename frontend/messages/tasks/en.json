@@ -233,5 +233,8 @@
   "tasks_board_add_column": "Add column",
   "tasks_board_foot_lead": "Cards on a board are separate records from the",
   "tasks_board_foot_link": "task list",
-  "tasks_board_foot_tail": ". A card here does not appear there, and completing one does not complete the other."
+  "tasks_board_foot_tail": ". A card here does not appear there, and completing one does not complete the other.",
+  "tasks_parent_project_unnamed": "A project",
+  "tasks_kind_project": "project",
+  "tasks_parent_project": "A project"
 }

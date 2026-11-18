@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -50,24 +50,34 @@
     LifeBuoy,
     Zap,
     TriangleAlert,
-    CirclePause
+    CirclePause,
+    Gauge,
+    FileCheck,
+    FileText,
+    FileX,
+    UserPlus,
+    Clock,
+    House,
+    Armchair
   } from '@lucide/svelte';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
+
+  type Row = PageData['results'][number];
 
   let emptyText = $derived(notificationsEmptyText(data.modules));
 
   /* Local copy: marking read is a real state change in this page's terms even
      though nothing is persisted yet. It is not derived from `data`, or every
      revalidation would resurrect what you just cleared. */
-  let rows = $state(untrack(() => data.results.map((n) => ({ ...n }))));
-  let filter = $state(/** @type {'unread' | 'all'} */ ('unread'));
+  let rows: Row[] = $state(untrack(() => data.results.map((n) => ({ ...n }))));
+  let filter = $state('unread' as 'unread' | 'all');
 
   let unread = $derived(rows.filter((n) => n.read_at === null));
   let visible = $derived(filter === 'unread' ? unread : rows);
 
-  const ICON = {
+  const ICON: Record<string, typeof Bell> = {
     'case.mentioned': AtSign,
     'case.commented': MessageSquare,
     'support.replied': LifeBuoy,
@@ -75,7 +85,17 @@
     'automation.message': Zap,
     'automation.failed': TriangleAlert,
     'automation.limit': TriangleAlert,
-    'automation.paused': CirclePause
+    'automation.paused': CirclePause,
+    'project.budget': Gauge,
+    'project.retainer_invoice': FileText,
+    'estimate.accepted': FileCheck,
+    'estimate.declined': FileX,
+    'lead.assigned': UserPlus,
+    'lead.created': UserPlus,
+    'lead.enquired': MessageSquare,
+    'lead.waiting': Clock,
+    'real_estate.match': House,
+    'education.seat_open': Armchair
   };
 
   /**
@@ -83,7 +103,7 @@
    * fallback for the ones that do not. `case.sla_breached` becomes
    * "sla breached" and not `case.sla_breached`.
    */
-  function verbPhrase(n) {
+  function verbPhrase(n: Row) {
     if (n.verb === 'case.mentioned') return m.app_notifications_verb_mentioned();
     if (n.verb === 'case.commented') return m.app_notifications_verb_commented();
     if (n.verb === 'support.replied') return m.app_notifications_verb_replied();
@@ -91,15 +111,48 @@
     return `${n.verb.replace(/^[^.]+\./, '').replace(/_/g, ' ')}, `;
   }
 
-  function isAutomation(n) {
+  /* The wording of the push, so the bell and the phone say the same thing. */
+  const LEAD_COPY: Record<string, (v: { name: string }) => string> = {
+    'lead.assigned': m.app_notifications_lead_assigned,
+    'lead.created': m.app_notifications_lead_created,
+    'lead.enquired': m.app_notifications_lead_enquired,
+    'lead.waiting': m.app_notifications_lead_waiting,
+    'real_estate.match': m.app_notifications_real_estate_match,
+    'education.seat_open': m.app_notifications_seat_open
+  };
+
+  /** The sentence around the linked name, split where the locale puts the name. */
+  function leadCopy(n: Row): [string, string] | null {
+    const copy = LEAD_COPY[n.verb];
+    if (!copy) return null;
+    const pieces = parts(copy({ name: slot('name') }));
+    const at = pieces.findIndex((p) => p.key === 'name');
+    const join = (list: typeof pieces) => list.map((p) => p.text).join('');
+    return [join(pieces.slice(0, at)), join(pieces.slice(at + 1))];
+  }
+
+  function entityLabel(n: Row) {
+    return (
+      n.entity_name ||
+      (n.verb.startsWith('lead.') ? m.app_notifications_a_lead() : m.app_notifications_a_record())
+    );
+  }
+
+  function leadSource(n: Row) {
+    if (!n.verb.startsWith('lead.')) return '';
+    const source = n.data?.source;
+    return typeof source === 'string' && source ? ` (${source})` : '';
+  }
+
+  function isAutomation(n: Row) {
     return n.verb?.startsWith('automation.');
   }
 
-  function isTicketVerb(n) {
+  function isTicketVerb(n: Row) {
     return n.verb?.startsWith('case.') || n.verb?.startsWith('support.');
   }
 
-  function isSupportNotification(n) {
+  function isSupportNotification(n: Row) {
     return n.verb?.startsWith('support.');
   }
 
@@ -119,7 +172,7 @@
   /* Persist to a page action. `keepalive` so the write survives the navigation
      that a link click starts, clicking a notification both opens the ticket
      AND marks it read, and the read must not be cancelled mid-flight. */
-  async function post(/** @type {string} */ action, /** @type {FormData} */ body) {
+  async function post(action: string, body: FormData) {
     const res = await fetch(action, { method: 'POST', body, keepalive: true });
     return deserialize(await res.text());
   }
@@ -127,7 +180,7 @@
   /* Marking read is optimistic, the dot clears immediately, then persisted.
      If the API refuses (or the network fails) the change is put back, so the
      page never shows a state the server did not accept. */
-  async function markRead(/** @type {any} */ n) {
+  async function markRead(n: Row) {
     if (n.read_at !== null) return;
     n.read_at = new Date().toISOString();
     const body = new FormData();
@@ -204,6 +257,7 @@
         {#each visible as n (n.id)}
           {@const Icon = ICON[n.verb] ?? Bell}
           {@const auto = notificationText(n, data.org?.timezone ?? 'UTC')}
+          {@const copy = leadCopy(n)}
           <li class="row" class:read={n.read_at !== null}>
             <span class="mark" aria-hidden="true">
               {#if n.read_at === null}<i class="dot"></i>{/if}
@@ -213,39 +267,47 @@
 
             <div class="body">
               <p class="line">
-                {#if isSupportNotification(n)}
-                  <b class="system">{m.app_notifications_support()}</b>
-                {:else if n.actor}
-                  <Avatar name={actorName(n)} size={17} />
-                  <b>{actorName(n)}</b>
-                {:else}
-                  <b class="system">{m.app_notifications_system()}</b>
-                {/if}
-                {#if isAutomation(n)}
-                  {#if n.resolved_link}
-                    <a
-                      class="auto-text"
+                {#if copy}
+                  {@const [before, after] = copy}
+                  {before}{#if n.resolved_link}<a
                       href={resolve(asInternalPath(n.resolved_link))}
-                      onclick={() => markRead(n)}>{auto?.text ?? automationFallback()}</a
-                    >
-                  {:else}
-                    <span class="auto-text">{auto?.text ?? automationFallback()}</span>
-                  {/if}
+                      onclick={() => markRead(n)}>{entityLabel(n)}</a
+                    >{:else}<span class="entity">{entityLabel(n)}</span>{/if}{leadSource(n)}{after}
                 {:else}
-                  {verbPhrase(n)}
-                {/if}
-                {#if isAutomation(n)}
-                  <!-- the sentence above carries the link -->
-                {:else if n.entity_name}
-                  {#if n.resolved_link}
-                    <a href={resolve(asInternalPath(n.resolved_link))} onclick={() => markRead(n)}
-                      >{n.entity_name}</a
-                    >
+                  {#if isSupportNotification(n)}
+                    <b class="system">{m.app_notifications_support()}</b>
+                  {:else if n.actor}
+                    <Avatar name={actorName(n)} size={17} />
+                    <b>{actorName(n)}</b>
                   {:else}
-                    <span class="entity">{n.entity_name}</span>
+                    <b class="system">{m.app_notifications_system()}</b>
                   {/if}
-                {:else if isTicketVerb(n)}
-                  <span class="entity v2-muted">{m.app_notifications_unnamed_ticket()}</span>
+                  {#if isAutomation(n) || auto}
+                    {#if n.resolved_link}
+                      <a
+                        class="auto-text"
+                        href={resolve(asInternalPath(n.resolved_link))}
+                        onclick={() => markRead(n)}>{auto?.text ?? automationFallback()}</a
+                      >
+                    {:else}
+                      <span class="auto-text">{auto?.text ?? automationFallback()}</span>
+                    {/if}
+                  {:else}
+                    {verbPhrase(n)}
+                  {/if}
+                  {#if isAutomation(n) || auto}
+                    <!-- the sentence above carries the link -->
+                  {:else if n.entity_name}
+                    {#if n.resolved_link}
+                      <a href={resolve(asInternalPath(n.resolved_link))} onclick={() => markRead(n)}
+                        >{n.entity_name}</a
+                      >
+                    {:else}
+                      <span class="entity">{n.entity_name}</span>
+                    {/if}
+                  {:else if isTicketVerb(n)}
+                    <span class="entity v2-muted">{m.app_notifications_unnamed_ticket()}</span>
+                  {/if}
                 {/if}
               </p>
 

@@ -262,7 +262,7 @@
   "settingsWebFormCustomField": "Custom field",
   "settingsWebFormsTitle": "Web forms",
   "settingsWebFormsNew": "New web form",
-  "settingsWebFormsNothingToCreate": "Web forms create leads or tickets, and both are switched off. An admin can switch one on in Modules settings.",
+  "settingsWebFormsNothingToCreate": "Web forms create leads or tickets, and both are switched off. An admin can switch one on in Apps settings.",
   "settingsWebFormsEachSubmissionCreates": "Each submission creates",
   "settingsWebFormsTargetLead": "A lead",
   "settingsWebFormsTargetTicket": "A ticket",
@@ -1613,7 +1613,7 @@
   "settingsMailboxFormAddress": "Address",
   "settingsMailboxFormAddressHint": "Mail to the old address stops becoming tickets.",
   "settingsMailboxFormProvider": "Provider",
-  "settingsMailboxFormProviderHint": "Only AWS SES is implemented. Mail to an address using one of the others becomes nothing until that integration exists.",
+  "settingsMailboxFormProviderHint": "AWS SES, Postmark and Mailgun deliver. Mail to an IMAP address becomes nothing until that integration exists.",
   "settingsMailboxFormTopicHint": "Mail is accepted only from this exact topic. Left blank, it is set by the first subscription AWS confirms from an AWS account this server allows. Clearing it stops mail until it is set again.",
   "settingsMailboxFormSectionOpensAs": "What a ticket opens as",
   "settingsMailboxFormType": "Type",
@@ -1910,7 +1910,6 @@
   "settingsOrgCascade": "Close child tickets with the parent",
   "settingsOrgCascadeTicked": "Starts ticked",
   "settingsOrgCascadeUnticked": "Starts unticked",
-  "settingsOrgSectionPack": "Vertical pack",
   "settingsOrgUnnamed": "Unnamed organization",
   "settingsOrgMemberCount": "{count, plural, =1{1 member} other{{count} members}}",
   "@settingsOrgMemberCount": {
@@ -1923,30 +1922,6 @@
   "settingsOrgNotRecorded": "Not recorded",
   "settingsOrgPrintedNote": "These fields are printed on every invoice and estimate. Changing one changes documents from that moment on; PDFs already sent keep what they were sent with.",
   "settingsOrgApiKeyNote": "The organization API key is not here. It authenticates as the whole organization, so it is never shown on a page you can reach by browsing. For per-person programmatic access, use API tokens, which can be revoked one at a time.",
-  "settingsOrgApplyTitle": "Apply \"{name}\"?",
-  "@settingsOrgApplyTitle": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "settingsOrgApplyBody": "This adds starter pipelines, tags, custom fields and a set of sample records. Anything already set up is left exactly as it is.",
-  "settingsOrgApplyBodyProducts": "This adds starter pipelines, tags, custom fields, products and a set of sample records. Anything already set up is left exactly as it is.",
-  "settingsOrgApply": "Apply",
-  "settingsOrgClearTitle": "Clear sample data?",
-  "settingsOrgClearBody": "Permanently deletes every sample record a pack created for this organization. Your real records are never touched, and any sample record you have since attached real work to is kept. This cannot be undone.",
-  "settingsOrgClear": "Clear",
-  "settingsOrgFirstPack": "First pack applied",
-  "settingsOrgNoneYet": "None yet",
-  "settingsOrgPackBody": "A pack adds starter pipelines, tags, custom fields and sample records for one kind of business. Applying one only fills in what this organization is missing.",
-  "settingsOrgPackBodyProducts": "A pack adds starter pipelines, tags, custom fields, products and sample records for one kind of business. Applying one only fills in what this organization is missing.",
-  "settingsOrgAdminsOnly": "Applying a pack or clearing sample data is limited to administrators.",
-  "settingsOrgNoPacks": "No packs available right now.",
-  "settingsOrgClearButton": "Clear sample data",
-  "settingsOrgClearHint": "Removes only the records a pack created as samples. Your real records are never touched.",
-  "settingsOrgApplied": "Applied",
-  "settingsOrgApplyAgain": "Apply again",
   "settingsOrgLoadFailed": "Could not load the organization",
   "settingsOrgTryAgain": "Try again",
   "settingsOrgEditTitle": "Edit organization",
@@ -2421,5 +2396,374 @@
   "settingsTagsEmptyTitle": "No tags yet",
   "settingsTagsEmptyAdmin": "Tags are shared across every record type, so the first one is worth naming carefully.",
   "settingsTagsEmptyMember": "An administrator adds these.",
-  "settingsTagsLoadError": "Could not load the tags"
+  "settingsTagsLoadError": "Could not load the tags",
+  "settingsAppsPreviewFailed": "Could not load what this would change.",
+  "settingsAppsInstalled": "{name} installed.",
+  "@settingsAppsInstalled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsUpdated": "{name} updated.",
+  "@settingsAppsUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsRemoved": "{name} removed. Every record stays.",
+  "@settingsAppsRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsClearTitle": "Clear sample data?",
+  "settingsAppsClearBody": "Permanently deletes every sample record an app created for this organization. Your real records are never touched, and any sample record you have since attached real work to is kept. This cannot be undone.",
+  "settingsAppsClear": "Clear",
+  "settingsAppsModulesTitle": "Modules",
+  "settingsAppsTitle": "Apps",
+  "settingsAppsPartsWithProducts": "fields, pipelines, tags, lead sources and products",
+  "settingsAppsParts": "fields, pipelines, tags and lead sources",
+  "settingsAppsIndustryApps": "Industry apps",
+  "settingsAppsIntro": "Each sets BottleCRM up for one kind of business: its wording, {parts}. You see what changes before anything does, and removing an app keeps every record.",
+  "@settingsAppsIntro": {
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsStatusRemoved": "Removed. Its records stay, and installing again turns its parts back on.",
+  "settingsAppsVersionInstalled": "Version {version} installed",
+  "@settingsAppsVersionInstalled": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsInstalledBy": " by {name}",
+  "@settingsAppsInstalledBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsInstalledOn": " on {date}",
+  "@settingsAppsInstalledOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsUpdateSkipped": " An update adds the parts skipped while a module was off.",
+  "settingsAppsVersionAvailable": " Version {version} is available.",
+  "@settingsAppsVersionAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsSwitchOn": "{count, plural, =1{ Switch it on below, then update to add them.} other{ Switch them on below, then update to add them.}}",
+  "@settingsAppsSwitchOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppsUpdateAddsNow": " Update adds them now.",
+  "settingsAppsSkipped": "{count, plural, =1{Parts for {names} were skipped because that module was off.} other{Parts for {names} were skipped because those modules were off.}}",
+  "@settingsAppsSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsBadgeInstalled": "Installed",
+  "settingsAppsBadgeRemoved": "Removed",
+  "settingsAppsInstall": "Install",
+  "settingsAppsUpdate": "Update",
+  "settingsAppsRemove": "Remove",
+  "settingsAppsClearButton": "Clear sample data",
+  "settingsAppsClearHint": "Removes only the records an app added as samples. Your real records are never touched.",
+  "settingsAppsLoadFailed": "Could not load the apps.",
+  "settingsAppsMemberNotice": "Only an organization admin can manage apps and modules.",
+  "settingsAppPreviewInstallTitle": "Install {name}?",
+  "@settingsAppPreviewInstallTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewUpdateTitle": "Update {name}?",
+  "@settingsAppPreviewUpdateTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewRemoveTitle": "Remove {name}?",
+  "@settingsAppPreviewRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewInstallLead": "This is what it adds. Anything this organization already has is kept as it is, and no record changes.",
+  "settingsAppPreviewUpdateLead": "This adds what is listed. Nothing you already have changes, and anything you deleted stays deleted.",
+  "settingsAppPreviewRemoveLead": "This turns off what is listed. Every record stays, pipelines and tags included, and installing again brings it all back.",
+  "settingsAppPreviewInstallEmpty": "This organization already has everything this app sets up.",
+  "settingsAppPreviewUpdateEmpty": "There is nothing new to add.",
+  "settingsAppPreviewRemoveEmpty": "There is nothing to turn off.",
+  "settingsAppPreviewHandWork": "Stages marked Add by hand are new in this version, but their pipeline is already here, so the update leaves them out. Add them to that pipeline yourself if you want them.",
+  "settingsAppPreviewSampleTitle": "Add sample records",
+  "settingsAppPreviewSampleCount": "{count} example records to try it with. Clear sample data removes them.",
+  "@settingsAppPreviewSampleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppPreviewSample": "Example records to try it with. Clear sample data removes them.",
+  "settingsLeadCaptureTitle": "Lead capture",
+  "settingsLeadCaptureWebForms": "Web forms",
+  "settingsLeadCaptureWebFormsHint": "Forms you embed on your own site",
+  "settingsLeadCaptureWebhooksFailed": "Could not load the webhooks.",
+  "settingsLeadCaptureNoWebhooks": "No webhooks yet. Create one on the web, where its fields are mapped. Here you can copy its URL, replace its key, switch it off and read its deliveries.",
+  "settingsLeadCaptureWebhooks": "Webhooks",
+  "settingsLeadCaptureUntitledWebhook": "Untitled webhook",
+  "settingsLeadCaptureNothingYet": "{preset} · nothing received yet",
+  "@settingsLeadCaptureNothingYet": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadCaptureLastPost": "{preset} · last post {when}",
+  "@settingsLeadCaptureLastPost": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadCaptureAddressAdded": "Address added",
+  "settingsLeadCaptureAddressSaved": "Address saved",
+  "settingsLeadCaptureAddressOff": "Address turned off",
+  "settingsLeadCaptureAddressOn": "Address turned on",
+  "settingsLeadCaptureAddresses": "Lead addresses",
+  "settingsLeadCaptureAddressesFailed": "Could not load the lead addresses.",
+  "settingsLeadCaptureNoAddresses": "No lead address yet. Forward an enquiry to one, or point a portal's notification emails at it, and each email becomes a lead.",
+  "settingsLeadCaptureAddAddress": "Add a lead address",
+  "settingsLeadCaptureTurnOff": "Turn off",
+  "settingsLeadCaptureTurnOn": "Turn on",
+  "settingsLeadCaptureKeyTitle": "Copy the new key now",
+  "settingsLeadCaptureKeyBody": "This is the only time the key is shown. Paste it into the tool that posts to this webhook; replace it again if it is lost.",
+  "settingsLeadCaptureKeyCopied": "Key copied",
+  "settingsLeadCaptureCopy": "Copy",
+  "settingsLeadIntakeUrlCopied": "URL copied",
+  "settingsLeadIntakeReplaceTitle": "Replace the key?",
+  "settingsLeadIntakeReplaceBody": "The current key keeps working for 7 days, so there is time to update whatever posts here. The URL stays the same.",
+  "settingsLeadIntakeReplaceKey": "Replace key",
+  "settingsLeadIntakeTurnedOff": "Turned off",
+  "settingsLeadIntakeTurnedOn": "Turned on",
+  "settingsLeadIntakeTitle": "Webhook",
+  "settingsLeadIntakeNotOffered": "This server has no lead webhooks.",
+  "settingsLeadIntakeLoadFailed": "Could not load the webhook.",
+  "settingsLeadIntakeMissing": "That webhook does not exist.",
+  "settingsLeadIntakeCopyUrl": "Copy URL",
+  "settingsLeadIntakeFieldMapping": "Field mapping",
+  "settingsLeadIntakeMappingOnWeb": "The mapping is edited on the web.",
+  "settingsLeadIntakeDeliveries": "Deliveries",
+  "settingsLeadIntakeKeyHidden": "Key hidden",
+  "settingsLeadIntakeKeyEnding": "Key ending {hint}",
+  "@settingsLeadIntakeKeyEnding": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeArriveAs": "Leads arrive as {source}",
+  "@settingsLeadIntakeArriveAs": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeArriveAsDetail": "Leads arrive as {source}, {detail}",
+  "@settingsLeadIntakeArriveAsDetail": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeNothingYet": "Nothing received yet",
+  "settingsLeadIntakeLastPost": "Last post {when}",
+  "@settingsLeadIntakeLastPost": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeAuthHint": "Send the key in an Authorization: Bearer header. Tools that only take a URL can add ?key= to it, but servers log URLs, so the header is safer.",
+  "settingsLeadIntakeDeliveriesFailed": "Could not load the deliveries. Pull to refresh.",
+  "settingsLeadIntakeNothingYetDot": "Nothing received yet.",
+  "settingsLeadIntakeExternalId": "id {id}",
+  "@settingsLeadIntakeExternalId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeAdminsOnly": "Administrators only",
+  "settingsLeadIntakeAdminsOnlyBody": "A webhook's URL and key let anything that holds them create leads in this organization, so only administrators can see or change them.",
+  "settingsLeadSourcesNew": "New source",
+  "settingsLeadSourcesAdded": "Source added",
+  "settingsLeadSourcesRenameTitle": "Rename {label}",
+  "@settingsLeadSourcesRenameTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesRenamed": "Source renamed",
+  "settingsLeadSourcesRetiredMsg": "Source retired",
+  "settingsLeadSourcesRestoredMsg": "Source restored",
+  "settingsLeadSourcesTitle": "Lead sources",
+  "settingsLeadSourcesRetiredNote": "A retired source stays on the leads, contacts and deals that have it, and cannot be picked for new ones. Sources are never deleted.",
+  "settingsLeadSourcesLabel": "Label",
+  "settingsLeadSourcesLabelHint": "Spring open day",
+  "settingsLeadSourcesRetiredBadge": "Retired",
+  "settingsLeadSourcesMoveUp": "Move {label} up",
+  "@settingsLeadSourcesMoveUp": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesMoveDown": "Move {label} down",
+  "@settingsLeadSourcesMoveDown": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesRename": "Rename",
+  "settingsLeadSourcesRetire": "Retire",
+  "settingsLeadSourcesRestore": "Restore",
+  "settingsLeadSourcesNotOffered": "This server has a fixed list of lead sources, so they cannot be changed here. A newer server lets an admin edit them.",
+  "settingsLeadSourcesLoadFailed": "Could not load the lead sources",
+  "settingsHubApps": "Apps",
+  "settingsHubAppsBody": "Industry apps, and the parts of BottleCRM this organization uses",
+  "settingsProfileSectionAlerts": "Alerts",
+  "settingsProfileLeadAlertsEmail": "Lead alerts by email",
+  "settingsProfileLeadAlertsEmailBody": "An email when a lead is assigned to you or enquires again",
+  "settingsProfileLeadAlertsPush": "Lead alerts on the phone",
+  "settingsProfileLeadAlertsPushBody": "A notification on this and your other phones",
+  "settingsOrgPlan": "Plan",
+  "settingsOrgEditSectionLeads": "Leads",
+  "settingsOrgEditLeadReminder": "Remind the assignee when a lead waits more than",
+  "settingsOrgEditLeadReminderHint": "Sent once per enquiry, to the assignee, or to the admins when nobody has the lead.",
+  "settingsOrgEditLeadReminderOff": "Off",
+  "settingsOrgEditLeadReminderMinutes": "{count, plural, one{{count} minute} other{{count} minutes}}",
+  "@settingsOrgEditLeadReminderMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMailboxFormCreates": "Mail here creates",
+  "settingsMailboxFormCreatesTickets": "Tickets",
+  "settingsMailboxFormCreatesLeads": "Leads",
+  "settingsMailboxFormGenerate": "Generate an address",
+  "settingsMailboxFormGenerateHint": "A new address at {domain}, ready to use. Nothing to set up with a mail provider.",
+  "@settingsMailboxFormGenerateHint": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormAddressHintLeads": "Mail to the old address stops becoming leads.",
+  "settingsMailboxFormSectionLeadArrives": "What a lead arrives with",
+  "settingsMailboxFormSubSource": "Sub-source (optional)",
+  "settingsMailboxFormAssigneeHintLeads": "Owns every lead this address makes.",
+  "settingsMailboxFormUnassignedLeads": "Unassigned",
+  "settingsMailboxFormDeactivatedHintLeads": "Deactivated users are not assigned. New leads from this address stay unassigned until you choose someone else.",
+  "settingsMailboxFormSecretPassword": "Basic-auth password",
+  "settingsMailboxFormSecretSigningKey": "Webhook signing key",
+  "settingsMailboxFormSecretStored": "A secret is stored. It is never shown; leave blank to keep it.",
+  "settingsMailboxFormSecretMissing": "No secret is stored, so every post to this address is refused.",
+  "settingsMailboxFormSecretPostmark": "Postmark sends it as the basic-auth password in the webhook URL.",
+  "settingsMailboxFormSecretMailgun": "This is your Mailgun account's HTTP webhook signing key.",
+  "settingsMailboxFormWebhookUrl": "Inbound webhook URL: {url}",
+  "@settingsMailboxFormWebhookUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormRouteAction": "Route action: {url}",
+  "@settingsMailboxFormRouteAction": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormSetupUrlLater": "The setup URL appears here once the address is saved.",
+  "settingsMailboxFormLeadSource": "Lead source",
+  "settingsMailboxFormSourcesFailed": "Could not load the sources. Close this and try again.",
+  "settingsMailboxFormSourcesLoading": "Loading the sources.",
+  "settingsProfileAlertsFailed": "Could not change that setting",
+  "settingsInboundEmailStatLeads": "creating leads",
+  "settingsHubLeadSources": "Lead sources",
+  "settingsHubLeadSourcesBody": "Where leads come from, as the pickers list it",
+  "settingsHubLeadCapture": "Lead capture",
+  "settingsHubLeadCaptureBody": "Web forms, webhooks and email addresses that bring leads in",
+  "settingsMoreProjects": "Projects",
+  "settingsMoreProjectsBody": "Client work, its time, budget and invoices",
+  "settingsWebhookFormFormatTeams": "Teams message",
+  "settingsObjectSettingsSaved": "Saved",
+  "settingsObjectSettingsAccessFailed": "Could not save who sees records.",
+  "settingsObjectSettingsGroupBoardBy": "Group the board by",
+  "settingsObjectSettingsBoardNeedsDropdown": "Add a dropdown field to group records on a board.",
+  "settingsObjectSettingsBoardOff": "Board turned off",
+  "settingsObjectSettingsBoardSaved": "Board field saved",
+  "settingsObjectSettingsBoardFailed": "Could not save the board field.",
+  "settingsObjectSettingsWhoSees": "Who sees records"
 }

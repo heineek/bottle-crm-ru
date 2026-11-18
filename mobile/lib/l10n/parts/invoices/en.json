@@ -514,5 +514,51 @@
   "invoicesTemplateLogoSet": "A logo is already set. Choosing one replaces it.",
   "invoicesTemplateNoLogo": "No logo. Invoices print with the org name instead.",
   "invoicesTemplateReplaceLogo": "Replace logo",
-  "invoicesTemplateAddLogo": "Add logo"
+  "invoicesTemplateAddLogo": "Add logo",
+  "invoicesCustomFields": "Custom fields",
+  "invoicesCustomFieldsRequired": "Fill in the required custom fields.",
+  "invoicesEditFields": "Edit fields",
+  "invoicesFieldsSaved": "Fields saved",
+  "invoicesDepositTooLow": "A deposit must be more than 0%.",
+  "invoicesDepositTooHigh": "A deposit cannot be more than 100%.",
+  "invoicesDepositLabel": "Deposit on acceptance",
+  "invoicesDepositNone": "None",
+  "invoicesDepositInvoice": "deposit invoice",
+  "invoicesDepositInvoiceWithTax": "deposit invoice, with tax",
+  "invoicesDepositRoundsToZero": "Rounds to 0.00, so no deposit invoice is drafted.",
+  "invoicesDepositInvoiceNumber": "Deposit invoice {number}",
+  "@invoicesDepositInvoiceNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRaiseFullTitle": "Raise the full invoice?",
+  "invoicesRaiseFullBody": "{which} for {amount} is not taken off automatically. Edit the new invoice before you send it.",
+  "@invoicesRaiseFullBody": {
+    "placeholders": {
+      "which": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRaiseInvoice": "Raise invoice",
+  "invoicesEstimateProject": "Project",
+  "invoicesEstimateProjectNamed": "Project: {name}",
+  "@invoicesEstimateProjectNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateWhenAccepted": "When the client accepts",
+  "invoicesEstimateStartProject": "Start a project when accepted",
+  "invoicesEstimateProjectBilling": "Project billing",
+  "invoicesEstimateIntroduction": "Introduction (optional)",
+  "invoicesEstimateIntroductionHelp": "Shown to the client above the lines"
 }

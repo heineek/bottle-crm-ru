@@ -116,5 +116,37 @@
   "profile_feed_apple": "Календарь Apple",
   "profile_feed_apple_body": "Выберите «Файл», затем «Новая подписка на календарь» и вставьте URL ленты.",
   "profile_feed_key_title": "URL и есть ключ",
-  "profile_feed_key_body": "Любой, у кого он есть, видит названия и приоритеты ваших открытых задач без входа в систему. Не передавайте его никому, кроме своего календаря, и создайте новый, если он утёк. Он сам перестанет работать, если вы покинете организацию или вашу учётную запись деактивируют."
+  "profile_feed_key_body": "Любой, у кого он есть, видит названия и приоритеты ваших открытых задач без входа в систему. Не передавайте его никому, кроме своего календаря, и создайте новый, если он утёк. Он сам перестанет работать, если вы покинете организацию или вашу учётную запись деактивируют.",
+  "profile_alerts_label": "Оповещения",
+  "profile_alerts_email_title": "Оповещения о лидах по почте",
+  "profile_alerts_email_hint": "Письмо, когда вам назначают лида или он обращается повторно.",
+  "profile_alerts_push_title": "Оповещения о лидах на телефоне",
+  "profile_alerts_push_hint": "Push-уведомление в приложение BottleCRM. Уведомления внутри приложения приходят всегда.",
+  "profile_alerts_read_more": "Подробнее",
+  "profile_alerts_save": "Сохранить оповещения",
+  "profile_alerts_saved": "Сохранено.",
+  "profile_alerts_save_failed": "Не удалось сохранить настройки оповещений.",
+  "profile_lead_alert_minutes": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} минута",
+        "countPlural=few": "{countShown} минуты",
+        "countPlural=many": "{countShown} минут",
+        "countPlural=other": "{countShown} минуты"
+      }
+    }
+  ],
+  "profile_lead_alert_off": "Выкл.",
+  "profile_webhook_format_json": "Подписанный JSON (Zapier, n8n, ваш собственный код)",
+  "profile_webhook_format_json_short": "Подписанное сообщение JSON",
+  "profile_webhook_format_slack": "Сообщение в Slack (URL входящего вебхука)",
+  "profile_webhook_format_slack_short": "Сообщение в Slack",
+  "profile_webhook_format_teams": "Сообщение в Teams (URL вебхука Workflows)",
+  "profile_webhook_format_teams_short": "Сообщение в Teams"
 }

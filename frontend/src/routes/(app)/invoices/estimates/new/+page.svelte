@@ -1,5 +1,7 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
+  import type { FormBody } from '#lib/api-helpers.js';
+  import type { components } from '#lib/api-schema.js';
   /**
    * New estimate.
    *
@@ -21,6 +23,7 @@
    */
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import SectionTabs from '#lib/v2/components/SectionTabs.svelte';
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
@@ -40,9 +43,24 @@
   import { numberPattern } from '#lib/v2/document-numbers.js';
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
+  import { isOrgAdmin } from '#lib/admin.js';
+  import { money } from '#lib/v2/format.js';
+  import { BILLING_TYPE_LABEL } from '#lib/v2/projects.js';
+  import {
+    depositRoundsToZero,
+    INTRODUCTION_MAX,
+    PROJECT_BILLING_TYPES,
+    depositAmount,
+    depositOffer,
+    depositPercentError,
+    proposalFields
+  } from '#lib/v2/estimates.js';
+  import type { Figure } from '#lib/v2/line-items.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  type Schemas = components['schemas'];
+
+  let { data, form }: PageProps = $props();
 
   const CURRENCIES = CURRENCY_CODES.filter((c) => c.value);
   // The org's day: a UTC date is yesterday for a morning east of UTC.
@@ -58,7 +76,7 @@
     const p = data.prefill;
     const account = p && data.accounts.some((a) => a.id === p.account_id) ? p.account_id : '';
     const contact =
-      (p?.contact_ids ?? []).find((/** @type {string} */ id) =>
+      (p?.contact_ids ?? []).find((id: string) =>
         data.contacts.some((c) => c.id === id && (!c.account_id || c.account_id === account))
       ) ?? '';
     const deal =
@@ -94,6 +112,13 @@
   let notes = $state('');
   let terms = $state('');
   let items = $state(start.items);
+  let introduction = $state('');
+  let depositPercent: Figure = $state(null);
+  let startProject = $state(false);
+  let billingType = $state('fixed_fee');
+  let projectsOn = $derived(isOn(data.modules, 'projects'));
+  /* Starting a project on acceptance is an admin's call; the API refuses anyone else. */
+  let isAdmin = $derived(isOrgAdmin(data));
 
   /* The invoice builder's rule: a contact bound to another account is a 400. */
   let contactOptions = $derived(
@@ -116,6 +141,21 @@
   let taxError = $derived(taxRateError(taxRate));
   /* Only a line started from the deal carries a discount of its own. */
   let linesOk = $derived(!usableLines.some(lineDiscountError));
+  let depositError = $derived(depositPercentError(depositPercent));
+  let deposit = $derived(
+    depositAmount({
+      subtotal: totals.subtotal,
+      discountAmount: totals.discountAmount,
+      taxRate,
+      percent: depositPercent
+    })
+  );
+  /* A deposit that rounds to 0.00 drafts no invoice, so the client is promised none. */
+  let depositLine = $derived(
+    deposit && deposit.total > 0
+      ? depositOffer({ percent: depositPercent, amount: deposit.total, currency })
+      : null
+  );
 
   let ready = $derived(
     Boolean(accountId) &&
@@ -125,6 +165,7 @@
       !datesBackwards &&
       !discountError &&
       !taxError &&
+      !depositError &&
       linesOk
   );
 
@@ -135,14 +176,21 @@
 
   /** The builder as the API body; only what `EstimateCreateSerializer` accepts. */
   let payload = $derived.by(() => {
-    /** @type {Record<string, any>} */
-    const body = {
+    const body: FormBody<Schemas['EstimateBodyRequest']> = {
       title: title.trim(),
       account_id: accountId,
       contact_id: contactId,
       currency,
       issue_date: issueDate,
-      line_items: linePayload(usableLines)
+      line_items: linePayload(usableLines),
+      ...proposalFields({
+        introduction,
+        depositPercent,
+        startProject,
+        billingType,
+        projectsOn,
+        isAdmin
+      })
     };
     if (dealId) body.opportunity_id = dealId;
     if (expiryDate) body.expiry_date = expiryDate;
@@ -286,6 +334,19 @@
           {/if}
         </div>
 
+        <div class="v2-card" style="padding:16px 18px;margin-top:14px">
+          <label class="f">
+            <span
+              >{m.invoices_proposal_introduction()} <span class="opt">{m.invoices_form_optional()}</span></span
+            >
+            <textarea
+              rows="5"
+              maxlength={INTRODUCTION_MAX}
+              bind:value={introduction}
+              placeholder={m.invoices_proposal_introduction_placeholder()}></textarea>
+          </label>
+        </div>
+
         <LineItemsEditor bind:items products={data.products} {currency} />
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
@@ -338,6 +399,62 @@
         </div>
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_proposal_on_accept()}</div>
+          <div class="beside">
+            <label class="f">
+              <span>{m.invoices_proposal_deposit_percent()}</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder={m.invoices_proposal_no_deposit()}
+                bind:value={depositPercent}
+                aria-invalid={Boolean(depositError)}
+                aria-describedby={depositError ? 'deposit-error' : undefined}
+              />
+            </label>
+            {#if deposit && deposit.total > 0}
+              <span class="v2-num deposit-amount">
+                {num(taxRate)
+                  ? m.invoices_proposal_deposit_with_tax({ amount: money(deposit.total, currency) })
+                  : money(deposit.total, currency)}
+              </span>
+            {/if}
+          </div>
+          {#if depositError}
+            <small id="deposit-error" class="field-err" role="alert">{depositError}</small>
+          {:else if deposit && deposit.total === 0}
+            <p class="hint">{depositRoundsToZero()}</p>
+          {/if}
+          <p class="hint">{m.invoices_proposal_deposit_never_sent()}</p>
+
+          {#if projectsOn && isAdmin}
+            <label class="check">
+              <input type="checkbox" bind:checked={startProject} />
+              <span>{m.invoices_proposal_start_project()}</span>
+            </label>
+            {#if startProject}
+              <label class="f" style="margin-top:12px">
+                <span>{m.invoices_proposal_project_billing()}</span>
+                <select bind:value={billingType}>
+                  {#each PROJECT_BILLING_TYPES as t (t)}
+                    <option value={t}>{BILLING_TYPE_LABEL[t]}</option>
+                  {/each}
+                </select>
+              </label>
+              <p class="hint">
+                {#if billingType === 'non_billable'}
+                  {m.invoices_proposal_project_gets()}
+                {:else}
+                  {m.invoices_proposal_project_gets_budget()}
+                {/if}
+              </p>
+            {/if}
+          {/if}
+        </div>
+
+        <div class="v2-card" style="padding:16px 18px;margin-top:14px">
           <label class="f">
             <span>{m.invoices_form_notes()}</span>
             <textarea
@@ -353,6 +470,16 @@
               placeholder={m.invoices_estimate_terms_placeholder()}></textarea>
           </label>
         </div>
+        {#if data.customFields?.length}
+          <div class="v2-card" style="padding:16px 18px;margin-top:14px">
+            <div class="v2-label" style="margin-bottom:12px">{m.common_details()}</div>
+            <RecordFieldInputs
+              fields={data.customFields}
+              errors={form?.fieldErrors}
+              form="estimate-form"
+            />
+          </div>
+        {/if}
       </div>
 
       <div>
@@ -361,6 +488,9 @@
             <span class="v2-label">{m.invoices_form_preview_title()}</span>
           </div>
           <div style="padding:14px 16px 16px">
+            {#if introduction.trim()}
+              <p class="intro">{introduction.trim()}</p>
+            {/if}
             {#if usableLines.length}
               <PortalLineItems
                 items={usableLines}
@@ -373,6 +503,9 @@
                 taxAmount={totals.taxAmount}
                 total={totals.total}
               />
+              {#if depositLine}
+                <p class="hint">{depositLine}</p>
+              {/if}
             {:else}
               <p class="empty">
                 {m.invoices_form_preview_empty()}
@@ -460,6 +593,40 @@
     font-size: 11.5px;
     color: var(--v2-slate);
     line-height: 1.5;
+  }
+  .beside {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  .beside .f {
+    flex: 0 1 220px;
+  }
+  .deposit-amount {
+    line-height: 44px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-top: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .check input {
+    width: auto;
+    min-height: 0;
+  }
+  .intro {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   .warn {
     margin: 12px 0 0;

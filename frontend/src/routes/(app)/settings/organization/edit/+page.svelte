@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Editing the organisation.
@@ -39,36 +39,47 @@
   import { sortedCountries } from '#lib/constants/countries.js';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
-  import { m } from '#lib/paraglide/messages.js';
+  import { isLocale, locales } from '#lib/paraglide/runtime.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
-  import { locales } from '#lib/paraglide/runtime.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { components } from '#lib/api-schema.js';
+  import {
+    DOCS_LEAD_ALERTS,
+    REMINDER_CHOICES,
+    reminderExtra,
+    reminderLabel
+  } from '#lib/v2/lead-alerts.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   // A switched-off module's fields are left out, and the save sends only what
   // the form submits, so their stored values stay as they are.
   let invoicesOn = $derived(isOn(data.modules, 'invoices'));
   let ticketsOn = $derived(isOn(data.modules, 'tickets'));
+  let leadsOn = $derived(isOn(data.modules, 'leads'));
 
   // A supported currency is required (the column is non-blank with a default),
   // so the empty "Select Currency" placeholder is dropped from the options.
-  const currencyOptions = CURRENCY_CODES.filter((/** @type {any} */ c) => c.value);
+  const currencyOptions = CURRENCY_CODES.filter((c) => c.value);
 
   // The full list the backend COUNTRIES accepts, so every stored code has an
   // option. A code missing here would leave the select on its first entry and
   // the next save would silently clear the org's country.
   const countryOptions = sortedCountries().map((c) => ({ value: c.code, label: c.name }));
 
-  const org = untrack(() => data.org ?? {});
+  const org: Partial<components['schemas']['OrgSettings']> = untrack(() => data.org ?? {});
   // Always includes the org's current value, because the API builds the list
   // from the same database the value was validated against. A stored zone with
   // no matching option would make the select submit its first entry instead.
+  const reminderOptions = [...REMINDER_CHOICES, ...reminderExtra(org.lead_reminder_minutes)].sort(
+    (a, b) => a - b
+  );
   const timezones = untrack(() => data.timezones ?? [{ name: 'UTC', label: 'UTC' }]);
   // A stored language this build has no messages for still needs an option,
   // or the select would submit another one in its place.
   const languageOptions = untrack(() =>
-    locales.includes(org.default_language) || !org.default_language
+    isLocale(org.default_language) || !org.default_language
       ? [...locales]
       : [org.default_language, ...locales]
   );
@@ -91,7 +102,8 @@
       default_currency: org.default_currency || 'USD',
       default_country: org.default_country ?? '',
       timezone: org.timezone || 'UTC',
-      default_language: org.default_language || 'en',
+      default_language: org.default_language ?? '',
+      lead_reminder_minutes: String(org.lead_reminder_minutes ?? ''),
       // Booleans travel as strings so the select always submits an explicit value.
       csat_enabled: String(org.csat_enabled ?? true),
       auto_close_children_on_parent_close: String(org.auto_close_children_on_parent_close ?? false),
@@ -103,12 +115,11 @@
     }))
   );
 
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state<Record<string, boolean>>({});
   let submitted = $state(false);
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (form.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email))
       e.email = m.settings_org_edit_err_email();
     // The model stores this in a URLField, which wants a real URL. A light check
@@ -116,7 +127,11 @@
     if (form.website && !/^https?:\/\/.+\..+/.test(form.website))
       e.website = m.settings_org_edit_err_website();
     if (!invoicesOn) return e;
-    for (const field of ['invoice_number_prefix', 'estimate_number_prefix']) {
+    const prefixFields: ('invoice_number_prefix' | 'estimate_number_prefix')[] = [
+      'invoice_number_prefix',
+      'estimate_number_prefix'
+    ];
+    for (const field of prefixFields) {
       if (!NUMBER_PREFIX_PATTERN.test(form[field].trim()))
         e[field] = m.settings_org_edit_err_prefix();
     }
@@ -126,28 +141,24 @@
     return e;
   });
 
-  /** @param {unknown} value @param {number} min @param {number} max */
-  function wholeIn(value, min, max) {
+  function wholeIn(value: unknown, min: number, max: number) {
     const n = Number(value);
     return value !== '' && value !== null && Number.isInteger(n) && n >= min && n <= max;
   }
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (/** @type {string} */ field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   /**
    * These checks are a UX hint. The serializer is the rule, and its 400 is what
    * `result.error` reports.
-   *
-   * @type {import('./$types').SubmitFunction}
    */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
       return;
     }
@@ -392,12 +403,35 @@
         >
           {#each languageOptions as code (code)}
             <option value={code} lang={code}>
-              {locales.includes(code) ? m.language_name({}, { locale: code }) : code}
+              {isLocale(code) ? m.language_name({}, { locale: code }) : code}
             </option>
           {/each}
         </select>
         <p class="v2-hint">{m.org_language_hint()}</p>
       </div>
+      {#if leadsOn}
+        <div class="v2-label" style="margin:24px 0 12px">{m.settings_org_leads_section()}</div>
+        <div class="v2-field">
+          <label for="f-reminder">{m.settings_org_reminder_label()}</label>
+          <select
+            id="f-reminder"
+            name="lead_reminder_minutes"
+            class="v2-input"
+            bind:value={form.lead_reminder_minutes}
+          >
+            <option value="">{m.settings_org_reminder_off()}</option>
+            {#each reminderOptions as mins (mins)}
+              <option value={String(mins)}>{reminderLabel(mins)}</option>
+            {/each}
+          </select>
+          <p class="v2-hint">
+            {m.settings_org_reminder_hint()}
+            <a href={DOCS_LEAD_ALERTS} target="_blank" rel="noopener noreferrer"
+              >{m.settings_org_read_more()}</a
+            >
+          </p>
+        </div>
+      {/if}
 
       {#if invoicesOn}
         <div class="v2-label" style="margin:24px 0 12px">{m.settings_org_invoice_numbers()}</div>

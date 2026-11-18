@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
@@ -7,7 +7,7 @@
   import { count } from '#lib/v2/format.js';
   import { Columns3, List, TriangleAlert } from '@lucide/svelte';
   import { flip } from 'svelte/animate';
-  import { dndzone } from 'svelte-dnd-action';
+  import { dndzone, type DndEvent } from 'svelte-dnd-action';
   import { refreshAll } from '$app/navigation';
   import { deserialize } from '$app/forms';
   import { t } from '#lib/terminology.js';
@@ -15,18 +15,22 @@
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { RATING_LABEL } from '#lib/v2/enums.js';
   import { holdLockedCard } from '#lib/v2/board-drag.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  type Lane = PageData['lanes'][number];
+  type Card = Lane['rows'][number];
+  type CardEvent = CustomEvent<DndEvent<Card>>;
+
+  let { data }: PageProps = $props();
 
   const FLIP_MS = 160;
 
   /** HOT/WARM/COLD, the three ratings a lead can carry. */
-  const RATING_TONE = /** @type {Record<string, 'rust'|'clay'|'slate'>} */ ({
+  const RATING_TONE = {
     HOT: 'rust',
     WARM: 'clay',
     COLD: 'slate'
-  });
+  } as Record<string, 'rust' | 'clay' | 'slate'>;
 
   /* A vertical pack renames the module ("Enquiries"), and the list page
      already follows it; a board headed "Leads" beside it reads as a bug. */
@@ -35,17 +39,15 @@
   /* `dndzone` reorders the array it is handed, so the board renders from a
      local copy that is rebuilt whenever the server sends new lanes. That
      rebuild is what makes a refused move snap back. */
-  let boardLanes = $state(/** @type {any[]} */ ([]));
+  let boardLanes: Lane[] = $state([]);
   $effect(() => {
-    boardLanes = data.lanes.map((/** @type {any} */ lane) => ({ ...lane, rows: [...lane.rows] }));
+    boardLanes = data.lanes.map((lane) => ({ ...lane, rows: [...lane.rows] }));
   });
 
   /** The stages a card can be sent to: every lane except "No stage". */
-  let stages = $derived(data.lanes.filter((/** @type {any} */ lane) => !lane.unstaged));
-  let inPipeline = $derived(
-    stages.reduce((/** @type {number} */ n, /** @type {any} */ lane) => n + lane.count, 0)
-  );
-  let unstagedLane = $derived(data.lanes.find((/** @type {any} */ lane) => lane.unstaged));
+  let stages = $derived(data.lanes.filter((lane) => !lane.unstaged));
+  let inPipeline = $derived(stages.reduce((n, lane) => n + lane.count, 0));
+  let unstagedLane = $derived(data.lanes.find((lane) => lane.unstaged));
   let unstagedCount = $derived(unstagedLane?.count ?? 0);
 
   let moveError = $state('');
@@ -53,25 +55,25 @@
 
   /* A capped lane keeps the server's total; otherwise the header follows the
      cards on screen, so an optimistic move updates it without a round-trip. */
-  function laneCount(/** @type {any} */ lane) {
+  function laneCount(lane: Lane) {
     return lane.truncated ? lane.count : lane.rows.length;
   }
 
-  function onConsider(/** @type {any} */ lane, /** @type {any} */ e) {
+  function onConsider(lane: Lane, e: CardEvent) {
     lane.rows = e.detail.items;
   }
 
-  async function onFinalize(/** @type {any} */ lane, /** @type {any} */ e) {
+  async function onFinalize(lane: Lane, e: CardEvent) {
     lane.rows = e.detail.items;
     const movedId = e.detail.info?.id;
-    const index = e.detail.items.findIndex((/** @type {any} */ r) => r.id === movedId);
+    const index = e.detail.items.findIndex((r) => r.id === movedId);
     // Finalize fires on both lanes of a cross-lane move; only the lane now
     // holding the card persists it.
     if (index === -1) return;
     // A reorder inside "No stage" has no stage to store the order against, so
     // the cards go back rather than pretend it saved. A card dropped in from a
     // stage is a real move: it leaves the pipeline.
-    if (lane.unstaged && unstagedLane?.rows.some((/** @type {any} */ r) => r.id === movedId)) {
+    if (lane.unstaged && unstagedLane?.rows.some((r) => r.id === movedId)) {
       await refreshAll();
       return;
     }
@@ -88,10 +90,10 @@
    * the destination stage and ignores any it cannot find there.
    */
   async function persistMove(
-    /** @type {string} */ id,
-    /** @type {string} */ stageId,
-    /** @type {string | undefined} */ aboveId,
-    /** @type {string | undefined} */ belowId
+    id: string,
+    stageId: string,
+    aboveId: string | undefined,
+    belowId: string | undefined
   ) {
     const body = new FormData();
     body.set('id', id);
@@ -105,9 +107,8 @@
         moveError = '';
         return true;
       }
-      moveError =
-        (result.type === 'failure' && /** @type {any} */ (result.data)?.error) ||
-        m.leads_board_move_failed();
+      const refusal = result.type === 'failure' ? result.data?.error : undefined;
+      moveError = (typeof refusal === 'string' && refusal) || m.leads_board_move_failed();
     } catch {
       moveError = m.leads_board_move_failed();
     }
@@ -121,8 +122,8 @@
    * cannot drag at all, so every card also carries this. It appends to the
    * stage, then reloads so the card shows where the server put it.
    */
-  async function moveBySelect(/** @type {string} */ id, /** @type {Event} */ e) {
-    const select = /** @type {HTMLSelectElement} */ (e.currentTarget);
+  async function moveBySelect(id: string, e: Event) {
+    const select = e.currentTarget as HTMLSelectElement;
     const stageId = select.value;
     if (!stageId) return;
     busy = true;
@@ -222,8 +223,8 @@
             flipDurationMs: FLIP_MS,
             dragDisabled: busy || stages.length === 0
           }}
-          onconsider={(e) => onConsider(lane, e)}
-          onfinalize={(e) => onFinalize(lane, e)}
+          onconsider={(e: CardEvent) => onConsider(lane, e)}
+          onfinalize={(e: CardEvent) => onFinalize(lane, e)}
           onmousedowncapture={holdLockedCard}
           ontouchstartcapture={holdLockedCard}
           onkeydowncapture={holdLockedCard}

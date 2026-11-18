@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Billing schedules. Each row answers one question: when does this next
@@ -22,21 +22,22 @@
   import { Plus, RefreshCw, Hand, Pause, Play } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let totals = $derived(data.totals);
 
-  const frequency = (s) =>
+  const frequency = (s: { frequency: string; custom_days: number | null }) =>
     s.frequency === 'CUSTOM'
-      ? m.invoices_recurring_every_days({ days: s.custom_days })
+      ? m.invoices_recurring_every_days({ days: s.custom_days ?? 0 })
       : RECURRING_FREQUENCY_LABEL[s.frequency];
 
   /** Next run, or why there isn't one. A paused schedule has no next run. */
-  function nextRun(s) {
+  function nextRun(s: { is_active: boolean; next_generation_date: string | null }) {
     if (!s.is_active) return { text: m.invoices_recurring_paused(), tone: 'muted' };
     const n = daysSince(s.next_generation_date);
+    if (n === null) return { text: shortDate(s.next_generation_date), tone: 'normal' };
     if (n > 0) return { text: m.invoices_recurring_overdue({ n }), tone: 'late' };
     if (n === 0) return { text: m.invoices_recurring_today(), tone: 'soon' };
     if (Math.abs(n) <= 7)
@@ -45,10 +46,10 @@
   }
 
   /** An end date that has nearly arrived stops the schedule without warning. */
-  const endingSoon = (s) => {
+  const endingSoon = (s: { is_active: boolean; end_date: string | null }) => {
     if (!s.end_date || !s.is_active) return false;
     const n = daysSince(s.end_date);
-    return n <= 0 && Math.abs(n) <= 14;
+    return n !== null && n <= 0 && Math.abs(n) <= 14;
   };
 </script>
 

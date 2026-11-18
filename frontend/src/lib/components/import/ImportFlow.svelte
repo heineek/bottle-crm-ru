@@ -1,9 +1,9 @@
-<script>
+<script lang="ts">
   import { onDestroy } from 'svelte';
   import { deserialize } from '$app/forms';
   import { resolve } from '$app/paths';
   import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Upload } from '@lucide/svelte';
-  import { IMPORT_ENTITIES } from '#lib/import/entities.js';
+  import { IMPORT_ENTITIES, type ImportConfig } from '#lib/import/entities.js';
   import {
     droppedLines,
     hasAnyMatch,
@@ -11,7 +11,9 @@
     setColumnField,
     skippedRowsCsv,
     suggestLeads,
-    summaryLine
+    summaryLine,
+    type Column,
+    type Skipped
   } from '#lib/import/mapping.js';
   import { downloadCsv } from '#lib/utils/csv.js';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -29,66 +31,83 @@
    * list page's form actions (`IMPORT_ENTITIES[entity].actionPath`), so the
    * flow works from any page.
    *
+   * `config` replaces the entity's settings for a record kind that is not
+   * built in (a custom object); `entity` is then left out.
+   *
    * `singular` and `plural` override the entity's default words (the leads
    * drawer passes the org's terminology). `onDone(created)` runs after a
    * successful import. `onUseLeads`, when given, turns the "import as leads"
    * suggestion into a button; it must switch `entity` to `leads`, and the
    * flow then previews the same file again. Without it the suggestion is text.
-   *
-   * @type {{
-   *   entity: 'contacts' | 'leads',
-   *   singular?: string,
-   *   plural?: string,
-   *   onDone?: (created: number) => void,
-   *   onUseLeads?: () => void
-   * }}
    */
-  let { entity, singular, plural, onDone, onUseLeads } = $props();
+  let {
+    entity,
+    config,
+    singular,
+    plural,
+    onDone,
+    onUseLeads
+  }: {
+    entity?: 'contacts' | 'leads';
+    config?: ImportConfig;
+    singular?: string;
+    plural?: string;
+    onDone?: (created: number) => void;
+    onUseLeads?: () => void;
+  } = $props();
 
-  /** @typedef {import('#lib/import/mapping.js').Column} Column */
-  /** @typedef {import('#lib/import/mapping.js').Skipped} Skipped */
-  /**
-   * @typedef {{
-   *   columns: (Column & { header: string, samples: string[] })[],
-   *   fields: { name: string, label: string, required: boolean }[],
-   *   skipped: Skipped[],
-   *   dropped: { field: string, count: number }[],
-   *   summary: { total: number, valid: number, skipped: number }
-   * }} Preview
-   */
+  type Preview = {
+    columns: (Column & { header: string; samples: string[] })[];
+    fields: { name: string; label: string; required: boolean }[];
+    skipped: Skipped[];
+    dropped: { field: string; count: number }[];
+    summary: { total: number; valid: number; skipped: number };
+  };
+  /** What the import actions answer (`forwardCsvImport`), deserialized. */
+  type ImportAnswer = {
+    type: 'success' | 'failure' | 'redirect' | 'error';
+    data?: {
+      importPreview?: Preview;
+      importCommit?: {
+        created: number;
+        skipped?: Skipped[];
+        dropped?: { field: string; count: number }[];
+      };
+      importError?: string;
+      importSkipped?: Skipped[];
+    };
+  };
 
   const DEBOUNCE_MS = 400;
   const SKIPPED_SHOWN = 50;
   const TOO_LARGE = () => m.app_import_too_large();
   const OFFLINE = () => m.app_import_offline();
 
-  let cfg = $derived(IMPORT_ENTITIES[entity]);
+  let cfg: ImportConfig = $derived(config ?? IMPORT_ENTITIES[entity ?? 'leads']);
+  let stem = $derived(cfg.fileStem ?? entity ?? 'leads');
   let nouns = $derived({ singular: singular ?? cfg.singular, plural: plural ?? cfg.plural });
 
-  let step = $state(/** @type {'select' | 'match' | 'done'} */ ('select'));
-  /** @type {File | null} */
-  let file = $state(null);
-  /** @type {HTMLInputElement | null} */
-  let fileInput = $state(null);
+  let step = $state<'select' | 'match' | 'done'>('select');
+  let file: File | null = $state(null);
+  let fileInput: HTMLInputElement | null = $state(null);
   let dragOver = $state(false);
   let loading = $state(false);
   let committing = $state(false);
-  /** @type {string | null} */
-  let error = $state(null);
-  /** @type {Preview | null} */
-  let preview = $state(null);
-  /** @type {Preview['columns']} */
-  let columns = $state([]);
+  let error: string | null = $state(null);
+  let preview: Preview | null = $state(null);
+  let columns: Preview['columns'] = $state([]);
   /** The `mapping` the shown preview was computed for. */
   let previewed = $state('');
   let showEmpty = $state(false);
-  /** @type {{ created: number, skipped?: Skipped[], dropped?: { field: string, count: number }[] } | null} */
-  let result = $state(null);
+  let result: {
+    created: number;
+    skipped?: Skipped[];
+    dropped?: { field: string; count: number }[];
+  } | null = $state(null);
 
   /** Only the latest preview request may change the screen. */
   let seq = 0;
-  /** @type {ReturnType<typeof setTimeout> | undefined} */
-  let timer;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   let destroyed = false;
   onDestroy(() => {
     destroyed = true;
@@ -96,21 +115,20 @@
   });
 
   let stale = $derived(step === 'match' && mappingPayload(columns) !== previewed);
-  let canImport = $derived(
-    !!preview && !stale && !loading && !committing && preview.summary.valid > 0
+  let canImport = $derived.by(
+    () => !!preview && !stale && !loading && !committing && preview.summary.valid > 0
   );
   // A column with no value in any row cannot import anything. Exports such as
   // Outlook's carry dozens of them, so they wait behind a toggle.
   let shown = $derived(showEmpty ? columns : columns.filter((c) => c.field || c.samples.length));
   let hiddenCount = $derived(columns.length - shown.length);
 
-  /**
-   * @param {'importPreview' | 'importCommit'} action
-   * @param {string} mapping
-   */
-  async function post(action, mapping) {
+  async function post(
+    action: 'importPreview' | 'importCommit',
+    mapping: string
+  ): Promise<ImportAnswer> {
     const fd = new FormData();
-    fd.append('file', /** @type {File} */ (file));
+    fd.append('file', file as File);
     fd.append('mapping', mapping);
     const res = await fetch(`${resolve(asInternalPath(cfg.actionPath))}?/${action}`, {
       method: 'POST',
@@ -120,18 +138,17 @@
     // the image sets 6M) with a plain-text
     // 413 before the action runs, which `deserialize` cannot parse.
     if (res.status === 413) return { type: 'failure', data: { importError: TOO_LARGE() } };
-    return /** @type {any} */ (deserialize(await res.text()));
+    return deserialize(await res.text()) as ImportAnswer;
   }
 
-  /** @param {any} out @param {string} fallback */
-  function failureText(out, fallback) {
+  function failureText(out: ImportAnswer, fallback: string) {
     return out?.type === 'failure' && out.data?.importError
       ? String(out.data.importError)
       : fallback;
   }
 
-  /** @param {string} mapping `auto` for the server's guess, else `mappingPayload` */
-  async function runPreview(mapping) {
+  /** @param mapping `auto` for the server's guess, else `mappingPayload` */
+  async function runPreview(mapping: string) {
     if (!file) return;
     const mine = ++seq;
     loading = true;
@@ -155,8 +172,7 @@
     }
   }
 
-  /** @param {File | null | undefined} f */
-  function choose(f) {
+  function choose(f: File | null | undefined) {
     if (!f) return;
     clearTimeout(timer);
     file = f;
@@ -180,8 +196,8 @@
     step = 'select';
   }
 
-  /** @param {number} index @param {string} value '' for Don't import */
-  function change(index, value) {
+  /** @param value '' for Don't import */
+  function change(index: number, value: string) {
     columns = setColumnField(columns, index, value || null);
     // A new choice replaces whatever the last failed request said, as on the
     // phone. Reverting to the previewed choice sends nothing, so an error
@@ -246,18 +262,17 @@
       cfg.templateHeaders.join(','),
       cfg.templateExample.map((v) => (v.includes(',') ? `"${v}"` : v)).join(',')
     ].join('\n');
-    downloadCsv(csv, `${entity}-import-template.csv`);
+    downloadCsv(csv, `${stem}-import-template.csv`);
   }
 
-  /** @param {Skipped[]} skipped */
-  function downloadSkipped(skipped) {
+  function downloadSkipped(skipped: Skipped[]) {
     // A byte-order mark, as the server's exports carry, so Excel reads
     // accented names as UTF-8. The importer reads the file with or without it.
     const csv = skippedRowsCsv(
       columns.map((c) => c.header),
       skipped
     );
-    downloadCsv(`\uFEFF${csv}`, `${entity}-skipped-rows.csv`);
+    downloadCsv(`\uFEFF${csv}`, `${stem}-skipped-rows.csv`);
   }
 </script>
 
@@ -397,13 +412,13 @@
           <button
             type="button"
             class="v2-btn"
-            onclick={() => downloadSkipped(/** @type {Preview} */ (preview).skipped)}
+            onclick={() => downloadSkipped((preview as Preview).skipped)}
           >
             <Download />{m.app_import_download_skipped()}
           </button>
         </div>
       {/if}
-      {#if suggestLeads(entity, preview.skipped)}
+      {#if suggestLeads(entity ?? '', preview.skipped)}
         <p class="note">
           {m.app_import_suggest_leads()}
           {#if onUseLeads}

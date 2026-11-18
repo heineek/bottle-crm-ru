@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
@@ -8,19 +8,16 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import LeadImportDrawer from '#lib/components/leads/LeadImportDrawer.svelte';
   import { money, count, relativeDays, daysSince } from '#lib/v2/format.js';
-  import {
-    LEAD_SOURCE_LABEL,
-    LEAD_STATUS_LABEL,
-    LEAD_STATUS_TONE,
-    industryLabel
-  } from '#lib/v2/enums.js';
-  import { Download, Plus, Upload, Target } from '@lucide/svelte';
+  import { LEAD_STATUS_LABEL, LEAD_STATUS_TONE, industryLabel } from '#lib/v2/enums.js';
+  import { sourceFilterOptions, sourceLabel } from '#lib/v2/lead-sources.js';
+  import { secondsSince, spanText } from '#lib/v2/interactions.js';
+  import { Download, Plus, Upload, Target, Timer, Trophy } from '@lucide/svelte';
   import { t } from '#lib/terminology.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let leads = $derived(data.leads);
   let importOpen = $state(false);
@@ -39,21 +36,40 @@
    * The same rule the API counts with, so the highlighted rows and the
    * "unworked for more than a week" figure in the header agree. If one moves,
    * move the other, `LeadListView.UNWORKED_AFTER_DAYS`.
-   *
-   * @param {{ last_contacted: string | null, created_at: string }} lead
    */
-  const stale = (lead) => (daysSince(lead.last_contacted ?? lead.created_at) ?? 0) > 7;
+  const stale = (lead: { last_contacted: string | null; created_at: string }) =>
+    (daysSince(lead.last_contacted ?? lead.created_at) ?? 0) > 7;
+
+  // An API without response tracking ignores `?unanswered=true` and lists every
+  // open lead, so the view is only claimed when the rows prove it was applied.
+  let asked = $derived(page.url.searchParams.get('unanswered') === 'true');
+  let responseOff = $derived(data.responseLive === false);
+  let unanswered = $derived(asked && !responseOff);
+
+  const waitFor = (lead: { is_unanswered: boolean; waiting_since: string | null }) =>
+    lead.is_unanswered && lead.waiting_since ? spanText(secondsSince(lead.waiting_since)) : '';
 </script>
 
 <PageHeader title={plural}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.count)}</span>
-    {m.leads_list_open({ count: totals.count })} ·
-    <span class="v2-num">{totals.unworked_over_a_week}</span>
-    {m.leads_list_unworked()}
+    {#if unanswered}
+      <span class="v2-num">{count(totals.count)}</span>
+      {m.leads_list_waiting({ count: totals.count })}
+    {:else}
+      <span class="v2-num">{count(totals.count)}</span>
+      {m.leads_list_open({ count: totals.count })} ·
+      <span class="v2-num">{totals.unworked_over_a_week}</span>
+      {m.leads_list_unworked()}
+    {/if}
   {/snippet}
   {#snippet actions()}
     <a class="v2-btn" href={resolve('leads/board')}>{m.leads_view_board()}</a>
+    {#if !responseOff}
+      <a class="v2-btn" href={resolve('leads/response-times')}
+        ><Timer />{m.leads_response_time_title()}</a
+      >
+      <a class="v2-btn" href={resolve('leads/outcomes')}><Trophy />{m.leads_outcomes_title()}</a>
+    {/if}
     <button class="v2-btn" onclick={() => (importOpen = true)}><Upload />{m.common_import()}</button
     >
     <!-- The page's own query string: the export rebuilds the same API query
@@ -76,10 +92,18 @@
   url={page.url}
   people={data.people}
   tags={data.tags}
+  sources={sourceFilterOptions(data.sources)}
   meId={data.meId}
   saved={data.savedViews}
-  meta={m.leads_list_filter_meta()}
+  onlyPresets={responseOff ? ['open', 'mine'] : undefined}
+  meta={unanswered ? m.leads_list_filter_meta_waiting() : m.leads_list_filter_meta()}
 />
+
+{#if asked && responseOff}
+  <p class="v2-sub v2-pad" style="font-size:12.5px;margin:10px 0 0">
+    {m.leads_list_unanswered_off()}
+  </p>
+{/if}
 
 <LeadImportDrawer
   bind:open={importOpen}
@@ -88,7 +112,11 @@
 />
 
 <div class="v2-scroll">
-  {#if leads.length === 0}
+  {#if leads.length === 0 && unanswered}
+    <EmptyState title={m.leads_list_waiting_empty_title()} body={m.leads_list_waiting_empty_body()}>
+      {#snippet icon()}<Timer size={21} />{/snippet}
+    </EmptyState>
+  {:else if leads.length === 0}
     <EmptyState
       title={m.leads_list_empty_title({ plural: plural.toLowerCase() })}
       body={m.leads_list_empty_body()}
@@ -111,7 +139,7 @@
             <th>{m.common_status()}</th>
             <th>{m.leads_list_col_source()}</th>
             <th class="v2-r">{m.leads_list_col_value()}</th>
-            <th>{m.leads_list_col_last_touch()}</th>
+            <th>{unanswered ? m.leads_list_col_waiting() : m.leads_list_col_last_touch()}</th>
             <th>{m.common_owner()}</th>
           </tr>
         </thead>
@@ -135,9 +163,9 @@
                   >{LEAD_STATUS_LABEL[l.status] ?? l.status}</Pill
                 ></td
               >
-              <td class="v2-muted" data-m="hide" style="font-size:12.5px"
-                >{LEAD_SOURCE_LABEL[l.source] ?? l.source}</td
-              >
+              <td class="v2-muted" data-m="hide" style="font-size:12.5px">
+                {sourceLabel(data.sources, l.source)}
+              </td>
               <td class="v2-r v2-num"
                 >{l.opportunity_amount ? money(l.opportunity_amount, l.currency) : '—'}</td
               >
@@ -150,8 +178,10 @@
               conversation, and a column that quietly counts them stops being
               worth reading.
             -->
-              <td class:v2-muted={!stale(l)} class:overdue={stale(l)}>
-                {#if l.last_contacted}
+              <td class:v2-muted={!stale(l) && !waitFor(l)} class:overdue={stale(l) || waitFor(l)}>
+                {#if waitFor(l)}
+                  {m.leads_list_waiting_for({ span: waitFor(l) })}
+                {:else if l.last_contacted}
                   {relativeDays(l.last_contacted)}
                 {:else}
                   <div>{m.leads_list_not_contacted()}</div>

@@ -18,7 +18,7 @@ from common.modules import (
     module_label,
     ordered_modules,
 )
-from common.permissions import is_org_admin
+from common.permissions import may_configure
 
 # Module key to the dotted path of a ``fn(org) -> None`` run when that module
 # becomes available again, so it starts fresh.
@@ -48,7 +48,7 @@ def modules_payload(org, profile) -> dict:
                 "needs": m.needs,
             }
         )
-    return {"modules": rows, "can_edit": is_org_admin(profile)}
+    return {"modules": rows, "can_edit": may_configure(profile)}
 
 
 def _key_list(data, field, errors):
@@ -111,9 +111,11 @@ def _blockers(row, key):
                 )
                 % {"label": label, "count": len(forms), "names": _named(forms)}
             )
-    if key == "tickets":
+    # A mailbox counts against the module its mail becomes; the `creates`
+    # values are the two module keys.
+    if key in (InboundMailbox.CREATES_TICKETS, InboundMailbox.CREATES_LEADS):
         addresses = list(
-            InboundMailbox.objects.filter(org=row, is_active=True)
+            InboundMailbox.objects.filter(org=row, is_active=True, creates=key)
             .order_by("address")
             .values_list("address", flat=True)
         )

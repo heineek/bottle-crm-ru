@@ -177,5 +177,29 @@
         "countPlural=other": "{countShown} позиции"
       }
     }
-  ]
+  ],
+  "pipeline_source_not_specified": "Не указан",
+  "pipeline_source_not_recorded": "Не указан",
+  "pipeline_detail_log_activity": "Записать активность",
+  "pipeline_detail_interactions_failed": "Не удалось загрузить звонки и сообщения, поэтому ниже их нет.",
+  "pipeline_detail_start_project": "Начать проект",
+  "pipeline_detail_interactions_more": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Показаны последние звонки и сообщения; ещё {countShown} более раннее не показано.",
+        "countPlural=few": "Показаны последние звонки и сообщения; ещё {countShown} более ранних не показаны.",
+        "countPlural=many": "Показаны последние звонки и сообщения; ещё {countShown} более ранних не показаны.",
+        "countPlural=other": "Показаны последние звонки и сообщения; ещё {countShown} более ранних не показаны."
+      }
+    }
+  ],
+  "pipeline_detail_files": "Файлы",
+  "pipeline_detail_files_empty": "К этой сделке пока не прикреплено файлов. Прикрепите файл к комментарию выше.",
+  "pipeline_attachment_fallback": "Вложение"
 }

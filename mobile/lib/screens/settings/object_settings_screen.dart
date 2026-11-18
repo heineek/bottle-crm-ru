@@ -146,6 +146,126 @@ class ObjectSettingsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _chooseAccess(
+    BuildContext context,
+    WidgetRef ref,
+    ObjectSummary summary,
+  ) async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(context.l10n.appObjectFormRecordAccess),
+            ),
+            for (final o in [
+              ('everyone', context.l10n.settingsObjectsAccessEveryone),
+              ('own', context.l10n.settingsObjectsAccessOwn),
+            ])
+              ListTile(
+                minTileHeight: 48,
+                title: Text(o.$2),
+                trailing:
+                    o.$1 ==
+                        (summary.recordAccess == 'everyone'
+                            ? 'everyone'
+                            : 'own')
+                    ? Icon(LucideIcons.check, color: AppColors.primary600)
+                    : null,
+                onTap: () => Navigator.of(sheet).pop(o.$1),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || picked == summary.recordAccess || !context.mounted) {
+      return;
+    }
+    final response = await ref.read(customObjectsApiProvider).updateObject(
+      objectKey,
+      {'record_access': picked},
+    );
+    if (!context.mounted) return;
+    if (response.success) refreshObjects(ref, objectKey);
+    _say(
+      context,
+      response.success
+          ? context.l10n.settingsObjectSettingsSaved
+          : settingsWriteError(
+              response,
+              context.l10n.settingsObjectSettingsAccessFailed,
+              labels: objectFormLabels,
+            ),
+    );
+  }
+
+  Future<void> _chooseBoard(
+    BuildContext context,
+    WidgetRef ref,
+    ObjectSummary summary,
+    List<ObjectField> fields,
+  ) async {
+    final choices = boardChoices(fields);
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(context.l10n.settingsObjectSettingsGroupBoardBy),
+            ),
+            for (final c in [null, ...choices])
+              ListTile(
+                minTileHeight: 48,
+                title: Text(c?.label ?? context.l10n.appObjectsNoBoard),
+                trailing: (c?.key ?? '') == summary.boardField
+                    ? Icon(LucideIcons.check, color: AppColors.primary600)
+                    : null,
+                onTap: () => Navigator.of(sheet).pop(c?.key ?? ''),
+              ),
+            if (choices.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  context.l10n.settingsObjectSettingsBoardNeedsDropdown,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || picked == summary.boardField || !context.mounted) {
+      return;
+    }
+    final response = await ref
+        .read(customObjectsApiProvider)
+        .updateObject(objectKey, boardFieldBody(picked));
+    if (!context.mounted) return;
+    if (response.success) refreshObjects(ref, objectKey);
+    _say(
+      context,
+      response.success
+          ? (picked.isEmpty
+                ? context.l10n.settingsObjectSettingsBoardOff
+                : context.l10n.settingsObjectSettingsBoardSaved)
+          : settingsWriteError(
+              response,
+              context.l10n.settingsObjectSettingsBoardFailed,
+              labels: objectFormLabels,
+            ),
+    );
+  }
+
   Future<void> _editField(
     BuildContext context,
     WidgetRef ref,
@@ -216,8 +336,6 @@ class ObjectSettingsScreen extends ConsumerWidget {
     final answer = shownCustomObjects(answerState);
     final loadFailed = customObjectsFailed(answerState);
     final isAdmin = ref.watch(isOrgAdminProvider);
-    final writesOn = answer?.hasCustomObjects == true;
-    final canWrite = isAdmin && writesOn;
     final targets = answer?.linkTargets ?? const <LinkTarget>[];
 
     return Scaffold(
@@ -252,6 +370,8 @@ class ObjectSettingsScreen extends ConsumerWidget {
         ),
         data: (data) {
           final summary = data.summary;
+          final canWrite = isAdmin && canWriteObject(summary, answer);
+          final canShape = isAdmin && canCustomizeObject(summary, answer);
           return RefreshIndicator(
             onRefresh: () =>
                 ref.refresh(objectSettingsProvider(objectKey).future),
@@ -262,11 +382,11 @@ class ObjectSettingsScreen extends ConsumerWidget {
                   _LoadFailed(
                     onRetry: () => ref.invalidate(customObjectsProvider),
                   )
-                else if (isAdmin && !writesOn && !answerState.isLoading)
+                else if (isAdmin && !canShape && !answerState.isLoading)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Text(
-                      objectsTurnedOffNotice,
+                      objectShapeLockedNotice,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -274,11 +394,22 @@ class ObjectSettingsScreen extends ConsumerWidget {
                   ),
                 _Details(
                   summary: summary,
+                  boardLabel: boardLabelOf(summary, data.fields),
                   actions: [
-                    if (canWrite)
+                    if (canShape)
                       _action(
                         context.l10n.settingsObjectSettingsEditObject,
                         () => _editObject(context, ref, summary),
+                      )
+                    else if (canWrite)
+                      _action(
+                        context.l10n.settingsObjectSettingsWhoSees,
+                        () => _chooseAccess(context, ref, summary),
+                      ),
+                    if (canWrite)
+                      _action(
+                        context.l10n.appObjectFormBoardField,
+                        () => _chooseBoard(context, ref, summary, data.fields),
                       ),
                     if (isAdmin && summary.isActive)
                       _action(
@@ -312,7 +443,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (canWrite)
+                      if (canShape)
                         SizedBox(
                           height: 44,
                           child: TextButton.icon(
@@ -340,6 +471,7 @@ class ObjectSettingsScreen extends ConsumerWidget {
                     field: f,
                     targets: targets,
                     canWrite: canWrite,
+                    canShape: canShape,
                     onEdit: () => _editField(context, ref, f, targets),
                     onTurn: () => _turn(context, ref, f, !f.isActive),
                   ),
@@ -394,9 +526,14 @@ class _Action {
 }
 
 class _Details extends StatelessWidget {
-  const _Details({required this.summary, required this.actions});
+  const _Details({
+    required this.summary,
+    required this.actions,
+    required this.boardLabel,
+  });
 
   final ObjectSummary summary;
+  final String boardLabel;
   final List<_Action> actions;
 
   Widget _line(String label, String value) => Padding(
@@ -432,6 +569,7 @@ class _Details extends StatelessWidget {
                 ? l10n.settingsObjectsAccessEveryone
                 : l10n.settingsObjectsAccessOwn,
           ),
+          _line(l10n.appObjectFormBoardField, boardLabel),
           if (summary.description.isNotEmpty)
             _line(l10n.commonDescription, summary.description),
           if (!summary.isActive) ...[
@@ -474,6 +612,7 @@ class _FieldRow extends StatelessWidget {
     required this.field,
     required this.targets,
     required this.canWrite,
+    required this.canShape,
     required this.onEdit,
     required this.onTurn,
   });
@@ -481,6 +620,7 @@ class _FieldRow extends StatelessWidget {
   final ObjectField field;
   final List<LinkTarget> targets;
   final bool canWrite;
+  final bool canShape;
   final VoidCallback onEdit;
   final VoidCallback onTurn;
 
@@ -550,13 +690,14 @@ class _FieldRow extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                SizedBox(
-                  height: 44,
-                  child: OutlinedButton(
-                    onPressed: onEdit,
-                    child: Text(l10n.commonEdit),
+                if (canShape)
+                  SizedBox(
+                    height: 44,
+                    child: OutlinedButton(
+                      onPressed: onEdit,
+                      child: Text(l10n.commonEdit),
+                    ),
                   ),
-                ),
                 SizedBox(
                   height: 44,
                   child: OutlinedButton(

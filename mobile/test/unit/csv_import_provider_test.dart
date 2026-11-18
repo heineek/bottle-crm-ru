@@ -390,7 +390,7 @@ void main() {
 
         await notifier(target).choose(_file(name: 'People.XLSX'));
 
-        expect(stateOf(target).error, isNull, reason: target.name);
+        expect(stateOf(target).error, isNull, reason: target.plural);
         expect(stateOf(target).file!.name, 'People.XLSX');
       }
       expect(client.sent, hasLength(2));
@@ -837,7 +837,7 @@ void main() {
     });
   });
 
-  group('web parity helpers (frontend/src/lib/import/mapping.js)', () {
+  group('web parity helpers (frontend/src/lib/import/mapping.ts)', () {
     const cols = [
       CsvImportColumn(index: 0, header: 'A', field: 'email', samples: []),
       CsvImportColumn(index: 1, header: 'B', field: null, samples: []),

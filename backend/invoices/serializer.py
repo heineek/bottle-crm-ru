@@ -3,11 +3,13 @@ from decimal import Decimal
 
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from drf_spectacular.utils import extend_schema_field, inline_serializer
 from rest_framework import serializers
 
 from accounts.access import visible_accounts_qs
 from accounts.serializer import AccountPickerSerializer
 from common.modules import module_is_available, module_off_message, org_of
+from common.permissions import is_org_admin
 from common.serializer import (
     OrganizationSerializer,
     ProfileSerializer,
@@ -32,6 +34,7 @@ from invoices.models import (
     line_discount,
     line_gross,
 )
+from invoices.proposals import estimate_deposit
 from opportunity.access import visible_deals_qs
 from opportunity.models import Opportunity
 
@@ -89,7 +92,7 @@ class ProductSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "created_at", "updated_at")
 
-    def get_used_on(self, obj):
+    def get_used_on(self, obj) -> int:
         """Distinct invoices this product is a line item on.
 
         Line items denormalise their own name and unit price, so retiring or
@@ -210,19 +213,19 @@ class InvoiceTemplateListSerializer(serializers.ModelSerializer):
             "updated_by",
         )
 
-    def get_has_logo(self, obj):
+    def get_has_logo(self, obj) -> bool:
         return bool(obj.logo)
 
-    def get_has_custom_html(self, obj):
+    def get_has_custom_html(self, obj) -> bool:
         return bool(obj.template_html)
 
-    def get_has_custom_css(self, obj):
+    def get_has_custom_css(self, obj) -> bool:
         return bool(obj.template_css)
 
-    def get_custom_html_bytes(self, obj):
+    def get_custom_html_bytes(self, obj) -> int:
         return len((obj.template_html or "").encode("utf-8"))
 
-    def get_used_on_invoices(self, obj):
+    def get_used_on_invoices(self, obj) -> int:
         # ``InvoiceTemplateListView`` annotates this to avoid an N+1; fall back
         # to a direct count for single-object (detail/create) and nested uses.
         annotated = getattr(obj, "used_on_invoices_count", None)
@@ -230,7 +233,7 @@ class InvoiceTemplateListSerializer(serializers.ModelSerializer):
             return annotated
         return obj.invoices.count()
 
-    def get_updated_by(self, obj):
+    def get_updated_by(self, obj) -> str | None:
         user = obj.updated_by or obj.created_by
         if not user:
             return None
@@ -520,8 +523,9 @@ TOTALS_INPUTS = frozenset(
 
 
 # What an issued invoice or estimate can no longer change, besides its lines:
-# everything its totals are computed from, and the currency they are in.
-LOCKED_WHEN_ISSUED = TOTALS_INPUTS | {"currency"}
+# everything its totals are computed from, the currency they are in, and an
+# estimate's deposit, which the client was shown with them.
+LOCKED_WHEN_ISSUED = TOTALS_INPUTS | {"currency", "deposit_percent"}
 
 
 def issued_lock_message(document):
@@ -789,6 +793,8 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source="account.name", read_only=True)
     contact_name = serializers.SerializerMethodField()
     line_items_count = serializers.SerializerMethodField()
+    project = serializers.PrimaryKeyRelatedField(read_only=True, allow_null=True)
+    is_overdue = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Invoice
@@ -799,6 +805,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "status",
             "account",
             "account_name",
+            "project",
             "contact",
             "contact_name",
             "client_name",
@@ -814,12 +821,12 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "created_at",
         )
 
-    def get_contact_name(self, obj):
+    def get_contact_name(self, obj) -> str | None:
         if obj.contact:
             return f"{obj.contact.first_name} {obj.contact.last_name}"
         return None
 
-    def get_line_items_count(self, obj):
+    def get_line_items_count(self, obj) -> int:
         return obj.line_items.count()
 
 
@@ -828,14 +835,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     # `{id, name}` only. Seeing this record is not access to its account, and
     # both clients read only these two; the rest is on `/api/accounts/<id>/`.
-    account = AccountPickerSerializer(read_only=True)
+    account = AccountPickerSerializer(read_only=True, allow_null=True)
     # The name only: mobile reads it, the web reads `contact_name` from lists.
-    contact = ContactPickerSerializer(read_only=True)
-    opportunity = OpportunityMinimalSerializer(read_only=True)
-    template = InvoiceTemplateListSerializer(read_only=True)
+    contact = ContactPickerSerializer(read_only=True, allow_null=True)
+    opportunity = OpportunityMinimalSerializer(read_only=True, allow_null=True)
+    project = serializers.PrimaryKeyRelatedField(read_only=True, allow_null=True)
+    template = InvoiceTemplateListSerializer(read_only=True, allow_null=True)
     line_items = InvoiceLineItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
-    created_by = UserSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True, allow_null=True)
     assigned_to = ProfileSerializer(read_only=True, many=True)
     teams = TeamsSerializer(read_only=True, many=True)
     org = OrganizationSerializer(read_only=True)
@@ -853,6 +861,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "account",
             "contact",
             "opportunity",
+            "project",
             # Client Details
             "client_name",
             "client_email",
@@ -1126,7 +1135,7 @@ class InvoiceCreateSerializer(serializers.ModelSerializer):
 class InvoiceHistorySerializer(serializers.ModelSerializer):
     """Serializer for Invoice History (audit trail)"""
 
-    updated_by = ProfileSerializer(read_only=True)
+    updated_by = ProfileSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = InvoiceHistory
@@ -1151,6 +1160,23 @@ class InvoiceHistorySerializer(serializers.ModelSerializer):
 # =============================================================================
 # ESTIMATE SERIALIZERS
 # =============================================================================
+
+
+class EstimateDepositSerializer(serializers.Serializer):
+    """`invoices.proposals.estimate_deposit`, for the schema."""
+
+    percent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    amount = serializers.DecimalField(max_digits=None, decimal_places=2)
+    currency = serializers.CharField()
+
+
+class DepositInvoiceSerializer(serializers.Serializer):
+    """An estimate's deposit invoice, on its list row and the convert answer."""
+
+    id = serializers.UUIDField()
+    invoice_number = serializers.CharField()
+    status = serializers.CharField()
+    total_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
 
 
 class EstimateLineItemSerializer(serializers.ModelSerializer):
@@ -1197,6 +1223,10 @@ class EstimateListSerializer(serializers.ModelSerializer):
     contact_name = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     converted_to_invoice = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
+    deposit_invoice = serializers.SerializerMethodField()
+    deposit = serializers.SerializerMethodField()
+    is_expired = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Estimate
@@ -1217,24 +1247,72 @@ class EstimateListSerializer(serializers.ModelSerializer):
             "total_amount",
             "currency",
             "is_expired",
+            "introduction",
+            "deposit_percent",
+            "start_project",
+            "project_billing_type",
+            "project",
+            "deposit_invoice",
+            "deposit",
             "created_at",
         )
 
-    def get_contact_name(self, obj):
+    def get_contact_name(self, obj) -> str | None:
         if obj.contact:
             return f"{obj.contact.first_name} {obj.contact.last_name}"
         return None
 
+    @extend_schema_field(
+        inline_serializer(
+            "EstimateListDeal",
+            {"id": serializers.UUIDField(), "name": serializers.CharField()},
+            allow_null=True,
+        )
+    )
     def get_opportunity(self, obj):
         if obj.opportunity_id and module_is_available(org_of(obj), "deals"):
             return {"id": str(obj.opportunity_id), "name": obj.opportunity.name}
         return None
 
+    @extend_schema_field(
+        inline_serializer(
+            "EstimateListInvoice",
+            {
+                "id": serializers.UUIDField(),
+                "invoice_number": serializers.CharField(),
+            },
+            allow_null=True,
+        )
+    )
     def get_converted_to_invoice(self, obj):
         invoice = obj.converted_to_invoice
         if invoice:
             return {"id": str(invoice.id), "invoice_number": invoice.invoice_number}
         return None
+
+    @extend_schema_field(
+        inline_serializer(
+            "EstimateListProject",
+            {"id": serializers.UUIDField(), "name": serializers.CharField()},
+            allow_null=True,
+        )
+    )
+    def get_project(self, obj):
+        # The caller may open only the ids the list view puts in the context
+        # (`_estimate_link_visibility`); without them, neither link is shown.
+        if obj.project_id in self.context.get("visible_project_ids", ()):
+            return {"id": str(obj.project_id), "name": obj.project.name}
+        return None
+
+    @extend_schema_field(DepositInvoiceSerializer(allow_null=True))
+    def get_deposit_invoice(self, obj):
+        if obj.deposit_invoice_id in self.context.get("visible_invoice_ids", ()):
+            return DepositInvoiceSerializer(obj.deposit_invoice).data
+        return None
+
+    @extend_schema_field(EstimateDepositSerializer(allow_null=True))
+    def get_deposit(self, obj):
+        return estimate_deposit(obj)
 
 
 class EstimateSerializer(serializers.ModelSerializer):
@@ -1242,13 +1320,17 @@ class EstimateSerializer(serializers.ModelSerializer):
 
     # `{id, name}` only. Seeing this record is not access to its account, and
     # both clients read only these two; the rest is on `/api/accounts/<id>/`.
-    account = AccountPickerSerializer(read_only=True)
+    account = AccountPickerSerializer(read_only=True, allow_null=True)
     # The name only: mobile reads it, the web reads `contact_name` from lists.
-    contact = ContactPickerSerializer(read_only=True)
-    opportunity = OpportunityMinimalSerializer(read_only=True)
-    converted_to_invoice = InvoiceListSerializer(read_only=True)
+    contact = ContactPickerSerializer(read_only=True, allow_null=True)
+    opportunity = OpportunityMinimalSerializer(read_only=True, allow_null=True)
+    converted_to_invoice = InvoiceListSerializer(read_only=True, allow_null=True)
+    project = serializers.PrimaryKeyRelatedField(read_only=True, allow_null=True)
+    deposit_invoice = serializers.PrimaryKeyRelatedField(
+        read_only=True, allow_null=True
+    )
     line_items = EstimateLineItemSerializer(many=True, read_only=True)
-    created_by = UserSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True, allow_null=True)
     assigned_to = ProfileSerializer(read_only=True, many=True)
     teams = TeamsSerializer(read_only=True, many=True)
     is_expired = serializers.BooleanField(read_only=True)
@@ -1294,6 +1376,10 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
             "public_link_enabled",
             "notes",
             "terms",
+            "introduction",
+            "deposit_percent",
+            "start_project",
+            "project_billing_type",
             "line_items",
         )
         # Accepting a quote authorises its price, so it is a transition, not a
@@ -1363,9 +1449,40 @@ class EstimateCreateSerializer(serializers.ModelSerializer):
                 {"expiry_date": _("An estimate cannot expire before it is issued.")}
             )
 
+        self._refuse_project_choice_by_member(attrs)
+        if attrs.get("start_project"):
+            if not attrs.get("account_id", getattr(self.instance, "account_id", None)):
+                raise serializers.ValidationError(
+                    {"start_project": _("Choose an account to start a project for.")}
+                )
+            if self.org is not None and not module_is_available(self.org, "projects"):
+                raise serializers.ValidationError(
+                    {"start_project": module_off_message(self.org, "projects")}
+                )
+
         validate_line_item_products(attrs.get("line_items"), self.org)
         validate_document_discount(attrs, self.instance)
         return attrs
+
+    def _refuse_project_choice_by_member(self, attrs):
+        """Only an admin may change whether acceptance starts a project, or its
+        billing type, as only an admin sets a project's money fields
+        (`projects.serializer.ADMIN_ONLY_FIELDS`). A value equal to the stored
+        one (on create, the default) is not a change, so a member can still
+        edit an estimate an admin set up."""
+        if self.profile is None or is_org_admin(self.profile):
+            return
+        for name in ("start_project", "project_billing_type"):
+            if name not in attrs:
+                continue
+            if self.instance is not None:
+                stored = getattr(self.instance, name)
+            else:
+                stored = Estimate._meta.get_field(name).get_default()
+            if attrs[name] != stored:
+                raise serializers.ValidationError(
+                    {name: _("Only an admin can start a project from an estimate.")}
+                )
 
     def create(self, validated_data):
         line_items_data = validated_data.pop("line_items", [])
@@ -1474,7 +1591,7 @@ class RecurringInvoiceListSerializer(serializers.ModelSerializer):
             "created_at",
         )
 
-    def get_contact_name(self, obj):
+    def get_contact_name(self, obj) -> str | None:
         if obj.contact:
             return f"{obj.contact.first_name} {obj.contact.last_name}"
         return None
@@ -1485,12 +1602,12 @@ class RecurringInvoiceSerializer(serializers.ModelSerializer):
 
     # `{id, name}` only. Seeing this record is not access to its account, and
     # both clients read only these two; the rest is on `/api/accounts/<id>/`.
-    account = AccountPickerSerializer(read_only=True)
+    account = AccountPickerSerializer(read_only=True, allow_null=True)
     # The name only: mobile reads it, the web reads `contact_name` from lists.
-    contact = ContactPickerSerializer(read_only=True)
-    opportunity = OpportunityMinimalSerializer(read_only=True)
+    contact = ContactPickerSerializer(read_only=True, allow_null=True)
+    opportunity = OpportunityMinimalSerializer(read_only=True, allow_null=True)
     line_items = RecurringInvoiceLineItemSerializer(many=True, read_only=True)
-    created_by = UserSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True, allow_null=True)
     assigned_to = ProfileSerializer(read_only=True, many=True)
     teams = TeamsSerializer(read_only=True, many=True)
 

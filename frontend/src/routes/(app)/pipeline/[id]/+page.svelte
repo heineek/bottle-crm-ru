@@ -1,22 +1,26 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { enhance } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import Timeline from '#lib/v2/components/Timeline.svelte';
+  import LogActivity from '#lib/v2/components/LogActivity.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
   import Avatar from '#lib/v2/components/Avatar.svelte';
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
   import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
+  import CommentComposer from '#lib/v2/components/CommentComposer.svelte';
+  import FileList from '#lib/v2/components/FileList.svelte';
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
   import { money, longDate } from '#lib/v2/format.js';
   import { AGING_TONE, AGING_LABEL, OPPORTUNITY_TYPE_LABEL } from '#lib/v2/enums.js';
-  import { OPPORTUNITY_SOURCES } from '#lib/constants/filters.js';
-  import { Check, ChevronRight } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import { sourceLabel } from '#lib/v2/lead-sources.js';
+  import { Check, ChevronRight } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
   let related = $derived(relatedView(data.related));
 
   /* Raising an invoice copies the lines of a won deal. The API refuses any
@@ -24,13 +28,14 @@
      deal with no lines still gets the server's own sentence below. */
   let invoicing = $state(false);
 
+  let logging = $state(false);
+  let logKind = $state('call');
+
   let { deal, activity, lineItems, contacts } = $derived(data);
   /* The deal's own pipeline's open stages: the path a deal walks. Won and
      lost are not on it; they end it. */
-  let openStages = $derived(
-    (data.pipeline?.stages ?? []).filter((/** @type {any} */ s) => s.kind === 'open')
-  );
-  let stageIndex = $derived(openStages.findIndex((/** @type {any} */ s) => s.code === deal.stage));
+  let openStages = $derived((data.pipeline?.stages ?? []).filter((s) => s.kind === 'open'));
+  let stageIndex = $derived(openStages.findIndex((s) => s.code === deal.stage));
 
   /**
    * The discount is per line item: `OpportunityLineItem.save()` computes
@@ -40,8 +45,12 @@
    * between the lines and `deal.amount`. That difference cannot exist:
    * `recalculate_amount()` sets amount to the sum of the line totals.
    */
-  let subtotal = $derived(lineItems.reduce((a, li) => a + li.subtotal, 0));
-  let discount = $derived(lineItems.reduce((a, li) => a + li.discount_amount, 0));
+  let subtotal = $derived(
+    lineItems.reduce((a: number, li: { subtotal: number }) => a + li.subtotal, 0)
+  );
+  let discount = $derived(
+    lineItems.reduce((a: number, li: { discount_amount: number }) => a + li.discount_amount, 0)
+  );
 </script>
 
 <PageHeader title={deal.name} record>
@@ -58,6 +67,13 @@
     {#if isOn(data.modules, 'invoices')}
       <a class="v2-btn" href="{resolve('invoices/estimates/new')}?opportunity={deal.id}"
         >{m.pipeline_detail_create_estimate()}</a
+      >
+    {/if}
+    {#if deal.stage_kind === 'won' && isOn(data.modules, 'projects')}
+      <!-- Opens the new-project form filled from this deal; nothing is
+           created until that form is saved. -->
+      <a class="v2-btn" href="{resolve('projects/new')}?deal={deal.id}"
+        >{m.pipeline_detail_start_project()}</a
       >
     {/if}
     {#if deal.stage_kind === 'won' && isOn(data.modules, 'invoices')}
@@ -135,8 +151,48 @@
           nothing to render. A suggestion the system invented is worse than no
           suggestion, because people act on it.
         -->
-        <div class="v2-label" style="margin-bottom:12px">{m.pipeline_detail_activity()}</div>
+        {#if data.customFields?.length}
+          <div style="margin-bottom:22px">
+            <CustomFieldsCard fields={data.customFields} flush />
+          </div>
+        {/if}
+
+        <div class="act-head">
+          <div class="v2-label">{m.pipeline_detail_activity()}</div>
+          {#if data.interactions.live && !logging}
+            <button class="v2-btn v2-btn-sm" type="button" onclick={() => (logging = true)}>
+              {m.pipeline_detail_log_activity()}
+            </button>
+          {/if}
+        </div>
+        {#if logging}
+          <div style="margin-bottom:16px">
+            <LogActivity
+              bind:kind={logKind}
+              result={form?.activity}
+              timeZone={data.org?.timezone}
+              oncancel={() => (logging = false)}
+              onlogged={() => (logging = false)}
+            />
+          </div>
+        {/if}
+        <CommentComposer error={form?.noteError} />
+        {#if data.interactions.failed}
+          <p class="deal-error" style="margin-bottom:12px">
+            {m.pipeline_detail_interactions_failed()}
+          </p>
+        {/if}
+        {#if form?.activity?.deleteError}
+          <p class="deal-error" role="alert" style="margin-bottom:12px">
+            {form.activity.deleteError}
+          </p>
+        {/if}
         <Timeline events={activity} />
+        {#if data.interactions.more}
+          <p class="v2-sub" style="font-size:12px">
+            {m.pipeline_detail_interactions_more({ count: data.interactions.more })}
+          </p>
+        {/if}
 
         {#if lineItems.length}
           <div class="v2-label" style="margin:22px 0 10px">{m.pipeline_detail_line_items()}</div>
@@ -183,6 +239,9 @@
           </div>
         {/if}
 
+        <div class="v2-label" style="margin:22px 0 10px">{m.pipeline_detail_files()}</div>
+        <FileList files={data.files} empty={m.pipeline_detail_files_empty()} />
+
         <RelatedRecords {related} error={form?.related?.error} />
       </div>
     </div>
@@ -206,12 +265,7 @@
       <dt>{m.pipeline_field_type()}</dt>
       <dd>{OPPORTUNITY_TYPE_LABEL[deal.opportunity_type]}</dd>
       <dt>{m.pipeline_field_source()}</dt>
-      <dd>
-        {deal.lead_source
-          ? (OPPORTUNITY_SOURCES.find((o) => o.value === deal.lead_source)?.label ??
-            deal.lead_source)
-          : '—'}
-      </dd>
+      <dd>{sourceLabel(data.sources, deal.lead_source) || m.pipeline_source_not_recorded()}</dd>
       <dt>{m.pipeline_field_owner()}</dt>
       <dd>{deal.assigned_to || m.pipeline_detail_unassigned()}</dd>
       <!--
@@ -259,6 +313,13 @@
 </div>
 
 <style>
+  .act-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
   .deal-error {
     margin: 0;
     padding: 9px 12px;

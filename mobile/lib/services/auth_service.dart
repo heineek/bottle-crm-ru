@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -5,9 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/auth_response.dart';
 import 'api_service.dart';
 import 'crash_reporting.dart';
+import 'device_registration.dart';
 import 'token_storage.dart';
 
 /// Authentication service for BottleCRM
@@ -107,6 +110,13 @@ class AuthService {
       _apiService.setOrganizationId(_selectedOrganization!.id);
     }
 
+    DeviceRegistration.instance.watchRefresh(
+      () => isLoggedIn && _selectedOrganization != null,
+    );
+    if (isLoggedIn && _selectedOrganization != null) {
+      unawaited(DeviceRegistration.instance.register());
+    }
+
     debugPrint('AuthService: Initialized, isLoggedIn: $isLoggedIn');
   }
 
@@ -185,9 +195,9 @@ class AuthService {
 
   /// Verify a 6-digit OTP code and exchange it for JWT tokens.
   ///
-  /// Response shape matches `UserDetailSerializer` (see backend
-  /// `MagicLinkVerifyCodeView`), which is different from the Google sign-in
-  /// shape, hence the separate parser instead of `_handleAuthResponse`.
+  /// The answer is a `MagicLinkVerifyCodeResponse`, whose `user` is a
+  /// `UserDetail`: a different shape from the Google sign-in's, hence the
+  /// separate parser instead of `_handleAuthResponse`.
   Future<bool> signInWithMagicCode({
     required String email,
     required String code,
@@ -206,17 +216,17 @@ class AuthService {
         return false;
       }
 
-      final data = response.data!;
-      _accessToken = data['access_token'] as String?;
-      _refreshToken = data['refresh_token'] as String?;
+      final data = api.MagicLinkVerifyCodeResponse.fromJson(response.data!);
+      _accessToken = data.accessToken;
+      _refreshToken = data.refreshToken;
 
-      final userData = data['user'] as Map<String, dynamic>?;
-      if (userData != null) {
+      // `UserDetail` carries no name, so a code sign-in has none to cache.
+      final user = data.user;
+      if (user != null) {
         _currentUser = AuthUser(
-          id: userData['id'] as String,
-          email: userData['email'] as String,
-          name: userData['name'] as String?,
-          profilePic: userData['profile_pic'] as String?,
+          id: user.id!,
+          email: user.email!,
+          profilePic: user.profilePic,
         );
       }
 
@@ -226,21 +236,19 @@ class AuthService {
       // did, while the JWT quietly carried whichever org the server had picked.
       // The nested read is kept as a fallback in case an older build of the
       // API is on the other end.
-      final orgsList =
-          (data['organizations'] ?? userData?['organizations'])
-              as List<dynamic>?;
-      _organizations = orgsList
-          ?.map((org) => Organization.fromJson(org as Map<String, dynamic>))
-          .toList();
+      final orgs =
+          data.organizations?.map((o) => o.json) ??
+          user?.organizations?.map((o) => o.json);
+      _organizations = orgs?.map(Organization.fromJson).toList();
 
       // Backend returns `current_org` only when the user already belongs to an
       // org and its claim is baked into the JWT. Pre-select it so the user
       // skips org selection.
-      final currentOrgData = data['current_org'] as Map<String, dynamic>?;
-      if (currentOrgData != null && _organizations != null) {
+      final currentOrg = data.currentOrg;
+      if (currentOrg != null && _organizations != null) {
         _selectedOrganization = _organizations!.firstWhere(
-          (o) => o.id == currentOrgData['id'],
-          orElse: () => Organization.fromJson(currentOrgData),
+          (o) => o.id == currentOrg.id,
+          orElse: () => Organization.fromJson(currentOrg.json),
         );
       } else {
         _selectedOrganization = null;
@@ -258,6 +266,9 @@ class AuthService {
 
       debugPrint('AuthService: Magic code sign-in successful');
       await CrashReporting.applyFromAuth(this);
+      if (_selectedOrganization != null) {
+        unawaited(DeviceRegistration.instance.register());
+      }
       return true;
     } catch (e, stack) {
       debugPrint('AuthService: signInWithMagicCode error: $e');
@@ -266,29 +277,31 @@ class AuthService {
     }
   }
 
-  /// Handle authentication response from backend
-  Future<void> _handleAuthResponse(Map<String, dynamic> data) async {
+  /// Handle the Google sign-in answer, a `GoogleIdTokenResponse`.
+  Future<void> _handleAuthResponse(Map<String, dynamic> body) async {
+    final data = api.GoogleIdTokenResponse.fromJson(body);
     // Backend returns JWTtoken (matching old app response format) and a
     // refresh_token alongside it, without the refresh token, the access
     // token would die in 1 hour with no way to refresh until the user picks
     // an org (which re-issues both via OrgSwitchView).
-    _accessToken = data['JWTtoken'] as String?;
-    _refreshToken = data['refresh_token'] as String?;
+    _accessToken = data.jWTtoken;
+    _refreshToken = data.refreshToken;
 
-    if (data['user'] != null) {
-      final userData = data['user'] as Map<String, dynamic>;
+    final user = data.user;
+    if (user != null) {
       _currentUser = AuthUser(
-        id: userData['id'] as String,
-        email: userData['email'] as String,
-        name: userData['name'] as String?,
-        profilePic: userData['profileImage'] as String?,
+        id: user.id!,
+        email: user.email!,
+        name: user.name,
+        profilePic: user.profileImage,
       );
     }
 
-    if (data['organizations'] != null) {
-      _organizations = (data['organizations'] as List<dynamic>)
-          .map((org) => Organization.fromJson(org as Map<String, dynamic>))
-          .toList();
+    final orgs = data.organizations;
+    if (orgs != null) {
+      _organizations = [
+        for (final org in orgs) Organization.fromJson(org.json),
+      ];
     }
 
     // Clear any previously selected organization on fresh login
@@ -329,8 +342,9 @@ class AuthService {
         return false;
       }
 
-      final newAccess = response.data!['access'] as String?;
-      final newRefresh = response.data!['refresh'] as String?;
+      final data = api.OrgAwareTokenRefreshResponse.fromJson(response.data!);
+      final newAccess = data.access;
+      final newRefresh = data.refresh;
       if (newAccess == null) {
         debugPrint('AuthService: Refresh response missing access token');
         return false;
@@ -359,6 +373,11 @@ class AuthService {
     try {
       debugPrint('AuthService: Switching to organization: ${org.name}...');
 
+      // The phone's alerts belong to one org at a time: leave the old one
+      // while its org header is still on the session.
+      final hadOrg = _selectedOrganization != null;
+      if (hadOrg) await DeviceRegistration.instance.unregister();
+
       // Call switch-org API to get new tokens with org context. The outgoing
       // refresh token is sent so the backend blacklists it. We replace it below
       // either way, and leaving it live keeps a stolen copy working against the
@@ -370,21 +389,23 @@ class AuthService {
 
       if (!response.success || response.data == null) {
         debugPrint('AuthService: Switch org failed: ${response.message}');
+        if (hadOrg) unawaited(DeviceRegistration.instance.register());
         return false;
       }
 
       // Update tokens from response. The backend has now blacklisted the token
       // we sent, so a malformed reply must not clear the field, mirror the
       // guard in refreshAccessToken rather than stranding the session.
-      _accessToken = response.data!['access_token'] as String?;
-      final newRefresh = response.data!['refresh_token'] as String?;
+      final data = api.OrgSwitchResponse.fromJson(response.data!);
+      _accessToken = data.accessToken;
+      final newRefresh = data.refreshToken;
       if (newRefresh != null) {
         _refreshToken = newRefresh;
       }
 
       // Update selected organization, with the membership facts the switch
       // just re-read (role, admin), and the cached list entry with it.
-      final fresh = org.withMembership(response.data!['profile']);
+      final fresh = org.withMembership(data.profile?.json);
       _selectedOrganization = fresh;
       _organizations = _organizations
           ?.map((o) => o.id == fresh.id ? fresh : o)
@@ -400,6 +421,7 @@ class AuthService {
 
       debugPrint('AuthService: Switched to organization: ${org.name}');
       await CrashReporting.applyFromAuth(this);
+      unawaited(DeviceRegistration.instance.register());
       return true;
     } catch (e) {
       debugPrint('AuthService: Switch org error: $e');
@@ -429,12 +451,12 @@ class AuthService {
         return response.message ?? appL10n.appOrgCreateFailed;
       }
 
-      final orgJson = response.data!['org'] as Map<String, dynamic>?;
-      if (orgJson == null || orgJson['id'] == null) {
+      final created = api.OrgCreateResponse.fromJson(response.data!).org;
+      if (created == null || created.id == null) {
         return appL10n.appOrgCreateNoId;
       }
 
-      final org = Organization.fromJson(orgJson);
+      final org = Organization.fromJson(created.json);
       _organizations = [...?_organizations, org];
       await _saveToStorage();
 
@@ -480,28 +502,39 @@ class AuthService {
     // stranding them on a logged-in screen because the network dropped is the
     // worse outcome. `ApiService` already swallows transport errors into an
     // unsuccessful response.
-    if (_refreshToken != null) {
-      final response = await _apiService.post(ApiConfig.logout, {
-        'refresh': _refreshToken,
-      }, requiresAuth: false);
-      if (!response.success) {
-        debugPrint('AuthService: Server sign-out failed, clearing anyway');
+    // Dropped even with no refresh token (a forced sign-out): the local FCM
+    // token must not outlive the session. A failure is swallowed inside, and
+    // it runs before the logout call, which blacklists the refresh token the
+    // delete may still need.
+    try {
+      await DeviceRegistration.instance.unregister(forget: true);
+      if (_refreshToken != null) {
+        final response = await _apiService.post(ApiConfig.logout, {
+          'refresh': _refreshToken,
+        }, requiresAuth: false);
+        if (!response.success) {
+          debugPrint('AuthService: Server sign-out failed, clearing anyway');
+        }
       }
+
+      _accessToken = null;
+      _refreshToken = null;
+      _currentUser = null;
+      _organizations = null;
+      _selectedOrganization = null;
+
+      _apiService.clearAuth();
+      // Leave the refresh callback wired, `refreshAccessToken` already bails
+      // when `_refreshToken == null`, so it's safe to keep registered. Nulling
+      // it here used to break refresh for any signOut → signIn cycle inside
+      // the same app session (no path re-registers it).
+      await _clearStorage();
+      await CrashReporting.clear();
+    } finally {
+      // Always lifts the guard, so a sign-out that throws midway cannot leave
+      // registration off for the rest of the session.
+      DeviceRegistration.instance.finishSignOut();
     }
-
-    _accessToken = null;
-    _refreshToken = null;
-    _currentUser = null;
-    _organizations = null;
-    _selectedOrganization = null;
-
-    _apiService.clearAuth();
-    // Leave the refresh callback wired, `refreshAccessToken` already bails
-    // when `_refreshToken == null`, so it's safe to keep registered. Nulling
-    // it here used to break refresh for any signOut → signIn cycle inside
-    // the same app session (no path re-registers it).
-    await _clearStorage();
-    await CrashReporting.clear();
 
     debugPrint('AuthService: Signed out');
   }

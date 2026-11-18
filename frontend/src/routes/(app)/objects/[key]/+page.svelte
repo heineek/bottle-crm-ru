@@ -1,20 +1,35 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { asInternalPath } from '#lib/utils/paths.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
+  import FilterBar from '#lib/v2/components/FilterBar.svelte';
+  import LeadImportDrawer from '#lib/components/leads/LeadImportDrawer.svelte';
+  import { objectImportConfig } from '#lib/import/entities.js';
+  import { objectDescriptor } from '#lib/v2/object-filters.js';
   import { count } from '#lib/v2/format.js';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts as parts, slot } from '#lib/utils/message-parts.js';
-  import { Boxes, Plus } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { Boxes, Columns3, Download, List, Plus, Upload } from '@lucide/svelte';
+  import { canWriteObject } from '#lib/v2/custom-objects.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let def = $derived(data.definition);
   let rows = $derived(data.page.results);
-  let canCreate = $derived(data.customObjects?.has_custom_objects === true);
+  let canCreate = $derived(canWriteObject(data.definition, data.customObjects?.has_custom_objects));
   let hasNext = $derived(data.pageNumber * 20 < data.page.count);
+  let importOpen = $state(false);
+  let canImport = $derived(canCreate && data.canImport);
+  let descriptor = $derived(objectDescriptor(def.fields));
+  let importConfig = $derived(objectImportConfig(def));
+  // Anything filtering the list, so the search box and the pager keep it.
+  let filtered = $derived(
+    data.q !== '' ||
+      [...page.url.searchParams.keys()].some((k) => k !== 'page' && k !== 'q' && k !== 'limit')
+  );
 
   let countParts = $derived(
     parts(
@@ -28,12 +43,20 @@
     parts(m.app_objects_showing({ shown: slot('shown'), total: slot('total') }))
   );
 
-  /** @param {number} n */
-  function pageQuery(n) {
-    const parts = [];
-    if (data.q) parts.push(`q=${encodeURIComponent(data.q)}`);
-    if (n > 1) parts.push(`page=${n}`);
-    return `/objects/${def.key}${parts.length ? `?${parts.join('&')}` : ''}`;
+  // The board takes the list's filters, so the switch carries them over.
+  let boardHref = $derived.by(() => {
+    const params = new URLSearchParams(page.url.search);
+    params.delete('page');
+    const qs = params.toString();
+    return `/objects/${def.key}/board${qs ? `?${qs}` : ''}`;
+  });
+
+  function pageQuery(n: number) {
+    const params = new URLSearchParams(page.url.search);
+    params.delete('page');
+    if (n > 1) params.set('page', String(n));
+    const qs = params.toString();
+    return `/objects/${def.key}${qs ? `?${qs}` : ''}`;
   }
 </script>
 
@@ -44,6 +67,24 @@
           >{:else}{p.text}{/if}{/each}{/if}
   {/snippet}
   {#snippet actions()}
+    {#if data.hasBoard}
+      <span class="v2-btn" aria-current="true"><List />{m.objects_view_list()}</span>
+      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(boardHref))}
+        ><Columns3 />{m.objects_view_board()}</a
+      >
+    {/if}
+    {#if canImport}
+      <button class="v2-btn" onclick={() => (importOpen = true)}
+        ><Upload />{m.common_import()}</button
+      >
+    {/if}
+    <a
+      class="v2-btn"
+      href="{resolve(asInternalPath(`/api/objects/${def.key}/export`))}?{page.url.searchParams}"
+      data-sveltekit-reload
+    >
+      <Download />Export
+    </a>
     {#if canCreate}
       <a class="v2-btn v2-btn-primary" href={resolve(asInternalPath(`/objects/${def.key}/new`))}
         ><Plus />{m.app_objects_new({ label: def.label })}</a
@@ -52,8 +93,30 @@
   {/snippet}
 </PageHeader>
 
+<FilterBar
+  page="objects"
+  {descriptor}
+  url={page.url}
+  people={data.people}
+  tags={data.tags}
+  meId={data.meId}
+  saved={data.savedViews}
+/>
+
+{#if canImport}
+  <LeadImportDrawer
+    bind:open={importOpen}
+    singular={importConfig.singular}
+    plural={importConfig.plural}
+    config={importConfig}
+  />
+{/if}
+
 <div class="v2-scroll">
   <form class="ol-search" method="GET" role="search">
+    {#each [...page.url.searchParams] as [name, value], i (`${i}:${name}`)}
+      {#if name !== 'q' && name !== 'page'}<input type="hidden" {name} {value} />{/if}
+    {/each}
     <input
       class="v2-input"
       type="search"
@@ -68,14 +131,14 @@
 
   {#if rows.length === 0}
     <EmptyState
-      title={data.q
+      title={filtered
         ? m.app_objects_no_matches()
         : m.app_objects_empty_title({ plural: def.label_plural.toLowerCase() })}
-      body={data.q ? m.app_objects_no_matches_body({ query: data.q }) : m.app_objects_empty_body()}
+      body={filtered ? m.objects_no_matches_filters() : m.app_objects_empty_body()}
     >
       {#snippet icon()}<Boxes size={21} />{/snippet}
       {#snippet actions()}
-        {#if canCreate && !data.q}
+        {#if canCreate && !filtered}
           <a class="v2-btn v2-btn-primary" href={resolve(asInternalPath(`/objects/${def.key}/new`))}
             >{m.app_objects_new({ label: def.label })}</a
           >
@@ -90,6 +153,7 @@
             <th>{def.name_label}</th>
             {#each data.columns as c (c.key)}<th>{c.label}</th>{/each}
             <th>{m.common_assigned_to()}</th>
+            <th>{m.objects_tags()}</th>
           </tr>
         </thead>
         <tbody>
@@ -107,6 +171,11 @@
                 <td data-m="meta" data-l={data.columns[i].label}>{cell}</td>
               {/each}
               <td class="v2-muted" data-m="hide">{r.assignees.join(', ')}</td>
+              <td
+                class="v2-muted"
+                data-m="meta"
+                data-l={r.tags.length ? m.objects_tags() : undefined}>{r.tags.join(', ')}</td
+              >
             </tr>
           {/each}
         </tbody>

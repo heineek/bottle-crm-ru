@@ -9,14 +9,14 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.kanban import lock_pipeline, make_only_default, place_in_column
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.validators import date_param, uuid_param
 from tasks.access import assert_task_access, visible_tasks_qs
 from tasks.models import Task, TaskPipeline, TaskStage
@@ -28,6 +28,26 @@ from tasks.serializer import (
     TaskStageSerializer,
 )
 from tasks.views.task_views import _model_errors
+
+_KANBAN_COLUMN = inline_serializer(
+    name="TaskKanbanColumn",
+    fields={
+        # A status value on the status board, a stage id on a pipeline board.
+        "id": serializers.CharField(),
+        "name": serializers.CharField(),
+        "order": serializers.IntegerField(),
+        "color": serializers.CharField(),
+        "stage_type": serializers.CharField(),
+        "is_status_column": serializers.BooleanField(),
+        "wip_limit": serializers.IntegerField(allow_null=True),
+        # Pipeline columns only.
+        "maps_to_status": serializers.CharField(required=False, allow_null=True),
+        "task_count": serializers.IntegerField(),
+        # The first 100 of `task_count`.
+        "tasks": TaskKanbanCardSerializer(many=True),
+    },
+    many=True,
+)
 
 
 class TaskKanbanView(APIView):
@@ -107,6 +127,17 @@ class TaskKanbanView(APIView):
                 type=str,
             ),
         ],
+        responses={
+            200: inline_serializer(
+                name="TaskKanbanResponse",
+                fields={
+                    "mode": serializers.ChoiceField(choices=["status", "pipeline"]),
+                    "pipeline": TaskPipelineListSerializer(allow_null=True),
+                    "columns": _KANBAN_COLUMN,
+                    "total_tasks": serializers.IntegerField(),
+                },
+            )
+        },
     )
     def get(self, request):
         """Get kanban board data."""
@@ -156,7 +187,7 @@ class TaskKanbanView(APIView):
         due_date_lte = date_param(params, "due_date__lte")
         if due_date_lte:
             queryset = queryset.filter(due_date__lte=due_date_lte)
-        for related in ("account", "lead", "opportunity", "case"):
+        for related in ("account", "lead", "opportunity", "case", "project"):
             related_id = uuid_param(params, related)
             if related_id:
                 queryset = queryset.filter(**{f"{related}_id": related_id})
@@ -264,6 +295,16 @@ class TaskMoveView(APIView):
         tags=["Tasks Kanban"],
         operation_id="task_move",
         request=TaskMoveSerializer,
+        responses={
+            200: inline_serializer(
+                name="TaskMoveResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "message": serializers.CharField(),
+                    "task": TaskKanbanCardSerializer(),
+                },
+            )
+        },
     )
     @transaction.atomic
     def patch(self, request, pk):
@@ -401,7 +442,14 @@ class TaskPipelineListCreateView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     @extend_schema(
-        tags=["Task Pipelines"], responses={200: TaskPipelineListSerializer(many=True)}
+        tags=["Task Pipelines"],
+        operation_id="tasks_pipelines_list",
+        responses={
+            200: inline_serializer(
+                name="TaskPipelineListResponse",
+                fields={"pipelines": TaskPipelineListSerializer(many=True)},
+            )
+        },
     )
     def get(self, request):
         """List all pipelines for the organization."""
@@ -423,7 +471,7 @@ class TaskPipelineListCreateView(APIView):
         org = request.profile.org
 
         # Only admins can create pipelines
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can create pipelines")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -501,13 +549,13 @@ class TaskPipelineDetailView(APIView):
 
     @extend_schema(
         tags=["Task Pipelines"],
-        request=TaskPipelineSerializer,
+        request=TaskPipelineSerializer(partial=True),
         responses={200: TaskPipelineSerializer},
     )
     @transaction.atomic
     def put(self, request, pk):
         """Update pipeline."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -536,7 +584,7 @@ class TaskPipelineDetailView(APIView):
     @transaction.atomic
     def delete(self, request, pk):
         """Delete pipeline (soft delete by setting is_active=False)."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -577,7 +625,7 @@ class TaskStageCreateView(APIView):
     )
     def post(self, request, pipeline_pk):
         """Add a new stage to pipeline."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -608,12 +656,12 @@ class TaskStageDetailView(APIView):
 
     @extend_schema(
         tags=["Task Stages"],
-        request=TaskStageSerializer,
+        request=TaskStageSerializer(partial=True),
         responses={200: TaskStageSerializer},
     )
     def put(self, request, pk):
         """Update stage."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -635,7 +683,7 @@ class TaskStageDetailView(APIView):
     @extend_schema(tags=["Task Stages"], responses={204: None})
     def delete(self, request, pk):
         """Delete stage."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -675,11 +723,17 @@ class TaskStageReorderView(APIView):
     @extend_schema(
         tags=["Task Stages"],
         request=TaskStageReorderSerializer,
+        responses={
+            200: inline_serializer(
+                name="TaskStageReorderResponse",
+                fields={"message": serializers.CharField()},
+            )
+        },
     )
     @transaction.atomic
     def post(self, request, pipeline_pk):
         """Reorder stages by providing ordered list of stage IDs."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )

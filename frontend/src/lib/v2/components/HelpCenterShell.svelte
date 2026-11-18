@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * The frame for an org's public help center.
@@ -14,9 +14,9 @@
    */
   import '#lib/v2/styles/v2.css';
   import { resolve } from '$app/paths';
+  import type { Snippet } from 'svelte';
 
-  /** @type {{ name: string, slug: string, children: import('svelte').Snippet }} */
-  let { name, slug, children } = $props();
+  let { name, slug, children }: { name: string; slug: string; children: Snippet } = $props();
 </script>
 
 <div class="v2-root hc">

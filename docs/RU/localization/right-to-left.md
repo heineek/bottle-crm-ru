@@ -7,8 +7,8 @@
 
 ## Что уже сделано {#what-is-in-place}
 
-- **Веб.** `hooks.server.js` выставляет `dir` на `<html>` по `textDirection(locale)` из
-  `src/lib/i18n/locale.js`, который знает языки с письмом справа налево (`ar`, `fa`, `he`, `ur` и
+- **Веб.** `hooks.server.ts` выставляет `dir` на `<html>` по `textDirection(locale)` из
+  `src/lib/i18n/locale.ts`, который знает языки с письмом справа налево (`ar`, `fa`, `he`, `ur` и
   ещё несколько). Дальше браузер сам отражает выравнивание текста, строчный поток, flex-строки,
   столбцы grid и полосы прокрутки.
 - **Мобильное приложение.** `flutter_localizations` задаёт `Directionality` по локали приложения,

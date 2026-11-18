@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * Custom records that link to the built-in record on this page, with add and
@@ -9,12 +9,15 @@
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
-  import { recordHref } from '#lib/v2/custom-objects.js';
+  import { recordHref, type relatedView } from '#lib/v2/custom-objects.js';
   import RecordPicker from '#lib/v2/components/RecordPicker.svelte';
   import { X } from '@lucide/svelte';
 
-  /** @type {{ related: { groups: any[], addTargets: any[] } | null, error?: string | null, flush?: boolean }} */
-  let { related, error = null, flush = false } = $props();
+  let {
+    related,
+    error = null,
+    flush = false
+  }: { related: ReturnType<typeof relatedView>; error?: string | null; flush?: boolean } = $props();
 
   let chosen = $state('');
   /** Bumped after an add so the picker forgets the record just linked. */

@@ -8,6 +8,7 @@ import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/org_settings.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/billing_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../routes/app_router.dart';
@@ -25,9 +26,12 @@ import '../../services/org_date.dart';
 /// belongs behind its own audited action.
 ///
 /// The read is open to any member: the company profile is not a secret, and
-/// members legitimately see their org's address and currency. Editing, applying
-/// a pack and clearing sample data are admin-only, enforced server-side; hiding
-/// the buttons is UX.
+/// members legitimately see their org's address and currency. Editing is
+/// admin-only, enforced server-side; hiding the button is UX. Industry apps
+/// and sample data live on the Apps screen.
+///
+/// Where the server offers billing, the plan's name shows under the header,
+/// read-only for everyone: the phone never offers to buy or manage a plan.
 class OrganizationScreen extends ConsumerWidget {
   const OrganizationScreen({super.key});
 
@@ -37,6 +41,9 @@ class OrganizationScreen extends ConsumerWidget {
     final async = ref.watch(orgSettingsProvider);
     final invoicesOn = ref.watch(moduleOnProvider('invoices'));
     final ticketsOn = ref.watch(moduleOnProvider('tickets'));
+    // While it reloads, the previous value may be another org's plan.
+    final plan = ref.watch(orgPlanNameProvider);
+    final planName = plan.isLoading || plan.hasError ? null : plan.value;
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
@@ -60,14 +67,16 @@ class OrganizationScreen extends ConsumerWidget {
           onRetry: () => ref.read(orgSettingsProvider.notifier).refresh(),
         ),
         data: (org) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(orgPacksProvider);
-            await ref.read(orgSettingsProvider.notifier).refresh();
+          onRefresh: () {
+            ref.invalidate(orgPlanNameProvider);
+            return ref.read(orgSettingsProvider.notifier).refresh();
           },
           child: ListView(
             padding: const EdgeInsets.only(bottom: 40),
             children: [
               _Header(org: org),
+              if (planName != null)
+                _Field(label: context.l10n.settingsOrgPlan, value: planName),
               _SectionHeader(context.l10n.settingsOrgSectionCustomersSee),
               _Field(
                 label: context.l10n.settingsOrgLegalName,
@@ -159,8 +168,6 @@ class OrganizationScreen extends ConsumerWidget {
                 ),
               ],
               const _ApiKeyNote(),
-              _SectionHeader(context.l10n.settingsOrgSectionPack),
-              _PackSection(org: org, isAdmin: isAdmin),
             ],
           ),
         ),
@@ -292,280 +299,6 @@ class _ApiKeyNote extends StatelessWidget {
               context.l10n.settingsOrgApiKeyNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Packs: what is applied, what can be applied, and the sample data a pack
-/// creates.
-class _PackSection extends ConsumerStatefulWidget {
-  const _PackSection({required this.org, required this.isAdmin});
-
-  final OrgSettings org;
-  final bool isAdmin;
-
-  @override
-  ConsumerState<_PackSection> createState() => _PackSectionState();
-}
-
-class _PackSectionState extends ConsumerState<_PackSection> {
-  bool _busy = false;
-
-  Future<void> _apply(VerticalPack pack) async {
-    // Additive-only and safe to repeat, so re-applying the current pack is
-    // allowed rather than blocked. It reports everything skipped.
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.settingsOrgApplyTitle(pack.name)),
-        content: Text(
-          ref.read(productsOnProvider)
-              ? ctx.l10n.settingsOrgApplyBodyProducts
-              : ctx.l10n.settingsOrgApplyBody,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctx.l10n.settingsOrgApply),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _busy = true);
-    final result = await ref
-        .read(orgSettingsProvider.notifier)
-        .applyPack(pack.id);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.error ?? result.report!.summary)),
-    );
-  }
-
-  Future<void> _clearSampleData() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.settingsOrgClearTitle),
-        content: Text(ctx.l10n.settingsOrgClearBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctx.l10n.settingsOrgClear),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _busy = true);
-    final result = await ref
-        .read(orgSettingsProvider.notifier)
-        .clearSampleData();
-    if (!mounted) return;
-    setState(() => _busy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result.error ??
-              sampleDataResult(
-                deleted: result.deleted,
-                retained: result.retained,
-              ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final org = widget.org;
-    final packs = ref.watch(orgPacksProvider).value ?? const <VerticalPack>[];
-    final productsOn = ref.watch(productsOnProvider);
-    // The registry entry matching `org.vertical`, or null when no pack has been
-    // applied or the id is one this build does not know.
-    final applied = packs.where((pack) => pack.id == org.vertical).firstOrNull;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          color: AppColors.surface,
-          margin: const EdgeInsets.only(bottom: 1),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.settingsOrgFirstPack,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                applied?.name ??
-                    (org.vertical.isEmpty
-                        ? context.l10n.settingsOrgNoneYet
-                        : org.vertical),
-                style: AppTypography.body.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                productsOn
-                    ? context.l10n.settingsOrgPackBodyProducts
-                    : context.l10n.settingsOrgPackBody,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (!widget.isAdmin)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Text(
-              context.l10n.settingsOrgAdminsOnly,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          )
-        else ...[
-          for (final pack in packs)
-            _PackRow(
-              pack: pack,
-              isApplied: pack.id == org.vertical,
-              busy: _busy,
-              onApply: () => _apply(pack),
-            ),
-          if (packs.isEmpty)
-            Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: Text(
-                context.l10n.settingsOrgNoPacks,
-                style: AppTypography.body.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _busy ? null : _clearSampleData,
-                icon: const Icon(LucideIcons.trash2, size: 16),
-                label: Text(context.l10n.settingsOrgClearButton),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.danger600,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              context.l10n.settingsOrgClearHint,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _PackRow extends StatelessWidget {
-  const _PackRow({
-    required this.pack,
-    required this.isApplied,
-    required this.busy,
-    required this.onApply,
-  });
-
-  final VerticalPack pack;
-  final bool isApplied;
-  final bool busy;
-  final VoidCallback onApply;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surface,
-      margin: const EdgeInsets.only(bottom: 1),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  pack.name,
-                  style: AppTypography.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              if (isApplied)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.success50,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.success200),
-                  ),
-                  child: Text(
-                    context.l10n.settingsOrgApplied,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.success600,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (pack.description.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text(
-              pack.description,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: busy ? null : onApply,
-              child: Text(
-                isApplied
-                    ? context.l10n.settingsOrgApplyAgain
-                    : context.l10n.settingsOrgApply,
               ),
             ),
           ),

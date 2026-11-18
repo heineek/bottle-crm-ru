@@ -22,8 +22,8 @@ is the *only* tenant barrier, load-bearing, not a belt over RLS's braces.
 
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,6 +34,32 @@ from common.permissions import HasOrgContext, IsOrgAdmin
 from common.serializer import (
     PersonalAccessTokenCreateSerializer,
     PersonalAccessTokenListSerializer,
+)
+
+
+class OrgAccessTokenOwnerSerializer(serializers.Serializer):
+    """Response-only: the owner block on an org token row."""
+
+    id = serializers.CharField()
+    name = serializers.CharField()
+    role = serializers.CharField()
+    is_active = serializers.BooleanField()
+
+
+class OrgAccessTokenSerializer(PersonalAccessTokenListSerializer):
+    """Response-only: one `OrgAccessTokenListView` row."""
+
+    scopes = serializers.ListField(child=serializers.CharField(), read_only=True)
+    owner = OrgAccessTokenOwnerSerializer(read_only=True)
+    is_live = serializers.BooleanField(read_only=True)
+
+    class Meta(PersonalAccessTokenListSerializer.Meta):
+        fields = (*PersonalAccessTokenListSerializer.Meta.fields, "owner", "is_live")
+        read_only_fields = fields
+
+
+_REVOKE_RESPONSE = inline_serializer(
+    name="AccessTokenRevokeResponse", fields={"error": serializers.BooleanField()}
 )
 
 
@@ -48,10 +74,33 @@ def _revoke(request, pat):
         audit_log.api_token_revoked(request.user, pat, request)
 
 
+class PersonalAccessTokenCreatedSerializer(PersonalAccessTokenListSerializer):
+    """Response-only: a new token, with its raw value shown this once."""
+
+    error = serializers.BooleanField(read_only=True)
+    token = serializers.CharField(read_only=True)
+
+    class Meta(PersonalAccessTokenListSerializer.Meta):
+        fields = (*PersonalAccessTokenListSerializer.Meta.fields, "error", "token")
+        read_only_fields = fields
+
+
 class PersonalAccessTokenListCreateView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
-    @extend_schema(tags=["API Tokens"], operation_id="pat_list")
+    @extend_schema(
+        tags=["API Tokens"],
+        operation_id="pat_list",
+        responses={
+            200: inline_serializer(
+                name="AccessTokenListResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "tokens": PersonalAccessTokenListSerializer(many=True),
+                },
+            )
+        },
+    )
     def get(self, request):
         qs = PersonalAccessToken.objects.filter(
             org=request.profile.org, profile=request.profile
@@ -68,6 +117,7 @@ class PersonalAccessTokenListCreateView(APIView):
         tags=["API Tokens"],
         operation_id="pat_create",
         request=PersonalAccessTokenCreateSerializer,
+        responses={201: PersonalAccessTokenCreatedSerializer},
     )
     def post(self, request):
         ser = PersonalAccessTokenCreateSerializer(data=request.data)
@@ -91,7 +141,11 @@ class PersonalAccessTokenListCreateView(APIView):
 class PersonalAccessTokenDetailView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
-    @extend_schema(tags=["API Tokens"], operation_id="pat_revoke")
+    @extend_schema(
+        tags=["API Tokens"],
+        operation_id="pat_revoke",
+        responses={200: _REVOKE_RESPONSE},
+    )
     def delete(self, request, pk):
         pat = get_object_or_404(
             PersonalAccessToken.objects.select_related("profile__user"),
@@ -101,6 +155,12 @@ class PersonalAccessTokenDetailView(APIView):
         )
         _revoke(request, pat)
         return Response({"error": False}, status=status.HTTP_200_OK)
+
+
+def _people_tokens(org):
+    """The org's tokens, less those of app members (`common.app_members`),
+    whose keys belong to the extension that connected them."""
+    return PersonalAccessToken.objects.filter(org=org, profile__is_app=False)
 
 
 class OrgAccessTokenListView(APIView):
@@ -136,11 +196,32 @@ class OrgAccessTokenListView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext, IsOrgAdmin)
 
-    @extend_schema(tags=["API Tokens"], operation_id="org_pat_list")
+    @extend_schema(
+        tags=["API Tokens"],
+        operation_id="org_pat_list",
+        responses={
+            200: inline_serializer(
+                name="OrgAccessTokenListResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "tokens": OrgAccessTokenSerializer(many=True),
+                    "totals": inline_serializer(
+                        name="OrgAccessTokenTotals",
+                        fields={
+                            "count": serializers.IntegerField(),
+                            "live": serializers.IntegerField(),
+                            "orphaned": serializers.IntegerField(),
+                            "unused_90d": serializers.IntegerField(),
+                        },
+                    ),
+                },
+            )
+        },
+    )
     def get(self, request):
         now = timezone.now()
         qs = (
-            PersonalAccessToken.objects.filter(org=request.profile.org)
+            _people_tokens(request.profile.org)
             .select_related("profile", "profile__user")
             .order_by("-created_at")
         )
@@ -179,7 +260,7 @@ class OrgAccessTokenListView(APIView):
 
 
 class OrgAccessTokenDetailView(APIView):
-    """Admin revoke of ANY token in the org, org-scoped, not profile-scoped.
+    """Admin revoke of any person's token in the org, org-scoped, not profile-scoped.
 
     Separate from ``PersonalAccessTokenDetailView`` (which stays self-only): an
     admin cleaning up a deactivated colleague's token cannot use the self path.
@@ -190,12 +271,15 @@ class OrgAccessTokenDetailView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext, IsOrgAdmin)
 
-    @extend_schema(tags=["API Tokens"], operation_id="org_pat_revoke")
+    @extend_schema(
+        tags=["API Tokens"],
+        operation_id="org_pat_revoke",
+        responses={200: _REVOKE_RESPONSE},
+    )
     def delete(self, request, pk):
         pat = get_object_or_404(
-            PersonalAccessToken.objects.select_related("profile__user"),
+            _people_tokens(request.profile.org).select_related("profile__user"),
             pk=pk,
-            org=request.profile.org,
         )
         _revoke(request, pat)
         return Response({"error": False}, status=status.HTTP_200_OK)

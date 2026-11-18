@@ -8,14 +8,14 @@ from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.kanban import lock_pipeline, make_only_default, place_in_column
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.utils import LEAD_STATUS
 from common.validators import date_param, uuid_param
 from leads.access import visible_leads_qs
@@ -39,6 +39,23 @@ def _board_leads(leads):
     counting either refused a delete the admin had no way to satisfy.
     """
     return leads.filter(is_active=True).exclude(status__in=IRREVERSIBLE_STATUSES)
+
+
+class LeadKanbanColumnSerializer(serializers.Serializer):
+    """Schema only: one column of `LeadKanbanView`, a status or a stage."""
+
+    id = serializers.CharField()
+    name = serializers.CharField()
+    order = serializers.IntegerField()
+    color = serializers.CharField()
+    stage_type = serializers.CharField()
+    is_status_column = serializers.BooleanField()
+    wip_limit = serializers.IntegerField(allow_null=True)
+    # Stage columns only.
+    win_probability = serializers.IntegerField(required=False)
+    maps_to_status = serializers.CharField(required=False, allow_null=True)
+    lead_count = serializers.IntegerField()
+    leads = LeadKanbanCardSerializer(many=True)
 
 
 class LeadKanbanView(APIView):
@@ -82,6 +99,27 @@ class LeadKanbanView(APIView):
                 type=str,
             ),
         ],
+        responses={
+            200: inline_serializer(
+                name="LeadKanbanResponse",
+                fields={
+                    # "status", or "pipeline" with `pipeline_id`.
+                    "mode": serializers.CharField(),
+                    "pipeline": LeadPipelineListSerializer(allow_null=True),
+                    "columns": LeadKanbanColumnSerializer(many=True),
+                    "total_leads": serializers.IntegerField(),
+                    # Pipeline mode only.
+                    "unstaged": inline_serializer(
+                        name="LeadKanbanUnstaged",
+                        fields={
+                            "lead_count": serializers.IntegerField(),
+                            "leads": LeadKanbanCardSerializer(many=True),
+                        },
+                        required=False,
+                    ),
+                },
+            )
+        },
     )
     def get(self, request):
         """Get kanban board data."""
@@ -251,6 +289,16 @@ class LeadMoveView(APIView):
         tags=["Leads Kanban"],
         operation_id="lead_move",
         request=LeadMoveSerializer,
+        responses={
+            200: inline_serializer(
+                name="LeadMoveResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "message": serializers.CharField(),
+                    "lead": LeadKanbanCardSerializer(),
+                },
+            )
+        },
     )
     @transaction.atomic
     def patch(self, request, pk):
@@ -429,13 +477,27 @@ class LeadMoveView(APIView):
         return Lead.objects.filter(org=org, status=lead.status, stage__isnull=True)
 
 
+class LeadPipelineCreateSerializer(LeadPipelineSerializer):
+    # False skips the default stages `post` otherwise adds.
+    create_default_stages = serializers.BooleanField(required=False)
+
+    class Meta(LeadPipelineSerializer.Meta):
+        fields = [*LeadPipelineSerializer.Meta.fields, "create_default_stages"]
+
+
 class LeadPipelineListCreateView(APIView):
     """List and create lead pipelines."""
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     @extend_schema(
-        tags=["Lead Pipelines"], responses={200: LeadPipelineListSerializer(many=True)}
+        tags=["Lead Pipelines"],
+        responses={
+            200: inline_serializer(
+                "LeadPipelineListResponse",
+                {"pipelines": LeadPipelineListSerializer(many=True)},
+            )
+        },
     )
     def get(self, request):
         """List all pipelines for the organization."""
@@ -449,7 +511,7 @@ class LeadPipelineListCreateView(APIView):
 
     @extend_schema(
         tags=["Lead Pipelines"],
-        request=LeadPipelineSerializer,
+        request=LeadPipelineCreateSerializer,
         responses={201: LeadPipelineSerializer},
     )
     @transaction.atomic
@@ -458,7 +520,7 @@ class LeadPipelineListCreateView(APIView):
         org = request.profile.org
 
         # Only admins can create pipelines
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can create pipelines")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -554,13 +616,13 @@ class LeadPipelineDetailView(APIView):
 
     @extend_schema(
         tags=["Lead Pipelines"],
-        request=LeadPipelineSerializer,
+        request=LeadPipelineSerializer(partial=True),
         responses={200: LeadPipelineSerializer},
     )
     @transaction.atomic
     def put(self, request, pk):
         """Update pipeline."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -587,7 +649,7 @@ class LeadPipelineDetailView(APIView):
     @transaction.atomic
     def delete(self, request, pk):
         """Delete pipeline (soft delete by setting is_active=False)."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -631,7 +693,7 @@ class LeadStageCreateView(APIView):
     )
     def post(self, request, pipeline_pk):
         """Add a new stage to pipeline."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -671,12 +733,12 @@ class LeadStageDetailView(APIView):
 
     @extend_schema(
         tags=["Lead Stages"],
-        request=LeadStageSerializer,
+        request=LeadStageSerializer(partial=True),
         responses={200: LeadStageSerializer},
     )
     def put(self, request, pk):
         """Update stage."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -700,7 +762,7 @@ class LeadStageDetailView(APIView):
     @extend_schema(tags=["Lead Stages"], responses={204: None})
     def delete(self, request, pk):
         """Delete stage."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -742,11 +804,16 @@ class LeadStageReorderView(APIView):
     @extend_schema(
         tags=["Lead Stages"],
         request=LeadStageReorderSerializer,
+        responses={
+            200: inline_serializer(
+                "LeadStageReorderResponse", {"message": serializers.CharField()}
+            )
+        },
     )
     @transaction.atomic
     def post(self, request, pipeline_pk):
         """Reorder stages by providing ordered list of stage IDs."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )

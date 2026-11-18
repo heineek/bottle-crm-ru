@@ -1,5 +1,13 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
+  import { enhance, type SubmitFunction } from '$app/forms';
+  import { page, type ReadonlyURL } from '$app/state';
+  import { resolve } from '$app/paths';
+  import { Bookmark, ChevronDown, Pencil } from '@lucide/svelte';
+  import { asInternalPath } from '#lib/utils/paths.js';
+  import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
+  import { droppedValues, isShowing, viewHref, type Spec } from '#lib/v2/saved-views.js';
+
   /**
    * Saved views (G29): save the list's current filters under a name, open one
    * with a tap, rename or delete it. One menu, the same on all six lists that
@@ -9,36 +17,34 @@
    * works like every other filter in the bar: in the URL, shareable, undone by
    * the back button. Save, rename and delete post to the page's form actions
    * (`#lib/server/v2/saved-views.js`), which return to this same URL.
-   *
-   * @type {{
-   *   saved: { spec: import('#lib/v2/saved-views.js').Spec, views: { id: string, name: string, filters: Record<string, string[]> }[], limit: number | null },
-   *   url: URL
-   * }}
    */
-  import { enhance } from '$app/forms';
-  import { page } from '$app/state';
-  import { resolve } from '$app/paths';
-  import { Bookmark, ChevronDown, Pencil } from '@lucide/svelte';
-  import { asInternalPath } from '#lib/utils/paths.js';
-  import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
-  import { droppedValues, isShowing, viewHref } from '#lib/v2/saved-views.js';
+  let {
+    saved,
+    url
+  }: {
+    saved: {
+      spec: Spec;
+      views: { id: string; name: string; filters: Record<string, string[]> }[];
+      limit: number | null;
+    };
+    url: ReadonlyURL;
+  } = $props();
 
-  let { saved, url } = $props();
-
-  /** @type {string | null} */
-  let renaming = $state(null);
+  let renaming: string | null = $state(null);
   let busy = $state(false);
 
   let views = $derived(saved.views ?? []);
   let active = $derived(views.find((v) => isShowing(url.searchParams, v.filters, saved.spec)));
   let full = $derived(saved.limit !== null && views.length >= saved.limit);
-  let error = $derived(/** @type {any} */ (page.form)?.savedViewError ?? null);
+  let error = $derived(
+    (page.form as { savedViewError?: string } | null | undefined)?.savedViewError ?? null
+  );
   let query = $derived(url.searchParams.toString());
 
   /** Busy while posting; the form resets and the rename closes on success. */
-  const submit = () => {
+  const submit: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update, result }) => {
+    return async ({ update, result }) => {
       await update();
       busy = false;
       if (result.type === 'redirect' || result.type === 'success') renaming = null;

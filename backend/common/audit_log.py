@@ -109,6 +109,9 @@ class SecurityAuditLog(BaseModel):
         ("API_TOKEN_REVOKED", _("API Token Revoked")),
         ("FEATURE_GRANT_CHANGED", _("Feature Grant Changed")),
         ("MODULES_CHANGED", _("Modules Changed")),
+        ("APP_INSTALLED", _("App Installed")),
+        ("APP_UPGRADED", _("App Updated")),
+        ("APP_REMOVED", _("App Removed")),
     )
 
     event_type = models.CharField(max_length=50, choices=EVENT_TYPES, db_index=True)
@@ -498,6 +501,24 @@ class AuditLogger:
                 "switched_on": on,
                 "reordered": bool(reordered),
             },
+            request=request,
+        )
+
+    def app_changed(self, event_type, user, org, pack, version, request=None):
+        """Log an admin installing, updating or removing an industry app;
+        ``version`` is the one installed after an install or update, and the
+        one removed."""
+        verb = {
+            "APP_INSTALLED": "Installed",
+            "APP_UPGRADED": "Updated",
+            "APP_REMOVED": "Removed",
+        }[event_type]
+        self._log(
+            event_type,
+            user=user,
+            org=org,
+            description=f"{verb} the {pack['name']} app",
+            metadata={"app_id": pack["id"], "version": version},
             request=request,
         )
 

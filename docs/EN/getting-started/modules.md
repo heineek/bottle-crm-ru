@@ -1,18 +1,20 @@
 # Modules
 
 Not every team uses every part of BottleCRM. An organization admin can switch whole parts off, so
-the people in the org see only what they work with. There are nine modules: Pipeline, Leads,
-Goals, Tasks, Tickets, Knowledge base, Documents, Invoices and Timesheet. Some orgs rename
+the people in the org see only what they work with. There are ten modules: Pipeline, Leads,
+Goals, Tasks, Tickets, Knowledge base, Documents, Projects, Invoices and Timesheet. Some orgs rename
 Pipeline, Leads or Invoices; you see the org's own names throughout.
 
 This page is for admins. The API behind it is in [Modules (API)](../api/modules.md).
 
 ## Switching a module off or on
 
-Only admins see Modules in the apps. On the web, open Settings, then Modules
-(`/settings/modules`); the settings hub lists it after Organization. On the phone, open
-organization settings, where the Modules row shows for admins only. Any member can read the list
-through the API; only admins can change it.
+Only admins see Modules in the apps. On the web, open Settings, then Apps (`/settings/apps`),
+where Modules sits below the industry apps; the settings hub lists Apps after Organization, and
+the old `/settings/modules` address redirects there. On the phone, open organization settings,
+then Apps, where Modules also sits below the industry apps; the row shows for admins only, and is
+named Modules on a server without industry apps. Any member can read the list through the API;
+only admins can change it.
 
 The modules are grouped as Sell, Serve and Bill. Each row shows what the module covers and whether
 it is on: the web shows an On or Off label, and the phone a switch.
@@ -48,13 +50,16 @@ everything is there again, in the same state.
 
 ## Needs
 
-Two modules depend on another:
+One module depends on another:
 
 - **Goals needs Pipeline.** With Pipeline off, Goals is unavailable too, although its own switch
   keeps the setting you gave it.
-- **Timesheet needs Tickets.** The same applies with Tickets off.
 
 You cannot switch a module on while the one it needs is off. Switch the needed module on first.
+
+Timesheet needs no other module: time is logged on tickets and on [projects](../features/projects.md),
+so it keeps working while either is on. Time on tickets stops with Tickets off, and time on
+projects with Projects off.
 
 ## When a switch is refused
 
@@ -64,9 +69,8 @@ to clear:
 - **Published web forms.** Leads, or Tickets, still receives submissions from a published web
   form. Unpublish the form first, so no submission is lost. This also covers the website lead key
   the older embed used, once it has been used.
-- **Active inbound mailboxes.** Tickets still receives email at an address. Switch that mailbox off
-  first, so no email is lost. Switching Tickets off also takes Timesheet with it, so it is
-  refused for these reasons too.
+- **Active inbound mailboxes.** Tickets still receives email at a ticket address, or Leads at a
+  lead address. Switch that mailbox off first, so no email is lost.
 
 Reordering the modules is never refused, even while one is off.
 

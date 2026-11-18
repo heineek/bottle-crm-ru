@@ -1,6 +1,8 @@
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Manager, Max, Q, Sum
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
+from drf_spectacular.utils import extend_schema_field, inline_serializer
 from rest_framework import serializers
 
 from accounts.access import has_account_access
@@ -12,6 +14,7 @@ from cases.access import (
     visible_cases_qs,
 )
 from cases.approvals import Approval, ApprovalRule, close_refusal, closing_date
+from cases.inbound.generated import generated_domain, new_address, on_generated_domain
 from cases.inbound.sns import topic_account_id
 from cases.models import (
     Case,
@@ -32,7 +35,7 @@ from cases.workflow import (
     merged_status_refusal,
 )
 from common.models import Profile, Teams
-from common.modules import module_is_available, org_of
+from common.modules import module_is_available, module_off_message, org_of
 from common.permissions import is_org_admin
 from common.serializer import (
     OrganizationSerializer,
@@ -43,6 +46,7 @@ from common.serializer import (
 )
 from common.utils import STATUS_CHOICE
 from contacts.serializer import ContactLinkSerializer
+from leads.source_rules import check_source
 
 # Note: Removed unused serializer property:
 # - created_on_arrow (frontend computes its own humanized timestamps)
@@ -97,6 +101,31 @@ def _no_time():
         "last_entry_at": None,
         "by_profile": [],
     }
+
+
+class CaseTimeByProfileSerializer(serializers.Serializer):
+    profile_id = serializers.CharField()
+    name = serializers.CharField()
+    minutes = serializers.IntegerField()
+
+
+class CaseTimeSummarySerializer(serializers.Serializer):
+    """Schema only: what `time_summaries` and `_no_time` return for a case."""
+
+    total_minutes = serializers.IntegerField()
+    billable_minutes = serializers.IntegerField()
+    last_entry_at = serializers.DateTimeField(allow_null=True)
+    by_profile = CaseTimeByProfileSerializer(many=True)
+
+
+class CaseParentSummarySerializer(serializers.Serializer):
+    """Schema only: `CaseSerializer.parent_summary`; a restricted parent has
+    a null name and status."""
+
+    id = serializers.CharField()
+    name = serializers.CharField(allow_null=True)
+    status = serializers.CharField(allow_null=True)
+    restricted = serializers.BooleanField()
 
 
 def time_summaries(cases):
@@ -184,17 +213,19 @@ class CaseRowsListSerializer(SharedCalendarListSerializer):
 class CaseSerializer(serializers.ModelSerializer):
     # `{id, name}` only. Seeing this record is not access to its account, and
     # both clients read only these two; the rest is on `/api/accounts/<id>/`.
-    account = AccountPickerSerializer(read_only=True)
+    account = AccountPickerSerializer(read_only=True, allow_null=True)
     # Name and email only; see `ContactLinkSerializer`.
     contacts = ContactLinkSerializer(read_only=True, many=True)
     assigned_to = ProfileSerializer(read_only=True, many=True)
-    created_by = UserSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True, allow_null=True)
     teams = TeamsSerializer(read_only=True, many=True)
     tags = TagsSerializer(read_only=True, many=True)
     org = OrganizationSerializer()
 
-    first_response_sla_deadline = serializers.DateTimeField(read_only=True)
-    resolution_sla_deadline = serializers.DateTimeField(read_only=True)
+    first_response_sla_deadline = serializers.DateTimeField(
+        read_only=True, allow_null=True
+    )
+    resolution_sla_deadline = serializers.DateTimeField(read_only=True, allow_null=True)
     is_sla_first_response_breached = serializers.BooleanField(read_only=True)
     is_sla_resolution_breached = serializers.BooleanField(read_only=True)
     is_sla_first_response_at_risk = serializers.BooleanField(read_only=True)
@@ -207,6 +238,7 @@ class CaseSerializer(serializers.ModelSerializer):
     # Tier 3 time-tracking
     time_summary = serializers.SerializerMethodField()
 
+    @extend_schema_field(CaseParentSummarySerializer(allow_null=True))
     def get_parent_summary(self, obj):
         """The parent's name and status, or only its id when the viewer may
         not open it.
@@ -236,12 +268,13 @@ class CaseSerializer(serializers.ModelSerializer):
             "restricted": False,
         }
 
-    def get_child_count(self, obj):
+    def get_child_count(self, obj) -> int:
         # Set for a whole page by `CaseRowsListSerializer`.
         if hasattr(obj, "_child_count"):
             return obj._child_count
         return obj.children.count()
 
+    @extend_schema_field(CaseTimeSummarySerializer(allow_null=True))
     def get_time_summary(self, obj):
         # Set for a whole page by `CaseRowsListSerializer`; one ticket asks
         # the same function for itself. Null while the timesheet is off.
@@ -477,6 +510,8 @@ class CaseCreateSerializer(serializers.ModelSerializer):
 
 
 class CaseCreateSwaggerSerializer(serializers.ModelSerializer):
+    custom_fields = serializers.DictField(required=False)
+
     class Meta:
         model = Case
         fields = (
@@ -491,12 +526,15 @@ class CaseCreateSwaggerSerializer(serializers.ModelSerializer):
             "contacts",
             "tags",
             "description",
+            "custom_fields",
         )
 
 
 class CaseDetailEditSwaggerSerializer(serializers.Serializer):
-    comment = serializers.CharField()
-    case_attachment = serializers.FileField()
+    # A comment, a file, or both.
+    comment = serializers.CharField(required=False)
+    case_attachment = serializers.FileField(required=False)
+    is_internal = serializers.BooleanField(required=False)
 
 
 class CaseCommentEditSwaggerSerializer(serializers.Serializer):
@@ -548,7 +586,7 @@ class CaseStageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_(DUPLICATE_BY_MERGE_ONLY))
         return value
 
-    def get_case_count(self, obj):
+    def get_case_count(self, obj) -> int:
         return _visible_case_count(self, stage=obj)
 
 
@@ -579,10 +617,10 @@ class CasePipelineSerializer(serializers.ModelSerializer):
         # skipped that refusal.
         read_only_fields = ("id", "is_active", "created_at", "updated_at", "org")
 
-    def get_stage_count(self, obj):
+    def get_stage_count(self, obj) -> int:
         return obj.stages.count()
 
-    def get_case_count(self, obj):
+    def get_case_count(self, obj) -> int:
         return _visible_case_count(self, stage__pipeline=obj)
 
 
@@ -623,10 +661,10 @@ class CasePipelineListSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def get_stage_count(self, obj):
+    def get_stage_count(self, obj) -> int:
         return obj.stage_count
 
-    def get_case_count(self, obj):
+    def get_case_count(self, obj) -> int:
         return obj.case_count
 
 
@@ -662,7 +700,7 @@ class CaseKanbanCardSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def get_account_name(self, obj):
+    def get_account_name(self, obj) -> str | None:
         return obj.account.name if obj.account else None
 
     def get_can_move(self, obj) -> bool:
@@ -678,11 +716,11 @@ class CaseKanbanCardSerializer(serializers.ModelSerializer):
             return False
         return has_case_write_access(request.profile, obj)
 
-    def get_is_sla_breached(self, obj):
+    def get_is_sla_breached(self, obj) -> bool:
         """Return True if any SLA is breached."""
         return obj.is_sla_first_response_breached or obj.is_sla_resolution_breached
 
-    def get_is_sla_at_risk(self, obj):
+    def get_is_sla_at_risk(self, obj) -> bool:
         """Return True if either SLA is inside the warning band.
 
         Card rendering treats this as the amber step below `is_sla_breached`,
@@ -722,12 +760,28 @@ class ReopenPolicySerializer(serializers.ModelSerializer):
         return value
 
 
+class ReopenPolicyWithStatsSerializer(ReopenPolicySerializer):
+    """`GET /api/cases/reopen-policy/`: the policy plus `_reopen_analytics`."""
+
+    reopened_last_30d = serializers.IntegerField(read_only=True)
+    replies_after_window_30d = serializers.IntegerField(read_only=True)
+    median_days_to_reply = serializers.FloatField(read_only=True)
+
+    class Meta(ReopenPolicySerializer.Meta):
+        fields = (
+            *ReopenPolicySerializer.Meta.fields,
+            "reopened_last_30d",
+            "replies_after_window_30d",
+            "median_days_to_reply",
+        )
+
+
 class EscalationPolicySerializer(serializers.ModelSerializer):
     """Per-org, per-priority escalation policy. See docs/cases/tier1/escalation.md."""
 
-    first_response_target = ProfileSerializer(read_only=True)
-    resolution_target = ProfileSerializer(read_only=True)
-    notify_team = TeamsSerializer(read_only=True)
+    first_response_target = ProfileSerializer(read_only=True, allow_null=True)
+    resolution_target = ProfileSerializer(read_only=True, allow_null=True)
+    notify_team = TeamsSerializer(read_only=True, allow_null=True)
     # `*_id` write-only relational fields are scoped to the request's org in
     # __init__ (a class-level queryset would leak cross-tenant rows in the
     # browsable API). DRF requires a non-None placeholder here.
@@ -814,7 +868,7 @@ class EscalationPolicySerializer(serializers.ModelSerializer):
 class InboundMailboxSerializer(serializers.ModelSerializer):
     """Per-org inbound mailbox config. See docs/cases/tier1/email-to-ticket.md."""
 
-    default_assignee = ProfileSerializer(read_only=True)
+    default_assignee = ProfileSerializer(read_only=True, allow_null=True)
     default_assignee_id = serializers.PrimaryKeyRelatedField(
         source="default_assignee",
         queryset=Profile.objects.none(),
@@ -822,12 +876,12 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
-    # Writable so an admin can paste a provider-issued signing key, never
-    # readable. Nothing in the codebase compares this value, so there is no
-    # caller that needs it back, and a stored credential returned by a list
-    # endpoint is reachable by anything holding an admin's session or personal
-    # access token. `has_webhook_secret` is what an admin screen needs: whether
-    # one is set, not what it is.
+    # Postmark's basic-auth password or Mailgun's signing key
+    # (`cases.inbound.providers`). Writable so an admin can paste it, never
+    # readable: only the webhook compares it, and a stored credential returned
+    # by a list endpoint is reachable by anything holding an admin's session or
+    # personal access token. `has_webhook_secret` is what an admin screen
+    # needs: whether one is set, not what it is.
     webhook_secret = serializers.CharField(
         write_only=True, required=False, allow_blank=True, max_length=128
     )
@@ -842,6 +896,11 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
     # never-connected address as working. The ARN itself stays admin-only
     # below, since it embeds the AWS account id.
     has_topic_arn = serializers.SerializerMethodField()
+    # Create only: make the address under INBOUND_EMAIL_DOMAIN instead of
+    # taking a typed one.
+    generate_address = serializers.BooleanField(
+        write_only=True, required=False, default=False
+    )
 
     class Meta:
         model = InboundMailbox
@@ -858,10 +917,21 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
             "default_assignee",
             "default_assignee_id",
             "is_active",
+            "creates",
+            "lead_source",
+            "lead_source_detail",
+            "is_generated",
+            "generate_address",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "is_generated", "created_at", "updated_at")
+        extra_kwargs = {"address": {"required": False}}
+        # DRF would build one from `uniq_generated_inbound_address`, demanding
+        # an address on every create and probing other orgs' rows for it.
+        # `validate_address` checks the org's own duplicates; generated
+        # addresses are left to the unique index (see `create`).
+        validators = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -900,6 +970,23 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
         # mailbox must be excluded from its own duplicate check or saving a
         # record without changing its address would fail against itself.
         org = self.context.get("org")
+        instance = self.instance
+        if instance is not None and instance.is_generated:
+            if value.strip().lower() != instance.address.lower():
+                raise serializers.ValidationError(
+                    _("A generated address cannot be changed.")
+                )
+            return instance.address
+        # The catch-all routes the inbound domain's mail to generated mailboxes
+        # only, so a typed address there would silently receive nothing.
+        if on_generated_domain(value):
+            raise serializers.ValidationError(
+                _(
+                    "Addresses at %(domain)s can only be generated. "
+                    'Choose "Generate an address" instead.'
+                )
+                % {"domain": generated_domain()}
+            )
         if org:
             clash = InboundMailbox.objects.filter(org=org, address__iexact=value)
             if self.instance is not None:
@@ -924,6 +1011,89 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate_lead_source(self, value):
+        stored = getattr(self.instance, "lead_source", None)
+        try:
+            return check_source(value, self.context.get("org"), stored)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+
+    def validate(self, attrs):
+        org = self.context.get("org")
+        instance = self.instance
+        if attrs.pop("generate_address", False):
+            if instance is not None:
+                raise serializers.ValidationError(
+                    {
+                        "generate_address": _(
+                            "An address is generated only when the mailbox is created."
+                        )
+                    }
+                )
+            if not generated_domain():
+                raise serializers.ValidationError(
+                    {
+                        "generate_address": _(
+                            "This server has no inbound email "
+                            "domain, so it cannot make an address. Type one instead."
+                        )
+                    }
+                )
+            if attrs.get("address"):
+                raise serializers.ValidationError(
+                    {"address": _("Leave the address empty to have one generated.")}
+                )
+            attrs["is_generated"] = True
+        elif instance is None and not attrs.get("address"):
+            raise serializers.ValidationError({"address": _("This field is required.")})
+
+        generated = attrs.get("is_generated") or getattr(
+            instance, "is_generated", False
+        )
+        if generated and attrs.get("provider", "ses") != "ses":
+            raise serializers.ValidationError(
+                {
+                    "provider": _(
+                        "A generated address receives its mail through AWS SES."
+                    )
+                }
+            )
+
+        # A mailbox for a switched-off module would accept mail and make nothing,
+        # so it can be neither pointed at one nor switched on while it is off.
+        creates = attrs.get("creates", getattr(instance, "creates", None))
+        changed = instance is None or creates != instance.creates
+        turning_on = (
+            instance is not None
+            and attrs.get("is_active") is True
+            and not instance.is_active
+        )
+        module = "leads" if creates == InboundMailbox.CREATES_LEADS else "tickets"
+        if (
+            org is not None
+            and (changed or turning_on)
+            and not module_is_available(org, module)
+        ):
+            field = "creates" if changed else "is_active"
+            raise serializers.ValidationError({field: module_off_message(org, module)})
+        return attrs
+
+    def create(self, validated_data):
+        if not validated_data.get("is_generated"):
+            return super().create(validated_data)
+        org = validated_data["org"]
+        # The random part makes a clash rare; the unique index decides it.
+        for _attempt in range(5):
+            validated_data["address"] = new_address(org)
+            try:
+                with transaction.atomic():
+                    return super().create(dict(validated_data))
+            except IntegrityError:
+                continue
+        raise serializers.ValidationError(
+            {"generate_address": _("No free address was found. Try again.")}
+        )
+
     def get_has_webhook_secret(self, instance) -> bool:
         return bool(instance.webhook_secret)
 
@@ -944,12 +1114,10 @@ class InboundMailboxSerializer(serializers.ModelSerializer):
 
         `webhook_secret` itself is declared `write_only` above and so is never
         in `data` to begin with. This method used to pop it for non-admins,
-        which meant admins read it back on every list and detail call. Nothing
-        reads that value: `InboundMailboxWebhookView.post` authenticates with
-        the SNS signature and the `topic_arn` pin. Returning a stored
-        credential-shaped value that no code consumes only creates a way to
-        lose it, and it would become a live leak the day a provider
-        integration starts checking it, with no change here to notice."""
+        which meant admins read it back on every list and detail call. It is
+        now the credential a Postmark or Mailgun post is checked against, so
+        returning it would hand anyone holding an admin's session the means to
+        post mail into the org."""
         data = super().to_representation(instance)
         request = self.context.get("request")
         profile = getattr(request, "profile", None) if request else None
@@ -983,11 +1151,31 @@ class EmailMessageSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+@extend_schema_field(
+    {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "field": {"type": "string"},
+                "op": {"type": "string"},
+                "value": {},
+            },
+            "required": ["field", "value"],
+        },
+    }
+)
+class RoutingConditionsField(serializers.JSONField):
+    """`RoutingRule.conditions` with its shape in the schema. `op` may be
+    absent, since `validate_conditions` accepts that as `eq`."""
+
+
 class RoutingRuleSerializer(serializers.ModelSerializer):
     """Per-org auto-routing rule. See docs/cases/tier1/auto-routing.md."""
 
+    conditions = RoutingConditionsField(required=False)
     target_assignees = ProfileSerializer(read_only=True, many=True)
-    target_team = TeamsSerializer(read_only=True)
+    target_team = TeamsSerializer(read_only=True, allow_null=True)
     target_assignee_ids = serializers.PrimaryKeyRelatedField(
         source="target_assignees",
         queryset=Profile.objects.none(),
@@ -1125,9 +1313,13 @@ class TimeEntrySerializer(serializers.ModelSerializer):
 
     profile = ProfileSerializer(read_only=True)
     invoiced = serializers.SerializerMethodField()
+    project_name = serializers.SerializerMethodField()
 
     def get_invoiced(self, obj) -> bool:
         return obj.invoice_id is not None
+
+    def get_project_name(self, obj) -> str | None:
+        return obj.project.name if obj.project_id else None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -1142,6 +1334,9 @@ class TimeEntrySerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "case",
+            "project",
+            "project_name",
+            "task",
             "profile",
             "started_at",
             "ended_at",
@@ -1158,6 +1353,9 @@ class TimeEntrySerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
+            "case",
+            "project",
+            "task",
             "duration_minutes",
             "auto_stopped",
             "invoice",
@@ -1167,12 +1365,17 @@ class TimeEntrySerializer(serializers.ModelSerializer):
 
 
 class TimeEntryCreateSerializer(serializers.ModelSerializer):
-    """Manual time entry creation (POST /api/cases/<pk>/time-entries/).
+    """Manual time entry creation, on a ticket
+    (``POST /api/cases/<pk>/time-entries/``) or a project
+    (``POST /api/projects/<pk>/time-entries/``).
 
-    `case`, `profile`, and `org` are injected by the view and not accepted
-    from the client. Validation rejects negative durations and negative
-    hourly rates so the DB CheckConstraint is a backstop, not the first
-    line of defense.
+    `case`, `project`, `task`, `profile`, and `org` are set by the view, never
+    taken from this serializer. On a project the view also replaces `currency`
+    with the project's, and a non-admin's `hourly_rate` with the project's
+    rate rule (`cases.time_views.create_entry`).
+
+    Validation rejects negative durations and negative hourly rates so the DB
+    CheckConstraint is a backstop, not the first line of defense.
     """
 
     class Meta:
@@ -1325,12 +1528,26 @@ class ApprovalRuleSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    @extend_schema_field(
+        inline_serializer(
+            name="ApprovalRuleApprover",
+            fields={"id": serializers.CharField(), "email": serializers.CharField()},
+            many=True,
+        )
+    )
     def get_approvers(self, obj):
         return [
             {"id": str(p.id), "email": getattr(p.user, "email", "") or ""}
             for p in obj.approvers.all().select_related("user")
         ]
 
+    @extend_schema_field(
+        inline_serializer(
+            name="ApprovalRuleTeam",
+            fields={"id": serializers.CharField(), "name": serializers.CharField()},
+            allow_null=True,
+        )
+    )
     def get_match_team(self, obj):
         if not obj.match_team_id:
             return None
@@ -1354,6 +1571,27 @@ class ApprovalRuleSerializer(serializers.ModelSerializer):
                 "approver_ids"
             ].child_relation.queryset = Profile.objects.filter(org=org)
             self.fields["match_team_id"].queryset = Teams.objects.filter(org=org)
+
+
+class ApprovalProfileLabelSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    email = serializers.CharField()
+
+
+class ApprovalCaseSummarySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    status = serializers.CharField()
+    priority = serializers.CharField()
+    account = AccountPickerSerializer(allow_null=True)
+
+
+class ApprovalRuleSummarySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    trigger_event = serializers.CharField()
+    approver_role = serializers.CharField()
+    approvers = ApprovalProfileLabelSerializer(many=True)
 
 
 class ApprovalSerializer(serializers.ModelSerializer):
@@ -1392,6 +1630,7 @@ class ApprovalSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    @extend_schema_field(ApprovalCaseSummarySerializer)
     def get_case_summary(self, obj):
         c = obj.case
         account = None
@@ -1405,6 +1644,7 @@ class ApprovalSerializer(serializers.ModelSerializer):
             "account": account,
         }
 
+    @extend_schema_field(ApprovalRuleSummarySerializer)
     def get_rule_summary(self, obj):
         r = obj.rule
         return {
@@ -1424,9 +1664,11 @@ class ApprovalSerializer(serializers.ModelSerializer):
         email = getattr(profile.user, "email", "") if profile.user_id else ""
         return {"id": str(profile.id), "email": email or ""}
 
+    @extend_schema_field(ApprovalProfileLabelSerializer)
     def get_requested_by(self, obj):
         return self._profile_label(obj.requested_by)
 
+    @extend_schema_field(ApprovalProfileLabelSerializer(allow_null=True))
     def get_approver(self, obj):
         return self._profile_label(obj.approver)
 
@@ -1434,7 +1676,7 @@ class ApprovalSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         return getattr(request, "profile", None) if request else None
 
-    def get_can_act(self, obj):
+    def get_can_act(self, obj) -> bool:
         """True when the viewer may approve/reject this row right now.
 
         Mirrors ``ApprovalApproveView`` exactly: still pending, the viewer is in
@@ -1449,7 +1691,7 @@ class ApprovalSerializer(serializers.ModelSerializer):
             return False
         return obj.can_be_acted_on_by(profile)
 
-    def get_can_cancel(self, obj):
+    def get_can_cancel(self, obj) -> bool:
         """True when the viewer may withdraw this row right now: still pending,
         and `Approval.can_be_cancelled_by` (the requester or an org admin), the
         rule `ApprovalCancelView` enforces."""
@@ -1458,7 +1700,7 @@ class ApprovalSerializer(serializers.ModelSerializer):
             profile and obj.state == "pending" and obj.can_be_cancelled_by(profile)
         )
 
-    def get_is_own_request(self, obj):
+    def get_is_own_request(self, obj) -> bool:
         profile = self._viewer_profile()
         return bool(profile and obj.requested_by_id == profile.id)
 

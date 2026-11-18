@@ -245,5 +245,8 @@
   "tasks_board_add_column": "Добавить колонку",
   "tasks_board_foot_lead": "Карточки на доске хранятся отдельно от записей в",
   "tasks_board_foot_link": "списке задач",
-  "tasks_board_foot_tail": ". Карточка отсюда там не появится, и её выполнение не завершает задачу."
+  "tasks_board_foot_tail": ". Карточка отсюда там не появится, и её выполнение не завершает задачу.",
+  "tasks_parent_project_unnamed": "Проект",
+  "tasks_kind_project": "проект",
+  "tasks_parent_project": "Проекту"
 }

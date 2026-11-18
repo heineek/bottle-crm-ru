@@ -155,8 +155,6 @@
   "leadsDetailNoFilesBody": "Attach a document, a business card, or a photo.",
   "leadsDetailAttachmentNoFile": "That attachment has no file.",
   "leadsDetailDownloadFailed": "Could not download that file.",
-  "leadsDetailNoActivity": "No activity yet",
-  "leadsDetailNoActivityBody": "Activity will appear here as it happens",
   "leadsDetailEventCommented": "commented",
   "leadsDetailEventUploaded": "uploaded {file}",
   "@leadsDetailEventUploaded": {
@@ -275,39 +273,6 @@
     }
   },
   "leadsTimeJustNow": "Just now",
-  "leadsTimeMonths": "{count}mo",
-  "@leadsTimeMonths": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeDays": "{count}d",
-  "@leadsTimeDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeHours": "{count}h",
-  "@leadsTimeHours": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeMinutes": "{count}m",
-  "@leadsTimeMinutes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeNow": "now",
   "leadsFormLoadFailed": "Failed to load lead",
   "leadsFormFixErrors": "Please fix the errors in the form",
   "leadsFormFieldRequired": "{label} is required",
@@ -425,5 +390,23 @@
   "leadsCurrencyDirham": "Dirham",
   "leadsCurrencyReal": "Real",
   "leadsCurrencyPeso": "Peso",
-  "leadsCurrencyRand": "Rand"
+  "leadsCurrencyRand": "Rand",
+  "leadsDetailSubSource": "SUB-SOURCE",
+  "leadsDetailReference": "REFERENCE",
+  "leadsFormSubSource": "Sub-source (Optional)",
+  "leadsFormSubSourceHint": "Spring open day",
+  "leadsFormReference": "Reference (Optional)",
+  "leadsFormReferenceHint": "An ad or listing id",
+  "leadsFormSourcesLoadFailed": "Could not load the lead sources. Try again.",
+  "leadsListWaiting": "waiting {elapsed}",
+  "@leadsListWaiting": {
+    "placeholders": {
+      "elapsed": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsListUnanswered": "Unanswered",
+  "leadsListNobodyWaiting": "Nobody is waiting",
+  "leadsListNobodyWaitingBody": "Every lead in this view has had a reply."
 }

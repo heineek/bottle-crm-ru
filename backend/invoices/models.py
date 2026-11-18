@@ -17,6 +17,7 @@ from common.models import Org, Profile, Teams
 from common.utils import COUNTRIES, CURRENCY_CODES
 from contacts.models import Contact
 from opportunity.models import Opportunity
+from projects.models import STARTING_BILLING_TYPES as PROJECT_BILLING_TYPES
 
 # =============================================================================
 # CONSTANTS
@@ -100,6 +101,11 @@ def validate_shipping_amount(value):
     """Shipping is never negative: a negative one would lower the bill."""
     if value < 0:
         raise ValidationError(_("Shipping cannot be negative."))
+
+
+def validate_deposit_percent(value):
+    if value is not None and not 0 < value <= 100:
+        raise ValidationError(_("A deposit must be more than 0% and at most 100%."))
 
 
 def line_gross(quantity, unit_price):
@@ -370,6 +376,13 @@ class Invoice(AssignableMixin, BaseModel):
         related_name="invoices",
         help_text="The sales opportunity this invoice relates to (optional)",
     )
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices",
+    )
 
     # Client Details (denormalized for PDF generation and history)
     client_name = models.CharField(_("Client Name"), max_length=255, default="")
@@ -527,6 +540,9 @@ class Invoice(AssignableMixin, BaseModel):
         ordering = ("-created_at",)
         indexes = [
             models.Index(fields=["org", "-created_at"]),
+            models.Index(
+                fields=["org", "updated_at", "id"], name="invoice_org_upd_idx"
+            ),
             models.Index(fields=["org", "status"]),
             models.Index(fields=["account"]),
             models.Index(fields=["due_date"]),
@@ -568,6 +584,12 @@ class Invoice(AssignableMixin, BaseModel):
 
             super().save(*args, **kwargs)
 
+            # Every path to Cancelled saves through here, so this is where a
+            # cancelled invoice's time becomes billable again. Not once money
+            # was taken against it: that time was paid for.
+            if self.status == "Cancelled" and not self.payments.exists():
+                self.time_entries.update(invoice=None)
+
             # Keep the unscoped token→org lookup in step with the token we just
             # minted, so the anonymous portal view can resolve the org under RLS.
             from common.portal_tokens import register_portal_token
@@ -605,14 +627,16 @@ class Invoice(AssignableMixin, BaseModel):
         days = term_days.get(self.payment_terms, 30)
         return self.issue_date + timedelta(days=days)
 
-    def recalculate_totals(self):
+    def recalculate_totals(self, lines=None):
         """Recalculate invoice totals from line items.
 
         The subtotal is the sum of each line's ``net_amount`` (after the line's
-        own discount); see ``LineAmounts``.
+        own discount); see ``LineAmounts``. ``lines`` totals an unsaved invoice
+        from unsaved lines instead of the stored ones.
         """
-        line_items = self.line_items.all() if self.pk else []
-        self.subtotal = sum((item.net_amount for item in line_items), Decimal("0"))
+        if lines is None:
+            lines = self.line_items.all() if self.pk else []
+        self.subtotal = sum((item.net_amount for item in lines), Decimal("0"))
 
         # Calculate discount, never more than the subtotal: the serializers
         # refuse one that is, but removing a line later can still shrink the
@@ -992,6 +1016,43 @@ class Estimate(AssignableMixin, BaseModel):
         null=True,
         blank=True,
         related_name="source_estimate",
+    )
+
+    # Proposal: what accepting it starts (invoices.proposals). `project` and
+    # `deposit_invoice` are set only by the public accept.
+    introduction = models.TextField(
+        _("Introduction"), max_length=5000, blank=True, default=""
+    )
+    deposit_percent = models.DecimalField(
+        _("Deposit (%)"),
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[validate_deposit_percent],
+    )
+    start_project = models.BooleanField(
+        _("Start a project when accepted"), default=False
+    )
+    project_billing_type = models.CharField(
+        _("Project billing type"),
+        max_length=20,
+        choices=PROJECT_BILLING_TYPES,
+        default="fixed_fee",
+    )
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="estimates",
+    )
+    deposit_invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deposit_estimates",
     )
 
     # Client Portal

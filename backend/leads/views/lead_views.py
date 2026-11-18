@@ -10,13 +10,14 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.custom_fields import custom_field_filter
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.models import (
     Attachments,
@@ -26,6 +27,7 @@ from common.models import (
     Tags,
     Teams,
 )
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext, is_org_admin
 from common.serializer import (
     AttachmentsSerializer,
@@ -51,10 +53,12 @@ from common.validators import (
 from contacts.access import replace_visible_contacts, visible_contacts_qs
 from leads import access, swagger_params
 from leads.models import Lead
+from leads.response import unanswered, with_response_state
 from leads.serializer import (
     LeadCreateSerializer,
     LeadCreateSwaggerSerializer,
     LeadDetailEditSwaggerSerializer,
+    LeadPatchSwaggerSerializer,
     LeadSerializer,
     TagsSerializer,
 )
@@ -121,7 +125,8 @@ def lead_list_queryset(profile, params):
     downloads holds exactly the leads the page would show them with the same
     filters. Converted leads are never listed. ``?open=true`` leaves out the
     closed ones too, which is what the web list shows; without it both halves
-    come back, as the mobile list reads them.
+    come back, as the mobile list reads them. ``?unanswered=true`` keeps only
+    the leads waiting for an answer (`leads.response`), longest wait first.
     """
     queryset = (
         access.visible_leads_qs(profile).exclude(status="converted").order_by("-id")
@@ -181,18 +186,44 @@ def lead_list_queryset(profile, params):
     next_follow_up = date_param(params, "next_follow_up")
     if next_follow_up:
         queryset = queryset.filter(next_follow_up=next_follow_up)
-    # Custom-field filters: ?cf_<key>=<value> -> custom_fields contains pair.
-    for raw_key, raw_value in params.items():
-        if raw_key.startswith("cf_") and raw_value:
-            cf_key = raw_key[3:]
-            if cf_key:
-                queryset = queryset.filter(custom_fields__contains={cf_key: raw_value})
+    queryset = queryset.filter(custom_field_filter("Lead", profile.org, params))
     if params.get("open") == "true":
         queryset = queryset.exclude(status="closed")
+    if params.get("unanswered") == "true":
+        queryset = unanswered(queryset, profile.org).order_by("waiting_since", "id")
+    else:
+        queryset = with_response_state(queryset, profile.org)
     return queryset.distinct()
 
 
-class LeadListView(APIView, LimitOffsetPagination):
+def _choice_pairs():
+    """Schema only: a `(value, label)` choices tuple as JSON renders it."""
+    return serializers.ListField(
+        child=serializers.ListField(child=serializers.CharField())
+    )
+
+
+class LeadUserOptionSerializer(serializers.Serializer):
+    """Schema only: a row of `users`, `values("id", "user__email")`."""
+
+    id = serializers.UUIDField()
+    user__email = serializers.EmailField()
+
+
+class LeadPipelineStageRefSerializer(serializers.Serializer):
+    """Schema only: `LeadDetailView`'s `pipeline_stage`."""
+
+    id = serializers.CharField()
+    name = serializers.CharField()
+    color = serializers.CharField()
+    stage_type = serializers.CharField()
+    pipeline = inline_serializer(
+        name="LeadPipelineRef",
+        fields={"id": serializers.CharField(), "name": serializers.CharField()},
+    )
+
+
+class LeadListView(APIView, CappedLimitOffsetPagination):
     model = Lead
     permission_classes = (IsAuthenticated, HasOrgContext)
 
@@ -229,10 +260,19 @@ class LeadListView(APIView, LimitOffsetPagination):
             .count(),
         }
 
+    def _next_offset(self, page):
+        """Where the next page starts, None after the last one, 0 for an empty
+        page. Counted from the page itself rather than from ids, so it holds
+        for the unanswered order as well as the default one."""
+        if not page:
+            return 0
+        following = self.offset + len(page)
+        return None if following >= self.count else following
+
     def get_context_data(self, **kwargs):
         queryset = (
             lead_list_queryset(self.request.profile, self.request.query_params)
-            .select_related("created_by")
+            .select_related("created_by", "first_response_by__user")
             .prefetch_related("tags", "assigned_to")
         )
         context = {}
@@ -241,12 +281,7 @@ class LeadListView(APIView, LimitOffsetPagination):
             queryset_open.distinct(), self.request, view=self
         )
         open_leads = LeadSerializer(results_leads_open, many=True).data
-        if results_leads_open:
-            offset = queryset_open.filter(id__gte=results_leads_open[-1].id).count()
-            if offset == queryset_open.count():
-                offset = None
-        else:
-            offset = 0
+        offset = self._next_offset(results_leads_open)
         context["per_page"] = 10
         page_number = int(self.offset / 10) + 1
         context["page_number"] = page_number
@@ -262,12 +297,7 @@ class LeadListView(APIView, LimitOffsetPagination):
             queryset_close.distinct(), self.request, view=self
         )
         close_leads = LeadSerializer(results_leads_close, many=True).data
-        if results_leads_close:
-            offset = queryset_close.filter(id__gte=results_leads_close[-1].id).count()
-            if offset == queryset_close.count():
-                offset = None
-        else:
-            offset = 0
+        offset = self._next_offset(results_leads_close)
 
         context["close_leads"] = {
             "leads_count": self.count,
@@ -299,22 +329,58 @@ class LeadListView(APIView, LimitOffsetPagination):
     @extend_schema(
         tags=["Leads"],
         operation_id="leads_list",
-        parameters=swagger_params.lead_list_get_params,
+        parameters=[
+            *swagger_params.lead_list_get_params,
+            OpenApiParameter(
+                "unanswered",
+                OpenApiTypes.BOOL,
+                OpenApiParameter.QUERY,
+                description="true: only leads waiting for an answer, longest wait first",
+            ),
+        ],
         responses={
             200: inline_serializer(
                 name="LeadListResponse",
                 fields={
                     "per_page": serializers.IntegerField(),
                     "page_number": serializers.IntegerField(),
-                    "open_leads": serializers.DictField(),
-                    "close_leads": serializers.DictField(),
-                    "contacts": serializers.ListField(),
-                    "status": serializers.ListField(),
-                    "source": serializers.ListField(),
+                    "open_leads": inline_serializer(
+                        name="LeadListOpenPage",
+                        fields={
+                            "leads_count": serializers.IntegerField(),
+                            "open_leads": LeadSerializer(many=True),
+                            "offset": serializers.IntegerField(allow_null=True),
+                        },
+                    ),
+                    "totals": inline_serializer(
+                        name="LeadListTotals",
+                        fields={
+                            "count": serializers.IntegerField(),
+                            "unworked_over_a_week": serializers.IntegerField(),
+                        },
+                    ),
+                    "close_leads": inline_serializer(
+                        name="LeadListClosedPage",
+                        fields={
+                            "leads_count": serializers.IntegerField(),
+                            "close_leads": LeadSerializer(many=True),
+                            "offset": serializers.IntegerField(allow_null=True),
+                        },
+                    ),
+                    "contacts": inline_serializer(
+                        name="LeadContactOption",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "first_name": serializers.CharField(),
+                        },
+                        many=True,
+                    ),
+                    "status": _choice_pairs(),
+                    "source": _choice_pairs(),
                     "tags": TagsSerializer(many=True),
-                    "users": serializers.ListField(),
-                    "countries": serializers.ListField(),
-                    "industries": serializers.ListField(),
+                    "users": LeadUserOptionSerializer(many=True),
+                    "countries": _choice_pairs(),
+                    "industries": _choice_pairs(),
                 },
             )
         },
@@ -335,6 +401,7 @@ class LeadListView(APIView, LimitOffsetPagination):
                 fields={
                     "error": serializers.BooleanField(),
                     "message": serializers.CharField(),
+                    "id": serializers.UUIDField(),
                     "account_id": serializers.CharField(required=False),
                     "contact_id": serializers.CharField(
                         required=False, allow_null=True
@@ -471,6 +538,7 @@ class LeadListView(APIView, LimitOffsetPagination):
                     {
                         "error": False,
                         "message": _("Lead Converted Successfully"),
+                        "id": str(lead_obj.id),
                         "account_id": str(account.id),
                         "contact_id": str(contact.id) if contact else None,
                         "opportunity_id": str(opportunity.id) if opportunity else None,
@@ -478,7 +546,11 @@ class LeadListView(APIView, LimitOffsetPagination):
                     status=status.HTTP_200_OK,
                 )
             return Response(
-                {"error": False, "message": _("Lead Created Successfully")},
+                {
+                    "error": False,
+                    "message": _("Lead Created Successfully"),
+                    "id": str(lead_obj.id),
+                },
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -505,6 +577,8 @@ class LeadDetailView(APIView):
             visible = Lead.objects.select_for_update().filter(
                 pk__in=visible.values("pk")
             )
+        else:
+            visible = with_response_state(visible, self.request.profile.org)
         return get_object_or_404(visible, id=pk)
 
     def get_context_data(self, **kwargs):
@@ -637,15 +711,29 @@ class LeadDetailView(APIView):
                     "lead_obj": LeadSerializer(),
                     "attachments": AttachmentsSerializer(many=True),
                     "comments": LeadCommentSerializer(many=True),
-                    "users_mention": serializers.ListField(),
-                    "assigned_data": serializers.ListField(),
+                    "users_mention": inline_serializer(
+                        name="LeadMentionUser",
+                        fields={"user__email": serializers.EmailField()},
+                        many=True,
+                    ),
+                    "assigned_data": inline_serializer(
+                        name="LeadAssignee",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "name": serializers.EmailField(),
+                        },
+                        many=True,
+                    ),
                     "users": ProfileSerializer(many=True),
                     "users_excluding_team": ProfileSerializer(many=True),
-                    "source": serializers.ListField(),
-                    "status": serializers.ListField(),
+                    "source": _choice_pairs(),
+                    "status": _choice_pairs(),
                     "teams": TeamsSerializer(many=True),
-                    "countries": serializers.ListField(),
-                    "pipeline_stage": serializers.DictField(allow_null=True),
+                    "countries": _choice_pairs(),
+                    "pipeline_stage": LeadPipelineStageRefSerializer(allow_null=True),
+                    "custom_field_definitions": CustomFieldDefinitionSerializer(
+                        many=True
+                    ),
                     "can_delete": serializers.BooleanField(),
                 },
             )
@@ -818,12 +906,12 @@ class LeadDetailView(APIView):
                 teams = Teams.objects.filter(id__in=team_ids, org=request.profile.org)
                 lead_obj.teams.add(*teams)
 
-            lead_obj.assigned_to.clear()
-            if assigned_ids:
-                profiles = Profile.objects.filter(
+            # `set`, not clear and add, so only the newly added are alerted.
+            lead_obj.assigned_to.set(
+                Profile.objects.filter(
                     id__in=assigned_ids, org=request.profile.org, is_active=True
                 )
-                lead_obj.assigned_to.add(*profiles)
+            )
 
             # Send email to newly assigned users (after assignees are updated)
             # Skip if status is "converted" - that branch handles its own email
@@ -886,7 +974,7 @@ class LeadDetailView(APIView):
     @extend_schema(
         tags=["Leads"],
         parameters=swagger_params.organization_params,
-        request=LeadDetailEditSwaggerSerializer,
+        request=LeadPatchSwaggerSerializer(partial=True),
         description="Partial Lead Update",
         responses={
             200: inline_serializer(
@@ -1035,12 +1123,11 @@ class LeadDetailView(APIView):
             # No email for a new assignee here: the conversion emails every
             # assignee below.
             if "assigned_to" in params:
-                lead_obj.assigned_to.clear()
-                if assigned_ids:
-                    profiles = Profile.objects.filter(
+                lead_obj.assigned_to.set(
+                    Profile.objects.filter(
                         id__in=assigned_ids, org=request.profile.org, is_active=True
                     )
-                    lead_obj.assigned_to.add(*profiles)
+                )
 
             from leads.services import convert_lead_to_account
 

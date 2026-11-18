@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Editing a deal.
@@ -49,16 +49,18 @@
    */
   import { tick, untrack } from 'svelte';
   import { enhance } from '$app/forms';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
   import { OPPORTUNITY_TYPE_LABEL, AGING_TONE, AGING_LABEL } from '#lib/v2/enums.js';
   import { money, longDate } from '#lib/v2/format.js';
+  import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { ChevronRight, TriangleAlert, Lock } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageData, PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   /* Read once, on purpose. `originalStage` has to stay the stage this form
      opened on. That is what "the clock is about to reset" is measured
@@ -68,20 +70,23 @@
     server: data.server,
     originalStage: data.deal.stage,
     originalPipeline: data.deal.pipeline,
-    pipelines: /** @type {any[]} */ (data.pipelines)
+    pipelines: data.pipelines
   }));
 
-  let form = $state(untrack(() => ({ ...data.form })));
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  type LoadedForm = PageData['form'];
+  // The inputs write strings back into the numbers the load sent.
+  let form: Omit<LoadedForm, 'amount' | 'probability'> & {
+    amount: number | string;
+    probability: number | string;
+  } = $state(untrack(() => ({ ...data.form })));
+  let touched = $state<Record<string, boolean>>({});
   let submitted = $state(false);
   let saved = $state(false);
 
   const amountIsCalculated = server.amount_source === 'CALCULATED';
 
-  let stages = $derived(
-    pipelines.find((p) => p.id === form.pipeline)?.stages ?? /** @type {any[]} */ ([])
-  );
-  let chosen = $derived(stages.find((/** @type {any} */ s) => s.code === form.stage));
+  let stages = $derived(pipelines.find((p) => p.id === form.pipeline)?.stages ?? []);
+  let chosen = $derived(stages.find((s) => s.code === form.stage));
   let isClosed = $derived(chosen?.kind === 'won' || chosen?.kind === 'lost');
   let isClosedWon = $derived(chosen?.kind === 'won');
   let stageChanged = $derived(form.stage !== originalStage || form.pipeline !== originalPipeline);
@@ -90,17 +95,14 @@
    * A new pipeline starts the deal on its first open stage. Read from the
    * event, not from `form.pipeline`, so it does not depend on whether the
    * binding or this handler sees the change first.
-   *
-   * @param {string} pipelineId
    */
-  function pipelineChanged(pipelineId) {
+  function pipelineChanged(pipelineId: string) {
     const next = pipelines.find((p) => p.id === pipelineId)?.stages ?? [];
-    form.stage = next.find((/** @type {any} */ s) => s.kind === 'open')?.code ?? '';
+    form.stage = next.find((s) => s.kind === 'open')?.code ?? '';
   }
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = m.pipeline_error_name();
     if (!form.account) e.account = m.pipeline_error_account_required();
 
@@ -129,7 +131,7 @@
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   /**
    * Stop the submit when this form's own checks fail, and send focus to the
@@ -139,17 +141,14 @@
    *
    * These checks are a UX hint. The serializer is the rule, and its 400 is
    * what `result.error` below reports.
-   *
-   * @type {import('./$types').SubmitFunction}
    */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     saved = false;
     if (!valid) {
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
       return;
     }
@@ -414,7 +413,19 @@
 
     <div class="v2-field">
       <label for="f-source">{m.pipeline_field_source()}</label>
-      <input id="f-source" name="lead_source" class="v2-input" bind:value={form.lead_source} />
+      {#if data.sourcesLive}
+        <!-- Offered against the stored value, so a retired source stays
+             selectable for the deal that still carries it. -->
+        <select id="f-source" name="lead_source" class="v2-input" bind:value={form.lead_source}>
+          <option value="">{m.pipeline_source_not_specified()}</option>
+          {#each sourceOptions(data.sources, data.form.lead_source) as s (s.key)}
+            <option value={s.key}>{s.label}</option>
+          {/each}
+        </select>
+      {:else}
+        <!-- An API without the org's source list takes its own values. -->
+        <input id="f-source" name="lead_source" class="v2-input" bind:value={form.lead_source} />
+      {/if}
     </div>
 
     <div class="v2-field">
@@ -426,6 +437,13 @@
         rows="4"
         bind:value={form.description}></textarea>
     </div>
+
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={result?.values?.custom_fields}
+      errors={result?.fieldErrors}
+      heading={m.common_details()}
+    />
 
     <div class="actions">
       <button class="v2-btn v2-btn-primary" type="submit">{m.pipeline_edit_submit()}</button>

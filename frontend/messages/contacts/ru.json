@@ -331,5 +331,31 @@
   "contacts_owner_unknown": "Неизвестно",
   "contacts_attachment_fallback": "Вложение",
   "contacts_event_added": "Контакт добавлен",
-  "contacts_not_found": "Такого контакта нет, или у вас нет к нему доступа."
+  "contacts_not_found": "Такого контакта нет, или у вас нет к нему доступа.",
+  "contacts_detail_filter_conversations": "Разговоры",
+  "contacts_detail_composer_label": "Добавить в ленту",
+  "contacts_detail_composer_note": "Заметка",
+  "contacts_detail_composer_log": "Записать активность",
+  "contacts_detail_note_placeholder_short": "Напишите заметку…",
+  "contacts_detail_interactions_failed": "Не удалось загрузить звонки и сообщения, поэтому ниже их нет.",
+  "contacts_detail_interaction_delete_explain": "Запись исчезнет из всех лент, где она есть.",
+  "contacts_detail_interactions_more": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Показаны последние звонки и сообщения; ещё {countShown} более раннее не показано.",
+        "countPlural=few": "Показаны последние звонки и сообщения; ещё {countShown} более ранних не показаны.",
+        "countPlural=many": "Показаны последние звонки и сообщения; ещё {countShown} более ранних не показаны.",
+        "countPlural=other": "Показаны последние звонки и сообщения; ещё {countShown} более ранних не показаны."
+      }
+    }
+  ],
+  "contacts_detail_rail_source": "Источник",
+  "contacts_detail_rail_sub_source": "Подысточник",
+  "contacts_detail_rail_reference": "Идентификатор"
 }

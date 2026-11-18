@@ -10,13 +10,22 @@ from rest_framework.views import APIView
 
 from common.modules import module_is_available, module_off_body
 from common.org_time import selectable_timezones
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.serializer import (
     HELP_CENTER_SLUG_TAKEN,
     HelpCenterSettingsSerializer,
     OrgSettingsSerializer,
 )
 from common.utils import COUNTRIES, CURRENCY_CODES, CURRENCY_SYMBOLS
+
+
+class HelpCenterSettingsReadSerializer(HelpCenterSettingsSerializer):
+    """Response-only: what `HelpCenterSettingsView` answers, with `can_edit`."""
+
+    can_edit = serializers.BooleanField(read_only=True)
+
+    class Meta(HelpCenterSettingsSerializer.Meta):
+        fields = (*HelpCenterSettingsSerializer.Meta.fields, "can_edit")
 
 
 class OrgSettingsView(APIView):
@@ -29,6 +38,7 @@ class OrgSettingsView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(tags=["organization"], responses={200: OrgSettingsSerializer})
     def get(self, request):
         """Get current organization settings."""
         if not request.profile:
@@ -40,6 +50,11 @@ class OrgSettingsView(APIView):
         serializer = OrgSettingsSerializer(org, context={"request": request})
         return Response(serializer.data)
 
+    @extend_schema(
+        tags=["organization"],
+        request=OrgSettingsSerializer,
+        responses={200: OrgSettingsSerializer},
+    )
     def patch(self, request):
         """Update organization settings (admin only)."""
         if not request.profile:
@@ -47,7 +62,7 @@ class OrgSettingsView(APIView):
                 {"error": _("Organization context required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can update organization settings")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -85,7 +100,7 @@ class HelpCenterSettingsView(APIView):
             raise NotFound(module_off_body(org, "knowledge_base"))
 
     def _can_edit(self, request):
-        return is_org_admin(request.profile)
+        return may_configure(request.profile)
 
     def _payload(self, request, org):
         data = HelpCenterSettingsSerializer(org).data
@@ -95,7 +110,7 @@ class HelpCenterSettingsView(APIView):
     @extend_schema(
         tags=["organization"],
         operation_id="help_center_settings_retrieve",
-        responses={200: HelpCenterSettingsSerializer},
+        responses={200: HelpCenterSettingsReadSerializer},
     )
     def get(self, request):
         return Response(self._payload(request, request.profile.org))
@@ -104,7 +119,7 @@ class HelpCenterSettingsView(APIView):
         tags=["organization"],
         operation_id="help_center_settings_update",
         request=HelpCenterSettingsSerializer,
-        responses={200: HelpCenterSettingsSerializer},
+        responses={200: HelpCenterSettingsReadSerializer},
     )
     def patch(self, request):
         if not self._can_edit(request):

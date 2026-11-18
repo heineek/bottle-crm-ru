@@ -1,0 +1,87 @@
+/**
+ * Form-action half of the spreadsheet importers (contacts, tickets and leads).
+ *
+ * `ImportFlow` (contacts and leads) and `TicketImportDrawer` post the chosen
+ * file to `?/importPreview` and `?/importCommit` on the list page and read the
+ * result under those same keys, `importError`, `importErrors` and
+ * `importSkipped` on failure. This forwards the file, and the `mapping` field
+ * when the form has one, to Django as multipart and maps the reply onto that
+ * shape. It never gates: the import views decide who may import (admin or
+ * sales access), check the mapping, cap the size and rows, throttle, and scope
+ * every write to the caller's org.
+ */
+import { fail, type Cookies } from '@sveltejs/kit';
+import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
+import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
+import type { components } from '#lib/api-schema.js';
+import type { components as Enterprise } from '#lib/enterprise-api-schema.js';
+import type { Skipped } from '#lib/import/mapping.js';
+import type { RowError } from '#lib/utils/csv.js';
+
+type Schemas = components['schemas'];
+type ImportReply = {
+  '/cases/import/preview/': Schemas['CaseImportPreviewResponse'];
+  '/cases/import/commit/': Schemas['CaseImportCommitResponse'];
+  '/contacts/import/preview/': Schemas['ContactImportPreviewResponse'];
+  '/contacts/import/commit/': Schemas['ContactImportCommitResponse'];
+  '/leads/import/preview/': Schemas['LeadImportPreviewResponse'];
+  '/leads/import/commit/': Schemas['LeadImportCommitResponse'];
+};
+
+/** A custom object's importer: same mapped reply as the leads one. */
+type ObjectImportPath = `/objects/${string}/records/import/${'preview' | 'commit'}/`;
+type ObjectReply<P> = P extends `${string}/preview/`
+  ? Enterprise['schemas']['CustomRecordImportPreview']
+  : Enterprise['schemas']['CustomRecordImportCommitResponse'];
+type ReplyFor<P> = P extends keyof ImportReply ? ImportReply[P] : ObjectReply<P>;
+
+/**
+ * @param path Django endpoint, e.g. `/contacts/import/preview/`
+ * @param key where the client reads the success body
+ *
+ * A custom object's importer refuses with its own sentence (a plan or an
+ * access message), which is shown as the server wrote it.
+ */
+export async function forwardCsvImport<
+  P extends keyof ImportReply | ObjectImportPath,
+  K extends 'importPreview' | 'importCommit'
+>({ request, cookies }: { request: Request; cookies: Cookies }, path: P, key: K) {
+  const form = await request.formData();
+  const file = form.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return fail(400, { importError: m.app_csv_choose_file() });
+  }
+  const body = new FormData();
+  body.set('file', file, file.name || 'upload.csv');
+  const mapping = form.get('mapping');
+  if (typeof mapping === 'string') body.set('mapping', mapping);
+  try {
+    // Quiet: an import's error reply carries the skipped rows' cells, which
+    // must not reach the server log.
+    const reply: ReplyFor<P> = await apiRequest(
+      path,
+      { method: 'POST', body, quietErrors: true },
+      { cookies }
+    );
+    return { [key]: reply } as Record<K, ReplyFor<P>>;
+  } catch (err) {
+    const status = apiStatus(err);
+    if (!status) throw err;
+    const data = apiErrorBody(err) ?? {};
+    return fail(status, {
+      importError:
+        status === 403
+          ? path.startsWith('/objects/')
+            ? String(data.detail || data.message || m.app_csv_import_records_forbidden())
+            : m.app_csv_import_forbidden()
+          : status === 429
+            ? m.app_csv_import_throttled()
+            : String(data.message || data.header_error || m.app_csv_import_failed()),
+      importErrors: (Array.isArray(data.errors) ? data.errors : []) as RowError[],
+      // A mapped commit with nothing importable answers 400 with the rows it
+      // skipped, so the client can still say why.
+      importSkipped: (Array.isArray(data.skipped) ? data.skipped : []) as Skipped[]
+    });
+  }
+}

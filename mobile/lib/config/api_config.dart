@@ -136,6 +136,10 @@ class ApiConfig {
   /// the org's first admin and is rotated through `OrgApiKeyView` alone.
   static String get orgSettings => '$apiBaseUrl/org/settings/';
 
+  /// The org's plan. Any member may read its name; the phone reads nothing
+  /// else and never buys or manages one. A server without billing answers 404.
+  static String get billing => '$apiBaseUrl/billing/';
+
   /// The public help center switch and address. GET is open to any member and
   /// carries `can_edit`; PATCH is admin-only. Always the caller's own org.
   static String get helpCenterSettings => '$apiBaseUrl/org/help-center/';
@@ -144,9 +148,25 @@ class ApiConfig {
   /// context, because its first caller is someone creating their first org.
   static String get packs => '$apiBaseUrl/packs/';
 
-  /// Apply one pack. Admin-only, additive-only, and safe to repeat: a pack
-  /// already applied reports everything skipped rather than refusing.
+  /// Apply one pack: on a server with industry apps, an install with sample
+  /// data. Kept for signup against a server that has no `/api/apps/`.
   static String packApply(String packId) => '$apiBaseUrl/packs/$packId/apply/';
+
+  /// The industry apps with this org's install state. Any member may read;
+  /// preview, install, upgrade and remove are admin-only. An older server
+  /// answers 404.
+  static String get apps => '$apiBaseUrl/apps/';
+
+  static String _app(String appId) =>
+      '$apiBaseUrl/apps/${Uri.encodeComponent(appId)}/';
+
+  /// What [action] (`install`, `upgrade` or `remove`) would do. Writes nothing.
+  static String appPreview(String appId, String action) =>
+      '${_app(appId)}preview/?action=${Uri.encodeQueryComponent(action)}';
+
+  static String appInstall(String appId) => '${_app(appId)}install/';
+  static String appUpgrade(String appId) => '${_app(appId)}upgrade/';
+  static String appRemove(String appId) => '${_app(appId)}remove/';
 
   /// Delete the demo records a pack created for this org, and nothing else.
   /// Admin-only. A sample record the org has since attached real work to is
@@ -268,6 +288,32 @@ class ApiConfig {
 
   /// One lead stage. PUT edits, DELETE removes it (refused while it has leads).
   static String leadStage(String id) => '$apiBaseUrl/leads/stages/$id/';
+
+  /// The org's lead sources under `sources`, retired ones included. Any member
+  /// reads; POST `{"label"}` adds one and is admin-only. An older API answers
+  /// 404, where the seven fixed sources apply.
+  static String get leadSources => '$apiBaseUrl/leads/sources/';
+
+  /// PATCH `{"label"?, "is_active"?}`. Admin-only; there is no delete.
+  static String leadSource(String id) => '$apiBaseUrl/leads/sources/$id/';
+
+  /// POST `{"keys": [...]}`, every key in the new order. Admin-only.
+  static String get leadSourcesOrder => '$apiBaseUrl/leads/sources/order/';
+
+  /// Lead webhooks. Admin-only on every route, reads included. A create or a
+  /// key replace answers the full key, once; later reads carry `key_hint`.
+  static String get leadIntakes => '$apiBaseUrl/leads/intakes/';
+  static String leadIntake(String id) => '$apiBaseUrl/leads/intakes/$id/';
+  static String leadIntakeKey(String id) =>
+      '$apiBaseUrl/leads/intakes/$id/key/';
+
+  /// The newest 50 deliveries, newest first.
+  static String leadIntakeDeliveries(String id) =>
+      '$apiBaseUrl/leads/intakes/$id/deliveries/';
+
+  /// Calls, meetings, emails, WhatsApp, SMS and enquiries. GET takes one of
+  /// `lead`, `contact`, `account`, `opportunity` or `case`; POST logs one.
+  static String get interactions => '$apiBaseUrl/interactions/';
 
   /// Contacts management
   static String get contacts => '$apiBaseUrl/contacts/';
@@ -412,8 +458,21 @@ class ApiConfig {
 
   static String objectRecords(String key) => '${object(key)}records/';
 
+  /// The object's records as a CSV file, taking the list's own parameters.
+  static String objectRecordsExport(String key) =>
+      '${objectRecords(key)}export/';
+
   static String objectRecord(String key, String id) =>
       '${objectRecords(key)}${_checked(_uuid, id, 'id')}/';
+
+  /// The object's board, and the move of one card on it.
+  static String objectBoard(String key) => '${object(key)}board/';
+
+  static String objectBoardMove(String key) => '${objectBoard(key)}move/';
+
+  /// A note on a record of the object, addressed by the comment's id.
+  static String objectComment(String key, String commentId) =>
+      '${object(key)}comments/${_checked(_uuid, commentId, 'commentId')}/';
 
   static String objectRecordAttachments(String key, String id) =>
       '${objectRecord(key, id)}attachments/';
@@ -425,6 +484,14 @@ class ApiConfig {
   ) =>
       '${objectRecordAttachments(key, id)}'
       '${_checked(_uuid, attachmentId, 'attachmentId')}/';
+
+  /// The matches of a property or requirement record, and the dismissal of
+  /// one pair from either side.
+  static String realEstateMatches(String id) =>
+      '$apiBaseUrl/real-estate/matches/${_checked(_uuid, id, 'id')}/';
+
+  static String realEstateMatchDismissed(String id, String otherId) =>
+      '${realEstateMatches(id)}dismissed/${_checked(_uuid, otherId, 'otherId')}/';
 
   static String get orgModules => '$apiBaseUrl/org/modules/';
 
@@ -551,9 +618,11 @@ class ApiConfig {
   static String timesheet({required String start, required String end}) =>
       '$apiBaseUrl/time-entries/timesheet/?start=$start&end=$end';
 
-  /// Where the time went over a window: totals by agent, ticket or account.
+  /// Where the time went over a window: totals by agent, ticket, account or
+  /// project.
   ///
-  /// `groupBy` is one of agent/ticket/account and `billable`, when given, is
+  /// `groupBy` is one of agent/ticket/account/project and `billable`, when
+  /// given, is
   /// the string 'true' or 'false'; the API rejects anything else rather than
   /// guessing, so the caller passes what the picker chose and nothing else.
   ///
@@ -664,6 +733,41 @@ class ApiConfig {
   static String invoiceFromDeal(String dealId) =>
       '$apiBaseUrl/invoices/from-opportunity/$dealId/';
 
+  /// Drafts an invoice from billable time. Admins only. Takes `account_id`
+  /// and `entry_ids`, or `project_id` with optional `entry_ids` and `up_to`,
+  /// and `group_by` (entry, person, task or single).
+  static String get invoiceFromTimeEntries =>
+      '$apiBaseUrl/invoices/from-time-entries/';
+
+  /// Projects. The list takes `status`, `account`, `assigned_to`, `search`,
+  /// `limit` and `offset`. The detail takes GET, PATCH, DELETE and POST (a
+  /// comment or an attachment, as on a deal).
+  static String get projects => '$apiBaseUrl/projects/';
+
+  static String project(String id) => '$projects${_checked(_uuid, id, 'id')}/';
+
+  /// A draft for the new-project form from a deal. Nothing is saved.
+  static String projectFromDeal(String dealId) =>
+      '${projects}from-deal/${_checked(_uuid, dealId, 'dealId')}/';
+
+  /// Time on a project: GET lists, POST logs a finished entry.
+  static String projectTimeEntries(String id) => '${project(id)}time-entries/';
+
+  static String projectTimerStart(String id) =>
+      '${project(id)}time-entries/start/';
+
+  /// What Bill time would take on or before [upTo] (`YYYY-MM-DD`). Admins only.
+  static String projectUnbilled(String id, String upTo) =>
+      '${project(id)}unbilled/?up_to=${Uri.encodeQueryComponent(upTo)}';
+
+  /// A one-line Draft invoice for an amount or a share of a fixed fee.
+  static String projectInvoiceAmount(String id) =>
+      '${project(id)}invoice-amount/';
+
+  /// Bills the project's open retainer month as a Draft invoice. Admins only.
+  static String projectRetainerBill(String id) =>
+      '${project(id)}retainer/bill/';
+
   /// Estimates (quotes). Takes `search`, `status` and `account`.
   static String get estimates => '$apiBaseUrl/invoices/estimates/';
 
@@ -768,6 +872,10 @@ class ApiConfig {
   /// Mark every unread notification read.
   static String get notificationsReadAll =>
       '$apiBaseUrl/notifications/read-all/';
+
+  /// This phone's push token: POST registers it for the caller in the current
+  /// org, DELETE (body `{token}`) removes the caller's own row for it.
+  static String get devices => '$apiBaseUrl/devices/';
 
   // ==========================================================================
   // USERS & TAGS ENDPOINTS

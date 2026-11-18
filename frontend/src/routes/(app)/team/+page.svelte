@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Who can get in, and how much they can do.
@@ -27,30 +27,30 @@
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import { count, relativeDays } from '#lib/v2/format.js';
   import { ROLE_LABEL, ROLE_TONE } from '#lib/v2/enums.js';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import { UserPlus, KeyRound } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let inviting = $state(false);
   let busy = $state(false);
 
   /** A submit handler that flips `busy` while the action runs. */
-  const working = () => {
+  const working: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };
   };
 
   /** The invite form both submits and, on success, closes itself. */
-  const inviteSubmit = () => {
+  const inviteSubmit: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update, result }) => {
+    return async ({ update, result }) => {
       await update();
       busy = false;
       if (result?.type === 'success' && result?.data?.invited) inviting = false;

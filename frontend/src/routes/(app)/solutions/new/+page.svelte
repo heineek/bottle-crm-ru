@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * New knowledge-base article.
@@ -38,9 +38,9 @@
   import { untrack } from 'svelte';
   import { ChevronLeft, Eye, EyeOff } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // `untrack` so a revalidation cannot overwrite what somebody has typed.
   // These are read once, on purpose. `update({ reset: false })` below is what

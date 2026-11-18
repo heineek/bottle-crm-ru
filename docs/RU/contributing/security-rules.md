@@ -106,8 +106,8 @@ entry = TimeEntry.objects.create(
 сериализатора, а не извлечением во время выполнения.
 
 Самый наглядный пример того, *почему* это важно, это `is_sample`: флаг, общий через одну
-импортируемую константу `SAMPLE_DATA_HELP_TEXT` для шести моделей: `Lead`, `Account`, `Contact`,
-`Case`, `Opportunity` и `Task` (`grep -rl SAMPLE_DATA_HELP_TEXT backend/` находит её в `models.py`
+импортируемую константу `SAMPLE_DATA_HELP_TEXT` для восьми моделей: `Lead`, `Account`, `Contact`,
+`Case`, `Opportunity`, `Task`, `Project` и `TimeEntry` (`grep -rl SAMPLE_DATA_HELP_TEXT backend/` находит её в `models.py`
 каждого приложения, а также в `common/base.py`, где она определена один раз). `leads/serializer.py`
 объявляет `read_only_fields = ("is_sample",)`. Сам текст подсказки, определённый один раз в
 `backend/common/base.py` и общий для всех моделей с этим полем, формулирует обоснование как

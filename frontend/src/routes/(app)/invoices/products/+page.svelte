@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * The catalogue line items are picked from. Short, boring, and the only page
@@ -20,9 +20,9 @@
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let totals = $derived(data.totals);
   // The catalogue is org config: only an admin may add or change it. The API
@@ -37,8 +37,7 @@
    * order, which is the order the list already arrives in.
    */
   let groups = $derived.by(() => {
-    /** @type {Record<string, any[]>} */
-    const byCategory = {};
+    const byCategory: Record<string, typeof data.products> = {};
     for (const p of data.products) {
       (byCategory[p.category] ??= []).push(p);
     }
@@ -102,7 +101,7 @@
                 <Pill tone="slate">{m.invoices_products_retired()}</Pill>
               {/if}
               <span class="v2-num" style="font-weight:600;font-size:13px">
-                {money(p.price, p.currency)}
+                {money(p.price, p.currency || data.org.currency)}
               </span>
               {#if canManage}
                 <a

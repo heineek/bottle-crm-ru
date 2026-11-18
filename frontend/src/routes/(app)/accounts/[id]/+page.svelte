@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * The account is a workspace, not a form.
@@ -11,6 +11,7 @@
    * All four panels come from the single detail response, the API already
    * returned them, so this costs no extra round trips.
    */
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import StatCard from '#lib/v2/components/StatCard.svelte';
@@ -33,9 +34,9 @@
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
   let related = $derived(relatedView(data.related));
   let dealsOn = $derived(isOn(data.modules, 'deals'));
   let ticketsOn = $derived(isOn(data.modules, 'tickets'));
@@ -43,16 +44,12 @@
 
   let { account, deals, contacts, tickets, invoices, owners } = $derived(data);
 
-  let openDeals = $derived(
-    deals.filter((/** @type {any} */ d) => !CLOSED_KINDS.includes(d.stage_kind))
-  );
-  let stalled = $derived(
-    dealsOn ? openDeals.filter((/** @type {any} */ d) => d.aging_status === 'red') : []
-  );
+  let openDeals = $derived(deals.filter((d) => !CLOSED_KINDS.includes(d.stage_kind ?? '')));
+  let stalled = $derived(dealsOn ? openDeals.filter((d) => d.aging_status === 'red') : []);
   // `past_due` is decided by the same rule as the header figure. See
   // `isPastDue` in the data layer. The invoice's own `is_overdue` flag counts
   // drafts, and a rail that disagrees with its header discredits both.
-  let pastDue = $derived(invoicesOn ? invoices.filter((/** @type {any} */ i) => i.past_due) : []);
+  let pastDue = $derived(invoicesOn ? invoices.filter((i) => i.past_due) : []);
 
   /** One sentence that connects problems across objects. Every clause is a
       fact on this page: a stalled deal, or an invoice past its due date. */
@@ -149,7 +146,7 @@
           value={account.overdue_by_currency?.length ? moneyEach(account.overdue_by_currency) : '—'}
           tone={account.overdue_by_currency?.length ? 'rust' : 'slate'}
           detail={pastDue.length
-            ? pastDue.map((/** @type {any} */ i) => i.invoice_number).join(', ')
+            ? pastDue.map((i) => i.invoice_number).join(', ')
             : m.accounts_detail_stat_nothing_past_due()}
         />
       {/if}
@@ -157,7 +154,7 @@
         <StatCard
           label={m.accounts_detail_stat_open_tickets()}
           value={String(account.open_tickets ?? 0)}
-          tone={tickets.some((/** @type {any} */ t) => t.priority === 'Urgent') ? 'rust' : 'slate'}
+          tone={tickets.some((t) => t.priority === 'Urgent') ? 'rust' : 'slate'}
           detail={tickets.length
             ? `${tickets[0].name} · ${tickets[0].priority}`
             : m.accounts_detail_stat_none_open()}
@@ -199,6 +196,12 @@
       duplicates={data.duplicates.duplicates}
     />
 
+    {#if data.customFields?.length}
+      <div style="margin-bottom:16px">
+        <CustomFieldsCard fields={data.customFields} flush />
+      </div>
+    {/if}
+
     <!-- align-items:start so each card is its own height. Stretched to match
          its neighbour, a one-row panel ends in a tall blank area that reads as
          content that failed to load. -->
@@ -225,13 +228,13 @@
                    it reads as though an open deal already closed. -->
                 <div class="v2-sub" style="font-size:11.5px">
                   {d.stage_label}{d.closed_on
-                    ? CLOSED_KINDS.includes(d.stage_kind)
+                    ? CLOSED_KINDS.includes(d.stage_kind ?? '')
                       ? ` · ${m.accounts_detail_deal_closed_on({ date: shortDate(d.closed_on) })}`
                       : ` · ${m.accounts_detail_deal_due_on({ date: shortDate(d.closed_on) })}`
                     : ''}
                 </div>
               </div>
-              {#if d.aging_status === 'red' && !CLOSED_KINDS.includes(d.stage_kind)}
+              {#if d.aging_status === 'red' && !CLOSED_KINDS.includes(d.stage_kind ?? '')}
                 <Pill tone="rust"
                   >{m.accounts_detail_deal_days({ days: d.days_in_current_stage })}</Pill
                 >

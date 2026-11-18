@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * One web form: the editor.
    *
@@ -48,13 +48,12 @@
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count, relativeTime, shortDate } from '#lib/v2/format.js';
   import {
-    LEAD_SOURCES,
-    LEAD_SOURCE_LABEL,
     CASE_PRIORITIES,
     CASE_TYPES,
     CASE_PRIORITY_LABEL,
     CASE_TYPE_LABEL
   } from '#lib/v2/enums.js';
+  import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { inactiveOptionLabel } from '#lib/v2/pickers.js';
   import {
     moveField,
@@ -65,11 +64,24 @@
     builtinFieldLabel
   } from '#lib/v2/webform-fields.js';
   import { ChevronUp, ChevronDown, GripVertical, Plus, Trash2, Copy, Check } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps, SubmitFunction } from './$types';
+  import type { components } from '#lib/api-schema.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  type Schemas = components['schemas'];
+  type Row = {
+    key: number;
+    source: string;
+    lead_field: string;
+    ticket_field: string;
+    custom_field: string | null;
+    label: string;
+    placeholder: string;
+    is_required: boolean;
+  };
+
+  let { data, form }: PageProps = $props();
 
   let wf = $derived(data.form);
   let canManage = $derived(data.canManage);
@@ -89,8 +101,7 @@
   let fields = $state(untrack(() => seed(data.form.fields ?? [])));
   let nextKey = $state(1000);
 
-  /** @param {any[]} rows */
-  function seed(rows) {
+  function seed(rows: Schemas['WebFormField'][]): Row[] {
     return rows.map((row, index) => ({
       key: index,
       source: row.source,
@@ -155,9 +166,9 @@
     return null;
   });
 
-  const working = () => {
+  const working: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };
@@ -165,9 +176,9 @@
 
   /** Save also reseeds the editor from whatever came back, so a row the
    *  server rejected or normalised does not linger in the browser's copy. */
-  const saveSubmit = () => {
+  const saveSubmit: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update, result }) => {
+    return async ({ update, result }) => {
       await update({ reset: false });
       busy = false;
       if (result?.type === 'success') fields = seed(data.form.fields ?? []);
@@ -190,8 +201,7 @@
     ];
   }
 
-  /** @param {number} index */
-  function removeField(index) {
+  function removeField(index: number) {
     fields = fields.filter((_, i) => i !== index);
   }
 
@@ -199,31 +209,24 @@
    * When a row's target changes and the label is still the one the previous
    * target suggested (or empty), follow it. A label the person actually typed
    * is never overwritten: guessing is a convenience, not a correction.
-   *
-   * @param {number} index
-   * @param {string} value
    */
-  function pickBuiltinField(index, value) {
-    const row = /** @type {any} */ (fields[index]);
-    const key = builtin.key;
+  function pickBuiltinField(index: number, value: string) {
+    const row = fields[index];
+    const key = builtin.key === 'ticket_field' ? 'ticket_field' : 'lead_field';
     const wasSuggested = !row.label.trim() || row.label === builtinFieldLabel(wf.target, row[key]);
     row[key] = value;
     row.custom_field = null;
     if (wasSuggested) row.label = builtinFieldLabel(wf.target, value);
   }
 
-  /**
-   * @param {number} index
-   * @param {string} value
-   */
-  function pickCustomField(index, value) {
+  function pickCustomField(index: number, value: string) {
     const row = fields[index];
-    const previous = data.customFields.find((/** @type {any} */ c) => c.id === row.custom_field);
+    const previous = data.customFields.find((c) => c.id === row.custom_field);
     const wasSuggested = !row.label.trim() || row.label === previous?.label;
     row.custom_field = value || null;
     row.lead_field = '';
     row.ticket_field = '';
-    const picked = data.customFields.find((/** @type {any} */ c) => c.id === value);
+    const picked = data.customFields.find((c) => c.id === value);
     if (wasSuggested && picked) row.label = picked.label;
   }
 
@@ -232,17 +235,15 @@
   // `dragging` holds the index being carried. It is set on dragstart and
   // cleared on dragend, so an interrupted drag (Escape, drop outside the list)
   // leaves no stuck state.
-  let dragging = $state(/** @type {number | null} */ (null));
+  let dragging = $state<number | null>(null);
 
-  /** @param {number} index */
-  function onDrop(index) {
+  function onDrop(index: number) {
     if (dragging === null || dragging === index) return;
     fields = moveField(fields, dragging, index - dragging);
     dragging = null;
   }
 
-  /** @param {string} text @param {string} which */
-  async function copy(text, which) {
+  async function copy(text: string, which: string) {
     try {
       await navigator.clipboard.writeText(text);
       copied = which;
@@ -270,12 +271,10 @@
   let submissions = $derived(data.submissions ?? []);
   let totals = $derived(data.analytics?.totals ?? null);
 
-  /** @param {string} status */
-  const statusTone = (status) =>
+  const statusTone = (status: string) =>
     status === 'accepted' || status === 'accepted_duplicate' ? 'moss' : 'slate';
 
-  /** @param {string} status */
-  const statusLabel = (status) =>
+  const statusLabel = (status: string) =>
     ({
       accepted: isTicket
         ? m.settings_webforms_status_ticket_opened()
@@ -432,7 +431,7 @@
                       id="tgt-{field.key}"
                       class="v2-input wf-narrow"
                       disabled={!canManage}
-                      value={/** @type {any} */ (field)[builtin.key]}
+                      value={isTicket ? field.ticket_field : field.lead_field}
                       onchange={(e) => pickBuiltinField(i, e.currentTarget.value)}
                     >
                       <option value="">{m.settings_webforms_choose_one()}</option>
@@ -767,8 +766,8 @@
                 disabled={!canManage}
                 value={wf.lead_source}
               >
-                {#each LEAD_SOURCES as s (s)}
-                  <option value={s}>{LEAD_SOURCE_LABEL[s] ?? s}</option>
+                {#each sourceOptions(data.sources, wf.lead_source) as s (s.key)}
+                  <option value={s.key}>{s.label}</option>
                 {/each}
               </select>
               <p class="v2-hint">

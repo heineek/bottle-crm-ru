@@ -1,15 +1,13 @@
-<script>
+<script lang="ts">
   /**
    * A signing secret, shown in the one response that carries it (a create or
    * a rotate) and gone on the next load. The list and detail responses only
    * ever carry `secret_hint`.
-   *
-   * @type {{ title: string, secret: string }}
    */
   import { Copy, Check } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
 
-  let { title, secret } = $props();
+  let { title, secret }: { title: string; secret: string } = $props();
   let copied = $state(false);
 
   async function copy() {

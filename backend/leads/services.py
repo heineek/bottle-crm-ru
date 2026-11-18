@@ -3,6 +3,7 @@ Lead conversion service functions
 """
 
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from django.utils.translation import gettext_lazy
 from rest_framework.exceptions import ValidationError
 
@@ -12,6 +13,7 @@ from common.models import Attachments, Comment
 from common.modules import module_is_available
 from contacts.access import has_contact_access, visible_contacts_qs
 from contacts.models import Contact
+from interactions.models import Interaction
 from opportunity.models import Opportunity
 
 CONVERSION_REFUSED = gettext_lazy(
@@ -48,6 +50,25 @@ def conversion_refusal(request, lead):
     return None
 
 
+def _move_interactions(lead, contact, account, opportunity):
+    """The lead's interactions keep their lead link, move home to the contact
+    it became (the account when no contact was made or linked), and gain the
+    account and deal, so the history follows the person.
+
+    One write sets the home and its link together, as the home check needs.
+    """
+    moved = {"account": account}
+    if contact is not None:
+        moved.update(home="contact", contact=contact)
+    else:
+        moved["home"] = "account"
+    if opportunity is not None:
+        moved["opportunity"] = opportunity
+    Interaction.objects.filter(org_id=lead.org_id, lead=lead, home="lead").update(
+        updated_at=timezone.now(), **moved
+    )
+
+
 def convert_lead_to_account(lead_obj, request, create_opportunity=True):
     """
     Convert a Lead to Account, Contact, and optionally Opportunity.
@@ -58,7 +79,7 @@ def convert_lead_to_account(lead_obj, request, create_opportunity=True):
        existing one with that email if the converter may open it
     3. Optionally creates an Opportunity (if create_opportunity=True and lead has opportunity_amount)
     4. Copies tags, assigned_to, teams
-    5. Migrates Comments and Attachments
+    5. Migrates Comments and Attachments, and moves interactions to the contact
     6. Auto-links the Lead.contacts the converter may open to the new Account
     7. Sets lead status to "converted"
 
@@ -139,6 +160,9 @@ def convert_lead_to_account(lead_obj, request, create_opportunity=True):
                 "last_name": lead_obj.last_name or "",
                 "email": lead_obj.email,
                 "phone": lead_obj.phone,
+                "source": lead_obj.source or "",
+                "source_detail": lead_obj.source_detail,
+                "source_ref": lead_obj.source_ref,
                 "organization": lead_obj.company_name or "",
                 "title": lead_obj.job_title,
                 "description": lead_obj.description,
@@ -205,6 +229,8 @@ def convert_lead_to_account(lead_obj, request, create_opportunity=True):
             probability=lead_obj.probability or 0,
             closed_on=lead_obj.close_date,
             lead_source=lead_obj.source,
+            source_detail=lead_obj.source_detail,
+            source_ref=lead_obj.source_ref,
             description=lead_obj.description,
             stage="QUALIFICATION",  # Initial stage after lead conversion
             created_by=request.profile.user,
@@ -217,6 +243,8 @@ def convert_lead_to_account(lead_obj, request, create_opportunity=True):
         # Link contact to opportunity
         if contact:
             opportunity.contacts.add(contact)
+
+    _move_interactions(lead_obj, contact, account, opportunity)
 
     # Update lead status to converted
     lead_obj.status = "converted"

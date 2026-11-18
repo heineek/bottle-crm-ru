@@ -8,10 +8,12 @@ cached, because those modules import from `common` and a module-level import
 would be circular.
 
 An installed app adds per-org entries with `register_hook`. `model_label`,
-`read_rule` and `edit_rule` are for the registry's own use. Callers use only
-`key`, `label`, `label_plural`, `custom_field_target`, `attachments`,
-`activity_feed`, `links`, `model`, `records(org)`, `readable(profile)`,
-`editable(profile)` and `automation_adapter()`.
+`read_rule`, `edit_rule`, `automation`, `list_spec`, `search` and `webhook`
+are for the registry's own use. Callers use only `key`, `label`,
+`label_plural`, `custom_field_target`, `attachments`, `activity_feed`, `links`,
+`tags_key`, `model`, `records(org)`, `readable(profile)`, `editable(profile)`,
+`automation_adapter()`, `saved_list()`, `search_hits(profile, q, limit)` and
+`webhook_spec()`.
 """
 
 from collections.abc import Callable, Iterable
@@ -36,6 +38,10 @@ class ObjectEntry:
     links: bool
     edit_rule: str | None
     automation: str | None = None
+    list_spec: str | None = None
+    search: str | None = None
+    tags_key: str | None = None
+    webhook: str | None = None
 
     @property
     def model(self):
@@ -62,6 +68,27 @@ class ObjectEntry:
             return None
         return import_string(self.automation)(self)
 
+    def saved_list(self):
+        """The `common.saved_views.SavedList` views on this object's list are
+        saved against, or None if the list takes none."""
+        if self.list_spec is None:
+            return None
+        return import_string(self.list_spec)
+
+    def search_hits(self, profile, q, limit):
+        """At most `limit` hits `{type, id, title, subtitle}` for `q` among the
+        records `profile` may open, or None if the object is not searched."""
+        if self.search is None:
+            return None
+        return import_string(self.search)(profile, q, limit)
+
+    def webhook_spec(self):
+        """The `webhooks.events.WebhookSpec` this object's events are sent
+        under, or None if it sends none."""
+        if self.webhook is None:
+            return None
+        return import_string(self.webhook)
+
 
 class RegistryConflict(Exception):
     pass
@@ -83,6 +110,10 @@ BUILT_IN = (
         links=True,
         edit_rule="leads.access.visible_leads_qs",
         automation="automation.adapters.leads.LeadAdapter",
+        list_spec="common.saved_views.LEAD_LIST",
+        search="common.search_views.search_leads",
+        tags_key="leads",
+        webhook="webhooks.events.LEAD_WEBHOOK",
     ),
     ObjectEntry(
         "contact",
@@ -96,6 +127,10 @@ BUILT_IN = (
         links=True,
         edit_rule="contacts.access.visible_contacts_qs",
         automation="automation.adapters.contacts.ContactAdapter",
+        list_spec="common.saved_views.CONTACT_LIST",
+        search="common.search_views.search_contacts",
+        tags_key="contacts",
+        webhook="webhooks.events.CONTACT_WEBHOOK",
     ),
     ObjectEntry(
         "account",
@@ -109,6 +144,10 @@ BUILT_IN = (
         links=True,
         edit_rule="accounts.access.visible_accounts_qs",
         automation="automation.adapters.accounts.AccountAdapter",
+        list_spec="common.saved_views.ACCOUNT_LIST",
+        search="common.search_views.search_accounts",
+        tags_key="accounts",
+        webhook="webhooks.events.ACCOUNT_WEBHOOK",
     ),
     ObjectEntry(
         "deal",
@@ -122,6 +161,10 @@ BUILT_IN = (
         links=True,
         edit_rule="opportunity.access.visible_deals_qs",
         automation="automation.adapters.deals.DealAdapter",
+        list_spec="common.saved_views.DEAL_LIST",
+        search="common.search_views.search_deals",
+        tags_key="opportunities",
+        webhook="webhooks.events.DEAL_WEBHOOK",
     ),
     ObjectEntry(
         "ticket",
@@ -135,6 +178,10 @@ BUILT_IN = (
         links=True,
         edit_rule="cases.access.writable_cases_qs",
         automation="automation.adapters.tickets.TicketAdapter",
+        list_spec="common.saved_views.TICKET_LIST",
+        search="common.search_views.search_tickets",
+        tags_key="cases",
+        webhook="webhooks.events.TICKET_WEBHOOK",
     ),
     ObjectEntry(
         "task",
@@ -148,6 +195,21 @@ BUILT_IN = (
         links=True,
         edit_rule="tasks.access.visible_tasks_qs",
         automation="automation.adapters.tasks.TaskAdapter",
+        tags_key="tasks",
+        webhook="webhooks.events.TASK_WEBHOOK",
+    ),
+    ObjectEntry(
+        "project",
+        "projects.Project",
+        "Project",
+        "projects.access.visible_projects_qs",
+        attachments=True,
+        activity_feed=False,
+        label="Project",
+        label_plural="Projects",
+        links=False,
+        edit_rule=None,
+        tags_key="projects",
     ),
     ObjectEntry(
         "invoice",
@@ -160,6 +222,9 @@ BUILT_IN = (
         label_plural="Invoices",
         links=False,
         edit_rule=None,
+        list_spec="common.saved_views.INVOICE_LIST",
+        search="common.search_views.search_invoices",
+        webhook="webhooks.events.INVOICE_WEBHOOK",
     ),
     ObjectEntry(
         "estimate",

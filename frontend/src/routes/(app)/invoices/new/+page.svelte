@@ -1,5 +1,7 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
+  import type { FormBody } from '#lib/api-helpers.js';
+  import type { components } from '#lib/api-schema.js';
   /**
    * New invoice.
    *
@@ -33,6 +35,7 @@
    */
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import SectionTabs from '#lib/v2/components/SectionTabs.svelte';
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
@@ -55,9 +58,11 @@
   import { Info } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: { products: any[], accounts: any[], contacts: any[], numbering: Record<string, any> | null, org: { currency: string, timezone: string } }, form: any }} */
-  let { data, form } = $props();
+  type Schemas = components['schemas'];
+
+  let { data, form }: PageProps = $props();
 
   /* The estimate builder's list. The org's default currency to start, read
      once; one the list does not carry starts at USD, so the picker never
@@ -68,7 +73,13 @@
       CURRENCIES.some((c) => c.value === data.org?.currency) ? data.org.currency : 'USD'
     )
   );
-  const TERM_DAYS = { DUE_ON_RECEIPT: 0, NET_15: 15, NET_30: 30, NET_45: 45, NET_60: 60 };
+  const TERM_DAYS: Record<string, number> = {
+    DUE_ON_RECEIPT: 0,
+    NET_15: 15,
+    NET_30: 30,
+    NET_45: 45,
+    NET_60: 60
+  };
 
   let accountId = $state('');
   let contactId = $state('');
@@ -149,8 +160,7 @@
    * status is server-forced to Draft, so none are here.
    */
   let payload = $derived.by(() => {
-    /** @type {Record<string, any>} */
-    const body = {
+    const body: FormBody<Schemas['InvoiceBodyRequest']> = {
       account_id: accountId,
       contact_id: contactId,
       currency,
@@ -373,6 +383,16 @@
           <textarea rows="3" bind:value={notes} placeholder={m.invoices_notes_placeholder()}
           ></textarea>
         </div>
+        {#if data.customFields?.length}
+          <div class="v2-card" style="padding:16px 18px;margin-top:14px">
+            <div class="v2-label" style="margin-bottom:12px">Details</div>
+            <RecordFieldInputs
+              fields={data.customFields}
+              errors={form?.fieldErrors}
+              form="invoice-form"
+            />
+          </div>
+        {/if}
       </div>
 
       <!-- ── what the customer will get ───────────────────────────────── -->

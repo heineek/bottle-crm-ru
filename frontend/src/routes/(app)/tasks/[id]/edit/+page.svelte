@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Editing a task.
@@ -7,6 +7,7 @@
    * hidden originals that let the save tell a real change from a re-send.
    * See the action for why that distinction matters here.
    */
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
@@ -20,9 +21,9 @@
     TASK_PRIORITY_CODES,
     TASK_STATUS_CODES
   } from '../../labels.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let kinds = $derived(
     parentKinds().filter(
@@ -133,6 +134,13 @@
       <span class="v2-label">{m.tasks_field_note()}</span>
       <textarea class="v2-input" name="description" rows="4">{values.description ?? ''}</textarea>
     </label>
+
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={form?.values?.custom_fields}
+      errors={form?.fieldErrors}
+      heading={m.common_details()}
+    />
 
     <div style="display:flex;gap:9px;margin-top:6px">
       <button class="v2-btn v2-btn-primary" type="submit">{m.common_save()}</button>

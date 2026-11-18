@@ -16,6 +16,7 @@ from datetime import time
 
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -26,7 +27,7 @@ from business_hours.serializers import (
     BusinessCalendarSerializer,
     BusinessHolidaySerializer,
 )
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 
 
 def _get_or_create_default(org):
@@ -68,12 +69,21 @@ class BusinessCalendarView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
-    def get(self, request, *args, **kwargs):
-        cal = _get_or_create_default(request.profile.org)
+    @extend_schema(tags=["Business hours"], responses={200: BusinessCalendarSerializer})
+    def get(self, request, pk=None, *args, **kwargs):
+        if pk is None:
+            cal = _get_or_create_default(request.profile.org)
+        else:
+            cal = get_object_or_404(BusinessCalendar, pk=pk, org=request.profile.org)
         return Response(BusinessCalendarSerializer(cal).data)
 
+    @extend_schema(
+        tags=["Business hours"],
+        request=BusinessCalendarSerializer(partial=True),
+        responses={200: BusinessCalendarSerializer},
+    )
     def put(self, request, pk=None, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can update business hours.")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -95,8 +105,14 @@ class BusinessHolidayListView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Business hours"],
+        request=BusinessHolidaySerializer,
+        # 200 when the calendar already has a holiday on that date.
+        responses={201: BusinessHolidaySerializer, 200: BusinessHolidaySerializer},
+    )
     def post(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can update business hours.")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -129,8 +145,9 @@ class BusinessHolidayDetailView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(tags=["Business hours"], responses={204: None})
     def delete(self, request, pk, hid, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can update business hours.")},
                 status=status.HTTP_403_FORBIDDEN,

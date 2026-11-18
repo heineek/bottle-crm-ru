@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { refreshAll } from '$app/navigation';
   import { deserialize } from '$app/forms';
   import { Loader2, Upload, FileText, Download, CheckCircle2, AlertCircle } from '@lucide/svelte';
@@ -8,38 +8,46 @@
   import { intlLocale } from '#lib/i18n/locale.js';
   import { m } from '#lib/paraglide/messages.js';
   import { getLocale } from '#lib/paraglide/runtime.js';
+  import type { components } from '#lib/api-schema.js';
 
   /**
    * Two-step CSV import flow: upload → preview → confirm.
    * The drawer is purely presentational; the network calls go to the
-   * SvelteKit form actions defined in tickets/+page.server.js, which
+   * SvelteKit form actions defined in tickets/+page.server.ts, which
    * forward the multipart upload to Django.
-   *
-   * @type {{ open: boolean, onOpenChange?: (v: boolean) => void }}
    */
-  let { open = $bindable(false), onOpenChange } = $props();
+  let {
+    open = $bindable(false),
+    onOpenChange
+  }: { open: boolean; onOpenChange?: (v: boolean) => void } = $props();
 
-  /** @type {'select' | 'preview' | 'done'} */
-  let step = $state('select');
-  /** @type {File | null} */
-  let file = $state(null);
+  let step: 'select' | 'preview' | 'done' = $state('select');
+  let file: File | null = $state(null);
   let dragOver = $state(false);
   let busy = $state(false);
 
-  /** @type {{ summary: { total: number, valid: number, invalid: number }, valid: any[], errors: { row: number, field: string, message: string }[], header_error: string | null } | null} */
-  let preview = $state(null);
-  /** @type {string | null} */
-  let formError = $state(null);
+  type Schemas = components['schemas'];
+  /** What the import actions answer (`forwardCsvImport`), deserialized. */
+  type ImportAnswer = {
+    type: 'success' | 'failure' | 'redirect' | 'error';
+    data?: {
+      importPreview?: Schemas['CaseImportPreviewResponse'];
+      importCommit?: Schemas['CaseImportCommitResponse'];
+      importError?: string;
+      importErrors?: Schemas['CaseImportRowError'][];
+    };
+  };
+
+  let preview: Schemas['CaseImportPreviewResponse'] | null = $state(null);
+  let formError: string | null = $state(null);
   /**
    * Per-row errors returned by the commit endpoint when the uploaded file
    * changed between preview and commit. Rendered in the same shape as preview
    * errors so users can act on them without re-running preview.
-   * @type {{ row: number, field: string, message: string }[]}
    */
-  let commitErrors = $state([]);
+  let commitErrors: { row: number; field: string; message: string }[] = $state([]);
 
-  /** @type {{ created: number, ids: string[] } | null} */
-  let commitResult = $state(null);
+  let commitResult: { created: number; ids: string[] } | null = $state(null);
 
   const TEMPLATE_HEADERS = [
     'name',
@@ -68,8 +76,7 @@
     ''
   ];
 
-  /** @param {number} bytes */
-  function kilobytes(bytes) {
+  function kilobytes(bytes: number) {
     return new Intl.NumberFormat(intlLocale(getLocale(), 'number'), {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
@@ -105,14 +112,12 @@
     URL.revokeObjectURL(url);
   }
 
-  /** @param {Event & { currentTarget: HTMLInputElement }} e */
-  function onFileChange(e) {
+  function onFileChange(e: Event & { currentTarget: HTMLInputElement }) {
     const f = e.currentTarget.files?.[0];
     if (f) file = f;
   }
 
-  /** @param {DragEvent} e */
-  function onDrop(e) {
+  function onDrop(e: DragEvent) {
     e.preventDefault();
     dragOver = false;
     const f = e.dataTransfer?.files?.[0];
@@ -123,16 +128,15 @@
    * The Node adapter refuses a body over BODY_SIZE_LIMIT (512K unless the
    * deploy sets it; the image sets 6M) with a plain-text 413 before the
    * action runs, which `deserialize` cannot parse.
-   * @param {Response} res
    */
-  async function readResult(res) {
+  async function readResult(res: Response): Promise<ImportAnswer> {
     if (res.status === 413) {
       return {
         type: 'failure',
         data: { importError: m.app_import_too_large() }
       };
     }
-    return /** @type {any} */ (deserialize(await res.text()));
+    return deserialize(await res.text()) as ImportAnswer;
   }
 
   async function submitPreview() {

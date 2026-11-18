@@ -83,6 +83,23 @@ new one (see [Adding a language](adding-a-language.md#before-you-start)).
 | Submission (web form) | Заявка | f | What a visitor sends through a web form. Not «отправка». |
 | Billable | Оплачиваемое | n | Time that is billed. Not «к оплате». |
 | Assignee | Ответственный | m | Same as "Assigned to". Not «исполнитель». |
+| Project / Projects | Проект, Проекты | m | |
+| Retainer | Ретейнер | m | A monthly fee with included hours. |
+| Included hours (retainer) | Объём часов | m | Rollover «перенос», overage «переработка». |
+| Budget burn | Расход бюджета | m | |
+| Billing type (project) | Тип оплаты | m | «По времени и материалам», «Фиксированная сумма», «Ретейнер», «Неоплачиваемый». |
+| Proposal | Предложение | n | An estimate with an introduction, a deposit or a project. The estimate itself stays «Коммерческое предложение». |
+| Deposit | Предоплата | f | A deposit invoice is «Счёт на предоплату». |
+| Interaction | Взаимодействие | n | A logged call, meeting, email or message. |
+| Enquiry (interaction kind) | Запрос | m | A lead asking, through a form, webhook or lead address. Not «Заявка» (a web form submission), not «Обращение» (a ticket). A lead that enquires again is «повторное обращение лида» in running text. |
+| Lead capture | Сбор лидов | m | |
+| Lead source / Sub-source | Источник лида; Уточнение источника | m, n | |
+| Lead address | Адрес для лидов | m | |
+| Lead alert | Оповещение о лиде | n | |
+| App / Apps (Settings) | Приложение, Приложения | n | Industry app «Отраслевое приложение», private app «Частное приложение», connected app «Подключённое приложение». |
+| Billing; Plan | Оплата; Тариф | f; m | |
+| Board (custom records) | Доска | f | |
+| Matches | Совпадения | n pl | |
 
 ## Statuses and choices
 

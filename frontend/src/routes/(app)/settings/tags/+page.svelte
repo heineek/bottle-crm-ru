@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { SvelteMap } from 'svelte/reactivity';
   /**
    * The labels shared across accounts, leads, deals and tickets.
@@ -12,7 +12,8 @@
    * meaning the same thing, and the work splits silently across them.
    */
   import { enhance } from '$app/forms';
-  import { isOn, wordsOn } from '#lib/v2/modules.js';
+  import { wordsOn } from '#lib/v2/modules.js';
+  import { usageColumns } from '#lib/v2/tag-usage.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import SettingsCrumb from '#lib/v2/components/SettingsCrumb.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
@@ -21,11 +22,12 @@
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count } from '#lib/v2/format.js';
   import { Plus, Merge, Tags as TagsIcon } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { components } from '#lib/api-schema.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // The "New tag" disclosure. Open while adding, closed on a successful
   // create; a failed one stays open so the error next to the input is
@@ -64,7 +66,11 @@
    * on the backend now walks the model registry to keep that list complete;
    * this sums whatever it sends.
    */
-  const used = (t) => Object.values(t.usage ?? {}).reduce((sum, n) => sum + (n || 0), 0);
+  const used = (t: { usage?: Record<string, number> }) =>
+    Object.values(t.usage ?? {}).reduce((sum, n) => sum + (n || 0), 0);
+
+  // The server names the kinds a tag can sit on, custom objects included.
+  let columns = $derived(usageColumns(data.usage_labels, data.tags));
 
   let tags = $derived(
     [...data.tags].sort((a, b) => used(b) - used(a) || a.name.localeCompare(b.name))
@@ -85,15 +91,14 @@
    * org's non-Latin tags as one duplicate group, with a merge button, now that
    * the server lets them coexist.
    */
-  const normalise = (name) =>
+  const normalise = (name: string) =>
     name
       .toLowerCase()
       .replace(/[^\p{L}\p{M}\p{N}]/gu, '')
       .replace(/s$/, '');
 
   let duplicateGroups = $derived.by(() => {
-    /** @type {Map<string, any[]>} */
-    const groups = new SvelteMap();
+    const groups: Map<string, components['schemas']['TagsListRow'][]> = new SvelteMap();
     // Active tags only. The list itself is fetched with
     // `?include_archived=true` so an admin can see what has been turned off,
     // but an archived tag is not offered on new records and so cannot be
@@ -103,7 +108,7 @@
     // Merge was wired that got worse: the merge archives the tag it empties,
     // so the banner would come straight back offering to merge a tag that no
     // longer had any records.
-    for (const t of data.tags.filter((/** @type {any} */ t) => t.is_active)) {
+    for (const t of data.tags.filter((t) => t.is_active)) {
       const key = normalise(t.name);
       groups.set(key, [...(groups.get(key) ?? []), t]);
     }
@@ -136,7 +141,7 @@
           action="?/create"
           use:enhance={() => {
             busy = true;
-            return async (/** @type {any} */ { result, update }) => {
+            return async ({ result, update }) => {
               await update();
               busy = false;
               // Only close on success. A failed submit (the empty-name guard, a
@@ -261,20 +266,7 @@
         <thead>
           <tr>
             <th>{m.settings_tags_col_tag()}</th>
-            <th style="text-align:right">{m.settings_tags_col_accounts()}</th>
-            <th style="text-align:right">{m.settings_tags_col_contacts()}</th>
-            {#if isOn(data.modules, 'leads')}<th style="text-align:right"
-                >{m.settings_tags_col_leads()}</th
-              >{/if}
-            {#if isOn(data.modules, 'deals')}<th style="text-align:right"
-                >{m.settings_tags_col_deals()}</th
-              >{/if}
-            {#if isOn(data.modules, 'tickets')}<th style="text-align:right"
-                >{m.settings_tags_col_tickets()}</th
-              >{/if}
-            {#if isOn(data.modules, 'tasks')}<th style="text-align:right"
-                >{m.settings_tags_col_tasks()}</th
-              >{/if}
+            {#each columns as c (c.key)}<th style="text-align:right">{c.label}</th>{/each}
             <th style="text-align:right">{m.settings_tags_col_total()}</th>
             <th></th>
             {#if data.can_edit}<th></th>{/if}
@@ -293,20 +285,14 @@
                   >{/** @type {any} */ (m)[`settings_tags_color_${t.color}`]?.() ?? t.color}</span
                 >
               </td>
-              <td class="v2-num" style="text-align:right">{t.usage.accounts || '—'}</td>
-              <td class="v2-num" style="text-align:right">{t.usage.contacts || '—'}</td>
-              {#if isOn(data.modules, 'leads')}<td class="v2-num" style="text-align:right"
-                  >{t.usage.leads || '—'}</td
-                >{/if}
-              {#if isOn(data.modules, 'deals')}<td class="v2-num" style="text-align:right"
-                  >{t.usage.opportunities || '—'}</td
-                >{/if}
-              {#if isOn(data.modules, 'tickets')}<td class="v2-num" style="text-align:right"
-                  >{t.usage.cases || '—'}</td
-                >{/if}
-              {#if isOn(data.modules, 'tasks')}<td class="v2-num" style="text-align:right"
-                  >{t.usage.tasks || '—'}</td
-                >{/if}
+              {#each columns as c (c.key)}
+                <td
+                  class="v2-num"
+                  style="text-align:right"
+                  data-m={t.usage?.[c.key] ? 'meta' : 'hide'}
+                  data-l={c.label}>{t.usage?.[c.key] || '—'}</td
+                >
+              {/each}
               <td class="v2-num" style="text-align:right;font-weight:600">{used(t) || '—'}</td>
               <td style="text-align:right">
                 {#if !t.is_active}
@@ -349,7 +335,7 @@
             </tr>
           {:else}
             <tr>
-              <td colspan={data.can_edit ? 8 : 7}>
+              <td colspan={columns.length + (data.can_edit ? 4 : 3)}>
                 <EmptyState
                   title={m.settings_tags_empty_title()}
                   body={m.settings_tags_empty_body()}

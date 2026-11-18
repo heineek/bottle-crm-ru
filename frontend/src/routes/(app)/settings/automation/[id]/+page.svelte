@@ -1,12 +1,13 @@
-<script>
+<script lang="ts">
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import AdminsOnly from '#lib/v2/components/automation/AdminsOnly.svelte';
   import AutomationCrumb from '#lib/v2/components/automation/AutomationCrumb.svelte';
   import RuleEditor from '#lib/v2/components/automation/RuleEditor.svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import { billingHref } from '#lib/v2/billing.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 </script>
 
 {#if data.forbidden}
@@ -27,6 +28,7 @@
       row={data.row}
       modules={data.modules}
       {form}
+      plansHref={billingHref(data)}
     />
   {/key}
 {/if}

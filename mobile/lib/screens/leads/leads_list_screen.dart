@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
+import '../../data/models/interaction.dart';
 import '../../data/models/models.dart';
 import '../../providers/csv_import_provider.dart';
+import '../../providers/lead_sources_provider.dart';
 import '../../providers/leads_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/profile_provider.dart';
@@ -19,6 +21,7 @@ import '../../widgets/common/common.dart';
 import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/saved_views_button.dart';
 import '../../widgets/forms/csv_import_sheet.dart';
+import '../../widgets/interactions/after_tap_logging.dart';
 import '../../l10n/l10n.dart';
 
 /// Leads list screen: searchable, filterable, paginated against the server.
@@ -34,7 +37,8 @@ class LeadsListScreen extends ConsumerStatefulWidget {
   ConsumerState<LeadsListScreen> createState() => _LeadsListScreenState();
 }
 
-class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
+class _LeadsListScreenState extends ConsumerState<LeadsListScreen>
+    with AfterTapLogging<LeadsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -43,6 +47,9 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
   // The dashboard badge this list was opened from, while its filter is still
   // the one in force. Cleared the moment the user changes anything.
   String? _activeView;
+
+  // Kept once seen, so the chip does not blink out while a page reloads.
+  bool _offersUnanswered = false;
 
   static const _searchDebounceMs = 350;
 
@@ -65,11 +72,13 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
       // The org's today: `ApiHomeView` counts the badge on the org's day.
       AppRoutes.viewFollowUps => LeadFilters.followUpsOn(orgToday()),
       AppRoutes.viewHot => LeadFilters.hot(),
+      AppRoutes.viewUnanswered => LeadFilters.unansweredOnly(),
       _ => null,
     };
     if (initial == null) return;
     _filters = initial;
-    _activeView = widget.initialView;
+    // The Unanswered chip itself shows that view as on.
+    _activeView = initial.unanswered ? null : widget.initialView;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(leadsProvider.notifier).setFilters(initial);
     });
@@ -81,6 +90,9 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
       ref.read(leadsProvider.notifier).loadMore();
     }
   }
+
+  @override
+  void onInteractionLogged() => ref.read(leadsProvider.notifier).refresh();
 
   @override
   void dispose() {
@@ -121,6 +133,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     'assigned_to',
     'tags',
     'next_follow_up',
+    'unanswered',
   };
 
   /// Put a saved view's filters on the list, labels and search box included.
@@ -157,6 +170,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     ref.watch(profileProvider);
     final data = leadsAsync.value;
     final leads = data?.leads ?? const <Lead>[];
+    _offersUnanswered = _offersUnanswered || (data?.offersUnanswered ?? false);
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
@@ -247,6 +261,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     if (leads.isEmpty) return _buildEmptyState();
 
     final hasMore = data?.hasMore ?? false;
+    // Read here, in build: the item builder runs later, during layout.
+    final sources =
+        shownLeadSources(ref.watch(leadSourcesProvider))?.sources ?? const [];
+    final now = DateTime.now();
 
     return RefreshIndicator(
       onRefresh: () => ref.read(leadsProvider.notifier).refresh(),
@@ -262,9 +280,38 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
             );
           }
           final lead = leads[index];
+          final waiting = lead.waitingSince;
+          final target = (home: InteractionHome.lead, id: lead.id);
+          final person = lead.firstName.trim().isNotEmpty
+              ? lead.firstName.trim()
+              : lead.name;
           return LeadCard(
             lead: lead,
-            onTap: () => context.push('/leads/${lead.id}'),
+            sourceLabel: leadSourceLabel(lead.source, sources),
+            waitingLabel: _filters.unanswered && waiting != null
+                ? context.l10n.leadsListWaiting(
+                    shortElapsed(now.difference(waiting)),
+                  )
+                : null,
+            onCall: () => launchAndOfferLog(
+              Uri(scheme: 'tel', path: lead.phone),
+              kind: InteractionKind.call,
+              target: target,
+              personName: person,
+            ),
+            onEmail: () => launchAndOfferLog(
+              Uri(scheme: 'mailto', path: lead.email),
+              kind: InteractionKind.email,
+              target: target,
+              personName: person,
+            ),
+            onTap: () async {
+              await context.push('/leads/${lead.id}');
+              // A call logged on the detail screen answers the lead.
+              if (mounted && _filters.unanswered) {
+                ref.read(leadsProvider.notifier).refresh();
+              }
+            },
             onTagTap: (tagId, tagLabel) =>
                 _applyFilters(_filters.withTag(id: tagId, label: tagLabel)),
           );
@@ -336,6 +383,18 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
         child: Row(
           children: [
+            if (_filters.unanswered || _offersUnanswered) ...[
+              _FilterChip(
+                label: context.l10n.leadsListUnanswered,
+                isActive: _filters.unanswered,
+                icon: LucideIcons.hourglass,
+                toggle: true,
+                onTap: () => _applyFilters(
+                  _filters.withUnanswered(!_filters.unanswered),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             if (_activeView != null) ...[
               _FilterChip(
                 label: _activeView == AppRoutes.viewHot
@@ -380,8 +439,9 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
             ),
             const SizedBox(width: 6),
             _FilterChip(
-              label:
-                  _filters.source?.displayName ?? context.l10n.leadsFieldSource,
+              label: _filters.source == null
+                  ? context.l10n.leadsFieldSource
+                  : _sourceLabel(_filters.source!),
               isActive: _filters.source != null,
               onTap: _showSourceFilter,
             ),
@@ -469,6 +529,15 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
 
   Widget _buildEmptyState() {
     final isFiltered = _filters.isActive;
+    if (_filters.unanswered) {
+      return EmptyState(
+        icon: LucideIcons.checkCircle,
+        title: context.l10n.leadsListNobodyWaiting,
+        description: context.l10n.leadsListNobodyWaitingBody,
+        actionLabel: context.l10n.leadsListClearFilters,
+        onAction: _clearAll,
+      );
+    }
     return EmptyState(
       icon: isFiltered ? LucideIcons.search : LucideIcons.users,
       title: isFiltered
@@ -602,7 +671,15 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
     );
   }
 
-  void _showSourceFilter() {
+  String _sourceLabel(String key) => leadSourceLabel(
+    key,
+    shownLeadSources(ref.watch(leadSourcesProvider))?.sources ?? const [],
+  );
+
+  Future<void> _showSourceFilter() async {
+    // Retired sources stay on their leads, so they stay filterable.
+    final sources = (await leadSourcesForPicker(ref))?.sources ?? const [];
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -620,18 +697,15 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
               Navigator.pop(context);
             },
           ),
-          ...LeadSource.values
-              .where((s) => s != LeadSource.none)
-              .map(
-                (source) => _FilterOption(
-                  label: source.displayName,
-                  isSelected: _filters.source == source,
-                  onTap: () {
-                    _applyFilters(_filters.withSource(source));
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
+          for (final source in sources)
+            _FilterOption(
+              label: source.pickerLabel,
+              isSelected: _filters.source == source.key,
+              onTap: () {
+                _applyFilters(_filters.withSource(source.key));
+                Navigator.pop(context);
+              },
+            ),
         ],
       ),
     );
@@ -647,12 +721,16 @@ class _FilterChip extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onClear;
 
+  /// On or off with a tap, with no sheet behind it.
+  final bool toggle;
+
   const _FilterChip({
     required this.label,
     required this.isActive,
     this.icon,
     required this.onTap,
     this.onClear,
+    this.toggle = false,
   });
 
   @override
@@ -687,12 +765,16 @@ class _FilterChip extends StatelessWidget {
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
-            const SizedBox(width: 3),
-            Icon(
-              onClear != null ? LucideIcons.x : LucideIcons.chevronDown,
-              size: 12,
-              color: isActive ? AppColors.primary700 : AppColors.gray600,
-            ),
+            if (!toggle || isActive) ...[
+              const SizedBox(width: 3),
+              Icon(
+                onClear != null || toggle
+                    ? LucideIcons.x
+                    : LucideIcons.chevronDown,
+                size: 12,
+                color: isActive ? AppColors.primary700 : AppColors.gray600,
+              ),
+            ],
           ],
         ),
       ),

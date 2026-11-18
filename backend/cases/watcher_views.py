@@ -12,18 +12,33 @@ rule in `cases.access.visible_cases_qs`, admins see everything; non-admins
 see cases they created OR are assigned to OR already watch (so a watcher who
 was un-assigned can still unsubscribe). This module used to keep its own copy
 of that query, which is how the case detail view came to disagree with it.
+
+Watchers are people. An app member (`common.app_members`) is refused a watch
+and never listed: these rows are read from the through table, which the
+people-only `Profile.objects` does not filter.
 """
 
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
-from rest_framework import status
+from django.utils.translation import gettext as _
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cases.access import visible_cases_qs as _visible_cases_qs
 from cases.models import Case, CaseWatcher
+from cases.serializer import CaseSerializer
 from common.permissions import HasOrgContext
+
+_WATCH_RESPONSE = inline_serializer(
+    name="CaseWatchResponse",
+    fields={
+        "watching": serializers.BooleanField(),
+        "subscribed_via": serializers.CharField(),
+    },
+)
 
 
 class WatchView(APIView):
@@ -31,8 +46,19 @@ class WatchView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    # 201 when this call subscribed the caller, 200 when they already were.
+    @extend_schema(
+        tags=["Cases"],
+        request=None,
+        responses={200: _WATCH_RESPONSE, 201: _WATCH_RESPONSE},
+    )
     def post(self, request, pk, *args, **kwargs):
         case = get_object_or_404(_visible_cases_qs(request.profile), pk=pk)
+        if request.profile.is_app:
+            return Response(
+                {"error": True, "errors": _("An app member cannot watch a ticket.")},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             obj, created = CaseWatcher.objects.get_or_create(
                 case=case,
@@ -50,6 +76,7 @@ class WatchView(APIView):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
+    @extend_schema(tags=["Cases"], responses={204: None})
     def delete(self, request, pk, *args, **kwargs):
         case = get_object_or_404(_visible_cases_qs(request.profile), pk=pk)
         CaseWatcher.objects.filter(case=case, profile=request.profile).delete()
@@ -61,10 +88,35 @@ class WatchersListView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        responses={
+            200: inline_serializer(
+                name="CaseWatchersResponse",
+                fields={
+                    "watchers": inline_serializer(
+                        name="CaseWatcherRow",
+                        fields={
+                            "id": serializers.CharField(),
+                            "profile_id": serializers.CharField(),
+                            "user_id": serializers.CharField(allow_null=True),
+                            "name": serializers.CharField(),
+                            "email": serializers.CharField(),
+                            "subscribed_via": serializers.CharField(),
+                            "created_at": serializers.DateTimeField(),
+                        },
+                        many=True,
+                    ),
+                    "count": serializers.IntegerField(),
+                    "is_current_user_watching": serializers.BooleanField(),
+                },
+            )
+        },
+    )
     def get(self, request, pk, *args, **kwargs):
         case = get_object_or_404(_visible_cases_qs(request.profile), pk=pk)
         rows = (
-            CaseWatcher.objects.filter(case=case)
+            CaseWatcher.objects.filter(case=case, profile__is_app=False)
             .select_related("profile__user")
             .order_by("created_at")
         )
@@ -104,8 +156,20 @@ class WatchingListView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        responses={
+            200: inline_serializer(
+                name="CaseWatchingResponse",
+                fields={
+                    "cases": CaseSerializer(many=True),
+                    "count": serializers.IntegerField(),
+                },
+            )
+        },
+    )
     def get(self, request, *args, **kwargs):
-        from cases.serializer import CaseSerializer, parent_access_context
+        from cases.serializer import parent_access_context
         from cases.views import apply_case_list_filters
 
         # The same related rows `/cases/` loads up front, so a row's account,
@@ -117,7 +181,9 @@ class WatchingListView(APIView):
             .order_by("-created_at")
             .distinct()
         )
-        cases = apply_case_list_filters(cases, request.query_params)
+        cases = apply_case_list_filters(
+            cases, request.query_params, request.profile.org
+        )
         return Response(
             {
                 "cases": CaseSerializer(

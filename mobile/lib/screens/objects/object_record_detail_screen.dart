@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -6,13 +9,18 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/attachment.dart';
+import '../../data/models/comment.dart';
 import '../../data/models/custom_object.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/custom_objects_provider.dart';
 import '../../routes/app_router.dart';
 import '../../services/attachment_upload.dart';
 import '../../widgets/common/common.dart';
+import '../../widgets/interactions/record_timeline.dart';
 import '../../widgets/objects/photo_gallery.dart';
 import '../../l10n/l10n.dart';
+import '../../widgets/objects/record_matches_card.dart';
+import '../../widgets/objects/related_objects_section.dart';
 
 /// One custom object record, with its links, photos, files and people.
 class ObjectRecordDetailScreen extends ConsumerStatefulWidget {
@@ -37,11 +45,19 @@ class _ObjectRecordDetailScreenState
   bool _notFound = false;
   String? _error;
   bool _uploading = false;
+  bool _addingNote = false;
+  final _noteController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
   }
 
   Future<void> _load({bool quiet = false}) async {
@@ -130,8 +146,74 @@ class _ObjectRecordDetailScreenState
       );
       return;
     }
-    ref.invalidate(objectRecordsProvider(widget.objectKey));
+    // Refresh in place: the list keeps its filters and its search text.
+    unawaited(
+      ref.read(objectRecordsProvider(widget.objectKey).notifier).refresh(),
+    );
     context.pop();
+  }
+
+  Future<void> _addNote() async {
+    final text = _noteController.text.trim();
+    if (text.isEmpty || _addingNote) return;
+    setState(() => _addingNote = true);
+    final response = await ref
+        .read(customObjectsApiProvider)
+        .addNote(widget.objectKey, widget.recordId, text);
+    if (!mounted) return;
+    setState(() => _addingNote = false);
+    final data = response.data;
+    if (!response.success || data == null) {
+      _snack(
+        noteError(response, context.l10n.objectsDetailNoteAddFailed),
+        error: true,
+      );
+      return;
+    }
+    _noteController.clear();
+    setState(() => _record = ObjectRecord.fromJson(data));
+  }
+
+  Future<void> _editNote(Comment note) async {
+    final text = await showDialog<String>(
+      context: context,
+      builder: (_) =>
+          EditNoteDialog(initialText: note.comment, maxLength: noteMaxLength),
+    );
+    if (text == null || text.isEmpty || text == note.comment.trim()) return;
+    final response = await ref
+        .read(customObjectsApiProvider)
+        .editNote(widget.objectKey, note.id, text);
+    if (!mounted) return;
+    if (!response.success) {
+      _snack(
+        noteError(response, context.l10n.objectsDetailNoteUpdateFailed),
+        error: true,
+      );
+      return;
+    }
+    await _load(quiet: true);
+  }
+
+  Future<void> _deleteNote(Comment note) async {
+    if (!await _confirm(
+      context.l10n.objectsDetailNoteDeleteTitle,
+      context.l10n.coreRecordDetailCannotUndo,
+    )) {
+      return;
+    }
+    final response = await ref
+        .read(customObjectsApiProvider)
+        .deleteNote(widget.objectKey, note.id);
+    if (!mounted) return;
+    if (!response.success) {
+      _snack(
+        noteError(response, context.l10n.objectsDetailNoteDeleteFailed),
+        error: true,
+      );
+      return;
+    }
+    await _load(quiet: true);
   }
 
   Future<void> _upload() async {
@@ -228,7 +310,7 @@ class _ObjectRecordDetailScreenState
         return _shell(
           title: def.summary.label,
           actions: [
-            if (record.canEdit)
+            if (record.canEdit && _canWrite(def))
               IconButton(
                 tooltip: l10n.commonEdit,
                 icon: const Icon(LucideIcons.pencil),
@@ -239,7 +321,7 @@ class _ObjectRecordDetailScreenState
                   if (mounted) _load(quiet: true);
                 },
               ),
-            if (record.canDelete)
+            if (record.canDelete && _canWrite(def))
               IconButton(
                 tooltip: l10n.commonDelete,
                 icon: Icon(LucideIcons.trash2, color: AppColors.danger600),
@@ -251,6 +333,11 @@ class _ObjectRecordDetailScreenState
       },
     );
   }
+
+  bool _canWrite(ObjectDefinition def) => canWriteObject(
+    def.summary,
+    shownCustomObjects(ref.watch(customObjectsProvider)),
+  );
 
   Widget _missing() => EmptyState(
     icon: LucideIcons.boxes,
@@ -303,6 +390,8 @@ class _ObjectRecordDetailScreenState
                     for (final f in def.linkFields)
                       _linkField(f.label, record.links[f.key]),
                   ]),
+                if (def.summary.matches)
+                  RecordMatchesCard(recordId: widget.recordId),
                 if (photos.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(2, 0, 2, 10),
@@ -320,12 +409,23 @@ class _ObjectRecordDetailScreenState
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                if (files.isNotEmpty || record.canEdit)
+                if (files.isNotEmpty || (record.canEdit && _canWrite(def)))
                   _card(l10n.objectsFiles, [
                     if (files.isEmpty) _none(),
                     for (final a in files) _fileRow(a),
-                    if (record.canEdit) _attachButton(),
+                    if (record.canEdit && _canWrite(def)) _attachButton(),
                   ]),
+                if (record.tags.isNotEmpty)
+                  _card(l10n.commonTags, [
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final t in record.tags) LabelPill(label: t.name),
+                      ],
+                    ),
+                  ]),
+                _timeline(def, record),
                 _card(l10n.objectsPeople, [
                   _field(
                     l10n.objectsAssignedTo,
@@ -340,7 +440,99 @@ class _ObjectRecordDetailScreenState
                         : _personName(record.createdBy!),
                   ),
                 ]),
+                if (ApiConfig.isObjectKey(widget.objectKey))
+                  RelatedObjectsSection(
+                    to: 'obj:${widget.objectKey}',
+                    recordId: widget.recordId,
+                  ),
               ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Notes and the record's creation, newest first. Posting and editing need
+  /// writes on for the org; deleting your own note never does.
+  Widget _timeline(ObjectDefinition def, ObjectRecord record) {
+    final canWrite = _canWrite(def);
+    final email = ref.watch(myEmailProvider);
+    final isAdmin = ref.watch(isOrgAdminProvider);
+    final creator = record.createdBy == null
+        ? ''
+        : _personName(record.createdBy!);
+    final events = <TimelineEvent>[
+      for (final n in record.comments)
+        TimelineEvent(
+          icon: LucideIcons.messageSquare,
+          tint: AppColors.primary600,
+          ts: n.commentedOn,
+          actor: n.authorName,
+          summary: context.l10n.objectsDetailAddedNote,
+          body: n.comment,
+          onEdit: canWrite && canEditNote(n, email) ? () => _editNote(n) : null,
+          onDelete: canDeleteNote(n, email, isAdmin: isAdmin)
+              ? () => _deleteNote(n)
+              : null,
+        ),
+      if (record.createdAt != null)
+        TimelineEvent(
+          icon: LucideIcons.sparkles,
+          tint: AppColors.success600,
+          ts: record.createdAt!,
+          actor: creator,
+          summary: creator.isEmpty
+              ? context.l10n.objectsDetailCreatedNoActor(def.summary.label)
+              : context.l10n.objectsDetailCreatedThis(
+                  def.summary.label.toLowerCase(),
+                ),
+        ),
+    ]..sort((a, b) => b.ts.compareTo(a.ts));
+    return _card(context.l10n.objectsDetailTimeline, [
+      if (canWrite) _noteComposer(),
+      for (var i = 0; i < events.length; i++)
+        TimelineEventRow(event: events[i], isLast: i == events.length - 1),
+    ]);
+  }
+
+  Widget _noteComposer() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _noteController,
+              enabled: !_addingNote,
+              minLines: 1,
+              maxLines: 5,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(noteMaxLength),
+              ],
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: context.l10n.objectsDetailNoteHint,
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: IconButton.filled(
+              tooltip: context.l10n.objectsDetailNoteAdd,
+              onPressed: _addingNote ? null : _addNote,
+              icon: _addingNote
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(LucideIcons.send, size: 18),
             ),
           ),
         ],

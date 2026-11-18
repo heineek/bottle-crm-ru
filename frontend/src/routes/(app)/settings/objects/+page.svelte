@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Custom objects: org-defined record types. Admins add and manage them
    * here; members reach the records from the sidebar.
@@ -11,16 +11,15 @@
   import StatCard from '#lib/v2/components/StatCard.svelte';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
-  import { suggestKey } from '#lib/v2/custom-objects.js';
+  import { objectLimit, suggestKey } from '#lib/v2/custom-objects.js';
+  import { billingHref } from '#lib/v2/billing.js';
   import { count } from '#lib/v2/format.js';
   import { Plus } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  const OBJECT_LIMIT = 20;
-
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let creating = $state(false);
   let label = $state('');
@@ -28,8 +27,10 @@
   let keyEdited = $state(false);
 
   let objects = $derived(data.answer.objects);
-  let archived = $derived(objects.filter((/** @type {any} */ o) => !o.is_active).length);
+  let archived = $derived(objects.filter((o) => !o.is_active).length);
+  let limit = $derived(objectLimit(data.answer));
   let canAdd = $derived(data.can_edit && data.answer.has_custom_objects);
+  let plansHref = $derived(billingHref(data));
 
   let subParts = $derived(messageParts(m.settings_objects_sub({ count: slot('count') })));
 
@@ -40,9 +41,8 @@
     creating = true;
   }
 
-  /** @param {Event} event */
-  function onLabel(event) {
-    label = /** @type {HTMLInputElement} */ (event.currentTarget).value;
+  function onLabel(event: Event) {
+    label = (event.currentTarget as HTMLInputElement).value;
     if (!keyEdited) key = suggestKey(label, 28);
   }
 </script>
@@ -75,7 +75,7 @@
       label={m.settings_objects_stat_used()}
       value={count(objects.length)}
       tone="slate"
-      detail={m.settings_objects_stat_used_detail({ limit: OBJECT_LIMIT })}
+      detail={m.settings_objects_stat_used_detail({ limit })}
     />
   </div>
 </div>
@@ -85,6 +85,9 @@
     {#if data.can_edit && !data.answer.has_custom_objects}
       <p class="v2-sub" style="font-size:12.5px;margin:0 0 16px;max-width:66ch">
         {m.settings_objects_no_plan()}
+        {#if plansHref}
+          <a href={resolve(asInternalPath(plansHref))}>{m.settings_objects_see_plans()}</a>
+        {/if}
       </p>
     {/if}
 

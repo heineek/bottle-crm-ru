@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
+import '../../data/models/custom_field_definition.dart';
 import '../../data/models/lookup_models.dart';
 import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
@@ -13,6 +14,7 @@ import '../../providers/lookup_provider.dart';
 import '../../routes/app_router.dart';
 import '../../services/app_language.dart';
 import '../../services/org_date.dart';
+import '../../widgets/forms/custom_fields_section.dart';
 import 'document_adjustments.dart';
 import 'invoice_format.dart';
 import 'line_item_sheet.dart';
@@ -50,6 +52,8 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
 
   final List<LineItemDraft> _items = [];
   DocumentAdjustments _adjustments = const DocumentAdjustments();
+  Map<String, dynamic> _customFields = {};
+  Map<String, String> _customFieldErrors = const {};
   bool _saving = false;
   String? _error;
 
@@ -97,6 +101,9 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
   Widget build(BuildContext context) {
     final accounts = ref.watch(accountsLookupProvider);
     final contacts = ref.watch(contactsLookupProvider);
+    final fieldDefs =
+        ref.watch(customFieldDefinitionsProvider('Invoice')).value ??
+        const <CustomFieldDefinition>[];
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
@@ -136,6 +143,7 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
                   ),
                 ]),
                 _extras(),
+                if (fieldDefs.isNotEmpty) _customFieldsCard(fieldDefs),
               ],
             ),
           ),
@@ -357,6 +365,35 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
     ]);
   }
 
+  /// Shown only when the org has invoice fields. The server enforces
+  /// required ones too; checking here keeps a refusal off the whole form.
+  Widget _customFieldsCard(List<CustomFieldDefinition> definitions) {
+    return _card(context.l10n.invoicesCustomFields, [
+      CustomFieldsSection(
+        heading: false,
+        definitions: definitions,
+        values: _customFields,
+        errors: _customFieldErrors,
+        onChanged: (next, errors) => setState(() {
+          _customFields = next;
+          _customFieldErrors = errors;
+        }),
+      ),
+    ]);
+  }
+
+  /// False, with the fields marked, when a required one is empty or a number
+  /// is not one.
+  bool _customFieldsReady(List<CustomFieldDefinition> definitions) {
+    final missing = customFieldProblems(definitions, _customFields);
+    if (missing.isEmpty) return true;
+    setState(() {
+      _customFieldErrors = missing;
+      _error = context.l10n.invoicesCustomFieldsRequired;
+    });
+    return false;
+  }
+
   // -------------------------------------------------------------------------
   // The pinned total and submit
   // -------------------------------------------------------------------------
@@ -402,8 +439,6 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            // Flexible: a longer translation ellipsizes before it pushes
-            // the total off screen.
             Flexible(
               child: SizedBox(
                 height: 46,
@@ -415,10 +450,9 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(
-                          context.l10n.invoicesFormCreateDraft,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(context.l10n.invoicesFormCreateDraft),
                         ),
                 ),
               ),
@@ -430,6 +464,10 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
   }
 
   Future<void> _submit() async {
+    final fieldDefs =
+        ref.read(customFieldDefinitionsProvider('Invoice')).value ??
+        const <CustomFieldDefinition>[];
+    if (!_customFieldsReady(fieldDefs)) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -450,6 +488,8 @@ class _NewInvoiceScreenState extends ConsumerState<NewInvoiceScreen> {
         'due_date': DateFormat('yyyy-MM-dd').format(_customDueDate!),
       if (_notes.text.trim().isNotEmpty) 'notes': _notes.text.trim(),
       ..._adjustments.toPayload(),
+      if (fieldDefs.isNotEmpty)
+        'custom_fields': sendableCustomFields(fieldDefs, _customFields),
     };
 
     final result = await ref

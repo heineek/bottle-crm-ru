@@ -169,5 +169,27 @@
         "countPlural=other": "{countShown} line items"
       }
     }
-  ]
+  ],
+  "pipeline_source_not_specified": "Not specified",
+  "pipeline_source_not_recorded": "Not recorded",
+  "pipeline_detail_log_activity": "Log activity",
+  "pipeline_detail_interactions_failed": "Calls and messages could not be loaded, so they are missing below.",
+  "pipeline_detail_start_project": "Start a project",
+  "pipeline_detail_interactions_more": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Showing the latest calls and messages; {countShown} older one is not shown.",
+        "countPlural=other": "Showing the latest calls and messages; {countShown} older ones are not shown."
+      }
+    }
+  ],
+  "pipeline_detail_files": "Files",
+  "pipeline_detail_files_empty": "No files on this deal yet. Attach one with a comment above.",
+  "pipeline_attachment_fallback": "Attachment"
 }

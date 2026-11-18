@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
-import '../data/api_envelope.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/webhook.dart';
 import '../services/api_service.dart';
 
@@ -73,16 +73,15 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadWebhooks);
     }
-    final body = response.data!;
-    final limit = body['limit'];
+    final body = api.WebhookListResponse.fromJson(response.data!);
     return WebhooksState(
-      endpoints: listFromEnvelope(body, const [
-        'endpoints',
-      ]).map(WebhookEndpoint.fromJson).toList(growable: false),
-      catalogue: listFromEnvelope(body, const [
-        'event_catalogue',
-      ]).map(WebhookEventGroup.fromJson).toList(growable: false),
-      limit: limit is int ? limit : 0,
+      endpoints: (body.endpoints ?? const <api.WebhookEndpoint>[])
+          .map((row) => WebhookEndpoint.fromJson(row.json))
+          .toList(growable: false),
+      catalogue: (body.eventCatalogue ?? const <api.WebhookEventGroup>[])
+          .map((group) => WebhookEventGroup.fromJson(group.json))
+          .toList(growable: false),
+      limit: body.limit ?? 0,
     );
   }
 
@@ -94,7 +93,7 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
         error: response.message ?? appL10n.appMsgCouldNotAddTheWebhook,
       );
     }
-    final secret = response.data!['secret']?.toString();
+    final secret = api.WebhookEndpointCreated.fromJson(response.data!).secret;
     await refresh();
     return (secret: secret, error: null);
   }
@@ -144,7 +143,9 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
         error: response.message ?? appL10n.appMsgCouldNotRotateTheSecret,
       );
     }
-    final secret = response.data!['secret']?.toString();
+    final secret = api.WebhookRotateSecretResponse.fromJson(
+      response.data!,
+    ).secret;
     await refresh();
     return (secret: secret, error: null);
   }
@@ -192,13 +193,12 @@ final webhookDeliveriesProvider =
           response.message ?? appL10n.appMsgFailedToLoadDeliveries,
         );
       }
-      final body = response.data!;
-      final deliveries = listFromEnvelope(body, const [
-        'results',
-      ]).map(WebhookDelivery.fromJson).toList(growable: false);
-      final count = body['count'];
+      final body = api.WebhookDeliveryListResponse.fromJson(response.data!);
+      final deliveries = (body.results ?? const <api.WebhookDelivery>[])
+          .map((row) => WebhookDelivery.fromJson(row.json))
+          .toList(growable: false);
       return WebhookDeliveryPage(
         deliveries: deliveries,
-        count: count is int ? count : deliveries.length,
+        count: body.count ?? deliveries.length,
       );
     });

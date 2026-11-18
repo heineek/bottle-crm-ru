@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -7,16 +7,17 @@
   import { shortDate } from '#lib/v2/format.js';
   import { Paperclip, Send } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { Tone } from '#lib/v2/enums.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
   let submitting = $state(false);
   let ticket = $derived(data.ticket);
 
-  const STATUS_TONE = {
+  const STATUS_TONE: Record<string, Tone> = {
     open: 'rust',
     in_progress: 'clay',
-    waiting_on_customer: 'sky',
+    waiting_on_customer: 'slate',
     resolved: 'moss',
     closed: 'slate'
   };

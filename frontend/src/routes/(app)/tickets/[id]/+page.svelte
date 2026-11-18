@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { resolve } from '$app/paths';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
@@ -48,15 +48,21 @@
     Unlink,
     X
   } from '@lucide/svelte';
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
   import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
-  import { isBilled } from '#lib/v2/time-entry.js';
+  import { isBilled, unbilledEntries } from '#lib/v2/time-entry.js';
+  import { BILL_GROUPINGS } from '#lib/v2/projects.js';
+  import { isOrgAdmin } from '#lib/admin.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { components } from '#lib/api-schema.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  type TimeEntry = components['schemas']['TimeEntry'];
+
+  let { data, form }: PageProps = $props();
   let related = $derived(relatedView(data.related));
 
   let { ticket, conversation, articles, alsoOpen, contacts, attachments, activity, canReply } =
@@ -89,8 +95,8 @@
    * picker itself is a GET form (`?merge=1&q=`), so searching works without
    * scripting; the candidates are the API's `merge-targets/`, never the list.
    */
-  let mergeTarget = $state(/** @type {any} */ (null));
-  let unmergeSource = $state(/** @type {any} */ (null));
+  let mergeTarget = $state<PageData['merge']['targets'][number] | null>(null);
+  let unmergeSource = $state<PageData['mergedFrom'][number] | null>(null);
 
   /*
    * Parent and child tickets, the same arrangement: the parent picker is a GET
@@ -100,7 +106,7 @@
    * `link/` takes). The panel shows for a ticket in a tree, a problem ticket,
    * or while the picker is open.
    */
-  let linkTarget = $state(/** @type {any} */ (null));
+  let linkTarget = $state<PageData['link']['candidates'][number] | null>(null);
   let confirmDetach = $state(false);
   let inTree = $derived(Boolean(ticket.parent || ticket.child_count > 0 || ticket.is_problem));
 
@@ -118,12 +124,10 @@
   // and clear it. `fileInput` is the element itself. A file input's value can
   // only be cleared through the DOM, not by rebinding.
   let fileName = $state('');
-  /** @type {HTMLInputElement | undefined} */
-  let fileInput = $state();
+  let fileInput: HTMLInputElement | undefined = $state();
 
-  /** @param {Event} e */
-  function pickFile(e) {
-    fileName = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0]?.name ?? '';
+  function pickFile(e: Event) {
+    fileName = (e.currentTarget as HTMLInputElement).files?.[0]?.name ?? '';
   }
   function clearFile() {
     if (fileInput) fileInput.value = '';
@@ -135,10 +139,8 @@
   // or a file.
   let canSend = $derived(Boolean(body.trim() || fileName));
 
-  /** @type {import('$app/forms').SubmitFunction} */
   /** The reply box, so a saved reply lands at the caret. */
-  /** @type {HTMLTextAreaElement | undefined} */
-  let replyBox = $state();
+  let replyBox: HTMLTextAreaElement | undefined = $state();
   let macroBusy = $state(false);
   let macroError = $state('');
 
@@ -152,22 +154,17 @@
    * write rule), and the API checks it again on apply.
    */
   let pickedId = $state('');
-  let picked = $derived(
-    data.macros?.find((/** @type {any} */ macro) => macro.id === pickedId) ?? null
-  );
+  let picked = $derived(data.macros?.find((macro) => macro.id === pickedId) ?? null);
 
-  /** @param {string | null | undefined} id */
-  function macroWithActions(id) {
-    const macro = data.macros?.find((/** @type {any} */ x) => x.id === id);
+  function macroWithActions(id: string | null | undefined) {
+    const macro = data.macros?.find((x) => x.id === id);
     return macro?.chips?.length ? macro : null;
   }
   let composerMacro = $state(untrack(() => macroWithActions(form?.macroId)));
-  let kept = $state(
-    untrack(() => (macroWithActions(form?.macroId)?.chips ?? []).map((c) => c.key))
+  let kept: string[] = $state(
+    untrack(() => (macroWithActions(form?.macroId)?.chips ?? []).map((c: { key: string }) => c.key))
   );
-  let keptChips = $derived(
-    (composerMacro?.chips ?? []).filter((/** @type {any} */ c) => kept.includes(c.key))
-  );
+  let keptChips = $derived((composerMacro?.chips ?? []).filter((c) => kept.includes(c.key)));
 
   function dropMacro() {
     composerMacro = null;
@@ -206,8 +203,7 @@
    * macro with no text instead. Apply (a macro with no text) reloads the
    * page, since it changed the ticket.
    */
-  /** @type {import('$app/forms').SubmitFunction} */
-  const insertMacro = ({ formData, action }) => {
+  const insertMacro: SubmitFunction = ({ formData, action }) => {
     const id = String(formData.get('macro_id') ?? '');
     const applying = action.search.includes('applyMacro');
     macroBusy = true;
@@ -234,7 +230,7 @@
         );
         body = next.text;
         composerMacro = macroWithActions(id);
-        kept = (composerMacro?.chips ?? []).map((/** @type {any} */ c) => c.key);
+        kept = (composerMacro?.chips ?? []).map((c) => c.key);
         requestAnimationFrame(() => {
           replyBox?.focus();
           replyBox?.setSelectionRange(next.caret, next.caret);
@@ -243,8 +239,7 @@
     };
   };
 
-  /** @type {import('$app/forms').SubmitFunction} */
-  const send = () => {
+  const send: SubmitFunction = () => {
     sending = true;
     return async ({ result, update }) => {
       sending = false;
@@ -306,10 +301,8 @@
    * Measured server-side up to page load, ticked locally after that. The
    * browser only ever contributes minutes it watched pass, so a machine with
    * the wrong date cannot report a timer as eight hours old.
-   *
-   * @param {any} entry
    */
-  const runningMinutes = (entry) =>
+  const runningMinutes = (entry: TimeEntry) =>
     Math.floor((Date.parse(time.now) - Date.parse(entry.started_at)) / 60000) + sinceLoad;
 
   /**
@@ -317,15 +310,21 @@
    * row, and the JWT's `user_id` passed down by the loader. Comparing the
    * Profile id to it would be false for everyone, silently, and the Stop
    * button would never appear.
-   *
-   * @param {any} entry
    */
-  const isMine = (entry) => entry.profile?.user_details?.id === time.viewerUserId;
+  const isMine = (entry: TimeEntry) => entry.profile?.user_details?.id === time.viewerUserId;
 
   /** This person's own running timer, if they have one on this ticket. */
-  let myTimer = $derived((entries ?? []).find((/** @type {any} */ e) => !e.ended_at && isMine(e)));
+  let myTimer = $derived((entries ?? []).find((e) => !e.ended_at && isMine(e)));
 
   let timeBusy = $state(false);
+
+  /* Bill time: admins, while Invoices is on, on a ticket with an account.
+     The action works out the entries again from the API; these say only
+     whether to offer it and what it would take. */
+  let toBill = $derived(unbilledEntries(entries));
+  let billOffered = $derived(
+    isOrgAdmin(data) && isOn(data.modules, 'invoices') && Boolean(ticket.account?.id)
+  );
 
   /**
    * The entry whose row is asking "delete?", if any.
@@ -338,8 +337,7 @@
    */
   let confirmDelete = $state('');
 
-  /** @type {import('$app/forms').SubmitFunction} */
-  const timeSubmit = () => {
+  const timeSubmit: SubmitFunction = () => {
     timeBusy = true;
     return async ({ update }) => {
       timeBusy = false;
@@ -358,10 +356,8 @@
    *
    * The mock had a `next_action` sentence telling the agent what to do; nothing
    * on `Case` supports inventing that, so this states the situation and stops.
-   *
-   * @type {{ tone: 'ember'|'rust', label: string, text: string } | null}
    */
-  let alert = $derived.by(() => {
+  let alert: { tone: 'ember' | 'rust'; label: string; text: string } | null = $derived.by(() => {
     if (!ticket.is_open) return null;
     if (!ticket.first_response_at) {
       return ticket.first_response_breached
@@ -399,7 +395,7 @@
    * and ordinary text for on track. Breached wins, because the two are
    * exclusive server-side and a tie would mean a bug worth seeing as red.
    */
-  function slaColor(breached, atRisk) {
+  function slaColor(breached: boolean, atRisk: boolean) {
     if (breached) return 'color:var(--v2-rust)';
     if (atRisk) return 'color:var(--v2-clay)';
     return '';
@@ -610,7 +606,7 @@
                     >{m.tickets_detail_merge_button()}</button
                   >
                   <button class="v2-btn" type="button" onclick={() => (mergeTarget = null)}>
-                    Cancel
+                    {m.common_cancel()}
                   </button>
                 </div>
               </form>
@@ -688,7 +684,7 @@
                   {cascade ? m.tickets_detail_close_all() : m.tickets_detail_close_this()}
                 </button>
                 <button class="v2-btn" type="button" onclick={() => (closePanel = false)}>
-                  Cancel
+                  {m.common_cancel()}
                 </button>
               </div>
             </form>
@@ -711,6 +707,12 @@
             <div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">
               {ticket.description}
             </div>
+          </div>
+        {/if}
+
+        {#if data.customFields?.length}
+          <div style="margin-bottom:18px">
+            <CustomFieldsCard fields={data.customFields} flush />
           </div>
         {/if}
 
@@ -760,7 +762,7 @@
                           >{m.tickets_detail_unmerge()}</button
                         >
                         <button class="v2-btn" type="button" onclick={() => (unmergeSource = null)}>
-                          Cancel
+                          {m.common_cancel()}
                         </button>
                       </div>
                     </form>
@@ -840,7 +842,7 @@
                       >{m.tickets_detail_detach()}</button
                     >
                     <button class="v2-btn" type="button" onclick={() => (confirmDetach = false)}>
-                      Cancel
+                      {m.common_cancel()}
                     </button>
                   </div>
                 </form>
@@ -957,7 +959,7 @@
                         >{m.tickets_detail_link_button()}</button
                       >
                       <button class="v2-btn" type="button" onclick={() => (linkTarget = null)}>
-                        Cancel
+                        {m.common_cancel()}
                       </button>
                     </div>
                   </form>
@@ -1222,12 +1224,57 @@
                   </form>
                 </details>
               {/if}
+
+              {#if billOffered && toBill.ids.length}
+                <details class="time-log">
+                  <summary class="v2-btn">{m.tickets_detail_bill_time()}</summary>
+                  <form
+                    method="POST"
+                    action="?/billTime"
+                    use:enhance={timeSubmit}
+                    class="time-log-form"
+                  >
+                    <input type="hidden" name="account_id" value={ticket.account?.id} />
+                    <p class="time-wide time-bill-text">
+                      {#each messageParts(m.tickets_detail_bill_summary( { count: toBill.ids.length, countSlot: slot('count'), time: slot('time'), account: ticket.account?.name ?? '' } )) as p, i (i)}{#if p.key === 'count'}<b
+                            class="v2-num">{toBill.ids.length}</b
+                          >{:else if p.key === 'time'}<b class="v2-num">{hm(toBill.minutes)}</b
+                          >{:else}{p.text}{/if}{/each}
+                    </p>
+                    {#if toBill.currencies.length > 1}
+                      <p class="v2-error time-wide">
+                        {m.tickets_detail_bill_currencies({
+                          currencies: toBill.currencies.join(', ')
+                        })}
+                      </p>
+                    {:else}
+                      <div class="v2-field time-wide">
+                        <label for="time-group">{m.tickets_detail_bill_lines()}</label>
+                        <select id="time-group" class="v2-input" name="group_by" value="entry">
+                          {#each BILL_GROUPINGS.filter((g) => g.value !== 'task') as g (g.value)}
+                            <option value={g.value}>{g.label}</option>
+                          {/each}
+                        </select>
+                      </div>
+                      <div class="time-wide time-log-foot">
+                        <button class="v2-btn v2-btn-primary" disabled={timeBusy}>
+                          {m.tickets_detail_bill_create()}
+                        </button>
+                      </div>
+                    {/if}
+                  </form>
+                </details>
+              {/if}
             </div>
 
             {#if form?.timeError}
               <p class="v2-error time-error">
                 <span>{form.timeError}</span>
-                {#if form.runningTicketId}
+                {#if form.runningProjectId}
+                  <a href={resolve(`projects/${form.runningProjectId}`)}
+                    >{m.tickets_detail_open_that_project()}</a
+                  >
+                {:else if form.runningTicketId}
                   <a href={resolve(`tickets/${form.runningTicketId}`)}
                     >{m.tickets_detail_open_that_ticket()}</a
                   >
@@ -1553,7 +1600,7 @@
             {#if picked && !picked.has_body && picked.chips.length}
               <p class="v2-sub macro-note">
                 {m.tickets_detail_applies_now({
-                  actions: picked.chips.map((/** @type {any} */ c) => c.label).join(' · ')
+                  actions: picked.chips.map((c) => c.label).join(' · ')
                 })}
               </p>
             {/if}
@@ -1598,7 +1645,7 @@
                 bind:value={body}
                 people={data.mentionPeople}
                 name="body"
-                rows="3"
+                rows={3}
                 placeholder={internal
                   ? m.tickets_detail_note_placeholder()
                   : m.tickets_detail_reply_placeholder()}
@@ -2317,6 +2364,10 @@
   }
   .time-log-form .v2-hint {
     margin: 0;
+  }
+  .time-bill-text {
+    margin: 0;
+    font-size: 12.5px;
   }
   .time-error {
     margin: 12px 0 0;

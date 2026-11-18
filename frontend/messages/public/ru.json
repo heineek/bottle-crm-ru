@@ -50,7 +50,7 @@
   "public_org_new_timezone_label": "Часовой пояс",
   "public_org_new_timezone_hint": "Определяет, когда здесь начинается день, чтобы «срок сегодня» и «просрочено» значили то, чего ждёт ваша команда. Его можно изменить позже в настройках.",
   "public_org_new_pack_legend": "Чем занимается ваш бизнес?",
-  "public_org_new_pack_hint": "Создаёт стартовую воронку, теги и поля для вашей отрасли. Всё это можно изменить позже.",
+  "public_org_new_pack_hint": "Устанавливает отраслевое приложение: стартовую воронку, теги, поля и примеры записей. Любую часть можно изменить, а приложение удалить в разделе «Настройки › Приложения».",
   "public_org_new_pack_skip": "Пропустить",
   "public_org_new_pack_blank": "Начать с пустого рабочего пространства.",
   "public_org_new_failed_title": "Не удалось создать организацию",
@@ -243,7 +243,7 @@
   "public_portal_estimate_expired_on": "Истекло {date}",
   "public_portal_estimate_valid_today": "Действительно до конца сегодняшнего дня",
   "public_portal_estimate_no_expiry": "Срок действия не указан",
-  "public_portal_estimate_accepted_body": "Мы уведомили {org}, вам выставят счёт на {total}. Копия отправлена на {email}.",
+  "public_portal_estimate_accepted_body": "Мы уведомили {org}, вам выставят счёт на {total}.",
   "public_portal_estimate_declined_body": "Мы уведомили {org}. Если вы отклонили предложение по ошибке, ответьте на письмо, из которого перешли по ссылке. На этой странице отменить это нельзя.",
   "public_portal_estimate_expired_title": "Срок действия коммерческого предложения истёк",
   "public_portal_estimate_expired_body": "Цены действовали до {date}. Ответьте на письмо, из которого перешли по ссылке, и {org} пришлёт актуальное предложение.",
@@ -280,5 +280,6 @@
         "countPlural=other": "Действительно до {date} · осталось {countShown} дня"
       }
     }
-  ]
+  ],
+  "public_portal_estimate_deposit_follows": "Следом придёт счёт на предоплату."
 }

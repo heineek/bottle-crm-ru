@@ -1,0 +1,95 @@
+{
+  "interactionsCouldNotOpen": "Could not open {scheme}",
+  "@interactionsCouldNotOpen": {
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "interactionsLogActivity": "Log activity",
+  "interactionsLogTitle": "{kind, select, call{Log this call?} meeting{Log this meeting?} email{Log this email?} whatsapp{Log this WhatsApp message?} sms{Log this text message?} other{Log this enquiry?}}",
+  "@interactionsLogTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "interactionsLogTitleTo": "{kind, select, call{Log this call to {name}?} meeting{Log this meeting to {name}?} email{Log this email to {name}?} whatsapp{Log this WhatsApp message to {name}?} sms{Log this text message to {name}?} other{Log this enquiry to {name}?}}",
+  "@interactionsLogTitleTo": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "interactionsDurationInvalid": "Duration is a whole number of minutes.",
+  "interactionsOutcome": "Outcome",
+  "interactionsDuration": "Duration",
+  "interactionsMinutesSuffix": "min",
+  "interactionsDurationEstimated": "Estimated from your time away",
+  "interactionsNote": "Note",
+  "interactionsSkip": "Skip",
+  "interactionsLog": "Log",
+  "interactionsKindCall": "Call",
+  "interactionsKindMeeting": "Meeting",
+  "interactionsKindEmail": "Email",
+  "interactionsKindWhatsapp": "WhatsApp",
+  "interactionsKindSms": "Text",
+  "interactionsKindEnquiry": "Enquiry",
+  "interactionsOutcomeConnected": "Connected",
+  "interactionsOutcomeNoAnswer": "No answer",
+  "interactionsOutcomeVoicemail": "Voicemail",
+  "interactionsOutcomeBusy": "Busy",
+  "interactionsOutcomeWrongNumber": "Wrong number",
+  "interactionsTimelineActorSeparator": " ",
+  "interactionsNoteActions": "Note actions",
+  "interactionsAgoMonths": "{count}mo",
+  "@interactionsAgoMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoDays": "{count}d",
+  "@interactionsAgoDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoHours": "{count}h",
+  "@interactionsAgoHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoMinutes": "{count}m",
+  "@interactionsAgoMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoNow": "now",
+  "interactionsShowingNewest": "{count, plural, one{Showing the newest {shown} of {count} activity.} other{Showing the newest {shown} of {count} activities.}}",
+  "@interactionsShowingNewest": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "shown": {
+        "type": "int"
+      }
+    }
+  }
+}

@@ -3,16 +3,23 @@ from decimal import Decimal
 from django.db.models import Case, CharField, F, Q, Value, When
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.permissions import HasOrgContext, is_org_admin
+from common.pagination import CappedLimitOffsetPagination
+from common.permissions import HasOrgContext, is_org_admin, may_configure
+from common.utils import GOAL_TYPES, PERIOD_TYPES
 from common.validators import uuid_param
 from opportunity.models import SalesGoal
 from opportunity.serializer import SalesGoalCreateSerializer, SalesGoalSerializer
+
+_MESSAGE = inline_serializer(
+    "SalesGoalMessage",
+    {"error": serializers.BooleanField(), "message": serializers.CharField()},
+)
 
 
 def _visible_to(profile):
@@ -37,7 +44,7 @@ def _sees_every_goal(request):
     return is_org_admin(request.profile)
 
 
-class SalesGoalListView(APIView, LimitOffsetPagination):
+class SalesGoalListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     def get_queryset(self, request):
@@ -68,6 +75,17 @@ class SalesGoalListView(APIView, LimitOffsetPagination):
             "assigned_to", "assigned_to__user", "team"
         ).distinct()
 
+    @extend_schema(
+        responses=inline_serializer(
+            "SalesGoalListResponse",
+            {
+                "goals": SalesGoalSerializer(many=True),
+                "goals_count": serializers.IntegerField(),
+                "offset": serializers.IntegerField(allow_null=True),
+                "per_page": serializers.IntegerField(),
+            },
+        )
+    )
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset(request)
         results = self.paginate_queryset(queryset, request, view=self)
@@ -89,8 +107,9 @@ class SalesGoalListView(APIView, LimitOffsetPagination):
             }
         )
 
+    @extend_schema(request=SalesGoalCreateSerializer, responses={201: _MESSAGE})
     def post(self, request, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": True, "errors": _("Only admins can create goals.")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -137,6 +156,7 @@ class SalesGoalDetailView(APIView):
             status=status.HTTP_404_NOT_FOUND,
         )
 
+    @extend_schema(responses=SalesGoalSerializer)
     def get(self, request, pk, *args, **kwargs):
         goal = self.get_object(pk, request)
         if not goal:
@@ -144,11 +164,12 @@ class SalesGoalDetailView(APIView):
         serializer = SalesGoalSerializer(goal)
         return Response(serializer.data)
 
+    @extend_schema(request=SalesGoalCreateSerializer(partial=True), responses=_MESSAGE)
     def put(self, request, pk, *args, **kwargs):
         goal = self.get_object(pk, request)
         if not goal:
             return self._not_found()
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": True, "errors": _("Only admins can update goals.")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -167,11 +188,12 @@ class SalesGoalDetailView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    @extend_schema(responses={200: _MESSAGE})
     def delete(self, request, pk, *args, **kwargs):
         goal = self.get_object(pk, request)
         if not goal:
             return self._not_found()
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": True, "errors": _("Only admins can delete goals.")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -199,6 +221,34 @@ class SalesGoalLeaderboardView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        responses=inline_serializer(
+            "SalesGoalLeaderboard",
+            {
+                "leaderboard": inline_serializer(
+                    "SalesGoalLeaderboardRow",
+                    {
+                        "goal_id": serializers.UUIDField(),
+                        "goal_name": serializers.CharField(),
+                        "user": inline_serializer(
+                            "SalesGoalLeaderboardUser",
+                            {
+                                "id": serializers.UUIDField(),
+                                "name": serializers.CharField(),
+                            },
+                        ),
+                        "goal_type": serializers.ChoiceField(choices=GOAL_TYPES),
+                        "currency": serializers.CharField(allow_null=True),
+                        "target": serializers.FloatField(),
+                        "achieved": serializers.FloatField(),
+                        "percent": serializers.IntegerField(),
+                        "rank": serializers.IntegerField(),
+                    },
+                    many=True,
+                )
+            },
+        )
+    )
     def get(self, request, *args, **kwargs):
         org = request.profile.org
         today = timezone.localdate()
@@ -303,6 +353,31 @@ class SalesGoalHistoryView(APIView):
             return self.DEFAULT_PERIODS
         return max(1, min(value, self.MAX_PERIODS))
 
+    @extend_schema(
+        responses=inline_serializer(
+            "SalesGoalHistory",
+            {
+                "history": inline_serializer(
+                    "SalesGoalHistoryPeriod",
+                    {
+                        "period_start": serializers.DateField(),
+                        "period_end": serializers.DateField(),
+                        "period_type": serializers.ChoiceField(choices=PERIOD_TYPES),
+                        "goal_type": serializers.ChoiceField(choices=GOAL_TYPES),
+                        "currency": serializers.CharField(allow_null=True),
+                        "goals_count": serializers.IntegerField(),
+                        "attained_count": serializers.IntegerField(),
+                        "target": serializers.FloatField(),
+                        "achieved": serializers.FloatField(),
+                        "percent": serializers.IntegerField(),
+                        "goals": SalesGoalSerializer(many=True),
+                    },
+                    many=True,
+                ),
+                "periods_returned": serializers.IntegerField(),
+            },
+        )
+    )
     def get(self, request, *args, **kwargs):
         org = request.profile.org
         today = timezone.localdate()

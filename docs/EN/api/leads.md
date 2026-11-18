@@ -51,21 +51,20 @@ leads in the filtered, org-scoped `open` queryset whose `last_contacted` (or, ab
 date) is more than 7 days old (`UNWORKED_AFTER_DAYS`, `lead_views.py:58,60-86`), not a stored status,
 just a computed staleness signal.
 
-**`source` accepts only the values in `LEAD_SOURCE`** (`backend/common/utils.py:59-67`): `call`,
-`email`, `existing customer`, `partner`, `public relations`, `compaign`, `other`. There is no
-`website` value in this enum: that spelling belongs to a completely different, uppercase vocabulary
-(`Opportunity.lead_source`, using `SOURCES`; see [Opportunities](opportunities.md#stages)). Note also
-that `compaign` is not a typo in this documentation. It is the literal stored value for "Campaign"
-leads. A client that sends `source=campaign` (the correctly-spelled word) gets zero rows back, not an
-error, because `?source=` is an exact match (`lead_views.py:115-116`), and a client that tries to
-*create* a lead with `source: "campaign"` gets a validation error, because `campaign` is not one of
-the choices `Lead.source` accepts (`leads/models.py:75-77`).
+**`source` is a key from the organisation's lead sources** (see [Lead sources](#lead-sources)).
+Every org starts with 15 (`call`, `email`, `existing customer`, `partner`, `public relations`,
+`campaign`, `other`, `web form`, `meta ads`, `google ads`, `linkedin ads`,
+`directory or marketplace`, `whatsapp`, `referral`, `walk-in`) and admins add more. The old
+misspelt key `compaign` is now `campaign`. The list response's `source` pairs above still carry the
+original seven; read `GET /api/leads/sources/` for the org's own list. `?source=` is an exact match
+on the key, so a key no lead holds matches nothing rather than erroring.
 
 Filters beyond `source` and `status`, `name`, `salutation`, `assigned_to`, `tags`, `city`, `email`,
 `rating`, `search`, `created_at__gte/lte`, `close_date__gte/lte`, `cf_<key>`, are documented in full,
 with exact match-vs-contains semantics for each, in
 [Conventions: Filtering and search](conventions.md#filtering-and-search), which uses this exact
-endpoint as its example.
+endpoint as its example. `?unanswered=true` keeps the leads waiting for an answer, longest wait
+first; see [Unanswered leads](#unanswered-leads).
 
 ## Create a lead
 
@@ -84,16 +83,17 @@ The body is validated by `LeadCreateSerializer` (`leads/serializer.py:88-224`); 
 [Errors: Status codes](errors.md#status-codes)):
 
 ```json
-{"error": false, "message": "Lead Created Successfully"}
+{"error": false, "message": "Lead Created Successfully", "id": "<uuid>"}
 ```
 
-Sending `"status": "converted"` on create runs the lead straight through
+`id` is the new lead's. Sending `"status": "converted"` on create runs the lead straight through
 `leads.services.convert_lead_to_account` and returns a different shape instead:
 
 ```json
 {
   "error": false,
   "message": "Lead Converted Successfully",
+  "id": "<uuid>",
   "account_id": "<uuid>",
   "contact_id": "<uuid or null>",
   "opportunity_id": "<uuid or null>"
@@ -233,6 +233,211 @@ transaction:
 
 The response is `{"error": false, "message": "...", "id": "<kept id>"}`.
 
+## Unanswered leads
+
+`GET /api/leads/?unanswered=true` keeps only the leads waiting for an answer, ordered by
+`waiting_since` (longest wait first, then by id), and combines with every other filter, such as
+`assigned_to` or `open`. The CSV export (`GET /api/leads/export/?unanswered=true`) and saved views
+take it too, so an exported or saved Unanswered list holds the same leads in the same order. Any
+value but `true` leaves the list unfiltered. The rule lives in `backend/leads/response.py`.
+
+With `arrival_at` the lead's `last_enquiry_at`, or its `created_at` when it has none, a lead is
+unanswered when all three hold:
+
+- its status is `assigned`, `in process` or `recycled` (never `converted` or `closed`);
+- `last_outbound_at` is null or earlier than `arrival_at`;
+- `arrival_at` is at or after the org's `lead_response_since`, the moment the org started measuring
+  (stamped when it upgraded to this release, and at creation for a newer org), so years of old open
+  leads do not flood the list.
+
+`waiting_since` is null unless the lead is unanswered. Then it is the lead's `created_at` when
+nothing outbound was ever logged on it and it was created at or after `lead_response_since`, and
+`arrival_at` otherwise. A new lead that enquires twice waits from its creation; a lead that was
+answered and then enquired again waits from that enquiry; and an old lead from before the stamp
+that enquires again waits from the new enquiry, not from the day it was created.
+`last_outbound_at`, `first_response_at` and `first_response_by` are kept from the lead's logged
+interactions ([Interactions](interactions.md#a-leads-response-fields)).
+
+`GET /api/dashboard/` and `GET /api/dashboard/today/` both carry the count:
+
+```json
+"unanswered_leads": {"count": 3, "oldest_since": "2026-10-24T09:46:00Z"}
+```
+
+over the leads the caller can see (an admin's whole org; a member's own and assigned leads), where
+`oldest_since` is the earliest `waiting_since`, or null when nothing is waiting. While the Leads
+module is off it is `{"count": 0, "oldest_since": null}`.
+
+## Response times
+
+`GET /api/leads/response-times/?days=30` answers how fast each person gives a lead its first
+response:
+
+```json
+{
+  "since": "2026-09-25",
+  "rows": [
+    {
+      "profile": "8d6c...",
+      "name": "Maria Lopez",
+      "answered": 12,
+      "median_seconds": 340,
+      "within_5_minutes": 50,
+      "within_1_hour": 83,
+      "unanswered_now": 2
+    }
+  ]
+}
+```
+
+- **Who gets which rows.** An org admin gets a row for every active member, themselves included;
+  anyone else gets exactly one row, their own. Comparing colleagues is an org aggregate.
+- **`days`** is a whole number from 7 to 90, default 30; anything else is a `400` naming `days`.
+  The window is the last `days` days of the org's calendar, today included. `since` is the first
+  of them, and the window opens at the org's midnight on that date.
+- **`answered`** counts the leads the person responded to first (`first_response_by`) with
+  `first_response_at` inside the window. A lead created before the org's `lead_response_since` is
+  left out: its response time would count the years before anything was logged.
+- A lead's response time is `first_response_at` minus `created_at`, on the clock, so nights and
+  weekends count. **`median_seconds`** is the median over the row's leads (the middle one, or the
+  mean of the middle two) in whole seconds rounded down, and null when there are none.
+- **`within_5_minutes`** and **`within_1_hour`** are the percentage of those leads answered in at
+  most five minutes and at most an hour, rounded down so that 100 means every one; 0 when there
+  are none.
+- **`unanswered_now`** counts the person's assigned leads that are unanswered right now, whatever
+  the window.
+- **`name`** is the member's name, or their email when the name is empty. Rows are sorted by it.
+
+Like every `/api/leads/` route it is refused while the Leads module is off
+([Modules](modules.md)).
+
+## Outcomes
+
+New in 1.41.0. `GET /api/leads/outcomes/?days=30` answers how many leads each person wins and loses,
+and how long winning takes:
+
+```json
+{
+  "since": "2026-09-29",
+  "measured_since": "2026-10-28",
+  "rows": [
+    {
+      "profile": "8d6c...",
+      "name": "Maria Lopez",
+      "won": 9,
+      "lost": 3,
+      "win_rate": 75,
+      "median_seconds_to_win": 432000,
+      "new_leads": 20
+    }
+  ],
+  "totals": {
+    "won": 21,
+    "lost": 8,
+    "win_rate": 72,
+    "median_seconds_to_win": 388800,
+    "new_leads": 64
+  }
+}
+```
+
+- **Won and lost.** A lead is won when its status is `converted` or its stage's `stage_type` is
+  `won`, lost when its status is `closed` or its stage's `stage_type` is `lost` (won wins when both
+  apply), and open otherwise, `recycled` included. The lead keeps `won_at` and `lost_at`, set in
+  `Lead.save()` when a save changes its status or stage and that changes its outcome: the one that
+  now applies takes the time and the other is cleared, and a lead that reopens has both cleared. A
+  save that changes neither status nor stage stamps nothing, and a lead created already won or lost
+  is not stamped, since nobody knows when it closed. The board, the edit form, conversion and
+  automation all save through it; a queryset `update()` does not. Changing a stage's `stage_type`,
+  or deleting a stage, restamps none of the leads in it: each keeps the dates it has until a save
+  changes its own status or stage. A merge keeps the kept lead's dates and never copies the other
+  lead's. Neither field is on the lead payload or accepted by any write.
+- **`measured_since`** is the org's date of `lead_outcomes_since`, the moment it started stamping
+  (when it upgraded to this release, or its creation for a newer org). Nothing earlier was
+  recorded, so an empty first week reads as "measuring since", not as nobody winning anything. No
+  write accepts it.
+- **Who gets which rows.** An org admin gets a row for every active member, themselves included,
+  and `totals`; anyone else gets exactly one row, their own, and `totals` is null.
+- **`days`** is a whole number from 7 to 90, default 30; anything else is a `400` naming `days`.
+  The window is the last `days` days of the org's calendar, today included; `since` is the first of
+  them, and the window opens at the org's midnight on that date.
+- **`won`** and **`lost`** count the leads assigned to the person now whose `won_at` or `lost_at`
+  is inside the window. Credit goes to whoever is assigned now, not whoever was at the time, and a
+  lead with two assignees counts for both. **`new_leads`** counts the leads assigned to the person
+  now that were created inside the window.
+- **`win_rate`** is `won` out of `won + lost` as a whole percent, rounded to the nearest (a half
+  goes to the even neighbour, so 12.5 is 12), and null when both are 0.
+- **`median_seconds_to_win`** is the median of `won_at` minus `created_at` over the row's leads won
+  inside the window (the middle one, or the mean of the middle two) in whole seconds rounded down,
+  and null when there are none.
+- **`totals`** counts each of the org's leads once, whether or not anyone is assigned to it.
+- **`name`** is the member's name, or their email when the name is empty. Rows are sorted by it.
+
+Like every `/api/leads/` route it is refused while the Leads module is off
+([Modules](modules.md)).
+
+## Lead alerts
+
+New in 1.39.0; what is sent and when is in [Lead alerts](../features/lead-alerts.md).
+
+**Notifications.** The four alerts are rows in `GET /api/notifications/` with `verb`
+`lead.assigned`, `lead.created`, `lead.enquired` or `lead.waiting`, `entity_type` `Lead`,
+`entity_id` and `link` (`/leads/<id>`) naming the lead, `entity_name` its name, and `data`
+`{"source": "<source label, or empty>"}`. A `lead.assigned` row's `actor` is the member who
+assigned, when one did. From 1.42.0, a `lead.enquired` row for a converted lead names the contact
+it became instead: `entity_type` `Contact`, `entity_id` and `link` (`/contacts/<id>`) the contact,
+`entity_name` the contact's name, and `data.source` still the lead's source.
+
+**Your switches.** `GET /api/profile/` (in `user_obj`) and `GET /api/auth/profile/` carry
+`lead_alerts_email` and `lead_alerts_push`, both `true` by default. `PATCH /api/profile/` with
+either one sets it on the caller's own profile in the token's org, and nobody else's; anything
+but a boolean is a `400`.
+
+**The reminder.** `GET /api/org/settings/` carries `lead_reminder_minutes`: `null` (off), `5`,
+`15`, `30` or `60`. An admin sets it with `PATCH /api/org/settings/`; any other value is a `400`
+and a member's `PATCH` is a `403`. Changing it from `null` to a value records the moment, and
+only leads whose latest enquiry (or creation) is at or after that moment are reminded about. The
+moment is not in the API.
+
+**Phones.** The phone app registers and removes its push token:
+
+| Endpoint | Body | Answer |
+| --- | --- | --- |
+| `POST /api/devices/` | `{"token", "platform": "android" or "ios", "app_version"?}` | `204`. Creates or refreshes the row for this token in the caller's org, owned by the caller (a phone another member signed in on moves to the caller), with `last_seen_at` now. The caller keeps their five rows in the org with the latest `last_seen_at`; older ones are deleted |
+| `DELETE /api/devices/` | `{"token"}` | `204`, whether or not the caller had that token in this org; another member's row is left alone |
+
+A token is at most 2,048 characters, each an ASCII letter or digit, `_`, `:` or `-` (FCM's
+alphabet; anything else is a `400`), and `app_version` at most 32. Pushes go to a member's five
+newest phones, and a row whose `last_seen_at` is older than the refresh token lifetime (14 days)
+is deleted unsent. Neither method ever answers with a
+token. Both are for a signed-in session only: `/api/devices/` is on the credential deny-list
+(`backend/common/scopes.py`), so a personal access token or the org API key gets `403`, because a
+registered phone keeps receiving the member's alerts after the token that registered it is
+revoked. They are limited to 60 requests a minute per user.
+
+## Lead sources
+
+Where a lead came from is a key from a per-org list. The endpoints are not tied to the Leads
+module switch, because contacts and deals read the same list.
+
+| Endpoint | Who | Body | Answer |
+| --- | --- | --- | --- |
+| `GET /api/leads/sources/` | any member | | `{"sources": [{"id", "key", "label", "is_active", "order"}]}`, by `order`, retired ones included. The defaults are created on first use |
+| `POST /api/leads/sources/` | admin | `{"label"}` | `201` with the new source. The key is the label lowercased with spaces collapsed; a label whose key already exists in the org (retired or not) is `400`. At most 64 characters |
+| `PATCH /api/leads/sources/{id}/` | admin | `{"label"?, "is_active"?}` | The source. The key never changes, so existing records keep pointing at it. Another org's id is `404` |
+| `POST /api/leads/sources/order/` | admin | `{"keys": [...]}` | `{"sources": [...]}` in the new order. Each key at most once and all must be the org's; keys left out follow the listed ones |
+
+There is no delete: retire a source instead. A retired source stays on the records that hold it,
+and cannot be chosen for a new one. A non-admin write is `403`.
+
+**Phone builds before 1.13.0** send no `X-BottleCRM-App` header (they identify as Dart's HTTP
+client) and cannot show a source they were never shipped. For those requests only, a blank value or
+`other` sent over a stored key the old build cannot read back is ignored (the stored key stays).
+A lead's readable keys are `call`, `email`, `existing customer`, `partner`, `public relations`
+and `other` (it read `campaign` as Other); a deal's are the same plus `campaign` (it read `web form`
+as None and sent `NONE`). `compaign` is read as `campaign`, and a deal's uppercase values as their
+keys.
+
 ## Fields
 
 `LeadCreateSerializer.Meta.fields` (`leads/serializer.py:178-213`) is what `POST /api/leads/`,
@@ -256,7 +461,9 @@ instead. See [Create a lead](#create-a-lead)).
 | `website` | string | optional | Free text, not validated as a URL |
 | `linkedin_url` | string | optional | Validated as a URL |
 | `status` | one of `LEAD_STATUS` | optional | `assigned`, `in process`, `converted`, `recycled`, `closed` |
-| `source` | one of `LEAD_SOURCE` | optional | `call`, `email`, `existing customer`, `partner`, `public relations`, `compaign`, `other`, no `website` |
+| `source` | a key of the org's [lead sources](#lead-sources) | optional | An unknown, other-org or retired key is `400` ("Choose one of your lead sources."). The key a lead already holds is always accepted, even once retired, so editing other fields never trips on it |
+| `source_detail` | string, at most 100 | optional | The sub-source, e.g. a campaign name |
+| `source_ref` | string, at most 255 | optional | A reference from the source, e.g. an ad click id |
 | `industry` | one of `INDCHOICES` | optional | e.g. `SOFTWARE` |
 | `rating` | `HOT` \| `WARM` \| `COLD` | optional | |
 | `opportunity_amount` | decimal | optional | Non-negative (DB constraint) |
@@ -269,6 +476,13 @@ instead. See [Create a lead](#create-a-lead)).
 | `description` | text | optional | |
 | `company_name` | string | optional | |
 | `is_active` | boolean | optional | Defaults `true` |
+
+Read-only on the lead payload: `phone_e164` (the phone normalised for matching), `external_source`,
+`external_id` and `last_enquiry_at` (set when an intake delivers the lead), and the response fields:
+`first_response_at`, `first_response_by` (a profile id) with `first_response_by_details`
+(`{"id", "name"}`, or null), `last_outbound_at`, `waiting_since` and `is_unanswered` (see
+[Unanswered leads](#unanswered-leads)). The list and the detail both carry them; a write that sends
+them is answered as usual and changes none of them.
 
 Not part of the serializer, but accepted in the same request body and resolved by the view on
 `POST`/`PUT`/`PATCH` (each a list of ids, org-scoped): `tags`, `contacts`, `teams`, `assigned_to`; plus

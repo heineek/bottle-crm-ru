@@ -42,7 +42,7 @@ One order on every layer, written three times so each layer can apply it without
 | Layer | Where the order lives |
 |---|---|
 | API | `backend/common/locale.py` (`resolve_language`), activated per request by `GetProfileAndOrg` |
-| Web | `frontend/src/lib/i18n/locale.js` (`resolveLocale`), applied in `src/hooks.server.js` |
+| Web | `frontend/src/lib/i18n/locale.ts` (`resolveLocale`), applied in `src/hooks.server.ts` |
 | Mobile | `mobile/lib/services/app_language.dart` (`resolveLanguage`), applied by `languageProvider` |
 
 The clients read the user's choice and the org default from the access token's `language` and
@@ -76,7 +76,7 @@ than as an English word in a translated screen.
 | `backend/common/tests/test_language_lists.py` | The three layers offer different languages |
 | `backend/common/tests/test_translations.py` | An untranslated or fuzzy `.po` entry, a stale `.mo`, an em dash, one English string translated two ways |
 | CI "Check message catalogs are up to date" | A wrapped string with no catalog entry |
-| `frontend/src/lib/i18n/messages.test.js` | Missing keys, changed placeholders, a plural without the forms the language needs, a key two modules define |
-| `frontend/src/lib/i18n/strategy.test.js` | The Vite plugin and `pnpm i18n` compiled with different locale strategies |
+| `frontend/src/lib/i18n/messages.test.ts` | Missing keys, changed placeholders, a plural without the forms the language needs, a key two modules define |
+| `frontend/src/lib/i18n/strategy.test.ts` | The Vite plugin and `pnpm i18n` compiled with different locale strategies |
 | `mobile/test/unit/app_language_test.dart` | Missing keys or placeholders, an empty message, the language order |
 | `mobile/test/unit/l10n_merge_test.dart` | ARB files that are stale against the fragments, a key two modules define |

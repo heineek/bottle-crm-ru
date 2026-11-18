@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 09:43+0000\n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -99,12 +99,23 @@ msgid "Kanban Order"
 msgstr "Порядок на канбан-доске"
 
 #, python-format
-msgid "A task can only be linked to one parent entity (Account, Opportunity, Case, or Lead). Currently linked to: %(parents)s"
-msgstr "Задачу можно связать только с одной родительской записью (компанией, сделкой, обращением или лидом). Сейчас связана с: %(parents)s"
+msgid ""
+"A task can only be linked to one parent entity (Account, Opportunity, Case, "
+"Lead, or Project). Currently linked to: %(parents)s"
+msgstr ""
+"Задачу можно связать только с одной родительской записью (компанией, сделкой,"
+" обращением, лидом или проектом). Сейчас связана с: %(parents)s"
+
+msgid "No such project."
+msgstr "Такого проекта нет."
 
 #, python-format
-msgid "A task can only be linked to one parent entity (Account, Opportunity, Case, or Lead). Currently set: %(parents)s"
-msgstr "Задачу можно связать только с одной родительской записью (компанией, сделкой, обращением или лидом). Сейчас указано: %(parents)s"
+msgid ""
+"A task can only be linked to one parent entity (Account, Opportunity, Case, "
+"Lead, or Project). Currently set: %(parents)s"
+msgstr ""
+"Задачу можно связать только с одной родительской записью (компанией, сделкой,"
+" обращением, лидом или проектом). Сейчас указано: %(parents)s"
 
 #, python-format
 msgid "maps_to_status must be one of %(statuses)s, or empty."
@@ -146,8 +157,12 @@ msgid "Invalid column for this board."
 msgstr "Эта колонка не относится к этой доске."
 
 #, python-format
-msgid "This task is in the %(pipeline)s pipeline. Move it to one of that pipeline's stages."
-msgstr "Эта задача находится в воронке «%(pipeline)s». Переместите её на один из этапов этой воронки."
+msgid ""
+"This task is in the %(pipeline)s pipeline. Move it to one of that pipeline's "
+"stages."
+msgstr ""
+"Эта задача находится в воронке «%(pipeline)s». Переместите её на один из "
+"этапов этой воронки."
 
 #, python-format
 msgid "Stage '%(stage)s' has reached its WIP limit of %(limit)s"
@@ -162,16 +177,25 @@ msgstr "Создавать воронки могут только админис
 #, python-format
 msgid "Cannot delete pipeline with %(count)s tasks. Move tasks first."
 msgid_plural "Cannot delete pipeline with %(count)s tasks. Move tasks first."
-msgstr[0] "Нельзя удалить воронку, в которой %(count)s задача. Сначала переместите задачи."
-msgstr[1] "Нельзя удалить воронку, в которой %(count)s задачи. Сначала переместите задачи."
-msgstr[2] "Нельзя удалить воронку, в которой %(count)s задач. Сначала переместите задачи."
+msgstr[0] ""
+"Нельзя удалить воронку, в которой %(count)s задача. Сначала переместите "
+"задачи."
+msgstr[1] ""
+"Нельзя удалить воронку, в которой %(count)s задачи. Сначала переместите "
+"задачи."
+msgstr[2] ""
+"Нельзя удалить воронку, в которой %(count)s задач. Сначала переместите "
+"задачи."
 
 #, python-format
 msgid "Cannot delete stage with %(count)s tasks. Move tasks first."
 msgid_plural "Cannot delete stage with %(count)s tasks. Move tasks first."
-msgstr[0] "Нельзя удалить этап, на котором %(count)s задача. Сначала переместите задачи."
-msgstr[1] "Нельзя удалить этап, на котором %(count)s задачи. Сначала переместите задачи."
-msgstr[2] "Нельзя удалить этап, на котором %(count)s задач. Сначала переместите задачи."
+msgstr[0] ""
+"Нельзя удалить этап, на котором %(count)s задача. Сначала переместите задачи."
+msgstr[1] ""
+"Нельзя удалить этап, на котором %(count)s задачи. Сначала переместите задачи."
+msgstr[2] ""
+"Нельзя удалить этап, на котором %(count)s задач. Сначала переместите задачи."
 
 msgid "Send every stage of this pipeline exactly once, in the new order."
 msgstr "Передайте каждый этап этой воронки ровно один раз, в новом порядке."

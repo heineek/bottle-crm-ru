@@ -8,13 +8,13 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.access import visible_accounts_qs
 from accounts.serializer import AccountPickerSerializer
+from common.custom_fields import custom_field_filter
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.lookups import get_on_visible_record_or_404
 from common.models import (
@@ -25,6 +25,7 @@ from common.models import (
     Tags,
     Teams,
 )
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext
 from common.serializer import (
     AttachmentsSerializer,
@@ -68,7 +69,21 @@ from tasks.updates import (
 )
 
 
-class TaskListView(APIView, LimitOffsetPagination):
+def _choice_pairs():
+    """`[value, label]` pairs, as Django stores choices."""
+    return serializers.ListField(
+        child=serializers.ListField(child=serializers.CharField())
+    )
+
+
+_PROFILE_EMAILS = inline_serializer(
+    name="ProfileEmail",
+    fields={"id": serializers.UUIDField(), "user__email": serializers.EmailField()},
+    many=True,
+)
+
+
+class TaskListView(APIView, CappedLimitOffsetPagination):
     model = Task
     permission_classes = (IsAuthenticated, HasOrgContext)
 
@@ -80,7 +95,7 @@ class TaskListView(APIView, LimitOffsetPagination):
         # the creator clause is live, tasks they created and could not open.
         queryset = (
             visible_tasks_qs(self.request.profile)
-            .select_related("account", "opportunity", "case", "lead")
+            .select_related("account", "opportunity", "case", "lead", "project")
             .prefetch_related("assigned_to__user", "tags")
             .order_by("-id")
         )
@@ -119,17 +134,13 @@ class TaskListView(APIView, LimitOffsetPagination):
             created_at_lte = date_param(params, "created_at__lte")
             if created_at_lte:
                 queryset = queryset.filter(created_at__date__lte=created_at_lte)
-            for related in ("account", "opportunity", "case", "lead"):
+            for related in ("account", "opportunity", "case", "lead", "project"):
                 related_id = uuid_param(params, related)
                 if related_id:
                     queryset = queryset.filter(**{f"{related}_id": related_id})
-            for raw_key, raw_value in params.items():
-                if raw_key.startswith("cf_") and raw_value:
-                    cf_key = raw_key[3:]
-                    if cf_key:
-                        queryset = queryset.filter(
-                            custom_fields__contains={cf_key: raw_value}
-                        )
+            queryset = queryset.filter(
+                custom_field_filter("Task", self.request.profile.org, params)
+            )
         context = {}
         queryset = queryset.distinct()
 
@@ -226,12 +237,27 @@ class TaskListView(APIView, LimitOffsetPagination):
                     "tasks_count": serializers.IntegerField(),
                     "offset": serializers.IntegerField(allow_null=True),
                     "tasks": TaskListSerializer(many=True),
-                    "totals": serializers.DictField(),
-                    "status": serializers.ListField(),
-                    "priority": serializers.ListField(),
-                    "users": serializers.ListField(),
-                    "accounts_list": AccountPickerSerializer(many=True),
-                    "contacts_list": ContactPickerSerializer(many=True),
+                    "totals": inline_serializer(
+                        name="TaskListTotals",
+                        fields={
+                            key: serializers.IntegerField()
+                            for key in (
+                                "count",
+                                "open",
+                                "overdue",
+                                "due_today",
+                                "due_this_week",
+                                "no_due_date",
+                                "unassigned",
+                            )
+                        },
+                    ),
+                    "status": _choice_pairs(),
+                    "priority": _choice_pairs(),
+                    "users": _PROFILE_EMAILS,
+                    # Left out with `?slim=true`.
+                    "accounts_list": AccountPickerSerializer(many=True, required=False),
+                    "contacts_list": ContactPickerSerializer(many=True, required=False),
                 },
             )
         },
@@ -372,8 +398,20 @@ class TaskDetailView(APIView):
                     "task_obj": TaskSerializer(),
                     "attachments": AttachmentsSerializer(many=True),
                     "comments": CommentSerializer(many=True),
-                    "users_mention": serializers.ListField(),
-                    "assigned_data": serializers.DictField(),
+                    # An admin, or the task's creator, gets `user__email` rows;
+                    # anyone else gets the creator alone, as `username`.
+                    "users_mention": inline_serializer(
+                        name="TaskMention",
+                        fields={
+                            "user__email": serializers.EmailField(required=False),
+                            "username": serializers.EmailField(required=False),
+                        },
+                        many=True,
+                    ),
+                    "assigned_data": _PROFILE_EMAILS,
+                    "custom_field_definitions": CustomFieldDefinitionSerializer(
+                        many=True
+                    ),
                     "users": ProfileSerializer(many=True),
                     "users_excluding_team": ProfileSerializer(many=True),
                     "teams": TeamsSerializer(many=True),

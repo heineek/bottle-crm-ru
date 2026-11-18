@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -7,12 +7,14 @@
   import { money, count } from '#lib/v2/format.js';
   import { todayLayout } from '#lib/v2/today-layout.js';
   import { todayClearText } from '#lib/v2/modules.js';
+  import { secondsSince, spanText } from '#lib/v2/interactions.js';
+  import { t } from '#lib/terminology.js';
   import { Target } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
-  const TONE_VAR = {
+  const TONE_VAR: Record<string, string> = {
     rust: 'var(--v2-rust)',
     clay: 'var(--v2-clay)',
     slate: 'var(--v2-slate)',
@@ -22,7 +24,7 @@
   let { queue, summary, later, goals } = $derived(data);
 
   /** Revenue goals are money in the goal's own currency; the others are counts. */
-  const goalValue = (g, n) =>
+  const goalValue = (g: { goal_type: string; currency?: string | null }, n: number | string) =>
     g.goal_type === 'REVENUE' ? money(n, g.currency || data.org.currency) : count(n);
 
   /**
@@ -30,7 +32,7 @@
    * strip agrees with the goals page rather than calling a goal green in week
    * two of a quarter for being 40% of the way there.
    */
-  const goalColor = (g) =>
+  const goalColor = (g: { status: string }) =>
     g.status === 'completed'
       ? 'var(--v2-moss)'
       : g.status === 'behind'
@@ -43,6 +45,20 @@
   // nowhere on this page to go, so name it and link each source to its own
   // list. "That's everything" is only true when nothing was left out.
   let layout = $derived(todayLayout(summary, queue.length));
+
+  // Leads nobody has answered yet. The Today queue does not hold them, so the
+  // card sits above it, and neither the header nor the all-clear may say
+  // nothing is waiting while it shows.
+  let waiting = $derived((data.unanswered?.count ?? 0) > 0 ? data.unanswered : null);
+  let terms = $derived(data.org?.terminology);
+  let waitingTitle = $derived.by(() => {
+    if (!waiting) return '';
+    const noun = t(terms, waiting.count === 1 ? 'lead.singular' : 'lead.plural', '');
+    return noun
+      ? m.app_today_waiting_title_term({ count: waiting.count, noun: noun.toLowerCase() })
+      : m.app_today_waiting_title({ count: waiting.count });
+  });
+  let oldestWait = $derived(waiting ? spanText(secondsSince(waiting.oldest_since)) : '');
 
   // Built as one string rather than conditional markup: the "quiet deals"
   // clause only makes sense when there are any, and the numbers are often zero
@@ -58,7 +74,9 @@
     layout.importCard
       ? m.app_today_sub_new()
       : summary.count === 0
-        ? m.app_today_sub_clear()
+        ? waiting
+          ? m.app_today_sub_clear_else()
+          : m.app_today_sub_clear()
         : summary.quiet_deals === 0
           ? m.app_today_sub_count({ count: summary.count })
           : `${m.app_today_sub_count({ count: summary.count })} ${m.app_today_sub_quiet({
@@ -94,6 +112,34 @@
       new coat: if everything is the primary action then nothing is, and the
       colour stops carrying information.
     -->
+    {#if waiting}
+      <div class="v2-card" style="margin-bottom:8px">
+        <div class="v2-queue-item">
+          <span class="v2-queue-spine" style="background:var(--v2-rust)"></span>
+          <div class="v2-queue-body">
+            <a
+              href={resolve(asInternalPath('/leads?unanswered=true'))}
+              style="color:inherit;text-decoration:none"
+            >
+              <div style="font-weight:640;letter-spacing:-0.012em">{waitingTitle}</div>
+            </a>
+            <div class="v2-sub" style="margin-top:2px">
+              {m.app_today_waiting_hint()}
+            </div>
+          </div>
+          <div class="v2-queue-actions">
+            {#if oldestWait}<Pill tone="rust">{m.app_today_waiting_for({ span: oldestWait })}</Pill
+              >{/if}
+            <a
+              class="v2-btn"
+              class:v2-btn-primary={!layout.importCard}
+              href={resolve(asInternalPath('/leads?unanswered=true'))}>{m.app_today_answer()}</a
+            >
+          </div>
+        </div>
+      </div>
+    {/if}
+
     {#each queue as item, i (item.id)}
       <div class="v2-card" style="margin-bottom:8px">
         <div class="v2-queue-item">
@@ -110,7 +156,7 @@
             <Pill tone={item.tone}>{item.due}</Pill>
             <a
               class="v2-btn"
-              class:v2-btn-primary={i === 0 && !layout.importCard}
+              class:v2-btn-primary={i === 0 && !layout.importCard && !waiting}
               href={resolve(asInternalPath(item.href))}>{item.action}</a
             >
           </div>
@@ -129,7 +175,7 @@
             style="color:inherit">{source.count} {source.label}</a
           >{i < summary.sources.length - 1 ? ', ' : '.'}{/each}
       </p>
-    {:else if layout.tail === 'clear'}
+    {:else if layout.tail === 'clear' && !waiting}
       <div class="v2-card" style="margin-bottom:8px">
         <div class="v2-pad" style="padding:20px;text-align:center">
           <div style="font-weight:640;letter-spacing:-0.012em">{m.app_today_inbox_zero()}</div>

@@ -50,6 +50,12 @@ queryset.
 `NULLIF(current_setting(...), '')` в каждой политике изоляции. См.
 [Мультитенантность и RLS](../architecture/multi-tenancy-and-rls.md).
 
+### Отраслевое приложение (Industry app) {#industry-app}
+
+[Отраслевой пакет](#vertical-pack), установленный в организации, вместе с записью (`InstalledApp`) о
+его версии и о том, что он там создал и предложил, чтобы администратор мог его обновить и снова
+удалить. См. [Отраслевые приложения](../features/industry-apps.md).
+
 ### Отраслевой пакет (Vertical pack) {#vertical-pack}
 
 Небольшой декларативный JSON-манифест (`backend/common/packs/manifests/*.json`, проверяется

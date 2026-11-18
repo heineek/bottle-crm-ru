@@ -62,9 +62,9 @@ uv run python manage.py devlogin <email> --org <name-or-uuid>
 `localStorage.setItem('refresh_token', ...)`), пишет только в `localStorage`. Это верно для
 собственных `STORAGE_KEYS` из `frontend/src/lib/api.js`, которые читает API-клиент при прямых
 запросах из браузера, но **само по себе недостаточно, чтобы войти через приложение SvelteKit**.
-`frontend/src/hooks.server.js` аутентифицирует каждый запрос, отрисовываемый на сервере, по трём
+`frontend/src/hooks.server.ts` аутентифицирует каждый запрос, отрисовываемый на сервере, по трём
 **cookie** (`event.cookies.get('jwt_access')`, `('jwt_refresh')` и `('org')`), и ничто на сервере
-вообще не читает `localStorage`. Без этих cookie `hooks.server.js` считает запрос
+вообще не читает `localStorage`. Без этих cookie `hooks.server.ts` считает запрос
 неаутентифицированным и перенаправляет на `/login`, что бы ни лежало в `localStorage`.
 
 Чтобы пройти эту проверку, откройте консоль devtools на `http://localhost:5181`, выполните

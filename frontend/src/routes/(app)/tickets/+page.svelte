@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { resolve } from '$app/paths';
@@ -22,9 +22,9 @@
   import TicketImportDrawer from '#lib/components/tickets/TicketImportDrawer.svelte';
   import { Download, Plus, LifeBuoy, Upload } from '@lucide/svelte';
   import { isOn, labelOf } from '#lib/v2/modules.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data, form }: PageProps = $props();
 
   let tickets = $derived(data.tickets);
   let totals = $derived(data.totals);
@@ -32,12 +32,11 @@
   // Bulk selection: loaded rows only, never the whole filtered set. SvelteSet
   // is reactive on mutation, so add/delete/clear below re-render without
   // reassigning the whole set.
-  let selected = new SvelteSet();
+  let selected = new SvelteSet<string>();
   let banner = $state('');
   let importOpen = $state(false);
 
-  /** @param {string} id */
-  function toggle(id) {
+  function toggle(id: string) {
     if (selected.has(id)) selected.delete(id);
     else selected.add(id);
   }
@@ -49,11 +48,7 @@
       for (const t of tickets) selected.add(t.id);
     }
   }
-  /**
-   * @param {'update'|'delete'} kind
-   * @param {Record<string, number>} s
-   */
-  function summaryText(kind, s) {
+  function summaryText(kind: 'update' | 'delete', s: Record<string, number>) {
     const parts = [
       kind === 'delete'
         ? m.tickets_list_bulk_deleted({ count: s.deleted })
@@ -79,10 +74,13 @@
    * A progress bar only means something while there is still time on the
    * clock. Past the deadline a bar pinned at 100% says nothing about how bad
    * it is, so we stop drawing one and say how far over it went instead.
-   *
-   * @param {any} t
    */
-  function responsePressure(t) {
+  function responsePressure(t: PageData['tickets'][number]): {
+    state: 'met' | 'none' | 'breached' | 'running';
+    label: string;
+    tone: keyof typeof TONE_VAR;
+    pct?: number;
+  } {
     if (t.first_response_at) {
       const took =
         (new Date(t.first_response_at).getTime() - new Date(t.opened_at).getTime()) / 6e4;
@@ -114,8 +112,7 @@
     };
   }
 
-  /** @param {number} mins */
-  function fmtMins(mins) {
+  function fmtMins(mins: number) {
     const n = Math.max(0, Math.round(mins));
     if (n < 60) return m.tickets_duration_m({ n });
     if (n < 1440) return m.tickets_duration_h({ n: Math.round(n / 60) });
@@ -184,7 +181,7 @@
     ondone={async () => {
       // The form action returned; show its summary (or why the API refused
       // the batch), refresh, clear selection.
-      const r = page.form;
+      const r = form;
       if (r?.ok) banner = summaryText(r.kind, r.summary);
       else if (r?.message) banner = r.message;
       selected.clear();

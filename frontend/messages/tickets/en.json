@@ -284,7 +284,6 @@
   "tickets_detail_merge_title": "Merge {name} into another ticket",
   "tickets_detail_search_by_subject": "Search by subject",
   "tickets_detail_merge_search_aria": "Search tickets to merge into",
-  "tickets_detail_search_button": "Search",
   "tickets_detail_merge_no_match": "No ticket you could merge this into matches that search.",
   "tickets_detail_merge_none": "There is no ticket you could merge this into.",
   "tickets_detail_merge_confirm": "\"{source}\" will be marked Duplicate and its comments, attachments, and emails will move into \"{target}\". You can undo this from the target ticket.",
@@ -597,5 +596,28 @@
   "tickets_server_customer": "The customer",
   "tickets_server_unknown_sender": "Unknown sender",
   "tickets_server_read_only": "You can read this ticket but not change it.",
-  "tickets_server_not_found": "That ticket does not exist, or you do not have access to it."
+  "tickets_server_not_found": "That ticket does not exist, or you do not have access to it.",
+  "tickets_detail_open_that_project": "Open that project",
+  "tickets_detail_bill_time": "Bill time",
+  "tickets_detail_bill_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input countSlot",
+        "input time",
+        "input account",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countSlot} billable entry, {time}, not yet billed, onto a draft invoice for {account}.",
+        "countPlural=other": "{countSlot} billable entries, {time}, not yet billed, onto a draft invoice for {account}."
+      }
+    }
+  ],
+  "tickets_detail_bill_currencies": "These entries are in {currencies}. An invoice takes one currency, so change the entries to one before billing them.",
+  "tickets_detail_bill_lines": "Invoice lines",
+  "tickets_detail_bill_create": "Create draft invoice",
+  "tickets_server_bill_nothing": "Nothing on this ticket is ready to bill.",
+  "tickets_server_bill_failed": "Could not bill this time."
 }

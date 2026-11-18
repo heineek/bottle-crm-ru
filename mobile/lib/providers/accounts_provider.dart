@@ -2,8 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
-import '../data/api_envelope.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/account.dart';
+import '../data/models/custom_field_definition.dart';
 import '../services/api_service.dart';
 
 /// Accounts, the module rather than the picker.
@@ -17,8 +18,8 @@ import '../services/api_service.dart';
 /// `active_accounts.open_accounts`, with the closed ones in a parallel
 /// `closed_accounts.close_accounts`. Guessing wrong here does not raise, it
 /// yields an empty list and a screen that says "No accounts found" in an org
-/// with hundreds. That is exactly how the deal form's picker sat broken. The
-/// paths are passed explicitly to `listFromEnvelope` for that reason.
+/// with hundreds. That is exactly how the deal form's picker sat broken, and
+/// why the envelope is read through `AccountListResponse`.
 class AccountsListData {
   const AccountsListData({
     this.accounts = const [],
@@ -129,31 +130,27 @@ class AccountsNotifier extends AsyncNotifier<AccountsListData> {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadAccounts);
     }
 
-    final body = response.data!;
-    final rows = listFromEnvelope(body, [
-      _showClosed
-          ? 'closed_accounts.close_accounts'
-          : 'active_accounts.open_accounts',
-    ]);
-    final total = _count(
-      body,
-      _showClosed ? 'closed_accounts' : 'active_accounts',
-      _showClosed ? 'close_accounts_count' : 'open_accounts_count',
-    );
+    final body = api.AccountListResponse.fromJson(response.data!);
+    final rows = _showClosed
+        ? body.closedAccounts?.closeAccounts
+        : body.activeAccounts?.openAccounts;
+    final total =
+        (_showClosed
+            ? body.closedAccounts?.closeAccountsCount
+            : body.activeAccounts?.openAccountsCount) ??
+        0;
+    final accounts = [
+      for (final row in rows ?? const <api.Account>[])
+        Account.fromJson(row.json),
+    ];
 
     return AccountsListData(
-      accounts: rows.map(Account.fromJson).toList(growable: false),
+      accounts: accounts,
       totalCount: total,
-      hasMore: offset + rows.length < total,
+      hasMore: offset + accounts.length < total,
       offset: offset,
       showingClosed: _showClosed,
     );
-  }
-
-  int _count(Map<String, dynamic> body, String group, String key) {
-    final node = body[group];
-    if (node is Map && node[key] is int) return node[key] as int;
-    return 0;
   }
 
   /// One account, with the relations and rollups the list rows do not carry.
@@ -165,13 +162,14 @@ class AccountsNotifier extends AsyncNotifier<AccountsListData> {
       if (response.statusCode == 404) onNotFound?.call();
       return null;
     }
-    final body = response.data!;
-    // The detail view wraps the record; the key has been stable but a bare
-    // body is accepted too so a serializer change degrades to a miss rather
-    // than a crash.
-    final raw = body['account_obj'] ?? body['account'] ?? body;
-    if (raw is! Map<String, dynamic>) return null;
-    return Account.fromJson(raw, canDelete: body['can_delete'] == true);
+    final body = api.AccountDetailResponse.fromJson(response.data!);
+    final account = body.accountObj;
+    if (account == null) return null;
+    return Account.fromJson(
+      account.json,
+      canDelete: body.canDelete ?? false,
+      customFieldDefinitions: customFieldDefinitionsIn(response.data),
+    );
   }
 
   /// Returns the new account's id, or an error message.
@@ -183,7 +181,7 @@ class AccountsNotifier extends AsyncNotifier<AccountsListData> {
       return (id: null, error: _message(response));
     }
     await refresh();
-    final id = response.data?['id']?.toString();
+    final id = api.AccountCreateResponse.fromJson(response.data ?? {}).id;
     return (id: id, error: null);
   }
 

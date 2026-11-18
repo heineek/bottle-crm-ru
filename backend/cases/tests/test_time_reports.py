@@ -11,6 +11,7 @@ import csv
 import io
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from crum import impersonate
@@ -149,23 +150,26 @@ class TestWindowAndFilters:
         self, admin_client, admin_user, admin_profile, org_a
     ):
         case = _case(org_a, admin_user)
-        _logged(case, admin_profile, 20, days_ago=3)
-        today = timezone.localdate()
+        # Time is dated by its start: just after midnight, the entry began a day earlier.
+        noon = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0)
+        with patch("django.utils.timezone.now", return_value=noon - timedelta(days=1)):
+            _logged(case, admin_profile, 20, days_ago=3)
+            today = timezone.localdate()
 
-        inside = admin_client.get(
-            REPORT,
-            {
-                "start": (today - timedelta(days=3)).isoformat(),
-                "end": (today - timedelta(days=3)).isoformat(),
-            },
-        ).json()
-        outside = admin_client.get(
-            REPORT,
-            {
-                "start": (today - timedelta(days=2)).isoformat(),
-                "end": today.isoformat(),
-            },
-        ).json()
+            inside = admin_client.get(
+                REPORT,
+                {
+                    "start": (today - timedelta(days=3)).isoformat(),
+                    "end": (today - timedelta(days=3)).isoformat(),
+                },
+            ).json()
+            outside = admin_client.get(
+                REPORT,
+                {
+                    "start": (today - timedelta(days=2)).isoformat(),
+                    "end": today.isoformat(),
+                },
+            ).json()
 
         assert inside["totals"]["total_minutes"] == 20
         assert outside["totals"]["total_minutes"] == 0
@@ -280,14 +284,22 @@ class TestCsvExport:
         assert "attachment; filename=" in response["Content-Disposition"]
 
         header, row = self._rows(response)
-        assert header[:5] == ["Date", "Agent", "Ticket", "Account", "Description"]
+        assert header[:6] == [
+            "Date",
+            "Agent",
+            "Ticket",
+            "Project",
+            "Account",
+            "Description",
+        ]
         assert row[2] == "Printer down"
-        assert row[3] == "Reyes & Co"
-        assert row[4] == "Traced the failed import"
-        assert row[5] == "45"
-        assert row[6] == "0.75"
-        assert row[7] == "yes"
-        assert row[10] == "60.00"
+        assert row[3] == ""
+        assert row[4] == "Reyes & Co"
+        assert row[5] == "Traced the failed import"
+        assert row[6] == "45"
+        assert row[7] == "0.75"
+        assert row[8] == "yes"
+        assert row[11] == "60.00"
 
     def test_a_non_billable_entry_has_no_value_rather_than_a_zero(
         self, admin_client, admin_user, admin_profile, org_a
@@ -296,9 +308,9 @@ class TestCsvExport:
 
         _header, row = self._rows(admin_client.get(EXPORT))
 
-        assert row[7] == "no"
-        assert row[8] == ""
-        assert row[10] == ""
+        assert row[8] == "no"
+        assert row[9] == ""
+        assert row[11] == ""
 
     def test_carries_the_same_window_and_the_same_visibility_as_the_report(
         self, user_client, admin_user, admin_profile, user_profile, org_a
@@ -310,7 +322,7 @@ class TestCsvExport:
 
         rows = self._rows(user_client.get(EXPORT))
 
-        assert [r[4] for r in rows[1:]] == ["Yours"]
+        assert [r[5] for r in rows[1:]] == ["Yours"]
 
     def test_an_agent_cannot_export_another_agents_time(
         self, user_client, admin_profile

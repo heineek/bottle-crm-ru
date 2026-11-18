@@ -141,6 +141,10 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
                   value: WebhookEndpoint.formatSlack,
                   child: Text(l10n.settingsWebhookFormFormatSlack),
                 ),
+                DropdownMenuItem(
+                  value: WebhookEndpoint.formatTeams,
+                  child: Text(l10n.settingsWebhookFormFormatTeams),
+                ),
               ],
               onChanged: (v) => setState(() => _format = v ?? _format),
             ),

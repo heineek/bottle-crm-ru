@@ -44,7 +44,7 @@
 | Уровень | Где задан порядок |
 |---|---|
 | API | `backend/common/locale.py` (`resolve_language`), активируется для каждого запроса в `GetProfileAndOrg` |
-| Веб | `frontend/src/lib/i18n/locale.js` (`resolveLocale`), применяется в `src/hooks.server.js` |
+| Веб | `frontend/src/lib/i18n/locale.ts` (`resolveLocale`), применяется в `src/hooks.server.ts` |
 | Мобильное приложение | `mobile/lib/services/app_language.dart` (`resolveLanguage`), применяется в `languageProvider` |
 
 Клиенты берут выбор пользователя и язык организации по умолчанию из claims `language` и
@@ -81,7 +81,7 @@ CSAT, портал) всегда получает язык организаци�
 | `backend/common/tests/test_language_lists.py` | Три уровня предлагают разные языки |
 | `backend/common/tests/test_translations.py` | Непереведённую или fuzzy-запись `.po`, устаревший `.mo`, длинное тире, одну английскую строку, переведённую двумя способами |
 | CI «Check message catalogs are up to date» | Обёрнутую строку без записи в каталоге |
-| `frontend/src/lib/i18n/messages.test.js` | Отсутствующие ключи, изменённые плейсхолдеры, множественное число без нужных языку форм, ключ, определённый в двух модулях |
-| `frontend/src/lib/i18n/strategy.test.js` | Плагин Vite и `pnpm i18n`, скомпилированные с разными стратегиями локали |
+| `frontend/src/lib/i18n/messages.test.ts` | Отсутствующие ключи, изменённые плейсхолдеры, множественное число без нужных языку форм, ключ, определённый в двух модулях |
+| `frontend/src/lib/i18n/strategy.test.ts` | Плагин Vite и `pnpm i18n`, скомпилированные с разными стратегиями локали |
 | `mobile/test/unit/app_language_test.dart` | Отсутствующие ключи или плейсхолдеры, пустое сообщение, порядок выбора языка |
 | `mobile/test/unit/l10n_merge_test.dart` | Файлы ARB, устаревшие относительно фрагментов, ключ, определённый в двух модулях |

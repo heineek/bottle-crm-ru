@@ -110,6 +110,7 @@ class _FormState extends ConsumerState<_Form> {
   late String _datePart;
   late bool _csat;
   late bool _cascade;
+  int? _reminder;
   String? _error;
   bool _busy = false;
 
@@ -147,6 +148,7 @@ class _FormState extends ConsumerState<_Form> {
     _datePart = org.numberDatePart;
     _csat = org.csatEnabled;
     _cascade = org.autoCloseChildren;
+    _reminder = org.leadReminderMinutes;
   }
 
   @override
@@ -213,6 +215,9 @@ class _FormState extends ConsumerState<_Form> {
             // Checked above when undated; sent as 1 when dated.
             invoiceNumberStart:
                 int.tryParse(_value('invoice_number_start').trim()) ?? 1,
+            leadReminderMinutes: _reminder,
+            // Only when the field is on screen, as on the web.
+            sendLeadReminder: ref.read(moduleOnProvider('leads')),
           ),
         );
     if (!mounted) return;
@@ -235,6 +240,7 @@ class _FormState extends ConsumerState<_Form> {
         OrgLocales.fallback.countries;
     final invoicesOn = ref.watch(moduleOnProvider('invoices'));
     final ticketsOn = ref.watch(moduleOnProvider('tickets'));
+    final leadsOn = ref.watch(moduleOnProvider('leads'));
     final currencies = [
       for (final currency in Currency.values)
         (value: currency.value, label: '${currency.label} ${currency.symbol}'),
@@ -440,6 +446,34 @@ class _FormState extends ConsumerState<_Form> {
             ),
           ),
         ],
+        if (leadsOn) ...[
+          _SectionLabel(context.l10n.settingsOrgEditSectionLeads),
+          DropdownButtonFormField<int?>(
+            initialValue: _reminder,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsOrgEditLeadReminder,
+              helperText: context.l10n.settingsOrgEditLeadReminderHint,
+              helperMaxLines: 3,
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text(context.l10n.settingsOrgEditLeadReminderOff),
+              ),
+              for (final minutes in withCurrentMinutes(_reminder))
+                DropdownMenuItem<int?>(
+                  value: minutes,
+                  child: Text(
+                    context.l10n.settingsOrgEditLeadReminderMinutes(minutes),
+                  ),
+                ),
+            ],
+            onChanged: (v) => setState(() => _reminder = v),
+          ),
+          const SizedBox(height: 14),
+        ],
         if (_error != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -544,3 +578,10 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+
+/// The reminder choices plus the stored value when it is not one of them, so
+/// the picker never submits a different number than the org has.
+List<int> withCurrentMinutes(int? current) => [
+  ...leadReminderChoices,
+  if (current != null && !leadReminderChoices.contains(current)) current,
+];

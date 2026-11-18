@@ -11,11 +11,12 @@
 /// likewise not editable here.
 ///
 /// The read is open to any member; the PATCH is admin-only and the backend is
-/// what refuses. `frontend/src/lib/server/v2/organization.js` carries the same
+/// what refuses. `frontend/src/lib/server/v2/organization.ts` carries the same
 /// allow-list.
 library;
 
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 
 /// Text, select and number fields the edit form may submit.
 ///
@@ -44,6 +45,8 @@ const List<String> editableOrgFields = [
   'number_date_part',
   'number_padding',
   'invoice_number_start',
+  // Null is off.
+  'lead_reminder_minutes',
 ];
 
 /// The two org-wide behaviour switches. Kept apart from the text fields because
@@ -81,6 +84,7 @@ class OrgSettings {
     this.numberDatePart = 'DAY',
     this.numberPadding = 4,
     this.invoiceNumberStart = 1,
+    this.leadReminderMinutes,
     this.logoUrl,
     this.memberCount = 0,
     this.createdAt,
@@ -136,43 +140,49 @@ class OrgSettings {
   /// The lowest counter the next invoice may take. Undated numbers only.
   final int invoiceNumberStart;
 
+  /// Remind the assignee when a lead has waited this many minutes for a first
+  /// reply: one of [leadReminderChoices], or null for off.
+  final int? leadReminderMinutes;
+
   final String? logoUrl;
   final int memberCount;
   final DateTime? createdAt;
 
-  factory OrgSettings.fromJson(Map<String, dynamic> json) => OrgSettings(
-    id: json['id']?.toString() ?? '',
-    name: _text(json['name']),
-    companyName: _text(json['company_name']),
-    addressLine: _text(json['address_line']),
-    city: _text(json['city']),
-    state: _text(json['state']),
-    postcode: _text(json['postcode']),
-    country: _text(json['country']),
-    phone: _text(json['phone']),
-    email: _text(json['email']),
-    website: _text(json['website']),
-    taxId: _text(json['tax_id']),
-    defaultCurrency: json['default_currency']?.toString() ?? 'USD',
-    defaultCountry: _text(json['default_country']),
-    currencySymbol: json['currency_symbol']?.toString() ?? '\$',
-    timezone: json['timezone']?.toString() ?? 'UTC',
-    defaultLanguage: json['default_language']?.toString() ?? 'en',
-    csatEnabled: json['csat_enabled'] as bool? ?? true,
-    autoCloseChildren:
-        json['auto_close_children_on_parent_close'] as bool? ?? false,
-    vertical: _text(json['vertical']),
-    invoiceNumberPrefix: json['invoice_number_prefix']?.toString() ?? 'INV-',
-    estimateNumberPrefix: json['estimate_number_prefix']?.toString() ?? 'EST-',
-    numberDatePart: json['number_date_part']?.toString() ?? 'DAY',
-    numberPadding: _intOr(json['number_padding'], 4),
-    invoiceNumberStart: _intOr(json['invoice_number_start'], 1),
-    logoUrl: json['logo_url']?.toString(),
-    memberCount: _intOr(json['member_count'], 0),
-    createdAt: DateTime.tryParse(
-      json['created_at']?.toString() ?? '',
-    )?.toLocal(),
-  );
+  /// Reads an `OrgSettings`, which the GET and the PATCH both answer.
+  factory OrgSettings.fromJson(Map<String, dynamic> json) {
+    final w = api.OrgSettings.fromJson(json);
+    return OrgSettings(
+      id: w.id ?? '',
+      name: w.name ?? '',
+      companyName: w.companyName ?? '',
+      addressLine: w.addressLine ?? '',
+      city: w.city ?? '',
+      state: w.state ?? '',
+      postcode: w.postcode ?? '',
+      country: w.country ?? '',
+      phone: w.phone ?? '',
+      email: w.email ?? '',
+      website: w.website ?? '',
+      taxId: w.taxId ?? '',
+      defaultCurrency: w.defaultCurrency ?? 'USD',
+      defaultCountry: w.defaultCountry ?? '',
+      currencySymbol: w.currencySymbol ?? '\$',
+      timezone: w.timezone ?? 'UTC',
+      defaultLanguage: w.defaultLanguage ?? 'en',
+      csatEnabled: w.csatEnabled ?? true,
+      autoCloseChildren: w.autoCloseChildrenOnParentClose ?? false,
+      vertical: w.vertical ?? '',
+      invoiceNumberPrefix: w.invoiceNumberPrefix ?? 'INV-',
+      estimateNumberPrefix: w.estimateNumberPrefix ?? 'EST-',
+      numberDatePart: w.numberDatePart ?? 'DAY',
+      numberPadding: w.numberPadding ?? 4,
+      invoiceNumberStart: w.invoiceNumberStart ?? 1,
+      leadReminderMinutes: w.leadReminderMinutes,
+      logoUrl: w.logoUrl,
+      memberCount: w.memberCount ?? 0,
+      createdAt: DateTime.tryParse(w.createdAt ?? '')?.toLocal(),
+    );
+  }
 
   /// The postal address on one line, in the order a label prints it.
   String get addressSummary => [
@@ -187,15 +197,6 @@ class OrgSettings {
   String get timezoneLabel => timezone.replaceAll('_', ' ');
 }
 
-String _text(dynamic value) => value?.toString() ?? '';
-
-int _intOr(dynamic value, int fallback) {
-  if (value is int) return value;
-  if (value is num) return value.round();
-  if (value is String) return int.tryParse(value) ?? fallback;
-  return fallback;
-}
-
 /// One IANA zone as `/api/org/timezones/` sends it.
 ///
 /// Served rather than read from the device because the two vocabularies
@@ -208,10 +209,14 @@ class TimezoneOption {
   final String name;
   final int offsetMinutes;
 
-  factory TimezoneOption.fromJson(Map<String, dynamic> json) => TimezoneOption(
-    name: json['name']?.toString() ?? 'UTC',
-    offsetMinutes: _intOr(json['offset_minutes'], 0),
-  );
+  /// Reads a `TimezoneOption`.
+  factory TimezoneOption.fromJson(Map<String, dynamic> json) {
+    final w = api.TimezoneOption.fromJson(json);
+    return TimezoneOption(
+      name: w.name ?? 'UTC',
+      offsetMinutes: w.offsetMinutes ?? 0,
+    );
+  }
 
   /// "Asia/Kolkata (UTC+05:30)". The offset is what makes a 490-entry list
   /// readable.
@@ -264,6 +269,8 @@ Map<String, dynamic> orgSettingsPayload({
   required String numberDatePart,
   required int numberPadding,
   required int invoiceNumberStart,
+  int? leadReminderMinutes,
+  bool sendLeadReminder = false,
 }) => {
   'name': name.trim(),
   'company_name': companyName.trim(),
@@ -287,7 +294,11 @@ Map<String, dynamic> orgSettingsPayload({
   'number_date_part': numberDatePart,
   'number_padding': numberPadding,
   'invoice_number_start': numberDatePart == 'NONE' ? invoiceNumberStart : 1,
+  if (sendLeadReminder) 'lead_reminder_minutes': leadReminderMinutes,
 };
+
+/// The waits the reminder offers, in minutes, as the API's choices.
+const List<int> leadReminderChoices = [5, 15, 30, 60];
 
 /// What an org save has to fix before it is worth sending, or null.
 ///
@@ -417,7 +428,8 @@ String cascadeDefaultExplanation(bool enabled) => enabled
 /// The footnote both organization screens carry about the cascade switch.
 String get cascadeWebGapNote => appL10n.appCascadeWebGapNote;
 
-/// A vertical pack as `/api/packs/` lists it.
+/// A vertical pack, the signup face of an industry app, as `/api/packs/` lists
+/// it.
 class VerticalPack {
   const VerticalPack({
     required this.id,
@@ -431,38 +443,15 @@ class VerticalPack {
   final String description;
   final String version;
 
-  factory VerticalPack.fromJson(Map<String, dynamic> json) => VerticalPack(
-    id: json['id']?.toString() ?? '',
-    name: json['name']?.toString() ?? '',
-    description: json['description']?.toString() ?? '',
-    version: json['version']?.toString() ?? '',
-  );
-}
-
-/// What an apply actually did.
-///
-/// A pack applied to an org that already has some of this configured is the
-/// normal case, not a partial failure, so both halves are reported.
-class PackApplyReport {
-  const PackApplyReport({this.created = 0, this.skipped = 0});
-
-  final int created;
-  final int skipped;
-
-  factory PackApplyReport.fromJson(Map<String, dynamic> json) {
-    final report = (json['report'] as Map?)?.cast<String, dynamic>() ?? json;
-    return PackApplyReport(
-      created: (report['created'] as List?)?.length ?? 0,
-      skipped: (report['skipped'] as List?)?.length ?? 0,
+  /// Reads a `PackSummary`, whose `version` is an integer.
+  factory VerticalPack.fromJson(Map<String, dynamic> json) {
+    final w = api.PackSummary.fromJson(json);
+    return VerticalPack(
+      id: w.id ?? '',
+      name: w.name ?? '',
+      description: w.description ?? '',
+      version: w.version?.toString() ?? '',
     );
-  }
-
-  String get summary {
-    final l10n = appL10n;
-    if (created == 0 && skipped == 0) return l10n.appPackReportNothing;
-    if (skipped == 0) return l10n.appPackReportCreated(created);
-    if (created == 0) return l10n.appPackReportSkipped(skipped);
-    return l10n.appPackReportBoth(created, skipped);
   }
 }
 

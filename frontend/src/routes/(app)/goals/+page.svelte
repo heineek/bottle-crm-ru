@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Quota, read against the calendar.
@@ -31,9 +31,9 @@
   import { Plus, Target, Trophy, History } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let totals = $derived(data.totals);
 
@@ -47,19 +47,27 @@
   let filters = $derived(data.filters ?? { period_type: '', q: '', window: '' });
   let filtered = $derived(Boolean(filters.period_type || filters.q || filters.window));
 
+  type Goal = {
+    period_start: string;
+    period_end: string;
+    progress_percent: number;
+    status: string;
+    type_weights?: Record<string, number>;
+  };
+
   /** How many deal types this goal re-weighs, for the badge on its card. */
-  const weightedTypes = (g) =>
+  const weightedTypes = (g: Goal) =>
     Object.entries(g.type_weights ?? {}).filter(([, w]) => Number(w) !== 1).length;
 
   /** How far through the period we are, 0-100. */
-  function elapsedPercent(g) {
+  function elapsedPercent(g: Goal) {
     const start = new Date(g.period_start).getTime();
     const end = new Date(g.period_end).getTime();
     if (!(end > start)) return 100;
     return Math.min(100, Math.max(0, Math.round(((Date.now() - start) / (end - start)) * 100)));
   }
 
-  const isOver = (g) => (daysSince(g.period_end) ?? -1) > 0;
+  const isOver = (g: Goal) => (daysSince(g.period_end) ?? -1) > 0;
 
   /**
    * SalesGoal.status has no terminal "missed": once period_end passes,
@@ -67,17 +75,17 @@
    * reporting "behind" as though you could still do something about it. A
    * finished period is reported as met or missed instead.
    */
-  const statusLabel = (g) =>
+  const statusLabel = (g: Goal) =>
     isOver(g)
       ? g.progress_percent >= 100
         ? m.goals_status_target_met()
         : m.goals_status_missed()
       : GOAL_STATUS_LABEL[g.status];
 
-  const statusTone = (g) =>
+  const statusTone = (g: Goal) =>
     isOver(g) ? (g.progress_percent >= 100 ? 'moss' : 'slate') : GOAL_STATUS_TONE[g.status];
 
-  const barColor = (g) => {
+  const barColor = (g: Goal) => {
     const tone = statusTone(g);
     return tone === 'moss'
       ? 'var(--v2-moss)'
@@ -94,11 +102,11 @@
    * Takes anything with `goal_type` and `currency`, so the leaderboard rows use
    * it too: the board ranks every type together.
    */
-  const value = (g, n) =>
+  const value = (g: { goal_type: string; currency?: string | null }, n: number) =>
     g.goal_type === 'REVENUE' ? money(n, g.currency || data.org.currency) : count(n);
 
   /** A per-currency total, or a dash when no revenue goal is active. */
-  const moneyTotal = (list) => moneyEach(list) || '—';
+  const moneyTotal = (list: { currency: string; amount: number }[]) => moneyEach(list) || '—';
 </script>
 
 <PageHeader title={m.goals_title()}>
@@ -149,7 +157,7 @@
     <StatCard label={m.goals_stat_active()} value={count(totals.active)} tone="slate" />
   </div>
 
-  <form class="filters" method="GET" data-sveltekit-keepfocus data-sveltekit-replacestate>
+  <form class="filters" method="GET" data-sveltekit-reset="false" data-sveltekit-replacestate>
     <input
       class="v2-input"
       type="search"

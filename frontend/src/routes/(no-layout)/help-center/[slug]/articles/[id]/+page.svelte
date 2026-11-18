@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * One public help article.
    *
@@ -13,8 +13,9 @@
   import { m } from '#lib/paraglide/messages.js';
   import { getLocale } from '#lib/paraglide/runtime.js';
   import { intlLocale } from '#lib/i18n/locale.js';
+  import type { PageProps } from './$types';
 
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let title = $derived(m.public_help_article_title({ title: data.article.title, name: data.name }));
 
@@ -26,8 +27,7 @@
     return text.length > 160 ? `${text.slice(0, 157).trimEnd()}...` : text;
   });
 
-  /** @param {string} value */
-  function formatDate(value) {
+  function formatDate(value: string) {
     if (!value) return '';
     // The number locale is en-US for English, which is what 'en' always rendered.
     return new Date(value).toLocaleDateString(intlLocale(getLocale(), 'number'), {

@@ -1,33 +1,41 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
+  import { billingHref } from '#lib/v2/billing.js';
   import { TriangleAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import { canWriteObject } from '#lib/v2/custom-objects.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   let def = $derived(data.definition);
-  let plan = $derived(data.customObjects?.has_custom_objects === true);
+  let plan = $derived(canWriteObject(data.definition, data.customObjects?.has_custom_objects));
+  let plansHref = $derived(billingHref(data));
   let busy = $state(false);
 
   // What was typed comes back after a refusal.
-  let typed = $derived(result?.values ?? {});
+  let typed = $derived(result?.values);
   let fields = $derived(
-    data.fields.map((/** @type {any} */ f) => {
-      const v = typed.custom_fields?.[f.key];
-      if (!typed.custom_fields || !(f.key in typed.custom_fields)) return f;
+    data.fields.map((f) => {
+      const v = typed?.custom_fields?.[f.key];
+      if (!typed?.custom_fields || !(f.key in typed.custom_fields)) return f;
       return { ...f, value: f.field_type === 'checkbox' ? Boolean(v) : v == null ? '' : String(v) };
     })
   );
   let linkFields = $derived(data.linkFields);
+  let selectedTags = $derived(
+    (typed?.tags ?? [])
+      .map((id) => data.tags?.find((t) => t.id === id))
+      .filter((t) => t !== undefined)
+  );
   let assignees = $derived(
-    (typed.assigned_to ?? [])
-      .map((/** @type {string} */ id) => data.people.find((/** @type {any} */ p) => p.id === id))
-      .filter(Boolean)
+    (typed?.assigned_to ?? [])
+      .map((id) => data.people.find((p) => p.id === id))
+      .filter((p) => p !== undefined)
   );
 </script>
 
@@ -43,10 +51,13 @@
       <p>
         {data.customObjects ? m.app_objects_plan_missing() : m.app_objects_load_failed()}
       </p>
-      <p style="margin-top:14px">
+      <p class="o-plan-actions">
         <a class="v2-btn" href={resolve(asInternalPath(`/objects/${def.key}`))}
           >{m.app_objects_back_to({ plural: def.label_plural })}</a
         >
+        {#if data.customObjects && plansHref}
+          <a class="v2-btn" href={resolve(asInternalPath(plansHref))}>{m.objects_see_plans()}</a>
+        {/if}
       </p>
     </div>
   {:else}
@@ -84,11 +95,18 @@
           class="v2-input"
           required
           maxlength="255"
-          value={typed.name ?? ''}
+          value={typed?.name ?? ''}
         />
       </div>
 
-      <RecordFieldInputs {fields} {linkFields} people={data.people} {assignees} />
+      <RecordFieldInputs
+        {fields}
+        {linkFields}
+        people={data.people}
+        {assignees}
+        tags={data.tags}
+        {selectedTags}
+      />
 
       <div class="actions">
         <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>
@@ -103,6 +121,12 @@
 </div>
 
 <style>
+  .o-plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 14px;
+  }
   .actions {
     display: flex;
     align-items: center;

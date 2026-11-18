@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 import 'attachment.dart';
 import 'comment.dart';
 
@@ -34,48 +34,6 @@ enum LeadStatus {
     return LeadStatus.values.firstWhere(
       (s) => s.value == normalized,
       orElse: () => LeadStatus.assigned,
-    );
-  }
-}
-
-/// Lead source enumeration matching backend LEAD_SOURCE
-enum LeadSource {
-  none('', LucideIcons.circleHelp),
-  call('call', LucideIcons.phone),
-  email('email', LucideIcons.mail),
-  existingCustomer('existing customer', LucideIcons.users),
-  partner('partner', LucideIcons.handshake),
-  publicRelations('public relations', LucideIcons.newspaper),
-  campaign(
-    'compaign',
-    LucideIcons.megaphone,
-  ), // Note: backend has typo "compaign"
-  other('other', LucideIcons.ellipsis);
-
-  final String value;
-  final IconData icon;
-
-  const LeadSource(this.value, this.icon);
-
-  String get label => switch (this) {
-    none => appL10n.appLeadSourceNone,
-    call => appL10n.appLeadSourceCall,
-    email => appL10n.appLeadSourceEmail,
-    existingCustomer => appL10n.appLeadSourceExistingCustomer,
-    partner => appL10n.appLeadSourcePartner,
-    publicRelations => appL10n.appLeadSourcePublicRelations,
-    campaign => appL10n.appLeadSourceCampaign,
-    other => appL10n.appLeadSourceOther,
-  };
-
-  String get displayName => label;
-
-  static LeadSource fromString(String? value) {
-    if (value == null || value.isEmpty) return LeadSource.none;
-    final normalized = value.toLowerCase().trim();
-    return LeadSource.values.firstWhere(
-      (s) => s.value == normalized,
-      orElse: () => LeadSource.other,
     );
   }
 }
@@ -169,12 +127,21 @@ class Lead {
   final String lastName;
   final String email;
   final String? phone;
+
+  /// The phone in international form, set by the server; empty when it
+  /// does not parse. WhatsApp needs it.
+  final String phoneE164;
   final String? jobTitle;
   final String? website;
   final String? linkedinUrl;
   final String companyName;
   final LeadStatus status;
-  final LeadSource source;
+
+  /// A key from the org's source list, exactly as the server sent it (empty
+  /// for none). Label it with `leadSourceLabel`.
+  final String source;
+  final String sourceDetail;
+  final String sourceRef;
   final LeadRating rating;
   final String? industry;
   final double? opportunityAmount;
@@ -205,6 +172,11 @@ class Lead {
   final DateTime? updatedAt;
   final bool isActive;
 
+  /// Null from an API that predates response times, true when the lead waits
+  /// for a first reply, since [waitingSince].
+  final bool? isUnanswered;
+  final DateTime? waitingSince;
+
   const Lead({
     required this.id,
     this.title,
@@ -213,12 +185,15 @@ class Lead {
     required this.lastName,
     required this.email,
     this.phone,
+    this.phoneE164 = '',
     this.jobTitle,
     this.website,
     this.linkedinUrl,
     required this.companyName,
     required this.status,
-    required this.source,
+    this.source = '',
+    this.sourceDetail = '',
+    this.sourceRef = '',
     required this.rating,
     this.industry,
     this.opportunityAmount,
@@ -244,6 +219,8 @@ class Lead {
     required this.createdAt,
     this.updatedAt,
     this.isActive = true,
+    this.isUnanswered,
+    this.waitingSince,
   });
 
   /// Full name combining first and last name
@@ -266,29 +243,21 @@ class Lead {
   /// shows just "?".
   String get assignedToName {
     if (assignedTo == null || assignedTo!.isEmpty) return appL10n.appUnassigned;
-    final first = assignedTo!.first;
-    final details = first['user_details'];
-    if (details is Map<String, dynamic>) {
-      final name = (details['name'] as String?)?.trim() ?? '';
-      if (name.isNotEmpty) return name;
-      final email = (details['email'] as String?)?.trim() ?? '';
-      if (email.isNotEmpty) return email.split('@').first;
-    }
-    // Legacy / flat shapes some endpoints used to return.
-    final flatEmail = (first['user__email'] as String?)?.trim() ?? '';
-    if (flatEmail.isNotEmpty) return flatEmail.split('@').first;
+    final details = api.Profile.fromJson(assignedTo!.first).userDetails;
+    final name = details?.name?.trim() ?? '';
+    if (name.isNotEmpty) return name;
+    final email = details?.email?.trim() ?? '';
+    if (email.isNotEmpty) return email.split('@').first;
     return appL10n.appUnknownPerson;
   }
 
   /// Profile picture URL of the first assignee, if any.
   String? get assignedToProfilePic {
     if (assignedTo == null || assignedTo!.isEmpty) return null;
-    final details = assignedTo!.first['user_details'];
-    if (details is Map<String, dynamic>) {
-      final pic = (details['profile_pic'] as String?)?.trim();
-      if (pic != null && pic.isNotEmpty) return pic;
-    }
-    return null;
+    final pic = api.Profile.fromJson(
+      assignedTo!.first,
+    ).userDetails?.profilePic?.trim();
+    return pic == null || pic.isEmpty ? null : pic;
   }
 
   /// Get lead initials for avatar fallback
@@ -305,124 +274,67 @@ class Lead {
     return '?';
   }
 
-  /// Factory constructor to create Lead from JSON
+  /// Reads a `Lead`, the row the list pages and the detail's `lead_obj`
+  /// share. Comments and attachments travel beside it in the detail answer,
+  /// and the provider adds them.
   factory Lead.fromJson(Map<String, dynamic> json) {
-    // Parse tags - both names and IDs
-    List<String> parsedTags = [];
-    List<String> parsedTagIds = [];
-    if (json['tags'] != null) {
-      final tagsList = json['tags'] as List<dynamic>;
-      for (final t in tagsList) {
-        if (t is Map<String, dynamic>) {
-          final name = t['name'] as String? ?? '';
-          final id = t['id']?.toString() ?? '';
-          if (name.isNotEmpty) parsedTags.add(name);
-          if (id.isNotEmpty) parsedTagIds.add(id);
-        } else if (t is String) {
-          parsedTags.add(t);
-        }
-      }
-    }
-
-    // Parse assigned_to - both full objects and IDs
-    List<Map<String, dynamic>>? parsedAssignedTo;
-    List<String> parsedAssignedToIds = [];
-    if (json['assigned_to'] != null) {
-      final assignedList = json['assigned_to'] as List<dynamic>;
-      parsedAssignedTo = [];
-      for (final a in assignedList) {
-        if (a is Map<String, dynamic>) {
-          parsedAssignedTo.add(a);
-          final id = a['id']?.toString() ?? '';
-          if (id.isNotEmpty) parsedAssignedToIds.add(id);
-        }
-      }
-    }
-
-    // Parse comments (lead_comments from backend)
-    List<Comment> parsedComments = [];
-    if (json['lead_comments'] != null) {
-      final commentsList = json['lead_comments'] as List<dynamic>;
-      parsedComments = commentsList
-          .map((c) => Comment.fromJson(c as Map<String, dynamic>))
-          .toList();
-    }
-
-    // Parse attachments. List backend uses `lead_attachment` inside the
-    // serialized lead object; the detail endpoint also returns a separate
-    // top-level `attachments` key, which is merged in by the provider.
-    List<Attachment> parsedAttachments = [];
-    final rawAttachments = json['lead_attachment'] ?? json['attachments'];
-    if (rawAttachments is List) {
-      parsedAttachments = rawAttachments
-          .whereType<Map<String, dynamic>>()
-          .map(Attachment.fromJson)
-          .toList();
-    }
-
-    // Custom fields, backend stores them as a single JSON dict on the
-    // lead row, keyed by the CustomFieldDefinition.key.
-    Map<String, dynamic> parsedCustomFields = const {};
-    final cf = json['custom_fields'];
-    if (cf is Map<String, dynamic>) {
-      parsedCustomFields = Map<String, dynamic>.from(cf);
-    }
-
+    final w = api.Lead.fromJson(json);
+    final tags = w.tags ?? const <api.Tags>[];
+    final assigned = w.assignedTo;
+    final customFields = w.customFields;
     return Lead(
-      id: json['id']?.toString() ?? '',
-      title: json['title'] as String?,
-      salutation: json['salutation'] as String?,
-      firstName: json['first_name'] as String? ?? '',
-      lastName: json['last_name'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      phone: json['phone'] as String?,
-      jobTitle: json['job_title'] as String?,
-      website: json['website'] as String?,
-      linkedinUrl: json['linkedin_url'] as String?,
-      companyName: json['company_name'] as String? ?? '',
-      status: LeadStatus.fromString(json['status'] as String?),
-      source: LeadSource.fromString(json['source'] as String?),
-      rating: LeadRating.fromString(json['rating'] as String?),
-      industry: json['industry'] as String?,
-      opportunityAmount: json['opportunity_amount'] != null
-          ? double.tryParse(json['opportunity_amount'].toString())
-          : null,
-      currency: json['currency'] as String?,
-      probability: json['probability'] as int?,
-      closeDate: json['close_date'] != null
-          ? DateTime.tryParse(json['close_date'] as String)
-          : null,
-      addressLine: json['address_line'] as String?,
-      city: json['city'] as String?,
-      state: json['state'] as String?,
-      postcode: json['postcode'] as String?,
-      country: json['country'] as String?,
-      lastContacted: json['last_contacted'] != null
-          ? DateTime.tryParse(json['last_contacted'] as String)
-          : null,
-      nextFollowUp: json['next_follow_up'] != null
-          ? DateTime.tryParse(json['next_follow_up'] as String)
-          : null,
-      description: json['description'] as String?,
-      tags: parsedTags,
-      tagIds: parsedTagIds,
-      assignedTo: parsedAssignedTo,
-      assignedToIds: parsedAssignedToIds,
-      comments: parsedComments,
-      attachments: parsedAttachments,
-      customFieldValues: parsedCustomFields,
-      // `created_by` is a nested UserSerializer on the detail route and may be
-      // absent or a bare id on lighter payloads, so read it defensively.
-      createdByEmail: json['created_by'] is Map<String, dynamic>
-          ? (json['created_by'] as Map<String, dynamic>)['email'] as String?
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
-          : DateTime.now(),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'] as String)
-          : null,
-      isActive: json['is_active'] as bool? ?? true,
+      id: w.id ?? '',
+      title: w.title,
+      salutation: w.salutation,
+      firstName: w.firstName ?? '',
+      lastName: w.lastName ?? '',
+      email: w.email ?? '',
+      phone: w.phone,
+      phoneE164: w.phoneE164 ?? '',
+      jobTitle: w.jobTitle,
+      website: w.website,
+      linkedinUrl: w.linkedinUrl,
+      companyName: w.companyName ?? '',
+      status: LeadStatus.fromString(w.status),
+      source: w.source ?? '',
+      sourceDetail: w.sourceDetail ?? '',
+      sourceRef: w.sourceRef ?? '',
+      rating: LeadRating.fromString(w.rating),
+      industry: w.industry,
+      opportunityAmount: double.tryParse(w.opportunityAmount ?? ''),
+      currency: w.currency,
+      probability: w.probability,
+      closeDate: DateTime.tryParse(w.closeDate ?? ''),
+      addressLine: w.addressLine,
+      city: w.city,
+      state: w.state,
+      postcode: w.postcode,
+      country: w.country,
+      lastContacted: DateTime.tryParse(w.lastContacted ?? ''),
+      nextFollowUp: DateTime.tryParse(w.nextFollowUp ?? ''),
+      description: w.description,
+      tags: [
+        for (final t in tags)
+          if (t.name case final name? when name.isNotEmpty) name,
+      ],
+      tagIds: [
+        for (final t in tags)
+          if (t.id case final id? when id.isNotEmpty) id,
+      ],
+      assignedTo: assigned?.map((p) => p.json).toList(),
+      assignedToIds: [
+        for (final p in assigned ?? const <api.Profile>[])
+          if (p.id case final id? when id.isNotEmpty) id,
+      ],
+      customFieldValues: customFields is Map<String, dynamic>
+          ? Map<String, dynamic>.from(customFields)
+          : const {},
+      createdByEmail: w.createdBy?.email,
+      createdAt: DateTime.tryParse(w.createdAt ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(w.updatedAt ?? ''),
+      isActive: w.isActive ?? true,
+      isUnanswered: w.isUnanswered,
+      waitingSince: DateTime.tryParse(w.waitingSince ?? ''),
     );
   }
 
@@ -441,7 +353,7 @@ class Lead {
       'linkedin_url': linkedinUrl,
       'company_name': companyName,
       'status': status.value,
-      'source': source.value,
+      'source': source,
       'rating': rating.value,
       'industry': industry,
       'opportunity_amount': opportunityAmount,
@@ -468,12 +380,15 @@ class Lead {
     String? lastName,
     String? email,
     String? phone,
+    String? phoneE164,
     String? jobTitle,
     String? website,
     String? linkedinUrl,
     String? companyName,
     LeadStatus? status,
-    LeadSource? source,
+    String? source,
+    String? sourceDetail,
+    String? sourceRef,
     LeadRating? rating,
     String? industry,
     double? opportunityAmount,
@@ -499,6 +414,8 @@ class Lead {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    bool? isUnanswered,
+    DateTime? waitingSince,
   }) {
     return Lead(
       id: id ?? this.id,
@@ -508,12 +425,15 @@ class Lead {
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      phoneE164: phoneE164 ?? this.phoneE164,
       jobTitle: jobTitle ?? this.jobTitle,
       website: website ?? this.website,
       linkedinUrl: linkedinUrl ?? this.linkedinUrl,
       companyName: companyName ?? this.companyName,
       status: status ?? this.status,
       source: source ?? this.source,
+      sourceDetail: sourceDetail ?? this.sourceDetail,
+      sourceRef: sourceRef ?? this.sourceRef,
       rating: rating ?? this.rating,
       industry: industry ?? this.industry,
       opportunityAmount: opportunityAmount ?? this.opportunityAmount,
@@ -539,6 +459,8 @@ class Lead {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      isUnanswered: isUnanswered ?? this.isUnanswered,
+      waitingSince: waitingSince ?? this.waitingSince,
     );
   }
 

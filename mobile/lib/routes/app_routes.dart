@@ -65,6 +65,17 @@ class AppRoutes {
   static String settingsLeadPipeline(String id) =>
       '/more/settings/lead-pipelines/$id';
 
+  /// Lead sources and lead capture, both under the Leads module. Lead
+  /// capture's webhook pages are admin-only to read; the screen says so to a
+  /// member.
+  static const String settingsLeadSources = '/more/settings/lead-sources';
+  static const String settingsLeadCapture = '/more/settings/lead-capture';
+  static const String settingsLeadCaptureWebhookDetail =
+      '/more/settings/lead-capture/webhooks/:intakeId';
+
+  static String settingsLeadCaptureWebhook(String id) =>
+      '/more/settings/lead-capture/webhooks/$id';
+
   static const String settingsDealPipelines = '/more/settings/deal-pipelines';
   static const String settingsDealPipelineDetail =
       '/more/settings/deal-pipelines/:pipelineId';
@@ -146,9 +157,9 @@ class AppRoutes {
   static const String profileLanguage = '/more/profile/language';
   static const String settingsOrganization = '/more/settings/organization';
 
-  /// Which modules the organization uses. Admin only; the screen says so to a
-  /// member.
-  static const String settingsModules = '/more/settings/modules';
+  /// The industry apps, and which modules the organization uses. Admin only;
+  /// the screen says so to a member.
+  static const String settingsApps = '/more/settings/apps';
   static const String settingsOrganizationEdit =
       '/more/settings/organization/edit';
 
@@ -215,6 +226,18 @@ class AppRoutes {
   static String invoiceTemplateEditFor(String id) =>
       '/invoices/templates/$id/edit';
 
+  /// Projects. Matches the web app's `/projects`. `new` is declared before
+  /// `:id` in the router. `?deal=<id>` on `new` fills the form from that deal.
+  static const String projects = '/projects';
+  static const String projectNew = '/projects/new';
+  static const String projectDetail = '/projects/:id';
+  static const String projectEdit = '/projects/:id/edit';
+
+  static String projectFor(String id) => '/projects/$id';
+  static String projectEditFor(String id) => '/projects/$id/edit';
+  static String projectFromDeal(String dealId) =>
+      '$projectNew?deal=${Uri.encodeQueryComponent(dealId)}';
+
   // Knowledge base
   static const String solutions = '/solutions';
   static const String solutionNew = '/solutions/new';
@@ -238,4 +261,5 @@ class AppRoutes {
   static const String viewDueToday = 'due-today';
   static const String viewFollowUps = 'follow-ups';
   static const String viewHot = 'hot';
+  static const String viewUnanswered = 'unanswered';
 }

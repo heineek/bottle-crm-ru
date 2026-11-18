@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Built for a 390px phone first. The list is a stack of cards rather than a
    * table, because a customer has a handful of requests and a table of six
@@ -11,8 +11,9 @@
   import { getLocale } from '#lib/paraglide/runtime.js';
   import { intlLocale } from '#lib/i18n/locale.js';
   import { CASE_PRIORITY_LABEL, CASE_STATUS_LABEL } from '#lib/v2/enums.js';
+  import type { PageProps } from './$types';
 
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let composing = $state(false);
 
@@ -24,9 +25,9 @@
    * overwrite the results of a later query.
    */
   let summary = $state('');
-  let suggestions = $state([]);
+  let suggestions: { id: string; title: string; snippet: string }[] = $state([]);
   let latestQuery = 0;
-  let debounce;
+  let debounce: ReturnType<typeof setTimeout> | undefined;
 
   function findAnswers() {
     clearTimeout(debounce);
@@ -41,7 +42,9 @@
         `${resolve('portal/articles/suggestions')}?q=${encodeURIComponent(query)}`
       );
       if (!response.ok) return;
-      const body = await response.json();
+      const body = (await response.json()) as {
+        articles?: { id: string; title: string; snippet: string }[];
+      };
       if (ticket === latestQuery) suggestions = body.articles ?? [];
     }, 300);
   }
@@ -53,21 +56,21 @@
     { value: 'Closed', label: CASE_STATUS_LABEL.Closed }
   ];
 
-  /** @param {string} status */
-  function emptyFor(status) {
+  function emptyFor(status: string) {
     if (status === 'New') return m.public_portal_cases_empty_new();
     if (status === 'Pending') return m.public_portal_cases_empty_pending();
     if (status === 'Closed') return m.public_portal_cases_empty_closed();
     return m.public_portal_cases_empty_status({ status: status.toLowerCase() });
   }
 
-  /** @param {string} status */
-  const statusLabel = (status) =>
-    Object.hasOwn(CASE_STATUS_LABEL, status) ? CASE_STATUS_LABEL[status] : status;
+  const statusLabel = (status: string) =>
+    Object.hasOwn(CASE_STATUS_LABEL, status)
+      ? CASE_STATUS_LABEL[status as keyof typeof CASE_STATUS_LABEL]
+      : status;
 
   const OPEN_STATUSES = new Set(['New', 'Assigned', 'Pending']);
 
-  function formatDate(value) {
+  function formatDate(value: string | null | undefined) {
     if (!value) return '';
     return new Date(value).toLocaleDateString(intlLocale(getLocale(), 'number'), {
       day: 'numeric',

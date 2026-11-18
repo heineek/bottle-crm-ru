@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "django-crm"
-version = "1.25.0"
+version = "1.45.0"
 # The one-line summary PyPI shows under the project title and in search results,
 # so it carries the terms people actually search for ("open source CRM",
 # "self-hosted CRM", "Django CRM") and names the modules rather than the
@@ -104,6 +104,8 @@ dependencies = [
     "defusedxml>=0.7.1",
     # The tz database's own alias list, read by common.org_time.canonical_timezone.
     "tzdata>=2026.5",
+    # Parses phone numbers to E.164 for matching, in common.phones.
+    "phonenumbers>=9.0.41",
 ]
 
 [project.urls]
@@ -124,6 +126,7 @@ dev = [
     "pytest-django>=4.14.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.0",
+    "pytest-xdist>=3.8.0",
 ]
 docs = [
     "mkdocs-material>=9.7.7",
@@ -143,11 +146,13 @@ packages = [
     "common",
     "contacts",
     "crm",
+    "interactions",
     "invoices",
     "leads",
     "macros",
     "opportunity",
     "orders",
+    "projects",
     "tasks",
     "webforms",
     "webhooks",
@@ -162,11 +167,13 @@ include = [
     "common/",
     "contacts/",
     "crm/",
+    "interactions/",
     "invoices/",
     "leads/",
     "macros/",
     "opportunity/",
     "orders/",
+    "projects/",
     "tasks/",
     "webforms/",
     "webhooks/",

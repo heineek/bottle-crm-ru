@@ -6,7 +6,7 @@
 {% endblock heading %}
 
 {% block content_body %}
-<p>{% blocktranslate trimmed count deal_count=deal_count %}You have <strong>{{ deal_count }}</strong> stale deal that needs attention:{% plural %}You have <strong>{{ deal_count }}</strong> stale deals that need attention:{% endblocktranslate %}</p>
+<p>{% blocktranslate trimmed count deal_count=deal_count %}<strong>{{ deal_count }}</strong> of your deals just went stale, past the time its stage expects:{% plural %}<strong>{{ deal_count }}</strong> of your deals just went stale, past the time their stages expect:{% endblocktranslate %}</p>
 
 <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
   <thead>
@@ -28,6 +28,8 @@
     {% endfor %}
   </tbody>
 </table>
+
+<p>{% translate "Each deal is emailed about once in each stage." %}{% if still_waiting %} {% blocktranslate trimmed count still_waiting=still_waiting %}{{ still_waiting }} more stale deal from earlier is still waiting.{% plural %}{{ still_waiting }} more stale deals from earlier are still waiting.{% endblocktranslate %}{% endif %}</p>
 {% endblock content_body %}
 
 {% block button_link %}

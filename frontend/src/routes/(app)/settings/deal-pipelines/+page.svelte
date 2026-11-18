@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Deal pipelines: the stages a deal moves through, and how long it may sit
    * in each before it counts as rotting.
@@ -26,31 +26,32 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import { count } from '#lib/v2/format.js';
   import { ArrowDown, ArrowUp, Plus } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
+
+  type Stage = NonNullable<PageData['pipeline']>['stages'][number];
 
   /** `workflow.STAGE_KINDS`. */
-  let KINDS = $derived([
+  const KINDS = [
     ['open', m.settings_dealpipelines_type_open()],
     ['won', m.settings_dealpipelines_type_won()],
     ['lost', m.settings_dealpipelines_type_lost()]
-  ]);
-  let KIND_LABEL = $derived(Object.fromEntries(KINDS));
-
-  const KIND_TONE = /** @type {Record<string, 'slate'|'moss'|'rust'>} */ ({
+  ] as const;
+  const KIND_LABEL = Object.fromEntries(KINDS);
+  const KIND_TONE = {
     open: 'slate',
     won: 'moss',
     lost: 'rust'
-  });
+  } as Record<string, 'slate' | 'moss' | 'rust'>;
 
   let pipeline = $derived(data.pipeline);
 
   // `null` closed, `'new'` adding a stage, or the stage being edited. One
   // panel, so two stages can never be open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<null | 'new' | Stage>(null);
   let addingPipeline = $state(false);
   let renaming = $state(false);
   // The kind picked in the open stage form: rotting days only apply to open.
@@ -66,13 +67,12 @@
     addingPipeline = false;
   });
 
-  function edit(/** @type {any} */ stage) {
+  function edit(stage: 'new' | Stage) {
     editing = stage;
     editingKind = stage === 'new' ? 'open' : stage.kind;
   }
 
-  /** @param {any} s */
-  function rotting(s) {
+  function rotting(s: Stage) {
     if (s.kind !== 'open') return m.settings_dealpipelines_rots_closed();
     if (!s.expected_days) return m.settings_dealpipelines_rots_never();
     return s.warning_days
@@ -148,7 +148,7 @@
             method="POST"
             action="?/renamePipeline"
             use:enhance={() =>
-              async (/** @type {any} */ { result, update }) => {
+              async ({ result, update }) => {
                 await update();
                 if (result.type === 'success') renaming = false;
               }}
@@ -219,6 +219,8 @@
       {/if}
 
       {#if editing}
+        <!-- The snippet below loses the `if` narrowing; a const keeps it. -->
+        {@const current = editing}
         <SettingsFormPanel
           title={editing === 'new'
             ? m.settings_dealpipelines_new_stage()
@@ -232,10 +234,10 @@
           ondone={() => (editing = null)}
         >
           {#snippet fields()}
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <input type="hidden" name="pipeline_id" value={pipeline.id} />
             {:else}
-              <input type="hidden" name="id" value={editing.id} />
+              <input type="hidden" name="id" value={current.id} />
             {/if}
             <div class="v2-field">
               <label for="s-label">{m.settings_dealpipelines_name_label()}</label>
@@ -245,7 +247,7 @@
                 name="label"
                 maxlength="100"
                 required
-                value={editing === 'new' ? '' : editing.label}
+                value={current === 'new' ? '' : current.label}
               />
             </div>
             <div class="v2-field">
@@ -271,7 +273,7 @@
                   max="3650"
                   step="1"
                   inputmode="numeric"
-                  value={editing === 'new' ? '' : (editing.expected_days ?? '')}
+                  value={current === 'new' ? '' : (current.expected_days ?? '')}
                 />
                 <p class="v2-hint">
                   {m.settings_dealpipelines_expected_hint()}
@@ -288,7 +290,7 @@
                   max="3650"
                   step="1"
                   inputmode="numeric"
-                  value={editing === 'new' ? '' : (editing.warning_days ?? '')}
+                  value={current === 'new' ? '' : (current.warning_days ?? '')}
                 />
                 <p class="v2-hint">{m.settings_dealpipelines_warning_hint()}</p>
               </div>

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * One webhook: test it, switch it, rotate its secret, edit it, and read what
    * happened to each delivery.
@@ -9,6 +9,7 @@
    * (1m, 5m, 30m, 2h, 6h) before it is marked Failed, and Redeliver on a
    * settled row sends the same event again as a new row.
    */
+  import { webhookFormatName } from '#lib/v2/lead-alerts.js';
   import { resolve } from '$app/paths';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import SettingsCrumb from '#lib/v2/components/SettingsCrumb.svelte';
@@ -16,30 +17,30 @@
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count, relativeTime } from '#lib/v2/format.js';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import WebhookFields from '../WebhookFields.svelte';
   import SecretOnce from '../SecretOnce.svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let busy = $state(false);
 
-  const working = () => {
+  const working: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update({ reset: false });
       busy = false;
     };
   };
 
-  const DELIVERY_TONE = /** @type {const} */ ({
+  const DELIVERY_TONE = {
     succeeded: 'moss',
     pending: 'slate',
     failed: 'rust'
-  });
+  } as const;
 
   let actionError = $derived(
     form?.update?.error ??
@@ -70,8 +71,8 @@
 
   <div class="v2-scroll">
     <div class="v2-pad" style="padding-top:16px;padding-bottom:32px">
-      {#if form?.rotated?.secret}
-        <SecretOnce title={m.settings_webhooks_rotated_title()} secret={form.rotated.secret} />
+      {#if form?.rotated && 'secret' in form.rotated && form.rotated.secret}
+        <SecretOnce title="m.settings_webhooks_rotated_title()" secret={form.rotated.secret} />
       {/if}
       {#if actionError}
         <div style="margin-bottom:16px">
@@ -96,7 +97,7 @@
                 : m.settings_webhooks_state_off()}
           </Pill>
           <span class="v2-sub" style="font-size:12px">
-            {#each messageParts(m.settings_webhooks_format_secret( { format: e.format === 'slack' ? m.settings_webhooks_format_slack_message() : m.settings_webhooks_format_json(), hint: slot('hint') } )) as p, i (i)}{#if p.key === 'hint'}<span
+            {#each messageParts(m.settings_webhooks_format_secret( { format: webhookFormatName(e.format), hint: slot('hint') } )) as p, i (i)}{#if p.key === 'hint'}<span
                   class="v2-num">{e.secret_hint}</span
                 >{:else}{p.text}{/if}{/each}
           </span>
@@ -205,9 +206,8 @@
                   </td>
                   <td data-m="tag">
                     <Pill
-                      tone={DELIVERY_TONE[
-                        /** @type {'succeeded'|'pending'|'failed'} */ (d.status)
-                      ] ?? 'slate'}
+                      tone={DELIVERY_TONE[d.status as 'succeeded' | 'pending' | 'failed'] ??
+                        'slate'}
                     >
                       {d.status === 'succeeded'
                         ? m.settings_webhooks_delivery_delivered()

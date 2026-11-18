@@ -1,12 +1,13 @@
 import 'package:bottle_crm/data/models/deal_pipeline.dart';
-import 'package:bottle_crm/providers/auth_provider.dart';
 import 'package:bottle_crm/screens/settings/deal_pipeline_detail_screen.dart';
-import 'package:bottle_crm/screens/settings/modules_screen.dart';
+import 'package:bottle_crm/screens/settings/modules_section.dart';
 import 'package:bottle_crm/screens/settings/options_editor.dart';
 import 'package:bottle_crm/services/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/modules_fixtures.dart';
 
 void main() {
   setUp(() => applyLanguage('ru'));
@@ -26,11 +27,15 @@ void main() {
   testWidgets('a member reads the modules notice in Russian', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [isOrgAdminProvider.overrideWithValue(false)],
-        child: const MaterialApp(home: ModulesScreen()),
+        overrides: modulesOverrides(
+          FakeOrgModules(() async => modulesAnswer(canEdit: false)),
+        ),
+        child: const MaterialApp(
+          home: Scaffold(body: ModulesSection(showHeading: true)),
+        ),
       ),
     );
-    expect(find.text('Модули'), findsOneWidget);
+    await tester.pumpAndSettle();
     expect(
       find.text(
         'Включать и выключать модули может только администратор организации.',

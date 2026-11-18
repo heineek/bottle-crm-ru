@@ -1,16 +1,27 @@
 from django.utils.translation import gettext as _
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from opportunity.models import DealPipeline
 from opportunity.workflow import OPEN
 
 # The same ceiling `DealStageSerializer` applies: ten years in one stage is
 # already not a threshold anyone means.
 MAX_DAYS = 3650
+
+
+class StageAgingConfigSerializer(serializers.Serializer):
+    """Response-only: one `_row`."""
+
+    id = serializers.CharField()
+    stage = serializers.CharField()
+    label = serializers.CharField()
+    expected_days = serializers.IntegerField(allow_null=True)
+    warning_days = serializers.IntegerField(allow_null=True)
 
 
 def _row(stage):
@@ -37,10 +48,37 @@ class StageAgingConfigView(APIView):
     def _open_stages(self, org):
         return DealPipeline.default_for(org).stages.filter(kind=OPEN)
 
+    @extend_schema(
+        tags=["Opportunities"], responses={200: StageAgingConfigSerializer(many=True)}
+    )
     def get(self, request):
         """Return aging config for the default pipeline's open stages."""
         return Response([_row(s) for s in self._open_stages(request.profile.org)])
 
+    @extend_schema(
+        tags=["Opportunities"],
+        request=inline_serializer(
+            "StageAgingConfigUpdate",
+            {
+                "stage": serializers.CharField(),
+                "expected_days": serializers.IntegerField(required=False),
+                "warning_days": serializers.IntegerField(
+                    required=False, allow_null=True
+                ),
+            },
+            many=True,
+        ),
+        responses={
+            200: inline_serializer(
+                "StageAgingConfigUpdateResponse",
+                {
+                    "error": serializers.BooleanField(),
+                    "message": serializers.CharField(),
+                    "configs": StageAgingConfigSerializer(many=True),
+                },
+            )
+        },
+    )
     def put(self, request):
         """Bulk update stage aging configs (admin only).
 
@@ -48,7 +86,7 @@ class StageAgingConfigView(APIView):
         or carrying an unusable `expected_days`, are skipped, as they always
         were.
         """
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": True, "errors": _("Only admins can update aging config")},
                 status=status.HTTP_403_FORBIDDEN,

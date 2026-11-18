@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Lead pipelines: the stages a lead moves through on the board.
    *
@@ -21,25 +21,26 @@
   import { count } from '#lib/v2/format.js';
   import { LEAD_STATUS_LABEL } from '#lib/v2/enums.js';
   import { ArrowDown, ArrowUp, Columns3, Plus } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
+
+  type Stage = NonNullable<PageData['pipeline']>['stages'][number];
 
   /** `LeadStage.STAGE_TYPE_CHOICES`. */
-  let STAGE_TYPES = $derived([
+  const STAGE_TYPES = [
     ['open', m.settings_leadpipelines_type_open()],
     ['won', m.settings_leadpipelines_type_won()],
     ['lost', m.settings_leadpipelines_type_lost()]
-  ]);
-  let TYPE_LABEL = $derived(Object.fromEntries(STAGE_TYPES));
-
-  const TYPE_TONE = /** @type {Record<string, 'slate'|'moss'|'rust'>} */ ({
+  ] as const;
+  const TYPE_LABEL = Object.fromEntries(STAGE_TYPES);
+  const TYPE_TONE = {
     open: 'slate',
     won: 'moss',
     lost: 'rust'
-  });
+  } as Record<string, 'slate' | 'moss' | 'rust'>;
 
   /**
    * The statuses a stage may map to. "converted" is not offered: the board
@@ -50,14 +51,13 @@
    */
   const STAGE_STATUSES = ['assigned', 'in process', 'recycled', 'closed'];
 
-  const statusLabel = (/** @type {string} */ s) =>
-    /** @type {Record<string, string>} */ (LEAD_STATUS_LABEL)[s] ?? s;
+  const statusLabel = (s: string) => (LEAD_STATUS_LABEL as Record<string, string>)[s] ?? s;
 
   let pipeline = $derived(data.pipeline);
 
   // `null` closed, `'new'` adding a stage, or the stage being edited. One
   // panel, so two stages can never be open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<null | 'new' | Stage>(null);
   let addingPipeline = $state(false);
   let renaming = $state(false);
 
@@ -157,7 +157,7 @@
               method="POST"
               action="?/renamePipeline"
               use:enhance={() =>
-                async (/** @type {any} */ { result, update }) => {
+                async ({ result, update }) => {
                   await update();
                   if (result.type === 'success') renaming = false;
                 }}
@@ -222,6 +222,8 @@
         {/if}
 
         {#if editing}
+          <!-- The snippet below loses the `if` narrowing; a const keeps it. -->
+          {@const current = editing}
           <SettingsFormPanel
             title={editing === 'new'
               ? m.settings_leadpipelines_new_stage()
@@ -235,10 +237,10 @@
             ondone={() => (editing = null)}
           >
             {#snippet fields()}
-              {#if editing === 'new'}
+              {#if current === 'new'}
                 <input type="hidden" name="pipeline_id" value={pipeline.id} />
               {:else}
-                <input type="hidden" name="id" value={editing.id} />
+                <input type="hidden" name="id" value={current.id} />
               {/if}
               <div class="v2-field">
                 <label for="s-name">{m.settings_leadpipelines_name_label()}</label>
@@ -248,7 +250,7 @@
                   name="name"
                   maxlength="100"
                   required
-                  value={editing === 'new' ? '' : editing.name}
+                  value={current === 'new' ? '' : current.name}
                 />
               </div>
               <div class="v2-field">
@@ -257,7 +259,7 @@
                   {#each STAGE_TYPES as [value, label] (value)}
                     <option
                       {value}
-                      selected={editing === 'new' ? value === 'open' : editing.stageType === value}
+                      selected={current === 'new' ? value === 'open' : current.stageType === value}
                       >{label}</option
                     >
                   {/each}
@@ -266,11 +268,11 @@
               <div class="v2-field">
                 <label for="s-status">{m.settings_leadpipelines_status_label()}</label>
                 <select id="s-status" class="v2-input" name="maps_to_status">
-                  <option value="" selected={editing === 'new' || !editing.mapsToStatus}
+                  <option value="" selected={current === 'new' || !current.mapsToStatus}
                     >{m.settings_leadpipelines_status_keep()}</option
                   >
                   {#each stageOptions as s (s)}
-                    <option value={s} selected={editing !== 'new' && editing.mapsToStatus === s}
+                    <option value={s} selected={current !== 'new' && current.mapsToStatus === s}
                       >{statusLabel(s)}</option
                     >
                   {/each}
@@ -288,7 +290,7 @@
                   max="100"
                   step="1"
                   inputmode="numeric"
-                  value={editing === 'new' ? 0 : editing.winProbability}
+                  value={current === 'new' ? 0 : current.winProbability}
                 />
                 <p class="v2-hint">{m.settings_leadpipelines_prob_hint()}</p>
               </div>

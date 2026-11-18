@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * What gates a ticket close, and who can clear it.
@@ -47,9 +47,10 @@
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { Plus, TriangleAlert, ChevronRight } from '@lucide/svelte';
+  import type { PageProps } from './$types';
+  import type { ApprovalRuleRow } from '#lib/server/v2/ticket-approvals.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // cases.approvals: PRIORITY_CHOICE and CASE_TYPE. Not in `#lib/v2/enums.js`
   // because there is no shared label map to derive from: value and label are
@@ -61,20 +62,20 @@
   // vocabulary this form offers (ADMIN/MANAGER). MANAGER is not a real
   // `Profile.role` value (see the module docstring), so it has no entry in
   // that map and would render as `undefined`. Labelled here instead.
-  function approverRoleLabel(role) {
+  function approverRoleLabel(role: string) {
     return role === 'MANAGER' ? m.settings_approvals_role_manager() : (ROLE_LABEL[role] ?? role);
   }
 
   // `null` when the panel is closed, `'new'` when adding, or the rule object
   // when editing that row. One panel, two modes, so two rows can never be
   // open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<'new' | ApprovalRuleRow | null>(null);
 
   function openCreate() {
     editing = 'new';
   }
 
-  function openEdit(r) {
+  function openEdit(r: ApprovalRuleRow) {
     editing = r;
   }
 
@@ -124,21 +125,22 @@
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if editing}
+      {@const current = editing}
       <SettingsFormPanel
-        title={editing === 'new'
+        title={current === 'new'
           ? m.settings_approvals_new_rule()
-          : m.settings_approvals_edit_title({ name: editing.name })}
-        action={editing === 'new' ? '?/create' : '?/update'}
-        error={editing === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={editing === 'new'
+          : m.settings_approvals_edit_title({ name: current.name })}
+        action={current === 'new' ? '?/create' : '?/update'}
+        error={current === 'new' ? form?.create?.error : form?.update?.error}
+        submitLabel={current === 'new'
           ? m.settings_approvals_add_rule()
           : m.settings_approvals_save_rule()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
         {#snippet fields()}
-          {#if editing !== 'new'}
-            <input type="hidden" name="id" value={editing.id} />
+          {#if current !== 'new'}
+            <input type="hidden" name="id" value={current.id} />
           {/if}
 
           <div class="v2-field">
@@ -149,7 +151,7 @@
               name="name"
               maxlength="128"
               required
-              value={editing === 'new' ? '' : editing.name}
+              value={current === 'new' ? '' : current.name}
             />
           </div>
 
@@ -159,7 +161,7 @@
               {#each ['ADMIN', 'MANAGER'] as role (role)}
                 <option
                   value={role}
-                  selected={editing === 'new' ? role === 'ADMIN' : editing.approver_role === role}
+                  selected={current === 'new' ? role === 'ADMIN' : current.approver_role === role}
                 >
                   {approverRoleLabel(role)}
                 </option>
@@ -188,7 +190,7 @@
               {#each data.people as p (p.id)}
                 <option
                   value={p.id}
-                  selected={editing !== 'new' && editing.approvers.some((a) => a.id === p.id)}
+                  selected={current !== 'new' && current.approvers.some((a) => a.id === p.id)}
                 >
                   {p.name}
                 </option>
@@ -207,12 +209,12 @@
           <div class="v2-field">
             <label for="a-priority">{m.settings_approvals_priority_label()}</label>
             <select id="a-priority" class="v2-input" name="match_priority">
-              <option value="" selected={editing === 'new' || !editing.match_priority}
+              <option value="" selected={current === 'new' || !current.match_priority}
                 >{m.settings_approvals_any()}</option
               >
               {#each MATCH_PRIORITIES as p (p)}
-                <option value={p} selected={editing !== 'new' && editing.match_priority === p}>
-                  {priorityLabel(p)}
+                <option value={p} selected={current !== 'new' && current.match_priority === p}>
+                  {p}
                 </option>
               {/each}
             </select>
@@ -221,12 +223,12 @@
           <div class="v2-field">
             <label for="a-type">{m.settings_approvals_type_label()}</label>
             <select id="a-type" class="v2-input" name="match_case_type">
-              <option value="" selected={editing === 'new' || !editing.match_case_type}>
+              <option value="" selected={current === 'new' || !current.match_case_type}>
                 {m.settings_approvals_any()}
               </option>
               {#each MATCH_CASE_TYPES as t (t)}
-                <option value={t} selected={editing !== 'new' && editing.match_case_type === t}>
-                  {caseTypeLabel(t)}
+                <option value={t} selected={current !== 'new' && current.match_case_type === t}>
+                  {t}
                 </option>
               {/each}
             </select>
@@ -235,7 +237,7 @@
           <div class="v2-field">
             <label for="a-team">{m.settings_approvals_team_label()}</label>
             <select id="a-team" class="v2-input" name="match_team_id">
-              <option value="" selected={editing === 'new' || !editing.match_team}
+              <option value="" selected={current === 'new' || !current.match_team}
                 >{m.settings_approvals_any_team()}</option
               >
               {#if missingTeam}
@@ -244,7 +246,7 @@
               {#each data.teams as t (t.id)}
                 <option
                   value={t.id}
-                  selected={editing !== 'new' && editing.match_team?.id === t.id}
+                  selected={current !== 'new' && current.match_team?.id === t.id}
                 >
                   {t.name}
                 </option>
@@ -252,7 +254,7 @@
             </select>
             {#if data.options_failed}
               <p class="v2-hint" role="alert">
-                {editing === 'new'
+                {current === 'new'
                   ? m.settings_approvals_options_failed_new()
                   : m.settings_approvals_options_failed_edit()}
               </p>
@@ -261,7 +263,7 @@
             {/if}
           </div>
 
-          {#if editing === 'new'}
+          {#if current === 'new'}
             <div class="v2-field">
               <label for="a-active">{m.settings_approvals_active_label()}</label>
               <label style="display:flex;gap:8px;align-items:center;font-weight:400">
@@ -280,10 +282,10 @@
     {#if form?.activate?.error}
       <p class="v2-error" style="margin-bottom:12px">{form.activate.error}</p>
     {/if}
-    {#if form?.remove?.error}
+    {#if form?.remove && 'error' in form.remove && form.remove.error}
       <p class="v2-error" style="margin-bottom:12px">{form.remove.error}</p>
     {/if}
-    {#if form?.remove?.turned_off}
+    {#if form?.remove && 'turned_off' in form.remove && form.remove.turned_off}
       <!-- What actually happened, not what the button said. The backend
            soft-disables a rule that has approval history rather than
            destroying it, so the row is still in the list below, off, and

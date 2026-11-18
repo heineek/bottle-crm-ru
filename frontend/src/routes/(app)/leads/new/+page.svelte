@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Adding a lead.
@@ -16,22 +16,17 @@
    */
   import { tick, untrack } from 'svelte';
   import { enhance } from '$app/forms';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import DuplicateNotice from '#lib/v2/components/DuplicateNotice.svelte';
-  import {
-    LEAD_STATUSES,
-    LEAD_STATUS_LABEL,
-    LEAD_SOURCES,
-    LEAD_SOURCE_LABEL,
-    INDUSTRIES,
-    industryLabel
-  } from '#lib/v2/enums.js';
+  import { LEAD_STATUSES, LEAD_STATUS_LABEL, INDUSTRIES, industryLabel } from '#lib/v2/enums.js';
+  import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { money } from '#lib/v2/format.js';
   import { TriangleAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   // Seeded from the load once, on purpose: a half-typed form must not be
   // wiped if the page data revalidates underneath it. untrack() says that
@@ -48,6 +43,8 @@
       website: '',
       status: data.defaults.status,
       source: '',
+      source_detail: '',
+      source_ref: '',
       industry: '',
       opportunity_amount: '',
       description: '',
@@ -58,7 +55,7 @@
     }))
   );
 
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state<Record<string, boolean>>({});
   let submitted = $state(false);
 
   // Disables the submit button while the create action is in flight, so a
@@ -66,8 +63,7 @@
   let busy = $state(false);
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     // Mirrors the edit form's own rule: a lead needs a name to be findable,
     // but not both halves of one. Neither half is required by the API
     // itself (Lead.first_name/last_name are both nullable), so this is a UX
@@ -97,15 +93,13 @@
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (/** @type {string} */ field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   /**
    * On success the action redirects to the new lead, so there is no success
    * state to render here.
-   *
-   * @type {import('./$types').SubmitFunction}
    */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       // Send focus to the first field that needs work rather than only
@@ -114,13 +108,12 @@
       // querying now finds nothing.
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
       return;
     }
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };
@@ -254,10 +247,32 @@
       <label for="f-source">{m.leads_field_source()}</label>
       <select id="f-source" name="source" class="v2-input" bind:value={form.source}>
         <option value="">{m.leads_field_not_specified()}</option>
-        {#each LEAD_SOURCES as s (s)}
-          <option value={s}>{LEAD_SOURCE_LABEL[s]}</option>
+        {#each sourceOptions(data.sources, form.source) as s (s.key)}
+          <option value={s.key}>{s.label}</option>
         {/each}
       </select>
+    </div>
+    <div class="v2-field">
+      <label for="f-source-detail">{m.leads_field_source_detail()}</label>
+      <input
+        id="f-source-detail"
+        name="source_detail"
+        class="v2-input"
+        maxlength="100"
+        placeholder={m.leads_field_source_detail_placeholder()}
+        bind:value={form.source_detail}
+      />
+    </div>
+    <div class="v2-field">
+      <label for="f-source-ref">{m.leads_field_source_ref()}</label>
+      <input
+        id="f-source-ref"
+        name="source_ref"
+        class="v2-input"
+        maxlength="255"
+        bind:value={form.source_ref}
+      />
+      <p class="v2-hint">{m.leads_field_source_ref_hint()}</p>
     </div>
     <div class="v2-field">
       <label for="f-industry">{m.leads_field_industry()}</label>
@@ -300,6 +315,13 @@
         rows="4"
         bind:value={form.description}></textarea>
     </div>
+
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={result?.values?.custom_fields}
+      errors={result?.fieldErrors}
+      heading="Details"
+    />
 
     <DuplicateNotice
       module="leads"

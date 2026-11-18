@@ -5,13 +5,13 @@ from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common import swagger_params
 from common.models import Document, Profile, Teams
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext, is_org_admin
 from common.serializer import (
     DocumentCreateSerializer,
@@ -73,7 +73,19 @@ def may_read_document(profile, document):
     return Document.objects.filter(pk=document.pk).filter(_visible_to(profile)).exists()
 
 
-class DocumentListView(APIView, LimitOffsetPagination):
+def _document_page(status_name):
+    """One status's envelope in the document list (`get_context_data`)."""
+    return inline_serializer(
+        f"DocumentList{status_name.title()}",
+        {
+            f"documents_{status_name}_count": serializers.IntegerField(),
+            f"documents_{status_name}": DocumentSerializer(many=True),
+            "offset": serializers.IntegerField(allow_null=True),
+        },
+    )
+
+
+class DocumentListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
     model = Document
 
@@ -177,10 +189,12 @@ class DocumentListView(APIView, LimitOffsetPagination):
                 name="DocumentListResponse",
                 fields={
                     "search": serializers.BooleanField(),
-                    "documents_active": serializers.DictField(),
-                    "documents_inactive": serializers.DictField(),
+                    "documents_active": _document_page("active"),
+                    "documents_inactive": _document_page("inactive"),
                     "users": ProfileSerializer(many=True),
-                    "status_choices": serializers.ListField(),
+                    "status_choices": serializers.ListField(
+                        child=serializers.ListField(child=serializers.CharField())
+                    ),
                 },
             )
         },
@@ -354,7 +368,7 @@ class DocumentDetailView(APIView):
         tags=["documents"],
         operation_id="documents_update",
         parameters=swagger_params.organization_params,
-        request=DocumentEditSwaggerSerializer,
+        request=DocumentEditSwaggerSerializer(partial=True),
         responses={
             200: inline_serializer(
                 name="DocumentUpdateResponse",

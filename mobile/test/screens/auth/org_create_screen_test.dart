@@ -1,5 +1,9 @@
 import 'package:bottle_crm/data/models/auth_response.dart';
+import 'package:bottle_crm/data/models/org_app.dart';
+import 'package:bottle_crm/data/models/org_settings.dart';
 import 'package:bottle_crm/providers/auth_provider.dart';
+import 'package:bottle_crm/providers/org_apps_provider.dart';
+import 'package:bottle_crm/providers/settings_provider.dart';
 import 'package:bottle_crm/routes/app_router.dart';
 import 'package:bottle_crm/screens/auth/org_create_screen.dart';
 import 'package:bottle_crm/screens/auth/org_selection_screen.dart';
@@ -7,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/apps_fixtures.dart';
 
 /// Mobile could not create an organization at all, while the org picker's empty
 /// state told people to "create a new organization" and gave them nowhere to do
@@ -149,13 +155,161 @@ void main() {
       );
     });
   });
+
+  group('the industry choice', () {
+    testWidgets('offers the packs the server lists, and a way to skip', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_creating(apps: _apps()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('What kind of business is this?'), findsOneWidget);
+      expect(find.text('Skip for now'), findsOneWidget);
+      expect(find.text('Professional services'), findsOneWidget);
+      expect(find.text('Real estate'), findsOneWidget);
+    });
+
+    testWidgets('is left out when the pack list is empty', (tester) async {
+      await tester.pumpWidget(
+        _creating(apps: _apps(), packs: () async => const []),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('What kind of business is this?'), findsNothing);
+    });
+
+    testWidgets('is left out when the pack list fails to load', (tester) async {
+      await tester.pumpWidget(
+        _creating(apps: _apps(), packs: () async => throw Exception('offline')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('What kind of business is this?'), findsNothing);
+      // The form itself still works without it.
+      expect(find.text('Create organization'), findsOneWidget);
+    });
+
+    testWidgets('the chosen app is installed on the new organization', (
+      tester,
+    ) async {
+      final apps = _apps();
+      await tester.pumpWidget(_creating(apps: apps));
+      await tester.pumpAndSettle();
+
+      await _create(tester, pick: 'Real estate');
+
+      expect(apps.signupInstalls, ['real-estate']);
+      expect(find.text('the welcome screen'), findsOneWidget);
+    });
+
+    testWidgets('skipping installs nothing', (tester) async {
+      final apps = _apps();
+      await tester.pumpWidget(_creating(apps: apps));
+      await tester.pumpAndSettle();
+
+      await _create(tester);
+
+      expect(apps.signupInstalls, isEmpty);
+      expect(find.text('the welcome screen'), findsOneWidget);
+    });
+
+    testWidgets('an app that will not install still leaves the organization '
+        'created, and says so', (tester) async {
+      final apps = _apps(error: 'Only admins can install an app.');
+      await tester.pumpWidget(_creating(apps: apps));
+      await tester.pumpAndSettle();
+
+      await _create(tester, pick: 'Professional services');
+
+      expect(apps.signupInstalls, ['professional-services']);
+      expect(find.text('the welcome screen'), findsOneWidget);
+      expect(
+        find.textContaining('the industry setup did not install'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a create the server refuses installs no app', (tester) async {
+      final apps = _apps();
+      await tester.pumpWidget(_creating(apps: apps, createFails: true));
+      await tester.pumpAndSettle();
+
+      await _create(tester, pick: 'Real estate');
+
+      expect(apps.signupInstalls, isEmpty);
+      expect(find.text('That name is taken.'), findsOneWidget);
+      expect(find.text('the welcome screen'), findsNothing);
+    });
+  });
 }
 
 Widget _host(Widget screen, {List<Organization> orgs = const []}) =>
     ProviderScope(
-      overrides: [authProvider.overrideWith(() => _FakeAuth(orgs))],
+      overrides: [
+        authProvider.overrideWith(() => _FakeAuth(orgs)),
+        orgPacksProvider.overrideWith((ref) async => const <VerticalPack>[]),
+      ],
       child: MaterialApp(home: screen),
     );
+
+const _packs = [
+  VerticalPack(
+    id: 'professional-services',
+    name: 'Professional services',
+    description: 'Agencies, consultancies and accounting firms.',
+  ),
+  VerticalPack(id: 'real-estate', name: 'Real estate'),
+];
+
+/// The create screen under a router, so a finished create lands somewhere
+/// assertable. [apps] records which apps were installed.
+Widget _creating({
+  required FakeOrgApps apps,
+  Future<List<VerticalPack>> Function()? packs,
+  bool createFails = false,
+}) {
+  final router = GoRouter(
+    initialLocation: AppRoutes.orgCreate,
+    routes: [
+      GoRoute(
+        path: AppRoutes.orgCreate,
+        builder: (_, _) => const OrgCreateScreen(),
+      ),
+      // A Scaffold like the real welcome screen's, so a snackbar raised on
+      // the way there has somewhere to show.
+      GoRoute(
+        path: AppRoutes.importWelcome,
+        builder: (_, _) => const Scaffold(body: Text('the welcome screen')),
+      ),
+    ],
+  );
+  return ProviderScope(
+    overrides: [
+      authProvider.overrideWith(
+        createFails ? _RefusingAuth.new : _CreatingAuth.new,
+      ),
+      orgPacksProvider.overrideWith(
+        (ref) => packs == null ? Future.value(_packs) : packs(),
+      ),
+      orgAppsProvider.overrideWith(() => apps),
+    ],
+    child: MaterialApp.router(routerConfig: router),
+  );
+}
+
+Future<void> _create(WidgetTester tester, {String? pick}) async {
+  await tester.enterText(find.byType(TextFormField), 'Acme Inc.');
+  if (pick != null) {
+    await tester.ensureVisible(find.text(pick));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(pick));
+    await tester.pump();
+  }
+  await tester.ensureVisible(find.text('Create organization'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Create organization'));
+  await tester.pumpAndSettle();
+}
 
 class _FakeAuth extends AuthNotifier {
   _FakeAuth(this.orgs);
@@ -180,3 +334,15 @@ class _CreatingAuth extends _FakeAuth {
   Future<String?> createOrganization(String name, {String? timezone}) async =>
       null;
 }
+
+class _RefusingAuth extends _FakeAuth {
+  _RefusingAuth() : super(const []);
+
+  @override
+  Future<String?> createOrganization(String name, {String? timezone}) async =>
+      'That name is taken.';
+}
+
+/// [error] makes every install fail with it.
+FakeOrgApps _apps({String? error}) =>
+    FakeOrgApps(() async => const OrgAppsAnswer(), error: error);

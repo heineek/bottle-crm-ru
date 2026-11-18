@@ -16,10 +16,10 @@ export default defineConfig(({ mode }) => {
         autoUploadSourceMaps: !!env.PUBLIC_SENTRY_DSN
       }),
       tailwindcss(),
-      // The locale is decided once per request in hooks.server.js
+      // The locale is decided once per request in hooks.server.ts
       // (#lib/i18n/locale.js) and handed to Paraglide through `custom-crm`;
       // the browser reads the cookie the server writes. `pnpm i18n` passes the
-      // same strategy: src/lib/i18n/strategy.test.js keeps the two in step.
+      // same strategy: src/lib/i18n/strategy.test.ts keeps the two in step.
       paraglideVitePlugin({
         project: './project.inlang',
         outdir: './src/lib/paraglide',
@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
         emitTsDeclarations: false
       }),
       // SvelteKit 3 reads its config here; svelte.config.js is gone.
-      // src/instrumentation.server.js is picked up because it exists.
+      // src/instrumentation.server.ts is picked up because it exists.
       sveltekit({
         adapter: adapter(),
         prebundleSvelteLibraries: false,

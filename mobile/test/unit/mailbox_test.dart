@@ -91,13 +91,42 @@ void main() {
     });
 
     test('is unsupported for a provider the webhook answers 501 for', () {
-      for (final provider in ['mailgun', 'postmark', 'imap']) {
+      expect(
+        build(mailboxJson(provider: 'imap')).delivery,
+        MailboxDelivery.unsupported,
+      );
+    });
+
+    test('Postmark and Mailgun are live only with a stored secret', () {
+      for (final provider in ['postmark', 'mailgun']) {
+        Mailbox with_(Map<String, dynamic> extra) => build(
+          mailboxJson(provider: provider, hasTopicArn: false)..addAll(extra),
+        );
         expect(
-          build(mailboxJson(provider: provider)).delivery,
-          MailboxDelivery.unsupported,
+          with_({'has_webhook_secret': true}).delivery,
+          MailboxDelivery.live,
           reason: provider,
         );
+        expect(
+          with_({'has_webhook_secret': false}).delivery,
+          MailboxDelivery.unconfirmed,
+          reason: provider,
+        );
+        expect(with_({}).delivery, MailboxDelivery.unconfirmed);
       }
+    });
+
+    test('a topic pin does not stand in for a secret, nor the reverse', () {
+      expect(
+        build(mailboxJson(provider: 'postmark')).delivery,
+        MailboxDelivery.unconfirmed,
+      );
+      expect(
+        build(
+          mailboxJson(hasTopicArn: false)..['has_webhook_secret'] = true,
+        ).delivery,
+        MailboxDelivery.unconfirmed,
+      );
     });
 
     test('is unconfirmed for an SES address with no topic pin', () {
@@ -111,11 +140,11 @@ void main() {
 
     test('reports the gate the webhook hits first, not every gate', () {
       expect(
-        build(mailboxJson(isActive: false, provider: 'mailgun')).delivery,
+        build(mailboxJson(isActive: false, provider: 'imap')).delivery,
         MailboxDelivery.off,
       );
       expect(
-        build(mailboxJson(provider: 'mailgun', hasTopicArn: false)).delivery,
+        build(mailboxJson(provider: 'imap', hasTopicArn: false)).delivery,
         MailboxDelivery.unsupported,
       );
     });
@@ -136,10 +165,18 @@ void main() {
       expect(text, contains('no ticket is opened'));
     });
 
-    test('names the provider and says only SES is wired up', () {
-      final text = build(mailboxJson(provider: 'mailgun')).deliveryExplanation!;
-      expect(text, contains('Mailgun'));
-      expect(text, contains('Only AWS SES'));
+    test('names the provider and no longer says only SES is wired up', () {
+      final text = build(mailboxJson(provider: 'imap')).deliveryExplanation!;
+      expect(text, contains('IMAP'));
+      expect(text, isNot(contains('Only AWS SES')));
+    });
+
+    test('asks for the webhook secret, not a topic, on Postmark', () {
+      final text = build(
+        mailboxJson(provider: 'postmark'),
+      ).deliveryExplanation!;
+      expect(text, contains('webhook secret'));
+      expect(text, isNot(contains('Topic ARN')));
     });
 
     test(
@@ -177,7 +214,7 @@ void main() {
     test('counts what opens tickets, not what is switched on', () {
       final rows = [
         build(mailboxJson(id: 'a')),
-        build(mailboxJson(id: 'b', provider: 'mailgun')),
+        build(mailboxJson(id: 'b', provider: 'imap')),
         build(mailboxJson(id: 'c', hasTopicArn: false)),
       ];
       expect(deliveringMailboxCount(rows), 1);
@@ -218,13 +255,15 @@ void main() {
   });
 
   group('mailboxProviderLabel', () {
-    test('leaves the one implemented provider alone', () {
+    test('leaves the implemented providers alone', () {
       expect(mailboxProviderLabel('ses'), 'AWS SES');
+      expect(mailboxProviderLabel('mailgun'), 'Mailgun');
+      expect(mailboxProviderLabel('postmark'), 'Postmark');
     });
 
-    test('marks the three that are not', () {
-      expect(mailboxProviderLabel('mailgun'), 'Mailgun (not wired up yet)');
-      expect(supportedMailboxProviders, ['ses']);
+    test('marks the one that is not', () {
+      expect(mailboxProviderLabel('imap'), 'IMAP (not wired up yet)');
+      expect(supportedMailboxProviders, ['ses', 'mailgun', 'postmark']);
     });
 
     test('keeps every model choice offerable, marked rather than hidden', () {
@@ -235,6 +274,51 @@ void main() {
         'postmark',
         'imap',
       ]);
+    });
+  });
+
+  group('mailboxSetupUrl', () {
+    test('gives Postmark a basic-auth URL with a placeholder', () {
+      expect(
+        mailboxSetupUrl('postmark', 'm1', 'https://api.acme.io'),
+        'https://postmark:<secret>@api.acme.io/api/cases/inbound/m1/',
+      );
+    });
+
+    test('wraps the Mailgun URL in forward()', () {
+      expect(
+        mailboxSetupUrl('mailgun', 'm1', 'https://api.acme.io/'),
+        'forward("https://api.acme.io/api/cases/inbound/m1/")',
+      );
+    });
+
+    test('has none for SES, IMAP or an unknown host', () {
+      expect(mailboxSetupUrl('ses', 'm1', 'https://api.acme.io'), isNull);
+      expect(mailboxSetupUrl('imap', 'm1', 'https://api.acme.io'), isNull);
+      expect(mailboxSetupUrl('postmark', 'm1', ''), isNull);
+    });
+  });
+
+  group('webhook secret', () {
+    test('has_webhook_secret is read, and a secret is never held', () {
+      final json = mailboxJson(provider: 'postmark')
+        ..['has_webhook_secret'] = true
+        ..['webhook_secret'] = 'leaked';
+      final mailbox = Mailbox.fromJson(json);
+      expect(mailbox.hasWebhookSecret, isTrue);
+      expect(mailbox.opensAs, isNot(contains('leaked')));
+    });
+
+    test('is sent only when typed', () {
+      Map<String, dynamic> body(String? secret) => mailboxPayload(
+        address: 'a@b.io',
+        provider: 'postmark',
+        defaultPriority: 'Normal',
+        webhookSecret: secret,
+      );
+      expect(body(null).containsKey('webhook_secret'), isFalse);
+      expect(body('   ').containsKey('webhook_secret'), isFalse);
+      expect(body(' s3cret ')['webhook_secret'], 's3cret');
     });
   });
 
@@ -346,7 +430,7 @@ void main() {
   });
 
   group('the copy that says what is true', () {
-    test('the auth note names both checks and no shared secret', () {
+    test('the auth note names both SES checks and the stored secret', () {
       expect(mailboxAuthExplanation, contains('signs each notification'));
       expect(mailboxAuthExplanation, contains('pinned'));
       expect(mailboxAuthExplanation, contains('Topic ARN'));
@@ -354,7 +438,7 @@ void main() {
         mailboxAuthExplanation,
         contains('AWS account this server allows'),
       );
-      expect(mailboxAuthExplanation.toLowerCase(), isNot(contains('secret')));
+      expect(mailboxAuthExplanation, contains('webhook secret'));
     });
 
     test('deleting says the pin goes with it', () {
@@ -364,6 +448,100 @@ void main() {
     test('turning off says mail keeps arriving', () {
       expect(mailboxDeactivateExplanation, contains('Mail keeps arriving'));
       expect(mailboxDeactivateExplanation, contains('nothing bounces'));
+    });
+  });
+
+  group('dropped mail', () {
+    Mailbox dropped(int total, Object? reasons, {bool limit = false}) =>
+        Mailbox.fromJson(
+          mailboxJson()
+            ..['dropped_last_30d'] = total
+            ..['drops_last_30d'] = reasons
+            ..['limit_reached'] = limit,
+        );
+
+    test('an older API reads as nothing dropped and no limit reached', () {
+      final mailbox = build();
+      expect(mailbox.droppedLast30d, 0);
+      expect(mailbox.dropsLast30d, isEmpty);
+      expect(mailbox.limitReached, isFalse);
+      expect(mailbox.dropSummary, isNull);
+      expect(mailbox.limitNotice(300), isNull);
+    });
+
+    test('names each reason in a fixed order, whatever order it arrived', () {
+      expect(
+        dropped(12, {'automatic': 1, 'spoofed': 2, 'spam': 9}).dropSummary,
+        '12 dropped in 30 days: 9 spam, 2 failed the sender check, '
+        '1 automatic reply',
+      );
+      expect(
+        dropped(4, {'other': 1, 'virus': 2, 'spam': 1}).dropSummary,
+        '4 dropped in 30 days: 1 spam, 2 with a virus, 1 other',
+      );
+    });
+
+    test('says reply for one and replies for more', () {
+      expect(
+        dropped(1, {'automatic': 1}).dropSummary,
+        '1 dropped in 30 days: 1 automatic reply',
+      );
+      expect(
+        dropped(3, {'automatic': 3}).dropSummary,
+        '3 dropped in 30 days: 3 automatic replies',
+      );
+    });
+
+    test('leaves out a reason it does not know, and zero counts', () {
+      expect(
+        dropped(5, {'spam': 2, 'quarantined': 3, 'virus': 0}).dropSummary,
+        '5 dropped in 30 days: 2 spam',
+      );
+    });
+
+    test('states the total alone when there is no usable breakdown', () {
+      expect(dropped(7, null).dropSummary, '7 dropped in 30 days');
+      expect(dropped(7, 'spam').dropSummary, '7 dropped in 30 days');
+      expect(dropped(0, {'spam': 2}).dropSummary, isNull);
+    });
+
+    test('groups thousands as the web does', () {
+      expect(
+        dropped(1200, {'spam': 1200}).dropSummary,
+        '1,200 dropped in 30 days: 1,200 spam',
+      );
+    });
+
+    test('warns only when the limit was reached, naming it when known', () {
+      expect(dropped(0, null).limitNotice(300), isNull);
+      final full = dropped(0, null, limit: true);
+      expect(
+        full.limitNotice(300),
+        'Took its limit of 300 emails today. More mail is refused until the '
+        'count falls.',
+      );
+      expect(
+        full.limitNotice(1),
+        'Took its limit of 1 email today. More mail is refused until the '
+        'count falls.',
+      );
+      expect(
+        full.limitNotice(null),
+        'Took its daily limit today. More mail is refused until the count '
+        'falls.',
+      );
+    });
+
+    test('the policy says what is dropped and the limits, or nothing', () {
+      expect(
+        mailboxDropPolicy(300),
+        "Spam, viruses and mail that fails its sender's domain check are "
+        'dropped. Each address takes up to 300 emails a day, and a ticket '
+        'address up to 20 an hour from one sender.',
+      );
+      expect(mailboxDropPolicy(1000), contains('up to 1,000 emails a day'));
+      expect(mailboxDropPolicy(null), isNull);
+      expect(mailboxDropPolicy(0), isNull);
     });
   });
 }

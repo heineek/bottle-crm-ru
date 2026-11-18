@@ -13,6 +13,7 @@
 library;
 
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 
 /// The two states the backend accepts (`Document.DOCUMENT_STATUS_CHOICE`).
 ///
@@ -118,12 +119,13 @@ class DocumentShare {
   final String id;
   final String name;
 
+  /// Reads a `Profile`, as `shared_to` lists them.
   factory DocumentShare.fromJson(Map<String, dynamic> json) {
-    final details = json['user_details'] as Map<String, dynamic>?;
-    final name = details?['name']?.toString() ?? '';
-    final email = details?['email']?.toString() ?? '';
+    final w = api.Profile.fromJson(json);
+    final name = w.userDetails?.name ?? '';
+    final email = w.userDetails?.email ?? '';
     return DocumentShare(
-      id: json['id']?.toString() ?? '',
+      id: w.id ?? '',
       name: name.trim().isNotEmpty
           ? name.trim()
           : (email.isNotEmpty ? email : appL10n.appUnnamedPerson),
@@ -145,12 +147,15 @@ class DocumentTeamShare {
   /// How many people the share actually reaches. A bare team name does not say.
   final int memberCount;
 
-  factory DocumentTeamShare.fromJson(Map<String, dynamic> json) =>
-      DocumentTeamShare(
-        id: json['id']?.toString() ?? '',
-        name: json['name']?.toString() ?? '',
-        memberCount: (json['member_count'] as num?)?.toInt() ?? 0,
-      );
+  /// Reads a `DocumentTeam`.
+  factory DocumentTeamShare.fromJson(Map<String, dynamic> json) {
+    final w = api.DocumentTeam.fromJson(json);
+    return DocumentTeamShare(
+      id: w.id ?? '',
+      name: w.name ?? '',
+      memberCount: w.memberCount ?? 0,
+    );
+  }
 }
 
 /// One document, from a `DocumentSerializer` row.
@@ -199,25 +204,26 @@ class CrmDocument {
   DocumentKind get kind => documentKind(documentFile);
   String get fileName => documentFileName(documentFile);
 
+  /// Reads a `Document`.
   factory CrmDocument.fromJson(Map<String, dynamic> json) {
-    final createdBy = json['created_by'] as Map<String, dynamic>?;
-    final name = createdBy?['name']?.toString() ?? '';
-    final email = createdBy?['email']?.toString();
+    final w = api.Document.fromJson(json);
+    final name = w.createdBy?.name ?? '';
+    final email = w.createdBy?.email;
     return CrmDocument(
-      id: json['id']?.toString() ?? '',
-      title: json['title']?.toString() ?? '',
-      documentFile: json['document_file']?.toString() ?? '',
-      status: json['status']?.toString() ?? 'active',
-      sharedTo: (json['shared_to'] as List? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(DocumentShare.fromJson)
-          .toList(),
-      teams: (json['teams'] as List? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(DocumentTeamShare.fromJson)
-          .toList(),
-      sizeBytes: (json['size_bytes'] as num?)?.toInt(),
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      id: w.id ?? '',
+      title: w.title ?? '',
+      documentFile: w.documentFile ?? '',
+      status: w.status ?? 'active',
+      sharedTo: [
+        for (final p in w.sharedTo ?? const <api.Profile>[])
+          DocumentShare.fromJson(p.json),
+      ],
+      teams: [
+        for (final t in w.teams ?? const <api.DocumentTeam>[])
+          DocumentTeamShare.fromJson(t.json),
+      ],
+      sizeBytes: w.sizeBytes,
+      createdAt: DateTime.tryParse(w.createdAt ?? ''),
       uploaderName: name.trim().isNotEmpty
           ? name.trim()
           : (email != null && email.isNotEmpty

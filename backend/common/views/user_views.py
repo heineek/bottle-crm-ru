@@ -6,7 +6,6 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +16,8 @@ from common import swagger_params
 from common.models import Comment, PersonalAccessToken, Profile, Teams, User
 from common.module_deletes import delete_refusal
 from common.modules import MODEL_MODULES, available_modules, only_available
-from common.permissions import HasOrgContext, is_org_admin
+from common.pagination import CappedLimitOffsetPagination
+from common.permissions import HasOrgContext, is_org_admin, may_configure
 from common.serializer import (
     BillingAddressSerializer,
     CommentSerializer,
@@ -95,7 +95,17 @@ class GetTeamsAndUsersView(APIView):
         return Response(data)
 
 
-class UsersListView(APIView, LimitOffsetPagination):
+class UserListRowSerializer(ProfileSerializer):
+    """Response-only: a `UsersListView` row, which also counts the profile's
+    live tokens."""
+
+    active_token_count = serializers.IntegerField(read_only=True)
+
+    class Meta(ProfileSerializer.Meta):
+        fields = (*ProfileSerializer.Meta.fields, "active_token_count")
+
+
+class UsersListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     @extend_schema(
@@ -113,7 +123,7 @@ class UsersListView(APIView, LimitOffsetPagination):
         },
     )
     def post(self, request, format=None):
-        if not is_org_admin(self.request.profile):
+        if not may_configure(self.request.profile):
             return Response(
                 {"error": True, "errors": _("Permission Denied")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -188,11 +198,30 @@ class UsersListView(APIView, LimitOffsetPagination):
             200: inline_serializer(
                 name="UsersListResponse",
                 fields={
-                    "active_users": serializers.DictField(),
-                    "inactive_users": serializers.DictField(),
+                    "active_users": inline_serializer(
+                        name="UsersActiveBlock",
+                        fields={
+                            "active_users_count": serializers.IntegerField(),
+                            "active_users": UserListRowSerializer(many=True),
+                            "offset": serializers.IntegerField(allow_null=True),
+                        },
+                    ),
+                    "inactive_users": inline_serializer(
+                        name="UsersInactiveBlock",
+                        fields={
+                            "inactive_users_count": serializers.IntegerField(),
+                            "inactive_users": UserListRowSerializer(many=True),
+                            "offset": serializers.IntegerField(allow_null=True),
+                        },
+                    ),
                     "admin_email": serializers.CharField(),
-                    "roles": serializers.ListField(),
-                    "status": serializers.ListField(),
+                    # [value, label] pairs.
+                    "roles": serializers.ListField(
+                        child=serializers.ListField(child=serializers.CharField())
+                    ),
+                    "status": serializers.ListField(
+                        child=serializers.ListField(child=serializers.CharField())
+                    ),
                 },
             )
         },
@@ -306,7 +335,7 @@ class UserDetailView(APIView):
         Editing your own profile for contact details stays allowed; only the
         privileged fields are withheld, by making them read_only downstream.
         """
-        actor_is_admin = is_org_admin(request.profile)
+        actor_is_admin = may_configure(request.profile)
         editing_self = request.profile.id == target_profile.id
         return actor_is_admin and not editing_self
 
@@ -318,7 +347,29 @@ class UserDetailView(APIView):
                 name="UserDetailResponse",
                 fields={
                     "error": serializers.BooleanField(),
-                    "data": serializers.DictField(),
+                    "data": inline_serializer(
+                        name="UserDetailData",
+                        fields={
+                            "profile_obj": ProfileSerializer(),
+                            "opportunity_list": OpportunitySerializer(many=True),
+                            "contacts": ContactSerializer(many=True),
+                            "cases": CaseSerializer(many=True),
+                            "assigned_data": inline_serializer(
+                                name="UserDetailAssignee",
+                                fields={
+                                    "id": serializers.UUIDField(),
+                                    "user__email": serializers.EmailField(),
+                                },
+                                many=True,
+                            ),
+                            "comments": CommentSerializer(many=True),
+                            "countries": serializers.ListField(
+                                child=serializers.ListField(
+                                    child=serializers.CharField()
+                                )
+                            ),
+                        },
+                    ),
                 },
             )
         },
@@ -387,7 +438,7 @@ class UserDetailView(APIView):
         profile = self.get_object(pk)
         address_obj = profile.address
         if (
-            not is_org_admin(self.request.profile)
+            not may_configure(self.request.profile)
             and self.request.profile.id != profile.id
         ):
             return Response(
@@ -467,7 +518,7 @@ class UserDetailView(APIView):
         params = request.data
         profile = self.get_object(pk)
         if (
-            not is_org_admin(self.request.profile)
+            not may_configure(self.request.profile)
             and self.request.profile.id != profile.id
         ):
             return Response(
@@ -529,7 +580,7 @@ class UserDetailView(APIView):
         },
     )
     def delete(self, request, pk, format=None):
-        if not is_org_admin(self.request.profile):
+        if not may_configure(self.request.profile):
             return Response(
                 {"error": True, "errors": _("Permission Denied")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -588,7 +639,7 @@ class UserStatusView(APIView):
         },
     )
     def post(self, request, pk, format=None):
-        if not is_org_admin(self.request.profile):
+        if not may_configure(self.request.profile):
             return Response(
                 {
                     "error": True,

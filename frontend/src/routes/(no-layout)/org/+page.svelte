@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import '../../../app.css';
   import '#lib/v2/styles/v2.css';
@@ -6,15 +6,15 @@
   import { Building2, LogOut, Plus, ChevronRight } from '@lucide/svelte';
   import { enhance } from '$app/forms';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  let { data = { orgs: [] } } = $props();
+  let { data = { orgs: [] } }: PageProps = $props();
   let orgs = $derived(data?.orgs ?? []);
 
   let loading = $state(false);
-  let selectedOrgId = $state(null);
+  let selectedOrgId = $state<string | null>(null);
 
-  /** @param {string | undefined} role */
-  function roleLabel(role) {
+  function roleLabel(role: string | undefined) {
     if (role === 'ADMIN') return m.public_org_role_admin();
     if (role === 'USER') return m.public_org_role_user();
     return role?.toLowerCase() || m.public_org_role_member();

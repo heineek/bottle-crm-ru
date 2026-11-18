@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { CASE_PRIORITY_LABEL, CASE_TYPE_LABEL } from '#lib/v2/enums.js';
@@ -29,9 +29,9 @@
   import { count, shortDate } from '#lib/v2/format.js';
   import { Clock } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let canView = $derived(data.can_view);
   let totals = $derived(data.totals);
@@ -44,7 +44,7 @@
    * duration, and neither is "1d 0h". A zero remainder is dropped rather than
    * printed, at every scale.
    */
-  function duration(mins) {
+  function duration(mins: number | null | undefined) {
     if (mins == null) return '—';
     if (mins < 60) return m.tickets_duration_m({ n: mins });
     const h = Math.floor(mins / 60);
@@ -58,11 +58,11 @@
   // Attainment among *decided* cases (met vs missed). A priority with no
   // decided cases yet (all in-flight, or none at all) has no percentage to
   // report, so it returns null and the row shows "—" rather than "NaN%".
-  const attainment = (r) => {
+  const attainment = (r: { met: number; missed: number }) => {
     const decided = r.met + r.missed;
     return decided ? Math.round((r.met / decided) * 100) : null;
   };
-  const barColor = (pct) =>
+  const barColor = (pct: number | null) =>
     pct == null
       ? 'var(--v2-line)'
       : pct >= 95
@@ -75,11 +75,13 @@
   let net = $derived(totals.opened - totals.closed);
 
   /** The next-response endpoint reports hours; `duration` reads whole minutes. */
-  const minutesOf = (hours) => (hours == null ? null : Math.round(hours * 60));
+  const minutesOf = (hours: number | null | undefined) =>
+    hours == null ? null : Math.round(hours * 60);
 
   // Best first, so the bars read down from the answer most tickets hope for.
-  const RATINGS = [5, 4, 3, 2, 1];
-  const ratingShare = (n) => (data.csat.count ? Math.round((n / data.csat.count) * 100) : 0);
+  const RATINGS: (5 | 4 | 3 | 2 | 1)[] = [5, 4, 3, 2, 1];
+  const ratingShare = (n: number) =>
+    data.csat.count ? Math.round((n / data.csat.count) * 100) : 0;
 </script>
 
 <PageHeader title={m.tickets_analytics_title()}>
@@ -240,7 +242,7 @@
             <p class="v2-sub" style="font-size:11.5px;margin:16px 0 0">
               <a href={resolve('solutions')} style="color:inherit">
                 {m.tickets_analytics_questions_link({
-                  count: data.byType.find((t) => t.case_type === 'Question').count
+                  count: data.byType.find((t) => t.case_type === 'Question')?.count ?? 0
                 })}
               </a>. {m.tickets_analytics_questions_tail()}
             </p>
@@ -393,7 +395,7 @@
         <Clock size={15} style="color:var(--v2-slate);flex:none;margin-top:2px" />
         <p class="v2-sub" style="font-size:12px;margin:0">
           {#if totals.business_hours_applied}
-            {m.tickets_analytics_clock_business({ calendar: totals.calendar_name })}
+            {m.tickets_analytics_clock_business({ calendar: totals.calendar_name ?? '' })}
             <a href={resolve('settings/business-hours')} style="color:inherit"
               >{m.tickets_analytics_clock_change()}</a
             >.

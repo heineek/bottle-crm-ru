@@ -1,0 +1,145 @@
+import { fail, redirect, type ActionFailure } from '@sveltejs/kit';
+import { listAccounts } from '#lib/server/v2/accounts.js';
+import { listContacts } from '#lib/server/v2/contacts.js';
+import { listDeals } from '#lib/server/v2/deals.js';
+import { listProducts } from '#lib/server/v2/products.js';
+import { createEstimate, estimateFromDeal } from '#lib/server/v2/estimates.js';
+import {
+  fieldsForNew,
+  readCustomFields,
+  saveRefusal
+} from '#lib/server/v2/record-custom-fields.js';
+import { getNumbering } from '#lib/server/v2/organization.js';
+import { getModules } from '#lib/server/v2/modules.js';
+import { isOn } from '#lib/v2/modules.js';
+import { apiStatus } from '#lib/api-errors.js';
+import { isOrgAdmin } from '#lib/admin.js';
+import type { Actions, PageServerLoad } from './$types';
+import type { FormBody } from '#lib/api-helpers.js';
+import type { components } from '#lib/api-schema.js';
+import { m } from '#lib/paraglide/messages.js';
+
+type Schemas = components['schemas'];
+
+type ContactRow = {
+  id: string;
+  name: string;
+  email: string;
+  account: { id: string; name: string } | null;
+};
+
+/**
+ * The estimate builder's pickers, the same list layers the invoice builder
+ * reads, plus the deals for the optional deal link. Every list is what the API
+ * lets this caller see, and the API checks each id again on save.
+ *
+ * `?opportunity=<id>` (the "Create estimate" action on a deal) prefills the
+ * form from that deal; a deal the caller cannot open prefills nothing. The
+ * org's numbering format feeds the "Assigned on save" preview.
+ */
+export const load: PageServerLoad = async ({ cookies, locals, url }) => {
+  // Asked directly: `parent()` would rerun the whole shell load.
+  const modulesP = getModules({ cookies, locals });
+  const dealsOnP = modulesP.then((m) => isOn(m?.modules ?? null, 'deals'));
+  const requested = url.searchParams.get('opportunity');
+  const [accounts, contacts, products, deals, prefill, numbering, customFields] = await Promise.all(
+    [
+      listAccounts({ cookies }, new URLSearchParams({ limit: '1000' })),
+      listContacts({ cookies }, new URLSearchParams({ limit: '1000' })),
+      listProducts({ cookies }),
+      // A failed deal list costs the optional deal picker, not the form.
+      dealsOnP.then((on) =>
+        on
+          ? listDeals({ cookies }, new URLSearchParams({ limit: '1000' })).catch(() => ({
+              results: []
+            }))
+          : { results: [] }
+      ),
+      requested
+        ? dealsOnP.then((on) => (on ? estimateFromDeal({ cookies }, requested) : null))
+        : null,
+      getNumbering({ cookies }),
+      fieldsForNew(cookies, 'Estimate')
+    ]
+  );
+
+  return {
+    modules: (await modulesP)?.modules ?? null,
+    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || m.invoices_unnamed_account() })),
+    contacts: contacts.results.map((c: ContactRow) => ({
+      id: c.id,
+      name: c.name || c.email || m.invoices_unnamed_contact(),
+      account_id: c.account?.id ?? null,
+      account_name: c.account?.name ?? ''
+    })),
+    products: products.results
+      .filter((p) => p.is_active)
+      .map((p) => ({ id: p.id, name: p.name, sku: p.sku, price: p.price })),
+    deals: deals.results.map((d: { id: string; name: string; account: { id: string | null } }) => ({
+      id: d.id,
+      name: d.name,
+      account_id: d.account.id
+    })),
+    prefill,
+    numbering,
+    customFields
+  };
+};
+
+export const actions: Actions = {
+  /**
+   * Create the draft from the builder's one JSON `payload` field. The server
+   * owns org, creator, number, token, totals and status, and decides whether
+   * this caller may bill the account and cite the deal. A project on
+   * acceptance is an admin's choice: the builder hides it from anyone else,
+   * and it is never sent for them.
+   *
+   * Annotated so the refusal with `fieldErrors` is not folded into the bare one.
+   */
+  create: async ({
+    cookies,
+    locals,
+    request
+  }): Promise<ActionFailure<{ error: string; fieldErrors?: Record<string, string> }>> => {
+    const form = await request.formData();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(form.get('payload')?.toString() || '{}');
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return fail(400, { error: m.invoices_estimate_form_unreadable() });
+    }
+    const body = parsed as FormBody<Schemas['EstimateBodyRequest']>;
+
+    // Custom fields come from their own inputs, never from the builder's payload.
+    delete body.custom_fields;
+    if (!isOrgAdmin(locals.profile)) {
+      delete body.start_project;
+      delete body.project_billing_type;
+    }
+    const custom = await readCustomFields(cookies, 'Estimate', form);
+    if (custom.refusal) return fail(503, custom.refusal);
+    if (custom.values) body.custom_fields = custom.values;
+
+    if (!body.account_id) return fail(400, { error: m.invoices_recurring_choose_account() });
+    if (!body.contact_id) return fail(400, { error: m.invoices_recurring_choose_contact() });
+    if (!body.title) return fail(400, { error: m.invoices_estimate_title_required() });
+    if (!Array.isArray(body.line_items) || body.line_items.length === 0) {
+      return fail(400, { error: m.invoices_lines_required() });
+    }
+
+    try {
+      await createEstimate({ cookies }, body);
+    } catch (err) {
+      return fail(apiStatus(err) === 403 ? 403 : 400, {
+        ...saveRefusal(err, custom.definitions, m.invoices_estimate_create_failed())
+      });
+    }
+
+    // There is no estimate detail page on the web; the worklist is where a
+    // new draft is sent from.
+    redirect(303, '/invoices/estimates');
+  }
+};

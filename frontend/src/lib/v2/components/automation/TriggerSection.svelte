@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { untrack } from 'svelte';
   import {
@@ -8,23 +8,34 @@
     triggerFields,
     withStored,
     switchObject,
-    changeHint
+    changeHint,
+    type Catalogue,
+    type RuleDraft,
+    type RuleValue
   } from '#lib/v2/automation.js';
   import RuleValueInput from './RuleValueInput.svelte';
 
   /**
    * WHEN: the object (chosen on a new rule, fixed after), created or updated,
    * and on an update the field and, if asked, the value it moves into.
-   *
-   * @type {{ catalogue: any, draft: any, fixed?: boolean, error?: string | null }}
    */
-  let { catalogue, draft = $bindable(), fixed = false, error = null } = $props();
+  let {
+    catalogue,
+    draft = $bindable(),
+    fixed = false,
+    error = null
+  }: {
+    catalogue: Catalogue;
+    draft: RuleDraft;
+    fixed?: boolean;
+    error?: string | null;
+  } = $props();
 
   let object = $derived(objectOf(catalogue, draft.object_key));
   let field = $derived(draft.trigger.field ? fieldOf(object, draft.trigger.field) : null);
   let objects = $derived([
-    ...(catalogue?.objects ?? []).filter((/** @type {any} */ o) => !o.key.startsWith('obj:')),
-    ...(catalogue?.objects ?? []).filter((/** @type {any} */ o) => o.key.startsWith('obj:'))
+    ...(catalogue?.objects ?? []).filter((o) => !o.key.startsWith('obj:')),
+    ...(catalogue?.objects ?? []).filter((o) => o.key.startsWith('obj:'))
   ]);
   let fields = $derived(
     withStored(
@@ -42,32 +53,28 @@
   // The box can be ticked before a value is chosen; the draft holds `to` only once there is one.
   let limited = $state(untrack(() => draft.trigger.to !== undefined && draft.trigger.to !== null));
 
-  /** @param {string} key */
-  function chooseObject(key) {
+  function chooseObject(key: string) {
     limited = false;
     draft = switchObject(draft, catalogue, key);
   }
 
-  /** @param {string} event */
-  function chooseEvent(event) {
+  function chooseEvent(event: string) {
     limited = false;
     draft.trigger = { event };
   }
 
-  /** @param {string} key */
-  function chooseField(key) {
+  function chooseField(key: string) {
     limited = false;
     draft.trigger = key ? { event: 'updated', field: key } : { event: 'updated' };
   }
 
-  /** @param {boolean} on */
-  function limit(on) {
+  function limit(on: boolean) {
     limited = on;
     if (!on) delete draft.trigger.to;
   }
 
-  /** An empty "changes to" is no "changes to". @param {any} value */
-  function setTo(value) {
+  /** An empty "changes to" is no "changes to". */
+  function setTo(value: RuleValue | undefined) {
     const empty = value === null || value === undefined || value === '' || Number.isNaN(value);
     if (empty) delete draft.trigger.to;
     else draft.trigger.to = value;

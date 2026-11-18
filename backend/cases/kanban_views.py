@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -30,9 +30,25 @@ from cases.serializer import (
 )
 from cases.workflow import duplicate_refusal, merged_status_refusal
 from common.kanban import lock_pipeline, make_only_default, place_in_column
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.utils import STATUS_CHOICE
 from common.validators import date_param, uuid_param
+
+
+class CaseKanbanColumnSerializer(serializers.Serializer):
+    """Schema only: a board column. A status column has its status as `id`
+    and no `maps_to_status`; a stage column has the stage's id."""
+
+    id = serializers.CharField()
+    name = serializers.CharField()
+    order = serializers.IntegerField()
+    color = serializers.CharField()
+    stage_type = serializers.CharField()
+    is_status_column = serializers.BooleanField()
+    wip_limit = serializers.IntegerField(allow_null=True)
+    maps_to_status = serializers.CharField(allow_null=True, required=False)
+    case_count = serializers.IntegerField()
+    cases = CaseKanbanCardSerializer(many=True)
 
 
 class CaseKanbanView(APIView):
@@ -88,6 +104,17 @@ class CaseKanbanView(APIView):
                 type=str,
             ),
         ],
+        responses={
+            200: inline_serializer(
+                name="CaseKanbanResponse",
+                fields={
+                    "mode": serializers.CharField(),
+                    "pipeline": CasePipelineListSerializer(allow_null=True),
+                    "columns": CaseKanbanColumnSerializer(many=True),
+                    "total_cases": serializers.IntegerField(),
+                },
+            )
+        },
     )
     def get(self, request):
         """Get kanban board data."""
@@ -249,6 +276,16 @@ class CaseMoveView(APIView):
         tags=["Cases Kanban"],
         operation_id="case_move",
         request=CaseMoveSerializer,
+        responses={
+            200: inline_serializer(
+                name="CaseMoveResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "message": serializers.CharField(),
+                    "case": CaseKanbanCardSerializer(),
+                },
+            )
+        },
     )
     @transaction.atomic
     def patch(self, request, pk):
@@ -409,7 +446,13 @@ class CasePipelineListCreateView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     @extend_schema(
-        tags=["Case Pipelines"], responses={200: CasePipelineListSerializer(many=True)}
+        tags=["Case Pipelines"],
+        responses={
+            200: inline_serializer(
+                name="CasePipelineListResponse",
+                fields={"pipelines": CasePipelineListSerializer(many=True)},
+            )
+        },
     )
     def get(self, request):
         """List all pipelines for the organization."""
@@ -430,7 +473,7 @@ class CasePipelineListCreateView(APIView):
         """Create a new pipeline."""
         org = request.profile.org
 
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Only admins can create pipelines")},
                 status=status.HTTP_403_FORBIDDEN,
@@ -518,12 +561,12 @@ class CasePipelineDetailView(APIView):
 
     @extend_schema(
         tags=["Case Pipelines"],
-        request=CasePipelineSerializer,
+        request=CasePipelineSerializer(partial=True),
         responses={200: CasePipelineSerializer},
     )
     @transaction.atomic
     def put(self, request, pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -551,7 +594,7 @@ class CasePipelineDetailView(APIView):
     @extend_schema(tags=["Case Pipelines"], responses={204: None})
     @transaction.atomic
     def delete(self, request, pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -590,7 +633,7 @@ class CaseStageCreateView(APIView):
         responses={201: CaseStageSerializer},
     )
     def post(self, request, pipeline_pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -621,11 +664,11 @@ class CaseStageDetailView(APIView):
 
     @extend_schema(
         tags=["Case Stages"],
-        request=CaseStageSerializer,
+        request=CaseStageSerializer(partial=True),
         responses={200: CaseStageSerializer},
     )
     def put(self, request, pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -646,7 +689,7 @@ class CaseStageDetailView(APIView):
 
     @extend_schema(tags=["Case Stages"], responses={204: None})
     def delete(self, request, pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )
@@ -685,10 +728,16 @@ class CaseStageReorderView(APIView):
     @extend_schema(
         tags=["Case Stages"],
         request=CaseStageReorderSerializer,
+        responses={
+            200: inline_serializer(
+                name="CaseStageReorderResponse",
+                fields={"message": serializers.CharField()},
+            )
+        },
     )
     @transaction.atomic
     def post(self, request, pipeline_pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": _("Permission denied")}, status=status.HTTP_403_FORBIDDEN
             )

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * The satisfaction survey: the shortest page in the product, and the only
    * one whose success is measured in whether people bother.
@@ -26,9 +26,9 @@
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
   import { longDate, relativeDays } from '#lib/v2/format.js';
   import { Star, CheckCircle2, Clock } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let survey = $derived(data.survey);
 
@@ -42,7 +42,10 @@
   let hover = $state(0);
   let submitting = $state(false);
 
-  const SCALE_ENDS = { 1: m.public_csat_scale_low(), 5: m.public_csat_scale_high() };
+  const SCALE_ENDS: Record<number, string> = {
+    1: m.public_csat_scale_low(),
+    5: m.public_csat_scale_high()
+  };
 
   let prior = $derived(
     survey?.respondedAt && survey?.editableUntil
@@ -116,7 +119,7 @@
                it can change, rather than silently showing a pre-filled form. -->
           <div class="prior">
             {#each prior as p, i (i)}{#if p.key}<b
-                  >{m.public_csat_score({ rating: survey.rating })}</b
+                  >{m.public_csat_score({ rating: survey.rating ?? '' })}</b
                 >{:else}{p.text}{/if}{/each}
           </div>
         {/if}
@@ -188,7 +191,7 @@
         </form>
 
         <p class="fine">
-          {m.public_csat_fine_print({ org: survey.orgName })}
+          {m.public_csat_fine_print({ org: survey.orgName ?? '' })}
         </p>
       </section>
     {/if}

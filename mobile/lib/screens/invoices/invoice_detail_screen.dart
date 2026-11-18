@@ -8,6 +8,8 @@ import '../../l10n/l10n.dart';
 import '../../providers/invoices_provider.dart';
 import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
+import '../../widgets/common/custom_fields_display.dart';
+import 'invoice_fields_sheet.dart';
 import 'invoice_format.dart';
 import 'record_payment_sheet.dart';
 
@@ -82,6 +84,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   _amounts(invoice),
                   if (invoice.lineItems.isNotEmpty) _lineItems(invoice),
                   if (invoice.payments.isNotEmpty) _payments(invoice),
+                  if (CustomFieldsDisplay.shows(invoice.customFieldDefinitions))
+                    _customFields(invoice),
                   _actions(invoice),
                 ],
               ),
@@ -415,6 +419,45 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           ),
         ),
     ]);
+  }
+
+  /// Any viewer may edit these: the server lets whoever can open the invoice
+  /// save its fields, and the issued lock covers lines, not fields.
+  Widget _customFields(Invoice invoice) {
+    return _section(context.l10n.invoicesCustomFields, [
+      CustomFieldsDisplay(
+        definitions: invoice.customFieldDefinitions,
+        values: invoice.customFields,
+      ),
+      const SizedBox(height: 12),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton.icon(
+            onPressed: _busy ? null : () => _editFields(invoice),
+            icon: const Icon(LucideIcons.pencil, size: 16),
+            label: Text(context.l10n.invoicesEditFields),
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  Future<void> _editFields(Invoice invoice) async {
+    final values = await showInvoiceFieldsSheet(
+      context,
+      definitions: invoice.customFieldDefinitions,
+      values: invoice.customFields,
+    );
+    if (values == null || !mounted) return;
+    await _run(
+      () => ref
+          .read(invoicesProvider.notifier)
+          .updateCustomFields(invoice.id, values),
+      context.l10n.invoicesFieldsSaved,
+    );
   }
 
   Widget _section(String title, List<Widget> children) {

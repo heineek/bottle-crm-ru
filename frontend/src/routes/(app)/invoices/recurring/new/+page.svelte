@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * New recurring schedule.
@@ -36,6 +36,7 @@
    */
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import SectionTabs from '#lib/v2/components/SectionTabs.svelte';
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
@@ -53,9 +54,9 @@
   import { todayIn } from '#lib/v2/dates.js';
   import { CURRENCY_CODES } from '#lib/constants/filters.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: { products: any[], accounts: any[], contacts: any[], org: { timezone: string } }, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // The org's day: a UTC date is yesterday for a morning east of UTC.
   const today = untrack(() => todayIn(data.org.timezone));
@@ -91,7 +92,7 @@
    * Contacts whose primary account is this account, plus contacts with no
    * account (they attach to anyone).
    *
-   * `c.account_id` (set in `+page.server.js` from `contacts.js`'s
+   * `c.account_id` (set in `+page.server.ts` from `contacts.js`'s
    * `accountLink`) is the primary FK when the contact has one, and the first
    * M2M membership otherwise. The server's cross-check,
    * `RecurringInvoiceCreateSerializer.validate` (`invoices/serializer.py:
@@ -145,8 +146,7 @@
    * are its to derive, so none are here.
    */
   let payload = $derived.by(() => {
-    /** @type {Record<string, any>} */
-    const body = {
+    const body: Record<string, unknown> = {
       account_id: accountId,
       contact_id: contactId,
       title: title.trim(),
@@ -406,6 +406,16 @@
             bind:value={terms}
             placeholder={m.invoices_recurring_terms_placeholder()}></textarea>
         </div>
+        {#if data.customFields?.length}
+          <div class="v2-card" style="padding:16px 18px;margin-top:14px">
+            <div class="v2-label" style="margin-bottom:12px">Details</div>
+            <RecordFieldInputs
+              fields={data.customFields}
+              errors={form?.fieldErrors}
+              form="recurring-form"
+            />
+          </div>
+        {/if}
       </div>
 
       <!-- what each generated invoice will total, from the lines priced in so far -->

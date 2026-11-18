@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Editing an invoice template: the brand fields, the boilerplate text, and
@@ -25,13 +25,24 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { ChevronRight, Lock, FileCode } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // A failed save re-renders with what was typed; a fresh load uses the saved
   // record. Without the fallback an admin loses their edits on any 400.
-  let values = $derived(form?.values ?? data.template ?? {});
+  type TemplateValues = {
+    name?: string;
+    primary_color?: string;
+    secondary_color?: string;
+    default_notes?: string;
+    default_terms?: string;
+    footer_text?: string;
+    template_html?: string;
+    template_css?: string;
+  };
+
+  let values: TemplateValues = $derived(form?.values ?? data.template ?? {});
 </script>
 
 <PageHeader
@@ -90,7 +101,7 @@
             class="color-swatch"
             type="color"
             name="primary_color"
-            value={values.primary_color || '#3B82F6'}
+            defaultValue={values.primary_color || '#3B82F6'}
           />
         </label>
         <label class="color-field">
@@ -99,7 +110,7 @@
             class="color-swatch"
             type="color"
             name="secondary_color"
-            value={values.secondary_color || '#1E40AF'}
+            defaultValue={values.secondary_color || '#1E40AF'}
           />
         </label>
       </div>

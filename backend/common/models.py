@@ -12,9 +12,10 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models.functions import Lower
+from django.db.models.functions import Lower, Now
 from django.utils import timezone
 from django.utils.timesince import timesince
+from django.utils.timezone import now as timezone_now
 from django.utils.translation import gettext, pgettext_lazy
 from django.utils.translation import gettext_lazy as _
 
@@ -176,6 +177,11 @@ class Org(BaseModel):
     # explicit confirmation; this flag only controls the default state.
     auto_close_children_on_parent_close = models.BooleanField(default=False)
 
+    # Where the org came from, written once at creation by
+    # `common.signup_source.clean_signup_source`. Growth analytics only:
+    # NEVER used in a permission check or a queryset filter.
+    signup_source = models.JSONField(default=dict, blank=True)
+
     # Vertical packs. Descriptive only: records which pack was applied at
     # signup. NEVER used in a permission check or a queryset filter.
     vertical = models.CharField(
@@ -195,6 +201,31 @@ class Org(BaseModel):
     modules_off = models.JSONField(default=list, blank=True)
     module_order = models.JSONField(default=list, blank=True)
     modules_on_at = models.JSONField(default=dict, blank=True)
+
+    # A lead counts as unanswered only if it arrived or enquired after this, so
+    # an org's years of open leads do not flood the list on day one. Existing
+    # orgs got the time the column was added. Server-set only. (`timezone` is a
+    # field name in this class body, hence the alias.)
+    lead_response_since = models.DateTimeField(default=timezone_now)
+    # Leads were first stamped won or lost (`leads.outcomes`) at this moment,
+    # so the outcomes view counts from here. Existing orgs got the time the
+    # column was added. Server-set only.
+    lead_outcomes_since = models.DateTimeField(default=timezone_now)
+    # Remind a waiting lead's assignees after this many minutes
+    # (`leads.tasks.remind_waiting_leads`); null is off.
+    LEAD_REMINDER_CHOICES = (
+        (5, _("5 minutes")),
+        (15, _("15 minutes")),
+        (30, _("30 minutes")),
+        (60, _("60 minutes")),
+    )
+    lead_reminder_minutes = models.PositiveSmallIntegerField(
+        null=True, blank=True, choices=LEAD_REMINDER_CHOICES
+    )
+    # A wait that began before the reminder was last switched on is never
+    # reminded about, so switching it on with a backlog sends no burst. Set
+    # by `OrgSettingsSerializer.update`; server-set only.
+    lead_reminder_since = models.DateTimeField(default=timezone_now, db_default=Now())
 
     # Public help center at `/help-center/<slug>` on the app frontend. Off by default:
     # it publishes the org's approved, published articles to anyone, search
@@ -406,6 +437,13 @@ class Tags(BaseModel):
         super().save(*args, **kwargs)
 
 
+class PeopleManager(models.Manager):
+    """Profiles of people: app members (`common.app_members`) are left out."""
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_app=False)
+
+
 class Profile(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="profiles")
     org = models.ForeignKey(Org, on_delete=models.CASCADE, related_name="profiles")
@@ -424,6 +462,20 @@ class Profile(BaseModel):
     is_active = models.BooleanField(default=True)
     is_organization_admin = models.BooleanField(default=False)
     date_of_joining = models.DateField(null=True, blank=True)
+    # Lead alerts (`leads.alerts`), per membership and set only by the member.
+    # Email gates the assignment and enquired-again emails and a web form's
+    # email to the lead's assignees, push the phone pushes; the in-app
+    # notification is always written.
+    lead_alerts_email = models.BooleanField(default=True, db_default=True)
+    lead_alerts_push = models.BooleanField(default=True, db_default=True)
+    # A connected app's member rather than a person; see `common.app_members`.
+    is_app = models.BooleanField(default=False, db_default=False)
+
+    # `objects` comes first so it is the default manager, which reverse and
+    # many-to-many managers copy. The base manager stays plain, so a foreign
+    # key to an app member (a token's profile, an activity's author) resolves.
+    objects = PeopleManager()
+    all_objects = models.Manager()
 
     class Meta:
         verbose_name = "Profile"
@@ -918,6 +970,7 @@ class Activity(BaseModel):
         ("Event", "Event"),
         ("Document", "Document"),
         ("Team", "Team"),
+        ("CustomRecord", "Custom record"),
     )
 
     user = models.ForeignKey(
@@ -1001,6 +1054,41 @@ class Notification(BaseModel):
         return f"{self.verb} -> {self.recipient_id}"
 
 
+class DeviceToken(BaseOrgModel):
+    """A phone's push token, registered by the phone app for whoever is signed
+    in on it (`POST /api/devices/`) and used by `common.push`.
+
+    The token is a secret of that phone: it is never logged or returned.
+    """
+
+    PLATFORMS = (("android", "Android"), ("ios", "iOS"))
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="device_tokens"
+    )
+    token = models.CharField(max_length=4096)
+    platform = models.CharField(max_length=10, choices=PLATFORMS)
+    app_version = models.CharField(max_length=32, blank=True, default="")
+    last_seen_at = models.DateTimeField(default=timezone_now)
+
+    class Meta:
+        db_table = "device_token"
+        ordering = ("-created_at",)
+        # Restated: a subclass Meta replaces BaseOrgModel's, index included.
+        indexes = [
+            models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "user"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "token"], name="unique_device_token_per_org"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.platform} device {self.pk}"
+
+
 class Teams(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -1015,11 +1103,6 @@ class Teams(BaseModel):
 
     def __str__(self):
         return f"{self.name}"
-
-    def get_users(self):
-        return ",".join(
-            [str(_id) for _id in list(self.users.values_list("id", flat=True))]
-        )
 
 
 class ContactFormSubmission(BaseModel):
@@ -1295,11 +1378,13 @@ class PortalAccessToken(models.Model):
     ESTIMATE = "estimate"
     CSAT = "csat"
     INBOUND_MAILBOX = "inbound_mailbox"
+    LEAD_INTAKE = "lead_intake"
     RESOURCE_CHOICES = (
         (INVOICE, "Invoice"),
         (ESTIMATE, "Estimate"),
         (CSAT, "CSAT survey"),
         (INBOUND_MAILBOX, "Inbound mailbox"),
+        (LEAD_INTAKE, "Lead webhook"),
     )
 
     id = models.UUIDField(default=uuid.uuid4, primary_key=True)
@@ -1360,6 +1445,53 @@ class PackApplication(BaseOrgModel):
         return f"{self.pack_id} v{self.pack_version} → {self.org.name}"
 
 
+class InstalledApp(BaseOrgModel):
+    """One industry app on one org: its version, and what it has done there.
+
+    ``owned`` lists the parts the app created, ``{type, target, key, id}``, with
+    ``off`` on the ones removal switched off. ``offered`` lists every part it
+    has ever offered the org, ``{type, target, key, skipped_module}``. Written
+    only by ``common.apps_catalogue``; see docs/features/industry-apps.md.
+    """
+
+    INSTALLED = "installed"
+    REMOVED = "removed"
+    STATUS_CHOICES = (
+        (INSTALLED, pgettext_lazy("app status", "Installed")),
+        (REMOVED, pgettext_lazy("app status", "Removed")),
+    )
+
+    app_id = models.CharField(max_length=64)
+    installed_version = models.PositiveIntegerField()
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=INSTALLED)
+    installed_by = models.ForeignKey(
+        "common.Profile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="installed_apps",
+    )
+    installed_at = models.DateTimeField()
+    removed_at = models.DateTimeField(null=True, blank=True)
+    owned = models.JSONField(default=list, blank=True)
+    offered = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        verbose_name = "Installed App"
+        verbose_name_plural = "Installed Apps"
+        db_table = "installed_app"
+        ordering = ("created_at",)
+        indexes = [models.Index(fields=["org", "-created_at"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "app_id"], name="unique_installed_app_per_org"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.app_id} v{self.installed_version} ({self.status})"
+
+
 class SavedView(BaseOrgModel):
     """A profile's named filters for one list, to put back with one tap (G29).
 
@@ -1369,19 +1501,12 @@ class SavedView(BaseOrgModel):
     takes, and how they are checked, lives in ``common/saved_views.py``.
     """
 
-    MODULE_CHOICES = (
-        ("leads", "Leads"),
-        ("contacts", "Contacts"),
-        ("accounts", "Accounts"),
-        ("opportunities", "Deals"),
-        ("cases", "Tickets"),
-        ("invoices", "Invoices"),
-    )
-
     profile = models.ForeignKey(
         "common.Profile", on_delete=models.CASCADE, related_name="saved_views"
     )
-    module = models.CharField(max_length=20, choices=MODULE_CHOICES)
+    # A list name from `common.saved_views.saved_lists`, which decides what
+    # a view may be saved on; no choices here, since an installed app adds lists.
+    module = models.CharField(max_length=40)
     name = models.CharField(max_length=100)
     filters = models.JSONField(default=dict, blank=True)
 

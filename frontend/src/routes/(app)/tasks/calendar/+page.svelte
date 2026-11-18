@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * The task calendar. One month at a time, dated tasks sitting on the day they
@@ -16,11 +16,11 @@
   import { TASK_PRIORITY_TONE } from '#lib/v2/enums.js';
   import { ChevronLeft, ChevronRight, CalendarDays } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
-  const TONE_VAR = {
+  const TONE_VAR: Record<string, string> = {
     ink: 'var(--v2-ink)',
     slate: 'var(--v2-slate)',
     clay: 'var(--v2-clay)',
@@ -29,7 +29,7 @@
   };
 
   /** Overdue trumps priority. A late card is rust whatever it was set to. */
-  const dot = (/** @type {any} */ t) =>
+  const dot = (t: { overdue: boolean; priority: string }) =>
     t.overdue ? TONE_VAR.rust : (TONE_VAR[TASK_PRIORITY_TONE[t.priority]] ?? TONE_VAR.slate);
 
   const CAP = 4; // chips per cell before it collapses to "+N more"
@@ -46,7 +46,7 @@
         class="v2-btn v2-btn-icon"
         href={resolve(`tasks/calendar?month=${data.prevMonth}`)}
         aria-label={m.tasks_calendar_prev()}
-        data-sveltekit-noscroll
+        data-sveltekit-reset="false"
       >
         <ChevronLeft size={15} />
       </a>
@@ -54,14 +54,14 @@
         <a
           class="v2-btn v2-btn-sm"
           href={resolve(`tasks/calendar?month=${data.thisMonth}`)}
-          data-sveltekit-noscroll>{m.tasks_day_today()}</a
+          data-sveltekit-reset="false">{m.tasks_day_today()}</a
         >
       {/if}
       <a
         class="v2-btn v2-btn-icon"
         href={resolve(`tasks/calendar?month=${data.nextMonth}`)}
         aria-label={m.tasks_calendar_next()}
-        data-sveltekit-noscroll
+        data-sveltekit-reset="false"
       >
         <ChevronRight size={15} />
       </a>

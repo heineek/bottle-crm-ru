@@ -5,9 +5,10 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.utils import timezone, translation
 from django.utils.cache import patch_vary_headers
+from django.utils.translation import gettext as _
 
-from common import scopes
-from common.locale import request_language
+from common import ratelimit, scopes
+from common.locale import request_language, resolve_language
 from common.models import Org, Profile
 from common.org_time import activate_org_timezone
 
@@ -17,6 +18,37 @@ logger = logging.getLogger(__name__)
 def _denied(reason):
     """A 403 shaped like the one RequireOrgContext returns, so clients see one form."""
     return JsonResponse({"detail": reason}, status=403)
+
+
+def _over_allowance(request, org, credential_key, user=None):
+    """A 429 when this credential has used its minute's allowance, else None.
+
+    Nothing is counted when no limit applies to the org.
+    """
+    try:
+        limit = ratelimit.token_limit_per_minute(org)
+        if limit is None:
+            return None
+        wait = ratelimit.hit(credential_key, limit)
+    except Exception as exc:
+        # Counting is a guard against abuse; losing the cache must not turn
+        # every token request into a 500.
+        logger.warning(
+            "Token rate limit check failed (%s); letting the request through",
+            type(exc).__name__,
+        )
+        return None
+    if wait is None:
+        return None
+    # Runs before the request's language is activated, so pick it here.
+    language = resolve_language(
+        user=user, org=org, accept_language=request.headers.get("Accept-Language")
+    )
+    with translation.override(language):
+        detail = _("Too many requests. Try again later.")
+    response = JsonResponse({"detail": detail}, status=429)
+    response["Retry-After"] = str(max(1, wait))
+    return response
 
 
 class GetProfileAndOrg:
@@ -207,6 +239,12 @@ class GetProfileAndOrg:
             )
             return _denied(denial)
 
+        throttled = _over_allowance(
+            request, pat.org, f"pat:{pat.id}", user=pat.profile.user
+        )
+        if throttled is not None:
+            return throttled
+
         request.profile = pat.profile
         request.org = pat.org
         request.META["org"] = str(pat.org.id)
@@ -331,6 +369,12 @@ class GetProfileAndOrg:
                     organization.id,
                 )
                 return _denied(denial)
+
+            throttled = _over_allowance(
+                request, organization, f"orgkey:{organization.id}"
+            )
+            if throttled is not None:
+                return throttled
 
             request.profile = profile
             request.org = organization

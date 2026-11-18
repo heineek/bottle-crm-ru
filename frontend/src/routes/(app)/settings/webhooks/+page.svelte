@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Outbound webhooks: where the org's events are sent.
    *
@@ -10,6 +10,7 @@
    * The signing secret appears once, straight after a create, and never on
    * this list: the API only returns `secret_hint` here.
    */
+  import { webhookFormatName } from '#lib/v2/lead-alerts.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
@@ -18,16 +19,19 @@
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { count, shortDate } from '#lib/v2/format.js';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import { Plus, ShieldAlert } from '@lucide/svelte';
   import WebhookFields from './WebhookFields.svelte';
   import SecretOnce from './SecretOnce.svelte';
   import { wordsOn } from '#lib/v2/modules.js';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
+  import type { components } from '#lib/api-schema.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  type WebhookEndpoint = components['schemas']['WebhookEndpoint'];
+
+  let { data, form }: PageProps = $props();
 
   // "a lead, deal, ticket or other record", naming only the modules that are on.
   let changedKinds = $derived.by(() => {
@@ -51,9 +55,9 @@
 
   let atLimit = $derived(!data.forbidden && data.endpoints.length >= data.limit);
 
-  const createSubmit = () => {
+  const createSubmit: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update, result }) => {
+    return async ({ update, result }) => {
       await update({ reset: false });
       busy = false;
       if (result?.type === 'success' && result?.data?.created) creating = false;
@@ -63,23 +67,20 @@
   /**
    * Who answers for an endpoint. Nobody once their user has been deleted,
    * which also pauses it.
-   * @param {any} e
    */
-  function creatorLabel(e) {
+  function creatorLabel(e: WebhookEndpoint) {
     return e.created_by
       ? e.created_by.name || e.created_by.email
       : m.settings_webhooks_creator_removed();
   }
 
-  /** @param {any} e */
-  function endpointState(e) {
-    if (e.is_active)
-      return { tone: /** @type {const} */ ('moss'), label: m.settings_webhooks_state_sending() };
+  function endpointState(e: WebhookEndpoint) {
+    if (e.is_active) return { tone: 'moss' as const, label: m.settings_webhooks_state_sending() };
     // The server turned it off: a 410 from the receiver, or its creator lost
     // the standing to own it. Either way an admin can turn it back on.
     if (e.disabled_reason)
-      return { tone: /** @type {const} */ ('clay'), label: m.settings_webhooks_state_paused() };
-    return { tone: /** @type {const} */ ('slate'), label: m.settings_webhooks_state_off() };
+      return { tone: 'clay' as const, label: m.settings_webhooks_state_paused() };
+    return { tone: 'slate' as const, label: m.settings_webhooks_state_off() };
   }
 </script>
 
@@ -88,8 +89,7 @@
   {#snippet sub()}
     {#if !data.forbidden}
       {#each messageParts(m.settings_webhooks_list_sub( { sending: slot('sending'), total: slot('total') } )) as p, i (i)}{#if p.key === 'sending'}<span
-            class="v2-num"
-            >{count(data.endpoints.filter((/** @type {any} */ e) => e.is_active).length)}</span
+            class="v2-num">{count(data.endpoints.filter((e) => e.is_active).length)}</span
           >{:else if p.key === 'total'}<span class="v2-num">{count(data.endpoints.length)}</span
           >{:else}{p.text}{/if}{/each}
     {/if}
@@ -198,11 +198,7 @@
                       <div class="v2-table-primary" style="word-break:break-all">{e.url}</div>
                       <div class="v2-table-secondary">
                         {m.settings_webhooks_row_meta({
-                          description:
-                            e.description ||
-                            (e.format === 'slack'
-                              ? m.settings_webhooks_format_slack_short()
-                              : m.settings_webhooks_format_json()),
+                          description: e.description || webhookFormatName(e.format),
                           creator: creatorLabel(e)
                         })}
                       </div>

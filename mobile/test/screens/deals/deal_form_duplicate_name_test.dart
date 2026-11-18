@@ -164,7 +164,7 @@ class _RefusingDeals extends DealsNotifier {
 
   @override
   Future<({bool success, String? error, Deal? deal, String? nameError})>
-  createDeal(Deal deal) async {
+  createDeal(Deal deal, {bool withLeadSource = false}) async {
     attempts++;
     return (
       success: false,

@@ -31,6 +31,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from cases.approvals import closing_date
+from cases.inbound.generated import lookup_token
 from cases.models import Case, InboundMailbox, ReopenPolicy, Solution, TimeEntry
 from cases.workflow import resolve_sla_targets
 from common.actor import current_actor
@@ -335,7 +336,7 @@ def _maybe_stamp_first_response(case, comment):
     stamped = comment.created_at or timezone.now()
     case.first_response_at = stamped
     Case.objects.filter(pk=case.pk, first_response_at__isnull=True).update(
-        first_response_at=stamped
+        first_response_at=stamped, updated_at=timezone.now()
     )
 
 
@@ -625,7 +626,10 @@ def _evaluate_reopen(case, comment):
     # written out by hand here. A reopened ticket is not a resolved one.
     case.resolved_at = None
     Case.objects.filter(pk=case.pk).update(
-        status=case.status, closed_on=None, resolved_at=None
+        status=case.status,
+        closed_on=None,
+        resolved_at=None,
+        updated_at=timezone.now(),
     )
     _create_activity(
         case,
@@ -685,7 +689,10 @@ def maybe_reopen_for_inbound_email(case, email_message):
     # written out by hand here. A reopened ticket is not a resolved one.
     case.resolved_at = None
     Case.objects.filter(pk=case.pk).update(
-        status=case.status, closed_on=None, resolved_at=None
+        status=case.status,
+        closed_on=None,
+        resolved_at=None,
+        updated_at=timezone.now(),
     )
     _create_activity(
         case,
@@ -857,6 +864,15 @@ def inbound_mailbox_register_lookup(sender, instance, created, raw=False, **kwar
             PortalAccessToken.INBOUND_MAILBOX,
             instance.pk,
         )
+        # The catch-all finds a generated address's org by the address itself,
+        # which cannot change after create; delete below removes both rows.
+        if instance.is_generated:
+            register_portal_token(
+                lookup_token(instance.address),
+                instance.org_id,
+                PortalAccessToken.INBOUND_MAILBOX,
+                instance.pk,
+            )
 
 
 @receiver(post_delete, sender=InboundMailbox)

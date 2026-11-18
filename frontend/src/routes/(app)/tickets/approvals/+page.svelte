@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   /**
@@ -25,12 +25,12 @@
   import { count, shortAge, relativeDays } from '#lib/v2/format.js';
   import { APPROVAL_STATE_LABEL, APPROVAL_STATE_TONE, PRIORITY_TONE } from '#lib/v2/enums.js';
   import { ShieldCheck, TriangleAlert, ChevronRight } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let totals = $derived(data.totals);
-  let pending = $derived(data.approvals.filter((a) => a.state === 'pending'));
+  let pending = $derived(data.approvals.filter((a: { state: string }) => a.state === 'pending'));
 
   /**
    * The first row you can actually act on. Only that one gets the ember
@@ -39,19 +39,19 @@
    * colour stops meaning "start here". The rest are ordinary buttons and work
    * exactly the same.
    */
-  let firstActionable = $derived(pending.find((a) => a.can_act)?.id ?? null);
-  let decided = $derived(data.approvals.filter((a) => a.state !== 'pending'));
+  let firstActionable = $derived(pending.find((a: { can_act: boolean }) => a.can_act)?.id ?? null);
+  let decided = $derived(data.approvals.filter((a: { state: string }) => a.state !== 'pending'));
   let rules = $derived(data.rules);
 
   /** The one row whose reject-reason box is open (a rejection needs a reason). */
-  let rejectingId = $state(/** @type {string | null} */ (null));
+  let rejectingId = $state<string | null>(null);
 
   /**
    * Why a non-actionable row is blocked, in the words of the rule that says so.
    * Only called for rows that are neither yours nor actionable. An own request
    * gets its own banner, so this never has to explain that case.
    */
-  function blockedReason(a) {
+  function blockedReason(a: { rule: { approvers: string[]; approver_role: string } }) {
     if (a.rule.approvers.length)
       return m.tickets_approvals_only_names({
         names: a.rule.approvers.join(m.tickets_approvals_or())
@@ -60,7 +60,7 @@
   }
 
   /** An approver role code as a word: "admin", or "admins" when `plural`. */
-  function roleWord(/** @type {string} */ role, plural = false) {
+  function roleWord(role: string, plural = false) {
     const words = {
       ADMIN: [m.tickets_approvals_role_admin_one, m.tickets_approvals_role_admin_many],
       USER: [m.tickets_approvals_role_user_one, m.tickets_approvals_role_user_many],
@@ -301,7 +301,7 @@
     <!-- MANAGER is a valid approver_role on the model but not a valid
          Profile.role, so a rule set to MANAGER currently matches nobody. Said
          here rather than left for someone to discover via a stuck queue. -->
-    {#if rules.some((r) => r.is_active && r.approver_role === 'MANAGER' && !r.approvers.length)}
+    {#if rules.some((r: { is_active: boolean; approver_role: string; approvers: string[] }) => r.is_active && r.approver_role === 'MANAGER' && !r.approvers.length)}
       <p class="v2-sub" style="font-size:12px;margin-top:12px">
         {m.tickets_approvals_manager_warning()}
       </p>

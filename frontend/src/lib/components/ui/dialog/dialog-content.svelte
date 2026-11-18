@@ -1,10 +1,16 @@
-<script>
-  import { Dialog as DialogPrimitive } from 'bits-ui';
+<script lang="ts">
+  import {
+    Dialog as DialogPrimitive,
+    type DialogContentProps,
+    type DialogPortalProps,
+    type WithoutChildrenOrChild
+  } from 'bits-ui';
   import DialogPortal from './dialog-portal.svelte';
   import XIcon from '@lucide/svelte/icons/x';
   import * as Dialog from './index.js';
   import { cn } from '#lib/utils.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { Snippet } from 'svelte';
   let {
     ref = $bindable(null),
     class: className = undefined,
@@ -12,6 +18,10 @@
     children,
     showCloseButton = true,
     ...restProps
+  }: WithoutChildrenOrChild<DialogContentProps> & {
+    portalProps?: DialogPortalProps;
+    children: Snippet;
+    showCloseButton?: boolean;
   } = $props();
 </script>
 

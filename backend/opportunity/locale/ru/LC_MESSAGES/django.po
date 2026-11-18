@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-crm\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 09:43+0000\n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
 "PO-Revision-Date: 2026-11-10 12:00+0000\n"
 "Last-Translator: BottleCRM\n"
 "Language-Team: Russian\n"
@@ -66,6 +66,12 @@ msgstr "Ожидаемая дата закрытия"
 
 msgid "Lead Source"
 msgstr "Источник лида"
+
+msgid "Sub-source"
+msgstr "Подысточник"
+
+msgid "Reference"
+msgstr "Основание"
 
 msgid "Notes"
 msgstr "Заметки"
@@ -166,8 +172,8 @@ msgid ""
 "This deal's amount is the sum of its line items. Edit the line items to "
 "change it."
 msgstr ""
-"Сумма этой сделки складывается из её позиций. Чтобы изменить сумму, измените "
-"позиции."
+"Сумма этой сделки складывается из её позиций. Чтобы изменить сумму, измените"
+" позиции."
 
 msgid "A stage needs a name."
 msgstr "У этапа должно быть название."
@@ -189,8 +195,8 @@ msgstr "Выбранная команда не принадлежит этой �
 
 msgid "Deal type weights must be an object mapping a deal type to a number."
 msgstr ""
-"Веса типов сделок должны быть объектом, где каждому типу сделки соответствует"
-" число."
+"Веса типов сделок должны быть объектом, где каждому типу сделки "
+"соответствует число."
 
 #, python-format
 msgid "'%(type)s' is not a deal type. Choose from: %(types)s."
@@ -220,18 +226,18 @@ msgstr "Цель назначается либо человеку, либо ко
 msgid ""
 "An activities goal counts logged activity, which has no deal type to weigh."
 msgstr ""
-"Цель по активностям считает записанные активности, у которых нет типа сделки "
-"для взвешивания."
+"Цель по активностям считает записанные активности, у которых нет типа сделки"
+" для взвешивания."
 
 msgid "Assigned an opportunity for you."
 msgstr "Вам назначена сделка."
 
 #, python-format
-msgid "[BottleCRM] %(count)d stale deal need attention"
-msgid_plural "[BottleCRM] %(count)d stale deals need attention"
-msgstr[0] "[BottleCRM] %(count)d застрявшая сделка требует внимания"
-msgstr[1] "[BottleCRM] %(count)d застрявшие сделки требуют внимания"
-msgstr[2] "[BottleCRM] %(count)d застрявших сделок требуют внимания"
+msgid "[BottleCRM] %(count)d deal went stale"
+msgid_plural "[BottleCRM] %(count)d deals went stale"
+msgstr[0] "[BottleCRM] %(count)d сделка застряла"
+msgstr[1] "[BottleCRM] %(count)d сделки застряли"
+msgstr[2] "[BottleCRM] %(count)d сделок застряли"
 
 #, python-format
 msgid "[BottleCRM] Goal '%(name)s' reached %(milestone)s!"
@@ -280,18 +286,20 @@ msgstr "Здравствуйте, %(name)s!"
 
 #, python-format
 msgid ""
-"You have <strong>%(deal_count)s</strong> stale deal that needs attention:"
+"<strong>%(deal_count)s</strong> of your deals just went stale, past the time"
+" its stage expects:"
 msgid_plural ""
-"You have <strong>%(deal_count)s</strong> stale deals that need attention:"
+"<strong>%(deal_count)s</strong> of your deals just went stale, past the time"
+" their stages expect:"
 msgstr[0] ""
-"У вас <strong>%(deal_count)s</strong> застрявшая сделка, которая требует "
-"внимания:"
+"<strong>%(deal_count)s</strong> ваша сделка только что застряла: она дольше,"
+" чем положено, находится на своём этапе:"
 msgstr[1] ""
-"У вас <strong>%(deal_count)s</strong> застрявшие сделки, которые требуют "
-"внимания:"
+"<strong>%(deal_count)s</strong> ваши сделки только что застряли: они дольше,"
+" чем положено, находятся на своих этапах:"
 msgstr[2] ""
-"У вас <strong>%(deal_count)s</strong> застрявших сделок, которые требуют "
-"внимания:"
+"<strong>%(deal_count)s</strong> ваших сделок только что застряли: они "
+"дольше, чем положено, находятся на своих этапах:"
 
 msgid "Deal"
 msgstr "Сделка"
@@ -305,6 +313,17 @@ msgstr "Норма"
 #, python-format
 msgid "%(days)sd"
 msgstr "%(days)s дн."
+
+msgid "Each deal is emailed about once in each stage."
+msgstr "О каждой сделке мы пишем примерно один раз на каждом этапе."
+
+#, python-format
+msgid "%(still_waiting)s more stale deal from earlier is still waiting."
+msgid_plural ""
+"%(still_waiting)s more stale deals from earlier are still waiting."
+msgstr[0] "Ещё %(still_waiting)s застрявшая ранее сделка по-прежнему ждёт."
+msgstr[1] "Ещё %(still_waiting)s застрявшие ранее сделки по-прежнему ждут."
+msgstr[2] "Ещё %(still_waiting)s застрявших ранее сделок по-прежнему ждут."
 
 msgid "View Stale Deals"
 msgstr "Открыть застрявшие сделки"

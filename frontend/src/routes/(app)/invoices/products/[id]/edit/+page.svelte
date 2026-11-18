@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Editing a catalogue product, or retiring it.
@@ -16,11 +16,25 @@
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
-  let values = $derived(form?.values ?? data.product ?? {});
+  /**
+   * What the form is filled from: the echoed values of a refused save, else
+   * the stored product.
+   */
+  type ProductValues = {
+    name?: string;
+    sku?: string;
+    price?: string | number;
+    currency?: string | null;
+    category?: string;
+    description?: string;
+    is_active?: boolean;
+  };
+
+  let values: ProductValues = $derived(form?.values ?? data.product ?? {});
   let invoicesOn = $derived(isOn(data.modules, 'invoices'));
   let usedOn = $derived(data.product?.used_on ?? 0);
   let confirming = $state(false);

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Documents: a model with a full API and, until now, no screen anywhere.
@@ -32,9 +32,9 @@
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { getLocale } from '#lib/paraglide/runtime.js';
   import { FileText, FileSpreadsheet, File, Users, Upload, Lock, Pencil } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let documents = $derived(data.results);
   let totals = $derived(data.totals);
@@ -42,14 +42,18 @@
   // the Upload button shows for everyone. Editing/deleting are the narrow writes
   //. Those are gated per row by `can_write` (creator or admin) below.
 
-  const ICON = { pdf: FileText, sheet: FileSpreadsheet, text: FileText };
-  const iconFor = (kind) => ICON[kind] ?? File;
+  const ICON: Record<string, typeof File> = {
+    pdf: FileText,
+    sheet: FileSpreadsheet,
+    text: FileText
+  };
+  const iconFor = (kind: string) => ICON[kind] ?? File;
 
   /** kB and MB, never bytes. Nobody reads a file size in bytes. A missing file
       has no size the server could read, so it shows an em dash, not "0 kB". */
-  function fileSize(bytes) {
+  function fileSize(bytes: number | null) {
     if (bytes == null) return '—';
-    const number = (/** @type {number} */ n, /** @type {number} */ digits) =>
+    const number = (n: number, digits: number) =>
       new Intl.NumberFormat(intlLocale(getLocale(), 'number'), {
         minimumFractionDigits: digits,
         maximumFractionDigits: digits,
@@ -68,7 +72,7 @@
    * separately below because "the Support team" is the thing that was chosen,
    * and flattening it to three names loses the reason.
    */
-  function reachLabel(d) {
+  function reachLabel(d: { shared_to: { name: string }[]; teams: unknown[] }) {
     const names = d.shared_to.map((p) => p.name.split(' ')[0]);
     if (!names.length) return d.teams.length ? '' : m.documents_reach_nobody();
     if (names.length === 1) return names[0];
@@ -175,7 +179,12 @@
                 {#if d.teams.length}
                   <span class="team-share">
                     <Users size={11} />
-                    {d.teams.map((t) => `${t.name} (${t.member_count})`).join(', ')}
+                    {d.teams
+                      .map(
+                        (t: { name: string; member_count: number }) =>
+                          `${t.name} (${t.member_count})`
+                      )
+                      .join(', ')}
                   </span>
                 {/if}
               </td>

@@ -344,6 +344,13 @@ class Task(AssignableMixin, BaseModel):
         blank=True,
         on_delete=models.SET_NULL,
     )
+    project = models.ForeignKey(
+        "projects.Project",
+        related_name="tasks",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
 
     contacts = models.ManyToManyField(Contact, related_name="task_contacts")
 
@@ -379,6 +386,7 @@ class Task(AssignableMixin, BaseModel):
             models.Index(fields=["status"]),
             models.Index(fields=["due_date"]),
             models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "updated_at", "id"], name="task_org_upd_idx"),
             models.Index(fields=["status", "kanban_order"]),
             models.Index(fields=["stage", "kanban_order"]),
         ]
@@ -389,7 +397,7 @@ class Task(AssignableMixin, BaseModel):
     def clean(self):
         """Validate that task has at most one parent entity."""
         super().clean()
-        parent_fields = ["account", "opportunity", "case", "lead"]
+        parent_fields = ["account", "opportunity", "case", "lead", "project"]
         set_parents = [
             field for field in parent_fields if getattr(self, f"{field}_id", None)
         ]
@@ -398,7 +406,7 @@ class Task(AssignableMixin, BaseModel):
                 {
                     "account": gettext(
                         "A task can only be linked to one parent entity "
-                        "(Account, Opportunity, Case, or Lead). "
+                        "(Account, Opportunity, Case, Lead, or Project). "
                         "Currently linked to: %(parents)s"
                     )
                     % {"parents": ", ".join(set_parents)}

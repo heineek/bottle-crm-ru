@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * What happens when a ticket blows its target.
@@ -57,12 +57,12 @@
   } from './outcome.js';
   import { missingOption, inactiveOptionLabel } from '#lib/v2/pickers.js';
   import { TriangleAlert, BellOff, Plus } from '@lucide/svelte';
+  import type { PageProps } from './$types';
+  import type { EscalationPolicyRow } from '#lib/server/v2/escalation.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
-  /** @param {string} priority */
-  const priorityLabel = (priority) => CASE_PRIORITY_LABEL[priority] ?? priority;
+  const priorityLabel = (priority: string) => CASE_PRIORITY_LABEL[priority] ?? priority;
 
   /**
    * By severity, not by the model's `ordering = ("priority",)`. That sorts
@@ -86,7 +86,7 @@
   // `null` when the panel is closed, `'new'` when adding, or the policy
   // object when editing that row. One panel, two modes, so two rows can
   // never be open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<'new' | EscalationPolicyRow | null>(null);
 
   // Mirrors of the four action/target fields, so the "does nothing" hint can
   // react to what is currently picked in the form, before the policy is saved,
@@ -97,9 +97,10 @@
   let resolutionAction = $state('notify');
   let firstResponseTarget = $state('');
   let resolutionTarget = $state('');
-  let firstResponseHours = $state('');
-  let resolutionHours = $state('');
-  let nextResponseHours = $state('');
+  // A number once an edit prefills them or a number input binds them.
+  let firstResponseHours: number | string = $state('');
+  let resolutionHours: number | string = $state('');
+  let nextResponseHours: number | string = $state('');
   // Tracked so the hour placeholders follow the priority select on a create,
   // where the built-in default changes as you pick.
   let formPriority = $state('Urgent');
@@ -108,12 +109,12 @@
   /**
    * "6h" for a target this org set, "4h default" for one it never touched.
    * The distinction is the point: an unlabelled number reads as a decision.
-   *
-   * @param {any} policy
-   * @param {'first_response' | 'resolution' | 'next_response'} half
    */
-  function targetLabel(policy, half) {
-    const configured = policy[`${half}_hours`];
+  function targetLabel(
+    policy: EscalationPolicyRow,
+    half: 'first_response' | 'resolution' | 'next_response'
+  ) {
+    const configured = policy[`${half}_hours` as const];
     if (configured) return m.settings_escalation_hours_short({ hours: configured });
     const fallback = (DEFAULT_SLA_HOURS[policy.priority] ?? DEFAULT_SLA_HOURS.Normal)[half];
     return m.settings_escalation_hours_default({ hours: fallback });
@@ -131,7 +132,7 @@
     nextResponseHours = '';
   }
 
-  function openEdit(p) {
+  function openEdit(p: EscalationPolicyRow) {
     editing = p;
     firstResponseAction = p.first_response_action;
     resolutionAction = p.resolution_action;
@@ -176,7 +177,7 @@
   );
   // A failed people fetch leaves every stored target unlisted too. Kept all the
   // same, but not labelled "no longer active", which would be untrue.
-  const unlistedTargetLabel = (/** @type {string} */ name) =>
+  const unlistedTargetLabel = (name: string) =>
     data.options_failed ? name : inactiveOptionLabel(name);
 </script>
 
@@ -203,26 +204,27 @@
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if editing}
+      {@const current = editing}
       <SettingsFormPanel
-        title={editing === 'new'
+        title={current === 'new'
           ? m.settings_escalation_new_policy()
-          : m.settings_escalation_edit_title({ priority: priorityLabel(editing.priority) })}
-        action={editing === 'new' ? '?/create' : '?/update'}
-        error={editing === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={editing === 'new'
+          : m.settings_escalation_edit_title({ priority: priorityLabel(current.priority) })}
+        action={current === 'new' ? '?/create' : '?/update'}
+        error={current === 'new' ? form?.create?.error : form?.update?.error}
+        submitLabel={current === 'new'
           ? m.settings_escalation_add_policy()
           : m.settings_escalation_save_policy()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
         {#snippet fields()}
-          {#if editing !== 'new'}
-            <input type="hidden" name="id" value={editing.id} />
+          {#if current !== 'new'}
+            <input type="hidden" name="id" value={current.id} />
           {/if}
 
           <div class="v2-field">
             <label for="e-priority">{m.settings_escalation_priority_label()}</label>
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <select
                 id="e-priority"
                 class="v2-input"
@@ -235,7 +237,7 @@
                 {/each}
               </select>
             {:else}
-              <div style="font-size:13px">{priorityLabel(editing.priority)}</div>
+              <div style="font-size:13px">{current.priority}</div>
               <p class="v2-hint">{m.settings_escalation_priority_fixed()}</p>
             {/if}
           </div>
@@ -415,7 +417,7 @@
           <div class="v2-field">
             <label for="e-team">{m.settings_escalation_team_label()}</label>
             <select id="e-team" class="v2-input" name="notify_team_id">
-              <option value="" selected={editing === 'new' || !editing.notify_team}
+              <option value="" selected={current === 'new' || !current.notify_team}
                 >{m.settings_escalation_no_team()}</option
               >
               {#if missingTeam}
@@ -424,7 +426,7 @@
               {#each data.teams as t (t.id)}
                 <option
                   value={t.id}
-                  selected={editing !== 'new' && editing.notify_team?.id === t.id}
+                  selected={current !== 'new' && current.notify_team?.id === t.id}
                 >
                   {t.name}
                 </option>
@@ -432,7 +434,7 @@
             </select>
             {#if data.options_failed}
               <p class="v2-hint" role="alert">
-                {editing === 'new'
+                {current === 'new'
                   ? m.settings_escalation_options_failed_new()
                   : m.settings_escalation_options_failed_edit()}
               </p>
@@ -441,7 +443,7 @@
             {/if}
           </div>
 
-          {#if editing === 'new'}
+          {#if current === 'new'}
             <div class="v2-field">
               <label for="e-active">{m.settings_escalation_active_label()}</label>
               <label style="display:flex;gap:8px;align-items:center;font-weight:400">

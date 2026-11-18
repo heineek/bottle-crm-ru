@@ -27,7 +27,13 @@ class InboundEmailScreen extends ConsumerWidget {
     WidgetRef ref,
     Mailbox? existing,
   ) async {
-    final payload = await showMailboxFormSheet(context, existing: existing);
+    final state = ref.read(mailboxesProvider).value;
+    final payload = await showMailboxFormSheet(
+      context,
+      existing: existing,
+      leadsOffered: state?.leadsOffered ?? false,
+      generatedDomain: state?.generatedDomain,
+    );
     if (payload == null || !context.mounted) return;
     final notifier = ref.read(mailboxesProvider.notifier);
     final error = existing == null
@@ -172,13 +178,14 @@ class InboundEmailScreen extends ConsumerWidget {
                 for (final mailbox in state.mailboxes)
                   _MailboxRow(
                     mailbox: mailbox,
+                    dailyLimit: state.dailyLimit,
                     canEdit: isAdmin,
                     onEdit: () => _edit(context, ref, mailbox),
                     onTurnOff: () => _turnOff(context, ref, mailbox),
                     onTurnOn: () => _turnOn(context, ref, mailbox),
                     onDelete: () => _delete(context, ref, mailbox),
                   ),
-                const _AuthNote(),
+                _AuthNote(dailyLimit: state.dailyLimit),
               ],
             ),
           );
@@ -221,6 +228,11 @@ class _Summary extends StatelessWidget {
                 value: '${state.casesLast30d}',
                 label: context.l10n.settingsInboundEmailStatTickets,
               ),
+              if (state.deliveringLeads > 0)
+                _Stat(
+                  value: '${state.deliveringLeads}',
+                  label: context.l10n.settingsInboundEmailStatLeads,
+                ),
             ],
           ),
           if (silent.isNotEmpty) ...[
@@ -304,6 +316,7 @@ class _Stat extends StatelessWidget {
 class _MailboxRow extends StatelessWidget {
   const _MailboxRow({
     required this.mailbox,
+    required this.dailyLimit,
     required this.canEdit,
     required this.onEdit,
     required this.onTurnOff,
@@ -312,6 +325,7 @@ class _MailboxRow extends StatelessWidget {
   });
 
   final Mailbox mailbox;
+  final int? dailyLimit;
   final bool canEdit;
   final VoidCallback onEdit;
   final VoidCallback onTurnOff;
@@ -322,6 +336,8 @@ class _MailboxRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final delivery = mailbox.delivery;
     final why = mailbox.deliveryExplanation;
+    final dropped = mailbox.dropSummary;
+    final atLimit = mailbox.limitNotice(dailyLimit);
     return Container(
       color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 1),
@@ -344,7 +360,7 @@ class _MailboxRow extends StatelessWidget {
             runSpacing: 6,
             children: [
               StatusBadge(
-                label: delivery.label,
+                label: mailbox.deliveryLabel,
                 color: delivery.isLive
                     ? AppColors.success600
                     : AppColors.gray500,
@@ -354,17 +370,38 @@ class _MailboxRow extends StatelessWidget {
                     mailboxProviderLabels[mailbox.provider] ?? mailbox.provider,
                 color: AppColors.gray500,
               ),
-              StatusBadge(
-                label: context.l10n.settingsInboundEmailRowCases(
-                  mailbox.casesLast30d,
+              if (!mailbox.createsLeads)
+                StatusBadge(
+                  label: context.l10n.settingsInboundEmailRowCases(
+                    mailbox.casesLast30d,
+                  ),
+                  color: AppColors.gray500,
                 ),
-                color: AppColors.gray500,
-              ),
             ],
           ),
+          if (dropped != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              dropped,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          if (atLimit != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              atLimit,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.warning600,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
-            context.l10n.settingsInboundEmailOpensAs(mailbox.opensAs),
+            mailbox.createsLeads
+                ? mailbox.opensAs
+                : context.l10n.settingsInboundEmailOpensAs(mailbox.opensAs),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -427,10 +464,13 @@ class _MailboxRow extends StatelessWidget {
 /// The web carried a card saying a per-address shared secret did it and that
 /// the server minted one on create. Neither is true, so neither client says it.
 class _AuthNote extends StatelessWidget {
-  const _AuthNote();
+  const _AuthNote({required this.dailyLimit});
+
+  final int? dailyLimit;
 
   @override
   Widget build(BuildContext context) {
+    final policy = mailboxDropPolicy(dailyLimit);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
@@ -447,6 +487,15 @@ class _AuthNote extends StatelessWidget {
               color: AppColors.textTertiary,
             ),
           ),
+          if (policy != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              policy,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
         ],
       ),
     );

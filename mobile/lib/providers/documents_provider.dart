@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/crm_document.dart';
 import '../services/api_service.dart';
 
@@ -64,11 +65,16 @@ class DocumentsNotifier extends AsyncNotifier<DocumentsData> {
       );
     }
 
-    final data = response.data!;
+    // The rows sit at `documents_active.documents_active`, nested under a key
+    // with the same name as its own envelope.
+    final data = api.DocumentListResponse.fromJson(response.data!);
     final documents = [
-      ..._envelope(data, 'documents_active'),
-      ..._envelope(data, 'documents_inactive'),
-    ].map(CrmDocument.fromJson).toList();
+      for (final row in [
+        ...?data.documentsActive?.documentsActive,
+        ...?data.documentsInactive?.documentsInactive,
+      ])
+        CrmDocument.fromJson(row.json),
+    ];
 
     documents.sort((a, b) {
       final at = a.createdAt, bt = b.createdAt;
@@ -83,16 +89,6 @@ class DocumentsNotifier extends AsyncNotifier<DocumentsData> {
       totals: documentTotals(documents),
       includeArchived: includeArchived,
     );
-  }
-
-  /// The rows sit at `documents_active.documents_active`, nested under a key
-  /// with the same name as its own envelope.
-  List<Map<String, dynamic>> _envelope(Map<String, dynamic> data, String key) {
-    final block = data[key];
-    if (block is! Map<String, dynamic>) return const [];
-    final rows = block[key];
-    if (rows is! List) return const [];
-    return rows.whereType<Map<String, dynamic>>().toList();
   }
 
   Future<void> refresh() async {

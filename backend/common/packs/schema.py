@@ -6,9 +6,11 @@ not silently drop a stage. See docs/superpowers/specs/2026-08-01-vertical-packs-
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal, InvalidOperation
 
 from common.custom_fields import is_supported_target, validate_definition_options
+from leads.sources import derive_key
 
 TOP_LEVEL_KEYS = {
     "id",
@@ -19,8 +21,10 @@ TOP_LEVEL_KEYS = {
     "lead_pipeline",
     "case_pipeline",
     "task_pipeline",
+    "deal_pipelines",
     "custom_fields",
     "tags",
+    "lead_sources",
     "products",
     "sample_data",
     "sample_dates_written_on",
@@ -39,7 +43,9 @@ _SAMPLE_DATE_FIELDS = (
     ("deals", "Opportunity", ("closed_on",)),
     ("tickets", "Case", ()),
     ("leads", "Lead", ()),
+    ("projects", "Project", ("start_date",)),
     ("tasks", "Task", ("due_date",)),
+    ("time_entries", "TimeEntry", ("date",)),
 )
 
 
@@ -82,6 +88,10 @@ STAGE_KEYS = {
 # win_probability exists on LeadStage only (leads/models.py:296).
 LEAD_STAGE_KEYS = STAGE_KEYS | {"win_probability"}
 
+DEAL_PIPELINE_KEYS = {"name", "stages", "is_default"}
+DEAL_STAGE_KEYS = {"code", "label", "order", "kind", "expected_days"}
+DEAL_STAGE_CODE = re.compile(r"[a-z][a-z0-9_]{0,63}")
+
 CUSTOM_FIELD_KEYS = {
     "target",
     "key",
@@ -95,6 +105,7 @@ CUSTOM_FIELD_KEYS = {
 FIELD_TYPES = {"text", "textarea", "number", "dropdown", "date", "checkbox"}
 
 TAG_KEYS = {"name", "color", "description"}
+LEAD_SOURCE_KEYS = {"key", "label"}
 PRODUCT_KEYS = {"name", "sku", "price", "currency", "category", "description"}
 
 SAMPLE_LEAD_KEYS = {
@@ -169,19 +180,42 @@ SAMPLE_TASK_KEYS = {
     "deal",
     "ticket",
     "lead",
+    "project",
     "custom_fields",
 }
+SAMPLE_PROJECT_KEYS = {
+    "name",
+    "account",
+    "deal",
+    "billing_type",
+    "currency",
+    "hourly_rate",
+    "budget_hours",
+    "budget_amount",
+    "start_date",
+    "description",
+}
+# Logged by the person applying the pack, stopped, at the project's rate.
+SAMPLE_TIME_ENTRY_KEYS = {"project", "date", "hours", "description"}
 
-# Every entity `sample_data` understands, in the order the applier creates them
-# . A later entity may reference an earlier one by name, never the reverse.
-# Tasks are last because a task is the only row that can point at any of the
-# other five. common.packs.applier imports this rather than restating it.
-SAMPLE_ENTITY_KEYS = ("accounts", "contacts", "deals", "tickets", "leads", "tasks")
+# Every entity `sample_data` understands, in the order the applier creates them.
+# A later entity may reference an earlier one by name, never the reverse.
+# common.packs.applier imports this rather than restating it.
+SAMPLE_ENTITY_KEYS = (
+    "accounts",
+    "contacts",
+    "deals",
+    "tickets",
+    "leads",
+    "projects",
+    "tasks",
+    "time_entries",
+)
 
 # Task.clean (tasks/models.py) rejects a Task linked to more than one parent, and
 # Task.save calls full_clean, so the DB write raises rather than truncating. The
 # schema enforces the same rule so a bad pack fails in CI instead of at apply.
-SAMPLE_TASK_PARENTS = ("account", "deal", "ticket", "lead")
+SAMPLE_TASK_PARENTS = ("account", "deal", "ticket", "lead", "project")
 
 
 class PackValidationError(Exception):
@@ -332,6 +366,91 @@ def _validate_pipeline(
             )
 
 
+def _deal_text(where: str, obj: dict, field: str) -> str:
+    value = obj.get(field)
+    if (
+        not isinstance(value, str)
+        or not value.strip()
+        or value != value.strip()
+        or len(value) > 100
+    ):
+        raise PackValidationError(
+            f"{where}: {field} must be 1 to 100 characters with no outer spaces"
+        )
+    return value
+
+
+def _validate_deal_stage(where: str, stage: dict, seen: dict) -> None:
+    from opportunity.workflow import OPEN, STAGE_KINDS
+
+    _reject_unknown(where, stage, DEAL_STAGE_KEYS)
+    code = stage.get("code")
+    if not isinstance(code, str) or not DEAL_STAGE_CODE.fullmatch(code):
+        raise PackValidationError(
+            f"{where}: code must be a lowercase letter, then up to 63 lowercase "
+            "letters, digits or underscores"
+        )
+    label = _deal_text(where, stage, "label")
+    order = stage.get("order")
+    if isinstance(order, bool) or not isinstance(order, int) or order < 1:
+        raise PackValidationError(f"{where}: order must be a whole number from 1")
+    for field, value in (("code", code), ("label", label.casefold()), ("order", order)):
+        if value in seen[field]:
+            raise PackValidationError(
+                f"{where}: {field} {stage[field]!r} is listed twice in this pipeline"
+            )
+        seen[field].add(value)
+    kind = stage.get("kind")
+    if kind not in {k for k, _label in STAGE_KINDS}:
+        raise PackValidationError(f"{where}: kind {kind!r} is not open, won or lost")
+    seen["kind"].add(kind)
+    if "expected_days" in stage:
+        days = stage["expected_days"]
+        if isinstance(days, bool) or not isinstance(days, int) or not 1 <= days <= 3650:
+            raise PackValidationError(
+                f"{where}: expected_days must be a whole number from 1 to 3650"
+            )
+        # The deal pipeline API clears it on a closed stage, where nothing ages.
+        if kind != OPEN:
+            raise PackValidationError(f"{where}: expected_days is for open stages only")
+
+
+def _validate_deal_pipelines(where: str, pipelines) -> None:
+    """The rules the deal pipeline API holds a pipeline to, so a pack never
+    creates one the API would refuse (opportunity/views/pipeline_views.py)."""
+    from opportunity.workflow import DEFAULT_PIPELINE_NAME, STAGE_KINDS
+
+    if not isinstance(pipelines, list):
+        raise PackValidationError(f"{where}: expected a list")
+    names: set[str] = set()
+    for i, pipeline in enumerate(pipelines):
+        at = f"{where}[{i}]"
+        _reject_is_default(at, pipeline)
+        _reject_unknown(at, pipeline, DEAL_PIPELINE_KEYS)
+        name = _deal_text(at, pipeline, "name")
+        # An org without a default yet gets one by this name on its first deal
+        # read; a pack pipeline holding the name would make that create fail.
+        if name.casefold() == DEFAULT_PIPELINE_NAME.casefold():
+            raise PackValidationError(
+                f"{at}: {name!r} is the name of every org's default deal pipeline"
+            )
+        if name.casefold() in names:
+            raise PackValidationError(f"{at}: name {name!r} is listed twice")
+        names.add(name.casefold())
+        stages = pipeline.get("stages")
+        if not isinstance(stages, list) or not stages:
+            raise PackValidationError(f"{at}: stages must be a non-empty list")
+        seen = {"code": set(), "label": set(), "order": set(), "kind": set()}
+        for j, stage in enumerate(stages):
+            _validate_deal_stage(f"{at}.stages[{j}]", stage, seen)
+        for kind, label in STAGE_KINDS:
+            if kind not in seen["kind"]:
+                raise PackValidationError(
+                    f"{at}: no {label.lower()} stage; a deal pipeline needs at "
+                    "least one open, one won and one lost stage"
+                )
+
+
 def _validate_custom_field(where: str, field: dict) -> None:
     _reject_unknown(where, field, CUSTOM_FIELD_KEYS)
     target = field.get("target")
@@ -367,6 +486,44 @@ def _validate_tag(where: str, tag: dict) -> None:
     valid = {choice for choice, _label in Tags.COLOR_CHOICES}
     if color not in valid:
         raise PackValidationError(f"{where}: color {color!r} is not a valid tag colour")
+
+
+def pack_source_keys(raw: dict) -> set[str]:
+    """The sources a pack's sample leads may use: the defaults every org has,
+    and the ones the pack adds."""
+    from leads.sources import DEFAULT_SOURCES
+
+    keys = {key for key, _label in DEFAULT_SOURCES}
+    keys.update(
+        s["key"]
+        for s in raw.get("lead_sources") or []
+        if isinstance(s, dict) and isinstance(s.get("key"), str)
+    )
+    return keys
+
+
+def _validate_lead_sources(where: str, sources) -> None:
+    if not isinstance(sources, list):
+        raise PackValidationError(f"{where}: expected a list")
+    seen: set[str] = set()
+    for i, source in enumerate(sources):
+        at = f"{where}[{i}]"
+        if not isinstance(source, dict):
+            raise PackValidationError(f"{at}: expected an object")
+        _reject_unknown(at, source, LEAD_SOURCE_KEYS)
+        _require(at, source, "key", "label")
+        key, label = source["key"], source["label"]
+        if not isinstance(key, str) or not isinstance(label, str):
+            raise PackValidationError(f"{at}: key and label must be strings")
+        if key != derive_key(key) or not 0 < len(key) <= 64:
+            raise PackValidationError(
+                f"{at}: key must be lowercase, single-spaced, at most 64 characters"
+            )
+        if not 0 < len(label) <= 100:
+            raise PackValidationError(f"{at}: label must be 1 to 100 characters")
+        if key in seen:
+            raise PackValidationError(f"{at}: key {key!r} is listed twice")
+        seen.add(key)
 
 
 def _validate_product(where: str, product: dict) -> None:
@@ -405,6 +562,18 @@ def _validate_choice(where: str, value, field: str, allowed: set[str]) -> None:
         raise PackValidationError(
             f"{where}: {field} {value!r} is not valid (expected one of {sorted(allowed)})"
         )
+
+
+def _validate_amount(where: str, value, field: str) -> None:
+    """A number of 0 or more, or absent."""
+    if value is None:
+        return
+    try:
+        amount = Decimal(str(value))
+    except InvalidOperation:
+        raise PackValidationError(f"{where}: {field} is not a number") from None
+    if not amount.is_finite() or amount < 0:
+        raise PackValidationError(f"{where}: {field} must be 0 or more")
 
 
 def _validate_date(where: str, value, field: str) -> None:
@@ -469,13 +638,13 @@ def _validate_sample_data(where: str, sample: dict, raw: dict) -> None:
         COUNTRIES,
         CURRENCY_CODES,
         INDCHOICES,
-        LEAD_SOURCE,
         LEAD_STATUS,
         PRIORITY_CHOICE,
         SOURCES,
         STAGES,
         STATUS_CHOICE,
     )
+    from projects.models import STARTING_BILLING_TYPES
     from tasks.models import Task
 
     _reject_unknown(where, sample, set(SAMPLE_ENTITY_KEYS))
@@ -490,6 +659,8 @@ def _validate_sample_data(where: str, sample: dict, raw: dict) -> None:
     tickets = sample.get("tickets") or []
     tasks = sample.get("tasks") or []
     leads = sample.get("leads") or []
+    projects = sample.get("projects") or []
+    time_entries = sample.get("time_entries") or []
 
     def contact_name(row):
         return f"{row.get('first_name', '')} {row.get('last_name', '')}".strip()
@@ -508,6 +679,9 @@ def _validate_sample_data(where: str, sample: dict, raw: dict) -> None:
     )
     known_leads = _reference_index(
         f"{where}.leads", leads, lambda r: r.get("title"), "lead title"
+    )
+    known_projects = _reference_index(
+        f"{where}.projects", projects, lambda r: r.get("name"), "project name"
     )
 
     lead_stages = _pipeline_stage_names(raw, "lead_pipeline")
@@ -591,19 +765,52 @@ def _validate_sample_data(where: str, sample: dict, raw: dict) -> None:
             at, row.get("ticket"), "ticket", known_tickets, "sample ticket"
         )
         _check_reference(at, row.get("lead"), "lead", known_leads, "sample lead")
+        _check_reference(
+            at, row.get("project"), "project", known_projects, "sample project"
+        )
+
+    for i, row in enumerate(projects):
+        at = f"{where}.projects[{i}]"
+        _reject_unknown(at, row, SAMPLE_PROJECT_KEYS)
+        _require(at, row, "name", "account")
+        _validate_choice(
+            at,
+            row.get("billing_type"),
+            "billing_type",
+            {c for c, _l in STARTING_BILLING_TYPES},
+        )
+        _validate_choice(at, row.get("currency"), "currency", currencies)
+        for key in ("hourly_rate", "budget_hours", "budget_amount"):
+            _validate_amount(at, row.get(key), key)
+        _check_reference(
+            at, row.get("account"), "account", known_accounts, "sample account"
+        )
+        _check_reference(at, row.get("deal"), "deal", known_deals, "sample deal")
+
+    for i, row in enumerate(time_entries):
+        at = f"{where}.time_entries[{i}]"
+        _reject_unknown(at, row, SAMPLE_TIME_ENTRY_KEYS)
+        _require(at, row, "project", "date", "hours")
+        _validate_amount(at, row.get("hours"), "hours")
+        if not 0 < Decimal(str(row["hours"])) <= 24:
+            raise PackValidationError(f"{at}: hours must be more than 0 and at most 24")
+        _check_reference(
+            at, row.get("project"), "project", known_projects, "sample project"
+        )
 
     for i, row in enumerate(leads):
         at = f"{where}.leads[{i}]"
         _reject_unknown(at, row, SAMPLE_LEAD_KEYS)
         _require(at, row, "title")
         _validate_choice(at, row.get("stage"), "stage", lead_stages)
-        # Lead.source and Lead.status carry `choices` the applier never checks.
-        # Both were unvalidated here until three shipped packs were found writing
-        # source="website". A value LEAD_SOURCE does not contain, so the demo row
+        # Lead.status carries `choices` the applier never checks, and a source
+        # is a key the applier never checks either. Both were unvalidated here
+        # until three shipped packs were found writing
+        # source="website". A key the org's list does not hold, so the demo row
         # rendered as a blank dropdown and no source filter could reach it. The
         # row looked fine in the database, which is precisely why this needs a
         # schema check rather than trust.
-        _validate_choice(at, row.get("source"), "source", {c for c, _l in LEAD_SOURCE})
+        _validate_choice(at, row.get("source"), "source", pack_source_keys(raw))
         _validate_choice(at, row.get("status"), "status", {c for c, _l in LEAD_STATUS})
         _validate_choice(at, row.get("currency"), "currency", currencies)
 
@@ -639,11 +846,15 @@ def validate_manifest(raw: dict) -> dict:
                 pipeline_key=key,
                 allow_win_probability=allow_wp,
             )
+    if "deal_pipelines" in raw:
+        _validate_deal_pipelines("manifest.deal_pipelines", raw["deal_pipelines"])
 
     for i, field in enumerate(raw.get("custom_fields") or []):
         _validate_custom_field(f"manifest.custom_fields[{i}]", field)
     for i, tag in enumerate(raw.get("tags") or []):
         _validate_tag(f"manifest.tags[{i}]", tag)
+    if "lead_sources" in raw:
+        _validate_lead_sources("manifest.lead_sources", raw["lead_sources"])
     for i, product in enumerate(raw.get("products") or []):
         _validate_product(f"manifest.products[{i}]", product)
 

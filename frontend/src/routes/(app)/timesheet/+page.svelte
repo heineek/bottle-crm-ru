@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { SvelteDate } from 'svelte/reactivity';
   import { resolve } from '$app/paths';
   /**
@@ -14,19 +14,21 @@
    */
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import StatCard from '#lib/v2/components/StatCard.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
   import { money, count, shortDate, hoursMinutes as hm } from '#lib/v2/format.js';
   import { todayIn } from '#lib/v2/dates.js';
-  import { isBilled } from '#lib/v2/time-entry.js';
+  import { isBilled, entryParent } from '#lib/v2/time-entry.js';
+  import { asInternalPath } from '#lib/utils/paths.js';
   import { ChevronLeft, ChevronRight, Square, Receipt } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { components } from '#lib/api-schema.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let week = $derived(data.week);
 
@@ -35,9 +37,9 @@
   // second gets a 400 "Timer is already stopped." back, so a successful stop
   // reads as a failure.
   let busy = $state(false);
-  const stopping = () => {
+  const stopping: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };
@@ -53,8 +55,8 @@
     return () => clearInterval(id);
   });
 
-  const liveMinutes = (e) =>
-    e.is_running ? e.live_duration_minutes + sinceLoad : e.duration_minutes;
+  const liveMinutes = (e: components['schemas']['TimesheetEntry']) =>
+    e.is_running ? (e.live_duration_minutes ?? 0) + sinceLoad : e.duration_minutes;
 
   const WEEKDAY = [
     m.timesheet_weekday_mon,
@@ -69,7 +71,7 @@
   let todayISO = $derived(todayIn(data.org.timezone));
 
   /** Jump `deltaDays` from the current week's Mon..Sun and reload. */
-  function shiftWeek(/** @type {number} */ deltaDays) {
+  function shiftWeek(deltaDays: number) {
     const s = new SvelteDate(`${week.start}T00:00:00Z`);
     const e = new SvelteDate(`${week.end}T00:00:00Z`);
     s.setUTCDate(s.getUTCDate() + deltaDays);
@@ -108,7 +110,7 @@
         a +
         d.entries
           .filter((e) => e.billable && e.hourly_rate)
-          .reduce((x, e) => x + (liveMinutes(e) / 60) * e.hourly_rate, 0),
+          .reduce((x, e) => x + (liveMinutes(e) / 60) * Number(e.hourly_rate), 0),
       0
     )
   );
@@ -180,14 +182,19 @@
           <div class="v2-next-text">
             {#each week.days as d (d.date)}
               {#each d.entries.filter((e) => e.is_running) as e (e.id)}
+                {@const on = entryParent(e)}
                 <div class="v2-running-row">
                   <span>
-                    {#each messageParts(m.timesheet_running_on( { duration: slot('duration'), ticket: slot('ticket') } )) as p, i (i)}{#if p.key === 'duration'}<span
-                          class="v2-num">{hm(liveMinutes(e))}</span
-                        >{:else if p.key === 'ticket'}<a
-                          href={resolve(`tickets/${e.case.id}`)}
-                          style="color:inherit">{e.case.name}</a
-                        >{:else}{p.text}{/if}{/each}
+                    {#if on}
+                      {#each messageParts(m.timesheet_running_on( { duration: slot('duration'), parent: slot('parent') } )) as p, i (i)}{#if p.key === 'duration'}<span
+                            class="v2-num">{hm(liveMinutes(e))}</span
+                          >{:else if p.key === 'parent'}<a
+                            href={resolve(asInternalPath(on.href))}
+                            style="color:inherit">{on.name}</a
+                          >{:else}{p.text}{/if}{/each}
+                    {:else}
+                      <span class="v2-num">{hm(liveMinutes(e))}</span>
+                    {/if}
                   </span>
                   <!-- One form per entry. A single shared button could not say
                        which of several running timers it meant. -->
@@ -219,6 +226,7 @@
           </div>
 
           {#each d.entries as e (e.id)}
+            {@const on = entryParent(e)}
             <div class="v2-entry">
               <div style="display:flex;gap:6px;align-items:baseline">
                 <span class="v2-num" style="font-weight:600;font-size:11.5px">
@@ -254,12 +262,16 @@
                   {/if}
                 {/if}
               </div>
-              <a
-                href={resolve(`tickets/${e.case.id}`)}
-                style="color:inherit;text-decoration:none;display:block;margin-top:3px;white-space:normal;line-height:1.35"
-              >
-                {e.case.name}
-              </a>
+              {#if on}
+                <!-- A ticket or a project; an entry whose project was deleted
+                     has neither and shows no link. -->
+                <a
+                  href={resolve(asInternalPath(on.href))}
+                  style="color:inherit;text-decoration:none;display:block;margin-top:3px;white-space:normal;line-height:1.35"
+                >
+                  {on.name}
+                </a>
+              {/if}
               {#if e.description}
                 <div class="v2-sub" style="font-size:11px;margin-top:3px;white-space:normal">
                   {e.description}

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../data/api/schema.g.dart' as api;
 import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/deals_provider.dart';
@@ -409,11 +410,14 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             const SizedBox(height: 16),
           ],
 
-          if (defs.any((d) => _cfValueOf(d).isNotEmpty)) ...[
+          if (CustomFieldsDisplay.shows(defs)) ...[
             _buildCard(
               title: context.l10n.tasksCustomFields,
               icon: LucideIcons.listChecks,
-              child: Column(children: _buildCustomFieldRows(defs)),
+              child: CustomFieldsDisplay(
+                definitions: defs,
+                values: task.customFields,
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -571,6 +575,25 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         path: '/tickets/${t.caseId}',
       );
     }
+    if (t.projectId != null) {
+      final projectsOn = ref.watch(moduleOnProvider('projects'));
+      String label = l10n.tasksDetailSelectedProject;
+      for (final p
+          in projectsOn
+              ? ref.watch(projectEntityOptionsProvider).value ?? const []
+              : const []) {
+        if (p.id == t.projectId) {
+          label = p.label;
+          break;
+        }
+      }
+      return _RelatedRef(
+        typeLabel: l10n.tasksRelatedKindProject,
+        icon: LucideIcons.folderKanban,
+        label: label,
+        path: projectsOn ? '/projects/${t.projectId}' : null,
+      );
+    }
     return null;
   }
 
@@ -648,45 +671,12 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
   }
 
   String _assigneeDisplayName(Map<String, dynamic> profile) {
-    // ProfileSerializer wraps the user under `user_details` ({email, name, …}).
-    // Some older endpoints still return user__email at the top level. Keep
-    // that fallback so a payload shape change doesn't blank out the avatar.
-    final details = profile['user_details'];
-    String? email;
-    String? name;
-    if (details is Map<String, dynamic>) {
-      email = details['email'] as String?;
-      name = (details['name'] as String?)?.trim();
-    }
-    email ??= profile['user__email'] as String?;
+    final details = api.Profile.fromJson(profile).userDetails;
+    final email = details?.email;
+    final name = details?.name?.trim();
     if (name != null && name.isNotEmpty) return name;
     if (email != null && email.isNotEmpty) return email.split('@').first;
     return context.l10n.tasksDetailUnassigned;
-  }
-
-  /// Render the raw value stored under `custom_fields[def.key]` as a
-  /// display string. Empty / missing values return '' so the caller can
-  /// skip them.
-  String _cfValueOf(CustomFieldDefinition def) {
-    final raw = _task?.customFields[def.key];
-    if (raw == null) return '';
-    if (raw is bool) {
-      return raw ? context.l10n.commonYes : context.l10n.commonNo;
-    }
-    if (raw is List) return raw.join(', ');
-    final s = raw.toString();
-    return s;
-  }
-
-  List<Widget> _buildCustomFieldRows(List<CustomFieldDefinition> defs) {
-    final rows = <Widget>[];
-    for (final def in defs) {
-      final value = _cfValueOf(def);
-      if (value.isEmpty) continue;
-      if (rows.isNotEmpty) rows.add(const Divider(height: 20));
-      rows.add(_buildInfoRow(def.label, value, LucideIcons.tag));
-    }
-    return rows;
   }
 
   Widget _buildCommentsCard(List<Comment> comments) {
@@ -1188,19 +1178,17 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     // spinner (since _fetchTask always sets _isLoading=true) and would
     // silently fail if getTaskDetail returned null, leaving the new comment
     // invisible even though the server saved it.
-    final data = response.data;
-    final commentsData = data?['comments'];
-    final attachmentsData = data?['attachments'];
-    if (_detail != null && commentsData is List) {
-      final newComments = commentsData
-          .whereType<Map<String, dynamic>>()
-          .map(Comment.fromJson)
-          .toList();
-      final newAttachments = attachmentsData is List
-          ? attachmentsData
-                .whereType<Map<String, dynamic>>()
-                .map(Attachment.fromJson)
-                .toList()
+    final data = api.TaskCommentAttachmentResponse.fromJson(
+      response.data ?? const {},
+    );
+    final commentsData = data.comments;
+    final attachmentsData = data.attachments;
+    if (_detail != null && commentsData != null) {
+      final newComments = [
+        for (final c in commentsData) Comment.fromJson(c.json),
+      ];
+      final newAttachments = attachmentsData != null
+          ? [for (final a in attachmentsData) Attachment.fromJson(a.json)]
           : _detail!.attachments;
       setState(() {
         _detail = _detail!.copyWith(
@@ -1345,14 +1333,15 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       return;
     }
 
-    final attachmentsData = result.data?['attachments'];
-    if (_detail != null && attachmentsData is List) {
+    final attachmentsData = api.TaskCommentAttachmentResponse.fromJson(
+      result.data ?? const {},
+    ).attachments;
+    if (_detail != null && attachmentsData != null) {
       setState(() {
         _detail = _detail!.copyWith(
-          attachments: attachmentsData
-              .whereType<Map<String, dynamic>>()
-              .map(Attachment.fromJson)
-              .toList(),
+          attachments: [
+            for (final a in attachmentsData) Attachment.fromJson(a.json),
+          ],
         );
       });
     } else {

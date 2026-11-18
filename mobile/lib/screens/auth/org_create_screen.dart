@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../l10n/l10n.dart';
 import '../../config/api_config.dart';
+import '../../data/api/schema.g.dart' as api;
+import '../../data/models/org_settings.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/org_apps_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../routes/app_router.dart';
 import '../../services/api_service.dart';
 import '../../widgets/forms/unsaved_changes.dart';
@@ -32,6 +36,9 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
   /// different spelling of the same zone.
   List<_Zone> _zones = const [];
   String _timezone = 'UTC';
+
+  /// The chosen app id (a pack id); empty is "Skip for now".
+  String _vertical = '';
   bool _loadingZones = true;
   bool _submitting = false;
 
@@ -51,18 +58,15 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
     final response = await ApiService().get(ApiConfig.timezones);
     if (!mounted) return;
 
-    // Not written as a single ternary: `cond ? map?['k'] : null` makes the
-    // Dart parser read the null-aware index as the conditional's own `?`.
-    var zones = const <_Zone>[];
-    if (response.success) {
-      final raw = response.data?['timezones'];
-      if (raw is List) {
-        zones = raw
-            .whereType<Map<String, dynamic>>()
-            .map(_Zone.fromJson)
-            .toList(growable: false);
-      }
-    }
+    final body = response.data;
+    final zones = response.success && body != null
+        ? [
+            for (final zone
+                in api.TimezoneListResponse.fromJson(body).timezones ??
+                    const <api.TimezoneOption>[])
+              _Zone.fromJson(zone.json),
+          ]
+        : const <_Zone>[];
 
     setState(() {
       _zones = zones;
@@ -94,13 +98,32 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
         .createOrganization(_nameController.text.trim(), timezone: _timezone);
 
     if (!mounted) return;
-    setState(() => _submitting = false);
-
     if (failure != null) {
+      setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(failure), backgroundColor: Colors.red),
       );
       return;
+    }
+
+    // The org already exists and is selected, so an app that will not
+    // install must not undo it, as on the web. Unlike the web, say so: the
+    // Apps settings can install it again.
+    String? installFailure;
+    if (_vertical.isNotEmpty) {
+      installFailure = await ref
+          .read(orgAppsProvider.notifier)
+          .installAtSignup(_vertical);
+    }
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (installFailure != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.appOrgCreateInstallFailed(installFailure)),
+        ),
+      );
     }
     // A new workspace is empty, so the first thing offered is bringing in
     // the people from a spreadsheet, with a skip to the dashboard. The web's
@@ -108,12 +131,23 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
     context.go(AppRoutes.importWelcome);
   }
 
+  Widget _packOption(String id, String name, String description) =>
+      RadioListTile<String>(
+        value: id,
+        enabled: !_submitting,
+        contentPadding: EdgeInsets.zero,
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: description.isEmpty ? null : Text(description),
+      );
+
   /// The timezone is a guess the screen made, not something the user typed,
   /// so only a name counts as work worth keeping.
   bool get _hasUnsavedChanges => _nameController.text.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
+    // A list that fails to load hides the question, as the web does.
+    final packs = ref.watch(orgPacksProvider).value ?? const <VerticalPack>[];
     return UnsavedChangesGuard(
       hasUnsavedChanges: () => _hasUnsavedChanges,
       isSaving: _submitting,
@@ -194,6 +228,38 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     context.l10n.appOrgTimeZoneHint,
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                  if (packs.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      context.l10n.appOrgCreateIndustryTitle,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.l10n.appOrgCreateIndustryHint,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    RadioGroup<String>(
+                      groupValue: _vertical,
+                      onChanged: (value) {
+                        if (value != null) setState(() => _vertical = value);
+                      },
+                      child: Column(
+                        children: [
+                          _packOption(
+                            '',
+                            context.l10n.appOrgCreateSkip,
+                            context.l10n.appOrgCreateSkipHint,
+                          ),
+                          for (final pack in packs)
+                            _packOption(pack.id, pack.name, pack.description),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -224,10 +290,11 @@ class _Zone {
   final String name;
   final int offsetMinutes;
 
-  factory _Zone.fromJson(Map<String, dynamic> json) => _Zone(
-    name: json['name'] as String? ?? 'UTC',
-    offsetMinutes: (json['offset_minutes'] as num?)?.toInt() ?? 0,
-  );
+  /// Reads a `TimezoneOption`.
+  factory _Zone.fromJson(Map<String, dynamic> json) {
+    final w = api.TimezoneOption.fromJson(json);
+    return _Zone(name: w.name ?? 'UTC', offsetMinutes: w.offsetMinutes ?? 0);
+  }
 
   /// "Asia/Kolkata (UTC+05:30)". The offset is what makes a 490-entry list
   /// readable; the name alone tells most people very little.

@@ -28,15 +28,23 @@ out to many mailboxes (a platform-wide SES receipt rule, say, now that
 account), so each would receive every org's mail. A notification is therefore
 ingested only when the mailbox's address is one of its recipients, and is
 otherwise acknowledged and discarded without writing anything in this org.
+
+Postmark and Mailgun post to the same URL and are proven by the mailbox's
+`webhook_secret` instead (`cases.inbound.providers`). Generated addresses all
+arrive through `InboundCatchAllView`, pinned to `INBOUND_EMAIL_TOPIC_ARN`. A
+`creates=leads` mailbox hands its mail to `cases.inbound.leads.ingest_lead`.
 """
 
 from __future__ import annotations
 
 import base64
 import binascii
+import copy
 import email.utils
+import hashlib
 import json
 import logging
+from collections import Counter, defaultdict
 from datetime import timedelta
 
 from django.conf import settings
@@ -49,27 +57,108 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cases.inbound.generated import (
+    address_domain,
+    catch_all_topic,
+    generated_domain,
+    lookup_token,
+)
+from cases.inbound.leads import ingest_lead, read_email
+from cases.inbound.limits import daily_limit
 from cases.inbound.parser import parse_raw_email
 from cases.inbound.pipeline import ingest
+from cases.inbound.providers import (
+    claim_mailgun_token,
+    mailgun_signed,
+    parse_mailgun,
+    parse_postmark,
+    postmark_authorized,
+    release_mailgun_token,
+)
 from cases.inbound.sns import (
     SNSVerificationError,
     confirm_subscription,
     topic_account_id,
     verify_sns_message,
 )
+from cases.inbound.stored import StoredEmailUnavailable, stored_email
 from cases.models import EmailMessage, InboundMailbox
 from cases.serializer import InboundMailboxSerializer
 from common.models import PortalAccessToken
 from common.modules import module_is_available
 from common.org_time import activate_org_timezone
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.portal_tokens import resolve_portal_org
-from common.tasks import set_rls_context
+from common.tasks import clear_rls_context, set_rls_context
 
 logger = logging.getLogger(__name__)
 
 # Window the mailbox page reports ticket counts over.
 MAILBOX_WINDOW_DAYS = 30
+# Postmark and Mailgun posts larger than this are refused unread: above either
+# provider's message limit once attachments are base64 encoded.
+PROVIDER_BODY_MAX = 50 * 1024 * 1024
+SES_SPAM_VERDICTS = (("virusVerdict", "virus"), ("spamVerdict", "spam"))
+# A DMARC failure is acted on only where the sender's domain asks receivers to.
+DMARC_ENFORCED_POLICIES = {"quarantine", "reject"}
+
+
+def _ses_verdict(receipt: dict) -> str:
+    """Why SES's checks failed an email ("virus", "spam" or "spoofed"), or an
+    empty string."""
+    for key, name in SES_SPAM_VERDICTS:
+        if isinstance(receipt.get(key), dict) and receipt[key].get("status") == "FAIL":
+            return name
+    dmarc = receipt.get("dmarcVerdict")
+    policy = str(receipt.get("dmarcPolicy") or "").lower()
+    if (
+        isinstance(dmarc, dict)
+        and dmarc.get("status") == "FAIL"
+        and policy in DMARC_ENFORCED_POLICIES
+    ):
+        return "spoofed"
+    return ""
+
+
+# How the settings page groups a dropped email's reason; any other is "other".
+DROP_CATEGORIES = {
+    "spam": "spam",
+    "virus": "virus",
+    "spoofed": "spoofed",
+    "bounce": "automatic",
+    "auto_submitted": "automatic",
+    "precedence_bulk": "automatic",
+    "x_autoreply": "automatic",
+    "mailing_list": "automatic",
+}
+
+
+def _mailbox_drops(org):
+    """Per mailbox, the emails dropped in the window by category, and the set
+    of mailboxes that have accepted their daily limit in the last 24 hours."""
+    now = timezone.now()
+    inbound = EmailMessage.objects.filter(
+        org=org, direction="inbound", mailbox__isnull=False
+    ).order_by()
+    drops = defaultdict(Counter)
+    for row in (
+        inbound.filter(created_at__gte=now - timedelta(days=MAILBOX_WINDOW_DAYS))
+        .exclude(drop_reason="")
+        .values("mailbox_id", "drop_reason")
+        .annotate(n=Count("id"))
+    ):
+        category = DROP_CATEGORIES.get(row["drop_reason"], "other")
+        drops[str(row["mailbox_id"])][category] += row["n"]
+    full = {
+        str(row["mailbox_id"])
+        for row in inbound.filter(
+            drop_reason="", created_at__gte=now - timedelta(hours=24)
+        )
+        .values("mailbox_id")
+        .annotate(n=Count("id"))
+        if row["n"] >= daily_limit()
+    }
+    return drops, full
 
 
 def _mailbox_analytics(org):
@@ -120,23 +209,27 @@ def _admin_required():
 
 
 def _unwrap_sns_message(message):
-    """Split an SNS Notification's `Message` into (raw email, recipients).
+    """Split an SNS Notification's `Message` into (raw email, recipients,
+    verdict).
 
     SES's SNS receipt action publishes a JSON notification: the raw email in
     `content`, and in `receipt.recipients` the envelope RCPT TO addresses the
     receipt rule matched. SES sets those, Bcc included, and the sender cannot
     forge them. A `Message` that is not a JSON object is taken to be the raw
     email itself, and the recipients come back as None: the caller then has
-    only the message's own headers to go on.
+    only the message's own headers to go on. The verdict is `_ses_verdict`'s.
     """
     try:
         envelope = json.loads(message)
     except (ValueError, TypeError):
-        return message, None
+        return message, None, ""
     if not isinstance(envelope, dict):
-        return message, None
+        return message, None, ""
     receipt = envelope.get("receipt")
-    recipients = receipt.get("recipients") if isinstance(receipt, dict) else None
+    if not isinstance(receipt, dict):
+        receipt = {}
+    verdict = _ses_verdict(receipt)
+    recipients = receipt.get("recipients")
     if not isinstance(recipients, list):
         recipients = []
     content = envelope.get("content")
@@ -150,7 +243,28 @@ def _unwrap_sns_message(message):
             content = base64.b64decode("".join(content.split()), validate=True)
         except (binascii.Error, ValueError):
             pass
-    return content, [r for r in recipients if isinstance(r, str)]
+    return content, [r for r in recipients if isinstance(r, str)], verdict
+
+
+def _sns_payload(request):
+    """The SNS body as a dict, or None when it is not a JSON object.
+
+    Read from the raw body whatever its Content-Type: SNS posts
+    `text/plain; charset=UTF-8` unless the subscription's delivery policy sets
+    `headerContentType`, and DRF has no parser for that, so `request.data`
+    answered 415 to every default subscription.
+    """
+    try:
+        payload = json.loads(request.body or b"{}")
+    except (ValueError, TypeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _header_recipients(parsed):
+    """With no SES envelope, the headers a relay stamps with the delivery
+    address, then To and Cc."""
+    return [*parsed.delivered_to, *parsed.to_addresses, *parsed.cc_addresses]
 
 
 def _addressed_to(mailbox, recipients):
@@ -172,8 +286,80 @@ def _topic_rejected():
     )
 
 
+def mailbox_module(mailbox) -> str:
+    """The module a mailbox needs on: Leads for a lead address, else Tickets."""
+    return "leads" if mailbox.creates == InboundMailbox.CREATES_LEADS else "tickets"
+
+
+def _deliver(parsed, mailbox, reading=None) -> dict:
+    """Run one email through its mailbox; the webhook's answer. `reading`
+    (`cases.inbound.leads.read_email`) is shared by the catch-all's recipients."""
+    if mailbox.creates == InboundMailbox.CREATES_LEADS:
+        outcome = ingest_lead(parsed, mailbox, reading)
+        return {
+            "ok": True,
+            "lead_id": str(outcome.lead.id) if outcome.lead else None,
+            "result": outcome.result,
+            "dropped": outcome.dropped,
+            "reason": outcome.drop_reason,
+        }
+    result = ingest(parsed, mailbox)
+    return {
+        "ok": True,
+        "case_id": str(result.case.id) if result.case else None,
+        "dropped": result.dropped,
+        "reason": result.drop_reason,
+        "created_case": result.created_case,
+    }
+
+
+def _provider_delivery(request, mailbox):
+    """A Postmark or Mailgun post, checked against the mailbox's secret."""
+    try:
+        length = int(request.META.get("CONTENT_LENGTH") or 0)
+    except ValueError:
+        length = 0
+    if length > PROVIDER_BODY_MAX:
+        return Response(
+            {"error": True, "errors": "Message too large"},
+            status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        )
+    refused = Response(
+        {"error": True, "errors": "Signature verification failed"},
+        status=status.HTTP_401_UNAUTHORIZED,
+    )
+    if mailbox.provider == "postmark":
+        # The password is in a header, so it is checked before the body is read.
+        if not postmark_authorized(
+            request.META.get("HTTP_AUTHORIZATION"), mailbox.webhook_secret
+        ):
+            logger.warning("Postmark auth failed for mailbox=%s", mailbox.id)
+            return refused
+        if not isinstance(request.data, dict):
+            return Response(
+                {"error": True, "errors": "Body is not a JSON object"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            _deliver(parse_postmark(request.data), mailbox), status=status.HTTP_200_OK
+        )
+    if not mailgun_signed(request.data, mailbox.webhook_secret):
+        logger.warning("Mailgun signature failed for mailbox=%s", mailbox.id)
+        return refused
+    if not claim_mailgun_token(mailbox, request.data):
+        logger.warning("Mailgun token reused for mailbox=%s", mailbox.id)
+        return refused
+    try:
+        answer = _deliver(parse_mailgun(request.data, request.FILES), mailbox)
+    except Exception:
+        release_mailgun_token(mailbox, request.data)
+        raise
+    return Response(answer, status=status.HTTP_200_OK)
+
+
 class InboundMailboxWebhookView(APIView):
-    """Public endpoint where AWS SNS POSTs for one configured mailbox.
+    """Public endpoint where AWS SNS, Postmark or Mailgun POSTs for one
+    configured mailbox.
 
     URL: `/api/cases/inbound/<mailbox_id>/`. The mailbox lookup also acts as
     the org boundary, the URL embeds the per-mailbox UUID so the webhook
@@ -235,7 +421,9 @@ class InboundMailboxWebhookView(APIView):
             .select_related("org")
             .first()
         )
-        if mailbox is None or not module_is_available(mailbox.org, "tickets"):
+        if mailbox is None or not module_is_available(
+            mailbox.org, mailbox_module(mailbox)
+        ):
             return not_found
 
         # Likewise the org's day: the reopen window a reply is judged against
@@ -243,8 +431,10 @@ class InboundMailboxWebhookView(APIView):
         # `GetProfileAndOrg` deactivates it when the request ends.
         activate_org_timezone(mailbox.org)
 
+        if mailbox.provider in ("postmark", "mailgun"):
+            return _provider_delivery(request, mailbox)
         if mailbox.provider != "ses":
-            # Other providers wired into the same URL space land here.
+            # IMAP needs polling, which this webhook cannot do.
             return Response(
                 {
                     "error": True,
@@ -253,14 +443,8 @@ class InboundMailboxWebhookView(APIView):
                 status=status.HTTP_501_NOT_IMPLEMENTED,
             )
 
-        # SNS posts the JSON body in `request.body`. DRF may have parsed it.
-        try:
-            payload = (
-                request.data
-                if isinstance(request.data, dict)
-                else json.loads(request.body or b"{}")
-            )
-        except (ValueError, TypeError):
+        payload = _sns_payload(request)
+        if payload is None:
             return Response(
                 {"error": True, "errors": "Body is not valid JSON"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -339,7 +523,9 @@ class InboundMailboxWebhookView(APIView):
         # SES's SNS action sends a JSON notification carrying the raw email; a
         # bare raw RFC 5322 string (another publisher on the pinned topic) is
         # accepted too. See `_unwrap_sns_message`.
-        raw_message, recipients = _unwrap_sns_message(payload.get("Message") or "")
+        raw_message, recipients, verdict = _unwrap_sns_message(
+            payload.get("Message") or ""
+        )
 
         if not raw_message:
             return Response(
@@ -348,14 +534,9 @@ class InboundMailboxWebhookView(APIView):
             )
 
         parsed = parse_raw_email(raw_message)
+        parsed.spam_verdict = verdict
         if recipients is None:
-            # No SES envelope, so fall back to the headers a relay stamps with
-            # the delivery address, then To and Cc.
-            recipients = [
-                *parsed.delivered_to,
-                *parsed.to_addresses,
-                *parsed.cc_addresses,
-            ]
+            recipients = _header_recipients(parsed)
         if not _addressed_to(mailbox, recipients):
             # The topic also serves other mailboxes and this mail belongs to
             # one of them. Storing anything here, even a dropped audit row,
@@ -368,17 +549,206 @@ class InboundMailboxWebhookView(APIView):
                 {"ok": True, "dropped": True, "reason": "not_addressed_to_mailbox"},
                 status=status.HTTP_200_OK,
             )
-        result = ingest(parsed, mailbox)
+        return Response(_deliver(parsed, mailbox), status=status.HTTP_200_OK)
 
-        return Response(
-            {
-                "ok": True,
-                "case_id": str(result.case.id) if result.case else None,
-                "dropped": result.dropped,
-                "reason": result.drop_reason,
-                "created_case": result.created_case,
+
+def _short_hash(address):
+    """A stable tag for an address in a log line that must not hold it."""
+    return hashlib.sha256(address.encode()).hexdigest()[:12]
+
+
+def _deliver_generated(parsed, address, reading) -> str:
+    """Route one catch-all recipient to its org's active generated mailbox:
+    "delivered", "dropped" or "failed".
+
+    The org comes from the unscoped lookup row the mailbox registered on
+    create (cases/signals.py), then the mailbox is read under that org's RLS
+    context, so a row naming another org finds nothing. A failure is logged
+    and counted here, so one org's failure never stops the others.
+    """
+    try:
+        org_id = resolve_portal_org(
+            lookup_token(address), PortalAccessToken.INBOUND_MAILBOX
+        )
+        if org_id is None:
+            logger.warning(
+                "Dropping catch-all mail for an unknown recipient (%s)",
+                _short_hash(address),
+            )
+            return "dropped"
+        set_rls_context(org_id)
+        mailbox = (
+            InboundMailbox.objects.filter(
+                org_id=org_id,
+                address__iexact=address,
+                is_generated=True,
+                is_active=True,
+            )
+            .select_related("org")
+            .first()
+        )
+        if mailbox is None or not module_is_available(
+            mailbox.org, mailbox_module(mailbox)
+        ):
+            logger.warning(
+                "Dropping catch-all mail for recipient (%s): no active mailbox takes it",
+                _short_hash(address),
+            )
+            return "dropped"
+        activate_org_timezone(mailbox.org)
+        # `ingest` writes a synthetic Message-ID onto the email it is given.
+        _deliver(copy.copy(parsed), mailbox, reading)
+        return "delivered"
+    except Exception:
+        logger.exception(
+            "Catch-all delivery failed for recipient (%s)", _short_hash(address)
+        )
+        return "failed"
+    finally:
+        clear_rls_context()
+
+
+class InboundCatchAllView(APIView):
+    """Public endpoint for every generated address: `/api/cases/inbound/email/`.
+
+    One SES receipt rule for `INBOUND_EMAIL_DOMAIN` publishes to one SNS topic,
+    subscribed here. A notification is trusted only when its SNS signature
+    verifies and its TopicArn is exactly `INBOUND_EMAIL_TOPIC_ARN`, the same
+    two checks the per-mailbox webhook makes against its pin. Each recipient on
+    the domain is then delivered to its own org's mailbox; mail for an unknown
+    or inactive address is dropped and logged. With either setting empty the
+    route answers 404.
+    """
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        tags=["InboundEmail"],
+        request=inline_serializer(
+            name="SNSCatchAllPayload",
+            fields={
+                "Type": serializers.CharField(),
+                "Message": serializers.CharField(),
+                "TopicArn": serializers.CharField(),
             },
-            status=status.HTTP_200_OK,
+        ),
+        responses={
+            200: inline_serializer(
+                name="InboundCatchAllResponse",
+                fields={
+                    "ok": serializers.BooleanField(),
+                    "delivered": serializers.IntegerField(required=False),
+                    "failed": serializers.IntegerField(required=False),
+                },
+            )
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        domain, topic = generated_domain(), catch_all_topic()
+        if not domain or not topic:
+            return Response(
+                {"error": True, "errors": "Not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        payload = _sns_payload(request)
+        if payload is None:
+            return Response(
+                {"error": True, "errors": "Body is not valid JSON"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            verify_sns_message(payload)
+        except SNSVerificationError as exc:
+            logger.warning("SNS verification failed for the catch-all: %s", exc)
+            return _topic_rejected()
+        if payload.get("TopicArn") != topic:
+            logger.warning(
+                "Catch-all refused TopicArn %r", payload.get("TopicArn") or ""
+            )
+            return _topic_rejected()
+
+        msg_type = payload.get("Type")
+        if msg_type == "SubscriptionConfirmation":
+            try:
+                confirm_subscription(payload)
+            except Exception:
+                logger.exception("SNS subscription confirmation failed")
+                return Response(
+                    {"error": True, "errors": "SubscribeURL fetch failed"},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            return Response({"ok": True, "subscribed": True})
+        if msg_type == "UnsubscribeConfirmation":  # pragma: no cover: informational
+            return Response({"ok": True, "unsubscribed": True})
+        if msg_type != "Notification":
+            return Response(
+                {"error": True, "errors": f"Unsupported SNS Type: {msg_type!r}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        message = payload.get("Message") or ""
+        raw_message, recipients, verdict = _unwrap_sns_message(message)
+        if not raw_message:
+            try:
+                raw_message = stored_email(message, topic)
+            except StoredEmailUnavailable as exc:
+                logger.warning("Stored email could not be read: %s", exc)
+                return Response(
+                    {"error": True, "errors": "Stored email could not be read"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        if not raw_message:
+            return Response(
+                {"error": True, "errors": "SNS Message body is empty"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        parsed = parse_raw_email(raw_message)
+        parsed.spam_verdict = verdict
+        if recipients is None:
+            recipients = _header_recipients(parsed)
+        addresses = dict.fromkeys(
+            addr.strip().lower()
+            for _, addr in email.utils.getaddresses(recipients)
+            if addr.strip() and address_domain(addr) == domain
+        )
+        reading = read_email(parsed) if addresses else None
+        outcomes = Counter(_deliver_generated(parsed, a, reading) for a in addresses)
+        failed = outcomes["failed"]
+        # A failure answers 500 so SNS redelivers; the recipients that already
+        # have the email then answer "already received".
+        return Response(
+            {"ok": not failed, "delivered": outcomes["delivered"], "failed": failed},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            if failed
+            else status.HTTP_200_OK,
+        )
+
+
+class InboundMailboxListRowSerializer(InboundMailboxSerializer):
+    """Schema only: a mailbox as the list returns it, with its 30-day numbers.
+    `drops_last_30d` carries a category only once an email was dropped in it."""
+
+    cases_last_30d = serializers.IntegerField(read_only=True)
+    last_received_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    drops_last_30d = inline_serializer(
+        name="InboundMailboxDropsResponse",
+        fields={
+            category: serializers.IntegerField(required=False)
+            for category in sorted({*DROP_CATEGORIES.values(), "other"})
+        },
+        read_only=True,
+    )
+    dropped_last_30d = serializers.IntegerField(read_only=True)
+    limit_reached = serializers.BooleanField(read_only=True)
+
+    class Meta(InboundMailboxSerializer.Meta):
+        fields = (
+            *InboundMailboxSerializer.Meta.fields,
+            "cases_last_30d",
+            "last_received_at",
+            "drops_last_30d",
+            "dropped_last_30d",
+            "limit_reached",
         )
 
 
@@ -386,7 +756,25 @@ class InboundMailboxListCreateView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     @extend_schema(
-        tags=["InboundEmail"], responses={200: InboundMailboxSerializer(many=True)}
+        tags=["InboundEmail"],
+        responses={
+            200: inline_serializer(
+                name="InboundMailboxListResponse",
+                fields={
+                    "mailboxes": InboundMailboxListRowSerializer(many=True),
+                    "totals": inline_serializer(
+                        name="InboundMailboxListTotals",
+                        fields={
+                            "count": serializers.IntegerField(),
+                            "active": serializers.IntegerField(),
+                            "cases_last_30d": serializers.IntegerField(),
+                        },
+                    ),
+                    "generated_domain": serializers.CharField(allow_null=True),
+                    "daily_limit": serializers.IntegerField(),
+                },
+            )
+        },
     )
     def get(self, request, *args, **kwargs):
         org = request.profile.org
@@ -395,12 +783,17 @@ class InboundMailboxListCreateView(APIView):
             qs, many=True, context={"request": request}
         ).data
         cases_by, last_by, total_cases = _mailbox_analytics(org)
+        drops_by, full = _mailbox_drops(org)
         active = 0
         for mbx in mailboxes:
             mid = str(mbx["id"])
             mbx["cases_last_30d"] = cases_by.get(mid, 0)
             received = last_by.get(mid)
             mbx["last_received_at"] = received.isoformat() if received else None
+            drops = dict(drops_by.get(mid, {}))
+            mbx["drops_last_30d"] = drops
+            mbx["dropped_last_30d"] = sum(drops.values())
+            mbx["limit_reached"] = mid in full
             if mbx["is_active"]:
                 active += 1
         totals = {
@@ -408,7 +801,15 @@ class InboundMailboxListCreateView(APIView):
             "active": active,
             "cases_last_30d": total_cases,
         }
-        return Response({"mailboxes": mailboxes, "totals": totals})
+        return Response(
+            {
+                "mailboxes": mailboxes,
+                "totals": totals,
+                # Set when `generate_address` can make an address here.
+                "generated_domain": generated_domain() or None,
+                "daily_limit": daily_limit(),
+            }
+        )
 
     @extend_schema(
         tags=["InboundEmail"],
@@ -416,18 +817,13 @@ class InboundMailboxListCreateView(APIView):
         responses={201: InboundMailboxSerializer},
     )
     def post(self, request, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
-        # No webhook secret is generated here. This used to mint a
-        # `secrets.token_urlsafe(32)` when the body carried none, and nothing
-        # ever compared the result: SES delivery is authenticated by the SNS
-        # signature plus the `topic_arn` pin, both handled in
-        # `InboundMailboxWebhookView.post`. Now that the field is write-only,
-        # a generated value could not be read back either, so every mailbox
-        # would carry a secret no one holds. An empty column reads honestly as
-        # "not configured", which is also what a future provider integration
-        # needs in order to tell configured mailboxes from unconfigured ones.
+        # No webhook secret is generated here: the field is write-only, so a
+        # generated one could never be read back and given to Postmark or
+        # Mailgun. An empty column reads honestly as "not configured", and such
+        # a mailbox accepts no provider post.
         serializer = InboundMailboxSerializer(
             data=request.data, context={"org": org, "request": request}
         )
@@ -460,11 +856,11 @@ class InboundMailboxDetailView(APIView):
 
     @extend_schema(
         tags=["InboundEmail"],
-        request=InboundMailboxSerializer,
+        request=InboundMailboxSerializer(partial=True),
         responses={200: InboundMailboxSerializer},
     )
     def put(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         obj = self._get_object(pk, org)
@@ -500,7 +896,7 @@ class InboundMailboxDetailView(APIView):
         },
     )
     def delete(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         obj = self._get_object(pk, request.profile.org)
         if not obj:

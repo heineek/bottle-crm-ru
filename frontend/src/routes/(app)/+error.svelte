@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
@@ -66,8 +66,8 @@
       {/if}
       <a class="v2-btn" href={resolve('')}>{m.app_error_back_today()}</a>
       {#if moduleOff && isOrgAdmin(page.data)}
-        <a class="v2-btn" href={resolve(asInternalPath('/settings/modules'))}
-          >{m.app_error_open_modules()}</a
+        <a class="v2-btn" href={resolve(asInternalPath('/settings/apps'))}
+          >{m.app_error_open_apps()}</a
         >
       {/if}
     {/snippet}

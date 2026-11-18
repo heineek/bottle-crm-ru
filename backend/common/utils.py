@@ -61,13 +61,16 @@ LEAD_STATUS = (
 )
 
 
+# Lead sources are per org now (leads.models.LeadSource, defaults in
+# leads.sources). These two are the old fixed lists, moved into that key space
+# for the code that still imports them.
 LEAD_SOURCE = (
     ("call", pgettext_lazy("lead source", "Call")),
     ("email", pgettext_lazy("lead source", "Email")),
     ("existing customer", pgettext_lazy("lead source", "Existing Customer")),
     ("partner", pgettext_lazy("lead source", "Partner")),
     ("public relations", pgettext_lazy("lead source", "Public Relations")),
-    ("compaign", pgettext_lazy("lead source", "Campaign")),
+    ("campaign", pgettext_lazy("lead source", "Campaign")),
     ("other", pgettext_lazy("lead source", "Other")),
 )
 
@@ -111,15 +114,14 @@ OPPORTUNITY_TYPES = (
 )
 
 SOURCES = (
-    ("NONE", pgettext_lazy("deal source", "NONE")),
-    ("CALL", pgettext_lazy("deal source", "CALL")),
-    ("EMAIL", pgettext_lazy("deal source", " EMAIL")),
-    ("EXISTING CUSTOMER", pgettext_lazy("deal source", "EXISTING CUSTOMER")),
-    ("PARTNER", pgettext_lazy("deal source", "PARTNER")),
-    ("PUBLIC RELATIONS", pgettext_lazy("deal source", "PUBLIC RELATIONS")),
-    ("CAMPAIGN", pgettext_lazy("deal source", "CAMPAIGN")),
-    ("WEBSITE", pgettext_lazy("deal source", "WEBSITE")),
-    ("OTHER", pgettext_lazy("deal source", "OTHER")),
+    ("call", pgettext_lazy("lead source", "Call")),
+    ("email", pgettext_lazy("lead source", "Email")),
+    ("existing customer", pgettext_lazy("lead source", "Existing customer")),
+    ("partner", pgettext_lazy("lead source", "Partner")),
+    ("public relations", pgettext_lazy("lead source", "Public relations")),
+    ("campaign", pgettext_lazy("lead source", "Campaign")),
+    ("web form", pgettext_lazy("lead source", "Web form")),
+    ("other", pgettext_lazy("lead source", "Other")),
 )
 
 EVENT_PARENT_TYPE = ((10, "Account"), (13, "Lead"), (14, "Opportunity"), (11, "Case"))

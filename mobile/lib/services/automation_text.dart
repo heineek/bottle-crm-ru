@@ -6,7 +6,7 @@ import '../routes/record_routes.dart';
 import 'api_service.dart';
 
 /// Labels, sentences, request bodies and error rows for the automation
-/// builder. The twin of `frontend/src/lib/v2/automation.js`: same copy, and
+/// builder. The twin of `frontend/src/lib/v2/automation.ts`: same copy, and
 /// the catalogue is the only source of labels.
 
 String get _gone => appL10n.appAutoSomeoneInactive;

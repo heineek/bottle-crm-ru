@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Your own API tokens.
    *
@@ -27,38 +27,37 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { count, relativeDays, shortDate } from '#lib/v2/format.js';
   import { resolve } from '$app/paths';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import { Plus, KeyRound, ShieldAlert, Copy, Check } from '@lucide/svelte';
   import { tokenStatus, staleness, scopeSummary, EXPIRY_CHOICES } from '#lib/v2/token-rules.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let creating = $state(false);
   let busy = $state(false);
   let copied = $state(false);
 
-  const working = () => {
+  const working: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };
   };
 
-  const createSubmit = () => {
+  const createSubmit: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update, result }) => {
+    return async ({ update, result }) => {
       await update();
       busy = false;
       if (result?.type === 'success' && result?.data?.created) creating = false;
     };
   };
 
-  /** @param {string} value */
-  async function copyToken(value) {
+  async function copyToken(value: string) {
     try {
       await navigator.clipboard.writeText(value);
       copied = true;

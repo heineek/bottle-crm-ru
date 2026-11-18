@@ -300,7 +300,6 @@
   "tickets_detail_merge_title": "Объединить {name} с другим обращением",
   "tickets_detail_search_by_subject": "Поиск по теме",
   "tickets_detail_merge_search_aria": "Поиск обращений для объединения",
-  "tickets_detail_search_button": "Найти",
   "tickets_detail_merge_no_match": "По этому запросу нет обращений, с которыми можно объединить это обращение.",
   "tickets_detail_merge_none": "Нет обращений, с которыми можно объединить это обращение.",
   "tickets_detail_merge_confirm": "Обращение «{source}» будет помечено как дубликат, а его комментарии, вложения и письма перейдут в «{target}». Это можно отменить в целевом обращении.",
@@ -622,5 +621,30 @@
   "tickets_server_customer": "Клиент",
   "tickets_server_unknown_sender": "Неизвестный отправитель",
   "tickets_server_read_only": "Вы можете читать это обращение, но не изменять его.",
-  "tickets_server_not_found": "Такого обращения нет, или у вас нет к нему доступа."
+  "tickets_server_not_found": "Такого обращения нет, или у вас нет к нему доступа.",
+  "tickets_detail_open_that_project": "Открыть этот проект",
+  "tickets_detail_bill_time": "Выставить счёт за время",
+  "tickets_detail_bill_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input countSlot",
+        "input time",
+        "input account",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countSlot} оплачиваемая запись ({time}), ещё не выставленная в счёт, попадёт в черновик счёта для {account}.",
+        "countPlural=few": "{countSlot} оплачиваемые записи ({time}), ещё не выставленные в счёт, попадут в черновик счёта для {account}.",
+        "countPlural=many": "{countSlot} оплачиваемых записей ({time}), ещё не выставленных в счёт, попадут в черновик счёта для {account}.",
+        "countPlural=other": "{countSlot} оплачиваемой записи ({time}), ещё не выставленной в счёт, попадут в черновик счёта для {account}."
+      }
+    }
+  ],
+  "tickets_detail_bill_currencies": "Эти записи в разных валютах: {currencies}. В счёте может быть только одна валюта, поэтому приведите записи к одной валюте перед выставлением счёта.",
+  "tickets_detail_bill_lines": "Строки счёта",
+  "tickets_detail_bill_create": "Создать черновик счёта",
+  "tickets_server_bill_nothing": "В этом обращении нет времени, готового к выставлению счёта.",
+  "tickets_server_bill_failed": "Не удалось выставить счёт за это время."
 }

@@ -4,8 +4,18 @@ from django.utils.translation import gettext_lazy as _
 
 from automation.objects import Adapter, Choice, FieldSpec, model_choices
 from leads.models import Lead, LeadStage
+from leads.sources import org_sources
 from leads.updates import update_lead
 from webhooks.events import lead_data
+
+
+def source_choices(org):
+    """The org's lead sources. A retired one can still be matched on, since
+    records keep it, but a rule cannot set it."""
+    return tuple(
+        Choice(s.key, s.label, settable=s.is_active)
+        for s in org_sources(org, create=False)
+    )
 
 
 class LeadAdapter(Adapter):
@@ -28,7 +38,7 @@ class LeadAdapter(Adapter):
             "choice",
             model_choices(Lead, "status", unsettable={"converted"}),
         ),
-        FieldSpec("source", _("Source"), "choice", model_choices(Lead, "source")),
+        FieldSpec("source", _("Source"), "choice"),
         FieldSpec("industry", _("Industry"), "choice", model_choices(Lead, "industry")),
         FieldSpec("rating", _("Rating"), "choice", model_choices(Lead, "rating")),
         FieldSpec("stage", _("Stage"), "choice", settable=False),
@@ -48,8 +58,10 @@ class LeadAdapter(Adapter):
             .select_related("pipeline")
             .order_by("-pipeline__is_default", "pipeline__name", "order")
         )
+        choices = {"stage": stages, "source": source_choices(org)}
         return [
-            replace(s, choices=stages) if s.key == "stage" else s for s in self.FIELDS
+            replace(s, choices=choices[s.key]) if s.key in choices else s
+            for s in self.FIELDS
         ]
 
     def read(self, record, key):

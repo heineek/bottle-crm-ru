@@ -32,8 +32,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import status
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
@@ -83,6 +83,22 @@ def _state(feed):
     }
 
 
+def _feed_state_fields():
+    # A fresh dict each time: the serializer metaclass pops its fields out of
+    # the one it is given, which left the second schema with only `url`.
+    return {
+        "error": serializers.BooleanField(),
+        "enabled": serializers.BooleanField(),
+        "created_at": serializers.DateTimeField(allow_null=True),
+        "last_used_at": serializers.DateTimeField(allow_null=True),
+    }
+
+
+_FeedStateResponse = inline_serializer(
+    name="CalendarFeedStateResponse", fields=_feed_state_fields()
+)
+
+
 class CalendarFeedView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
@@ -91,7 +107,11 @@ class CalendarFeedView(APIView):
             org=request.profile.org, profile=request.profile
         )
 
-    @extend_schema(tags=["Calendar feed"], operation_id="calendar_feed_status")
+    @extend_schema(
+        tags=["Calendar feed"],
+        operation_id="calendar_feed_status",
+        responses={200: _FeedStateResponse},
+    )
     def get(self, request):
         return Response(_state(self._mine(request).first()))
 
@@ -103,6 +123,12 @@ class CalendarFeedView(APIView):
             "Create the feed, or replace it. Any previous URL stops working. "
             "The response carries `url` once; it cannot be read back."
         ),
+        responses={
+            201: inline_serializer(
+                name="CalendarFeedIssuedResponse",
+                fields={**_feed_state_fields(), "url": serializers.CharField()},
+            )
+        },
     )
     def post(self, request):
         with transaction.atomic():
@@ -124,7 +150,11 @@ class CalendarFeedView(APIView):
         data["url"] = api_url(f"{FEED_PATH_PREFIX}{raw}.ics")
         return Response(data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(tags=["Calendar feed"], operation_id="calendar_feed_disable")
+    @extend_schema(
+        tags=["Calendar feed"],
+        operation_id="calendar_feed_disable",
+        responses={200: _FeedStateResponse},
+    )
     def delete(self, request):
         deleted, _ = self._mine(request).delete()
         # Disabling a feed that is already off changes nothing and is not logged.

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { SvelteMap } from 'svelte/reactivity';
   /**
    * Fields this organisation added to records that shipped without them.
@@ -24,11 +24,14 @@
   import { isOn, TARGET_MODULES } from '#lib/v2/modules.js';
   import { FIELD_TYPE_LABEL, TARGET_MODEL_LABEL } from '#lib/v2/enums.js';
   import { Plus, TriangleAlert, Filter } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
+  import type { components } from '#lib/api-schema.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  type FieldRow = components['schemas']['CustomFieldDefinitionRow'];
+
+  let { data, form }: PageProps = $props();
 
   let targetOptions = $derived(
     Object.entries(TARGET_MODEL_LABEL).filter(
@@ -39,13 +42,13 @@
   // `null` when the panel is closed, `'new'` when adding, or the field object
   // when editing that row. One panel, two modes, so two rows can never be
   // open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<'new' | FieldRow | null>(null);
 
   // The dropdown options being edited, as `{ value, label }` rows. Held here
   // rather than read off `editing` so a row can be added or removed before
   // submitting. A new row has an empty `value`; the server module slugifies
   // one from the label, and never rewrites an existing value.
-  let optionRows = $state(/** @type {{ value: string, label: string }[]} */ ([]));
+  let optionRows = $state<{ value: string; label: string }[]>([]);
 
   // The type currently selected in the form, so the options editor appears
   // only for a dropdown. Seeded from the row being edited.
@@ -57,18 +60,21 @@
     optionRows = [];
   }
 
-  function openEdit(f) {
+  function openEdit(f: FieldRow) {
     editing = f;
     fieldType = f.field_type;
-    optionRows = (f.options ?? []).map((o) => ({ value: o.value, label: o.label }));
+    // A non-dropdown field may be stored with `{}` for its options.
+    optionRows = (Array.isArray(f.options) ? f.options : []).map((o) => ({
+      value: o.value,
+      label: o.label
+    }));
   }
 
   let totals = $derived(data.totals);
 
   /** One group per extended model, fields kept in display_order. */
   let groups = $derived.by(() => {
-    /** @type {Map<string, any[]>} */
-    const byModel = new SvelteMap();
+    const byModel: Map<string, FieldRow[]> = new SvelteMap();
     for (const f of data.fields) {
       byModel.set(f.target_model, [...(byModel.get(f.target_model) ?? []), f]);
     }
@@ -79,7 +85,9 @@
     }));
   });
 
-  let gaps = $derived(data.fields.filter((f) => f.is_required && f.records_missing_value > 0));
+  let gaps = $derived(
+    data.fields.filter((f) => f.is_required && (f.records_missing_value ?? 0) > 0)
+  );
 
   let subParts = $derived(
     messageParts(m.settings_fields_sub({ fields: slot('fields'), types: slot('types') }))
@@ -128,21 +136,22 @@
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-bottom:32px">
     {#if editing}
+      {@const current = editing}
       <SettingsFormPanel
-        title={editing === 'new'
+        title={current === 'new'
           ? m.settings_fields_new_title()
-          : m.settings_fields_edit_title({ label: editing.label })}
-        action={editing === 'new' ? '?/create' : '?/update'}
-        error={editing === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={editing === 'new'
+          : m.settings_fields_edit_title({ label: current.label })}
+        action={current === 'new' ? '?/create' : '?/update'}
+        error={current === 'new' ? form?.create?.error : form?.update?.error}
+        submitLabel={current === 'new'
           ? m.settings_fields_add_button()
           : m.settings_fields_save_button()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
         {#snippet fields()}
-          {#if editing !== 'new'}
-            <input type="hidden" name="id" value={editing.id} />
+          {#if current !== 'new'}
+            <input type="hidden" name="id" value={current.id} />
           {/if}
 
           <div class="v2-field">
@@ -153,13 +162,13 @@
               name="label"
               maxlength="128"
               required
-              value={editing === 'new' ? '' : editing.label}
+              value={current === 'new' ? '' : current.label}
             />
           </div>
 
           <div class="v2-field">
             <label for="f-key">{m.settings_fields_key_label()}</label>
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <input
                 id="f-key"
                 class="v2-input"
@@ -173,7 +182,7 @@
                 {m.settings_fields_key_hint_new()}
               </p>
             {:else}
-              <code class="v2-cf-key">{editing.key}</code>
+              <code class="v2-cf-key">{current.key}</code>
               <p class="v2-hint">
                 {m.settings_fields_key_hint_fixed()}
               </p>
@@ -182,7 +191,7 @@
 
           <div class="v2-field">
             <label for="f-target">{m.settings_fields_target_label()}</label>
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <select id="f-target" class="v2-input" name="target_model" required>
                 {#each targetOptions as [value, label] (value)}
                   <option {value}>{label}</option>
@@ -190,7 +199,7 @@
               </select>
             {:else}
               <div style="font-size:13px">
-                {TARGET_MODEL_LABEL[editing.target_model] ?? editing.target_model}
+                {TARGET_MODEL_LABEL[current.target_model] ?? current.target_model}
               </div>
               <p class="v2-hint">{m.settings_fields_fixed()}</p>
             {/if}
@@ -198,7 +207,7 @@
 
           <div class="v2-field">
             <label for="f-type">{m.settings_fields_type_label()}</label>
-            {#if editing === 'new'}
+            {#if current === 'new'}
               <select id="f-type" class="v2-input" name="field_type" bind:value={fieldType}>
                 {#each Object.entries(FIELD_TYPE_LABEL) as [value, label] (value)}
                   <option {value}>{label}</option>
@@ -213,7 +222,7 @@
                    as something to change; `UPDATE_FIELDS` drops `field_type`
                    from the outgoing body regardless of what this holds. -->
               <input type="hidden" name="field_type" value={fieldType} />
-              <div style="font-size:13px">{FIELD_TYPE_LABEL[editing.field_type]}</div>
+              <div style="font-size:13px">{FIELD_TYPE_LABEL[current.field_type]}</div>
               <p class="v2-hint">
                 {m.settings_fields_type_hint_fixed()}
               </p>
@@ -264,7 +273,7 @@
               type="number"
               name="display_order"
               min="0"
-              value={editing === 'new' ? 0 : editing.display_order}
+              value={current === 'new' ? 0 : current.display_order}
             />
           </div>
 
@@ -276,7 +285,7 @@
                 type="checkbox"
                 name="is_required"
                 value="true"
-                checked={editing !== 'new' && editing.is_required}
+                checked={current !== 'new' && current.is_required}
               />
               {m.settings_fields_required_hint()}
             </label>
@@ -290,7 +299,7 @@
                 type="checkbox"
                 name="is_filterable"
                 value="true"
-                checked={editing !== 'new' && editing.is_filterable}
+                checked={current !== 'new' && current.is_filterable}
               />
               {m.settings_fields_filterable_hint()}
             </label>
@@ -312,7 +321,7 @@
                 .map((f) =>
                   m.settings_fields_gap_item({
                     label: f.label,
-                    count: f.records_missing_value,
+                    count: f.records_missing_value ?? 0,
                     records: (TARGET_MODEL_LABEL[f.target_model] ?? f.target_model).toLowerCase()
                   })
                 )
@@ -345,12 +354,12 @@
                     <code class="v2-cf-key">{f.key}</code>
                   </div>
                   <span class="v2-sub" style="font-size:11.5px">
-                    {FIELD_TYPE_LABEL[f.field_type]}{#if f.options}
+                    {FIELD_TYPE_LABEL[f.field_type]}{#if Array.isArray(f.options)}
                       · {f.options.map((o) => o.label).join(', ')}
                     {/if}
-                    {#if f.is_required && f.records_missing_value > 0}
+                    {#if f.is_required && (f.records_missing_value ?? 0) > 0}
                       · <span style="color:var(--v2-clay)">
-                        {m.settings_fields_without_value({ count: f.records_missing_value })}
+                        {m.settings_fields_without_value({ count: f.records_missing_value ?? 0 })}
                       </span>
                     {/if}
                   </span>

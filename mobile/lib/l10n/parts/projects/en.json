@@ -1,0 +1,419 @@
+{
+  "projectsHours": "{hours}h",
+  "@projectsHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBurnHours": "Hours",
+  "projectsBurnAmount": "Amount",
+  "projectsBurnOf": "{used} of {total}",
+  "@projectsBurnOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsStatusActive": "Active",
+  "projectsStatusOnHold": "On hold",
+  "projectsStatusCompleted": "Completed",
+  "projectsStatusCancelled": "Cancelled",
+  "projectsBillingTimeAndMaterials": "Time and materials",
+  "projectsBillingFixedFee": "Fixed fee",
+  "projectsBillingRetainer": "Retainer",
+  "projectsBillingNonBillable": "Non-billable",
+  "projectsTitle": "Projects",
+  "projectsNew": "New project",
+  "projectsAccountsLoadFailed": "Could not load the accounts. Try again.",
+  "projectsFilterByAccount": "Filter by account",
+  "projectsLoadFailed": "Could not load projects",
+  "projectsTryAgain": "Try again",
+  "projectsSearchHint": "Search projects",
+  "projectsFilterAll": "All",
+  "projectsAnyAccount": "Any account",
+  "projectsOneAccount": "One account",
+  "projectsEmptyTitle": "No projects yet",
+  "projectsEmptyFilteredTitle": "No matching projects",
+  "projectsEmptyBody": "A project holds the tasks, time and invoices for one piece of client work. Start one here or from a won deal.",
+  "projectsEmptyFilteredBody": "Clear a filter to see more.",
+  "projectsRowDue": "due {date}",
+  "@projectsRowDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRowLogged": "{hours} logged",
+  "@projectsRowLogged": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountEnterNumber": "Enter a number.",
+  "projectsAmountMoreThanZero": "Enter more than 0.",
+  "projectsAmountPercentMax": "A percent is at most 100.",
+  "projectsAmountOfFee": "{part} of the {fee} fee",
+  "@projectsAmountOfFee": {
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountTitle": "Invoice an amount",
+  "projectsAmountDraftsForClient": "Drafts a one-line invoice for the client.",
+  "projectsAmountDraftsFor": "Drafts a one-line invoice for {account}.",
+  "@projectsAmountDraftsFor": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountFee": "Fee {fee}.",
+  "@projectsAmountFee": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountFeeInvoiced": "Fee {fee}, invoiced so far {invoiced}.",
+  "@projectsAmountFeeInvoiced": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      },
+      "invoiced": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountAmount": "Amount",
+  "projectsAmountPercentOfFee": "Percent of fee",
+  "projectsAmountPercent": "Percent",
+  "projectsAmountLineDescription": "Line description (optional)",
+  "projectsAmountLineHint": "{name}, fixed fee",
+  "@projectsAmountLineHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsNotFoundBody": "It may have been deleted, or you may not have access to it.",
+  "projectsCheckConnection": "Check your connection and try again.",
+  "projectsFormEnterZeroOrMore": "Enter 0 or more.",
+  "projectsFormNameRequired": "A project needs a name.",
+  "projectsFormAccountRequired": "Pick the client account.",
+  "projectsFormDueBeforeStart": "The due date cannot be before the start date.",
+  "projectsFormFeeMin": "Enter at least 0.01.",
+  "projectsFormFeeRequired": "Set the monthly fee.",
+  "projectsFormOverageRequired": "Set the rate for hours over the allowance.",
+  "projectsFormRateRequired": "Enter a rate.",
+  "projectsFormCheckFields": "Check the marked fields.",
+  "projectsFormSaved": "Project saved",
+  "projectsFormCreated": "Project created",
+  "projectsFormEditTitle": "Edit project",
+  "projectsFormLoadFailed": "Could not load this project",
+  "projectsFormDraftFailed": "Could not fill the form from that deal",
+  "projectsFormCustomFields": "Custom fields",
+  "projectsFormProjectCard": "Project",
+  "projectsFormName": "Name",
+  "projectsFormAccount": "Account",
+  "projectsFormCurrentAccount": "Current account",
+  "projectsFormDeal": "Deal (optional)",
+  "projectsFormNone": "None",
+  "projectsFormCurrentDeal": "Current deal",
+  "projectsNotSet": "Not set",
+  "projectsBillingAndBudget": "Billing and budget",
+  "projectsFormAdminOnly": "Only an admin can change these.",
+  "projectsBillingType": "Billing type",
+  "projectsMonthlyFee": "Monthly fee",
+  "projectsHoursIncluded": "Hours included each month",
+  "projectsRollover": "Roll unused hours over",
+  "projectsOverageRate": "Rate for hours over the allowance",
+  "projectsCurrency": "Currency",
+  "projectsBudgetHours": "Budget hours",
+  "projectsBudgetAmount": "Budget amount",
+  "projectsDefaultRate": "Default hourly rate",
+  "projectsRateForSomeone": "Rate for someone",
+  "projectsRateFor": "Rate for {name}",
+  "@projectsRateFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsHoursSuffix": "h",
+  "projectsFeeBudgetAmount": "Fee (budget amount)",
+  "projectsDefaultRateHelp": "Time logged here takes the person's own rate below, else this one.",
+  "projectsHoursIncludedHelp": "Leave blank to bill the fee alone, with no hours over.",
+  "projectsCarriedHours": "Carried hours",
+  "projectsCarriedHoursHelp": "Unused hours carried into the next invoice.",
+  "projectsDates": "Dates",
+  "projectsStartDate": "Start date",
+  "projectsDueDate": "Due date",
+  "projectsClearField": "Clear {field}",
+  "@projectsClearField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsSomeone": "Someone",
+  "projectsPeople": "People",
+  "projectsNobodyAssigned": "Nobody assigned",
+  "projectsAssignPeople": "Assign people",
+  "projectsNoMembers": "No active members",
+  "projectsRatesPerPerson": "Rates per person",
+  "projectsRatesPerPersonHelp": "A person's own hourly rate on this project. Leave someone out to use the default rate.",
+  "projectsPerson": "Person",
+  "projectsRate": "Rate",
+  "projectsRemoveRate": "Remove rate",
+  "projectsAddRate": "Add a rate",
+  "projectsTag": "Tag",
+  "projectsDetails": "Details",
+  "projectsNoTags": "No tags",
+  "projectsFormSave": "Save project",
+  "projectsFormCreate": "Create project",
+  "projectsNotFound": "Project not found",
+  "projectsTabOverview": "Overview",
+  "projectsTabTasks": "Tasks",
+  "projectsTabTime": "Time",
+  "projectsTabInvoices": "Invoices",
+  "projectsTabFiles": "Files",
+  "projectsTabFilesCount": "Files ({count})",
+  "@projectsTabFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsTabComments": "Comments",
+  "projectsTabCommentsCount": "Comments ({count})",
+  "@projectsTabCommentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsDelete": "Delete project",
+  "projectsFactAccount": "ACCOUNT",
+  "projectsDeal": "Deal",
+  "projectsFactFromDeal": "FROM THE DEAL",
+  "projectsFactFromEstimate": "FROM ESTIMATE",
+  "projectsBudget": "Budget",
+  "projectsFactStart": "START",
+  "projectsFactDue": "DUE",
+  "projectsRates": "Rates",
+  "projectsBillMonth": "Bill {month}",
+  "@projectsBillMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBillThisMonth": "Bill this month",
+  "projectsHoursCount": "{count, plural, one{{hours} hour} other{{hours} hours}}",
+  "@projectsHoursCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerNoFee": "No monthly fee set",
+  "projectsRetainerFee": "{amount} a month",
+  "@projectsRetainerFee": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerUsed": "{hours} in {month}",
+  "@projectsRetainerUsed": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerUsedOf": "{used} of {available} hours used in {month}",
+  "@projectsRetainerUsedOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerOverage": "{hours} over the allowance so far",
+  "@projectsRetainerOverage": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerOverageValue": "{hours} over the allowance so far, {amount}",
+  "@projectsRetainerOverageValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerCarried": "{hours} carried in from earlier months",
+  "@projectsRetainerCarried": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerEnded": "Ended after {month}",
+  "@projectsRetainerEnded": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetLogged": "{logged} logged, {billable} billable",
+  "@projectsBudgetLogged": {
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "billable": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetUnbilled": "Not yet billed: {amount}",
+  "@projectsBudgetUnbilled": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetInvoicedOfFee": "Invoiced {invoiced} of the {fee} fee",
+  "@projectsBudgetInvoicedOfFee": {
+    "placeholders": {
+      "invoiced": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetInvoiced": "Invoiced: {amount}",
+  "@projectsBudgetInvoiced": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetNone": "No budget set.",
+  "projectsRatesNoDefault": "No default rate",
+  "projectsRatesDefault": "Default: {amount} an hour",
+  "@projectsRatesDefault": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRateLineNone": "{name}: no rate",
+  "@projectsRateLineNone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRateLine": "{name}: {amount} an hour",
+  "@projectsRateLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsNewTask": "New task",
+  "projectsNoTasks": "No tasks on this project yet.",
+  "projectsTaskUpdateFailed": "Could not update that task",
+  "projectsLogged": "Logged",
+  "projectsStartTimer": "Start timer",
+  "projectsLogTime": "Log time",
+  "projectsNoTime": "No time logged here yet.",
+  "projectsTimerOn": "Start the timer on",
+  "projectsTimerOnProject": "The project",
+  "projectsTimerAlreadyRunning": "You already have a timer running.",
+  "projectsTimerStartFailed": "Could not start the timer.",
+  "projectsView": "View",
+  "projectsTimerStopFailed": "Could not stop the timer.",
+  "projectsLogTimeFailed": "Could not log that time.",
+  "projectsBillThisMonthQuestion": "Bill this month?",
+  "projectsBillMonthQuestion": "Bill {month}?",
+  "@projectsBillMonthQuestion": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBillMonthBody": "This drafts an invoice for the monthly fee, plus any hours over the allowance, and marks the month's time as billed.",
+  "projectsBillMonthFailed": "Could not bill the month.",
+  "projectsNoInvoices": "No invoices for this project yet.",
+  "projectsInvoice": "Invoice",
+  "projectsNoFiles": "No files yet. Attach a brief, a contract or a deliverable.",
+  "projectsAttachmentNoFile": "That attachment has no file.",
+  "projectsDownloadFailed": "Could not download that file.",
+  "projectsNoComments": "No comments yet",
+  "projectsNoCommentsBody": "Add a comment to keep the team in the loop",
+  "projectsAddCommentHint": "Add a comment...",
+  "projectsAddComment": "Add comment",
+  "projectsDeleteTitle": "Delete this project?",
+  "projectsDeleteBody": "Its tasks, time entries and invoices are kept, without the link to this project. This cannot be undone.",
+  "projectsDeleted": "Project deleted"
+}

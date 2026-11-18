@@ -55,7 +55,6 @@
   "timesheetAtSavedRates": "at the saved rates",
   "timesheetNotInvoiced": "not invoiced",
   "timesheetTimerRunning": "Timer running",
-  "timesheetATicket": "a ticket",
   "timesheetStopTimer": "Stop timer",
   "timesheetNothingLogged": "Nothing logged",
   "timesheetTagRunning": "running",
@@ -102,5 +101,112 @@
     }
   },
   "timesheetBillable": "billable",
-  "timesheetWorth": "worth"
+  "timesheetWorth": "worth",
+  "timeEntryZero": "0m",
+  "timeEntryHours": "{hours}h",
+  "@timeEntryHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "timeEntryRunning": "Running",
+  "timeEntryStop": "Stop",
+  "timeEntryFallback": "Time entry",
+  "timeEntrySheetTitle": "Add time entry",
+  "timeEntryDuration": "Duration",
+  "timeEntryDescriptionHint": "What did you work on?",
+  "timeEntryTaskOptional": "Task (optional)",
+  "timeEntryNoTask": "No task",
+  "timeEntryBillable": "Billable",
+  "timeEntryAdd": "Add entry",
+  "billTimeCouldNotDraft": "Could not draft the invoice.",
+  "billTimeTitle": "Bill time",
+  "billTimeIntro": "Turns unbilled billable time into a draft invoice and marks the entries billed. Cancelling the invoice frees them again.",
+  "billTimeUpTo": "Bill up to {date}",
+  "@billTimeUpTo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeGroupLines": "Group lines",
+  "billTimeGroupSingle": "One line for everything",
+  "billTimeGroupPerson": "One line per person",
+  "billTimeGroupTask": "One line per task",
+  "billTimeGroupEntry": "One line per entry",
+  "billTimeCreateDraft": "Create draft invoice",
+  "billTimeUnrated": "{count, plural, one{{count} entry has no rate and will be billed at 0.} other{{count} of these entries have no rate and will be billed at 0.}}",
+  "@billTimeUnrated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billTimeCounting": "Counting unbilled time...",
+  "billTimePreviewFailed": "The preview could not be loaded. The invoice still takes every billable entry not yet billed up to this date.",
+  "billTimeNothingUpTo": "Nothing unbilled up to this date.",
+  "billTimeSummary": "{entries}, {hours}h, worth {amount}",
+  "@billTimeSummary": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeNothing": "Nothing unbilled.",
+  "billTimeMixed": "{entries} in {currencies}. One invoice takes one currency, so these cannot be billed together.",
+  "@billTimeMixed": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "currencies": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeAnd": " and ",
+  "billTimeSummaryAbout": "{entries}, {hours}h, worth about {amount}",
+  "@billTimeSummaryAbout": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeEntries": "{count, plural, one{{count} entry} other{{count} entries}}",
+  "@billTimeEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billTimeLines": "{count, plural, one{{count} line} other{{count} lines}}",
+  "@billTimeLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetGroupProject": "Project",
+  "timesheetBillableShareLabel": "billable share",
+  "timesheetNoSource": "No ticket or project"
 }

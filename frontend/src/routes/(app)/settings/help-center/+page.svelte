@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * The public help center: one switch and one address.
    *
@@ -16,13 +16,13 @@
   import { ExternalLink, Globe } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
   const publishesBody = $derived(
     messageParts(m.settings_helpcenter_publishes_body({ path: slot('path') }))
   );
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let editing = $state(false);
 

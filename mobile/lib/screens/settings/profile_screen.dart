@@ -12,6 +12,7 @@ import '../../providers/profile_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/common.dart';
+import '../../widgets/common/push_prompt.dart';
 import '../../widgets/forms/unsaved_changes.dart';
 
 /// Profile view/edit screen.
@@ -343,6 +344,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ? context.l10n.settingsProfileEnabled
               : context.l10n.settingsProfileDisabled,
         ),
+        _sectionHeader(context.l10n.settingsProfileSectionAlerts),
+        SwitchListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          value: profile.leadAlertsEmail,
+          onChanged: (v) => _setAlerts(email: v),
+          title: Text(context.l10n.settingsProfileLeadAlertsEmail),
+          subtitle: Text(
+            context.l10n.settingsProfileLeadAlertsEmailBody,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        SwitchListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          value: profile.leadAlertsPush,
+          onChanged: (v) => _setAlerts(push: v),
+          title: Text(context.l10n.settingsProfileLeadAlertsPush),
+          subtitle: Text(
+            context.l10n.settingsProfileLeadAlertsPushBody,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
         _sectionHeader(context.l10n.settingsProfileSectionYourAccount),
         // Your OWN tokens, not the settings screen: that one is the admin's
         // org-wide oversight list and answers a member 403.
@@ -391,6 +417,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onTap: () => context.push(AppRoutes.tasks),
           ),
       ],
+    );
+  }
+
+  Future<void> _setAlerts({bool? email, bool? push}) async {
+    final ok = await ref
+        .read(profileProvider.notifier)
+        .setLeadAlerts(email: email, push: push);
+    if (ok && push == true) await requestPushPermission();
+    if (!mounted || ok) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.settingsProfileAlertsFailed),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 

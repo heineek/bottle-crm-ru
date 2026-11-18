@@ -50,7 +50,7 @@
   "public_org_new_timezone_label": "Time zone",
   "public_org_new_timezone_hint": "Sets when a day starts here, so \"due today\" and \"overdue\" mean what your team expects. You can change it later in Settings.",
   "public_org_new_pack_legend": "What kind of business is this?",
-  "public_org_new_pack_hint": "Sets up a starter pipeline, tags and fields for your industry. You can change everything later.",
+  "public_org_new_pack_hint": "Installs an industry app: a starter pipeline, tags, fields and sample records. You can change any of it, or remove the app, in Settings › Apps.",
   "public_org_new_pack_skip": "Skip for now",
   "public_org_new_pack_blank": "Start with a blank workspace.",
   "public_org_new_failed_title": "Couldn't create organisation",
@@ -237,7 +237,7 @@
   "public_portal_estimate_expired_on": "Expired {date}",
   "public_portal_estimate_valid_today": "Valid until end of today",
   "public_portal_estimate_no_expiry": "No expiry date set",
-  "public_portal_estimate_accepted_body": "{org} has been notified and will raise an invoice for {total}. A copy has been sent to {email}.",
+  "public_portal_estimate_accepted_body": "{org} has been notified and will raise an invoice for {total}.",
   "public_portal_estimate_declined_body": "{org} has been notified. If you declined by mistake, reply to the email this link came from. This page cannot undo it.",
   "public_portal_estimate_expired_title": "This estimate has expired",
   "public_portal_estimate_expired_body": "Prices were held until {date}. Reply to the email this link came from and {org} can send a current quote.",
@@ -272,5 +272,6 @@
         "countPlural=other": "Valid until {date} · {countShown} days left"
       }
     }
-  ]
+  ],
+  "public_portal_estimate_deposit_follows": "A deposit invoice will follow."
 }

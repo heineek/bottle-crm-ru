@@ -73,7 +73,7 @@ for f in messages/en.json messages/*/en.json; do cp "$f" "${f%en.json}fa.json"; 
   missing one. A language may turn a plain message into a plural where English does not need one.
 - **The language's own name** goes in `language_name` in `messages/fa.json` (`"فارسی"`). The
   profile picker shows each language through this key.
-- **Formatting.** `intlLocale` in `src/lib/i18n/locale.js` maps a UI locale to the `Intl` tag used
+- **Formatting.** `intlLocale` in `src/lib/i18n/locale.ts` maps a UI locale to the `Intl` tag used
   for dates and numbers. An unknown locale is used as is, which is right for most languages
   (`fa` gives Persian digits and the Persian calendar). Add an entry only to pin a region, as
   `ru` does with `ru-RU`.

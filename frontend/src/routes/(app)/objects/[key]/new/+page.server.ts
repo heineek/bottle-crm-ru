@@ -1,0 +1,59 @@
+import { error, fail, redirect } from '@sveltejs/kit';
+import {
+  checkKey,
+  createRecord,
+  getObject,
+  objectGone,
+  recordWriteError,
+  type RecordDetail
+} from '#lib/server/v2/custom-objects.js';
+import { getOrgPeopleAndTeams } from '#lib/server/v2/org-people.js';
+import { activeTagChoices } from '#lib/server/v2/tags.js';
+import { readRecordForm } from '#lib/server/v2/record-form.js';
+import { linkFieldsForEdit, pairForEdit } from '#lib/server/v2/record-fields.js';
+import { recordHref } from '#lib/v2/custom-objects.js';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ cookies, params }) => {
+  const key = checkKey(params.key);
+  const [definition, { people }, tags] = await Promise.all([
+    getObject({ cookies }, key),
+    getOrgPeopleAndTeams(cookies),
+    activeTagChoices({ cookies })
+  ]);
+  if (definition.is_active === false) error(404, objectGone());
+  const plain = definition.fields.filter((f) => f.field_type !== 'link');
+  return {
+    definition,
+    people,
+    tags,
+    fields: pairForEdit(plain, {}),
+    linkFields: linkFieldsForEdit(definition.fields, null)
+  };
+};
+
+export const actions: Actions = {
+  async create({ cookies, params, request }) {
+    const key = checkKey(params.key);
+    const event = { cookies };
+    const definition = await getObject(event, key);
+    const form = await request.formData();
+    const body = readRecordForm(form, definition);
+
+    let created: RecordDetail;
+    try {
+      created = await createRecord(event, key, body);
+    } catch (err) {
+      return fail(400, {
+        values: {
+          name: body.name,
+          custom_fields: body.custom_fields,
+          assigned_to: body.assigned_to,
+          tags: body.tags
+        },
+        error: recordWriteError(err, definition.fields, definition.name_label)
+      });
+    }
+    redirect(303, recordHref(`obj:${key}`, created?.id) ?? `/objects/${key}`);
+  }
+};

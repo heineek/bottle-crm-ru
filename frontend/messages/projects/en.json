@@ -1,0 +1,347 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "projects_title": "Projects",
+  "projects_new_button": "New project",
+  "projects_list_meta": "Newest first",
+  "projects_search_placeholder": "Search by name",
+  "projects_search_label": "Search projects by name",
+  "projects_empty_match_title": "No projects match",
+  "projects_empty_title": "No projects yet",
+  "projects_empty_match_body": "Nothing matches this view. Clear a filter or the search to see more.",
+  "projects_empty_body": "A project holds the work for a client: its tasks, the time logged on it, and the invoices that bill it. Start one here, or from a won deal.",
+  "projects_col_project": "Project",
+  "projects_col_budget_used": "Budget used",
+  "projects_col_logged": "Logged",
+  "projects_col_due": "Due",
+  "projects_col_billing": "Billing",
+  "projects_no_budget": "No budget set",
+  "projects_due_on": "Due {date}",
+  "projects_showing_of": "Showing {shown} of {total}",
+  "projects_status_active": "Active",
+  "projects_status_on_hold": "On hold",
+  "projects_status_completed": "Completed",
+  "projects_status_cancelled": "Cancelled",
+  "projects_billing_time_and_materials": "Time and materials",
+  "projects_billing_fixed_fee": "Fixed fee",
+  "projects_billing_retainer": "Retainer",
+  "projects_billing_non_billable": "Non-billable",
+  "projects_group_single": "One line for everything",
+  "projects_group_person": "One line per person",
+  "projects_group_task": "One line per task",
+  "projects_group_entry": "One line per entry",
+  "projects_hours_short": "{hours}h",
+  "projects_minutes_short": "{minutes}m",
+  "projects_hours_minutes_short": "{hours}h {minutes}m",
+  "projects_burn_of_hours": "{percent}% of hours",
+  "projects_burn_of_budget": "{percent}% of budget",
+  "projects_notify_hours_share": "{project} has used {percent}% of its hours budget",
+  "projects_notify_amount_share": "{project} has used {percent}% of its amount budget",
+  "projects_notify_hours_all": "{project} has used all of its hours budget",
+  "projects_notify_amount_all": "{project} has used all of its amount budget",
+  "projects_notify_retainer_invoice": "Retainer invoice {number} for {month} drafted for {project}",
+  "projects_field_budget_hours": "Budget hours",
+  "projects_field_budget_amount": "Budget amount",
+  "projects_field_hourly_rate": "Hourly rate",
+  "projects_field_monthly_fee": "Monthly fee",
+  "projects_field_included_hours": "Hours included each month",
+  "projects_field_overage_rate": "Rate for hours over the allowance",
+  "projects_field_carried_hours": "Carried hours",
+  "projects_error_name": "Give the project a name.",
+  "projects_error_account": "Pick the account this project is for.",
+  "projects_error_not_number": "{field} must be a number of 0 or more.",
+  "projects_error_due_before_start": "The due date cannot be before the start date.",
+  "projects_error_rate_missing": "Each person on the rates list needs a rate of 0 or more.",
+  "projects_error_rate_duplicate": "A person can have only one rate on a project.",
+  "projects_error_monthly_fee": "Set the monthly fee.",
+  "projects_error_overage_rate": "Set the rate for hours over the allowance.",
+  "projects_error_percent_needs_budget": "Set a budget amount on the project before invoicing a percentage of it.",
+  "projects_error_percent_range": "The percentage must be more than 0 and at most 100.",
+  "projects_error_amount_positive": "The amount must be more than 0.",
+  "projects_error_amount_mode": "Choose an amount or a percentage of the fee.",
+  "projects_retainer_no_fee": "No monthly fee set",
+  "projects_retainer_fee": "{amount} a month",
+  "projects_retainer_ended": "Ended after {month}",
+  "projects_someone": "Someone",
+  "projects_no_account": "No account",
+  "projects_attachment": "Attachment",
+  "projects_error_not_found": "That project does not exist, or you do not have access to it.",
+  "projects_new_title": "New project",
+  "projects_crumb_new": "New",
+  "projects_from_deal_note": "Filled from the deal {deal}. Nothing is saved until you create the project.",
+  "projects_draft_missed": "That deal could not be opened, so the form starts empty. Pick the account below.",
+  "projects_create_button": "Create project",
+  "projects_edit_title": "Edit project",
+  "projects_save_changes": "Save changes",
+  "projects_draft_account": "The deal’s account",
+  "projects_draft_deal": "The deal",
+  "projects_error_create": "Could not create the project.",
+  "projects_error_save": "Could not save the project.",
+  "projects_error_delete": "Could not delete this project.",
+  "projects_error_timer_start": "Could not start the timer.",
+  "projects_error_timer_stop": "Could not stop the timer.",
+  "projects_error_log_time": "Could not log this time.",
+  "projects_error_entry_change": "Could not change this entry.",
+  "projects_error_entry_delete": "Could not delete this entry.",
+  "projects_error_bill_time": "Could not bill this time.",
+  "projects_error_bill_month": "Could not bill this month.",
+  "projects_error_invoice_amount": "Could not make that invoice.",
+  "projects_tab_overview": "Overview",
+  "projects_tab_tasks": "Tasks",
+  "projects_tab_time": "Time",
+  "projects_tab_invoices": "Invoices",
+  "projects_tab_files": "Files",
+  "projects_tab_comments": "Comments",
+  "projects_from_deal": "from {deal}",
+  "projects_from_estimate": "from estimate {number}",
+  "projects_bill_time": "Bill time",
+  "projects_delete_confirm": "Delete for good",
+  "projects_delete_explain": "Deletes {name}. Its tasks, time and invoices stay, no longer linked to it.",
+  "projects_sections_label": "Project sections",
+  "projects_bill_up_to": "Bill up to",
+  "projects_bill_check": "Check",
+  "projects_bill_preview_failed": "The preview could not be loaded. The invoice still takes every billable entry not yet billed up to this date.",
+  "projects_bill_nothing": "Nothing to bill up to {date}. Every billable entry before then is already billed.",
+  "projects_bill_lines": "Invoice lines",
+  "projects_create_draft_invoice": "Create draft invoice",
+  "projects_bill_hint": "The entries are marked billed. Cancelling the invoice frees them to be billed again.",
+  "projects_bill_month": "Bill {month}",
+  "projects_bill_month_explain": "Drafts one invoice for {month}, marks that time billed, then opens the invoice.",
+  "projects_stat_hours_logged": "Hours logged",
+  "projects_percent_of": "{percent}% of {total}",
+  "projects_no_hours_budget": "No hours budget",
+  "projects_stat_billable_value": "Billable value",
+  "projects_no_budget_amount": "No budget amount",
+  "projects_stat_unbilled": "Not yet billed",
+  "projects_stat_unbilled_detail": "Billable time with no invoice",
+  "projects_stat_invoiced": "Invoiced",
+  "projects_of_fee": "of a {fee} fee",
+  "projects_stat_invoiced_detail": "Invoices not cancelled",
+  "projects_hours_budget": "Hours budget",
+  "projects_meter_hours_label": "{percent}% of the hours budget",
+  "projects_meter_amount_label": "{percent}% of the budget",
+  "projects_legend_logged": "{value} logged",
+  "projects_legend_budget": "{value} budget",
+  "projects_legend_billable": "{value} billable",
+  "projects_fee": "Fee",
+  "projects_budget": "Budget",
+  "projects_invoice_amount": "Invoice an amount",
+  "projects_invoice_mode_label": "Invoice",
+  "projects_mode_amount": "An amount",
+  "projects_mode_percent": "A percentage of the fee",
+  "projects_percentage": "Percentage",
+  "projects_amount_in": "Amount in {currency}",
+  "projects_line_description": "Line description",
+  "projects_line_placeholder": "{name}, fixed fee",
+  "projects_invoice_amount_hint": "One line, in {currency}, for {account}. It opens as a draft for you to check and send.",
+  "projects_account": "Account",
+  "projects_deal": "Deal",
+  "projects_per_hour": "{amount}/hr",
+  "projects_not_set": "Not set",
+  "projects_start": "Start",
+  "projects_people": "People",
+  "projects_people_empty": "Nobody is on this project yet.",
+  "projects_rates_hint": "Time logged here takes the person's rate on this project, else the project's hourly rate.",
+  "projects_view_label": "View",
+  "projects_view_list": "List",
+  "projects_view_board": "By status",
+  "projects_new_task": "New task",
+  "projects_tasks_failed": "The tasks could not be loaded. Nothing else here is affected.",
+  "projects_tasks_empty": "No tasks yet. Add the first piece of work for this project.",
+  "projects_task": "Task",
+  "projects_timer": "Timer",
+  "projects_start_timer_short": "Start",
+  "projects_lane_empty": "Nothing here.",
+  "projects_time_summary": "{logged} logged by everyone · {billable} billable",
+  "projects_who_logged": "Who logged it",
+  "projects_stop_timer": "Stop {time}",
+  "projects_start_timer": "Start timer",
+  "projects_log_time": "Log time",
+  "projects_minutes": "Minutes",
+  "projects_rate_per_hour": "Rate per hour",
+  "projects_rate_placeholder": "From the project",
+  "projects_no_task": "No task",
+  "projects_what_was_done": "What was done",
+  "projects_what_was_done_placeholder": "Drafted the homepage copy",
+  "projects_billable": "Billable",
+  "projects_log_hint_admin": "Counted back from now. With no rate typed, the entry takes the person's rate on this project, else the project's hourly rate.",
+  "projects_log_hint_member": "Counted back from now. The entry takes your rate on this project, else the project's hourly rate.",
+  "projects_open_running_project": "Open that project",
+  "projects_open_running_ticket": "Open that ticket",
+  "projects_time_failed": "The time entries could not be loaded. Nothing else on this project is affected.",
+  "projects_time_empty": "No time logged yet. Start the timer, or log a session you have already worked.",
+  "projects_who": "Who",
+  "projects_when": "When",
+  "projects_no_description": "No description",
+  "projects_running": "Running",
+  "projects_ago": "{age} ago",
+  "projects_stop": "Stop",
+  "projects_invoiced": "Invoiced",
+  "projects_keep": "Keep",
+  "projects_not_billable": "Not billable",
+  "projects_mark_non_billable": "Mark as non-billable",
+  "projects_mark_billable": "Mark as billable",
+  "projects_delete_entry": "Delete this entry",
+  "projects_invoices_empty": "No invoices for this project yet.",
+  "projects_invoices_empty_bill": "Bill its time from the button at the top.",
+  "projects_invoice": "Invoice",
+  "projects_issued": "Issued",
+  "projects_total": "Total",
+  "projects_invoice_draft": "Draft",
+  "projects_invoiced_total": "{amount} invoiced, not counting cancelled invoices.",
+  "projects_invoiced_total_of_fee": "{amount} invoiced of a {fee} fee, not counting cancelled invoices.",
+  "projects_file_note_placeholder": "A note to go with the file (optional)",
+  "projects_files_empty": "No files on this project yet.",
+  "projects_comments_empty": "No comments yet.",
+  "projects_list_count": [
+    {
+      "declarations": [
+        "input count",
+        "input shown",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{shown} project",
+        "countPlural=other": "{shown} projects"
+      }
+    }
+  ],
+  "projects_task_count": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} task",
+        "countPlural=other": "{countShown} tasks"
+      }
+    }
+  ],
+  "projects_unrated_entries": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} entry has no rate and will be billed at 0.",
+        "countPlural=other": "{countShown} of these entries have no rate and will be billed at 0."
+      }
+    }
+  ],
+  "projects_bill_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input entries",
+        "input hours",
+        "input value",
+        "input date",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{entries} entry, {hours}, {value} not yet billed, up to {date}.",
+        "countPlural=other": "{entries} entries, {hours}, {value} not yet billed, up to {date}."
+      }
+    }
+  ],
+  "projects_retainer_used_in": [
+    {
+      "declarations": [
+        "input count",
+        "input month",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} hour in {month}",
+        "countPlural=other": "{countShown} hours in {month}"
+      }
+    }
+  ],
+  "projects_retainer_used_of": [
+    {
+      "declarations": [
+        "input count",
+        "input month",
+        "input used",
+        "local countPlural = count: plural",
+        "local countShown = count: number",
+        "local usedShown = used: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{usedShown} of {countShown} hour used in {month}",
+        "countPlural=other": "{usedShown} of {countShown} hours used in {month}"
+      }
+    }
+  ],
+  "projects_retainer_overage": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} hour over the allowance so far",
+        "countPlural=other": "{countShown} hours over the allowance so far"
+      }
+    }
+  ],
+  "projects_retainer_overage_amount": [
+    {
+      "declarations": [
+        "input count",
+        "input amount",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} hour over the allowance so far, {amount}",
+        "countPlural=other": "{countShown} hours over the allowance so far, {amount}"
+      }
+    }
+  ],
+  "projects_retainer_carried": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} hour carried in from earlier months",
+        "countPlural=other": "{countShown} hours carried in from earlier months"
+      }
+    }
+  ]
+}
