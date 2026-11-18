@@ -21,3 +21,4 @@ it independently of the ORM's own org filters.
 - **Operators**, deploying and running BottleCRM: [Docker quick start](getting-started/docker-quick-start.md)
 - **Integrators**, building against the REST API: [Conventions](api/conventions.md)
 - **Contributors**, working on the BottleCRM codebase: [Development setup](contributing/development-setup.md)
+- **Translators**, bringing BottleCRM into another language: [Adding a language](localization/adding-a-language.md)

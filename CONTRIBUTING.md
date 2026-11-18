@@ -19,6 +19,7 @@ Full instructions (cloning, Docker, the backend (`uv`), the frontend (`pnpm`), r
 - [Repository layout](docs/contributing/repo-layout.md), where each part of the codebase lives.
 - [Security rules](docs/contributing/security-rules.md). The rules this codebase treats as non-negotiable.
 - [Adding an org-scoped model](docs/contributing/adding-an-org-scoped-model.md). What a new multi-tenant model needs, including its RLS policy.
+- [Localization](docs/localization/index.md). How strings are translated, and [how to add a language](docs/localization/adding-a-language.md).
 
 ## Submitting a Pull Request
 
