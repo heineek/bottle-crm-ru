@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/org_app.dart';
 import '../../widgets/common/badge.dart';
+import '../../l10n/l10n.dart';
 
 /// The admin's go-ahead from a preview, with or without sample records.
 typedef AppPreviewChoice = ({bool sampleData});
@@ -44,34 +45,33 @@ class _AppPreviewSheetState extends State<_AppPreviewSheet> {
       _action == AppAction.install && widget.preview.sampleOffered;
 
   String get _title => switch (_action) {
-    AppAction.install => 'Install ${widget.app.name}?',
-    AppAction.upgrade => 'Update ${widget.app.name}?',
-    AppAction.remove => 'Remove ${widget.app.name}?',
+    AppAction.install => context.l10n.settingsAppPreviewInstallTitle(
+      widget.app.name,
+    ),
+    AppAction.upgrade => context.l10n.settingsAppPreviewUpdateTitle(
+      widget.app.name,
+    ),
+    AppAction.remove => context.l10n.settingsAppPreviewRemoveTitle(
+      widget.app.name,
+    ),
   };
 
   String get _lead => switch (_action) {
-    AppAction.install =>
-      'This is what it adds. Anything this organization already has is '
-          'kept as it is, and no record changes.',
-    AppAction.upgrade =>
-      'This adds what is listed. Nothing you already have changes, and '
-          'anything you deleted stays deleted.',
-    AppAction.remove =>
-      'This turns off what is listed. Every record stays, pipelines and '
-          'tags included, and installing again brings it all back.',
+    AppAction.install => context.l10n.settingsAppPreviewInstallLead,
+    AppAction.upgrade => context.l10n.settingsAppPreviewUpdateLead,
+    AppAction.remove => context.l10n.settingsAppPreviewRemoveLead,
   };
 
   String get _empty => switch (_action) {
-    AppAction.install =>
-      'This organization already has everything this app sets up.',
-    AppAction.upgrade => 'There is nothing new to add.',
-    AppAction.remove => 'There is nothing to turn off.',
+    AppAction.install => context.l10n.settingsAppPreviewInstallEmpty,
+    AppAction.upgrade => context.l10n.settingsAppPreviewUpdateEmpty,
+    AppAction.remove => context.l10n.settingsAppPreviewRemoveEmpty,
   };
 
   String get _confirm => switch (_action) {
-    AppAction.install => 'Install',
-    AppAction.upgrade => 'Update',
-    AppAction.remove => 'Remove',
+    AppAction.install => context.l10n.settingsAppsInstall,
+    AppAction.upgrade => context.l10n.settingsAppsUpdate,
+    AppAction.remove => context.l10n.settingsAppsRemove,
   };
 
   @override
@@ -101,10 +101,7 @@ class _AppPreviewSheetState extends State<_AppPreviewSheet> {
                   if (widget.preview.hasHandWork) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'Stages marked Add by hand are new in this version, but '
-                      'their pipeline is already here, so the update leaves '
-                      'them out. Add them to that pipeline yourself if you '
-                      'want them.',
+                      context.l10n.settingsAppPreviewHandWork,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.warning700,
                       ),
@@ -131,14 +128,13 @@ class _AppPreviewSheetState extends State<_AppPreviewSheet> {
                       contentPadding: EdgeInsets.zero,
                       value: _sampleData,
                       onChanged: (on) => setState(() => _sampleData = on),
-                      title: const Text('Add sample records'),
+                      title: Text(context.l10n.settingsAppPreviewSampleTitle),
                       subtitle: Text(
                         widget.preview.sampleRecords > 0
-                            ? '${widget.preview.sampleRecords} example '
-                                  'records to try it with. Clear sample data '
-                                  'removes them.'
-                            : 'Example records to try it with. Clear sample '
-                                  'data removes them.',
+                            ? context.l10n.settingsAppPreviewSampleCount(
+                                widget.preview.sampleRecords,
+                              )
+                            : context.l10n.settingsAppPreviewSample,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -157,7 +153,7 @@ class _AppPreviewSheetState extends State<_AppPreviewSheet> {
                       height: 46,
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
+                        child: Text(context.l10n.commonCancel),
                       ),
                     ),
                   ),

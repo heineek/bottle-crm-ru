@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/approval.dart';
@@ -139,7 +140,7 @@ class TicketsNotifier extends AsyncNotifier<TicketsListData> {
 
     final response = await _apiService.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load tickets');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTickets);
     }
 
     // CaseListView returns `cases_count` (total matching) and `offset` (next
@@ -223,14 +224,14 @@ class TicketsNotifier extends AsyncNotifier<TicketsListData> {
       if (followMerge) {
         return _fetchTicketDetail(redirectTo, followMerge: false);
       }
-      throw const TicketLoadFailure(TicketLoadFailure.fallback);
+      throw TicketLoadFailure(TicketLoadFailure.fallback);
     }
 
     try {
       final data = api.CaseDetailResponse.fromJson(response.data!);
       final ticketData = data.casesObj;
       if (ticketData == null) {
-        throw const TicketLoadFailure(TicketLoadFailure.fallback);
+        throw TicketLoadFailure(TicketLoadFailure.fallback);
       }
       var ticketObj = Ticket.fromJson(ticketData.json);
 
@@ -292,7 +293,7 @@ class TicketsNotifier extends AsyncNotifier<TicketsListData> {
       rethrow;
     } catch (_) {
       // A body that does not parse is a failed load, not a missing ticket.
-      throw const TicketLoadFailure(TicketLoadFailure.fallback);
+      throw TicketLoadFailure(TicketLoadFailure.fallback);
     }
   }
 
@@ -558,7 +559,8 @@ class TicketsNotifier extends AsyncNotifier<TicketsListData> {
     if (!response.success || response.data == null) {
       return ApiResponse(
         success: false,
-        message: response.message ?? 'Could not load tickets to merge into.',
+        message:
+            response.message ?? appL10n.appMsgCouldNotLoadTicketsToMergeInto,
         statusCode: response.statusCode,
       );
     }
@@ -682,8 +684,7 @@ class TicketLoadFailure implements Exception {
   final String message;
   const TicketLoadFailure(this.message);
 
-  static const fallback =
-      'The server could not load this ticket. Try again in a moment.';
+  static String get fallback => appL10n.appMsgTheServerCouldNotLoadThisTicket;
 
   @override
   String toString() => 'TicketLoadFailure: $message';
@@ -751,7 +752,7 @@ class TicketDetailResult {
 /// so the shape and the cascade count are true; [name] reads as
 /// [restrictedName] for it, and the screen does not offer to open it.
 class TicketTreeNode {
-  static const restrictedName = TicketParentSummary.restrictedName;
+  static String get restrictedName => TicketParentSummary.restrictedName;
 
   final String id;
   final String name;
@@ -865,7 +866,7 @@ class TicketTreeNode {
 /// source (admin, or creator of both tickets); the screen offers Unmerge only
 /// when it is true.
 class MergedFromSummary {
-  static const restrictedName = TicketParentSummary.restrictedName;
+  static String get restrictedName => TicketParentSummary.restrictedName;
 
   final String id;
   final String name;

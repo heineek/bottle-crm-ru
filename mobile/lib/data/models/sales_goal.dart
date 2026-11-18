@@ -11,6 +11,8 @@
 /// 403 to everyone else, which is why the screens gate on role.
 library;
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../api/schema.g.dart' as api;
 
 /// The three goal kinds the backend accepts (`common/utils.py` GOAL_TYPES).
@@ -31,15 +33,15 @@ const List<String> dealTypes = [
 String dealTypeLabel(String type) {
   switch (type) {
     case 'NEW_BUSINESS':
-      return 'New business';
+      return appL10n.appDealTypeNewBusiness;
     case 'EXISTING_BUSINESS':
-      return 'Existing business';
+      return appL10n.appDealTypeExistingBusiness;
     case 'RENEWAL':
-      return 'Renewal';
+      return appL10n.appDealTypeRenewal;
     case 'UPSELL':
-      return 'Upsell';
+      return appL10n.appDealTypeUpsell;
     case 'CROSS_SELL':
-      return 'Cross-sell';
+      return appL10n.appDealTypeCrossSell;
     default:
       return type;
   }
@@ -56,24 +58,24 @@ const List<String> goalPeriodTypes = [
 String goalTypeLabel(String type) {
   switch (type) {
     case 'DEALS_CLOSED':
-      return 'Deals closed';
+      return appL10n.appGoalTypeDealsClosed;
     case 'ACTIVITIES':
-      return 'Activities';
+      return appL10n.appGoalTypeActivities;
     default:
-      return 'Revenue';
+      return appL10n.appGoalTypeRevenue;
   }
 }
 
 String goalPeriodLabel(String period) {
   switch (period) {
     case 'MONTHLY':
-      return 'Monthly';
+      return appL10n.appGoalPeriodMonthly;
     case 'QUARTERLY':
-      return 'Quarterly';
+      return appL10n.appGoalPeriodQuarterly;
     case 'YEARLY':
-      return 'Yearly';
+      return appL10n.appGoalPeriodYearly;
     case 'CUSTOM':
-      return 'Custom';
+      return appL10n.appGoalPeriodCustom;
     default:
       return period;
   }
@@ -87,13 +89,13 @@ String goalPeriodLabel(String period) {
 String goalStatusLabel(String status) {
   switch (status) {
     case 'completed':
-      return 'Target met';
+      return appL10n.appGoalStatusCompleted;
     case 'on_track':
-      return 'On track';
+      return appL10n.appGoalStatusOnTrack;
     case 'at_risk':
-      return 'At risk';
+      return appL10n.appGoalStatusAtRisk;
     case 'behind':
-      return 'Behind pace';
+      return appL10n.appGoalStatusBehind;
     default:
       return status;
   }
@@ -162,8 +164,10 @@ class SalesGoal {
     if (assignedToName != null && assignedToName!.isNotEmpty) {
       return assignedToName!;
     }
-    if (teamName != null && teamName!.isNotEmpty) return '${teamName!} (team)';
-    return 'Whole organisation';
+    if (teamName != null && teamName!.isNotEmpty) {
+      return appL10n.appGoalTargetTeam(teamName!);
+    }
+    return appL10n.appGoalTargetWholeOrg;
   }
 
   /// How many deal types this goal actually re-weighs. A weight of exactly 1
@@ -255,7 +259,7 @@ class GoalLeaderRow {
       rank: w.rank ?? 0,
       goalId: w.goalId ?? '',
       goalName: w.goalName ?? '',
-      user: w.user?.name ?? 'Unknown',
+      user: w.user?.name ?? appL10n.appUnknownPerson,
       target: w.target ?? 0,
       achieved: w.achieved ?? 0,
       percent: w.percent ?? 0,
@@ -386,22 +390,22 @@ String? validateGoalForm({
   required String periodStart,
   required String periodEnd,
 }) {
-  if (name.trim().isEmpty) return 'Give the goal a name.';
+  if (name.trim().isEmpty) return appL10n.appGoalValidateName;
 
   final target = double.tryParse(targetValue.trim());
-  if (target == null) return 'Target must be a number.';
+  if (target == null) return appL10n.appGoalValidateTargetNumber;
   // `> 0`, matching the serializer. Zero is rejected there too, and a goal of
   // zero is met before it starts.
-  if (target <= 0) return 'Target must be greater than 0.';
+  if (target <= 0) return appL10n.appGoalValidateTargetPositive;
 
   if (periodStart.isEmpty || periodEnd.isEmpty) {
-    return 'Pick a start and an end date.';
+    return appL10n.appGoalValidateDates;
   }
   // The serializer rejects `period_end <= period_start`, so equal dates are
   // refused as well as reversed ones. A one-day goal is not expressible here
   // and the message must not imply it is.
   if (periodEnd.compareTo(periodStart) <= 0) {
-    return 'The end date must be after the start date.';
+    return appL10n.appGoalValidateEndAfterStart;
   }
   return null;
 }
@@ -417,7 +421,7 @@ String _personName(api.Profile profile) {
   final name = details?.name ?? '';
   if (name.trim().isNotEmpty) return name.trim();
   final email = details?.email ?? '';
-  return email.isNotEmpty ? email : 'Unnamed';
+  return email.isNotEmpty ? email : appL10n.appUnnamedPerson;
 }
 
 /// A period as "1 May - 31 May", from the two date-only strings the API sends.
@@ -429,24 +433,11 @@ String _personName(api.Profile profile) {
 String goalDateRange(String start, String end) {
   final from = _shortDate(start);
   final to = _shortDate(end);
-  if (from == null || to == null) return '$start to $end';
+  if (from == null || to == null) {
+    return appL10n.appGoalDateRangeRaw(start, end);
+  }
   return '$from - $to';
 }
-
-const List<String> _months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
 
 String? _shortDate(String isoDate) {
   final parts = isoDate.split('-');
@@ -454,7 +445,8 @@ String? _shortDate(String isoDate) {
   final month = int.tryParse(parts[1]);
   final day = int.tryParse(parts[2]);
   if (month == null || day == null || month < 1 || month > 12) return null;
-  return '$day ${_months[month - 1]}';
+  final year = int.tryParse(parts[0]) ?? 2000;
+  return localDateFormat('d MMM', 'MMMd').format(DateTime(year, month, day));
 }
 
 /// One finished period from `/api/opportunities/goals/history/`.

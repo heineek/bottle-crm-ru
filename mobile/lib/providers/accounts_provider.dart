@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/account.dart';
@@ -126,7 +127,7 @@ class AccountsNotifier extends AsyncNotifier<AccountsListData> {
     ).replace(queryParameters: params).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load accounts');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadAccounts);
     }
 
     final body = api.AccountListResponse.fromJson(response.data!);
@@ -220,7 +221,9 @@ class AccountsNotifier extends AsyncNotifier<AccountsListData> {
       }
     }
     final raw = response.message as String?;
-    return (raw == null || raw.trim().isEmpty) ? 'Something went wrong' : raw;
+    return (raw == null || raw.trim().isEmpty)
+        ? appL10n.appMsgSomethingWentWrong
+        : raw;
   }
 }
 

@@ -7,6 +7,7 @@ import '../../data/models/lead_source.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_sources_provider.dart';
 import '../../widgets/common/badge.dart';
+import '../../l10n/l10n.dart';
 
 /// Where leads come from: the org's list, which every lead, contact and deal
 /// picker reads.
@@ -18,10 +19,15 @@ class LeadSourcesScreen extends ConsumerWidget {
   const LeadSourcesScreen({super.key});
 
   Future<void> _add(BuildContext context, WidgetRef ref) async {
-    final label = await _askLabel(context, title: 'New source');
+    final label = await _askLabel(
+      context,
+      title: context.l10n.settingsLeadSourcesNew,
+    );
     if (label == null || !context.mounted) return;
     final error = await ref.read(leadSourcesProvider.notifier).add(label);
-    if (context.mounted) _snack(context, error ?? 'Source added');
+    if (context.mounted) {
+      _snack(context, error ?? context.l10n.settingsLeadSourcesAdded);
+    }
   }
 
   Future<void> _rename(
@@ -31,14 +37,16 @@ class LeadSourcesScreen extends ConsumerWidget {
   ) async {
     final label = await _askLabel(
       context,
-      title: 'Rename ${source.label}',
+      title: context.l10n.settingsLeadSourcesRenameTitle(source.label),
       initial: source.label,
     );
     if (label == null || label == source.label || !context.mounted) return;
     final error = await ref
         .read(leadSourcesProvider.notifier)
         .rename(source.id, label);
-    if (context.mounted) _snack(context, error ?? 'Source renamed');
+    if (context.mounted) {
+      _snack(context, error ?? context.l10n.settingsLeadSourcesRenamed);
+    }
   }
 
   Future<void> _setActive(
@@ -52,7 +60,10 @@ class LeadSourcesScreen extends ConsumerWidget {
     if (!context.mounted) return;
     _snack(
       context,
-      error ?? (source.isActive ? 'Source retired' : 'Source restored'),
+      error ??
+          (source.isActive
+              ? context.l10n.settingsLeadSourcesRetiredMsg
+              : context.l10n.settingsLeadSourcesRestoredMsg),
     );
   }
 
@@ -83,7 +94,7 @@ class LeadSourcesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Lead sources'),
+        title: Text(context.l10n.settingsLeadSourcesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -91,7 +102,7 @@ class LeadSourcesScreen extends ConsumerWidget {
           if (canEdit)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New source',
+              tooltip: context.l10n.settingsLeadSourcesNew,
               onPressed: () => _add(context, ref),
             ),
         ],
@@ -125,9 +136,7 @@ class LeadSourcesScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: Text(
-                        'A retired source stays on the leads, contacts and '
-                        'deals that have it, and cannot be picked for new '
-                        'ones. Sources are never deleted.',
+                        context.l10n.settingsLeadSourcesRetiredNote,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -186,20 +195,20 @@ class _LabelDialogState extends State<_LabelDialog> {
         autofocus: true,
         maxLength: 64,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(
-          labelText: 'Label',
-          hintText: 'Spring open day',
+        decoration: InputDecoration(
+          labelText: context.l10n.settingsLeadSourcesLabel,
+          hintText: context.l10n.settingsLeadSourcesLabelHint,
         ),
         onSubmitted: (v) => Navigator.pop(context, v),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Save'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );
@@ -250,19 +259,24 @@ class _SourceRow extends StatelessWidget {
                       ),
                     ),
                     if (!source.isActive)
-                      StatusBadge(label: 'Retired', color: AppColors.gray500),
+                      StatusBadge(
+                        label: context.l10n.settingsLeadSourcesRetiredBadge,
+                        color: AppColors.gray500,
+                      ),
                   ],
                 ),
               ),
               if (canEdit) ...[
                 IconButton(
                   icon: const Icon(LucideIcons.arrowUp, size: 18),
-                  tooltip: 'Move ${source.label} up',
+                  tooltip: context.l10n.settingsLeadSourcesMoveUp(source.label),
                   onPressed: onUp,
                 ),
                 IconButton(
                   icon: const Icon(LucideIcons.arrowDown, size: 18),
-                  tooltip: 'Move ${source.label} down',
+                  tooltip: context.l10n.settingsLeadSourcesMoveDown(
+                    source.label,
+                  ),
                   onPressed: onDown,
                 ),
               ],
@@ -278,14 +292,18 @@ class _SourceRow extends StatelessWidget {
                   height: 44,
                   child: OutlinedButton(
                     onPressed: onRename,
-                    child: const Text('Rename'),
+                    child: Text(context.l10n.settingsLeadSourcesRename),
                   ),
                 ),
                 SizedBox(
                   height: 44,
                   child: OutlinedButton(
                     onPressed: onToggle,
-                    child: Text(source.isActive ? 'Retire' : 'Restore'),
+                    child: Text(
+                      source.isActive
+                          ? context.l10n.settingsLeadSourcesRetire
+                          : context.l10n.settingsLeadSourcesRestore,
+                    ),
                   ),
                 ),
               ],
@@ -305,8 +323,7 @@ class _NotOffered extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Text(
-        'This server has a fixed list of lead sources, so they cannot be '
-        'changed here. A newer server lets an admin edit them.',
+        context.l10n.settingsLeadSourcesNotOffered,
         style: AppTypography.body.copyWith(color: AppColors.textSecondary),
       ),
     );
@@ -333,12 +350,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the lead sources',
+              context.l10n.settingsLeadSourcesLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.appTryAgain),
+            ),
           ],
         ),
       ),

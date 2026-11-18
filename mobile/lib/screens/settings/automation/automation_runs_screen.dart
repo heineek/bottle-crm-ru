@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/automation_provider.dart';
 import '../../../services/automation_text.dart';
@@ -33,11 +34,16 @@ class _AutomationRunsScreenState extends ConsumerState<AutomationRunsScreen> {
       if (prev != next && _offset != 0) setState(() => _offset = 0);
     });
     if (!ref.watch(isOrgAdminProvider)) {
-      return _shell('Runs', const _Notice.member());
+      return _shell(
+        context.l10n.settingsAutomationRunsTitle,
+        const _Notice.member(),
+      );
     }
     final rule = ref.watch(automationRuleProvider(widget.ruleId));
     final name = rule.isLoading || rule.hasError ? null : rule.value?.name;
-    final title = name == null || name.isEmpty ? 'Runs' : name;
+    final title = name == null || name.isEmpty
+        ? context.l10n.settingsAutomationRunsTitle
+        : name;
     final runs = ref.watch(
       automationRunsProvider((id: widget.ruleId, offset: _offset)),
     );
@@ -88,7 +94,7 @@ class _AutomationRunsScreenState extends ConsumerState<AutomationRunsScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'Runs from the last 30 days, newest first.',
+          context.l10n.settingsAutomationRunsSub,
           style: AppTypography.bodySmall.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -98,7 +104,7 @@ class _AutomationRunsScreenState extends ConsumerState<AutomationRunsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Text(
-              'No more runs.',
+              context.l10n.settingsAutomationRunsNoMore,
               textAlign: TextAlign.center,
               style: AppTypography.body,
             ),
@@ -113,7 +119,7 @@ class _AutomationRunsScreenState extends ConsumerState<AutomationRunsScreen> {
             Expanded(
               child: OutlinedButton(
                 onPressed: hasNewer ? _newer : null,
-                child: const Text('Newer'),
+                child: Text(context.l10n.settingsAutomationRunsNewer),
               ),
             ),
             const SizedBox(width: 12),
@@ -122,7 +128,7 @@ class _AutomationRunsScreenState extends ConsumerState<AutomationRunsScreen> {
                 onPressed: hasOlder
                     ? () => setState(() => _offset += _pageSize)
                     : null,
-                child: const Text('Older'),
+                child: Text(context.l10n.settingsAutomationRunsOlder),
               ),
             ),
           ],
@@ -164,7 +170,7 @@ class _RunCard extends StatelessWidget {
           Text(run.reason, style: AppTypography.bodySmall),
         if (by != null)
           Text(
-            'Set off by "$by"',
+            context.l10n.settingsAutomationRunsSetOffBy(by),
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -205,7 +211,9 @@ class _RecordName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = run.recordName.isEmpty ? 'Record' : run.recordName;
+    final name = run.recordName.isEmpty
+        ? context.l10n.settingsAutomationRunsRecord
+        : run.recordName;
     final path = run.recordId.isEmpty
         ? null
         : recordPath(run.objectKey, run.recordId);
@@ -241,10 +249,10 @@ Color _runColor(String status) => switch (status) {
   _ => AppColors.textSecondary,
 };
 
-String _runLabel(String status) => switch (status) {
-  'done' => 'Done',
-  'failed' => 'Failed',
-  'skipped' => 'Skipped',
+String _runLabel(AppLocalizations l10n, String status) => switch (status) {
+  'done' => l10n.settingsAutomationRunsDone,
+  'failed' => l10n.settingsAutomationRunsFailed,
+  'skipped' => l10n.settingsAutomationRunsSkipped,
   _ => status,
 };
 
@@ -263,7 +271,7 @@ class _RunPill extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
-        _runLabel(status),
+        _runLabel(context.l10n, status),
         style: AppTypography.caption.copyWith(
           color: color,
           fontWeight: FontWeight.w600,
@@ -280,11 +288,24 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final (icon, color, label) = switch (step.status) {
       'done' => (LucideIcons.check, AppColors.success600, null),
-      'undone' => (LucideIcons.undo2, AppColors.warning600, 'Undone'),
-      'failed' => (LucideIcons.circleX, AppColors.danger600, 'Failed'),
-      _ => (LucideIcons.minus, AppColors.textSecondary, 'Skipped'),
+      'undone' => (
+        LucideIcons.undo2,
+        AppColors.warning600,
+        l10n.settingsAutomationRunsStepUndone,
+      ),
+      'failed' => (
+        LucideIcons.circleX,
+        AppColors.danger600,
+        l10n.settingsAutomationRunsFailed,
+      ),
+      _ => (
+        LucideIcons.minus,
+        AppColors.textSecondary,
+        l10n.settingsAutomationRunsSkipped,
+      ),
     };
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -297,7 +318,7 @@ class _StepRow extends StatelessWidget {
               icon,
               size: 16,
               color: color,
-              semanticLabel: label ?? 'Done',
+              semanticLabel: label ?? l10n.settingsAutomationRunsDone,
             ),
           ),
           const SizedBox(width: 8),
@@ -323,66 +344,83 @@ class _StepRow extends StatelessWidget {
   }
 }
 
+enum _NoticeKind { member, empty, error }
+
 class _Notice extends StatelessWidget {
   const _Notice.member()
-    : icon = LucideIcons.lock,
-      title = null,
-      message = 'Only an organization admin can see automation rules.',
+    : kind = _NoticeKind.member,
       onRetry = null,
       onNewer = null;
 
   const _Notice.empty()
-    : icon = LucideIcons.history,
-      title = 'No runs yet',
-      message =
-          'When this rule runs, each run and what it did shows here for 30 days.',
+    : kind = _NoticeKind.empty,
       onRetry = null,
       onNewer = null;
 
   const _Notice.error({required VoidCallback this.onRetry, this.onNewer})
-    : icon = LucideIcons.triangleAlert,
-      title = null,
-      message = 'Could not load the runs';
+    : kind = _NoticeKind.error;
 
-  final IconData icon;
-  final String? title;
-  final String message;
+  final _NoticeKind kind;
   final VoidCallback? onRetry;
   final VoidCallback? onNewer;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 40, color: AppColors.textTertiary),
-          const SizedBox(height: 16),
-          if (title != null) ...[
-            Text(title!, style: AppTypography.h3, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-          ],
-          Text(message, style: AppTypography.body, textAlign: TextAlign.center),
-          if (onRetry != null) ...[
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              children: [
-                if (onNewer != null)
-                  OutlinedButton(
-                    onPressed: onNewer,
-                    child: const Text('Newer'),
-                  ),
-                OutlinedButton(
-                  onPressed: onRetry,
-                  child: const Text('Try again'),
-                ),
-              ],
-            ),
-          ],
-        ],
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final (icon, title, message) = switch (kind) {
+      _NoticeKind.member => (
+        LucideIcons.lock,
+        null,
+        l10n.settingsAutomationAdminOnly,
       ),
-    ),
-  );
+      _NoticeKind.empty => (
+        LucideIcons.history,
+        l10n.settingsAutomationRunsEmptyTitle,
+        l10n.settingsAutomationRunsEmptyBody,
+      ),
+      _NoticeKind.error => (
+        LucideIcons.triangleAlert,
+        null,
+        l10n.settingsAutomationRunsLoadFailed,
+      ),
+    };
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 40, color: AppColors.textTertiary),
+            const SizedBox(height: 16),
+            if (title != null) ...[
+              Text(title, style: AppTypography.h3, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              message,
+              style: AppTypography.body,
+              textAlign: TextAlign.center,
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                children: [
+                  if (onNewer != null)
+                    OutlinedButton(
+                      onPressed: onNewer,
+                      child: Text(l10n.settingsAutomationRunsNewer),
+                    ),
+                  OutlinedButton(
+                    onPressed: onRetry,
+                    child: Text(l10n.settingsAutomationTryAgain),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -1,16 +1,15 @@
+import '../../l10n/l10n.dart';
 import '../api/enterprise_schema.g.dart' as enterprise;
 import 'attachment.dart';
 import 'comment.dart';
 import 'custom_field_definition.dart';
 import 'lookup_models.dart';
 
-const objectsTurnedOffNotice =
-    'Creating and editing is turned off for this organization.';
+String get objectsTurnedOffNotice => appL10n.appObjectsTurnedOff;
 
 /// The server's cap on a note's length.
 const noteMaxLength = 10000;
-const objectsLoadFailedNotice =
-    'Custom objects could not be loaded. Try again.';
+String get objectsLoadFailedNotice => appL10n.appObjectsLoadFailed;
 
 /// Whether a stored custom field value has anything to show.
 bool hasFieldValue(dynamic v) =>
@@ -21,9 +20,9 @@ bool hasFieldValue(dynamic v) =>
 /// A stored custom field value as the user reads it. A dropdown shows its
 /// option label, or the stored value itself when the option is gone.
 String displayValue(ObjectField field, dynamic raw) {
-  if (!hasFieldValue(raw)) return 'None';
+  if (!hasFieldValue(raw)) return appL10n.appValueNone;
   if (raw is bool || field.fieldType == 'checkbox') {
-    return raw == true ? 'Yes' : 'No';
+    return raw == true ? appL10n.commonYes : appL10n.commonNo;
   }
   if (raw is List) return raw.map((e) => e.toString()).join(', ');
   final text = raw.toString();
@@ -143,8 +142,7 @@ bool canCustomizeObject(ObjectSummary object, CustomObjectsAnswer? answer) =>
 
 /// The server's words for a refused shape change; the object's data and its
 /// access settings stay editable.
-const objectShapeLockedNotice =
-    "Your organization's plan does not include custom objects.";
+String get objectShapeLockedNotice => appL10n.appObjectShapeLocked;
 
 class LinkTarget {
   final String key;

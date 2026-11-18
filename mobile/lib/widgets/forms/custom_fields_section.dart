@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
 import 'custom_fields_form.dart';
+import '../../l10n/l10n.dart';
 
 /// The custom fields of one form: an optional "Custom fields" heading over
 /// [CustomFieldsForm], empty when the org has none. Once a save has flagged a
@@ -34,7 +35,7 @@ class CustomFieldsSection extends StatelessWidget {
         if (heading) ...[
           const SizedBox(height: 8),
           Text(
-            'Custom fields',
+            context.l10n.coreCustomFieldsSectionHeading,
             style: AppTypography.label.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),

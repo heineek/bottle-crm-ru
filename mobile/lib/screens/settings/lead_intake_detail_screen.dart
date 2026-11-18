@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/lead_intakes_provider.dart';
 import '../../providers/lead_sources_provider.dart';
 import 'lead_capture_screen.dart';
+import '../../l10n/l10n.dart';
 
 /// One lead webhook: copy its URL, replace its key (shown once), switch it on
 /// or off, and read its newest 50 deliveries. Its field mapping is shown, and
@@ -35,26 +36,23 @@ class _LeadIntakeDetailScreenState
 
   Future<void> _copyUrl(String url) async {
     await Clipboard.setData(ClipboardData(text: url));
-    if (mounted) _say('URL copied');
+    if (mounted) _say(context.l10n.settingsLeadIntakeUrlCopied);
   }
 
   Future<void> _replaceKey() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Replace the key?'),
-        content: const Text(
-          'The current key keeps working for 7 days, so there is time to '
-          'update whatever posts here. The URL stays the same.',
-        ),
+        title: Text(context.l10n.settingsLeadIntakeReplaceTitle),
+        content: Text(context.l10n.settingsLeadIntakeReplaceBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Replace key'),
+            child: Text(context.l10n.settingsLeadIntakeReplaceKey),
           ),
         ],
       ),
@@ -80,7 +78,12 @@ class _LeadIntakeDetailScreenState
         .setActive(intake.id, !intake.isActive);
     if (!mounted) return;
     setState(() => _busy = false);
-    _say(error ?? (intake.isActive ? 'Turned off' : 'Turned on'));
+    _say(
+      error ??
+          (intake.isActive
+              ? context.l10n.settingsLeadIntakeTurnedOff
+              : context.l10n.settingsLeadIntakeTurnedOn),
+    );
   }
 
   @override
@@ -89,7 +92,7 @@ class _LeadIntakeDetailScreenState
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Webhook'),
+        title: Text(context.l10n.settingsLeadIntakeTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -106,8 +109,8 @@ class _LeadIntakeDetailScreenState
     if (async.hasError) {
       return _Centered(
         text: leadIntakesNotOffered(async)
-            ? 'This server has no lead webhooks.'
-            : 'Could not load the webhook.',
+            ? context.l10n.settingsLeadIntakeNotOffered
+            : context.l10n.settingsLeadIntakeLoadFailed,
         onRetry: () => ref.read(leadIntakesProvider.notifier).refresh(),
       );
     }
@@ -115,7 +118,7 @@ class _LeadIntakeDetailScreenState
         .where((i) => i.id == widget.intakeId)
         .firstOrNull;
     if (intake == null) {
-      return const _Centered(text: 'That webhook does not exist.');
+      return _Centered(text: context.l10n.settingsLeadIntakeMissing);
     }
     return RefreshIndicator(
       onRefresh: () async {
@@ -137,27 +140,31 @@ class _LeadIntakeDetailScreenState
                   style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
                   onPressed: () => _copyUrl(intake.url),
                   icon: const Icon(LucideIcons.copy, size: 16),
-                  label: const Text('Copy URL'),
+                  label: Text(context.l10n.settingsLeadIntakeCopyUrl),
                 ),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 48),
                   ),
                   onPressed: _busy ? null : _replaceKey,
-                  child: const Text('Replace key'),
+                  child: Text(context.l10n.settingsLeadIntakeReplaceKey),
                 ),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 48),
                   ),
                   onPressed: _busy ? null : () => _toggle(intake),
-                  child: Text(intake.isActive ? 'Turn off' : 'Turn on'),
+                  child: Text(
+                    intake.isActive
+                        ? context.l10n.settingsLeadCaptureTurnOff
+                        : context.l10n.settingsLeadCaptureTurnOn,
+                  ),
                 ),
               ],
             ),
           ),
           if (intake.mapping.isNotEmpty) ...[
-            const _Header('Field mapping'),
+            _Header(context.l10n.settingsLeadIntakeFieldMapping),
             Container(
               color: AppColors.surface,
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -176,7 +183,7 @@ class _LeadIntakeDetailScreenState
                     ),
                   const SizedBox(height: 6),
                   Text(
-                    'The mapping is edited on the web.',
+                    context.l10n.settingsLeadIntakeMappingOnWeb,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -185,7 +192,7 @@ class _LeadIntakeDetailScreenState
               ),
             ),
           ],
-          const _Header('Deliveries'),
+          _Header(context.l10n.settingsLeadIntakeDeliveries),
           _Deliveries(intakeId: intake.id),
         ],
       ),
@@ -222,7 +229,9 @@ class _Summary extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  intake.name.isEmpty ? 'Untitled webhook' : intake.name,
+                  intake.name.isEmpty
+                      ? context.l10n.settingsLeadCaptureUntitledWebhook
+                      : intake.name,
                   style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -245,24 +254,29 @@ class _Summary extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             intake.keyHint.isEmpty
-                ? 'Key hidden'
-                : 'Key ending ${intake.keyHint}',
+                ? context.l10n.settingsLeadIntakeKeyHidden
+                : context.l10n.settingsLeadIntakeKeyEnding(intake.keyHint),
             style: caption,
           ),
           if (source.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               intake.sourceDetail.isEmpty
-                  ? 'Leads arrive as $source'
-                  : 'Leads arrive as $source, ${intake.sourceDetail}',
+                  ? context.l10n.settingsLeadIntakeArriveAs(source)
+                  : context.l10n.settingsLeadIntakeArriveAsDetail(
+                      source,
+                      intake.sourceDetail,
+                    ),
               style: caption,
             ),
           ],
           const SizedBox(height: 6),
           Text(
             received == null
-                ? 'Nothing received yet'
-                : 'Last post ${intakeWhen.format(received)}',
+                ? context.l10n.settingsLeadIntakeNothingYet
+                : context.l10n.settingsLeadIntakeLastPost(
+                    intakeWhen.format(received),
+                  ),
             style: caption,
           ),
           if (intake.lastError.isNotEmpty) ...[
@@ -276,9 +290,7 @@ class _Summary extends ConsumerWidget {
           ],
           const SizedBox(height: 10),
           Text(
-            'Send the key in an Authorization: Bearer header. Tools that only '
-            'take a URL can add ?key= to it, but servers log URLs, so the '
-            'header is safer.',
+            context.l10n.settingsLeadIntakeAuthHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -305,7 +317,7 @@ class _Deliveries extends ConsumerWidget {
       error: (_, _) => Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          'Could not load the deliveries. Pull to refresh.',
+          context.l10n.settingsLeadIntakeDeliveriesFailed,
           style: AppTypography.caption.copyWith(color: AppColors.danger600),
         ),
       ),
@@ -314,7 +326,7 @@ class _Deliveries extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Nothing received yet.',
+              context.l10n.settingsLeadIntakeNothingYetDot,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -344,7 +356,8 @@ class _DeliveryRow extends StatelessWidget {
     final received = delivery.receivedAt;
     final detail = [
       if (received != null) intakeWhen.format(received),
-      if (delivery.externalId.isNotEmpty) 'id ${delivery.externalId}',
+      if (delivery.externalId.isNotEmpty)
+        context.l10n.settingsLeadIntakeExternalId(delivery.externalId),
     ].join(' · ');
     final leadId = delivery.leadId;
     return Material(
@@ -446,7 +459,7 @@ class _Centered extends StatelessWidget {
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: onRetry,
-                child: const Text('Try again'),
+                child: Text(context.l10n.appTryAgain),
               ),
             ],
           ],
@@ -470,15 +483,13 @@ class _MemberNotice extends StatelessWidget {
             Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'Administrators only',
+              context.l10n.settingsLeadIntakeAdminsOnly,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'A webhook\'s URL and key let anything that holds them create '
-              'leads in this organization, so only administrators can see or '
-              'change them.',
+              context.l10n.settingsLeadIntakeAdminsOnlyBody,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),

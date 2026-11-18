@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/web_form.dart';
@@ -57,7 +58,7 @@ class WebFormsNotifier extends AsyncNotifier<WebFormsState> {
   Future<WebFormsState> _fetch() async {
     final response = await _api.get('${ApiConfig.webForms}?limit=$_listLimit');
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load web forms');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadWebForms);
     }
     final body = api.WebFormListResponse.fromJson(response.data!);
     final forms = (body.results ?? const <api.WebFormList>[])
@@ -88,7 +89,7 @@ class WebFormsNotifier extends AsyncNotifier<WebFormsState> {
       'target': target,
     });
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not create the form');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotCreateTheForm);
     }
     await refresh();
     return api.WebFormDetail.fromJson(response.data!).id ?? '';
@@ -99,7 +100,9 @@ class WebFormsNotifier extends AsyncNotifier<WebFormsState> {
   /// request rather than one request per row.
   Future<String?> updateWebForm(String id, Map<String, dynamic> payload) async {
     final response = await _api.put(ApiConfig.webForm(id), payload);
-    if (!response.success) return response.message ?? 'Could not save the form';
+    if (!response.success) {
+      return response.message ?? appL10n.appMsgCouldNotSaveTheForm;
+    }
     await refresh();
     return null;
   }
@@ -112,7 +115,7 @@ class WebFormsNotifier extends AsyncNotifier<WebFormsState> {
   Future<String?> publish(String id) async {
     final response = await _api.post(ApiConfig.webFormPublish(id), const {});
     if (!response.success) {
-      return response.message ?? 'Could not publish the form';
+      return response.message ?? appL10n.appMsgCouldNotPublishTheForm;
     }
     await refresh();
     return null;
@@ -121,7 +124,7 @@ class WebFormsNotifier extends AsyncNotifier<WebFormsState> {
   Future<String?> unpublish(String id) async {
     final response = await _api.post(ApiConfig.webFormUnpublish(id), const {});
     if (!response.success) {
-      return response.message ?? 'Could not unpublish the form';
+      return response.message ?? appL10n.appMsgCouldNotUnpublishTheForm;
     }
     await refresh();
     return null;
@@ -134,7 +137,7 @@ class WebFormsNotifier extends AsyncNotifier<WebFormsState> {
   Future<String?> removeWebForm(String id) async {
     final response = await _api.delete(ApiConfig.webForm(id));
     if (!response.success) {
-      return response.message ?? 'Could not remove the form';
+      return response.message ?? appL10n.appMsgCouldNotRemoveTheForm;
     }
     await refresh();
     return null;
@@ -178,7 +181,9 @@ final webFormDetailProvider = FutureProvider.family<WebFormDetail, String>((
 
   final formResponse = await service.get(ApiConfig.webForm(id));
   if (!formResponse.success || formResponse.data == null) {
-    throw Exception(formResponse.message ?? 'Failed to load the web form');
+    throw Exception(
+      formResponse.message ?? appL10n.appMsgFailedToLoadTheWebForm,
+    );
   }
   final form = WebForm.fromJson(formResponse.data!);
 

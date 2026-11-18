@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// A tag, from `TagsSerializer`, carrying the usage block the settings list
@@ -107,6 +108,22 @@ String tagUsageLabel(String key) {
   return labels[key] ?? key.replaceAll('_', ' ');
 }
 
+/// "12 leads", counted in the current language, or null for a key with no
+/// message of its own.
+String? _tagUsageCount(String key, int count) {
+  final l10n = appL10n;
+  return switch (key) {
+    'accounts' => l10n.appTagUsageAccounts(count),
+    'contacts' => l10n.appTagUsageContacts(count),
+    'leads' => l10n.appTagUsageLeads(count),
+    'opportunities' => l10n.appTagUsageDeals(count),
+    'cases' => l10n.appTagUsageTickets(count),
+    'tasks' => l10n.appTagUsageTasks(count),
+    'api_settings' => l10n.appTagUsageApiKeys(count),
+    _ => null,
+  };
+}
+
 /// Where a tag is actually used, as one line: "12 leads, 3 deals, 1 ticket".
 ///
 /// The web has a column per record type and room for zeroes; a phone row has
@@ -116,7 +133,8 @@ String tagUsageLabel(String key) {
 String tagUsageSummary(Tag tag) {
   final parts = [
     for (final entry in tag.usageBreakdown)
-      '${entry.value} ${_singularise(_lower(tag.labelFor(entry.key)), entry.value)}',
+      _tagUsageCount(entry.key, entry.value) ??
+          '${entry.value} ${_singularise(_lower(tag.labelFor(entry.key)), entry.value)}',
   ];
   return parts.join(', ');
 }
@@ -228,7 +246,7 @@ Map<String, dynamic> tagMergePayload(String intoId) => {'into': intoId};
 /// A fast fail for the obvious mistake, not a control. `TagsListView.post`
 /// strips and re-checks the name itself, and that is the authority.
 String? validateTagName(String name) {
-  if (name.trim().isEmpty) return 'Give the tag a name.';
+  if (name.trim().isEmpty) return appL10n.appTagValidateName;
   return null;
 }
 
@@ -240,13 +258,8 @@ String? validateTagName(String name) {
 /// the count is the real one already on screen rather than a vague warning.
 String tagArchiveExplanation(Tag tag) {
   final used = tag.used;
-  if (used == 0) {
-    return 'Nothing carries this tag. Turning it off stops it being offered '
-        'on new records. You can turn it back on.';
-  }
-  return '$used ${used == 1 ? 'record keeps' : 'records keep'} this tag. '
-      'Turning it off stops it being offered on new records, and keeps it on '
-      'the ones that have it. You can turn it back on.';
+  if (used == 0) return appL10n.appTagArchiveUnused;
+  return appL10n.appTagArchiveUsed(used);
 }
 
 /// What a merge does, for the confirm dialog.
@@ -257,8 +270,5 @@ String tagArchiveExplanation(Tag tag) {
 /// which ones came from where.
 String tagMergeExplanation({required Tag from, required Tag into}) {
   final moving = from.used;
-  return '$moving ${moving == 1 ? 'record moves' : 'records move'} from '
-      '${from.name} to ${into.name}, and ${from.name} is turned off. Records '
-      'already on ${into.name} are untouched. This cannot be undone by '
-      'merging back.';
+  return appL10n.appTagMergeExplanation(moving, from.name, into.name);
 }

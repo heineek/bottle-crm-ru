@@ -6,6 +6,7 @@
 /// show the order shows a set of rules that look independent and are not.
 library;
 
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// One `{field, op, value}` triple. AND across a rule's conditions; OR is
@@ -51,7 +52,7 @@ class RoutingTarget {
       id: w.id ?? '',
       name: name != null && name.trim().isNotEmpty
           ? name
-          : w.userDetails?.email ?? 'Unnamed',
+          : w.userDetails?.email ?? appL10n.appUnnamedPerson,
       isActive: w.isActive ?? true,
     );
   }
@@ -182,33 +183,42 @@ class RoutingRule {
 }
 
 /// `RoutingRule.STRATEGY_CHOICES`, in the words the rest of the app uses.
-const Map<String, String> routingStrategyLabels = {
-  RoutingRule.strategyDirect: 'Direct',
-  RoutingRule.strategyRoundRobin: 'Round robin',
-  RoutingRule.strategyLeastBusy: 'Least busy',
-  RoutingRule.strategyByTeam: 'By team',
-};
+Map<String, String> get routingStrategyLabels {
+  final l10n = appL10n;
+  return {
+    RoutingRule.strategyDirect: l10n.appRoutingStrategyDirect,
+    RoutingRule.strategyRoundRobin: l10n.appRoutingStrategyRoundRobin,
+    RoutingRule.strategyLeastBusy: l10n.appRoutingStrategyLeastBusy,
+    RoutingRule.strategyByTeam: l10n.appRoutingStrategyByTeam,
+  };
+}
 
 String routingStrategyLabel(String strategy) =>
     routingStrategyLabels[strategy] ?? strategy;
 
 /// `RoutingRuleSerializer.SUPPORTED_FIELDS`, labelled.
-const Map<String, String> routingConditionFields = {
-  'priority': 'Priority',
-  'case_type': 'Type',
-  'account': 'Account',
-  'tags': 'Tags',
-  'from_email_domain': 'Sender domain',
-  'mailbox_id': 'Mailbox',
-};
+Map<String, String> get routingConditionFields {
+  final l10n = appL10n;
+  return {
+    'priority': l10n.commonPriority,
+    'case_type': l10n.appRoutingFieldType,
+    'account': l10n.appRoutingFieldAccount,
+    'tags': l10n.commonTags,
+    'from_email_domain': l10n.appRoutingFieldSenderDomain,
+    'mailbox_id': l10n.appRoutingFieldMailbox,
+  };
+}
 
 /// `RoutingRuleSerializer.SUPPORTED_OPS`, labelled.
-const Map<String, String> routingConditionOps = {
-  'eq': 'is',
-  'in': 'is one of',
-  'contains': 'includes',
-  'regex': 'matches',
-};
+Map<String, String> get routingConditionOps {
+  final l10n = appL10n;
+  return {
+    'eq': l10n.appRoutingOpEq,
+    'in': l10n.appRoutingOpIn,
+    'contains': l10n.appRoutingOpContains,
+    'regex': l10n.appRoutingOpRegex,
+  };
+}
 
 String routingConditionFieldLabel(String field) {
   final known = routingConditionFields[field];
@@ -247,8 +257,11 @@ String routingConditionSentence(RoutingCondition condition) {
 /// What a rule matches, in one line. A rule with no conditions matches every
 /// new ticket, which is the single most consequential thing a row can say.
 String routingMatchSentence(RoutingRule rule) {
-  if (rule.conditions.isEmpty) return 'Matches every new ticket';
-  return rule.conditions.map(routingConditionSentence).join(' and ');
+  final l10n = appL10n;
+  if (rule.conditions.isEmpty) return l10n.appRoutingMatchesEverything;
+  return rule.conditions
+      .map(routingConditionSentence)
+      .join(l10n.appRoutingConditionJoiner);
 }
 
 /// A condition as the form holds it: three strings, no type games.
@@ -371,27 +384,29 @@ String? routingWriteProblem({
   required String? teamId,
   required List<RoutingConditionDraft> conditions,
 }) {
-  if (name.trim().isEmpty) return 'A rule needs a name.';
+  final l10n = appL10n;
+  if (name.trim().isEmpty) return l10n.appRoutingValidateName;
   for (final row in conditions) {
     final field = row.field.trim();
     if (field.isEmpty) continue;
     if (!isSupportedConditionField(field)) {
-      return '"$field" is not a field a rule can match on.';
+      return l10n.appRoutingValidateField(field);
     }
     if (!routingConditionOps.containsKey(row.op)) {
-      return '"${row.op}" is not an operator a rule can use.';
+      return l10n.appRoutingValidateOp(row.op);
     }
   }
   if (strategy == RoutingRule.strategyByTeam) {
     if ((teamId ?? '').trim().isEmpty) {
-      return 'A by team rule needs a team to route to.';
+      return l10n.appRoutingValidateTeam;
     }
     return null;
   }
   final ids = assigneeIds.where((id) => id.trim().isNotEmpty);
   if (ids.isEmpty && !isCreate) {
-    return 'A ${routingStrategyLabel(strategy).toLowerCase()} rule needs at '
-        'least one assignee.';
+    return l10n.appRoutingValidateAssignee(
+      routingStrategyLabel(strategy).toLowerCase(),
+    );
   }
   return null;
 }
@@ -410,7 +425,4 @@ Map<String, dynamic> routingActivatePayload() => {'is_active': true};
 /// behind this verb, unlike custom fields and tags, so the control that calls
 /// it has to say so and has to offer turning the rule off as the reversible
 /// alternative.
-const String routingRemovalExplanation =
-    'The rule is gone for good, along with its place in the order. Tickets it '
-    'already routed keep their assignee. If you only want it to stop running, '
-    'turn it off instead: that is reversible.';
+String get routingRemovalExplanation => appL10n.appRoutingRemovalExplanation;

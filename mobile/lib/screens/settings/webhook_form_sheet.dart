@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/webhook.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/webhooks_provider.dart';
 
 /// Create or edit a webhook. Returns the draft, or null if dismissed.
@@ -54,11 +55,11 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
   void _submit() {
     final url = _url.text.trim();
     if (!url.toLowerCase().startsWith('https://')) {
-      setState(() => _error = 'The URL must start with https://.');
+      setState(() => _error = context.l10n.settingsWebhookFormErrorHttps);
       return;
     }
     if (_events.isEmpty) {
-      setState(() => _error = 'Choose at least one event.');
+      setState(() => _error = context.l10n.settingsWebhookFormErrorEvents);
       return;
     }
     // Catalogue order, so the saved list reads the same on both clients.
@@ -78,6 +79,7 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.initial != null;
+    final l10n = context.l10n;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -91,7 +93,9 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             Text(
-              editing ? 'Edit webhook' : 'New webhook',
+              editing
+                  ? l10n.settingsWebhookFormEditTitle
+                  : l10n.settingsWebhookFormNewTitle,
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 14),
@@ -101,12 +105,12 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
               autocorrect: false,
               enableSuggestions: false,
               maxLength: 500,
-              decoration: const InputDecoration(
-                labelText: 'Endpoint URL',
+              decoration: InputDecoration(
+                labelText: l10n.settingsWebhookFormUrlLabel,
                 hintText: 'https://hooks.zapier.com/hooks/catch/...',
-                helperText: 'HTTPS on the standard port, reachable publicly',
+                helperText: l10n.settingsWebhookFormUrlHelper,
                 helperMaxLines: 2,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 4),
@@ -114,39 +118,39 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
               controller: _description,
               maxLength: 255,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'What is it for?',
-                hintText: 'e.g. Zapier: new leads to the sales sheet',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsWebhookFormDescriptionLabel,
+                hintText: l10n.settingsWebhookFormDescriptionHint,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 4),
             DropdownButtonFormField<String>(
               initialValue: _format,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Send as',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsWebhookFormSendAs,
+                border: const OutlineInputBorder(),
               ),
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: WebhookEndpoint.formatJson,
-                  child: Text('Signed JSON (Zapier, n8n, your code)'),
+                  child: Text(l10n.settingsWebhookFormFormatJson),
                 ),
                 DropdownMenuItem(
                   value: WebhookEndpoint.formatSlack,
-                  child: Text('Slack message'),
+                  child: Text(l10n.settingsWebhookFormFormatSlack),
                 ),
                 DropdownMenuItem(
                   value: WebhookEndpoint.formatTeams,
-                  child: Text('Teams message'),
+                  child: Text(l10n.settingsWebhookFormFormatTeams),
                 ),
               ],
               onChanged: (v) => setState(() => _format = v ?? _format),
             ),
             const SizedBox(height: 16),
             Text(
-              'EVENTS',
+              l10n.settingsWebhookFormEvents.toUpperCase(),
               style: AppTypography.overline.copyWith(
                 color: AppColors.textSecondary,
                 letterSpacing: 1.2,
@@ -194,7 +198,7 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -204,7 +208,11 @@ class _WebhookFormSheetState extends State<WebhookFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(editing ? 'Save' : 'Add webhook'),
+                      child: Text(
+                        editing
+                            ? l10n.commonSave
+                            : l10n.settingsWebhookFormAddButton,
+                      ),
                     ),
                   ),
                 ),

@@ -5,11 +5,12 @@
 /// read carries [LeadIntake.keyHint], its last four characters.
 library;
 
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
-const Map<String, String> intakePresetLabels = {
-  'generic': 'Any tool that posts JSON or a form',
-  'google_ads': 'Google Ads lead form',
+Map<String, String> get intakePresetLabels => {
+  'generic': appL10n.appLeadIntakePresetGeneric,
+  'google_ads': appL10n.appLeadIntakePresetGoogleAds,
   'tally': 'Tally',
   'gravity_forms': 'Gravity Forms',
 };
@@ -27,6 +28,8 @@ class IntakeMapping {
       IntakeMapping(from: row.from ?? '', to: row.to ?? ''),
   ];
 }
+
+enum IntakeState { off, waiting, receiving }
 
 class LeadIntake {
   const LeadIntake({
@@ -57,14 +60,22 @@ class LeadIntake {
   final DateTime? lastReceivedAt;
   final String lastError;
 
-  String get presetLabel => intakePresetLabels[preset] ?? 'Any tool';
+  String get presetLabel =>
+      intakePresetLabels[preset] ?? appL10n.appLeadIntakePresetAny;
 
-  /// As the web words it: off, on with nothing yet, or on and receiving.
-  String get stateLabel => !isActive
-      ? 'Off'
+  /// Off, on with nothing yet, or on and receiving.
+  IntakeState get state => !isActive
+      ? IntakeState.off
       : lastReceivedAt == null
-      ? 'Waiting'
-      : 'Receiving';
+      ? IntakeState.waiting
+      : IntakeState.receiving;
+
+  /// As the web words it.
+  String get stateLabel => switch (state) {
+    IntakeState.off => appL10n.appLeadIntakeStateOff,
+    IntakeState.waiting => appL10n.appLeadIntakeStateWaiting,
+    IntakeState.receiving => appL10n.appLeadIntakeStateReceiving,
+  };
 
   /// Reads a `LeadIntake`.
   factory LeadIntake.fromJson(Map<String, dynamic> json) {
@@ -105,12 +116,12 @@ class IntakeDelivery {
   final String error;
 
   String get resultLabel => switch (result) {
-    'created' => 'Created',
-    'merged' => 'Merged',
-    'duplicate' => 'Duplicate',
-    'test' => 'Test',
-    'rejected' => 'Rejected',
-    '' => 'Unknown',
+    'created' => appL10n.appLeadIntakeResultCreated,
+    'merged' => appL10n.appLeadIntakeResultMerged,
+    'duplicate' => appL10n.appLeadIntakeResultDuplicate,
+    'test' => appL10n.appLeadIntakeResultTest,
+    'rejected' => appL10n.appLeadIntakeResultRejected,
+    '' => appL10n.appLeadIntakeResultUnknown,
     _ => result,
   };
 

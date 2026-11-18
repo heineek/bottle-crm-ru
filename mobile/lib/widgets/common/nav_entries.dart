@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../data/models/org_module.dart';
 
 /// One slot of the bottom bar. The "More" slot opens a sheet instead of
@@ -19,28 +20,50 @@ class NavEntry {
   });
 }
 
-const _home = NavEntry(
-  label: 'Home',
+NavEntry get _home => NavEntry(
+  label: appL10n.appNavHome,
   icon: LucideIcons.layoutDashboard,
   branches: [0],
 );
 
 // In bar order, each with the module that switches it off.
-const _candidates = <(String, NavEntry)>[
-  ('leads', NavEntry(label: 'Leads', icon: LucideIcons.users, branches: [1])),
-  (
-    'deals',
-    NavEntry(label: 'Deals', icon: LucideIcons.briefcase, branches: [2]),
-  ),
-  (
-    'tickets',
-    NavEntry(label: 'Tickets', icon: LucideIcons.ticket, branches: [3]),
-  ),
-  (
-    'tasks',
-    NavEntry(label: 'Tasks', icon: LucideIcons.checkSquare, branches: [4]),
-  ),
-];
+List<(String, NavEntry)> get _candidates {
+  final l10n = appL10n;
+  return [
+    (
+      'leads',
+      NavEntry(
+        label: l10n.appTargetLeads,
+        icon: LucideIcons.users,
+        branches: [1],
+      ),
+    ),
+    (
+      'deals',
+      NavEntry(
+        label: l10n.appTargetDeals,
+        icon: LucideIcons.briefcase,
+        branches: [2],
+      ),
+    ),
+    (
+      'tickets',
+      NavEntry(
+        label: l10n.appTargetTickets,
+        icon: LucideIcons.ticket,
+        branches: [3],
+      ),
+    ),
+    (
+      'tasks',
+      NavEntry(
+        label: l10n.appTargetTasks,
+        icon: LucideIcons.checkSquare,
+        branches: [4],
+      ),
+    ),
+  ];
+}
 
 bool _on(OrgModulesAnswer? modules, String key) =>
     modules == null || modules.isOn(key);
@@ -61,7 +84,7 @@ List<NavEntry> navEntries(OrgModulesAnswer? modules) => [
   _home,
   ..._barModules(modules),
   NavEntry(
-    label: 'More',
+    label: appL10n.appNavMore,
     icon: LucideIcons.moreHorizontal,
     branches: [5, if (tasksBehindMore(modules)) 4],
     opensSheet: true,

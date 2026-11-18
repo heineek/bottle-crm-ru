@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/custom_object.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_objects_provider.dart';
@@ -36,7 +37,7 @@ class ObjectsSettingsScreen extends ConsumerWidget {
         if (!response.success) {
           return settingsWriteError(
             response,
-            'Could not add that object.',
+            appL10n.settingsObjectsAddError,
             labels: objectFormLabels,
           );
         }
@@ -60,7 +61,7 @@ class ObjectsSettingsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Objects'),
+        title: Text(context.l10n.settingsObjectsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -68,20 +69,20 @@ class ObjectsSettingsScreen extends ConsumerWidget {
       floatingActionButton: isAdmin && writesOn
           ? AppFAB(
               icon: LucideIcons.plus,
-              label: 'New object',
+              label: context.l10n.settingsObjectsNewObject,
               onPressed: () => _create(context, ref),
             )
           : null,
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => _Message(
-          text: 'Could not load the objects',
+          text: context.l10n.settingsObjectsLoadError,
           onRetry: () => ref.invalidate(objectsSettingsProvider),
         ),
         data: (answer) {
           if (answer == null) {
             return _Message(
-              text: 'Could not load the objects',
+              text: context.l10n.settingsObjectsLoadError,
               onRetry: () => ref.invalidate(objectsSettingsProvider),
             );
           }
@@ -105,7 +106,7 @@ class ObjectsSettingsScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      'No objects yet',
+                      context.l10n.settingsObjectsEmpty,
                       style: AppTypography.body.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -163,7 +164,10 @@ class _ObjectRow extends StatelessWidget {
                 ),
               ),
               if (!summary.isActive)
-                StatusBadge(label: 'Archived', color: AppColors.gray500),
+                StatusBadge(
+                  label: context.l10n.settingsObjectsArchived,
+                  color: AppColors.gray500,
+                ),
               Icon(
                 LucideIcons.chevronRight,
                 size: 18,
@@ -193,7 +197,10 @@ class _Message extends StatelessWidget {
           children: [
             Text(text, style: AppTypography.body, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsObjectsTryAgain),
+            ),
           ],
         ),
       ),
@@ -275,11 +282,9 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
   Future<void> _submit() async {
     String? problem;
     if (_label.text.trim().isEmpty || _plural.text.trim().isEmpty) {
-      problem = 'Give the object a singular and a plural name.';
+      problem = context.l10n.settingsObjectsFormNamesRequired;
     } else if (_creating && !_keyPattern.hasMatch(_key.text.trim())) {
-      problem =
-          'The key starts with a letter, uses only lowercase letters, '
-          'numbers and underscores, and is 2 to 28 characters.';
+      problem = context.l10n.settingsObjectsFormKeyInvalid;
     }
     if (problem != null) {
       setState(() => _error = problem);
@@ -313,6 +318,7 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -326,7 +332,9 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _creating ? 'New object' : 'Edit ${widget.existing!.label}',
+              _creating
+                  ? l10n.settingsObjectsNewObject
+                  : l10n.settingsObjectsEditTitle(widget.existing!.label),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -335,9 +343,9 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
               onChanged: _onLabelChanged,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 64,
-              decoration: const InputDecoration(
-                labelText: 'Name (singular)',
-                hintText: 'Property',
+              decoration: InputDecoration(
+                labelText: l10n.settingsObjectsFormSingularLabel,
+                hintText: l10n.settingsObjectsFormSingularHint,
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -347,9 +355,9 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
               controller: _plural,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 64,
-              decoration: const InputDecoration(
-                labelText: 'Name (plural)',
-                hintText: 'Properties',
+              decoration: InputDecoration(
+                labelText: l10n.settingsObjectsFormPluralLabel,
+                hintText: l10n.settingsObjectsFormPluralHint,
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -363,11 +371,9 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
                 ],
-                decoration: const InputDecoration(
-                  labelText: 'Key',
-                  helperText:
-                      'Lowercase letters, numbers and underscores, starting '
-                      'with a letter. Cannot be changed later.',
+                decoration: InputDecoration(
+                  labelText: l10n.settingsObjectsKey,
+                  helperText: l10n.settingsObjectsFormKeyHelper,
                   helperMaxLines: 3,
                   border: OutlineInputBorder(),
                   counterText: '',
@@ -378,14 +384,14 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Key',
+                    l10n.settingsObjectsKey,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),
                   Text(widget.existing!.key, style: AppTypography.body),
                   Text(
-                    'Fixed after creation.',
+                    l10n.settingsObjectsFixed,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -396,9 +402,9 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
             TextField(
               controller: _nameLabel,
               maxLength: 64,
-              decoration: const InputDecoration(
-                labelText: "What each record's name is called",
-                hintText: 'Name',
+              decoration: InputDecoration(
+                labelText: l10n.settingsObjectsFormNameLabel,
+                hintText: l10n.settingsObjectsFormNameHint,
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -409,8 +415,8 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Description',
+              decoration: InputDecoration(
+                labelText: l10n.commonDescription,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -418,18 +424,18 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
             DropdownButtonFormField<String>(
               initialValue: _access,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Who can see its records',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsObjectsAccessLabel,
+                border: const OutlineInputBorder(),
               ),
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: 'own',
-                  child: Text('Only the people involved'),
+                  child: Text(l10n.settingsObjectsAccessOwn),
                 ),
                 DropdownMenuItem(
                   value: 'everyone',
-                  child: Text('Everyone in this organization'),
+                  child: Text(l10n.settingsObjectsAccessEveryone),
                 ),
               ],
               onChanged: (v) => setState(() => _access = v ?? _access),
@@ -453,7 +459,7 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
                       onPressed: _saving
                           ? null
                           : () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -463,7 +469,11 @@ class _ObjectFormSheetState extends State<_ObjectFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _saving ? null : _submit,
-                      child: Text(_creating ? 'Add object' : 'Save object'),
+                      child: Text(
+                        _creating
+                            ? l10n.settingsObjectsFormAdd
+                            : l10n.settingsObjectsFormSave,
+                      ),
                     ),
                   ),
                 ),

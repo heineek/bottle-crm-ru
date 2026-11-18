@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'lead_board.dart';
 import 'ticket.dart';
@@ -58,7 +59,7 @@ class TicketBoardCard {
     final name = w.name?.trim() ?? '';
     return TicketBoardCard(
       id: w.id ?? '',
-      name: name.isNotEmpty ? name : 'Untitled ticket',
+      name: name.isNotEmpty ? name : appL10n.appUntitledTicket,
       accountName: w.accountName ?? '',
       assignee: assigneeName.isNotEmpty ? assigneeName : details?.email ?? '',
       priority: TicketPriority.fromString(w.priority),

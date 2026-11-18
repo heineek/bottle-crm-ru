@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// Comment model for notes on leads, deals, etc.
@@ -37,7 +38,7 @@ class Comment {
     if (commentedByContactName != null && commentedByContactName!.isNotEmpty) {
       return commentedByContactName!;
     }
-    return 'Unknown';
+    return appL10n.appUnknownPerson;
   }
 
   /// Reads a `Comment`; a lead's `LeadComment` is the same shape without the

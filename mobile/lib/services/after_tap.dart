@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../data/models/interaction.dart';
+import '../l10n/l10n.dart';
 
 /// A tap on Call, WhatsApp, SMS or Email that may be logged once the app is
 /// back in front.
@@ -89,7 +90,9 @@ Uri? whatsAppUri(String? phoneE164, String firstName) {
   if (!RegExp(r'^\+[1-9]\d{6,14}$').hasMatch(e164)) return null;
   final digits = e164.substring(1);
   final name = firstName.trim();
-  final greeting = name.isEmpty ? 'Hi,' : 'Hi $name,';
+  final greeting = name.isEmpty
+      ? appL10n.coreAfterTapGreeting
+      : appL10n.coreAfterTapGreetingNamed(name);
   return Uri.parse(
     'https://wa.me/$digits?text=${Uri.encodeComponent(greeting)}',
   );

@@ -14,9 +14,12 @@ library;
 
 import 'package:intl/intl.dart';
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../api/schema.g.dart' as api;
 import 'lead_source.dart';
 import 'lookup_models.dart';
+import 'ticket.dart' show TicketPriority, TicketType;
 
 /// What an address actually does with mail, as opposed to what its switch says.
 ///
@@ -35,14 +38,17 @@ import 'lookup_models.dart';
 /// delivery fail first". None of it is a security control: every gate is
 /// enforced in `cases/inbound_views.py`.
 enum MailboxDelivery {
-  off('Creating nothing'),
-  unsupported('Provider not wired up'),
-  unconfirmed('Not connected yet'),
-  live('Creating tickets');
+  off,
+  unsupported,
+  unconfirmed,
+  live;
 
-  const MailboxDelivery(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    off => appL10n.appMailboxDeliveryOff,
+    unsupported => appL10n.appMailboxDeliveryUnsupported,
+    unconfirmed => appL10n.appMailboxDeliveryUnconfirmed,
+    live => appL10n.appMailboxDeliveryLive,
+  };
 
   bool get isLive => this == MailboxDelivery.live;
 }
@@ -69,7 +75,7 @@ String mailboxProviderLabel(String provider) {
   final label = mailboxProviderLabels[provider] ?? provider;
   return supportedMailboxProviders.contains(provider)
       ? label
-      : '$label (not wired up yet)';
+      : appL10n.appMailboxProviderNotWired(label);
 }
 
 class Mailbox {
@@ -204,24 +210,25 @@ class Mailbox {
   /// total.
   String? get dropSummary {
     if (droppedLast30d <= 0) return null;
+    final l10n = appL10n;
     final parts = <String>[
-      for (final (key, one, many) in _dropReasons)
+      for (final key in _dropReasons)
         if (dropsLast30d[key] case final n? when n > 0)
-          '${_count(n)} ${n == 1 ? one : many}',
+          _dropLabel(l10n, key, n),
     ];
-    final head = '${_count(droppedLast30d)} dropped in 30 days';
-    return parts.isEmpty ? head : '$head: ${parts.join(', ')}';
+    final total = _count(droppedLast30d);
+    return parts.isEmpty
+        ? l10n.appMailboxDropped(total)
+        : l10n.appMailboxDroppedBreakdown(total, parts.join(', '));
   }
 
   /// The warning for an address that took its daily limit, or null.
   /// [dailyLimit] is the list's; without one it says "its daily limit".
   String? limitNotice(int? dailyLimit) {
     if (!limitReached) return null;
-    final limit = dailyLimit != null && dailyLimit > 0
-        ? 'its limit of ${_count(dailyLimit)} '
-              '${dailyLimit == 1 ? 'email' : 'emails'}'
-        : 'its daily limit';
-    return 'Took $limit today. More mail is refused until the count falls.';
+    return dailyLimit != null && dailyLimit > 0
+        ? appL10n.appMailboxLimitNotice(dailyLimit, _count(dailyLimit))
+        : appL10n.appMailboxLimitNoticeDaily;
   }
 
   /// The first gate mail to this address would fail, or [MailboxDelivery.live].
@@ -243,32 +250,27 @@ class Mailbox {
   /// (`ApiConfig.baseUrl`), or null for SES and IMAP. See [mailboxSetupUrl].
   String? setupUrl(String apiBase) => mailboxSetupUrl(provider, id, apiBase);
 
-  String get deliveryLabel =>
-      delivery.isLive && createsLeads ? 'Creating leads' : delivery.label;
+  String get deliveryLabel => delivery.isLive && createsLeads
+      ? appL10n.appMailboxDeliveryLiveLeads
+      : delivery.label;
 
   /// Why nothing is arriving, or null when something is.
   String? get deliveryExplanation {
     switch (delivery) {
       case MailboxDelivery.off:
-        return 'Mail still arrives here and no '
-            '${createsLeads ? 'lead is created' : 'ticket is opened'}. Nothing '
-            'bounces, so whoever wrote gets silence rather than an error.';
+        return createsLeads
+            ? appL10n.appMailboxExplainOffLeads
+            : appL10n.appMailboxExplainOff;
       case MailboxDelivery.unsupported:
         final label = mailboxProviderLabels[provider] ?? provider;
-        return '$label deliveries are not implemented. The webhook refuses '
-            'them, so mail to this address becomes nothing whatever else is '
-            'set here.';
+        return appL10n.appMailboxExplainUnsupported(label);
       case MailboxDelivery.unconfirmed:
         if (secretMailboxProviders.contains(provider)) {
-          return 'Waiting for its '
-              '${provider == 'postmark' ? 'basic-auth password' : 'signing key'}. '
-              'Every post is refused until an admin stores the webhook secret '
-              'on this address.';
+          return provider == 'postmark'
+              ? appL10n.appMailboxExplainWaitingPassword
+              : appL10n.appMailboxExplainWaitingSigningKey;
         }
-        return 'Waiting for its SNS topic. Every message is refused until '
-            'this address has a Topic ARN: an admin can enter it here, or it is '
-            'set when AWS confirms a subscription from an AWS account this '
-            'server allows.';
+        return appL10n.appMailboxExplainUnconfirmed;
       case MailboxDelivery.live:
         return null;
     }
@@ -277,42 +279,59 @@ class Mailbox {
   /// What a ticket or lead from here starts out as, in one line. A ticket
   /// address's reads after "Opens as"; a lead address's stands alone.
   String get opensAs {
+    final l10n = appL10n;
     if (createsLeads) {
       final source = leadSourceLabel(leadSource);
       return [
-        'Makes leads',
+        l10n.appMailboxMakesLeads,
         if (source.isNotEmpty) source,
         if (leadSourceDetail.isNotEmpty) leadSourceDetail,
         defaultAssignee == null
-            ? 'unassigned'
-            : 'assigned to ${defaultAssignee!.displayName}',
+            ? l10n.appMailboxUnassigned
+            : l10n.appMailboxAssignedTo(defaultAssignee!.displayName),
       ].join(' · ');
     }
-    final parts = <String>[defaultPriority];
-    if (defaultCaseType != null) parts.add(defaultCaseType!);
+    final priority = TicketPriority.values
+        .where((p) => p.value == defaultPriority)
+        .firstOrNull;
+    final caseType = TicketType.values
+        .where((t) => t.value == defaultCaseType)
+        .firstOrNull;
+    final parts = <String>[priority?.label ?? defaultPriority];
+    if (defaultCaseType != null) {
+      parts.add(caseType?.label ?? defaultCaseType!);
+    }
     parts.add(
       defaultAssignee == null
-          ? 'then routed'
-          : 'assigned to ${defaultAssignee!.displayName}',
+          ? l10n.appMailboxThenRouted
+          : l10n.appMailboxAssignedTo(defaultAssignee!.displayName),
     );
     return parts.join(' · ');
   }
 }
 
-/// The drop reasons the API sends, in the order a row names them, each with
-/// its singular and plural label. `frontend/src/lib/v2/inbound-drops.ts` says
-/// the same.
-const List<(String, String, String)> _dropReasons = [
-  ('spam', 'spam', 'spam'),
-  ('virus', 'with a virus', 'with a virus'),
-  ('spoofed', 'failed the sender check', 'failed the sender check'),
-  ('automatic', 'automatic reply', 'automatic replies'),
-  ('other', 'other', 'other'),
+/// The drop reasons the API sends, in the order a row names them.
+/// `frontend/src/lib/v2/inbound-drops.ts` says the same.
+const List<String> _dropReasons = [
+  'spam',
+  'virus',
+  'spoofed',
+  'automatic',
+  'other',
 ];
 
-final NumberFormat _grouped = NumberFormat('#,##0', 'en_US');
+String _dropLabel(AppLocalizations l10n, String reason, int n) {
+  final count = _count(n);
+  return switch (reason) {
+    'spam' => l10n.appMailboxDropSpam(n, count),
+    'virus' => l10n.appMailboxDropVirus(n, count),
+    'spoofed' => l10n.appMailboxDropSpoofed(n, count),
+    'automatic' => l10n.appMailboxDropAutomatic(n, count),
+    _ => l10n.appMailboxDropOther(n, count),
+  };
+}
 
-String _count(int n) => _grouped.format(n);
+String _count(int n) => NumberFormat('#,##0', currentLanguage).format(n);
 
 /// What every address refuses, for the screen's explanation. Null when the
 /// API sends no `daily_limit`: an API that old filters none of this, so the
@@ -321,10 +340,7 @@ String? mailboxDropPolicy(int? dailyLimit) {
   if (dailyLimit == null || dailyLimit <= 0) return null;
   // The 20 is `cases.inbound.limits.SENDER_HOURLY_LIMIT`, which the API does
   // not send.
-  return "Spam, viruses and mail that fails its sender's domain check are "
-      'dropped. Each address takes up to ${_count(dailyLimit)} '
-      '${dailyLimit == 1 ? 'email' : 'emails'} a day, and a ticket address up '
-      'to 20 an hour from one sender.';
+  return appL10n.appMailboxDropPolicy(dailyLimit, _count(dailyLimit));
 }
 
 /// The URL to give the provider for one mailbox, from the API origin.
@@ -483,40 +499,25 @@ Map<String, dynamic> mailboxActivePayload(bool isActive) => {
 /// field answers immediately rather than after a round trip.
 String? mailboxAddressProblem(String address) {
   final trimmed = address.trim();
-  if (trimmed.isEmpty) return 'Give the address.';
+  if (trimmed.isEmpty) return appL10n.appMailboxValidateAddress;
   // Deliberately loose. `EmailField` is what decides, and a stricter pattern
   // here would refuse addresses the server accepts.
   final at = trimmed.indexOf('@');
   if (at <= 0 || at == trimmed.length - 1 || trimmed.contains(' ')) {
-    return 'That does not look like an email address.';
+    return appL10n.appOrgValidateEmail;
   }
   return null;
 }
 
 /// What deleting an address does, said before it is done.
-const String mailboxDeleteExplanation =
-    'Deleted for good. Mail sent here stops becoming tickets, and the topic '
-    'pin goes with it, so a delivery already in flight from AWS stops '
-    'verifying. Tickets already opened from this address are not touched.';
+String get mailboxDeleteExplanation => appL10n.appMailboxDeleteExplanation;
 
 /// What turning one off does, which is not the same as deleting it.
-const String mailboxDeactivateExplanation =
-    'Stops opening tickets. Mail keeps arriving and nothing bounces, so anyone '
-    'writing here gets no ticket and no error. It stays in the list, off, '
-    'until it is turned back on.';
+String get mailboxDeactivateExplanation =>
+    appL10n.appMailboxDeactivateExplanation;
 
 /// The two checks a delivery has to clear, said once on the screen.
 ///
 /// Postmark and Mailgun are proved by a secret an admin stores on the address
 /// instead; with none, every post is refused.
-const String mailboxAuthExplanation =
-    'AWS signs each notification, and the address has to be pinned to the exact '
-    'SNS topic it was subscribed to. The signature alone proves only that some '
-    'AWS account sent it, so without the pin anyone who learned an address id '
-    'could have AWS sign forged mail into this organization. An admin can '
-    'enter the pin as the address\'s Topic ARN. Left blank, it is set by the '
-    'first subscription AWS confirms from an AWS account this server allows; '
-    'a subscription from any other account is refused. Only admins can see '
-    'the ARN, because it carries the AWS account id. A Postmark or Mailgun '
-    'address is proved by a webhook secret an admin stores on it instead, '
-    'which is never shown back.';
+String get mailboxAuthExplanation => appL10n.appMailboxAuthExplanation;

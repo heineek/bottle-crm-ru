@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../../services/org_date.dart';
 import '../api/schema.g.dart' as api;
 import 'attachment.dart';
@@ -11,17 +12,25 @@ enum OpportunityType {
   // Sentinel, backend stores this as null (the column is blank=True,null=True).
   // The picker shows this as "Not Specified"; toJson translates it to null so
   // we don't auto-stamp NEW_BUSINESS on deals the user never categorized.
-  unspecified('', 'Not Specified'),
-  newBusiness('NEW_BUSINESS', 'New Business'),
-  existingBusiness('EXISTING_BUSINESS', 'Existing Business'),
-  renewal('RENEWAL', 'Renewal'),
-  upsell('UPSELL', 'Upsell'),
-  crossSell('CROSS_SELL', 'Cross Sell');
+  unspecified(''),
+  newBusiness('NEW_BUSINESS'),
+  existingBusiness('EXISTING_BUSINESS'),
+  renewal('RENEWAL'),
+  upsell('UPSELL'),
+  crossSell('CROSS_SELL');
 
   final String value;
-  final String label;
 
-  const OpportunityType(this.value, this.label);
+  const OpportunityType(this.value);
+
+  String get label => switch (this) {
+    unspecified => appL10n.appOpportunityTypeUnspecified,
+    newBusiness => appL10n.appOpportunityTypeNewBusiness,
+    existingBusiness => appL10n.appOpportunityTypeExistingBusiness,
+    renewal => appL10n.appOpportunityTypeRenewal,
+    upsell => appL10n.appOpportunityTypeUpsell,
+    crossSell => appL10n.appOpportunityTypeCrossSell,
+  };
 
   static OpportunityType fromString(String? value) {
     if (value == null || value.isEmpty) return OpportunityType.unspecified;
@@ -267,9 +276,9 @@ class Deal {
 
     // One display name for the first assignee that has one, for the list
     // card, where there is no room for more.
-    String assignedToName = 'Unassigned';
+    String? assignedToName;
     for (final p in assigned) {
-      if (assignedToName != 'Unassigned') break;
+      if (assignedToName != null) break;
       final name = (p.userDetails?.name ?? '').trim();
       final email = (p.userDetails?.email ?? '').trim();
       if (name.isNotEmpty) {
@@ -277,7 +286,9 @@ class Deal {
       } else if (email.isNotEmpty) {
         assignedToName = email.split('@').first;
       }
-      if (assignedToName.isEmpty) assignedToName = 'Assigned';
+      if (assignedToName?.isEmpty ?? false) {
+        assignedToName = appL10n.appAssigneeFallback;
+      }
     }
 
     final closedBy = w.closedBy?.userDetails;
@@ -309,7 +320,7 @@ class Deal {
       probability: w.probability ?? 0,
       closeDate: DateTime.tryParse(w.closedOn ?? ''),
       leadId: null, // API doesn't have lead reference directly
-      companyName: w.account?.name ?? 'No Account',
+      companyName: w.account?.name ?? appL10n.appDealNoAccount,
       accountId: w.account?.id,
       products: [
         for (final item in w.lineItems ?? const <api.OpportunityLineItem>[])
@@ -323,7 +334,7 @@ class Deal {
               discountValue: decimal(item.discountValue, 0),
             ),
       ],
-      assignedTo: assignedToName,
+      assignedTo: assignedToName ?? appL10n.appUnassigned,
       assignedToIds: [
         for (final p in assigned)
           if (p.id case final id? when id.isNotEmpty) id,

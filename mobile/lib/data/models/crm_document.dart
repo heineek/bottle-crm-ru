@@ -12,6 +12,7 @@
 /// the server would refuse. It is not what keeps anyone out.
 library;
 
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// The two states the backend accepts (`Document.DOCUMENT_STATUS_CHOICE`).
@@ -21,8 +22,9 @@ import '../api/schema.g.dart' as api;
 /// showing it by default.
 const List<String> documentStatuses = ['active', 'inactive'];
 
-String documentStatusLabel(String status) =>
-    status == 'inactive' ? 'Archived' : 'Active';
+String documentStatusLabel(String status) => status == 'inactive'
+    ? appL10n.appDocumentStatusArchived
+    : appL10n.appDocumentStatusActive;
 
 /// The icon buckets a filename falls into. Anything outside the three named
 /// groups collapses to a generic file, which is what the web does too.
@@ -59,10 +61,13 @@ String documentFileName(String path) {
 /// path, an unsynced media directory), which is not an error worth alarming
 /// anyone about, so it reads as unknown rather than as zero.
 String documentSizeLabel(int? bytes) {
-  if (bytes == null) return 'Size unknown';
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} kB';
-  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  final l10n = appL10n;
+  if (bytes == null) return l10n.appSizeUnknown;
+  if (bytes < 1024) return l10n.appSizeBytes(bytes);
+  if (bytes < 1024 * 1024) {
+    return l10n.appSizeKb((bytes / 1024).toStringAsFixed(0));
+  }
+  return l10n.appSizeMb((bytes / (1024 * 1024)).toStringAsFixed(1));
 }
 
 /// Who can reach a document besides its uploader and the org's admins.
@@ -73,7 +78,7 @@ String documentSizeLabel(int? bytes) {
 /// go stale the moment somebody joined.
 String documentShareSummary(CrmDocument doc) {
   if (doc.sharedTo.isEmpty && doc.teams.isEmpty) {
-    return 'Shared with nobody. Only you and an admin can open it.';
+    return appL10n.appDocumentSharedWithNobody;
   }
   final parts = <String>[];
   if (doc.sharedTo.isNotEmpty) {
@@ -123,7 +128,7 @@ class DocumentShare {
       id: w.id ?? '',
       name: name.trim().isNotEmpty
           ? name.trim()
-          : (email.isNotEmpty ? email : 'Unnamed'),
+          : (email.isNotEmpty ? email : appL10n.appUnnamedPerson),
     );
   }
 }
@@ -221,7 +226,9 @@ class CrmDocument {
       createdAt: DateTime.tryParse(w.createdAt ?? ''),
       uploaderName: name.trim().isNotEmpty
           ? name.trim()
-          : (email != null && email.isNotEmpty ? email : 'Unknown'),
+          : (email != null && email.isNotEmpty
+                ? email
+                : appL10n.appUnknownPerson),
       uploaderEmail: email,
     );
   }
@@ -260,4 +267,4 @@ DocumentTotals documentTotals(List<CrmDocument> docs) => DocumentTotals(
 /// server, so only the required part is mirrored: an empty title otherwise
 /// comes back as a field error rather than something readable.
 String? validateDocumentTitle(String title) =>
-    title.trim().isEmpty ? 'Give the document a title.' : null;
+    title.trim().isEmpty ? appL10n.appDocumentValidateTitle : null;

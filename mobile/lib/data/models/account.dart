@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'custom_field_definition.dart';
 
@@ -394,7 +395,7 @@ String? _contactLabel(api.Contact contact) {
 
 String _label(String? raw) {
   final s = raw?.trim() ?? '';
-  return s.isEmpty ? 'Untitled' : s;
+  return s.isEmpty ? appL10n.appUntitled : s;
 }
 
 String? _str(dynamic v) {

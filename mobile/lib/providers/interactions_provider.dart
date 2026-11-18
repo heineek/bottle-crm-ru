@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../l10n/l10n.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/interaction.dart';
 import '../services/after_tap.dart';
@@ -21,7 +22,7 @@ class InteractionsApi {
     }
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load the activity.');
+      throw Exception(response.message ?? appL10n.appInteractionsLoadFailed);
     }
     final body = api.InteractionListResponse.fromJson(data);
     final items = [
@@ -36,9 +37,9 @@ class InteractionsApi {
     final response = await _api.post(ApiConfig.interactions, draft.toJson());
     if (response.success) return null;
     if (response.statusCode == 404) {
-      return 'This record is no longer available to you.';
+      return appL10n.appInteractionsRecordGone;
     }
-    return response.message ?? 'Could not log this. Try again.';
+    return response.message ?? appL10n.appInteractionsLogFailed;
   }
 }
 

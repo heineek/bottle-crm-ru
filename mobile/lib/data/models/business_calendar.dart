@@ -7,31 +7,42 @@
 /// calendar says which.
 library;
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../api/schema.g.dart' as api;
 
 /// Monday first, matching `windows_by_weekday()` and the web. The key is the
 /// prefix of the model's fourteen flat TimeFields.
-const List<(String, String)> businessWeekdays = [
-  ('Monday', 'monday'),
-  ('Tuesday', 'tuesday'),
-  ('Wednesday', 'wednesday'),
-  ('Thursday', 'thursday'),
-  ('Friday', 'friday'),
-  ('Saturday', 'saturday'),
-  ('Sunday', 'sunday'),
-];
+List<(String, String)> get businessWeekdays {
+  final l10n = appL10n;
+  return [
+    (l10n.appWeekdayMonday, 'monday'),
+    (l10n.appWeekdayTuesday, 'tuesday'),
+    (l10n.appWeekdayWednesday, 'wednesday'),
+    (l10n.appWeekdayThursday, 'thursday'),
+    (l10n.appWeekdayFriday, 'friday'),
+    (l10n.appWeekdaySaturday, 'saturday'),
+    (l10n.appWeekdaySunday, 'sunday'),
+  ];
+}
+
+/// [key]'s weekday name in the current language, or [key] itself.
+String businessWeekdayLabel(String key) {
+  for (final (label, k) in businessWeekdays) {
+    if (k == key) return label;
+  }
+  return key;
+}
 
 /// One weekday's window. Both times null means closed; the serializer refuses
 /// one set and the other null.
 class BusinessDay {
-  const BusinessDay({
-    required this.day,
-    required this.key,
-    this.open,
-    this.close,
-  });
+  /// [day] is accepted for existing callers and ignored: the name is read
+  /// from [key] on every call, so it follows the current language.
+  const BusinessDay({String? day, required this.key, this.open, this.close});
 
-  final String day;
+  /// The weekday's name in the current language, read per call.
+  String get day => businessWeekdayLabel(key);
   final String key;
 
   /// "HH:MM", or null for a closed day. The API sends "HH:MM:SS" and this is
@@ -161,9 +172,8 @@ class BusinessCalendar {
       timezone: w.timezone ?? 'UTC',
       isDefault: w.isDefault ?? true,
       days: [
-        for (final (label, key) in businessWeekdays)
+        for (final (_, key) in businessWeekdays)
           BusinessDay(
-            day: label,
             key: key,
             open: trimSeconds(windows[key]?.$1),
             close: trimSeconds(windows[key]?.$2),
@@ -192,8 +202,8 @@ Map<String, dynamic> businessHoursPayload({
     'name': name.trim(),
     'timezone': timezone.trim(),
   };
-  for (final (label, key) in businessWeekdays) {
-    final day = days.where((d) => d.day == label).firstOrNull;
+  for (final (_, key) in businessWeekdays) {
+    final day = days.where((d) => d.key == key).firstOrNull;
     body['${key}_open'] = day?.isClosed ?? true ? null : day!.open;
     body['${key}_close'] = day?.isClosed ?? true ? null : day!.close;
   }
@@ -210,28 +220,25 @@ String? businessHoursProblem({
   required String name,
   required String timezone,
 }) {
-  if (name.trim().isEmpty) return 'The calendar needs a name.';
-  if (timezone.trim().isEmpty) {
-    return 'The calendar needs a timezone, as an IANA name like '
-        'Asia/Kolkata.';
-  }
+  final l10n = appL10n;
+  if (name.trim().isEmpty) return l10n.appBusinessHoursValidateName;
+  if (timezone.trim().isEmpty) return l10n.appBusinessHoursValidateTimezone;
   for (final day in days) {
     final open = day.open;
     final close = day.close;
     if ((open == null) != (close == null)) {
-      return '${day.day} needs an opening and a closing time, or neither.';
+      return l10n.appBusinessHoursValidateBothTimes(day.day);
     }
     if (open == null || close == null) continue;
     final from = _minutes(open);
     final to = _minutes(close);
     if (from == null || to == null) {
-      return '${day.day} has a time that is not readable.';
+      return l10n.appBusinessHoursValidateUnreadable(day.day);
     }
     if (to <= from) {
       // Not arbitrary: the walker only ever moves forward within one local
       // day, so a window that wraps midnight has no meaning to it.
-      return '${day.day} has to close after it opens. A shift that runs '
-          'past midnight cannot be set here.';
+      return l10n.appBusinessHoursValidateCloseAfterOpen(day.day);
     }
   }
   return null;
@@ -255,38 +262,21 @@ Map<String, dynamic> holidayPayload({
 String? holidayDuplicateWarning(BusinessCalendar calendar, String date) {
   final existing = calendar.holidayOn(date);
   if (existing == null) return null;
-  return '${_humanDate(date)} is already a holiday, called '
-      '"${existing.name}". Adding it again keeps that name.';
+  return appL10n.appHolidayDuplicateWarning(_humanDate(date), existing.name);
 }
 
 /// What the screen says after a holiday add that turned out to be a duplicate.
 String holidayAlreadyExistedMessage(String name) =>
-    'That date was already a holiday, called "$name". Nothing changed.';
+    appL10n.appHolidayAlreadyExisted(name);
 
 /// Removing a holiday is permanent, and takes effect at once.
-const String holidayRemovalExplanation =
-    'The day counts as working time again straight away, so targets that were '
-    'paused over it move earlier. This cannot be undone, only added back.';
+String get holidayRemovalExplanation => appL10n.appHolidayRemovalExplanation;
 
 /// "25 Dec 2026" from an ISO date, or the input when it is not one.
 String _humanDate(String iso) {
   final parsed = DateTime.tryParse(iso);
   if (parsed == null) return iso;
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
+  return localDateFormat('d MMM y', 'yMMMd').format(parsed);
 }
 
 String humanHolidayDate(String iso) => _humanDate(iso);
@@ -295,14 +285,11 @@ String humanHolidayDate(String iso) => _humanDate(iso);
 /// rather than the form's appearance.
 String businessHoursSummary(BusinessCalendar calendar) {
   if (calendar.isAlwaysOn) {
-    return 'No day is open, so targets run around the clock. Closing every '
-        'day does not stop the clock, it removes the calendar from the '
-        'calculation entirely.';
+    return appL10n.appBusinessHoursAlwaysOn;
   }
   final hours = calendar.weeklyHours;
   final rounded = hours == hours.roundToDouble()
       ? hours.round().toString()
       : hours.toStringAsFixed(1);
-  return '$rounded hours a week, in ${calendar.timezone}. Targets count only '
-      'the time inside them.';
+  return appL10n.appBusinessHoursWeekly(rounded, calendar.timezone);
 }

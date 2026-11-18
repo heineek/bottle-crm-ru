@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal_board.dart';
 import '../../data/models/models.dart';
@@ -219,7 +220,7 @@ class KanbanColumn extends StatelessWidget {
               if (bucket.mixed) ...[
                 const SizedBox(width: 4),
                 Text(
-                  '+ mixed',
+                  appL10n.appKanbanMixed,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                     fontStyle: FontStyle.italic,
@@ -231,7 +232,7 @@ class KanbanColumn extends StatelessWidget {
           if (isTruncated) ...[
             const SizedBox(height: 4),
             Text(
-              'Showing the first ${cards.length}. Filter to see the rest.',
+              appL10n.appKanbanTruncated(cards.length),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -257,8 +258,8 @@ class KanbanColumn extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               highlighted
-                  ? 'Drop to move to ${stage.label}'
-                  : 'No deals in ${stage.label}',
+                  ? appL10n.appKanbanDropTo(stage.label)
+                  : appL10n.appKanbanNoDeals(stage.label),
               textAlign: TextAlign.center,
               style: AppTypography.caption.copyWith(
                 color: highlighted ? color : AppColors.textTertiary,
@@ -299,7 +300,7 @@ class BoardColumn<T extends Object> extends StatelessWidget {
     required this.onDrop,
     this.draggable,
     this.width = 300,
-    this.emptyLabel = 'Nothing here',
+    this.emptyLabel,
     this.footnote,
   });
 
@@ -316,7 +317,7 @@ class BoardColumn<T extends Object> extends StatelessWidget {
   /// Null makes every card draggable.
   final bool Function(T card)? draggable;
   final double width;
-  final String emptyLabel;
+  final String? emptyLabel;
   final String? footnote;
 
   bool get _truncated => count > cards.length;
@@ -332,7 +333,7 @@ class BoardColumn<T extends Object> extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _header(),
+          _header(context),
           Expanded(
             child: DragTarget<T>(
               onWillAcceptWithDetails: (details) => accepts(details.data),
@@ -361,8 +362,9 @@ class BoardColumn<T extends Object> extends StatelessWidget {
                             padding: const EdgeInsets.all(24),
                             child: Text(
                               highlighted
-                                  ? 'Drop to move to $title'
-                                  : emptyLabel,
+                                  ? context.l10n.appKanbanDropTo(title)
+                                  : emptyLabel ??
+                                        context.l10n.appKanbanNothingHere,
                               textAlign: TextAlign.center,
                               style: AppTypography.caption.copyWith(
                                 color: highlighted
@@ -406,7 +408,7 @@ class BoardColumn<T extends Object> extends StatelessWidget {
     );
   }
 
-  Widget _header() {
+  Widget _header(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -461,7 +463,7 @@ class BoardColumn<T extends Object> extends StatelessWidget {
           if (_truncated) ...[
             const SizedBox(height: 4),
             Text(
-              'Showing the first ${cards.length}. Filter to see the rest.',
+              context.l10n.appKanbanTruncated(cards.length),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),

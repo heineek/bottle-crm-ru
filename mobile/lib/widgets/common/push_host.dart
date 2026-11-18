@@ -12,6 +12,7 @@ import '../../providers/notifications_provider.dart';
 import '../../routes/app_router.dart';
 import '../../services/device_registration.dart';
 import '../../services/push_messaging.dart';
+import '../../l10n/l10n.dart';
 
 /// Wraps the app to react to pushes: a banner while the app is open, a
 /// notification refresh on a message and on resume, and a tap (from the
@@ -112,14 +113,17 @@ class _PushHostState extends ConsumerState<PushHost>
         leading: Icon(LucideIcons.bellRing, color: AppColors.primary600),
         content: Text(text, style: AppTypography.body),
         actions: [
-          TextButton(onPressed: dismiss, child: const Text('Dismiss')),
+          TextButton(
+            onPressed: dismiss,
+            child: Text(context.l10n.corePushBannerDismiss),
+          ),
           if (destination != null)
             TextButton(
               onPressed: () {
                 dismiss();
                 _go(destination);
               },
-              child: const Text('Open'),
+              child: Text(context.l10n.corePushBannerOpen),
             ),
         ],
       ),

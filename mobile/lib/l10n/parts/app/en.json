@@ -1,0 +1,2839 @@
+{
+  "appDealTypeNewBusiness": "New business",
+  "appDealTypeExistingBusiness": "Existing business",
+  "appDealTypeRenewal": "Renewal",
+  "appDealTypeUpsell": "Upsell",
+  "appDealTypeCrossSell": "Cross-sell",
+  "appGoalTypeDealsClosed": "Deals closed",
+  "appGoalTypeActivities": "Activities",
+  "appGoalTypeRevenue": "Revenue",
+  "appGoalPeriodMonthly": "Monthly",
+  "appGoalPeriodQuarterly": "Quarterly",
+  "appGoalPeriodYearly": "Yearly",
+  "appGoalPeriodCustom": "Custom",
+  "appGoalStatusCompleted": "Target met",
+  "appGoalStatusOnTrack": "On track",
+  "appGoalStatusAtRisk": "At risk",
+  "appGoalStatusBehind": "Behind pace",
+  "appGoalTargetTeam": "{team} (team)",
+  "@appGoalTargetTeam": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "appGoalTargetWholeOrg": "Whole organisation",
+  "appGoalValidateName": "Give the goal a name.",
+  "appGoalValidateTargetNumber": "Target must be a number.",
+  "appGoalValidateTargetPositive": "Target must be greater than 0.",
+  "appGoalValidateDates": "Pick a start and an end date.",
+  "appGoalValidateEndAfterStart": "The end date must be after the start date.",
+  "appUnnamedPerson": "Unnamed",
+  "appGoalDateRangeRaw": "{start} to {end}",
+  "@appGoalDateRangeRaw": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "appOpportunityTypeUnspecified": "Not Specified",
+  "appOpportunityTypeNewBusiness": "New Business",
+  "appOpportunityTypeExistingBusiness": "Existing Business",
+  "appOpportunityTypeRenewal": "Renewal",
+  "appOpportunityTypeUpsell": "Upsell",
+  "appOpportunityTypeCrossSell": "Cross Sell",
+  "appUnassigned": "Unassigned",
+  "appAssigneeFallback": "Assigned",
+  "appDealNoAccount": "No Account",
+  "appWebFormFieldSalutation": "Salutation",
+  "appWebFormFieldFirstName": "First name",
+  "appWebFormFieldLastName": "Last name",
+  "appWebFormFieldEmail": "Email",
+  "appWebFormFieldPhone": "Phone",
+  "appWebFormFieldCompanyName": "Company name",
+  "appWebFormFieldJobTitle": "Job title",
+  "appWebFormFieldWebsite": "Website",
+  "appWebFormFieldSubject": "Subject",
+  "appWebFormFieldMessage": "Message",
+  "appWebFormFieldCity": "City",
+  "appWebFormFieldState": "State",
+  "appWebFormFieldCountry": "Country",
+  "appWebFormFieldPostcode": "Postal code",
+  "appWebFormFieldIndustry": "Industry",
+  "appWebFormBlockerNoFields": "Add at least one field first.",
+  "appWebFormBlockerEmailTicket": "Add an email field before publishing. It is how each ticket finds its contact, or creates one.",
+  "appWebFormBlockerEmailLead": "Add an email field before publishing. It is what lets a repeat submission update the existing lead instead of failing.",
+  "appWebFormBlockerIncomplete": "Every field needs a label and something to write into.",
+  "appWebFormBlockerNoRedirect": "This form redirects on success but has no redirect URL set.",
+  "appWebFormSubmissionTicketOpened": "Ticket opened",
+  "appWebFormSubmissionLeadCreated": "Lead created",
+  "appWebFormSubmissionMerged": "Merged into an existing lead",
+  "appWebFormSubmissionSpam": "Rejected as spam",
+  "appWebFormSubmissionInvalid": "Rejected, invalid",
+  "appWebFormSubmissionCaptcha": "Rejected, captcha",
+  "appRoleAdmin": "Admin",
+  "appRoleMember": "Member",
+  "appUnknownPerson": "Unknown",
+  "appTokenStatusRevoked": "Revoked",
+  "appTokenStatusExpired": "Expired",
+  "appTokenStatusLive": "Live",
+  "appTokenUnusedFor": "{days, plural, other{unused for {days} days}}",
+  "@appTokenUnusedFor": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appTokenNeverUsedIssued": "{days, plural, other{never used, issued {days} days ago}}",
+  "@appTokenNeverUsedIssued": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appTokenScopeEverythingOf": "Everything {owner} can",
+  "@appTokenScopeEverythingOf": {
+    "placeholders": {
+      "owner": {
+        "type": "String"
+      }
+    }
+  },
+  "appTokenScopeEverythingOwner": "Everything its owner can",
+  "appTokenScopeReadOnly": "Read only",
+  "appTokenAccessFull": "Everything the owner can",
+  "appTokenExpiry90": "In 90 days",
+  "appTokenExpiry30": "In 30 days",
+  "appTokenExpiry365": "In 1 year",
+  "appTokenExpiryNever": "Never",
+  "appTokenValidateName": "Give the token a name.",
+  "appTokenValidateNameLength": "That name is too long (255 characters max).",
+  "appTokenRevokeExplanation": "The token stops working on the next request that uses it. Anything built on it, a script or an integration, fails until it is given a new one. This cannot be undone: a revoked token is never reissued.",
+  "appTokenRevealWarning": "This is the only time the full token is shown. Store it somewhere safe. The server keeps only a hash, so it cannot be retrieved again.",
+  "appTokenNeverUsed": "Never used",
+  "appTokenLastUsed": "Last used {date}",
+  "@appTokenLastUsed": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "appTokenNeverExpires": "never expires",
+  "appTokenExpires": "expires {date}",
+  "@appTokenExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "appLeadStatusAssigned": "Assigned",
+  "appLeadStatusInProcess": "In Process",
+  "appLeadStatusConverted": "Converted",
+  "appLeadStatusRecycled": "Recycled",
+  "appLeadStatusClosed": "Closed",
+  "appLeadRatingCold": "Cold",
+  "appLeadRatingWarm": "Warm",
+  "appLeadRatingHot": "Hot",
+  "appPriorityLow": "Low",
+  "appPriorityNormal": "Normal",
+  "appPriorityMedium": "Medium",
+  "appPriorityHigh": "High",
+  "appPriorityUrgent": "Urgent",
+  "appTicketStatusNew": "New",
+  "appTicketStatusAssigned": "Assigned",
+  "appTicketStatusPending": "Pending",
+  "appTicketStatusClosed": "Closed",
+  "appTicketStatusRejected": "Rejected",
+  "appTicketStatusDuplicate": "Duplicate",
+  "appTicketTypeQuestion": "Question",
+  "appTicketTypeIncident": "Incident",
+  "appTicketTypeProblem": "Problem",
+  "appContactFallback": "Contact",
+  "appTicketRestrictedName": "A ticket you cannot open",
+  "appTicketCascadeNone": "Nothing linked to this ticket is still open, so closing it changes nothing else.",
+  "appTicketCascadeOpen": "{count, plural, =1{1 linked ticket is still open and will be closed with it.} other{{count} linked tickets are still open and will be closed with it.}}",
+  "@appTicketCascadeOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTicketCascadeOpenTruncated": "{count, plural, =1{1 linked ticket is still open and will be closed with it. There may be more further down than are listed here, and those close too.} other{{count} linked tickets are still open and will be closed with it. There may be more further down than are listed here, and those close too.}}",
+  "@appTicketCascadeOpenTruncated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTicketClosed": "Ticket closed",
+  "appTicketClosedNothingLinked": "Ticket closed. Nothing linked was open, so nothing else changed.",
+  "appTicketClosedCascaded": "{count, plural, =1{Ticket closed, and 1 linked ticket with it} other{Ticket closed, and {count} linked tickets with it}}",
+  "@appTicketClosedCascaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCustomFieldTypeText": "Text",
+  "appCustomFieldTypeTextarea": "Long text",
+  "appCustomFieldTypeNumber": "Number",
+  "appCustomFieldTypeDropdown": "Dropdown",
+  "appCustomFieldTypeDate": "Date",
+  "appCustomFieldTypeCheckbox": "Checkbox",
+  "appTargetAccounts": "Accounts",
+  "appTargetTickets": "Tickets",
+  "appTargetContacts": "Contacts",
+  "appTargetEstimates": "Estimates",
+  "appTargetInvoices": "Invoices",
+  "appTargetLeads": "Leads",
+  "appTargetDeals": "Deals",
+  "appTargetRecurringInvoices": "Recurring invoices",
+  "appTargetTasks": "Tasks",
+  "appCustomFieldValidateLabel": "Give the field a label.",
+  "appCustomFieldValidateKey": "Give the field a key.",
+  "appCustomFieldValidateKeyFormat": "A key is lowercase letters, numbers and underscores, starting with a letter. No hyphens or spaces.",
+  "appCustomFieldValidateTarget": "Choose the record type this field belongs to.",
+  "appCustomFieldValidateNoOptions": "A dropdown needs at least one option.",
+  "appCustomFieldValidateOptionName": "An option needs at least one letter or number in its name.",
+  "appCustomFieldValidateOptionDuplicate": "Two options would both be stored as \"{value}\". Rename one.",
+  "@appCustomFieldValidateOptionDuplicate": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "appOrgValidateEmail": "That does not look like an email address.",
+  "appOrgValidateWebsite": "Include the full website address, starting with http:// or https://.",
+  "appNumberDatePartNone": "No date, one running count",
+  "appNumberDatePartYear": "Year, count restarts each year",
+  "appNumberDatePartMonth": "Year and month, count restarts each month",
+  "appNumberDatePartDay": "Full date, count restarts each day",
+  "appNumberingValidatePrefix": "A number prefix can use letters, numbers, hyphens and underscores only.",
+  "appNumberingValidatePadding": "Counter digits must be from 1 to 10.",
+  "appNumberingValidateStart": "Start invoices at a whole number from 1 to 999,999,999.",
+  "appCsatExplanationOn": "A survey goes out after a ticket closes. Turning this off stops every survey org-wide, with no per-team exception.",
+  "appCsatExplanationOff": "No surveys are sent, anywhere in this organization. Nothing on a ticket says so, and there is no per-team exception.",
+  "appCascadeDefaultExplanationOn": "Closing a parent ticket here starts with \"also close linked tickets\" ticked. You still confirm, and can untick it.",
+  "appCascadeDefaultExplanationOff": "Closing a parent ticket here starts with \"also close linked tickets\" unticked. You still confirm, and can tick it.",
+  "appCascadeWebGapNote": "The web app has no close prompt yet, so closing a parent there leaves its children open whatever this is set to.",
+  "appSampleDataNone": "No sample data to clear.",
+  "appSampleDataDeleted": "{count, plural, =1{Deleted 1 sample record.} other{Deleted {count} sample records.}}",
+  "@appSampleDataDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appSampleDataKept": "{count, plural, =1{Kept 1 record you have since attached real work to.} other{Kept {count} records you have since attached real work to.}}",
+  "@appSampleDataKept": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appWeekdayMonday": "Monday",
+  "appWeekdayTuesday": "Tuesday",
+  "appWeekdayWednesday": "Wednesday",
+  "appWeekdayThursday": "Thursday",
+  "appWeekdayFriday": "Friday",
+  "appWeekdaySaturday": "Saturday",
+  "appWeekdaySunday": "Sunday",
+  "appBusinessHoursValidateName": "The calendar needs a name.",
+  "appBusinessHoursValidateTimezone": "The calendar needs a timezone, as an IANA name like Asia/Kolkata.",
+  "appBusinessHoursValidateBothTimes": "{day} needs an opening and a closing time, or neither.",
+  "@appBusinessHoursValidateBothTimes": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "appBusinessHoursValidateUnreadable": "{day} has a time that is not readable.",
+  "@appBusinessHoursValidateUnreadable": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "appBusinessHoursValidateCloseAfterOpen": "{day} has to close after it opens. A shift that runs past midnight cannot be set here.",
+  "@appBusinessHoursValidateCloseAfterOpen": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "appHolidayDuplicateWarning": "{date} is already a holiday, called \"{name}\". Adding it again keeps that name.",
+  "@appHolidayDuplicateWarning": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appHolidayAlreadyExisted": "That date was already a holiday, called \"{name}\". Nothing changed.",
+  "@appHolidayAlreadyExisted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appHolidayRemovalExplanation": "The day counts as working time again straight away, so targets that were paused over it move earlier. This cannot be undone, only added back.",
+  "appBusinessHoursAlwaysOn": "No day is open, so targets run around the clock. Closing every day does not stop the clock, it removes the calendar from the calculation entirely.",
+  "appBusinessHoursWeekly": "{hours} hours a week, in {timezone}. Targets count only the time inside them.",
+  "@appBusinessHoursWeekly": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "timezone": {
+        "type": "String"
+      }
+    }
+  },
+  "appInvoiceStatusDraft": "Draft",
+  "appInvoiceStatusSent": "Sent",
+  "appInvoiceStatusViewed": "Viewed",
+  "appInvoiceStatusPaid": "Paid",
+  "appInvoiceStatusPartiallyPaid": "Partially paid",
+  "appInvoiceStatusOverdue": "Overdue",
+  "appInvoiceStatusPending": "Pending",
+  "appInvoiceStatusCancelled": "Cancelled",
+  "appEstimateStatusDraft": "Draft",
+  "appEstimateStatusSent": "Sent",
+  "appEstimateStatusViewed": "Viewed",
+  "appEstimateStatusAccepted": "Accepted",
+  "appEstimateStatusDeclined": "Declined",
+  "appEstimateStatusExpired": "Expired",
+  "appPaymentMethodCash": "Cash",
+  "appPaymentMethodCheck": "Check",
+  "appPaymentMethodCreditCard": "Credit card",
+  "appPaymentMethodBankTransfer": "Bank transfer",
+  "appPaymentMethodOther": "Other",
+  "appActivityTypeCall": "Call",
+  "appActivityTypeEmail": "Email",
+  "appActivityTypeNote": "Note",
+  "appActivityTypeMeeting": "Meeting",
+  "appActivityTypeStageChange": "Stage Change",
+  "appActivityTypeDealWon": "Deal Won",
+  "appActivityTypeDealLost": "Deal Lost",
+  "appActivityTypeTaskCompleted": "Task Completed",
+  "appActivityTypeLeadCreated": "Lead Created",
+  "appActivityTypeDealCreated": "Deal Created",
+  "appRelativeJustNow": "Just now",
+  "appRelativeMinutesAgo": "{count}m ago",
+  "@appRelativeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appRelativeHoursAgo": "{count}h ago",
+  "@appRelativeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appRelativeDaysAgo": "{count}d ago",
+  "@appRelativeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appRelativeWeeksAgo": "{count}w ago",
+  "@appRelativeWeeksAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appRelativeMonthsAgo": "{count}mo ago",
+  "@appRelativeMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appRelatedLead": "Lead",
+  "appRelatedAccount": "Account",
+  "appRelatedOpportunity": "Opportunity",
+  "appRelatedTicket": "Ticket",
+  "appRelatedContact": "Contact",
+  "appTaskStatusNew": "New",
+  "appTaskStatusInProgress": "In Progress",
+  "appTaskStatusCompleted": "Completed",
+  "appTaskDueOverdue": "Overdue",
+  "appTaskDueToday": "Today",
+  "appTaskDueUpcoming": "Upcoming",
+  "appTaskDueNone": "No Due Date",
+  "appTaskDueCompleted": "Completed",
+  "appEscalationActionNotify": "Notify",
+  "appEscalationActionReassign": "Reassign to",
+  "appEscalationActionNotifyAndReassign": "Notify and reassign to",
+  "appEscalationHalfFirstResponse": "Missed first response",
+  "appEscalationHalfResolution": "Missed resolution",
+  "appSlaHours": "{hours}h",
+  "@appSlaHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "appSlaHoursDefault": "{hours}h default",
+  "@appSlaHoursDefault": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "appSlaHoursInvalid": "Enter a whole number of hours from 1 to {max}, or leave it blank for the default.",
+  "@appSlaHoursInvalid": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "appTeamPhrase": "the {name} team",
+  "@appTeamPhrase": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appTeamPhraseNamed": "the {name}",
+  "@appTeamPhraseNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appJoinAnd": "{list} and {last}",
+  "@appJoinAnd": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "appEscalationOutcomeOff": "Nothing. The policy is turned off.",
+  "appEscalationOutcomeNoTarget": "Nothing. No target is set.",
+  "appEscalationOutcomeNoTargetTeam": "Nothing. No target is set, and {team} is not notified on its own.",
+  "@appEscalationOutcomeNoTargetTeam": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "appEscalationOutcomeWithTeam": "{action} {target} and {team}.",
+  "@appEscalationOutcomeWithTeam": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "appEscalationOutcome": "{action} {target}.",
+  "@appEscalationOutcome": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appEscalationTeamIgnored": "{team} is not notified here: this half only reassigns.",
+  "@appEscalationTeamIgnored": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "appEscalationNoTargetHint": "Nothing happens on this half until a target is picked. A team on its own is not notified.",
+  "appEscalationRemovalExplanation": "The policy is gone for good. Breaches at this priority will escalate to nobody, and the priority goes back to having no policy at all. If you only want it to stop firing, turn it off instead: that is reversible.",
+  "appRoutingStrategyDirect": "Direct",
+  "appRoutingStrategyRoundRobin": "Round robin",
+  "appRoutingStrategyLeastBusy": "Least busy",
+  "appRoutingStrategyByTeam": "By team",
+  "appRoutingFieldType": "Type",
+  "appRoutingFieldAccount": "Account",
+  "appRoutingFieldSenderDomain": "Sender domain",
+  "appRoutingFieldMailbox": "Mailbox",
+  "appRoutingOpEq": "is",
+  "appRoutingOpIn": "is one of",
+  "appRoutingOpContains": "includes",
+  "appRoutingOpRegex": "matches",
+  "appRoutingMatchesEverything": "Matches every new ticket",
+  "appRoutingConditionJoiner": " and ",
+  "@appRoutingConditionJoiner": {
+    "description": "Joins two routing conditions; keep the surrounding spaces."
+  },
+  "appRoutingValidateName": "A rule needs a name.",
+  "appRoutingValidateField": "\"{field}\" is not a field a rule can match on.",
+  "@appRoutingValidateField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appRoutingValidateOp": "\"{op}\" is not an operator a rule can use.",
+  "@appRoutingValidateOp": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      }
+    }
+  },
+  "appRoutingValidateTeam": "A by team rule needs a team to route to.",
+  "appRoutingValidateAssignee": "A {strategy} rule needs at least one assignee.",
+  "@appRoutingValidateAssignee": {
+    "placeholders": {
+      "strategy": {
+        "type": "String"
+      }
+    }
+  },
+  "appRoutingRemovalExplanation": "The rule is gone for good, along with its place in the order. Tickets it already routed keep their assignee. If you only want it to stop running, turn it off instead: that is reversible.",
+  "appStageKindOpen": "Open",
+  "appStageKindWon": "Won",
+  "appStageKindLost": "Lost",
+  "appLeadStageStatusNone": "None",
+  "appPipelineValidateName": "Give the pipeline a name.",
+  "appStageValidateName": "Give the stage a name.",
+  "appValidateNameMax": "Keep the name to {max} characters.",
+  "@appValidateNameMax": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "appStageValidateDays": "Days must be a whole number from {min} to {max}.",
+  "@appStageValidateDays": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "appStageValidateProbability": "Win probability must be a whole number from 0 to 100.",
+  "appApprovalStatePending": "Pending",
+  "appApprovalStateApproved": "Approved",
+  "appApprovalStateRejected": "Rejected",
+  "appApprovalStateCancelled": "Cancelled",
+  "appApproverRoleManager": "Manager (matches nobody yet)",
+  "appApprovalMatchPriority": "{priority} priority",
+  "@appApprovalMatchPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "appApprovalMatchTeam": "{team} team",
+  "@appApprovalMatchTeam": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "appApprovalMatchEvery": "Every ticket",
+  "appApprovalValidateName": "Give the rule a name.",
+  "appApprovalValidateNameLength": "That name is too long (128 characters max).",
+  "appApprovalDeleteExplanation": "A rule that has never gated a close is deleted for good. One with any approval history is turned off instead, because the record has to be kept. Which happens is decided when you confirm, and you will be told.",
+  "appApprovalDeleteTurnedOff": "That rule had approval history, so it was turned off instead of deleted. It is still in the list, off, and gates nothing.",
+  "appApprovalDeleted": "Rule deleted",
+  "appApproverOrJoiner": " or ",
+  "@appApproverOrJoiner": {
+    "description": "Joins approver names; keep the surrounding spaces."
+  },
+  "appApproverAnyAdmin": "any admin",
+  "appApproverAnyAdminOr": "any admin, or {names}",
+  "@appApproverAnyAdminOr": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "appApproverNobody": "nobody",
+  "appMailboxDeliveryOff": "Creating nothing",
+  "appMailboxDeliveryUnsupported": "Provider not wired up",
+  "appMailboxDeliveryUnconfirmed": "Not connected yet",
+  "appMailboxDeliveryLive": "Creating tickets",
+  "appMailboxExplainOff": "Mail still arrives here and no ticket is opened. Nothing bounces, so whoever wrote gets silence rather than an error.",
+  "appMailboxExplainUnsupported": "{provider} deliveries are not implemented. The webhook refuses them, so mail to this address becomes nothing whatever else is set here.",
+  "@appMailboxExplainUnsupported": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxExplainUnconfirmed": "Waiting for its SNS topic. Every message is refused until this address has a Topic ARN: an admin can enter it here, or it is set when AWS confirms a subscription from an AWS account this server allows.",
+  "appMailboxThenRouted": "then routed",
+  "appMailboxAssignedTo": "assigned to {name}",
+  "@appMailboxAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxValidateAddress": "Give the address.",
+  "appMailboxDeleteExplanation": "Deleted for good. Mail sent here stops becoming tickets, and the topic pin goes with it, so a delivery already in flight from AWS stops verifying. Tickets already opened from this address are not touched.",
+  "appMailboxDeactivateExplanation": "Stops opening tickets. Mail keeps arriving and nothing bounces, so anyone writing here gets no ticket and no error. It stays in the list, off, until it is turned back on.",
+  "appMailboxAuthExplanation": "AWS signs each notification, and the address has to be pinned to the exact SNS topic it was subscribed to. The signature alone proves only that some AWS account sent it, so without the pin anyone who learned an address id could have AWS sign forged mail into this organization. An admin can enter the pin as the address's Topic ARN. Left blank, it is set by the first subscription AWS confirms from an AWS account this server allows; a subscription from any other account is refused. Only admins can see the ARN, because it carries the AWS account id. A Postmark or Mailgun address is proved by a webhook secret an admin stores on it instead, which is never shown back.",
+  "appMacroScopePersonal": "Just you",
+  "appMacroScopeOrg": "Everyone",
+  "appMacroRefDeactivated": "{name} (deactivated)",
+  "@appMacroRefDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroRefArchived": "{name} (archived)",
+  "@appMacroRefArchived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroChipStatus": "Status: {status}",
+  "@appMacroChipStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroChipPriority": "Priority: {priority}",
+  "@appMacroChipPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroChipAssign": "Assign: {people}",
+  "@appMacroChipAssign": {
+    "placeholders": {
+      "people": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroChipTag": "Tag: {tags}",
+  "@appMacroChipTag": {
+    "placeholders": {
+      "tags": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroAppliedNothing": "The macro changed nothing on this ticket.",
+  "appMacroApplied": "Macro applied: {actions}.",
+  "@appMacroApplied": {
+    "placeholders": {
+      "actions": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroDeleteTitle": "Delete {title}?",
+  "@appMacroDeleteTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroDeleteDetail": "This is one of your own saved replies, so it is removed for good. Nobody else could see it.",
+  "appMacroTurnOff": "Turn off",
+  "appMacroTurnOffTitle": "Turn off {title}?",
+  "@appMacroTurnOffTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appMacroTurnOffDetail": "It stops being offered in the reply box for everyone. The saved reply is kept and you can turn it back on.",
+  "appMacroValidateTitle": "Give the saved reply a title.",
+  "appMacroValidateBody": "A saved reply needs something to say or something to do.",
+  "appMacroValidateScope": "Choose who this reply is for.",
+  "appSupportCategoryTechnical": "Technical issue",
+  "appSupportCategoryBilling": "Billing",
+  "appSupportCategoryAccount": "Account access",
+  "appSupportCategoryFeatureRequest": "Feature request",
+  "appSupportCategoryOther": "Other",
+  "appSupportStatusOpen": "Open",
+  "appSupportStatusInProgress": "In progress",
+  "appSupportStatusWaiting": "Waiting on you",
+  "appSupportStatusResolved": "Resolved",
+  "appSupportStatusClosed": "Closed",
+  "appSolutionStatusDraft": "Draft",
+  "appSolutionStatusReviewed": "Reviewed",
+  "appSolutionStatusApproved": "Approved",
+  "appFrequencyWeekly": "Weekly",
+  "appFrequencyBiweekly": "Every two weeks",
+  "appFrequencySemiAnnually": "Twice a year",
+  "appFrequencyCustom": "Custom",
+  "appModulePipeline": "Pipeline",
+  "appModuleGoals": "Goals",
+  "appModuleKnowledgeBase": "Knowledge base",
+  "appModuleDocuments": "Documents",
+  "appModuleTimesheet": "Timesheet",
+  "appFrequencyEveryDays": "{days, plural, other{Every {days} days}}",
+  "@appFrequencyEveryDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appDocumentStatusArchived": "Archived",
+  "appDocumentStatusActive": "Active",
+  "appSizeUnknown": "Size unknown",
+  "appSizeBytes": "{bytes} B",
+  "@appSizeBytes": {
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      }
+    }
+  },
+  "appSizeKb": "{size} kB",
+  "@appSizeKb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "appSizeMb": "{size} MB",
+  "@appSizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "appDocumentSharedWithNobody": "Shared with nobody. Only you and an admin can open it.",
+  "appDocumentValidateTitle": "Give the document a title.",
+  "appObjectsTurnedOff": "Creating and editing is turned off for this organization.",
+  "appObjectsLoadFailed": "Custom objects could not be loaded. Try again.",
+  "appValueNone": "None",
+  "appWebhookFormatSlack": "Slack message",
+  "appWebhookFormatJson": "Signed JSON",
+  "appWebhookDelivered": "Delivered",
+  "appWebhookFailed": "Failed",
+  "appWebhookPending": "Pending",
+  "appReopenValidateWindow": "The window has to be a whole number of days between {min} and {max}.",
+  "@appReopenValidateWindow": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "appReopenValidateStatus": "A reopened ticket has to come back as New, Assigned or Pending.",
+  "appReopenSummaryOn": "{days, plural, other{A reply within {days} days brings a closed ticket back as {status}.}}",
+  "@appReopenSummaryOn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "appReopenSummaryOff": "Closed tickets stay closed. A reply is filed on the ticket and nothing else happens.",
+  "appReopenMissedCaveat": "Not counted while reopening is off. Replies to closed tickets are filed and nothing else happens, so none of them are recorded as having missed anything. This is a zero because nothing is measured, not because nothing is being lost.",
+  "appTagUsageAccounts": "{count, plural, =1{1 account} other{{count} accounts}}",
+  "@appTagUsageAccounts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagUsageContacts": "{count, plural, =1{1 contact} other{{count} contacts}}",
+  "@appTagUsageContacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagUsageLeads": "{count, plural, =1{1 lead} other{{count} leads}}",
+  "@appTagUsageLeads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagUsageDeals": "{count, plural, =1{1 deal} other{{count} deals}}",
+  "@appTagUsageDeals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagUsageTickets": "{count, plural, =1{1 ticket} other{{count} tickets}}",
+  "@appTagUsageTickets": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagUsageTasks": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@appTagUsageTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagUsageApiKeys": "{count, plural, =1{1 API key} other{{count} API keys}}",
+  "@appTagUsageApiKeys": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagValidateName": "Give the tag a name.",
+  "appTagArchiveUnused": "Nothing carries this tag. Turning it off stops it being offered on new records. You can turn it back on.",
+  "appTagArchiveUsed": "{count, plural, =1{1 record keeps this tag. Turning it off stops it being offered on new records, and keeps it on the ones that have it. You can turn it back on.} other{{count} records keep this tag. Turning it off stops it being offered on new records, and keeps it on the ones that have it. You can turn it back on.}}",
+  "@appTagArchiveUsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appTagMergeExplanation": "{count, plural, =1{1 record moves from {from} to {into}, and {from} is turned off. Records already on {into} are untouched. This cannot be undone by merging back.} other{{count} records move from {from} to {into}, and {from} is turned off. Records already on {into} are untouched. This cannot be undone by merging back.}}",
+  "@appTagMergeExplanation": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "from": {
+        "type": "String"
+      },
+      "into": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditNoUser": "No user",
+  "appAuditRecord": "record",
+  "appAuditMerged": "Merged {entity} \"{merged}\"{mergedId} into \"{kept}\"{keptId}.",
+  "@appAuditMerged": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      },
+      "merged": {
+        "type": "String"
+      },
+      "mergedId": {
+        "type": "String"
+      },
+      "kept": {
+        "type": "String"
+      },
+      "keptId": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditScopes": "scopes {scopes}",
+  "@appAuditScopes": {
+    "placeholders": {
+      "scopes": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditFullAccess": "full access",
+  "appAuditOwnedBy": ", owned by {owner}",
+  "@appAuditOwnedBy": {
+    "placeholders": {
+      "owner": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditToken": "Token \"{name}\" ({prefix}), {rest}.",
+  "@appAuditToken": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "prefix": {
+        "type": "String"
+      },
+      "rest": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditWebhookReenabled": "Turned back on, and now answers for the webhook.",
+  "appAuditWebhookChanged": "Changed {fields}, and now answers for the webhook.",
+  "@appAuditWebhookChanged": {
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditActionOn": "{action} on {resource}",
+  "@appAuditActionOn": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "resource": {
+        "type": "String"
+      }
+    }
+  },
+  "appAuditSampleLeadsRemoved": "{count} sample leads removed",
+  "@appAuditSampleLeadsRemoved": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appTimeToday": "Today",
+  "appTimeYesterday": "Yesterday",
+  "appNotificationSupportActor": "BottleCRM Support",
+  "appNotificationSystemActor": "The system",
+  "appNotificationSomeone": "Someone",
+  "appAutomationRuleFailed": "The rule \"{rule}\" failed: {reason}",
+  "@appAutomationRuleFailed": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutomationPaused": "{reason} Paused: {rules}.",
+  "@appAutomationPaused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "rules": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutomationLimit": "Automation reached its limit of 1,000 runs in the hour from {from}. The rest of that hour's runs were skipped.",
+  "@appAutomationLimit": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutomationFromRule": "From the rule \"{rule}\"",
+  "@appAutomationFromRule": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotificationVerbMentioned": "mentioned you on",
+  "appNotificationVerbCommented": "commented on",
+  "appNotificationVerbReplied": "replied to",
+  "appNotificationVerbUpdated": "updated",
+  "appUntitled": "Untitled",
+  "appUnnamedContact": "Unnamed contact",
+  "appUnnamedAccount": "Unnamed account",
+  "appNoStage": "No stage",
+  "appUntitledTicket": "Untitled ticket",
+  "appAgingCurrent": "Not yet due",
+  "appAging1To30": "1 to 30 days",
+  "appAging31To60": "31 to 60 days",
+  "appAging61To90": "61 to 90 days",
+  "appAgingOver90": "Over 90 days",
+  "appTokenScopeEverythingYou": "Everything you can",
+  "appMailboxProviderNotWired": "{provider} (not wired up yet)",
+  "@appMailboxProviderNotWired": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "appWebhookEventCreated": "Created",
+  "appWebhookEventUpdated": "Updated",
+  "appWebhookEventDeleted": "Deleted",
+  "appWebhookEventWon": "Won",
+  "appWebhookEventLost": "Lost",
+  "appWebhookEventPaid": "Paid",
+  "appWebhookEventCommentAdded": "Comment added",
+  "appDealCloseNeedsAmount": "A deal in {stage} needs an amount.",
+  "@appDealCloseNeedsAmount": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "appDealCloseNeedsDate": "A deal in {stage} needs a close date.",
+  "@appDealCloseNeedsDate": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "appDealSortCloseDate": "Closest close date",
+  "appDealSortValue": "Largest value",
+  "appDealSortStageAge": "Stalest first",
+  "appDealSortUpdated": "Recently updated",
+  "appMsgCouldNotLoadTheTimeReport": "Could not load the time report.",
+  "appMsgFailedToLoadProfile": "Failed to load profile",
+  "appMsgFailedToLoadAccounts": "Failed to load accounts",
+  "appMsgSomethingWentWrong": "Something went wrong",
+  "appMsgCouldNotLoadThisSection": "Could not load this section.",
+  "appMsgCouldNotLoadTheAuditLog": "Could not load the audit log",
+  "appMsgFailedToLoadContacts": "Failed to load contacts",
+  "appMsgCouldNotSendCodeCheckYourConnection": "Could not send code. Check your connection and try again.",
+  "appMsgSignInWasCancelledOrFailedPlease": "Sign-in was cancelled or failed. Please try again.",
+  "appMsgInvalidOrExpiredCodePleaseTryAgain": "Invalid or expired code. Please try again.",
+  "appMsgFailedToSwitchOrganization": "Failed to switch organization",
+  "appMsgFailedToLoadDashboardData": "Failed to load dashboard data",
+  "appMsgFailedToLoadTheAgeingReport": "Failed to load the ageing report",
+  "appMsgFailedToLoadTemplates": "Failed to load templates",
+  "appMsgFailedToLoadEstimates": "Failed to load estimates",
+  "appMsgFailedToLoadSchedules": "Failed to load schedules",
+  "appMsgFailedToLoadProducts": "Failed to load products",
+  "appMsgFailedToLoadReports": "Failed to load reports",
+  "appMsgThatRecordDoesNotExistOrYou": "That record does not exist, or you cannot open it.",
+  "appMsgAutomationRulesAreNotAvailableHere": "Automation rules are not available here.",
+  "appMsgThatRuleIsNoLongerInThe": "That rule is no longer in the list.",
+  "appMsgThatRuleCannotMoveFurther": "That rule cannot move further.",
+  "appMsgCouldNotSwitchTheRuleOff": "Could not switch the rule off.",
+  "appMsgAMoveIsAlreadyInProgress": "A move is already in progress.",
+  "appMsgCouldNotLoadTheCatalogue": "Could not load the catalogue",
+  "appMsgTheRulesAreStillLoading": "The rules are still loading.",
+  "appMsgCouldNotChangeTheOrder": "Could not change the order.",
+  "appMsgCouldNotDeleteTheRule": "Could not delete the rule.",
+  "appMsgCouldNotLoadTheRules": "Could not load the rules",
+  "appMsgCouldNotLoadTheRule": "Could not load the rule",
+  "appMsgCouldNotTryTheRule": "Could not try the rule.",
+  "appMsgCouldNotLoadTheRuns": "Could not load the runs",
+  "appMsgCouldNotLoadYourBoards": "Could not load your boards.",
+  "appMsgCouldNotLoadThatBoard": "Could not load that board.",
+  "appMsgOpenABoardFirst": "Open a board first.",
+  "appMsgFailedToUpdateComment": "Failed to update comment",
+  "appMsgFailedToLoadTheBoard": "Failed to load the board",
+  "appMsgFailedToDeleteComment": "Failed to delete comment",
+  "appMsgFailedToUpdateStage": "Failed to update stage",
+  "appMsgFailedToDeleteDeal": "Failed to delete deal",
+  "appMsgFailedToAddComment": "Failed to add comment",
+  "appMsgFailedToCreateDeal": "Failed to create deal",
+  "appMsgFailedToUpdateDeal": "Failed to update deal",
+  "appMsgFailedToLoadDeals": "Failed to load deals",
+  "appMsgCouldNotLoadGoalHistory": "Could not load goal history.",
+  "appMsgCouldNotLoadThatGoal": "Could not load that goal.",
+  "appMsgCouldNotLoadTheGoals": "Could not load the goals.",
+  "appMsgOnlyAnAdminCanChangeLeadPipelines": "Only an admin can change lead pipelines.",
+  "appMsgThisPipelineNoLongerExists": "This pipeline no longer exists.",
+  "appMsgCouldNotLoadThePipelines": "Could not load the pipelines.",
+  "appMsgCouldNotLoadThePipeline": "Could not load the pipeline.",
+  "appMsgSomethingWentWrongPeriod": "Something went wrong.",
+  "appMsgOnlyAnAdminCanChangeTheHelp": "Only an admin can change the help center.",
+  "appMsgCouldNotSaveTheHelpCenter": "Could not save the help center.",
+  "appMsgFailedToLoadTheHelpCenter": "Failed to load the help center",
+  "appMsgCouldNotLoadTheBoard": "Could not load the board.",
+  "appMsgCouldNotLoadNotifications": "Could not load notifications.",
+  "appMsgNothingLoadedYet": "Nothing loaded yet.",
+  "appMsgFailedToLoadLeads": "Failed to load leads",
+  "appMsgCouldNotSaveTheModules": "Could not save the modules.",
+  "appMsgCouldNotLoadModules": "Could not load modules",
+  "appMsgFailedToLoadCustomFields": "Failed to load custom fields",
+  "appMsgFailedToLoadTeams": "Failed to load teams",
+  "appMsgFailedToLoadUsers": "Failed to load users",
+  "appMsgFailedToLoadTags": "Failed to load tags",
+  "appMsgFailedToLoadInvoices": "Failed to load invoices",
+  "appMsgThatViewNoLongerExists": "That view no longer exists.",
+  "appMsgCouldNotLoadSavedViews": "Could not load saved views.",
+  "appMsgCouldNotDeleteTheView": "Could not delete the view.",
+  "appMsgCouldNotRenameTheView": "Could not rename the view.",
+  "appMsgCouldNotSaveTheView": "Could not save the view.",
+  "appMsgCouldNotLoadTheTeam": "Could not load the team.",
+  "appMsgTheServerCouldNotLoadThisTicket": "The server could not load this ticket. Try again in a moment.",
+  "appMsgCouldNotLoadTicketsToMergeInto": "Could not load tickets to merge into.",
+  "appMsgFailedToLoadTickets": "Failed to load tickets",
+  "appMsgCouldNotTurnTheCalendarFeedOff": "Could not turn the calendar feed off.",
+  "appMsgCouldNotCreateTheCalendarFeed": "Could not create the calendar feed.",
+  "appMsgFailedToLoadYourCalendarFeed": "Failed to load your calendar feed",
+  "appMsgCouldNotUnpublishTheForm": "Could not unpublish the form",
+  "appMsgFailedToLoadTheWebForm": "Failed to load the web form",
+  "appMsgCouldNotPublishTheForm": "Could not publish the form",
+  "appMsgCouldNotRemoveTheForm": "Could not remove the form",
+  "appMsgCouldNotCreateTheForm": "Could not create the form",
+  "appMsgFailedToLoadWebForms": "Failed to load web forms",
+  "appMsgCouldNotSaveTheForm": "Could not save the form",
+  "appMsgCouldNotDeleteTheWebhook": "Could not delete the webhook",
+  "appMsgCouldNotChangeTheWebhook": "Could not change the webhook",
+  "appMsgCouldNotRotateTheSecret": "Could not rotate the secret",
+  "appMsgCouldNotSaveTheWebhook": "Could not save the webhook",
+  "appMsgCouldNotAddTheWebhook": "Could not add the webhook",
+  "appMsgFailedToLoadDeliveries": "Failed to load deliveries",
+  "appMsgFailedToLoadWebhooks": "Failed to load webhooks",
+  "appMsgCouldNotSendATest": "Could not send a test",
+  "appMsgCouldNotRedeliver": "Could not redeliver",
+  "appMsgCouldNotLoadTheDocuments": "Could not load the documents.",
+  "appMsgFailedToLoadSolutions": "Failed to load solutions",
+  "appMsgCouldNotLoadYourTimesheet": "Could not load your timesheet.",
+  "appMsgFailedToLoadTasks": "Failed to load tasks",
+  "appMsgCouldNotLoadTheStatement": "Could not load the statement",
+  "appMsgFailedToLoadOrganizationSettings": "Failed to load organization settings",
+  "appMsgFailedToLoadEscalationPolicies": "Failed to load escalation policies",
+  "appMsgTheSavedReplyCameBackEmpty": "The saved reply came back empty.",
+  "appMsgTheCalendarHasNotLoadedYet": "The calendar has not loaded yet.",
+  "appMsgFailedToLoadTheReopenPolicy": "Failed to load the reopen policy",
+  "appMsgFailedToLoadApprovalRules": "Failed to load approval rules",
+  "appMsgFailedToLoadBusinessHours": "Failed to load business hours",
+  "appMsgFailedToLoadInboundEmail": "Failed to load inbound email",
+  "appMsgFailedToLoadRoutingRules": "Failed to load routing rules",
+  "appMsgFailedToLoadSavedReplies": "Failed to load saved replies",
+  "appMsgFailedToLoadYourTokens": "Failed to load your tokens",
+  "appMsgFailedToLoadTokens": "Failed to load tokens",
+  "appMsgCouldNotLoadThatPipeline": "Could not load that pipeline.",
+  "appMsgThatFileCouldNotBeReadTry": "That file could not be read. Try picking it again.",
+  "appMsgCouldNotLoadSupportTickets": "Could not load support tickets.",
+  "appMsgTheSupportRequestFailed": "The support request failed.",
+  "appMsgPipelineOrStageGone": "That pipeline or stage no longer exists. Refresh to see the current list.",
+  "appMsgTicketMoveNotAllowed": "You cannot move that ticket. You may not have access to it, or the ticket or stage no longer exists.",
+  "appMsgLeadMoveNotAllowed": "You cannot move that lead. You may not have access to it, or the lead or stage no longer exists.",
+  "appMsgTokenValueMissing": "The token was created but its value did not come back. Revoke it and create another.",
+  "appDupSingular": "{module, select, leads{lead} contacts{contact} other{account}}",
+  "@appDupSingular": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupMergeGone": "{module, select, leads{One of these leads no longer exists, or you do not have access to it.} contacts{One of these contacts no longer exists, or you do not have access to it.} other{One of these accounts no longer exists, or you do not have access to it.}}",
+  "@appDupMergeGone": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupMergeFailed": "{module, select, leads{Could not merge these leads.} contacts{Could not merge these contacts.} other{Could not merge these accounts.}}",
+  "@appDupMergeFailed": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupFieldCompany": "Company",
+  "appDupFieldCreated": "Created",
+  "appMsgCouldNotLoadCustomObjects": "Could not load custom objects",
+  "appMsgFailedToLoadThisObject": "Failed to load this object",
+  "appMsgFailedToLoadItsFields": "Failed to load its fields",
+  "appMsgFailedToLoadRecords": "Failed to load records",
+  "appMsgCouldNotSearch": "Could not search",
+  "appMsgCouldNotSaveThatRecord": "Could not save that record.",
+  "appObjectFormKey": "Key",
+  "appObjectFormLabelSingular": "Name (singular)",
+  "appObjectFormLabelPlural": "Name (plural)",
+  "appObjectFormNameLabel": "What each record's name is called",
+  "appObjectFormRecordAccess": "Who can see its records",
+  "appFieldFormLabel": "Label",
+  "appFieldFormOptions": "Options",
+  "appFieldFormTarget": "Links to",
+  "appFieldFormMany": "How many",
+  "appFieldFormRequired": "Required",
+  "appFieldFormOrder": "Order",
+  "appIndustryAdvertising": "Advertising",
+  "appIndustryAgriculture": "Agriculture",
+  "appIndustryApparelAccessories": "Apparel & accessories",
+  "appIndustryAutomotive": "Automotive",
+  "appIndustryBanking": "Banking",
+  "appIndustryBiotechnology": "Biotechnology",
+  "appIndustryBuildingMaterialsEquipment": "Building materials & equipment",
+  "appIndustryChemical": "Chemical",
+  "appIndustryComputer": "Computer",
+  "appIndustryEducation": "Education",
+  "appIndustryElectronics": "Electronics",
+  "appIndustryEnergy": "Energy",
+  "appIndustryEntertainmentLeisure": "Entertainment & leisure",
+  "appIndustryFinance": "Finance",
+  "appIndustryFoodBeverage": "Food & beverage",
+  "appIndustryGrocery": "Grocery",
+  "appIndustryHealthcare": "Healthcare",
+  "appIndustryInsurance": "Insurance",
+  "appIndustryLegal": "Legal",
+  "appIndustryManufacturing": "Manufacturing",
+  "appIndustryPublishing": "Publishing",
+  "appIndustryRealEstate": "Real estate",
+  "appIndustryService": "Service",
+  "appIndustrySoftware": "Software",
+  "appIndustrySports": "Sports",
+  "appIndustryTechnology": "Technology",
+  "appIndustryTelecommunications": "Telecommunications",
+  "appIndustryTelevision": "Television",
+  "appIndustryTransportation": "Transportation",
+  "appIndustryVentureCapital": "Venture capital",
+  "appCsvDescriptionContacts": "Bring in a spreadsheet of contacts. You'll check how its columns match, and nothing is written until you choose Import.",
+  "appCsvDescriptionLeads": "Bring in a spreadsheet of leads. You'll check how its columns match, and nothing is written until you choose Import.",
+  "appCsvDescriptionTickets": "Upload a CSV of tickets. We'll validate every row before writing anything. References (account, contacts, assignees) must already exist in your org.",
+  "appCsvAccountLinked": "account linked",
+  "appCsvNoun": "{target, select, contacts{{count, plural, =1{contact} other{contacts}}} leads{{count, plural, =1{lead} other{leads}}} other{{count, plural, =1{ticket} other{tickets}}}}",
+  "@appCsvNoun": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvForbidden": "Importing needs an admin, or a member with sales access.",
+  "appCsvThrottled": "Too many tries in a minute. Wait a moment, then try again.",
+  "appCsvTooLarge": "This file is too large to upload. Split it into smaller files.",
+  "appCsvFileType": "Save it as .xlsx or .csv and try again.",
+  "appCsvNoMatch": "We couldn't match any columns. Make sure the first row of your sheet holds the column names.",
+  "appCsvDropped": "{count, plural, =1{{label}: 1 value we couldn't use was left blank.} other{{label}: {count} values we couldn't use were left blank.}}",
+  "@appCsvDropped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvSummaryEmpty": "This file has no rows to import.",
+  "appCsvSummaryAllDuplicates": "Everything in this file is already in BottleCRM.",
+  "appCsvSummaryNothing": "Nothing in this file can be imported.",
+  "appCsvSummaryValid": "{count} {noun} will be imported.",
+  "@appCsvSummaryValid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "noun": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvSummaryValidDuplicates": "{skipped, plural, =1{{count} {noun} will be imported, and 1 duplicate row will be skipped.} other{{count} {noun} will be imported, and {skipped} duplicate rows will be skipped.}}",
+  "@appCsvSummaryValidDuplicates": {
+    "placeholders": {
+      "skipped": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "noun": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvSummaryValidSkipped": "{skipped, plural, =1{{count} {noun} will be imported, and 1 row will be skipped.} other{{count} {noun} will be imported, and {skipped} rows will be skipped.}}",
+  "@appCsvSummaryValidSkipped": {
+    "placeholders": {
+      "skipped": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "noun": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvChooseFile": "Choose a file.",
+  "appCsvChooseCsvFile": "Choose a CSV file.",
+  "appCsvNotCsv": "{name} is not a CSV file. Choose a file ending in .csv.",
+  "@appCsvNotCsv": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvFileTooBig": "{name} is {size} MB. Files must be 5 MB or smaller.",
+  "@appCsvFileTooBig": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvCsvFileTooBig": "{name} is {size} MB. CSV files must be 5 MB or smaller.",
+  "@appCsvCsvFileTooBig": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvPreviewFailed": "Preview failed",
+  "appCsvImportFailed": "Import failed",
+  "appAttachmentTooBig": "{name} is {size} MB. Files must be {limit} MB or smaller.",
+  "@appAttachmentTooBig": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "appAttachmentDownloadFailed": "Could not download that file.",
+  "appAttachmentSaveFailed": "Could not save that file.",
+  "appAttachmentSaveDialog": "Save attachment",
+  "appAttachmentUploadFailed": "Could not upload that file.",
+  "appExportFailed": "Could not export.",
+  "appExportSaveFailed": "Could not save the file.",
+  "appExportSaveDialog": "Save CSV export",
+  "appOrgCreateFailed": "Could not create the organization.",
+  "appOrgCreateNoId": "The organization was created but the server did not say which.",
+  "appOrgCreateSwitchFailed": "The organization was created, but signing into it failed. Pick it from the list to continue.",
+  "appNetworkError": "Cannot reach the server. Check your connection and try again.",
+  "appRequestFailedStatus": "Request failed with status {status}",
+  "@appRequestFailedStatus": {
+    "placeholders": {
+      "status": {
+        "type": "int"
+      }
+    }
+  },
+  "appAutoSomeoneInactive": "Someone no longer active",
+  "appAutoFieldGoneLower": "a field that is no longer available",
+  "appAutoFieldGone": "A field that is no longer available",
+  "appAutoPlanLimit": "This rule can't be switched on for this organization right now.",
+  "appAutoNotRunning": "This rule is not running for this organization right now.",
+  "appAutoNoLongerAvailable": "{value} (no longer available)",
+  "@appAutoNoLongerAvailable": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoOpEq": "is",
+  "appAutoOpNeq": "is not",
+  "appAutoOpContains": "contains",
+  "appAutoOpNotContains": "does not contain",
+  "appAutoOpGt": "is more than",
+  "appAutoOpLt": "is less than",
+  "appAutoOpIn": "is any of",
+  "appAutoOpNotIn": "is none of",
+  "appAutoOpTrue": "is true",
+  "appAutoOpFalse": "is false",
+  "appAutoOpIncludes": "includes",
+  "appAutoOpExcludes": "does not include",
+  "appAutoOpEmpty": "is empty",
+  "appAutoOpNotEmpty": "is not empty",
+  "appAutoOpWas": "was",
+  "appAutoOpWasNot": "was not",
+  "appAutoOpAfter": "is after",
+  "appAutoOpBefore": "is before",
+  "appAutoOpExactly": "is exactly",
+  "appAutoTargetThis": "This {object}",
+  "@appAutoTargetThis": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoTargetParent": "Its {object}",
+  "@appAutoTargetParent": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoTargetGone": "a target that is no longer available",
+  "appAutoRecipientAssignees": "Its assignees",
+  "appAutoRecipientCreator": "Who created it",
+  "appAutoRecipientParentTask": "Its parent's assignees",
+  "appAutoRecipientParentNamed": "The {parent}'s assignees",
+  "@appAutoRecipientParentNamed": {
+    "placeholders": {
+      "parent": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoRecipientAdmins": "All admins",
+  "appAutoRecipientLinked": "Assignees of {link}",
+  "@appAutoRecipientLinked": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoRecipientRemovedLink": "Assignees of a removed link",
+  "appAutoRecipientParentGone": "Its parent's assignees (no longer available)",
+  "appAutoRecipientOwner": "The rule's owner",
+  "appAutoRecipientPerson": "A chosen person",
+  "appAutoTriggerCreated": "Created",
+  "appAutoTriggerUpdated": "Updated",
+  "appAutoTriggerFieldGone": "A field that is no longer available changes",
+  "appAutoTriggerChanges": "{field} changes",
+  "@appAutoTriggerChanges": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoTriggerChangesTo": "{field} changes to {value}",
+  "@appAutoTriggerChangesTo": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoChangeHint": "Runs once, when the {field} moves into {value}; later edits do not run it again.",
+  "@appAutoChangeHint": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionCreateTask": "Create a task",
+  "appAutoActionCreateTaskTitled": "Create a task: {title}",
+  "@appAutoActionCreateTaskTitled": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionNotify": "Notify",
+  "appAutoActionNotifyWho": "Notify {who}",
+  "@appAutoActionNotifyWho": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionClear": "Clear {field} on {where}",
+  "@appAutoActionClear": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "where": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionSet": "Set {field} to {value} on {where}",
+  "@appAutoActionSet": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      },
+      "where": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionAssign": "Assign",
+  "appAutoActionAssignRotate": "Assign in turn to {who}",
+  "@appAutoActionAssignRotate": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionAssignTo": "Assign to {who}",
+  "@appAutoActionAssignTo": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionWebhook": "Send to an endpoint",
+  "appAutoActionWebhookTo": "Send to {endpoint}",
+  "@appAutoActionWebhookTo": {
+    "placeholders": {
+      "endpoint": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoActionWebhookGone": "Send to an endpoint that is no longer available",
+  "appAutoActionGone": "An action that is no longer available",
+  "appAutoRunsNone": "No runs",
+  "appAutoRuns": "{count, plural, =1{1 run} other{{count} runs}}",
+  "@appAutoRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appAutoRunsFailed": "{count, plural, =1{1 run, {failed} failed} other{{count} runs, {failed} failed}}",
+  "@appAutoRunsFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "appAutoStatusOn": "On",
+  "appAutoStatusPaused": "Paused",
+  "appAutoStatusOverLimit": "Not running",
+  "appAutoStatusNeedsAttention": "Needs attention",
+  "appAutoStatusOff": "Off",
+  "appAutoModulePausedNote": "\"{name}\": {status}. It runs again once that module is switched back on.",
+  "@appAutoModulePausedNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "appAutoSaveFailed": "Could not save the rule.",
+  "appNavHome": "Home",
+  "appNavMore": "More",
+  "appNavSettings": "Settings",
+  "appSignOut": "Sign out",
+  "appSignOutConfirm": "Are you sure you want to sign out?",
+  "appSearchHint": "Search...",
+  "appAttachFile": "Attach a file",
+  "appUploading": "Uploading…",
+  "appRelativeJustNowLower": "just now",
+  "appExportSaved": "Saved {name}",
+  "@appExportSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appExportCsv": "Export CSV",
+  "appModuleOffTitle": "{label} is switched off",
+  "@appModuleOffTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appModuleOffBody": "{label} is switched off for this organization.",
+  "@appModuleOffBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appBackToHome": "Back to Home",
+  "appSavedViews": "Saved views",
+  "appSaveCurrentFilters": "Save current filters",
+  "appRenameView": "Rename view",
+  "appDeleteViewQ": "Delete view?",
+  "appDeleteViewBody": "{name} will be removed. The records it shows are not touched.",
+  "@appDeleteViewBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appSavedViewsLoadFailed": "Could not load your saved views.",
+  "appSavedViewsEmpty": "No saved views yet. Filter the list, then save it here.",
+  "appSavedViewMoreFor": "More for {name}",
+  "@appSavedViewMoreFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appRename": "Rename",
+  "appViewName": "View name",
+  "appSavedViewShowing": "Showing {name}",
+  "@appSavedViewShowing": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appSavedViewShowingDropped": "{count, plural, =1{Showing {name}. 1 filter value in it cannot be shown here.} other{Showing {name}. {count} filter values in it cannot be shown here.}}",
+  "@appSavedViewShowingDropped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appSavedViewsLimit": "This list keeps at most {limit} saved views. Delete one to save another.",
+  "@appSavedViewsLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "appSavedViewDropped": "{count, plural, =1{1 filter value this screen cannot show} other{{count} filter values this screen cannot show}}",
+  "@appSavedViewDropped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appDaysShort": "{days}d",
+  "@appDaysShort": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appAgingPastExpected": "Past expected",
+  "appAgingStalled": "Stalled",
+  "appDaysOverdue": "{days}d overdue",
+  "@appDaysOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appDaysLeft": "{days}d left",
+  "@appDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appDealProbability": "{percent}% probability",
+  "@appDealProbability": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "appProductCount": "{count, plural, =0{0 product} =1{1 product} other{{count} products}}",
+  "@appProductCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appNoNextStep": "No next step",
+  "appNoDate": "no date",
+  "appAssignedToName": "Assigned to {name}",
+  "@appAssignedToName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appCallNumber": "Call {phone}",
+  "@appCallNumber": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "appEmailAddress": "Email {email}",
+  "@appEmailAddress": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "appCouldNotOpen": "Could not open {scheme}",
+  "@appCouldNotOpen": {
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "appSubTicket": "Sub-ticket",
+  "appChildCount": "{count, plural, =1{1 child} other{{count} children}}",
+  "@appChildCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appUserFallback": "User",
+  "appDueSoon": "Due soon",
+  "appSlaResolve": "SLA · Resolve",
+  "appNoDueDate": "No due date",
+  "appTimeTomorrow": "Tomorrow",
+  "appRelatedLeadTitle": "Lead: {title}",
+  "@appRelatedLeadTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appRelatedAccountTitle": "Account: {title}",
+  "@appRelatedAccountTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appRelatedOpportunityTitle": "Opportunity: {title}",
+  "@appRelatedOpportunityTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appRelatedTicketTitle": "Ticket: {title}",
+  "@appRelatedTicketTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appRelatedContactTitle": "Contact: {title}",
+  "@appRelatedContactTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "appKanbanMixed": "+ mixed",
+  "appKanbanTruncated": "Showing the first {count}. Filter to see the rest.",
+  "@appKanbanTruncated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appStageLostReopen": "{stage}. Tap a stage to reopen.",
+  "@appStageLostReopen": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "appNoActivityYet": "No activity yet",
+  "appNoActivityHint": "Start by making a call or sending an email",
+  "appKanbanDropTo": "Drop to move to {stage}",
+  "@appKanbanDropTo": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "appKanbanNoDeals": "No deals in {stage}",
+  "@appKanbanNoDeals": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupSameLower": "same {what}",
+  "@appDupSameLower": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupNoticeHint": "You can still save. If it is the same one, open it instead, or merge the two afterwards.",
+  "appDupSame": "Same {what}",
+  "@appDupSame": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "appCompare": "Compare",
+  "appDupMergeWho": "Only an admin or whoever created one of them can merge these.",
+  "appPossibleDuplicates": "{count, plural, =1{Possible duplicate} other{Possible duplicates}}",
+  "@appPossibleDuplicates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appNoOptions": "No options",
+  "appSearchEllipsis": "Search…",
+  "appSelectEllipsis": "Select…",
+  "appClear": "Clear",
+  "appSelectDate": "Select date",
+  "appDiscardChangesQ": "Discard changes?",
+  "appUnsavedChangesBody": "You have unsaved changes. Are you sure you want to leave?",
+  "appDiscard": "Discard",
+  "appPageNotFound": "Page not found",
+  "appGoToDashboard": "Go to Dashboard",
+  "appCsvTemplateSaved": "Template saved.",
+  "appCsvTemplateSaveFailed": "Could not save the template.",
+  "appCsvSavedFile": "Saved {name}.",
+  "@appCsvSavedFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvErrorsSaveFailed": "Could not save the errors.",
+  "appCsvSkippedSaveFailed": "Could not save the skipped rows.",
+  "appCsvSaveDialog": "Save CSV file",
+  "appTryAgain": "Try again",
+  "appCsvAnyColumns": "Any column names work. You'll check how they match before anything is imported.",
+  "appCsvXlsxLimit": ".xlsx or .csv, up to 5 MB.",
+  "appCsvFromScratch": "Starting from scratch?",
+  "appCsvSaveTemplate": "Save CSV template",
+  "appCsvFormat": "CSV format",
+  "appCsvHeadersHelp": "Required headers: {required}. Optional: {optional}",
+  "@appCsvHeadersHelp": {
+    "placeholders": {
+      "required": {
+        "type": "String"
+      },
+      "optional": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvCsvLimit": ".csv only, up to 5 MB.",
+  "appCsvUpdatingPreview": "Updating the preview",
+  "appCsvSaveSkipped": "Save skipped rows",
+  "appCsvSuggestLeads": "Some rows were skipped for a missing first or last name. A lead needs only one of the two, so this file could go in as leads instead.",
+  "appCsvImportAsLeads": "Import as leads instead",
+  "appCsvImportColumnAs": "Import {name} as",
+  "@appCsvImportColumnAs": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvImportAs": "Import as",
+  "appCsvDontImport": "Don't import",
+  "appCsvRow": "Row {row}",
+  "@appCsvRow": {
+    "placeholders": {
+      "row": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvTotal": "Total: {count}",
+  "@appCsvTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvValid": "Valid: {count}",
+  "@appCsvValid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvInvalid": "Invalid: {count}",
+  "@appCsvInvalid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvSaveErrors": "Save errors as CSV",
+  "appCsvShowingFirst": "Showing first {shown} of {total} valid rows",
+  "@appCsvShowingFirst": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvImported": "Imported {count} {noun}",
+  "@appCsvImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "noun": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvImportedDot": "Imported {count} {noun}.",
+  "@appCsvImportedDot": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "noun": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvTitle": "{target, select, contacts{Import contacts} leads{Import leads} other{Import tickets}}",
+  "@appCsvTitle": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvTitleFromCsv": "{target, select, contacts{Import contacts from CSV} leads{Import leads from CSV} other{Import tickets from CSV}}",
+  "@appCsvTitleFromCsv": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvNoneToImport": "{target, select, contacts{No contacts to import in this file.} leads{No leads to import in this file.} other{No tickets to import in this file.}}",
+  "@appCsvNoneToImport": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvServerRejected": "{count, plural, =1{Server rejected 1 row during import. The file may have changed since preview} other{Server rejected {count} rows during import. The file may have changed since preview}}",
+  "@appCsvServerRejected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvChooseSpreadsheet": "Choose a spreadsheet",
+  "appCsvChooseCsvButton": "Choose CSV file",
+  "appCsvImportButton": "Import {count} {noun}",
+  "@appCsvImportButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "noun": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvHideEmpty": "Hide the empty columns",
+  "appCsvShowEmpty": "{count, plural, =1{Show 1 empty column} other{Show {count} empty columns}}",
+  "@appCsvShowEmpty": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvRowsMore": "{count, plural, =1{1 row more are in the download.} other{{count} rows more are in the download.}}",
+  "@appCsvRowsMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvRowsSkipped": "{count, plural, =1{1 row skipped.} other{{count} rows skipped.}}",
+  "@appCsvRowsSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvErrorsHeading": "{count, plural, =1{1 error, fix the CSV before importing} other{{count} errors, fix the CSV before importing}}",
+  "@appCsvErrorsHeading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvColumn": "Column {number}",
+  "@appCsvColumn": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "appCsvNoValues": "No values",
+  "appLoginSubtitle": "Sign in to BottleCRM.",
+  "appLoginGoogle": "Continue with Google",
+  "appLoginEmailCode": "Sign in with email code",
+  "appLoginAgreePrefix": "By continuing you agree to our ",
+  "appLoginTerms": "Terms",
+  "appLoginTagline": "Your pipeline,\nin your pocket.",
+  "appCodeEnterSix": "Enter the 6-digit code from your email.",
+  "appCodeResent": "New code sent.",
+  "appCodeResendFailed": "Could not resend code. Try again later.",
+  "appCodeTitle": "Enter your code",
+  "appCodeSentPrefix": "We sent a 6-digit code to ",
+  "appCodeSentSuffix": ". It expires in 10 minutes.",
+  "appCodeVerify": "Verify and sign in",
+  "appCodeResendIn": "Resend code in {seconds}s",
+  "@appCodeResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "appSending": "Sending…",
+  "appCodeResend": "Resend code",
+  "appLoginAnd": " and ",
+  "appLoginPrivacy": "Privacy Policy",
+  "appCodeSendFailed": "Could not send code. Please try again.",
+  "appEmailSignInTitle": "Sign in with email",
+  "appEmailSignInBody": "Enter your email and we'll send you a 6-digit code to sign in. No password needed.",
+  "appEmailRequired": "Email is required",
+  "appEmailInvalid": "Please enter a valid email",
+  "appSendCode": "Send code",
+  "appOrgCreateTitle": "New Organization",
+  "appOrgNameLabel": "Organization name",
+  "appOrgNameHint": "e.g. Acme Inc.",
+  "appOrgNameRequired": "Give the organization a name",
+  "appOrgNameChars": "Letters, numbers, spaces, hyphens and dots only",
+  "appTimeZone": "Time zone",
+  "appOrgTimeZoneHint": "Sets when a day starts here, so \"due today\" and \"overdue\" mean what your team expects. You can change it later in Settings.",
+  "appOrgCreateButton": "Create organization",
+  "appOrgSelectFailed": "Failed to select organization",
+  "appSignOutTitle": "Sign Out",
+  "appSignOutButton": "Sign Out",
+  "appNoOrgs": "No Organizations",
+  "appNoOrgsBody": "You are not a member of any organization yet. Ask an administrator to invite you, or start one of your own.",
+  "appCreateAnOrg": "Create an organization",
+  "appSelectOrg": "Select Organization",
+  "appUnknownUser": "Unknown User",
+  "appChooseOrg": "Choose your organization to continue:",
+  "appSplashTagline": "CRM for AI and People",
+  "appWelcomeTitle": "Bring in your contacts",
+  "appWelcomeBody": "Upload a spreadsheet and we will match its columns for you.",
+  "appWelcomeContactsTitle": "Customers and people you work with",
+  "appWelcomeContactsLine": "Import them as contacts.",
+  "appWelcomeLeadsTitle": "People you're trying to sell to",
+  "appWelcomeLeadsLine": "Import them as leads to follow up.",
+  "appSkipForNow": "Skip for now",
+  "appDashLoadFailed": "Failed to load dashboard",
+  "appGreetLate": "Working late",
+  "appGreetMorning": "Good morning",
+  "appGreetAfternoon": "Good afternoon",
+  "appGreetEvening": "Good evening",
+  "appGreetThere": "there",
+  "appDashOpenDeals": "Open Deals",
+  "appDashConversion": "Conversion",
+  "appDashWonThisMonth": "Won This Month",
+  "appDashWeighted": "Weighted",
+  "appDashNeedsAttention": "Needs Attention",
+  "appDashOverdue": "Overdue",
+  "appDashDueToday": "Due Today",
+  "appDashFollowUps": "Follow-ups",
+  "appDashHotLeads": "Hot Leads",
+  "appDashPipelineOverview": "Pipeline Overview",
+  "appDashWhereYouStand": "Where you stand",
+  "appDashAllGoals": "All goals",
+  "appSeeAll": "See All",
+  "appContactedNever": "Not contacted yet",
+  "appContactedJustNow": "Contacted just now",
+  "appDashUpcomingTasks": "Upcoming Tasks",
+  "appDashNoUpcomingTasks": "No upcoming tasks",
+  "appDashAddLead": "Add Lead",
+  "appDashAddLeadSub": "Create a new lead",
+  "appDashAddDeal": "Add Deal",
+  "appDashAddDealSub": "Create a new deal",
+  "appDashAddTask": "Add Task",
+  "appDashAddTaskSub": "Create a new task",
+  "appGoalProgressOf": "{value} of {target}",
+  "@appGoalProgressOf": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "appDashImportBody": "Upload a spreadsheet and your workspace fills up in a minute.",
+  "appDashImportButton": "Import a spreadsheet",
+  "appDealCount": "{count, plural, =1{1 deal} other{{count} deals}}",
+  "@appDealCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appActivityCount": "{count, plural, =1{1 activity} other{{count} activities}}",
+  "@appActivityCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appDashOtherCurrency": "{count, plural, =1{1 deal in another currency is not counted in these totals} other{{count} deals in other currencies are not counted in these totals}}",
+  "@appDashOtherCurrency": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appContacted": "Contacted {when}",
+  "@appContacted": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifications": "Notifications",
+  "appUnreadNotifications": "{count, plural, =1{1 unread notification} other{{count} unread notifications}}",
+  "@appUnreadNotifications": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appDupThisRecord": "this record",
+  "appDupDeleteQ": "Delete {name}?",
+  "@appDupDeleteQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupDeleteBody": "Its notes, files, activity and links move to {kept}, and then {dropped} is deleted for good. This cannot be undone.",
+  "@appDupDeleteBody": {
+    "placeholders": {
+      "kept": {
+        "type": "String"
+      },
+      "dropped": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupMergeAndDelete": "Merge and delete",
+  "appDupPickKeep": "Pick the one to keep. The other is deleted once everything linked to it has moved over.",
+  "appDupNothingMerged": "Nothing was merged. {message}",
+  "@appDupNothingMerged": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupKeep": "Keep {name}",
+  "@appDupKeep": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupKeepForbidden": "Keeping this one would delete the other, which only an admin or its creator may do.",
+  "appDupAfterMerge": "AFTER THE MERGE",
+  "appDupAfterMergeBody": "Notes, files, activity and every link to {dropped} move to {kept}. Tags are combined; owners stay {kept}'s unless it has none.",
+  "@appDupAfterMergeBody": {
+    "placeholders": {
+      "dropped": {
+        "type": "String"
+      },
+      "kept": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupOtherRecord": "the other record",
+  "appDupMerging": "Merging…",
+  "appDupMergeInto": "Merge into {name}",
+  "@appDupMergeInto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupLoadGone": "{module, select, leads{One of these leads does not exist, or you do not have access to it.} contacts{One of these contacts does not exist, or you do not have access to it.} other{One of these accounts does not exist, or you do not have access to it.}}",
+  "@appDupLoadGone": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupLoadFailed": "{module, select, leads{Could not load these leads.} contacts{Could not load these contacts.} other{Could not load these accounts.}}",
+  "@appDupLoadFailed": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupMergeTitle": "{module, select, leads{Merge leads} contacts{Merge contacts} other{Merge accounts}}",
+  "@appDupMergeTitle": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appDupCannotMerge": "{module, select, leads{You cannot merge these two: keeping either would delete the other, and only an admin or the person who created a lead may delete it.} contacts{You cannot merge these two: keeping either would delete the other, and only an admin or the person who created a contact may delete it.} other{You cannot merge these two: keeping either would delete the other, and only an admin or the person who created a account may delete it.}}",
+  "@appDupCannotMerge": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "appMarkAllRead": "Mark all read",
+  "appUnreadTab": "Unread",
+  "appAllTab": "All",
+  "appNoNotifications": "No notifications",
+  "appShowReadToo": "Show read too",
+  "appAutomationSentNotification": "An automation rule sent a notification.",
+  "appNoProducer": "{verb} has no producer",
+  "@appNoProducer": {
+    "placeholders": {
+      "verb": {
+        "type": "String"
+      }
+    }
+  },
+  "appUnnamedTicketLower": "a ticket that no longer has a name",
+  "appLegacyLinks": "{count} of these were written before the link was fixed at source and still carry the old path. They open the right ticket here.",
+  "@appLegacyLinks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appMarkReadFailed": "Could not mark that read.",
+  "appMarkAllReadFailed": "Could not mark everything read.",
+  "appNothingUnread": "Nothing unread",
+  "appUnreadCount": "{count} unread",
+  "@appUnreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "appNotificationsHintTickets": "Notifications arrive for CRM ticket activity, automation rules, and updates from BottleCRM Support.",
+  "appNotificationsHint": "Notifications arrive for automation rules and updates from BottleCRM Support.",
+  "appOrgAppGroupWording": "Wording",
+  "appOrgAppGroupObjects": "Objects",
+  "appOrgAppGroupFields": "Fields",
+  "appOrgAppGroupPipelines": "Pipelines",
+  "appOrgAppGroupStages": "Stages",
+  "appOrgAppGroupTags": "Tags",
+  "appOrgAppGroupLeadSources": "Lead sources",
+  "appOrgAppGroupProducts": "Products",
+  "appOrgAppEffectAdd": "New",
+  "appOrgAppEffectKeep": "Kept",
+  "appOrgAppEffectTurnOff": "Turned off",
+  "appOrgAppEffectTurnOn": "Back on",
+  "appOrgAppEffectRestoreWording": "Back to default",
+  "appOrgAppEffectSkippedModule": "Module off",
+  "appOrgAppEffectAddByHand": "Add by hand",
+  "appOrgAppEffectRestore": "Comes back",
+  "appOrgAppEffectConflict": "Not added",
+  "appOrgAppEffectConflictNote": "None of the app's objects is added",
+  "appCustomFieldRequired": "{label} is required",
+  "@appCustomFieldRequired": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appCustomFieldNotNumber": "{label} must be a number",
+  "@appCustomFieldNotNumber": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appLeadSourceFixedCall": "Call",
+  "appLeadSourceFixedEmail": "Email",
+  "appLeadSourceFixedExistingCustomer": "Existing customer",
+  "appLeadSourceFixedPartner": "Partner",
+  "appLeadSourceFixedPublicRelations": "Public relations",
+  "appLeadSourceFixedCampaign": "Campaign",
+  "appLeadSourceFixedWebsite": "Website",
+  "appLeadSourceFixedOther": "Other",
+  "appLeadSourceRetired": "{label} (retired)",
+  "@appLeadSourceRetired": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appObjectShapeLocked": "Your organization's plan does not include custom objects.",
+  "appLeadIntakePresetGeneric": "Any tool that posts JSON or a form",
+  "appLeadIntakePresetGoogleAds": "Google Ads lead form",
+  "appLeadIntakePresetAny": "Any tool",
+  "appLeadIntakeStateOff": "Off",
+  "appLeadIntakeStateWaiting": "Waiting",
+  "appLeadIntakeStateReceiving": "Receiving",
+  "appLeadIntakeResultCreated": "Created",
+  "appLeadIntakeResultMerged": "Merged",
+  "appLeadIntakeResultDuplicate": "Duplicate",
+  "appLeadIntakeResultTest": "Test",
+  "appLeadIntakeResultRejected": "Rejected",
+  "appLeadIntakeResultUnknown": "Unknown",
+  "appRecordMatchesRecords": "records",
+  "appRecordMatchesHeading": "Matching {plural}",
+  "@appRecordMatchesHeading": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appLeadIntakeNotOffered": "Lead webhooks are not available here.",
+  "appLeadIntakeLoadFailed": "Could not load the webhooks.",
+  "appLeadIntakeChangeFailed": "Could not change the webhook.",
+  "appLeadIntakeReplaceKeyFailed": "Could not replace the key.",
+  "appLeadIntakeDeliveriesFailed": "Could not load the deliveries.",
+  "appLeadSourceLoadFailed": "Could not load the lead sources.",
+  "appLeadSourceStillLoading": "The sources are still loading.",
+  "appLeadSourceCannotMove": "That source cannot move further.",
+  "appLeadSourceAdminOnly": "Only an admin can change lead sources.",
+  "appLeadSourceSaveFailed": "Could not save the lead sources.",
+  "appOrgAppLoadFailed": "Could not load apps",
+  "appInteractionsLoadFailed": "Could not load the activity.",
+  "appInteractionsRecordGone": "This record is no longer available to you.",
+  "appInteractionsLogFailed": "Could not log this. Try again.",
+  "appProjectsLoadFailed": "Could not load projects.",
+  "appProjectsDeleteFailed": "Could not delete this project.",
+  "appProjectsAddFailed": "Could not add that.",
+  "appProjectsDealNotFound": "That deal could not be found.",
+  "appProjectsDealReadFailed": "Could not read that deal.",
+  "appProjectsUnbilledFailed": "Could not read the unbilled time.",
+  "appProjectsInvoiceFailed": "Could not invoice.",
+  "appProjectsBillMonthFailed": "Could not bill the month.",
+  "appMailboxExplainOffLeads": "Mail still arrives here and no lead is created. Nothing bounces, so whoever wrote gets silence rather than an error.",
+  "appMailboxExplainWaitingPassword": "Waiting for its basic-auth password. Every post is refused until an admin stores the webhook secret on this address.",
+  "appMailboxExplainWaitingSigningKey": "Waiting for its signing key. Every post is refused until an admin stores the webhook secret on this address.",
+  "appMailboxMakesLeads": "Makes leads",
+  "appMailboxUnassigned": "unassigned",
+  "appMailboxDeliveryLiveLeads": "Creating leads",
+  "appMailboxDropped": "{count} dropped in 30 days",
+  "@appMailboxDropped": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDroppedBreakdown": "{count} dropped in 30 days: {parts}",
+  "@appMailboxDroppedBreakdown": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropSpam": "{n, plural, other{{count} spam}}",
+  "@appMailboxDropSpam": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropVirus": "{n, plural, other{{count} with a virus}}",
+  "@appMailboxDropVirus": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropSpoofed": "{n, plural, other{{count} failed the sender check}}",
+  "@appMailboxDropSpoofed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropAutomatic": "{n, plural, one{{count} automatic reply} other{{count} automatic replies}}",
+  "@appMailboxDropAutomatic": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropOther": "{n, plural, other{{count} other}}",
+  "@appMailboxDropOther": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxLimitNotice": "{n, plural, one{Took its limit of {count} email today. More mail is refused until the count falls.} other{Took its limit of {count} emails today. More mail is refused until the count falls.}}",
+  "@appMailboxLimitNotice": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxLimitNoticeDaily": "Took its daily limit today. More mail is refused until the count falls.",
+  "appMailboxDropPolicy": "{n, plural, one{Spam, viruses and mail that fails its sender's domain check are dropped. Each address takes up to {count} email a day, and a ticket address up to 20 an hour from one sender.} other{Spam, viruses and mail that fails its sender's domain check are dropped. Each address takes up to {count} emails a day, and a ticket address up to 20 an hour from one sender.}}",
+  "@appMailboxDropPolicy": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appModuleProjects": "Projects",
+  "appWebhookFormatTeams": "Teams message",
+  "appWebhookRemovedUser": "a removed user",
+  "appNotifBudgetAllHours": "{name} has used all of its hours budget",
+  "@appNotifBudgetAllHours": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifBudgetAllAmount": "{name} has used all of its amount budget",
+  "@appNotifBudgetAllAmount": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifBudgetPercentHours": "{name} has used {percent}% of its hours budget",
+  "@appNotifBudgetPercentHours": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "appNotifBudgetPercentAmount": "{name} has used {percent}% of its amount budget",
+  "@appNotifBudgetPercentAmount": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "appNotifEstimateClient": "The client",
+  "appNotifEstimateDeclined": "{who} declined estimate {number}",
+  "@appNotifEstimateDeclined": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifEstimateAccepted": "{who} accepted estimate {number}",
+  "@appNotifEstimateAccepted": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifProjectStarted": "project started",
+  "appNotifDepositDrafted": "deposit invoice drafted",
+  "appNotifRetainerInvoice": "Retainer invoice {number} for {month} drafted for {name}",
+  "@appNotifRetainerInvoice": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadFallback": "a lead",
+  "appNotifLeadAssigned": "New lead assigned: {name}{source}",
+  "@appNotifLeadAssigned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadCreated": "New lead: {name}{source}",
+  "@appNotifLeadCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadEnquired": "{name} enquired again",
+  "@appNotifLeadEnquired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadWaiting": "{name} is waiting for a reply",
+  "@appNotifLeadWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifRecordMatch": "{name} fits an open requirement",
+  "@appNotifRecordMatch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifRecordMatchUnnamed": "A record fits an open requirement",
+  "appNotifSeatOpen": "A seat opened in {name}",
+  "@appNotifSeatOpen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifSeatOpenUnnamed": "A seat opened in a record",
+  "appObjectFormBoardField": "Board field",
+  "appCsvDescriptionObject": "Bring in a spreadsheet of {plural}. You'll check how its columns match, and nothing is written until you choose Import.",
+  "@appCsvDescriptionObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appObjectsBoardLoadFailed": "Could not load the board.",
+  "appObjectsBoardNotLoaded": "The board is not loaded.",
+  "appObjectsBoardMoveFailed": "Could not move that card.",
+  "appObjectsNoteField": "Note",
+  "appObjectsNoBoard": "No board",
+  "appKanbanNothingHere": "Nothing here",
+  "appOpenAppsSettings": "Open Apps settings",
+  "appNotifBudgetFallback": "A project reached a budget level.",
+  "appNotifEstimateAcceptedFallback": "A client accepted an estimate.",
+  "appNotifEstimateDeclinedFallback": "A client declined an estimate.",
+  "appNotifRetainerFallback": "A retainer invoice was drafted.",
+  "appOrgCreateInstallFailed": "Your organization is ready, but the industry setup did not install ({reason}). You can install it from Apps in Organization settings.",
+  "@appOrgCreateInstallFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "appOrgCreateIndustryTitle": "What kind of business is this?",
+  "appOrgCreateIndustryHint": "Sets up a starter pipeline, tags and fields for your industry. You can change everything later.",
+  "appOrgCreateSkip": "Skip for now",
+  "appOrgCreateSkipHint": "Start with a blank workspace.",
+  "appDashboardUnanswered": "Unanswered",
+  "appCsvTitleObject": "Import {plural}",
+  "@appCsvTitleObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvTitleFromCsvObject": "Import {plural} from CSV",
+  "@appCsvTitleFromCsvObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvNoneToImportObject": "No {plural} to import in this file.",
+  "@appCsvNoneToImportObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appInteractionCallIn": "Incoming call",
+  "appInteractionCallOut": "Outgoing call",
+  "appInteractionMeeting": "Meeting",
+  "appInteractionEmailIn": "Email received",
+  "appInteractionEmailOut": "Email sent",
+  "appInteractionWhatsappIn": "WhatsApp received",
+  "appInteractionWhatsappOut": "WhatsApp sent",
+  "appInteractionSmsIn": "Text received",
+  "appInteractionSmsOut": "Text sent",
+  "appInteractionEnquiry": "Enquiry",
+  "appInteractionEnquiryWebform": "Enquiry via web form",
+  "appInteractionEnquiryIntake": "Enquiry via lead webhook",
+  "appInteractionEnquiryEmail": "Enquiry via email",
+  "appInteractionEnquiryVia": "Enquiry via {origin}",
+  "@appInteractionEnquiryVia": {
+    "placeholders": {
+      "origin": {
+        "type": "String"
+      }
+    }
+  },
+  "appInteractionActivity": "Activity",
+  "appInteractionAbout": "about {duration}",
+  "@appInteractionAbout": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "appElapsedUnderMinute": "under a minute",
+  "appElapsedMinutes": "{minutes} min",
+  "@appElapsedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedHours": "{hours} h",
+  "@appElapsedHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedHoursMinutes": "{hours} h {minutes} min",
+  "@appElapsedHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedDays": "{days} d",
+  "@appElapsedDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedDaysHours": "{days} d {hours} h",
+  "@appElapsedDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  }
+}

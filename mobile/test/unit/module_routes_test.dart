@@ -33,6 +33,7 @@ const corePaths = {
   '/more/profile',
   '/more/team',
   '/more/profile/tokens',
+  '/more/profile/language',
   '/more/settings',
   '/more/settings/custom-fields',
   '/more/settings/tags',

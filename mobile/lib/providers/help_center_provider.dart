@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/help_center_settings.dart';
 import '../services/api_service.dart';
@@ -22,7 +23,9 @@ class HelpCenterSettingsNotifier extends AsyncNotifier<HelpCenterSettings> {
   Future<HelpCenterSettings> _fetch() async {
     final response = await _api.get(ApiConfig.helpCenterSettings);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load the help center');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadTheHelpCenter,
+      );
     }
     return HelpCenterSettings.fromJson(response.data!);
   }
@@ -36,7 +39,7 @@ class HelpCenterSettingsNotifier extends AsyncNotifier<HelpCenterSettings> {
     });
     if (!response.success) {
       if (response.statusCode == 403) {
-        return 'Only an admin can change the help center.';
+        return appL10n.appMsgOnlyAnAdminCanChangeTheHelp;
       }
       return saveErrorText(response.message);
     }
@@ -50,7 +53,7 @@ class HelpCenterSettingsNotifier extends AsyncNotifier<HelpCenterSettings> {
 String saveErrorText(String? message) {
   const label = 'Help center slug: ';
   final text = (message ?? '').trim();
-  if (text.isEmpty) return 'Could not save the help center.';
+  if (text.isEmpty) return appL10n.appMsgCouldNotSaveTheHelpCenter;
   return text.startsWith(label) ? text.substring(label.length) : text;
 }
 

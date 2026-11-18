@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' show Color;
 
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'lead_board.dart' show leadStageSwatch;
 
@@ -118,37 +119,50 @@ class LeadPipelineDetail {
 }
 
 /// `LeadStage.STAGE_TYPE_CHOICES`.
-const leadStageTypes = {'open': 'Open', 'won': 'Won', 'lost': 'Lost'};
+Map<String, String> get leadStageTypes {
+  final l10n = appL10n;
+  return {
+    'open': l10n.appStageKindOpen,
+    'won': l10n.appStageKindWon,
+    'lost': l10n.appStageKindLost,
+  };
+}
 
 /// The lead statuses a stage may be set to map to. `converted` is missing on
 /// purpose: the server refuses it as a new value, because the board refuses
 /// every move into a stage that converts.
-const leadStageStatuses = {
-  'assigned': 'Assigned',
-  'in process': 'In Process',
-  'recycled': 'Recycled',
-  'closed': 'Closed',
-};
+Map<String, String> get leadStageStatuses {
+  final l10n = appL10n;
+  return {
+    'assigned': l10n.appLeadStatusAssigned,
+    'in process': l10n.appLeadStatusInProcess,
+    'recycled': l10n.appLeadStatusRecycled,
+    'closed': l10n.appLeadStatusClosed,
+  };
+}
 
 /// The choices a picker offers for a stage type: the known ones, plus the
 /// stage's current value when it is none of them, labelled with its name.
 /// A picker with no option for the stored value would submit a different
 /// one, so an unchanged save must be able to send the value back.
-Map<String, String> leadStageTypeOptions(String current) => {
-  ...leadStageTypes,
-  if (!leadStageTypes.containsKey(current)) current: _label(current),
-};
+Map<String, String> leadStageTypeOptions(String current) {
+  final types = leadStageTypes;
+  return {...types, if (!types.containsKey(current)) current: _label(current)};
+}
 
 /// The choices for "sets status to", keyed by the value sent. Null is "none".
 /// A stage that already maps to a status the list leaves out (an older
 /// `converted`) keeps it as an extra option: the server lets an unchanged
 /// value through, and dropping it would rewrite the stage on every save.
-Map<String?, String> leadStageStatusOptions(String? current) => {
-  null: 'None',
-  ...leadStageStatuses,
-  if (current != null && !leadStageStatuses.containsKey(current))
-    current: _label(current),
-};
+Map<String?, String> leadStageStatusOptions(String? current) {
+  final statuses = leadStageStatuses;
+  return {
+    null: appL10n.appLeadStageStatusNone,
+    ...statuses,
+    if (current != null && !statuses.containsKey(current))
+      current: _label(current),
+  };
+}
 
 String _label(String value) => value.isEmpty
     ? value
@@ -164,9 +178,9 @@ const leadStageNameMax = 100;
 /// Why a pipeline name cannot be sent, or null when it can.
 String? leadPipelineNameProblem(String name) {
   final trimmed = name.trim();
-  if (trimmed.isEmpty) return 'Give the pipeline a name.';
+  if (trimmed.isEmpty) return appL10n.appPipelineValidateName;
   if (trimmed.length > leadPipelineNameMax) {
-    return 'Keep the name to $leadPipelineNameMax characters.';
+    return appL10n.appValidateNameMax(leadPipelineNameMax);
   }
   return null;
 }
@@ -178,14 +192,15 @@ String? leadStageDraftProblem({
   required String winProbability,
 }) {
   final trimmed = name.trim();
-  if (trimmed.isEmpty) return 'Give the stage a name.';
+  if (trimmed.isEmpty) return appL10n.appStageValidateName;
   if (trimmed.length > leadStageNameMax) {
-    return 'Keep the name to $leadStageNameMax characters.';
+    return appL10n.appValidateNameMax(leadStageNameMax);
   }
   final probability = int.tryParse(winProbability.trim());
   if (probability == null || probability < 0 || probability > 100) {
-    return 'Win probability must be a whole number from 0 to 100.';
+    return appL10n.appStageValidateProbability;
   }
+
   return null;
 }
 

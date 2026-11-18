@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'comment.dart';
 
 /// Ticket status enumeration matching backend STATUS_CHOICE
 enum TicketStatus {
-  newStatus('New', 'New', AppColors.primary500),
-  assigned('Assigned', 'Assigned', AppColors.primary400),
-  pending('Pending', 'Pending', AppColors.warning500),
-  closed('Closed', 'Closed', AppColors.success600),
-  rejected('Rejected', 'Rejected', AppColors.danger500),
-  duplicate('Duplicate', 'Duplicate', AppColors.gray500);
+  newStatus('New', AppColors.primary500),
+  assigned('Assigned', AppColors.primary400),
+  pending('Pending', AppColors.warning500),
+  closed('Closed', AppColors.success600),
+  rejected('Rejected', AppColors.danger500),
+  duplicate('Duplicate', AppColors.gray500);
 
   final String value;
-  final String label;
   final Color color;
 
-  const TicketStatus(this.value, this.label, this.color);
+  const TicketStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    newStatus => appL10n.appTicketStatusNew,
+    assigned => appL10n.appTicketStatusAssigned,
+    pending => appL10n.appTicketStatusPending,
+    closed => appL10n.appTicketStatusClosed,
+    rejected => appL10n.appTicketStatusRejected,
+    duplicate => appL10n.appTicketStatusDuplicate,
+  };
 
   String get displayName => label;
 
@@ -38,16 +47,22 @@ enum TicketStatus {
 
 /// Ticket priority enumeration matching backend PRIORITY_CHOICE
 enum TicketPriority {
-  low('Low', 'Low', AppColors.success500),
-  normal('Normal', 'Normal', AppColors.primary400),
-  high('High', 'High', AppColors.warning500),
-  urgent('Urgent', 'Urgent', AppColors.danger500);
+  low('Low', AppColors.success500),
+  normal('Normal', AppColors.primary400),
+  high('High', AppColors.warning500),
+  urgent('Urgent', AppColors.danger500);
 
   final String value;
-  final String label;
   final Color color;
 
-  const TicketPriority(this.value, this.label, this.color);
+  const TicketPriority(this.value, this.color);
+
+  String get label => switch (this) {
+    low => appL10n.appPriorityLow,
+    normal => appL10n.appPriorityNormal,
+    high => appL10n.appPriorityHigh,
+    urgent => appL10n.appPriorityUrgent,
+  };
 
   String get displayName => label;
 
@@ -62,15 +77,20 @@ enum TicketPriority {
 
 /// Ticket type enumeration matching backend CASE_TYPE
 enum TicketType {
-  question('Question', 'Question', LucideIcons.circleHelp),
-  incident('Incident', 'Incident', LucideIcons.circleAlert),
-  problem('Problem', 'Problem', LucideIcons.triangleAlert);
+  question('Question', LucideIcons.circleHelp),
+  incident('Incident', LucideIcons.circleAlert),
+  problem('Problem', LucideIcons.triangleAlert);
 
   final String value;
-  final String label;
   final IconData icon;
 
-  const TicketType(this.value, this.label, this.icon);
+  const TicketType(this.value, this.icon);
+
+  String get label => switch (this) {
+    question => appL10n.appTicketTypeQuestion,
+    incident => appL10n.appTicketTypeIncident,
+    problem => appL10n.appTicketTypeProblem,
+  };
 
   String get displayName => label;
 
@@ -223,9 +243,9 @@ class Ticket {
 
   /// Assigned-to display name (first assignee or "Unassigned").
   String get assignedToName {
-    if (assignedTo.isEmpty) return 'Unassigned';
+    if (assignedTo.isEmpty) return appL10n.appUnassigned;
     final email = api.Profile.fromJson(assignedTo.first).userDetails?.email;
-    if (email == null || email.isEmpty) return 'Unassigned';
+    if (email == null || email.isEmpty) return appL10n.appUnassigned;
     return email.split('@').first;
   }
 
@@ -301,7 +321,9 @@ class Ticket {
       c.firstName,
       c.lastName,
     ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' ');
-    return name.trim().isNotEmpty ? name.trim() : (c.email ?? 'Contact');
+    return name.trim().isNotEmpty
+        ? name.trim()
+        : (c.email ?? appL10n.appContactFallback);
   }
 
   Map<String, dynamic> toJson() {
@@ -418,7 +440,7 @@ class Ticket {
 /// reads as [restrictedName] and the screen does not offer to open it. The id
 /// stays, since detaching from it needs write on the child alone.
 class TicketParentSummary {
-  static const restrictedName = 'A ticket you cannot open';
+  static String get restrictedName => appL10n.appTicketRestrictedName;
 
   final String id;
   final String name;
@@ -457,18 +479,10 @@ class TicketParentSummary {
 ///
 /// `frontend/src/routes/(app)/tickets/[id]/close.js` carries the same rules.
 String cascadeSummary({required int count, bool truncated = false}) {
-  if (count == 0) {
-    return 'Nothing linked to this ticket is still open, so closing it '
-        'changes nothing else.';
-  }
-  final noun = count == 1 ? 'ticket' : 'tickets';
-  final verb = count == 1 ? 'is' : 'are';
-  final tail = truncated
-      ? ' There may be more further down than are listed here, and those '
-            'close too.'
-      : '';
-  return '$count linked $noun $verb still open and will be closed with it.'
-      '$tail';
+  if (count == 0) return appL10n.appTicketCascadeNone;
+  return truncated
+      ? appL10n.appTicketCascadeOpenTruncated(count)
+      : appL10n.appTicketCascadeOpen(count);
 }
 
 /// What to say after closing a parent ticket.
@@ -480,12 +494,9 @@ String cascadeSummary({required int count, bool truncated = false}) {
 /// "and 3 linked" when three children were already closed and nothing happened,
 /// and understated a deep tree where more than the direct children closed.
 String cascadeCloseMessage({required bool cascade, required int cascaded}) {
-  if (!cascade) return 'Ticket closed';
-  if (cascaded == 0) {
-    return 'Ticket closed. Nothing linked was open, so nothing else changed.';
-  }
-  return 'Ticket closed, and $cascaded linked '
-      '${cascaded == 1 ? 'ticket' : 'tickets'} with it';
+  if (!cascade) return appL10n.appTicketClosed;
+  if (cascaded == 0) return appL10n.appTicketClosedNothingLinked;
+  return appL10n.appTicketClosedCascaded(cascaded);
 }
 
 /// The ids the close endpoint reports as cascaded, counted defensively: a body

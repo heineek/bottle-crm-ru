@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/deal_pipeline.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/deal_pipelines_provider.dart';
 import '../../routes/app_router.dart';
@@ -35,7 +36,10 @@ class DealPipelinesScreen extends ConsumerWidget {
     if (!context.mounted) return;
     _snack(
       context,
-      error ?? (existing == null ? 'Pipeline created' : 'Pipeline renamed'),
+      error ??
+          (existing == null
+              ? context.l10n.settingsPipelineCreated
+              : context.l10n.settingsDealPipelinesRenamed),
     );
   }
 
@@ -47,20 +51,17 @@ class DealPipelinesScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${pipeline.name}?'),
-        content: const Text(
-          'Its stages go with it. A pipeline that still holds deals cannot be '
-          'deleted: move them to another pipeline first.',
-        ),
+        title: Text(context.l10n.settingsPipelineDeleteTitle(pipeline.name)),
+        content: Text(context.l10n.settingsDealPipelinesDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsPipelineKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -70,7 +71,7 @@ class DealPipelinesScreen extends ConsumerWidget {
         .read(dealPipelinesProvider.notifier)
         .deletePipeline(pipeline.id);
     if (!context.mounted) return;
-    _snack(context, error ?? 'Pipeline deleted');
+    _snack(context, error ?? context.l10n.settingsPipelineDeleted);
   }
 
   void _snack(BuildContext context, String message) {
@@ -91,7 +92,7 @@ class DealPipelinesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Deal pipelines'),
+        title: Text(context.l10n.settingsDealPipelinesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -99,7 +100,7 @@ class DealPipelinesScreen extends ConsumerWidget {
           if (canEdit)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New pipeline',
+              tooltip: context.l10n.settingsPipelineNew,
               onPressed: () => _edit(context, ref, null),
             ),
         ],
@@ -131,8 +132,7 @@ class DealPipelinesScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Text(
-                  'Open a pipeline to see its stages. Each stage is a column '
-                  'on the deals board.',
+                  context.l10n.settingsDealPipelinesFooter,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -199,14 +199,14 @@ class _PipelineRow extends StatelessWidget {
                               ),
                               if (pipeline.isDefault)
                                 StatusBadge(
-                                  label: 'Default',
+                                  label: context.l10n.settingsPipelineDefault,
                                   color: AppColors.primary600,
                                 ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$n ${n == 1 ? 'stage' : 'stages'}',
+                            context.l10n.settingsPipelineStageCount(n),
                             style: AppTypography.caption.copyWith(
                               color: AppColors.textTertiary,
                             ),
@@ -238,7 +238,7 @@ class _PipelineRow extends StatelessWidget {
                     height: 44,
                     child: OutlinedButton(
                       onPressed: onRename,
-                      child: const Text('Rename'),
+                      child: Text(context.l10n.settingsPipelineRename),
                     ),
                   ),
                   if (onDelete != null)
@@ -249,7 +249,7 @@ class _PipelineRow extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.danger600,
                         ),
-                        child: const Text('Delete'),
+                        child: Text(context.l10n.commonDelete),
                       ),
                     ),
                 ],
@@ -281,12 +281,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the pipelines',
+              context.l10n.settingsPipelineLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsPipelineTryAgain),
+            ),
           ],
         ),
       ),

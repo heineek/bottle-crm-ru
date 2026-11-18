@@ -1,4 +1,6 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
+import 'ticket.dart' show TicketPriority, TicketStatus;
 
 /// A saved reply, from `MacroSerializer`.
 ///
@@ -65,7 +67,8 @@ class Macro {
 
   /// "Everyone" / "Just you", matching `MACRO_SCOPE_LABEL` in
   /// `frontend/src/lib/v2/enums.ts`.
-  String get scopeLabel => isPersonal ? 'Just you' : 'Everyone';
+  String get scopeLabel =>
+      isPersonal ? appL10n.appMacroScopePersonal : appL10n.appMacroScopeOrg;
 
   /// Reads a `Macro`.
   factory Macro.fromJson(Map<String, dynamic> json) {
@@ -114,7 +117,9 @@ class MacroRef {
 
   String get label {
     if (isActive) return name;
-    return '$name (${isPerson ? 'deactivated' : 'archived'})';
+    return isPerson
+        ? appL10n.appMacroRefDeactivated(name)
+        : appL10n.appMacroRefArchived(name);
   }
 
   /// Reads a `MacroAssigneeDetail`. A member with no name shows the email.
@@ -123,7 +128,7 @@ class MacroRef {
     final name = w.name?.trim() ?? '';
     return MacroRef(
       id: w.id ?? '',
-      name: name.isNotEmpty ? name : (w.email ?? 'Unknown'),
+      name: name.isNotEmpty ? name : (w.email ?? appL10n.appUnknownPerson),
       isActive: w.isActive ?? true,
     );
   }
@@ -134,7 +139,7 @@ class MacroRef {
     final name = w.name?.trim() ?? '';
     return MacroRef(
       id: w.id ?? '',
-      name: name.isNotEmpty ? name : 'Unnamed',
+      name: name.isNotEmpty ? name : appL10n.appUnnamedPerson,
       isActive: w.isActive ?? true,
       isPerson: false,
     );
@@ -158,18 +163,36 @@ const List<String> macroPriorities = ['Low', 'Normal', 'High', 'Urgent'];
 /// (`status`, `priority`, `assignees`, `tags`). The key is what
 /// `POST /macros/<id>/apply/` takes in `only`.
 List<({String key, String label})> macroActionChips(Macro macro) {
+  final l10n = appL10n;
+  final status = TicketStatus.values
+      .where((s) => s.value == macro.setStatus)
+      .firstOrNull;
+  final priority = TicketPriority.values
+      .where((p) => p.value == macro.setPriority)
+      .firstOrNull;
   return [
     if (macro.setStatus.isNotEmpty)
-      (key: 'status', label: 'Status: ${macro.setStatus}'),
+      (
+        key: 'status',
+        label: l10n.appMacroChipStatus(status?.label ?? macro.setStatus),
+      ),
     if (macro.setPriority.isNotEmpty)
-      (key: 'priority', label: 'Priority: ${macro.setPriority}'),
+      (
+        key: 'priority',
+        label: l10n.appMacroChipPriority(priority?.label ?? macro.setPriority),
+      ),
     if (macro.assignees.isNotEmpty)
       (
         key: 'assignees',
-        label: 'Assign: ${macro.assignees.map((a) => a.label).join(', ')}',
+        label: l10n.appMacroChipAssign(
+          macro.assignees.map((a) => a.label).join(', '),
+        ),
       ),
     if (macro.tags.isNotEmpty)
-      (key: 'tags', label: 'Tag: ${macro.tags.map((t) => t.label).join(', ')}'),
+      (
+        key: 'tags',
+        label: l10n.appMacroChipTag(macro.tags.map((t) => t.label).join(', ')),
+      ),
   ];
 }
 
@@ -179,8 +202,8 @@ String macroApplySummary(Map<String, dynamic>? data) {
   final w = data == null ? null : api.MacroApplyResponse.fromJson(data);
   final names = w?.applied ?? const <String>[];
   final head = names.isEmpty
-      ? 'The macro changed nothing on this ticket.'
-      : 'Macro applied: ${names.join(', ')}.';
+      ? appL10n.appMacroAppliedNothing
+      : appL10n.appMacroApplied(names.join(', '));
   final reasons = [
     for (final s in w?.skipped ?? const <api.MacroApplySkipped>[]) ?s.reason,
   ];
@@ -240,20 +263,16 @@ class MacroRemoval {
 MacroRemoval macroRemoval(Macro macro) {
   if (macro.isPersonal) {
     return MacroRemoval(
-      actionLabel: 'Delete',
-      title: 'Delete ${macro.title}?',
-      detail:
-          'This is one of your own saved replies, so it is removed for '
-          'good. Nobody else could see it.',
+      actionLabel: appL10n.commonDelete,
+      title: appL10n.appMacroDeleteTitle(macro.title),
+      detail: appL10n.appMacroDeleteDetail,
       isPermanent: true,
     );
   }
   return MacroRemoval(
-    actionLabel: 'Turn off',
-    title: 'Turn off ${macro.title}?',
-    detail:
-        'It stops being offered in the reply box for everyone. The saved '
-        'reply is kept and you can turn it back on.',
+    actionLabel: appL10n.appMacroTurnOff,
+    title: appL10n.appMacroTurnOffTitle(macro.title),
+    detail: appL10n.appMacroTurnOffDetail,
     isPermanent: false,
   );
 }
@@ -269,12 +288,12 @@ String? validateMacroDraft({
   required String scope,
   bool hasAction = false,
 }) {
-  if (title.trim().isEmpty) return 'Give the saved reply a title.';
+  if (title.trim().isEmpty) return appL10n.appMacroValidateTitle;
   if (body.trim().isEmpty && !hasAction) {
-    return 'A saved reply needs something to say or something to do.';
+    return appL10n.appMacroValidateBody;
   }
   if (scope != Macro.scopeOrg && scope != Macro.scopePersonal) {
-    return 'Choose who this reply is for.';
+    return appL10n.appMacroValidateScope;
   }
   return null;
 }

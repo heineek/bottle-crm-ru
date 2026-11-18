@@ -1,0 +1,2769 @@
+{
+  "settingsAutomationAdminOnly": "Only an organization admin can see automation rules.",
+  "settingsAutomationTryAgain": "Try again",
+  "settingsAutomationTryTitle": "Try it on a record",
+  "settingsAutomationFieldGone": "This field is no longer available. Choose another.",
+  "settingsAutomationNoLongerAvailable": "{label} (no longer available)",
+  "@settingsAutomationNoLongerAvailable": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationField": "Field",
+  "settingsAutomationValue": "Value",
+  "settingsAutomationAddCondition": "Add condition",
+  "settingsAutomationAddAction": "Add action",
+  "settingsAutomationRulesTitle": "Automation",
+  "settingsAutomationRulesNewRule": "New rule",
+  "settingsAutomationRulesNotOffered": "Automation rules are not available here.",
+  "settingsAutomationRulesLoadFailed": "Could not load automation rules",
+  "settingsAutomationRulesPausedNote": "\"{name}\": {status} Switch it on again to take it over.",
+  "@settingsAutomationRulesPausedNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRulesTriggerCreated": "Created",
+  "settingsAutomationRulesTriggerUpdated": "Updated",
+  "settingsAutomationRulesCardSubtitle": "{object}, {trigger}",
+  "@settingsAutomationRulesCardSubtitle": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      },
+      "trigger": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRulesMoveUp": "Move up",
+  "settingsAutomationRulesMoveDown": "Move down",
+  "settingsAutomationRulesEmptyTitle": "No rules yet",
+  "settingsAutomationRulesEmptyBody": "A rule does something when a record is created or changes: assign it, create a task, notify people, or set a field.",
+  "settingsAutomationRunsTitle": "Runs",
+  "settingsAutomationRunsSub": "Runs from the last 30 days, newest first.",
+  "settingsAutomationRunsNoMore": "No more runs.",
+  "settingsAutomationRunsNewer": "Newer",
+  "settingsAutomationRunsOlder": "Older",
+  "settingsAutomationRunsSetOffBy": "Set off by \"{rule}\"",
+  "@settingsAutomationRunsSetOffBy": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRunsRecord": "Record",
+  "settingsAutomationRunsDone": "Done",
+  "settingsAutomationRunsFailed": "Failed",
+  "settingsAutomationRunsSkipped": "Skipped",
+  "settingsAutomationRunsStepUndone": "Undone",
+  "settingsAutomationRunsEmptyTitle": "No runs yet",
+  "settingsAutomationRunsEmptyBody": "When this rule runs, each run and what it did shows here for 30 days.",
+  "settingsAutomationRunsLoadFailed": "Could not load the runs",
+  "settingsAutomationTriedOn": "Tried on \"{name}\". Nothing was changed.",
+  "@settingsAutomationTriedOn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationTryHint": "The trigger and conditions are not checked: this is what the actions would do.",
+  "settingsAutomationTryWouldFail": "Would fail",
+  "settingsAutomationTrySkipped": "Skipped",
+  "settingsAutomationTriggerTitle": "When",
+  "settingsAutomationTriggerIsCreated": "is created",
+  "settingsAutomationTriggerIsUpdated": "is updated",
+  "settingsAutomationTriggerAnyField": "Any field",
+  "settingsAutomationTriggerOnlyWhen": "Only when it changes to",
+  "settingsAutomationConditionEditTitle": "Edit condition",
+  "settingsAutomationConditionOperator": "Operator",
+  "settingsAutomationValueChooseDate": "Choose a date",
+  "settingsAutomationValueChoose": "Choose",
+  "settingsAutomationActionTypeSetField": "Set a field",
+  "settingsAutomationActionTypeAssign": "Assign",
+  "settingsAutomationActionTypeCreateTask": "Create a task",
+  "settingsAutomationActionTypeNotify": "Notify",
+  "settingsAutomationActionTypeWebhook": "Send to an endpoint",
+  "settingsAutomationActionNameHint": "{token} becomes the record's name.",
+  "@settingsAutomationActionNameHint": {
+    "placeholders": {
+      "token": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationActionPriorityLow": "Low",
+  "settingsAutomationActionPriorityMedium": "Medium",
+  "settingsAutomationActionPriorityHigh": "High",
+  "settingsAutomationActionRemovedLink": "A removed link",
+  "settingsAutomationActionOn": "On",
+  "settingsAutomationActionSet": "Set",
+  "settingsAutomationActionClearInstead": "Clear it instead",
+  "settingsAutomationActionOnePerson": "One person",
+  "settingsAutomationActionInTurn": "In turn",
+  "settingsAutomationActionWho": "Who",
+  "settingsAutomationActionPeople": "People",
+  "settingsAutomationActionPerson": "Person",
+  "settingsAutomationActionRotateHint": "Choose 2 to 20 people; each new record goes to the next one.",
+  "settingsAutomationActionOnePersonHint": "One person takes exactly one. Choose who stays.",
+  "settingsAutomationActionReplacesAssignees": "Replaces current assignees.",
+  "settingsAutomationActionForAssignees": "Its assignees",
+  "settingsAutomationActionForOwner": "The rule's owner",
+  "settingsAutomationActionForPerson": "A chosen person",
+  "settingsAutomationActionTitle": "Title",
+  "settingsAutomationActionDueIn": "Due in",
+  "settingsAutomationActionDueSuffix": "days",
+  "settingsAutomationActionDueHelper": "From 0 to 365. Leave empty for no due date.",
+  "settingsAutomationActionFor": "For",
+  "settingsAutomationActionAndThesePeople": "And these people",
+  "settingsAutomationActionMessage": "Message",
+  "settingsAutomationActionNotifyHint": "In the app and by email, to active members only.",
+  "settingsAutomationActionEndpoint": "Endpoint",
+  "settingsAutomationActionEndpointGone": "An endpoint no longer available",
+  "settingsAutomationActionGone": "This action is no longer available.",
+  "settingsAutomationActionEditTitle": "Edit action",
+  "settingsAutomationActionLabel": "Action",
+  "settingsAutomationRuleEditorLoadFailed": "Could not load the rule editor.",
+  "settingsAutomationRuleLoadFailed": "Could not load the rule",
+  "settingsAutomationRuleNewTitle": "New rule",
+  "settingsAutomationRuleTitle": "Rule",
+  "settingsAutomationRuleSaveFailed": "Could not save the rule.",
+  "settingsAutomationRuleSaved": "Saved.",
+  "settingsAutomationRuleSaveSwitchOn": "Save and switch on",
+  "settingsAutomationRuleSaveTakeOver": "Save and take over",
+  "settingsAutomationRuleDelete": "Delete rule",
+  "settingsAutomationRuleSectionStatus": "STATUS",
+  "settingsAutomationRuleSectionWhen": "WHEN",
+  "settingsAutomationRuleSectionOnlyIf": "ONLY IF",
+  "settingsAutomationRuleSectionThen": "THEN",
+  "settingsAutomationRuleSectionTry": "TRY IT",
+  "settingsAutomationRuleSwitchedOn": "Switched on",
+  "settingsAutomationRuleSwitchedOnBy": "Switched on by {name}",
+  "@settingsAutomationRuleSwitchedOnBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRuleRunHistory": "Run history",
+  "settingsAutomationRuleSwitchOff": "Switch off",
+  "settingsAutomationRuleSaveToTry": "Save the rule to try it on a record.",
+  "settingsAutomationRuleSaveFirst": "Save first: Try uses the saved rule.",
+  "settingsAutomationRuleSwitchedOff": "Switched off.",
+  "settingsAutomationRuleDeleteTitle": "Delete this rule?",
+  "settingsAutomationRuleDeleteBody": "Its run history goes too.",
+  "settingsAutomationRuleKeepIt": "Keep it",
+  "settingsAutomationRuleDeletePermanently": "Delete permanently",
+  "settingsAutomationRuleWhenCreated": "{object} created",
+  "@settingsAutomationRuleWhenCreated": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRuleWhenUpdated": "{object} updated",
+  "@settingsAutomationRuleWhenUpdated": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRuleWhenUpdatedField": "{object} updated: {sentence}",
+  "@settingsAutomationRuleWhenUpdatedField": {
+    "placeholders": {
+      "object": {
+        "type": "String"
+      },
+      "sentence": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutomationRuleObject": "Object",
+  "settingsAutomationRuleMatchAll": "All of these",
+  "settingsAutomationRuleMatchAny": "Any of these",
+  "settingsAutomationRuleRemoveCondition": "Remove condition {n}",
+  "@settingsAutomationRuleRemoveCondition": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutomationRuleConditionsLimit": "{count, plural, other{A rule can have at most {count} conditions.}}",
+  "@settingsAutomationRuleConditionsLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutomationRuleActionsEmpty": "Add at least one action.",
+  "settingsAutomationRuleMoveActionUp": "Move action {n} up",
+  "@settingsAutomationRuleMoveActionUp": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutomationRuleMoveActionDown": "Move action {n} down",
+  "@settingsAutomationRuleMoveActionDown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutomationRuleRemoveAction": "Remove action {n}",
+  "@settingsAutomationRuleRemoveAction": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutomationRuleActionsLimit": "{count, plural, other{A rule can have at most {count} actions.}}",
+  "@settingsAutomationRuleActionsLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebFormNameHelper": "Internal only. The visitor never sees it",
+  "settingsWebFormPublished": "Published",
+  "settingsWebFormDraft": "Draft",
+  "settingsWebFormShowingRecent": "Showing the {shown} most recent of {total}.",
+  "@settingsWebFormShowingRecent": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebFormStatSpam": "spam blocked",
+  "settingsWebFormTryAgain": "Try again",
+  "settingsWebFormCustomField": "Custom field",
+  "settingsWebFormsTitle": "Web forms",
+  "settingsWebFormsNew": "New web form",
+  "settingsWebFormsNothingToCreate": "Web forms create leads or tickets, and both are switched off. An admin can switch one on in Apps settings.",
+  "settingsWebFormsEachSubmissionCreates": "Each submission creates",
+  "settingsWebFormsTargetLead": "A lead",
+  "settingsWebFormsTargetTicket": "A ticket",
+  "settingsWebFormsCreateSubmit": "Create and add fields",
+  "settingsWebFormsStatPublished": "published",
+  "settingsWebFormsStatDrafts": "drafts",
+  "settingsWebFormsStatAccepted": "accepted, 30 days",
+  "settingsWebFormsRowLeads": "Leads",
+  "settingsWebFormsRowTickets": "Tickets",
+  "settingsWebFormsFieldCount": "{count, plural, =1{{count} field} other{{count} fields}}",
+  "@settingsWebFormsFieldCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebFormsSubmissionCount": "{count, plural, =1{1 submission} other{{count} submissions}}",
+  "@settingsWebFormsSubmissionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebFormsLiveSilent": "Live but silent. Nothing has been submitted.",
+  "settingsWebFormsSecurityNote": "A published form accepts posts from anyone. It has to: the whole point is that a stranger can fill it in without an account. A hidden honeypot field, per-address and per-form rate limits, and disposable-address rejection are always on. Unpublish a form the moment you take its snippet off your site.",
+  "settingsWebFormsEmptyTitle": "No web forms yet",
+  "settingsWebFormsEmptyAdmin": "A web form is a page you embed on your own site. What people fill in becomes a lead or a ticket here, with no login and no copy-pasting.",
+  "settingsWebFormsEmptyMember": "Nobody has built a web form for this organization yet. An administrator can create one.",
+  "settingsWebFormsLoadError": "Could not load the web forms",
+  "settingsWebFormDetailChangesSaved": "Changes saved",
+  "settingsWebFormDetailUnpublishTitle": "Unpublish this form?",
+  "settingsWebFormDetailUnpublishBody": "It stops accepting submissions immediately. The embed stays on your site and starts refusing people.",
+  "settingsWebFormDetailKeepLive": "Keep it live",
+  "settingsWebFormDetailUnpublishConfirm": "Unpublish it",
+  "settingsWebFormDetailUnpublishedSnack": "Form unpublished",
+  "settingsWebFormDetailPublishedSnack": "Form published",
+  "settingsWebFormDetailDeleteTitle": "Delete this form?",
+  "settingsWebFormDetailDeleteBody": "The form and its submission history go for good. Leads and tickets it already created stay where they are. Any embed still on your site will stop working.",
+  "settingsWebFormDetailKeepIt": "Keep it",
+  "settingsWebFormDetailDeletePermanently": "Delete permanently",
+  "settingsWebFormDetailIframeCopied": "iframe snippet copied",
+  "settingsWebFormDetailScriptCopied": "script snippet copied",
+  "settingsWebFormDetailTitle": "Web form",
+  "settingsWebFormDetailDeleteTooltip": "Delete form",
+  "settingsWebFormDetailSaving": "Saving…",
+  "settingsWebFormDetailSaveChanges": "Save changes",
+  "settingsWebFormDetailFields": "Fields",
+  "settingsWebFormDetailFieldsSub": "What a visitor is asked, in the order they are asked it. An email field is required before the form can be published.",
+  "settingsWebFormDetailAddField": "Add a field",
+  "settingsWebFormDetailBehaviour": "Behaviour",
+  "settingsWebFormDetailBehaviourSubLead": "What the visitor sees after they submit, and where the lead lands.",
+  "settingsWebFormDetailBehaviourSubTicket": "What the visitor sees after they submit, and where the ticket lands.",
+  "settingsWebFormDetailSubmitButton": "Submit button",
+  "settingsWebFormDetailAfterSuccess": "After a successful submission",
+  "settingsWebFormDetailShowMessage": "Show a message",
+  "settingsWebFormDetailRedirectToUrl": "Redirect to a URL",
+  "settingsWebFormDetailRedirectUrl": "Redirect URL",
+  "settingsWebFormDetailRedirectHelper": "http or https only. The embed navigates the visitor here",
+  "settingsWebFormDetailSuccessMessage": "Success message",
+  "settingsWebFormDetailAssignNewLeads": "Assign new leads",
+  "settingsWebFormDetailAssignHelper": "A repeat submission from the same email updates the existing lead and keeps its owner",
+  "settingsWebFormDetailToOnePerson": "To one person",
+  "settingsWebFormDetailRotateMembers": "Rotate between members",
+  "settingsWebFormDetailRotateBetween": "Rotate between",
+  "settingsWebFormDetailRotateEmpty": "Nobody to rotate between yet",
+  "settingsWebFormDetailDeactivated": "{name} (deactivated)",
+  "@settingsWebFormDetailDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormDetailRotationHint": "Each new lead goes to the next member in turn. Deactivated members are skipped.",
+  "settingsWebFormDetailLastAssigned": "Last assigned: {name}.",
+  "@settingsWebFormDetailLastAssigned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormDetailLastAssignedNobody": "Last assigned: nobody yet.",
+  "settingsWebFormDetailCapLabel": "Most open leads per member",
+  "settingsWebFormDetailCapHint": "No limit",
+  "settingsWebFormDetailCapHelper": "Optional. A member holding this many open leads is passed over until one is converted or closed. When everyone is passed over, the lead stays unassigned",
+  "settingsWebFormDetailAssignLeadsTo": "Assign new leads to",
+  "settingsWebFormDetailAssignTicketsTo": "Assign new tickets to",
+  "settingsWebFormDetailDeactivatedTicketHelper": "Deactivated users are not assigned. New tickets from this form are left to your routing rules until you choose someone else.",
+  "settingsWebFormDetailDeactivatedLeadHelper": "Deactivated users are not assigned. New leads from this form stay unassigned until you choose someone else.",
+  "settingsWebFormDetailNobody": "Nobody",
+  "settingsWebFormDetailTicketPriority": "Ticket priority",
+  "settingsWebFormDetailPriorityHelper": "Set by the form, never by the visitor",
+  "settingsWebFormDetailPriorityLow": "Low",
+  "settingsWebFormDetailPriorityNormal": "Normal",
+  "settingsWebFormDetailPriorityHigh": "High",
+  "settingsWebFormDetailPriorityUrgent": "Urgent",
+  "settingsWebFormDetailTicketType": "Ticket type",
+  "settingsWebFormDetailNoType": "No type",
+  "settingsWebFormDetailTypeQuestion": "Question",
+  "settingsWebFormDetailTypeIncident": "Incident",
+  "settingsWebFormDetailTypeProblem": "Problem",
+  "settingsWebFormDetailNotifyLead": "Email these people on each lead",
+  "settingsWebFormDetailNotifyTicket": "Email these people on each ticket",
+  "settingsWebFormDetailNobodyElse": "Nobody else",
+  "settingsWebFormDetailTagLead": "Tag every lead with",
+  "settingsWebFormDetailTagTicket": "Tag every ticket with",
+  "settingsWebFormDetailNoTags": "No tags",
+  "settingsWebFormDetailSpam": "Spam",
+  "settingsWebFormDetailSpamSub": "A hidden honeypot field, a per-address rate limit and a per-form one are always on and are not configurable. These are the parts you choose.",
+  "settingsWebFormDetailOrigins": "Allowed origins",
+  "settingsWebFormDetailOriginsHelper": "One per line, scheme and host only. Leave empty and the iframe embed works anywhere. The script embed needs the site listed here",
+  "settingsWebFormDetailRejectDisposable": "Reject throwaway email addresses",
+  "settingsWebFormDetailChallenge": "Challenge",
+  "settingsWebFormDetailChallengeNone": "None",
+  "settingsWebFormDetailSiteKey": "Turnstile site key",
+  "settingsWebFormDetailSecret": "Turnstile secret",
+  "settingsWebFormDetailSecretStoredHint": "Stored. Leave blank to keep it",
+  "settingsWebFormDetailSecretPasteHint": "Paste the secret from Cloudflare",
+  "settingsWebFormDetailSecretStoredHelper": "Never shown again once saved. Leaving this blank keeps what is stored",
+  "settingsWebFormDetailSecretMissingHelper": "No secret stored yet. Verification fails closed, so publishing with Turnstile on and no secret would refuse every submission",
+  "settingsWebFormDetailEmbed": "Embed",
+  "settingsWebFormDetailEmbedSub": "Paste one of these into your own site. Both are built by the server, because they need the API address.",
+  "settingsWebFormDetailIframeNote": "Works anywhere, no origin list needed.",
+  "settingsWebFormDetailScriptNote": "Inherits your site styling.",
+  "settingsWebFormDetailScriptWarning": "This one will not work yet. Add the site origin under Spam first: the browser blocks a cross-origin POST unless we permit that origin, and this form permits none.",
+  "settingsWebFormDetailActivity": "Activity",
+  "settingsWebFormDetailActivitySub": "The last 30 days. A view is counted when the embed loads, whether or not anyone fills it in.",
+  "settingsWebFormDetailStatViews": "views",
+  "settingsWebFormDetailStatLeads": "leads",
+  "settingsWebFormDetailStatTickets": "tickets",
+  "settingsWebFormDetailStatConversion": "conversion",
+  "settingsWebFormDetailCreatesTickets": "Creates tickets.",
+  "settingsWebFormDetailCreatesLeads": "Creates leads.",
+  "settingsWebFormDetailAccepting": "Accepting submissions from anyone with the embed.",
+  "settingsWebFormDetailCollectingNothing": "Collecting nothing until it is published.",
+  "settingsWebFormDetailUnpublish": "Unpublish",
+  "settingsWebFormDetailPublish": "Publish",
+  "settingsWebFormDetailFieldsEmpty": "No fields yet. A form with no fields collects nothing.",
+  "settingsWebFormDetailFieldRequired": "{target} · required",
+  "@settingsWebFormDetailFieldRequired": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormDetailFieldIncomplete": "Incomplete. It needs a label and a target.",
+  "settingsWebFormDetailMoveUp": "Move {name} up",
+  "@settingsWebFormDetailMoveUp": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormDetailMoveDown": "Move {name} down",
+  "@settingsWebFormDetailMoveDown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormDetailRemoveField": "Remove {name}",
+  "@settingsWebFormDetailRemoveField": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormDetailCopy": "Copy",
+  "settingsWebFormDetailSubmissionsEmpty": "Nothing submitted yet. Rejected attempts would be listed here too, so an empty list means nobody has reached the form at all.",
+  "settingsWebFormDetailBadgeRefused": "Refused",
+  "settingsWebFormDetailBadgeTicket": "Ticket",
+  "settingsWebFormDetailBadgeLead": "Lead",
+  "settingsWebFormFieldLabelRequired": "Give the field a label. It is what the visitor reads.",
+  "settingsWebFormFieldTargetRequired": "Choose what this field writes into.",
+  "settingsWebFormFieldAddTitle": "Add a field",
+  "settingsWebFormFieldEditTitle": "Edit field",
+  "settingsWebFormFieldTicketField": "Ticket field",
+  "settingsWebFormFieldLeadField": "Lead field",
+  "settingsWebFormFieldWritesInto": "Writes into",
+  "settingsWebFormFieldWritesIntoTicket": "Where on the ticket or its contact this answer lands",
+  "settingsWebFormFieldWritesIntoLead": "The field on the lead this answer lands in",
+  "settingsWebFormFieldAlreadyOnForm": "{label} (already on this form)",
+  "@settingsWebFormFieldAlreadyOnForm": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebFormFieldLabel": "Label",
+  "settingsWebFormFieldLabelHelper": "What the visitor sees above the box",
+  "settingsWebFormFieldPlaceholder": "Placeholder",
+  "settingsWebFormFieldPlaceholderHelper": "Optional. Shown inside the empty box",
+  "settingsWebFormFieldRequired": "Required",
+  "settingsWebFormFieldRequiredSub": "The visitor cannot submit without answering",
+  "settingsWebFormFieldAddButton": "Add field",
+  "settingsWebFormFieldSaveButton": "Save field",
+  "settingsWebhookTryAgain": "Try again",
+  "settingsWebhookCopy": "Copy",
+  "settingsWebhooksTitle": "Webhooks",
+  "settingsWebhooksNewButton": "New webhook",
+  "settingsWebhooksCreatedTitle": "Webhook added, copy its signing secret now",
+  "settingsWebhooksSecretOnce": "This is the only time the signing secret is shown. Store it where your receiver can read it; rotate it if it is lost.",
+  "settingsWebhooksSecretCopied": "Secret copied",
+  "settingsWebhooksAdminsOnly": "Administrators only",
+  "settingsWebhooksMemberBody": "Webhooks send copies of this organization's records to other services, and a hook URL is often a secret of its own, so only administrators can see or change them.",
+  "settingsWebhooksLoadError": "Could not load webhooks",
+  "settingsWebhooksAtLimit": "An organization can have at most {limit} webhooks. Remove one to add another.",
+  "@settingsWebhooksAtLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebhooksEventCount": "{count, plural, =1{{count} event} other{{count} events}}",
+  "@settingsWebhooksEventCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebhooksBy": "By {name}",
+  "@settingsWebhooksBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebhooksStateSending": "Sending",
+  "settingsWebhooksStatePaused": "Paused",
+  "settingsWebhooksStateOff": "Off",
+  "settingsWebhooksKindLead": "lead",
+  "settingsWebhooksKindDeal": "deal",
+  "settingsWebhooksKindTicket": "ticket",
+  "settingsWebhooksKindOther": "other record",
+  "settingsWebhooksKindRecord": "record",
+  "settingsWebhooksKindsJoin": "{rest} or {last}",
+  "@settingsWebhooksKindsJoin": {
+    "placeholders": {
+      "rest": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebhooksEmptyTitle": "No webhooks yet",
+  "settingsWebhooksEmptyBody": "A webhook posts to a URL whenever a {kinds} changes. Point one at Zapier, n8n, Slack or your own code.",
+  "@settingsWebhooksEmptyBody": {
+    "placeholders": {
+      "kinds": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebhooksFootnote": "Every JSON delivery carries an X-BottleCRM-Signature header: an HMAC-SHA256 of the timestamp and the raw body, keyed with the webhook's secret. A failed delivery is retried five times over about eight and a half hours, and an endpoint that answers 410 Gone is paused. So is every webhook whose creator stops being an admin, is deactivated or leaves; any admin can turn it back on and then answers for it.",
+  "settingsWebhookDetailRotateTitle": "Rotate the secret?",
+  "settingsWebhookDetailRotateBody": "The current secret stops verifying at once. Update your receiver straight after.",
+  "settingsWebhookDetailRotateNow": "Rotate now",
+  "settingsWebhookDetailRotatedTitle": "Secret rotated, copy the new one now",
+  "settingsWebhookDetailDeleteTitle": "Delete this webhook?",
+  "settingsWebhookDetailDeleteBody": "Removes the webhook and its delivery log.",
+  "settingsWebhookDetailDeletePermanently": "Delete permanently",
+  "settingsWebhookDetailSaved": "Saved",
+  "settingsWebhookDetailTitle": "Webhook",
+  "settingsWebhookDetailLoadError": "Could not load the webhook",
+  "settingsWebhookDetailNotFound": "That webhook does not exist.",
+  "settingsWebhookDetailTestQueued": "Test queued. Pull to refresh in a few seconds.",
+  "settingsWebhookDetailTurnedOff": "Turned off",
+  "settingsWebhookDetailTurnedOn": "Turned on",
+  "settingsWebhookDetailEvents": "Events ({count})",
+  "@settingsWebhookDetailEvents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebhookDetailDeliveries": "Deliveries",
+  "settingsWebhookDetailRedelivered": "Queued to send again",
+  "settingsWebhookDetailSecretLine": "{format} · secret {hint}",
+  "@settingsWebhookDetailSecretLine": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      },
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebhookDetailAnswersFor": "Answers for it: {name}",
+  "@settingsWebhookDetailAnswersFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWebhookDetailAnswersNote": "Turning it on, changing its URL, events or format, or rotating its secret makes you the admin who answers for it.",
+  "settingsWebhookDetailSendTest": "Send test",
+  "settingsWebhookDetailTurnOff": "Turn off",
+  "settingsWebhookDetailReEnable": "Re-enable",
+  "settingsWebhookDetailTurnOn": "Turn on",
+  "settingsWebhookDetailRotateSecret": "Rotate secret",
+  "settingsWebhookDetailDeliveriesError": "Could not load deliveries. Pull to refresh.",
+  "settingsWebhookDetailDeliveriesEmpty": "Nothing sent yet. Send a test, or change a record this webhook listens for.",
+  "settingsWebhookDetailNewer": "Newer",
+  "settingsWebhookDetailOlder": "Older",
+  "settingsWebhookDetailTries": "{count, plural, =1{{count} try} other{{count} tries}}",
+  "@settingsWebhookDetailTries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWebhookDetailRedeliver": "Redeliver",
+  "settingsWebhookFormErrorHttps": "The URL must start with https://.",
+  "settingsWebhookFormErrorEvents": "Choose at least one event.",
+  "settingsWebhookFormEditTitle": "Edit webhook",
+  "settingsWebhookFormNewTitle": "New webhook",
+  "settingsWebhookFormUrlLabel": "Endpoint URL",
+  "settingsWebhookFormUrlHelper": "HTTPS on the standard port, reachable publicly",
+  "settingsWebhookFormDescriptionLabel": "What is it for?",
+  "settingsWebhookFormDescriptionHint": "e.g. Zapier: new leads to the sales sheet",
+  "settingsWebhookFormSendAs": "Send as",
+  "settingsWebhookFormFormatJson": "Signed JSON (Zapier, n8n, your code)",
+  "settingsWebhookFormFormatSlack": "Slack message",
+  "settingsWebhookFormEvents": "Events",
+  "settingsWebhookFormAddButton": "Add webhook",
+  "settingsPipelineDeleteTitle": "Delete {name}?",
+  "@settingsPipelineDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPipelineKeepIt": "Keep it",
+  "settingsPipelineCreated": "Pipeline created",
+  "settingsPipelineDeleted": "Pipeline deleted",
+  "settingsPipelineNew": "New pipeline",
+  "settingsPipelineRenameTitle": "Rename pipeline",
+  "settingsPipelineRename": "Rename",
+  "settingsPipelineDefault": "Default",
+  "settingsPipelineLoadFailed": "Could not load the pipelines",
+  "settingsPipelineTryAgain": "Try again",
+  "settingsPipelineStageCount": "{count, plural, =1{1 stage} other{{count} stages}}",
+  "@settingsPipelineStageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsPipelineLeadCount": "{count, plural, =1{1 lead} other{{count} leads}}",
+  "@settingsPipelineLeadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsPipelineCounts": "{stages}, {leads}",
+  "@settingsPipelineCounts": {
+    "placeholders": {
+      "stages": {
+        "type": "String"
+      },
+      "leads": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPipelineIsDefault": "{counts}, the default pipeline",
+  "@settingsPipelineIsDefault": {
+    "placeholders": {
+      "counts": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPipelineTitleFallback": "Pipeline",
+  "settingsPipelineAddStage": "Add stage",
+  "settingsPipelineNewStage": "New stage",
+  "settingsPipelineEditStage": "Edit stage",
+  "settingsPipelineStageAdded": "Stage added",
+  "settingsPipelineStageSaved": "Stage saved",
+  "settingsPipelineStageDeleted": "Stage deleted",
+  "settingsPipelineOrderSaved": "Order saved",
+  "settingsPipelineMoveStageUp": "Move {name} up",
+  "@settingsPipelineMoveStageUp": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPipelineMoveStageDown": "Move {name} down",
+  "@settingsPipelineMoveStageDown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPipelineDeleteStage": "Delete {name}",
+  "@settingsPipelineDeleteStage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDealPipelinesTitle": "Deal pipelines",
+  "settingsDealPipelinesRenamed": "Pipeline renamed",
+  "settingsDealPipelinesDeleteBody": "Its stages go with it. A pipeline that still holds deals cannot be deleted: move them to another pipeline first.",
+  "settingsDealPipelinesFooter": "Open a pipeline to see its stages. Each stage is a column on the deals board.",
+  "settingsDealPipelineSheetsNewHint": "It starts with the default stages, from Prospecting to Closed Won and Closed Lost. You can rename or remove any of them.",
+  "settingsDealPipelineSheetsKind": "Kind",
+  "settingsDealPipelineSheetsKindHint": "Won and lost close a deal. Reports and goals read this, not the name.",
+  "settingsDealPipelineSheetsExpectedLabel": "Expected days (optional)",
+  "settingsDealPipelineSheetsExpectedHint": "A deal here longer than this reads Past expected, and Stalled at one and a half times it. Empty: never ages.",
+  "settingsDealPipelineSheetsWarningLabel": "Warning days (optional)",
+  "settingsDealPipelineSheetsWarningHint": "An earlier Past expected, before the expected days run out.",
+  "settingsDealPipelineDetailDeleteStageBody": "Its column disappears from the board. A stage that still holds deals cannot be deleted, and neither can the last open, won or lost stage.",
+  "settingsDealPipelineDetailFooter": "Stages are columns on the deals board, in this order. Won and lost stages close a deal; only open stages age.",
+  "settingsDealPipelineDetailLoadFailed": "Could not load the pipeline.",
+  "settingsDealPipelineDetailGone": "This pipeline no longer exists.",
+  "settingsDealPipelineDetailNeverAges": "{kind}. Never ages.",
+  "@settingsDealPipelineDetailNeverAges": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDealPipelineDetailAging": "{yellow, plural, =1{{kind}. Past expected at 1 day, stalled at {red}.} other{{kind}. Past expected at {yellow} days, stalled at {red}.}}",
+  "@settingsDealPipelineDetailAging": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "yellow": {
+        "type": "int"
+      },
+      "red": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLeadPipelinesTitle": "Lead pipelines",
+  "settingsLeadPipelinesSaved": "Pipeline saved",
+  "settingsLeadPipelinesDeleteBody": "It disappears from the board along with its stages. A pipeline that still holds leads cannot be deleted: move them out of its stages first.",
+  "settingsLeadPipelinesFooter": "Open a pipeline to see its stages. Each stage is a lane on the lead board.",
+  "settingsLeadPipelinesEmptyTitle": "No lead pipelines",
+  "settingsLeadPipelinesEmptyAdmin": "A pipeline sorts leads into stages you move them through. Tap + to create one.",
+  "settingsLeadPipelinesEmptyMember": "A pipeline sorts leads into stages you move them through. An administrator sets these up.",
+  "settingsLeadPipelineDetailDeleteStageBody": "Its lane disappears from the board. A stage that still holds leads cannot be deleted: move them to another stage first.",
+  "settingsLeadPipelineDetailNoStagesAdmin": "No stages yet. Add one so leads can be moved into this pipeline.",
+  "settingsLeadPipelineDetailNoStages": "No stages yet.",
+  "settingsLeadPipelineDetailFooter": "Stages are lanes on the lead board, in this order. Moving a lead into a stage can set its status and win probability.",
+  "settingsLeadPipelineDetailSetsStatus": "sets status to {status}",
+  "@settingsLeadPipelineDetailSetsStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadPipelineDetailWinPercent": "{percent}% win",
+  "@settingsLeadPipelineDetailWinPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLeadPipelineFormDescription": "Description (optional)",
+  "settingsLeadPipelineFormDefaultStages": "Start with the default stages",
+  "settingsLeadPipelineFormDefaultStagesOn": "New, Contacted, Qualified, Proposal, Won and Lost. You can rename or remove any of them.",
+  "settingsLeadPipelineFormDefaultStagesOff": "The pipeline starts empty. Add stages before moving leads into it.",
+  "settingsLeadStageFormType": "Stage type",
+  "settingsLeadStageFormTypeHint": "Whether leads here are still open, won or lost",
+  "settingsLeadStageFormStatus": "Sets the lead status to",
+  "settingsLeadStageFormStatusHint": "Applied when a lead is moved into this stage",
+  "settingsLeadStageFormProbability": "Win probability, in percent",
+  "settingsLeadStageFormProbabilityHint": "0 to 100. Given to a lead moved in with none set.",
+  "settingsCustomFieldsTitle": "Custom fields",
+  "settingsCustomFieldsNewField": "New custom field",
+  "settingsCustomFieldsAdded": "Field added",
+  "settingsCustomFieldsSaved": "Field saved",
+  "settingsCustomFieldsTurnOffTitle": "Turn off {label}?",
+  "@settingsCustomFieldsTurnOffTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCustomFieldsTurnOffBody": "It stops appearing on new records and stops accepting new values. Values already stored are kept, and you can turn it back on.",
+  "settingsCustomFieldsLeaveOn": "Leave it on",
+  "settingsCustomFieldsTurnOff": "Turn off",
+  "settingsCustomFieldsTurnOn": "Turn on",
+  "settingsCustomFieldsTurnedOffSnack": "Field turned off",
+  "settingsCustomFieldsTurnedOnSnack": "Field turned on",
+  "settingsCustomFieldsStatInUse": "in use",
+  "settingsCustomFieldsStatTurnedOff": "turned off",
+  "settingsCustomFieldsStatRecordTypes": "{count, plural, =1{record type} other{record types}}",
+  "@settingsCustomFieldsStatRecordTypes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCustomFieldsGapsBanner": "{count, plural, =1{One required field has records with no value for it. Marking a field required only binds new saves, so older records keep the gap.} other{{count} required fields have records with no value for them. Marking a field required only binds new saves, so older records keep the gap.}}",
+  "@settingsCustomFieldsGapsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCustomFieldsBadgeOff": "Turned off",
+  "settingsCustomFieldsRequired": "Required",
+  "settingsCustomFieldsBadgeFilter": "Filter",
+  "settingsCustomFieldsOptionCount": "{count, plural, =1{1 option} other{{count} options}}",
+  "@settingsCustomFieldsOptionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCustomFieldsMissing": "{count, plural, =1{1 record has no value for this} other{{count} records have no value for this}}",
+  "@settingsCustomFieldsMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCustomFieldsEmptyTitle": "No custom fields yet",
+  "settingsCustomFieldsEmptyAdmin": "Add one to collect something the built-in fields do not cover, on any record type.",
+  "settingsCustomFieldsEmptyMember": "An administrator adds these.",
+  "settingsCustomFieldsLoadFailed": "Could not load the custom fields",
+  "settingsCustomFieldFormEditTitle": "Edit {label}",
+  "@settingsCustomFieldFormEditTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCustomFieldFormLabel": "Label",
+  "settingsCustomFieldFormLabelHint": "What the field is called on the record",
+  "settingsCustomFieldFormKey": "Key",
+  "settingsCustomFieldFormKeyHint": "Lowercase letters, numbers and underscores. Cannot be changed later.",
+  "settingsCustomFieldFormKeyFixed": "Fixed after creation. Every value already stored is filed under this key, and changing it would leave them behind.",
+  "settingsCustomFieldFormTarget": "On record type",
+  "settingsCustomFieldFormFixed": "Fixed after creation.",
+  "settingsCustomFieldFormType": "Type",
+  "settingsCustomFieldFormTypeFixed": "Fixed after creation. Values already stored were written as this type and a new one would reinterpret them.",
+  "settingsCustomFieldFormPosition": "Position",
+  "settingsCustomFieldFormPositionHint": "Lower numbers come first on the record",
+  "settingsCustomFieldFormRequiredHint": "Binds new saves only. Records saved before this keep their gap.",
+  "settingsCustomFieldFormFilterable": "Offer as a filter",
+  "settingsCustomFieldFormAdd": "Add field",
+  "settingsCustomFieldFormSave": "Save field",
+  "settingsOptionsEditorTitle": "Options",
+  "settingsOptionsEditorHint": "Renaming an option keeps the records that already use it.",
+  "settingsOptionsEditorPlaceholder": "Option {number}",
+  "@settingsOptionsEditorPlaceholder": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsOptionsEditorRemove": "Remove option",
+  "settingsOptionsEditorAdd": "Add option",
+  "settingsModulesTitle": "Modules",
+  "settingsModulesGroupSell": "Sell",
+  "settingsModulesGroupServe": "Serve",
+  "settingsModulesGroupBill": "Bill",
+  "settingsModulesSwitchOffTitle": "Switch off {module}?",
+  "@settingsModulesSwitchOffTitle": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModulesKeepOn": "Keep it on",
+  "settingsModulesSwitchOff": "Switch off",
+  "settingsModulesLoadFailed": "Could not load modules",
+  "settingsModulesNotOffered": "This server does not offer modules yet.",
+  "settingsModulesIntro": "Switch off what this organization does not use. Nothing is deleted: switching a module back on brings everything back as it was.",
+  "settingsModulesMemberOnly": "Only an organization admin can switch modules on or off.",
+  "settingsModulesNeeds": "Needs {module}.",
+  "@settingsModulesNeeds": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModulesNeedsComesBack": "Needs {module}. It comes back when {module} is switched on.",
+  "@settingsModulesNeedsComesBack": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModulesMoveUp": "Move up",
+  "settingsModulesMoveDown": "Move down",
+  "settingsModulesWebForms": "Web forms",
+  "settingsModulesInboundEmail": "Inbound email",
+  "settingsRoutingRuleAdded": "Rule added",
+  "settingsRoutingRuleSaved": "Rule saved",
+  "settingsRoutingRuleTurnedOff": "Rule turned off",
+  "settingsRoutingRuleTurnedOn": "Rule turned on",
+  "settingsRoutingRuleDeleted": "Rule deleted",
+  "settingsRoutingDeleteTitle": "Delete {name}?",
+  "@settingsRoutingDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingKeepIt": "Keep it",
+  "settingsRoutingTitle": "Ticket routing",
+  "settingsRoutingNewRule": "New rule",
+  "settingsRoutingStatRunning": "running",
+  "settingsRoutingStatTurnedOff": "turned off",
+  "settingsRoutingStatUnrouted": "unrouted in 30 days",
+  "settingsRoutingDeadWarning": "{count, plural, =1{One running rule has nobody to assign to. It matches tickets and leaves them unassigned.} other{{count} running rules have nobody to assign to. They match tickets and leave them unassigned.}}",
+  "@settingsRoutingDeadWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRoutingTargetNoTeam": "no team chosen",
+  "settingsRoutingTargetTeam": "the {name} team",
+  "@settingsRoutingTargetTeam": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingTargetNobody": "nobody",
+  "settingsRoutingTargetPeople": "{count, plural, other{{count} people}}",
+  "@settingsRoutingTargetPeople": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRoutingGoesTo": "Goes to {target}, {strategy}",
+  "@settingsRoutingGoesTo": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      },
+      "strategy": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingNextInRotation": "Next in the rotation: {name}",
+  "@settingsRoutingNextInRotation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingBadgeTurnedOff": "Turned off",
+  "settingsRoutingBadgeStopsHere": "Stops here",
+  "settingsRoutingBadgeMatched": "{count} in 30 days",
+  "@settingsRoutingBadgeMatched": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRoutingNobodyStops": "Nobody to assign to. Matching tickets are left unassigned, and this rule stops the ones below it from trying.",
+  "settingsRoutingNobodyFallsThrough": "Nobody to assign to. Matching tickets fall through to the rules below.",
+  "settingsRoutingOneInactive": "{name} is deactivated and is skipped.",
+  "@settingsRoutingOneInactive": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingManyInactive": "{count, plural, other{{count} of the people here are deactivated and are skipped.}}",
+  "@settingsRoutingManyInactive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRoutingTurnOff": "Turn off",
+  "settingsRoutingTurnOn": "Turn on",
+  "settingsRoutingFootnote": "Rules run in this order and the first match wins. Routing happens once, when a ticket is created, so changing a rule does not move tickets that already exist.",
+  "settingsRoutingEmptyTitle": "No routing rules",
+  "settingsRoutingEmptyAdmin": "New tickets arrive unassigned until a rule picks them up.",
+  "settingsRoutingEmptyMember": "New tickets arrive unassigned. An administrator sets these up.",
+  "settingsRoutingLoadError": "Could not load the routing rules",
+  "settingsRoutingTryAgain": "Try again",
+  "settingsRoutingRuleFormNewTitle": "New routing rule",
+  "settingsRoutingRuleFormEditTitle": "Edit {name}",
+  "@settingsRoutingRuleFormEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingRuleFormNameLabel": "Rule name",
+  "settingsRoutingRuleFormOrderLabel": "Order",
+  "settingsRoutingRuleFormOrderHelper": "Lower runs first",
+  "settingsRoutingRuleFormWhenSection": "When a ticket matches",
+  "settingsRoutingRuleFormNoConditions": "With no conditions this rule matches every new ticket.",
+  "settingsRoutingRuleFormAddCondition": "Add a condition",
+  "settingsRoutingRuleFormAllTrue": "All of these have to be true.",
+  "settingsRoutingRuleFormAssignSection": "Assign it",
+  "settingsRoutingRuleFormHowLabel": "How",
+  "settingsRoutingRuleFormTeamLabel": "Team",
+  "settingsRoutingRuleFormDirectHint": "Everyone picked here is assigned.",
+  "settingsRoutingRuleFormRotationHint": "Picked one at a time, in turn.",
+  "settingsRoutingRuleFormDeactivated": "{name} (deactivated)",
+  "@settingsRoutingRuleFormDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRoutingRuleFormNobodyToPick": "Nobody to pick yet. Invite someone from Team first.",
+  "settingsRoutingRuleFormStopTitle": "Stop after this rule",
+  "settingsRoutingRuleFormStopOn": "No rule below this one gets a turn, even if this one assigns nobody.",
+  "settingsRoutingRuleFormStopOff": "A ticket this rule cannot assign falls through to the rules below.",
+  "settingsRoutingRuleFormAddRule": "Add rule",
+  "settingsRoutingRuleFormSaveChanges": "Save changes",
+  "settingsRoutingRuleFormFieldLabel": "Field",
+  "settingsRoutingRuleFormRemoveCondition": "Remove this condition",
+  "settingsRoutingRuleFormTestLabel": "Test",
+  "settingsRoutingRuleFormValueLabel": "Value",
+  "settingsRoutingRuleFormCommaHelper": "Separate with commas",
+  "settingsEscalationPolicyAdded": "Policy added",
+  "settingsEscalationPolicySaved": "Policy saved",
+  "settingsEscalationPolicyTurnedOn": "Policy turned on",
+  "settingsEscalationPolicyTurnedOff": "Policy turned off",
+  "settingsEscalationPolicyDeleted": "Policy deleted",
+  "settingsEscalationDeleteTitle": "Delete the {priority} policy?",
+  "@settingsEscalationDeleteTitle": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationKeepIt": "Keep it",
+  "settingsEscalationTitle": "Escalation",
+  "settingsEscalationNewPolicy": "New policy",
+  "settingsEscalationStatSetUp": "of 4 set up",
+  "settingsEscalationStatNeverFire": "that never fire",
+  "settingsEscalationUnheardWarning": "{count, plural, other{{count} breaches in the last 30 days told nobody. A policy that exists is not the same as a policy that fires.}}",
+  "@settingsEscalationUnheardWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsEscalationUnconfiguredOne": "{priority} has no policy, so breaches at that priority escalate to nobody and are not counted here.",
+  "@settingsEscalationUnconfiguredOne": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationUnconfiguredMany": "{priorities} have no policy, so breaches at those priorities escalate to nobody and are not counted here.",
+  "@settingsEscalationUnconfiguredMany": {
+    "placeholders": {
+      "priorities": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationJoinAnd": "{list} and {last}",
+  "@settingsEscalationJoinAnd": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationBadgeTurnedOff": "Turned off",
+  "settingsEscalationTargetsLine": "{first} reply · {resolution} resolve",
+  "@settingsEscalationTargetsLine": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "resolution": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationNextReplyLine": "{next} next reply, measured in analytics only. Missing it triggers no escalation.",
+  "@settingsEscalationNextReplyLine": {
+    "placeholders": {
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationTurnOff": "Turn off",
+  "settingsEscalationTurnOn": "Turn on",
+  "settingsEscalationHalfBreaches": "{count} in the last 30 days",
+  "@settingsEscalationHalfBreaches": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsEscalationHalfBreachesIgnored": "{count} in the last 30 days, none of them acted on",
+  "@settingsEscalationHalfBreachesIgnored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsEscalationFootnote": "First response and resolution targets are measured on business hours, so a breach counts working time only, and time spent waiting on the customer does not count at all. Editing a policy sets both the target and who hears about a breach. The next reply target escalates nothing: it is counted around the clock and reported in ticket analytics. The counts cover tickets opened in the last 30 days.",
+  "settingsEscalationEmptyTitle": "No escalation policies",
+  "settingsEscalationEmptyAdmin": "A policy decides what happens when a ticket misses its first response or its resolution target. None are set, so a breach escalates to nobody.",
+  "settingsEscalationEmptyMember": "A policy decides what happens when a ticket misses its first response or its resolution target. None are set, so a breach escalates to nobody. An administrator sets these up.",
+  "settingsEscalationLoadError": "Could not load the escalation policies",
+  "settingsEscalationTryAgain": "Try again",
+  "settingsEscalationPolicyFormHoursHelper": "Business hours. Blank uses the default.",
+  "settingsEscalationPolicyFormHoursHint": "{hours} (default)",
+  "@settingsEscalationPolicyFormHoursHint": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsEscalationPolicyFormNewTitle": "New escalation policy",
+  "settingsEscalationPolicyFormEditTitle": "Edit the {priority} policy",
+  "@settingsEscalationPolicyFormEditTitle": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationPolicyFormPriorityHelper": "Fixed once the policy is saved",
+  "settingsEscalationPolicyFormPriorityFixed": "Priority {priority}. One policy per priority, fixed after it is created.",
+  "@settingsEscalationPolicyFormPriorityFixed": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationPolicyFormSlaSection": "SLA targets",
+  "settingsEscalationPolicyFormFirstResponse": "First response (hours)",
+  "settingsEscalationPolicyFormNextResponse": "Next response (hours)",
+  "settingsEscalationPolicyFormResolution": "Resolution (hours)",
+  "settingsEscalationPolicyFormNextHelper": "Each reply after the first, counted around the clock. Measured in analytics only: missing it triggers no escalation. Blank uses the default.",
+  "settingsEscalationPolicyFormApplyNote": "First response and resolution apply to tickets opened from now on, and to any ticket moved to this priority. Tickets already open keep the target they were given. Next response is read whenever analytics are scored, so a change rescores past replies too.",
+  "settingsEscalationPolicyFormAlsoNotify": "Also notify",
+  "settingsEscalationPolicyFormTeamLabel": "Team",
+  "settingsEscalationPolicyFormNoTeam": "No team",
+  "settingsEscalationPolicyFormNoTeams": "No teams in this organization yet.",
+  "settingsEscalationPolicyFormTeamHint": "Copied in alongside the target, on halves that notify. A team is never escalated to on its own.",
+  "settingsEscalationPolicyFormAddPolicy": "Add policy",
+  "settingsEscalationPolicyFormSaveChanges": "Save changes",
+  "settingsEscalationPolicyFormDoWhat": "Do what",
+  "settingsEscalationPolicyFormToWhom": "To whom",
+  "settingsEscalationPolicyFormNobody": "Nobody",
+  "settingsEscalationPolicyFormDeactivated": "{name} (deactivated)",
+  "@settingsEscalationPolicyFormDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsEscalationPolicyFormInactiveTarget": "This account is no longer active. It stays set until you change it, and a breach sent here waits for somebody who cannot sign in.",
+  "settingsEscalationPolicyFormReassignHint": "Reassigns the ticket. No email is sent, to them or to the team.",
+  "settingsReopenSaved": "Reopen policy saved",
+  "settingsReopenTitle": "Reopen policy",
+  "settingsReopenEditPolicy": "Edit policy",
+  "settingsReopenAdminsOnly": "Administrators only",
+  "settingsReopenMemberBody": "The reopen policy and the reply figures behind it are visible to administrators. Ask one of yours whether replies to closed tickets bring them back.",
+  "settingsReopenLast30Days": "Last 30 days",
+  "settingsReopenRuleSection": "The rule",
+  "settingsReopenEnabledLabel": "Reopen on customer reply",
+  "settingsReopenEnabledDetail": "Off means a reply is filed on the closed ticket and nothing else happens.",
+  "settingsReopenWindowLabel": "Window",
+  "settingsReopenWindowDetail": "Counted from when the ticket was closed, in calendar days.",
+  "settingsReopenStatusLabel": "Comes back as",
+  "settingsReopenStatusDetail": "Has to be a status that counts as open, or the ticket would close again on arrival.",
+  "settingsReopenNotifyLabel": "Tell the assignee",
+  "settingsReopenNotifyDetail": "The person the ticket was assigned to when it closed.",
+  "settingsReopenOn": "On",
+  "settingsReopenOff": "Off",
+  "settingsReopenWindowDays": "{count, plural, other{{count} days}}",
+  "@settingsReopenWindowDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsReopenStatReopened": "reopened",
+  "settingsReopenNotApplicable": "n/a",
+  "settingsReopenStatMissed": "missed the window",
+  "settingsReopenMedianDays": "{days}d",
+  "@settingsReopenMedianDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsReopenStatMedian": "median reply",
+  "settingsReopenLateReplies": "{count, plural, other{{count} replies landed on tickets closed more than {days} days earlier, so no ticket came back and nobody was told. Those customers are still waiting.}}",
+  "@settingsReopenLateReplies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsReopenFootnoteOn": "A reopened ticket is the same ticket, keeping its history and its number, so first response and resolution are still measured from the original open. Which addresses accept replies at all is set in inbound email.",
+  "settingsReopenFootnoteOff": "Turned on, a reply inside the window would bring the same ticket back rather than open a new one, keeping its history and its number. Which addresses accept replies at all is set in inbound email.",
+  "settingsReopenLoadError": "Could not load the reopen policy",
+  "settingsReopenTryAgain": "Try again",
+  "settingsReopenFormEnabledOn": "A reply inside the window puts the ticket back in the queue.",
+  "settingsReopenFormEnabledOff": "A reply is filed on the closed ticket and nothing else happens. Nothing counts those replies either, so the missed-window figure reads zero while it is off.",
+  "settingsReopenFormWindowLabel": "Window, in days",
+  "settingsReopenFormWindowHelper": "Calendar days from when the ticket closed, {min} to {max}",
+  "@settingsReopenFormWindowHelper": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsReopenFormStatusHelper": "Only a status that counts as open",
+  "settingsReopenFormSave": "Save policy",
+  "settingsMacrosReplySaved": "Reply saved",
+  "settingsMacrosChangesSaved": "Changes saved",
+  "settingsMacrosKeepIt": "Keep it",
+  "settingsMacrosReplyDeleted": "Reply deleted",
+  "settingsMacrosReplyTurnedOff": "Reply turned off",
+  "settingsMacrosReplyTurnedOn": "Reply turned on",
+  "settingsMacrosTitle": "Saved replies",
+  "settingsMacrosNew": "New saved reply",
+  "settingsMacrosStatShared": "shared",
+  "settingsMacrosStatYours": "just yours",
+  "settingsMacrosStatTurnedOff": "turned off",
+  "settingsMacrosBrokenWarning": "{count, plural, =1{One reply uses a placeholder that is not recognized. It goes out to the customer exactly as written.} other{{count} replies use a placeholder that is not recognized. Those go out to the customer exactly as written.}}",
+  "@settingsMacrosBrokenWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMacrosOnSend": "On send: {actions}",
+  "@settingsMacrosOnSend": {
+    "placeholders": {
+      "actions": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMacrosBadgeTurnedOff": "Turned off",
+  "settingsMacrosNotUsed": "not used yet",
+  "settingsMacrosUsedTimes": "{count, plural, =1{used 1 time} other{used {count} times}}",
+  "@settingsMacrosUsedTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMacrosBrokenOne": "{token} is not recognized and goes out as written",
+  "@settingsMacrosBrokenOne": {
+    "placeholders": {
+      "token": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMacrosBrokenMany": "{tokens} are not recognized and go out as written",
+  "@settingsMacrosBrokenMany": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMacrosTurnOn": "Turn on",
+  "settingsMacrosEmptyTitle": "No saved replies yet",
+  "settingsMacrosEmptyBody": "Write the answer you keep typing once, then insert it into a ticket reply in two taps.",
+  "settingsMacrosLoadError": "Could not load the saved replies",
+  "settingsMacrosTryAgain": "Try again",
+  "settingsMacroFormAssignTo": "Assign to",
+  "settingsMacroFormNoMembers": "No active members to choose from",
+  "settingsMacroFormAddTags": "Add tags",
+  "settingsMacroFormNoTags": "No active tags to choose from",
+  "settingsMacroFormNewTitle": "New saved reply",
+  "settingsMacroFormEditTitle": "Edit {title}",
+  "@settingsMacroFormEditTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMacroFormTitleLabel": "Title",
+  "settingsMacroFormTitleHelper": "What you will look for in the reply box",
+  "settingsMacroFormScopeLabel": "Who can use it",
+  "settingsMacroFormScopeOrg": "Everyone in the organization",
+  "settingsMacroFormScopeMe": "Just you",
+  "settingsMacroFormMemberNote": "Saved for you alone. An administrator writes the replies the whole organization shares.",
+  "settingsMacroFormBodyLabel": "Reply",
+  "settingsMacroFormBodyHelper": "Leave empty for a reply that only changes the ticket",
+  "settingsMacroFormTapToInsert": "Tap to insert",
+  "settingsMacroFormWhenSent": "When the reply is sent",
+  "settingsMacroFormSetStatus": "Set status",
+  "settingsMacroFormNoChange": "No change",
+  "settingsMacroFormSetPriority": "Set priority",
+  "settingsMacroFormAssignHint": "Replaces whoever the ticket is assigned to",
+  "settingsMacroFormTagsHint": "Added to the ticket's own tags",
+  "settingsMacroFormSaveReply": "Save reply",
+  "settingsMacroFormSaveChanges": "Save changes",
+  "settingsBusinessHoursSaved": "Business hours saved",
+  "settingsBusinessHoursHolidayAdded": "Holiday added",
+  "settingsBusinessHoursRemoveTitle": "Remove {name}?",
+  "@settingsBusinessHoursRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBusinessHoursKeepIt": "Keep it",
+  "settingsBusinessHoursHolidayRemoved": "Holiday removed",
+  "settingsBusinessHoursTitle": "Business hours",
+  "settingsBusinessHoursEditHours": "Edit hours",
+  "settingsBusinessHoursWeek": "The week",
+  "settingsBusinessHoursHolidays": "Holidays",
+  "settingsBusinessHoursAlwaysOnBanner": "Every day below reads Closed, and a four-hour target still expires four hours after the ticket arrives, weekend or not. Open at least one day to make the calendar count.",
+  "settingsBusinessHoursClosed": "Closed",
+  "settingsBusinessHoursRange": "{open} to {close}",
+  "@settingsBusinessHoursRange": {
+    "placeholders": {
+      "open": {
+        "type": "String"
+      },
+      "close": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBusinessHoursRemoveHoliday": "Remove this holiday",
+  "settingsBusinessHoursNoHolidays": "No holidays set. Targets keep running on public holidays.",
+  "settingsBusinessHoursFootnote": "A ticket that arrives after closing starts its clock when the week next opens, so the hours in between do not spend a target. Service analytics is measured on this calendar too. A holiday is a full day off in this timezone, which is separate from the organization timezone.",
+  "settingsBusinessHoursLoadError": "Could not load the business hours",
+  "settingsBusinessHoursTryAgain": "Try again",
+  "settingsBusinessHoursFormTitle": "Edit business hours",
+  "settingsBusinessHoursFormCalendarName": "Calendar name",
+  "settingsBusinessHoursFormTimezone": "Timezone",
+  "settingsBusinessHoursFormTimezoneHelper": "An IANA name, like Asia/Kolkata",
+  "settingsBusinessHoursFormWeek": "The week",
+  "settingsBusinessHoursFormAlwaysOn": "With no day open, targets run around the clock. The engine drops a calendar that never opens rather than treating it as permanently shut.",
+  "settingsBusinessHoursFormSave": "Save hours",
+  "settingsBusinessHoursFormClosed": "Closed",
+  "settingsBusinessHoursFormOpen": "Open",
+  "settingsBusinessHoursFormFrom": "From {time}",
+  "@settingsBusinessHoursFormFrom": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBusinessHoursFormTo": "To {time}",
+  "@settingsBusinessHoursFormTo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBusinessHoursFormPickDateError": "Pick a date.",
+  "settingsBusinessHoursFormNameError": "Give the day a name, so the list reads.",
+  "settingsBusinessHoursFormHolidayTitle": "Add a holiday",
+  "settingsBusinessHoursFormHolidayIntro": "A full day off in {timezone}. Targets stop for the whole of it.",
+  "@settingsBusinessHoursFormHolidayIntro": {
+    "placeholders": {
+      "timezone": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBusinessHoursFormPickDate": "Pick a date",
+  "settingsBusinessHoursFormHolidayHint": "Christmas Day",
+  "settingsBusinessHoursFormAddHoliday": "Add holiday",
+  "settingsApprovalRulesAdded": "Rule added",
+  "settingsApprovalRulesSaved": "Rule saved",
+  "settingsApprovalRulesTurnedOffToast": "Rule turned off",
+  "settingsApprovalRulesTurnedOnToast": "Rule turned on",
+  "settingsApprovalRulesDeleteTitle": "Delete {name}?",
+  "@settingsApprovalRulesDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRulesKeepIt": "Keep it",
+  "settingsApprovalRulesTitle": "Approval rules",
+  "settingsApprovalRulesNewRule": "New rule",
+  "settingsApprovalRulesStatActive": "active",
+  "settingsApprovalRulesStatTurnedOff": "turned off",
+  "settingsApprovalRulesStatWaiting": "waiting on them",
+  "settingsApprovalRulesStranding": "{count, plural, =1{One active rule can be cleared by nobody. What it gates cannot be closed by anyone.} other{{count} active rules can be cleared by nobody. What they gate cannot be closed by anyone.}}",
+  "@settingsApprovalRulesStranding": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsApprovalRulesGates": "Gates {match}",
+  "@settingsApprovalRulesGates": {
+    "placeholders": {
+      "match": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRulesClearedBy": "Cleared by {approvers}",
+  "@settingsApprovalRulesClearedBy": {
+    "placeholders": {
+      "approvers": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRulesBadgeTurnedOff": "Turned off",
+  "settingsApprovalRulesBadgeNobody": "Nobody can clear",
+  "settingsApprovalRulesBadgeNeverRuns": "Never runs",
+  "settingsApprovalRulesBadgeWaiting": "{count, plural, other{{count} waiting}}",
+  "@settingsApprovalRulesBadgeWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsApprovalRulesNobodyFlag": "This organization has admins and members. There is no manager role. With no named approvers, the first ticket this gates cannot be closed by anyone. Name approvers, or set it to admin.",
+  "settingsApprovalRulesShadowedFlag": "{rule} gates exactly the same tickets and was written later. One rule gates a close, the most specific match, and the newest wins between equals, so this one never runs.",
+  "@settingsApprovalRulesShadowedFlag": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRulesTurnOff": "Turn off",
+  "settingsApprovalRulesTurnOn": "Turn on",
+  "settingsApprovalRulesFootnote": "A ticket is gated by one rule, the most specific that matches it. The others are fallbacks for the tickets it misses. Whoever asked for the close can never be the one who clears it, whatever a rule says.",
+  "settingsApprovalRulesEmptyTitle": "No approval rules",
+  "settingsApprovalRulesEmptyAdmin": "Tickets close without anyone signing off. Add a rule to gate the closes that need a second pair of eyes.",
+  "settingsApprovalRulesEmptyMember": "Tickets close without anyone signing off. An administrator sets these up.",
+  "settingsApprovalRulesLoadError": "Could not load the approval rules",
+  "settingsApprovalRulesTryAgain": "Try again",
+  "settingsApprovalRuleFormNewTitle": "New approval rule",
+  "settingsApprovalRuleFormEditTitle": "Edit {name}",
+  "@settingsApprovalRuleFormEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRuleFormNameLabel": "Rule name",
+  "settingsApprovalRuleFormSectionGates": "What it gates",
+  "settingsApprovalRuleFormAny": "Any",
+  "settingsApprovalRuleFormTicketType": "Ticket type",
+  "settingsApprovalRuleFormTeam": "Team",
+  "settingsApprovalRuleFormNoTeams": "No teams in this org yet.",
+  "settingsApprovalRuleFormAnyTeam": "Any team",
+  "settingsApprovalRuleFormSectionWho": "Who can clear it",
+  "settingsApprovalRuleFormRole": "Role",
+  "settingsApprovalRuleFormPickedHint": "Anyone picked here can clear it as well as the role above, not instead of it.",
+  "settingsApprovalRuleFormDeactivated": "{name} (deactivated)",
+  "@settingsApprovalRuleFormDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRuleFormClearedBy": "Cleared by {approvers}",
+  "@settingsApprovalRuleFormClearedBy": {
+    "placeholders": {
+      "approvers": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRuleFormAnyAdmin": "any admin",
+  "settingsApprovalRuleFormAnyAdminOr": "any admin, or {names}",
+  "@settingsApprovalRuleFormAnyAdminOr": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApprovalRuleFormNobody": "nobody",
+  "settingsApprovalRuleFormOrSeparator": " or ",
+  "settingsApprovalRuleFormStrandsWarning": "This organization has admins and members. There is no manager role, so with nobody named here the first ticket this gates cannot be closed by anyone.",
+  "settingsApprovalRuleFormAddRule": "Add rule",
+  "settingsApprovalRuleFormSaveChanges": "Save changes",
+  "settingsInboundEmailAdded": "Address added",
+  "settingsInboundEmailSaved": "Address saved",
+  "settingsInboundEmailTurnOffTitle": "Turn off {address}?",
+  "@settingsInboundEmailTurnOffTitle": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsInboundEmailLeaveOn": "Leave it on",
+  "settingsInboundEmailTurnOff": "Turn off",
+  "settingsInboundEmailTurnOn": "Turn on",
+  "settingsInboundEmailTurnedOffToast": "Address turned off",
+  "settingsInboundEmailTurnedOnToast": "Address turned on",
+  "settingsInboundEmailDeleteTitle": "Delete {address}?",
+  "@settingsInboundEmailDeleteTitle": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsInboundEmailKeepIt": "Keep it",
+  "settingsInboundEmailDeleted": "Address deleted",
+  "settingsInboundEmailTitle": "Inbound email",
+  "settingsInboundEmailAdd": "Add address",
+  "settingsInboundEmailStatDelivering": "creating tickets",
+  "settingsInboundEmailStatAddresses": "addresses",
+  "settingsInboundEmailStatTickets": "tickets in 30 days",
+  "settingsInboundEmailSilentOne": "{address} is switched on and creates nothing. Mail keeps arriving and nothing bounces, so whoever writes there gets no ticket and no error.",
+  "@settingsInboundEmailSilentOne": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsInboundEmailSilentMany": "{count, plural, other{{count} addresses are switched on and create nothing. Mail keeps arriving and nothing bounces, so whoever writes there gets no ticket and no error.}}",
+  "@settingsInboundEmailSilentMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsInboundEmailRowCases": "{count, plural, other{{count} in 30 days}}",
+  "@settingsInboundEmailRowCases": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsInboundEmailOpensAs": "Opens as {what}",
+  "@settingsInboundEmailOpensAs": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsInboundEmailAuthTitle": "How a delivery is proved genuine",
+  "settingsInboundEmailEmptyTitle": "No inbound addresses",
+  "settingsInboundEmailEmptyAdmin": "Add one and mail sent to it opens a ticket, once it is pinned to its SNS topic.",
+  "settingsInboundEmailEmptyMember": "Email does not open tickets here yet. An administrator sets these up.",
+  "settingsInboundEmailLoadError": "Could not load the inbound addresses",
+  "settingsInboundEmailTryAgain": "Try again",
+  "settingsMailboxFormNewTitle": "New address",
+  "settingsMailboxFormEditTitle": "Edit {address}",
+  "@settingsMailboxFormEditTitle": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormAddress": "Address",
+  "settingsMailboxFormAddressHint": "Mail to the old address stops becoming tickets.",
+  "settingsMailboxFormProvider": "Provider",
+  "settingsMailboxFormProviderHint": "AWS SES, Postmark and Mailgun deliver. Mail to an IMAP address becomes nothing until that integration exists.",
+  "settingsMailboxFormTopicHint": "Mail is accepted only from this exact topic. Left blank, it is set by the first subscription AWS confirms from an AWS account this server allows. Clearing it stops mail until it is set again.",
+  "settingsMailboxFormSectionOpensAs": "What a ticket opens as",
+  "settingsMailboxFormType": "Type",
+  "settingsMailboxFormNone": "None",
+  "settingsMailboxFormAssigneeHint": "Where a ticket goes after that is decided by routing, not by this.",
+  "settingsMailboxFormUnassigned": "Unassigned, then routed",
+  "settingsMailboxFormDeactivated": "{name} (deactivated)",
+  "@settingsMailboxFormDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormDeactivatedHint": "Deactivated users are not assigned. New tickets from this address go to routing until you choose someone else.",
+  "settingsMailboxFormAddAddress": "Add address",
+  "settingsMailboxFormSaveChanges": "Save changes",
+  "settingsHelpCenterTitle": "Help center",
+  "settingsHelpCenterSectionCurrent": "Current setting",
+  "settingsHelpCenterPublicLabel": "Public help center",
+  "settingsHelpCenterOffHint": "Off means every public page answers \"not found\".",
+  "settingsHelpCenterOn": "On",
+  "settingsHelpCenterOff": "Off",
+  "settingsHelpCenterAddress": "Address",
+  "settingsHelpCenterNotChosen": "Not chosen yet",
+  "settingsHelpCenterSectionChange": "Change",
+  "settingsHelpCenterSummaryLive": "Public, and open to search engines.",
+  "settingsHelpCenterSummaryOff": "Off. Nothing is published.",
+  "settingsHelpCenterOpenFailed": "Could not open the public page",
+  "settingsHelpCenterOpenPage": "Open the public page",
+  "settingsHelpCenterSaved": "Help center saved",
+  "settingsHelpCenterPublicSubtitle": "Publish approved, published articles for anyone to read.",
+  "settingsHelpCenterSlugHint": "3 to 50 lowercase letters, numbers and single hyphens. Required before the help center can be switched on.",
+  "settingsHelpCenterSaving": "Saving...",
+  "settingsHelpCenterFootnote": "Only articles that are both approved and published are shown, the same ones customers see in the portal. Drafts, tags, linked tickets and who wrote an article never are. Search engines can list these pages.",
+  "settingsHelpCenterLoadError": "Could not load the help center",
+  "settingsHelpCenterTryAgain": "Try again",
+  "settingsAuditLogTitle": "Audit log",
+  "settingsAuditLogShowingOnly": "Showing {name} only.",
+  "@settingsAuditLogShowingOnly": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAuditLogShowEveryone": "Show everyone",
+  "settingsAuditLogErrorTitle": "That did not work",
+  "settingsAuditLogNothingMatches": "Nothing matches",
+  "settingsAuditLogNothingYet": "Nothing recorded yet",
+  "settingsAuditLogEmptyFilteredBody": "No entry matches these filters. Widen the dates or clear them.",
+  "settingsAuditLogEmptyBody": "Sign-ins, org switches, refused requests, webhook pauses and API token or calendar feed changes appear here as they happen.",
+  "settingsAuditLogEvent": "Event",
+  "settingsAuditLogAllEvents": "All events",
+  "settingsAuditLogFrom": "From",
+  "settingsAuditLogFromDate": "From {date}",
+  "@settingsAuditLogFromDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAuditLogTo": "To",
+  "settingsAuditLogToDate": "To {date}",
+  "@settingsAuditLogToDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAuditLogClear": "Clear",
+  "settingsAuditLogShowRefreshes": "Show token refreshes",
+  "settingsAuditLogOk": "OK",
+  "settingsAuditLogRefused": "Refused",
+  "settingsAuditLogOpenWebhook": "Open webhook",
+  "settingsAuditLogNewer": "Newer",
+  "settingsAuditLogOlder": "Older",
+  "settingsAuditLogTryAgain": "Try again",
+  "settingsAuditLogAdminsOnlyTitle": "Administrators only",
+  "settingsAuditLogAdminsOnlyBody": "The audit log records who signed in, from where, and what was refused, so only administrators can read it.",
+  "settingsCalendarFeedRegenTitle": "Regenerate the URL?",
+  "settingsCalendarFeedRegenBody": "The old URL stops working at once, and calendars subscribed to it stop updating. Subscribe again with the new one.",
+  "settingsCalendarFeedRegen": "Regenerate",
+  "settingsCalendarFeedOffTitle": "Turn the calendar feed off?",
+  "settingsCalendarFeedOffBody": "The URL stops working and subscribed calendars stop updating. You can turn it on again later with a new URL.",
+  "settingsCalendarFeedTurnOff": "Turn off",
+  "settingsCalendarFeedTurnedOffToast": "Calendar feed turned off",
+  "settingsCalendarFeedTitle": "Calendar feed",
+  "settingsCalendarFeedLastFetched": "Last fetched",
+  "settingsCalendarFeedNeverRead": "No calendar app has read it yet.",
+  "settingsCalendarFeedReadAt": "A calendar app read it on {when}.",
+  "@settingsCalendarFeedReadAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCalendarFeedRegenUrl": "Regenerate URL",
+  "settingsCalendarFeedTurnOn": "Turn on calendar feed",
+  "settingsCalendarFeedSectionSubscribe": "Subscribe to it",
+  "settingsCalendarFeedGoogle": "Google Calendar",
+  "settingsCalendarFeedGoogleBody": "On a computer, open Google Calendar. Beside Other calendars choose +, then From URL, paste the feed URL and choose Add calendar. Google refreshes it every few hours, so changes take a while to appear.",
+  "settingsCalendarFeedOutlookBody": "In Outlook on the web choose Add calendar, then Subscribe from web, paste the feed URL and choose Import.",
+  "settingsCalendarFeedApple": "Apple Calendar",
+  "settingsCalendarFeedAppleBody": "Choose File, then New Calendar Subscription, and paste the feed URL.",
+  "settingsCalendarFeedRevealTitle": "Your feed URL, copy it now",
+  "settingsCalendarFeedRevealBody": "This is the only time it is shown. If you lose it, regenerate it.",
+  "settingsCalendarFeedCopied": "Feed URL copied",
+  "settingsCalendarFeedCopyUrl": "Copy URL",
+  "settingsCalendarFeedSummaryOn": "On, URL created {date}",
+  "@settingsCalendarFeedSummaryOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCalendarFeedSummaryOff": "Off",
+  "settingsCalendarFeedSummaryBody": "Your tasks that are New or In progress and have a due date, from 90 days ago to a year ahead, as all-day events. Each shows the title, the priority and a link to the task.",
+  "settingsCalendarFeedFootnote": "The URL is the key. Anyone who has it can see the titles and priorities of your open tasks without signing in, so share it with nobody but your calendar app, and regenerate it if it leaks. It stops working on its own if you leave the organisation or your account is deactivated.",
+  "settingsCalendarFeedLoadError": "Could not load your calendar feed",
+  "settingsCalendarFeedTryAgain": "Try again",
+  "settingsHubTitle": "Organization settings",
+  "settingsHubSectionRecords": "Records",
+  "settingsHubSectionTickets": "Tickets",
+  "settingsHubSectionOrganization": "Organization",
+  "settingsHubCustomFields": "Custom fields",
+  "settingsHubCustomFieldsBody": "Extra fields on leads, deals, tickets and the rest",
+  "settingsHubObjects": "Objects",
+  "settingsHubObjectsBody": "Your own record types, with their fields",
+  "settingsHubTags": "Tags",
+  "settingsHubTagsBody": "The labels shared across every record type",
+  "settingsHubLeadPipelines": "Lead pipelines",
+  "settingsHubLeadPipelinesBody": "The stages leads move through on the board",
+  "settingsHubDealPipelines": "Deal pipelines",
+  "settingsHubDealPipelinesBody": "The stages deals move through, and when they stall",
+  "settingsHubProducts": "Products",
+  "settingsHubProductsBody": "The products and prices invoices and estimates use",
+  "settingsHubRouting": "Routing",
+  "settingsHubRoutingBody": "Who a new ticket is assigned to",
+  "settingsHubEscalation": "Escalation",
+  "settingsHubEscalationBody": "What happens when a ticket misses its SLA target",
+  "settingsHubBusinessHours": "Business hours",
+  "settingsHubBusinessHoursBody": "The week every response target is measured against",
+  "settingsHubReopen": "Reopen policy",
+  "settingsHubReopenBody": "Whether a reply brings a closed ticket back",
+  "settingsHubSavedReplies": "Saved replies",
+  "settingsHubSavedRepliesBody": "Canned answers to insert into a ticket reply",
+  "settingsHubInboundEmail": "Inbound email",
+  "settingsHubInboundEmailBody": "The addresses that turn mail into tickets",
+  "settingsHubApprovals": "Approval rules",
+  "settingsHubApprovalsBody": "What gates a ticket close, and who can clear it",
+  "settingsHubOrganization": "Organization",
+  "settingsHubOrganizationBody": "Company details printed on documents, and defaults",
+  "settingsHubModules": "Modules",
+  "settingsHubModulesBody": "Switch off the parts of BottleCRM this organization does not use",
+  "settingsHubApiTokens": "API tokens",
+  "settingsHubApiTokensBody": "Programmatic access, and what to revoke",
+  "settingsHubWebhooks": "Webhooks",
+  "settingsHubWebhooksBody": "Send record changes to Zapier, n8n, Slack or your own code",
+  "settingsHubAutomation": "Automation",
+  "settingsHubAutomationBody": "Rules that act when a record is created or changes",
+  "settingsHubAuditLog": "Audit log",
+  "settingsHubAuditLogBody": "Sign-ins, API tokens, calendar feeds, merges, refused requests and paused webhooks",
+  "settingsHubWebForms": "Web forms",
+  "settingsHubWebFormsBody": "Forms you embed on your own site, and the leads they bring in",
+  "settingsHubHelpCenter": "Help center",
+  "settingsHubHelpCenterBody": "Your published articles, public for customers and search engines",
+  "settingsMoreTitle": "More",
+  "settingsMoreSectionWorkspace": "Workspace",
+  "settingsMoreAccounts": "Accounts",
+  "settingsMoreAccountsBody": "The companies you sell to",
+  "settingsMoreContacts": "Contacts",
+  "settingsMoreContactsBody": "The people at those companies",
+  "settingsMoreNotifications": "Notifications",
+  "settingsMoreNotificationsBody": "Mentions and comments on your tickets",
+  "settingsMoreSectionObjects": "Objects",
+  "settingsMoreSectionAccount": "Account",
+  "settingsMoreProfileSettings": "Profile Settings",
+  "settingsMoreSwitchOrganization": "Switch Organization",
+  "settingsMoreSectionTeam": "Team",
+  "settingsMoreTeam": "Team",
+  "settingsMoreTeamBody": "Who is in this org, and what they can do",
+  "settingsMoreOrgSettings": "Organization settings",
+  "settingsMoreOrgSettingsBody": "Custom fields and other org-wide rules",
+  "settingsMoreSectionSupport": "Support",
+  "settingsMoreContactSupport": "Contact BottleCRM Support",
+  "settingsMoreContactSupportBody": "Open a ticket and follow replies",
+  "settingsMoreHelpCenter": "Help Center",
+  "settingsMoreTerms": "Terms of Service",
+  "settingsMorePrivacy": "Privacy Policy",
+  "settingsMoreVersion": "Version {version}",
+  "@settingsMoreVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMoreTasks": "Tasks",
+  "settingsMoreTasksBody": "Your to-dos across leads, deals and tickets",
+  "settingsMoreGoals": "Goals",
+  "settingsMoreGoalsBody": "Targets for you and your teams, and how far along",
+  "settingsMoreKnowledgeBase": "Knowledge base",
+  "settingsMoreKnowledgeBaseBody": "Articles for your team and your customers",
+  "settingsMoreDocuments": "Documents",
+  "settingsMoreDocumentsBody": "Files shared with you and your teams",
+  "settingsMoreInvoices": "Invoices",
+  "settingsMoreInvoicesBody": "What is owed, and what has been paid",
+  "settingsMoreTimesheet": "Timesheet",
+  "settingsMoreTimesheetBody": "The hours you logged this week",
+  "settingsMoreSignedInUser": "Signed-in user",
+  "settingsMoreSignOut": "Sign Out",
+  "settingsMoreCouldNotOpen": "Could not open {label}",
+  "@settingsMoreCouldNotOpen": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMoreSignOutConfirm": "Are you sure you want to sign out?",
+  "settingsMoreSignedOut": "Signed out successfully",
+  "settingsProfileUpdated": "Profile updated",
+  "settingsProfileUpdateFailed": "Could not update profile",
+  "settingsProfileTitle": "Profile",
+  "settingsProfileEditProfile": "Edit profile",
+  "settingsProfileLoadFailed": "Could not load profile",
+  "settingsProfileSectionPersonal": "Personal",
+  "settingsProfileSectionOrganization": "Organization",
+  "settingsProfileOrganization": "Organization",
+  "settingsProfileRole": "Role",
+  "settingsProfileJoined": "Joined",
+  "settingsProfileTeams": "Teams",
+  "settingsProfileTeamsNone": "None",
+  "settingsProfileLastSignedIn": "Last signed in",
+  "settingsProfileNotRecorded": "Not recorded",
+  "settingsProfileSectionAccess": "Access",
+  "settingsProfileSales": "Sales",
+  "settingsProfileMarketing": "Marketing",
+  "settingsProfileEnabled": "Enabled",
+  "settingsProfileDisabled": "Disabled",
+  "settingsProfileSectionYourAccount": "Your account",
+  "settingsProfileApiTokens": "API tokens",
+  "settingsProfileApiTokensDetail": "Each one signs in as you, with your role",
+  "settingsProfileCalendarFeed": "Calendar feed",
+  "settingsProfileCalendarFeedDetail": "Your open tasks in Google Calendar, Outlook or Apple Calendar",
+  "settingsProfileSectionWork": "Where your work shows up",
+  "settingsProfileGoals": "Goals",
+  "settingsProfileGoalsDetail": "Your quota and how it is pacing",
+  "settingsProfileTimesheet": "Timesheet",
+  "settingsProfileTimesheetDetail": "Hours you have logged this week",
+  "settingsProfileTasks": "Tasks",
+  "settingsProfileTasksDetail": "What is assigned to you",
+  "settingsProfileSectionEditable": "Editable fields",
+  "settingsProfileEditableHint": "Name and phone are editable. Email and access flags are managed by your administrator.",
+  "settingsProfileFullName": "Full name",
+  "settingsProfileSaveChanges": "Save changes",
+  "settingsOrgTitle": "Organization",
+  "settingsOrgEditDetails": "Edit details",
+  "settingsOrgSectionCustomersSee": "What customers see",
+  "settingsOrgLegalName": "Legal name",
+  "settingsOrgTradingAs": "Trading as",
+  "settingsOrgAddress": "Address",
+  "settingsOrgTaxId": "Tax ID",
+  "settingsOrgWebsite": "Website",
+  "settingsOrgSectionDefaults": "Defaults",
+  "settingsOrgCurrency": "Currency",
+  "settingsOrgCurrencyHintInvoices": "Applied to new invoices and estimates. Existing ones keep theirs.",
+  "settingsOrgCurrencyHint": "The default for new records that carry an amount. Existing ones keep theirs.",
+  "settingsOrgCountry": "Country",
+  "settingsOrgCountryHint": "Default for new addresses.",
+  "settingsOrgTimeZone": "Time zone",
+  "settingsOrgTimeZoneHint": "When a day starts here, so \"due today\" and \"overdue\" mean what your team expects.",
+  "settingsOrgSectionInvoiceNumbers": "Invoice numbers",
+  "settingsOrgNewInvoices": "New invoices",
+  "settingsOrgNumberingHint": "{numbering}. Numbers already issued keep theirs.",
+  "@settingsOrgNumberingHint": {
+    "placeholders": {
+      "numbering": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsOrgNewEstimates": "New estimates",
+  "settingsOrgEstimatesHint": "Same format, own prefix.",
+  "settingsOrgSectionBehaviour": "Behaviour",
+  "settingsOrgCsat": "Satisfaction surveys",
+  "settingsOrgCsatSending": "Sending",
+  "settingsOrgCsatOff": "Off",
+  "settingsOrgCascade": "Close child tickets with the parent",
+  "settingsOrgCascadeTicked": "Starts ticked",
+  "settingsOrgCascadeUnticked": "Starts unticked",
+  "settingsOrgUnnamed": "Unnamed organization",
+  "settingsOrgMemberCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@settingsOrgMemberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsOrgNotRecorded": "Not recorded",
+  "settingsOrgPrintedNote": "These fields are printed on every invoice and estimate. Changing one changes documents from that moment on; PDFs already sent keep what they were sent with.",
+  "settingsOrgApiKeyNote": "The organization API key is not here. It authenticates as the whole organization, so it is never shown on a page you can reach by browsing. For per-person programmatic access, use API tokens, which can be revoked one at a time.",
+  "settingsOrgLoadFailed": "Could not load the organization",
+  "settingsOrgTryAgain": "Try again",
+  "settingsOrgEditTitle": "Edit organization",
+  "settingsOrgEditAdminsOnlyTitle": "Administrators only",
+  "settingsOrgEditAdminsOnlyBody": "Editing organization details is limited to administrators. Ask one of yours if a company detail, currency, or survey setting needs changing.",
+  "settingsOrgEditSaved": "Organization saved",
+  "settingsOrgEditPrintedHint": "Printed on every invoice and estimate. Changes apply from now on; documents already sent keep what they were sent with.",
+  "settingsOrgEditTradingName": "Trading name",
+  "settingsOrgEditCity": "City",
+  "settingsOrgEditState": "State",
+  "settingsOrgEditPostcode": "Postcode",
+  "settingsOrgEditCountryDefault": "Country default",
+  "settingsOrgEditCountryDefaultHint": "Pre-filled on new addresses.",
+  "settingsOrgEditNotSet": "Not set",
+  "settingsOrgEditTimeZoneHint": "When a day starts for this organization. Changing it moves what counts as due today and overdue, for everyone here.",
+  "settingsOrgEditNumbersHint": "How new invoice and estimate numbers look. Numbers already issued keep theirs.",
+  "settingsOrgEditInvoicePrefix": "Invoice prefix",
+  "settingsOrgEditEstimatePrefix": "Estimate prefix",
+  "settingsOrgEditDatePart": "Date in the number",
+  "settingsOrgEditPadding": "Counter digits",
+  "settingsOrgEditStart": "Start invoices at",
+  "settingsOrgEditStartHint": "To carry on a sequence from another system. If invoices here already go higher, numbering carries on from the highest.",
+  "settingsOrgEditExample": "New invoices look like {invoice}, estimates like {estimate}.",
+  "@settingsOrgEditExample": {
+    "placeholders": {
+      "invoice": {
+        "type": "String"
+      },
+      "estimate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsOrgEditSave": "Save changes",
+  "settingsApiTokensTitle": "API tokens",
+  "settingsApiTokensNewToken": "New token",
+  "settingsApiTokensCreatedTitle": "\"{name}\" created, copy it now",
+  "@settingsApiTokensCreatedTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApiTokensCopied": "Token copied",
+  "settingsApiTokensCopy": "Copy",
+  "settingsApiTokensAdminsOnlyTitle": "Administrators only",
+  "settingsApiTokensAdminsOnlyBody": "Reviewing every token in the organization is limited to administrators, because a token authenticates as its owner. Ask an admin if one needs issuing or revoking.",
+  "settingsApiTokensSectionTokens": "Tokens",
+  "settingsApiTokensStatLive": "live",
+  "settingsApiTokensStatOrphaned": "owner deactivated",
+  "settingsApiTokensStatUnused": "unused 90+ days",
+  "settingsApiTokensStatTotal": "issued in total",
+  "settingsApiTokensRevokedOrphaned": "{count, plural, =1{Revoked 1 token on deactivated accounts.} other{Revoked {count} tokens on deactivated accounts.}}",
+  "@settingsApiTokensRevokedOrphaned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsApiTokensOrphanText": "{count, plural, =1{1 live token belongs to a deactivated account. Deactivating already stops it at login, but it is not revoked. Reactivating the account would bring it back.} other{{count} live tokens belong to a deactivated account. Deactivating already stops them at login, but they are not revoked. Reactivating the account would bring them back.}}",
+  "@settingsApiTokensOrphanText": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsApiTokensRevokeOrphaned": "{count, plural, =1{Revoke it} other{Revoke them all}}",
+  "@settingsApiTokensRevokeOrphaned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsApiTokensRevokeTitle": "Revoke \"{name}\"?",
+  "@settingsApiTokensRevokeTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApiTokensRevoke": "Revoke",
+  "settingsApiTokensRevoked": "Token revoked",
+  "settingsApiTokensOwnerDeactivated": "{name} · {role} · deactivated",
+  "@settingsApiTokensOwnerDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsApiTokensEmpty": "No tokens have been issued in this organization.",
+  "settingsApiTokensFootnote": "A token authenticates as its owner and inherits their role and organization. Issue one per integration so a single revocation stops a single thing, set an expiry, and revoke anything you cannot name a use for.",
+  "settingsApiTokensLoadFailed": "Could not load tokens",
+  "settingsApiTokensTryAgain": "Try again",
+  "settingsMyApiTokensTitle": "Your API tokens",
+  "settingsMyApiTokensSummary": "{live} live of {total} you have issued",
+  "@settingsMyApiTokensSummary": {
+    "placeholders": {
+      "live": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMyApiTokensSafetyTitle": "A token is you",
+  "settingsMyApiTokensSafetyBody": "It authenticates as your profile and inherits your role and your org, so anyone holding it can do what you can. Revoke it here the moment it is not needed. An admin can see and revoke it too.",
+  "settingsMyApiTokensEmptyTitle": "No tokens yet",
+  "settingsMyApiTokensEmptyBody": "A token lets a script, an integration or an agent call the API as you, with your role and your org. Create one when you need it, and revoke it the moment you do not.",
+  "settingsMyApiTokensLoadFailed": "Could not load your tokens",
+  "settingsApiTokenFormTitle": "New token",
+  "settingsApiTokenFormIntro": "The token is created for you and authenticates as you. The value is shown once, on the next screen.",
+  "settingsApiTokenFormNameLabel": "What is this token for?",
+  "settingsApiTokenFormNameHint": "e.g. Nightly export job",
+  "settingsApiTokenFormNameHelper": "Names what breaks if you revoke it later",
+  "settingsApiTokenFormAccess": "Access",
+  "settingsApiTokenFormAccessHelper": "Finer scopes are available through the API",
+  "settingsApiTokenFormExpires": "Expires",
+  "settingsApiTokenFormNeverWarning": "A token that never expires has to be revoked by hand to ever stop working.",
+  "settingsApiTokenFormCreate": "Create token",
+  "settingsObjectsTryAgain": "Try again",
+  "settingsObjectsArchived": "Archived",
+  "settingsObjectsKey": "Key",
+  "settingsObjectsFixed": "Fixed after creation.",
+  "settingsObjectsAccessLabel": "Who can see its records",
+  "settingsObjectsAccessOwn": "Only the people involved",
+  "settingsObjectsAccessEveryone": "Everyone in this organization",
+  "settingsObjectsEditTitle": "Edit {label}",
+  "@settingsObjectsEditTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectsAddField": "Add field",
+  "settingsObjectsRequired": "Required",
+  "settingsObjectsTitle": "Objects",
+  "settingsObjectsNewObject": "New object",
+  "settingsObjectsAddError": "Could not add that object.",
+  "settingsObjectsLoadError": "Could not load the objects",
+  "settingsObjectsEmpty": "No objects yet",
+  "settingsObjectsFormNamesRequired": "Give the object a singular and a plural name.",
+  "settingsObjectsFormKeyInvalid": "The key starts with a letter, uses only lowercase letters, numbers and underscores, and is 2 to 28 characters.",
+  "settingsObjectsFormSingularLabel": "Name (singular)",
+  "settingsObjectsFormSingularHint": "Property",
+  "settingsObjectsFormPluralLabel": "Name (plural)",
+  "settingsObjectsFormPluralHint": "Properties",
+  "settingsObjectsFormKeyHelper": "Lowercase letters, numbers and underscores, starting with a letter. Cannot be changed later.",
+  "settingsObjectsFormNameLabel": "What each record's name is called",
+  "settingsObjectsFormNameHint": "Name",
+  "settingsObjectsFormAdd": "Add object",
+  "settingsObjectsFormSave": "Save object",
+  "settingsObjectSettingsArchiveTitle": "Archive {name}?",
+  "@settingsObjectSettingsArchiveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectSettingsArchiveBody": "Hides it from More and from Related sections; its records stay and come back when you restore it.",
+  "settingsObjectSettingsArchive": "Archive",
+  "settingsObjectSettingsRestored": "Restored",
+  "settingsObjectSettingsArchivedDone": "Archived",
+  "settingsObjectSettingsCouldNotDoThat": "Could not do that.",
+  "settingsObjectSettingsDestroyTitle": "Delete {name} for good?",
+  "@settingsObjectSettingsDestroyTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectSettingsDestroyBody": "Removes the object and its fields for good.",
+  "settingsObjectSettingsDeleteForGood": "Delete for good",
+  "settingsObjectSettingsDeleteError": "Could not delete it.",
+  "settingsObjectSettingsSaveObjectError": "Could not save the object.",
+  "settingsObjectSettingsSaveFieldError": "Could not save the field.",
+  "settingsObjectSettingsTurnOffTitle": "Turn off {name}?",
+  "@settingsObjectSettingsTurnOffTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectSettingsTurnOffBody": "Stops being collected. Stored values stay.",
+  "settingsObjectSettingsTurnOff": "Turn off",
+  "settingsObjectSettingsTurnOn": "Turn on",
+  "settingsObjectSettingsFieldTurnedOn": "Field turned on",
+  "settingsObjectSettingsFieldTurnedOff": "Field turned off",
+  "settingsObjectSettingsTitleFallback": "Object",
+  "settingsObjectSettingsLoadError": "Could not load this object",
+  "settingsObjectSettingsEditObject": "Edit object",
+  "settingsObjectSettingsRestore": "Restore",
+  "settingsObjectSettingsFieldsHeader": "FIELDS",
+  "settingsObjectSettingsFieldsEmpty": "No fields yet. Fields are what each record holds, such as a price, a date or a link to a contact.",
+  "settingsObjectSettingsNameCalled": "Each record's name is called",
+  "settingsObjectSettingsLinkOne": "{target}, one",
+  "@settingsObjectSettingsLinkOne": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectSettingsLinkSeveral": "{target}, several",
+  "@settingsObjectSettingsLinkSeveral": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectSettingsTurnedOff": "Turned off",
+  "settingsObjectFieldTypeText": "Text",
+  "settingsObjectFieldTypeTextarea": "Long text",
+  "settingsObjectFieldTypeNumber": "Number",
+  "settingsObjectFieldTypeDropdown": "Dropdown",
+  "settingsObjectFieldTypeDate": "Date",
+  "settingsObjectFieldTypeCheckbox": "Checkbox",
+  "settingsObjectFieldTypeLink": "Link",
+  "settingsObjectFieldLabelRequired": "Give the field a label.",
+  "settingsObjectFieldKeyInvalid": "The key starts with a letter and uses only lowercase letters, numbers and underscores.",
+  "settingsObjectFieldTargetRequired": "Choose what the field links to.",
+  "settingsObjectFieldNewTitle": "New field",
+  "settingsObjectFieldLabel": "Label",
+  "settingsObjectFieldKeyHelper": "Lowercase letters, numbers and underscores. Cannot be changed later.",
+  "settingsObjectFieldType": "Type",
+  "settingsObjectFieldKeyAndType": "Key and type",
+  "settingsObjectFieldLinksTo": "Links to",
+  "settingsObjectFieldHowMany": "How many",
+  "settingsObjectFieldOneRecord": "One record",
+  "settingsObjectFieldSeveralRecords": "Several records",
+  "settingsObjectFieldLinkOneRecord": "{target}, one record",
+  "@settingsObjectFieldLinkOneRecord": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectFieldLinkSeveralRecords": "{target}, several records",
+  "@settingsObjectFieldLinkSeveralRecords": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsObjectFieldOrder": "Order",
+  "settingsObjectFieldRequiredHint": "A record cannot be saved without a value.",
+  "settingsObjectFieldSave": "Save field",
+  "settingsObjectFieldAdd": "Add field",
+  "settingsTeamTitle": "Team",
+  "settingsTeamInvite": "Invite",
+  "settingsTeamActiveHeader": "Active",
+  "settingsTeamDeactivatedHeader": "Deactivated",
+  "settingsTeamNobodyActive": "Nobody is active in this org.",
+  "settingsTeamStatActive": "active",
+  "settingsTeamStatAdmin": "admin",
+  "settingsTeamStatNeverSignedIn": "never signed in",
+  "settingsTeamStatDeactivated": "deactivated",
+  "settingsTeamOrphanTokens": "{count, plural, =1{{count} API token still work for someone who has been deactivated.} other{{count} API tokens still work for someone who has been deactivated.}}",
+  "@settingsTeamOrphanTokens": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTeamNeverSignedIn": "never signed in",
+  "settingsTeamMemberTokens": "{count, plural, =1{{count} API token} other{{count} API tokens}}",
+  "@settingsTeamMemberTokens": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTeamWithheldYou": "This is you. Your own role is not yours to change, and deactivating yourself would lock you out with no way back in. Ask another admin.",
+  "settingsTeamWithheldLastAdmin": "This is the only admin. An org has to keep one, so their role and status cannot be changed here.",
+  "settingsTeamNameYou": "{name} (you)",
+  "@settingsTeamNameYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTeamMakeAdmin": "Make an admin",
+  "settingsTeamMakeMember": "Make a member",
+  "settingsTeamDeactivate": "Deactivate",
+  "settingsTeamReactivate": "Reactivate",
+  "settingsTeamTokensStop": "Their API tokens stop working at the same time.",
+  "settingsTeamNowAdmin": "{name} is now an admin.",
+  "@settingsTeamNowAdmin": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTeamNowMember": "{name} is now a member.",
+  "@settingsTeamNowMember": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTeamRoleError": "Could not change that role.",
+  "settingsTeamActiveAgain": "{name} is active again.",
+  "@settingsTeamActiveAgain": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTeamDeactivated": "{name} is deactivated.",
+  "@settingsTeamDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTeamStatusError": "Could not change that status.",
+  "settingsTeamInviteTitle": "Invite someone",
+  "settingsTeamRole": "Role",
+  "settingsTeamRoleAdmin": "Admin",
+  "settingsTeamRoleMember": "Member",
+  "settingsTeamSendInvite": "Send invite",
+  "settingsTeamEnterEmail": "Enter an email address.",
+  "settingsTeamInvited": "Invited {email}.",
+  "@settingsTeamInvited": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTeamInviteError": "Could not send that invite.",
+  "settingsTeamAdminsOnly": "Admins only",
+  "settingsTeamAdminsOnlyBody": "Managing people and roles is an admin job. Ask an admin in your organization if you need a change here.",
+  "settingsTagsRevived": "That tag already existed and was turned back on",
+  "settingsTagsAdded": "Tag added",
+  "settingsTagsTurnOffTitle": "Turn off {name}?",
+  "@settingsTagsTurnOffTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsLeaveOn": "Leave it on",
+  "settingsTagsTurnOff": "Turn off",
+  "settingsTagsTurnedOffDone": "Tag turned off",
+  "settingsTagsTurnedBackOnDone": "Tag turned back on",
+  "settingsTagsMergeTitle": "Merge {from} into {into}?",
+  "@settingsTagsMergeTitle": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "into": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsKeepBoth": "Keep both",
+  "settingsTagsMerge": "Merge",
+  "settingsTagsMoved": "{count, plural, =1{{count} record moved to {name}} other{{count} records moved to {name}}}",
+  "@settingsTagsMoved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsNewTag": "New tag",
+  "settingsTagsNewTagTitle": "New tag",
+  "settingsTagsNameLabel": "Tag name",
+  "settingsTagsNewTagHint": "Tags are shared across every record type, so the first ones are worth naming carefully.",
+  "settingsTagsStatInUse": "{count, plural, other{in use}}",
+  "@settingsTagsStatInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTagsStatUnused": "{count, plural, other{applied to nothing}}",
+  "@settingsTagsStatUnused": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTagsStatOff": "{count, plural, other{turned off}}",
+  "@settingsTagsStatOff": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTagsNamesAnd": " and ",
+  "settingsTagsDuplicateTitle": "{names} look like the same tag",
+  "@settingsTagsDuplicateTitle": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsDuplicateUsage": "{count, plural, =1{{name} is on {count} record} other{{name} is on {count} records}}",
+  "@settingsTagsDuplicateUsage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsDuplicateBody": "{usage}. Anyone filtering by one of them misses the other.",
+  "@settingsTagsDuplicateBody": {
+    "placeholders": {
+      "usage": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsMergeNamed": "Merge {name}",
+  "@settingsTagsMergeNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsMergeInto": "Merge into {name}",
+  "@settingsTagsMergeInto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTagsAllHeader": "ALL TAGS",
+  "settingsTagsTurnedOff": "Turned off",
+  "settingsTagsUnused": "Unused",
+  "settingsTagsTurnBackOn": "Turn back on",
+  "settingsTagsFootnote": "Turning a tag off hides it from the pickers and leaves it on the records that already carry it. Nothing is removed, and you can turn a tag back on at any time.",
+  "settingsTagsEmptyTitle": "No tags yet",
+  "settingsTagsEmptyAdmin": "Tags are shared across every record type, so the first one is worth naming carefully.",
+  "settingsTagsEmptyMember": "An administrator adds these.",
+  "settingsTagsLoadError": "Could not load the tags",
+  "settingsAppsPreviewFailed": "Could not load what this would change.",
+  "settingsAppsInstalled": "{name} installed.",
+  "@settingsAppsInstalled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsUpdated": "{name} updated.",
+  "@settingsAppsUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsRemoved": "{name} removed. Every record stays.",
+  "@settingsAppsRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsClearTitle": "Clear sample data?",
+  "settingsAppsClearBody": "Permanently deletes every sample record an app created for this organization. Your real records are never touched, and any sample record you have since attached real work to is kept. This cannot be undone.",
+  "settingsAppsClear": "Clear",
+  "settingsAppsModulesTitle": "Modules",
+  "settingsAppsTitle": "Apps",
+  "settingsAppsPartsWithProducts": "fields, pipelines, tags, lead sources and products",
+  "settingsAppsParts": "fields, pipelines, tags and lead sources",
+  "settingsAppsIndustryApps": "Industry apps",
+  "settingsAppsIntro": "Each sets BottleCRM up for one kind of business: its wording, {parts}. You see what changes before anything does, and removing an app keeps every record.",
+  "@settingsAppsIntro": {
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsStatusRemoved": "Removed. Its records stay, and installing again turns its parts back on.",
+  "settingsAppsVersionInstalled": "Version {version} installed",
+  "@settingsAppsVersionInstalled": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsInstalledBy": " by {name}",
+  "@settingsAppsInstalledBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsInstalledOn": " on {date}",
+  "@settingsAppsInstalledOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsUpdateSkipped": " An update adds the parts skipped while a module was off.",
+  "settingsAppsVersionAvailable": " Version {version} is available.",
+  "@settingsAppsVersionAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsSwitchOn": "{count, plural, =1{ Switch it on below, then update to add them.} other{ Switch them on below, then update to add them.}}",
+  "@settingsAppsSwitchOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppsUpdateAddsNow": " Update adds them now.",
+  "settingsAppsSkipped": "{count, plural, =1{Parts for {names} were skipped because that module was off.} other{Parts for {names} were skipped because those modules were off.}}",
+  "@settingsAppsSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsBadgeInstalled": "Installed",
+  "settingsAppsBadgeRemoved": "Removed",
+  "settingsAppsInstall": "Install",
+  "settingsAppsUpdate": "Update",
+  "settingsAppsRemove": "Remove",
+  "settingsAppsClearButton": "Clear sample data",
+  "settingsAppsClearHint": "Removes only the records an app added as samples. Your real records are never touched.",
+  "settingsAppsLoadFailed": "Could not load the apps.",
+  "settingsAppsMemberNotice": "Only an organization admin can manage apps and modules.",
+  "settingsAppPreviewInstallTitle": "Install {name}?",
+  "@settingsAppPreviewInstallTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewUpdateTitle": "Update {name}?",
+  "@settingsAppPreviewUpdateTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewRemoveTitle": "Remove {name}?",
+  "@settingsAppPreviewRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewInstallLead": "This is what it adds. Anything this organization already has is kept as it is, and no record changes.",
+  "settingsAppPreviewUpdateLead": "This adds what is listed. Nothing you already have changes, and anything you deleted stays deleted.",
+  "settingsAppPreviewRemoveLead": "This turns off what is listed. Every record stays, pipelines and tags included, and installing again brings it all back.",
+  "settingsAppPreviewInstallEmpty": "This organization already has everything this app sets up.",
+  "settingsAppPreviewUpdateEmpty": "There is nothing new to add.",
+  "settingsAppPreviewRemoveEmpty": "There is nothing to turn off.",
+  "settingsAppPreviewHandWork": "Stages marked Add by hand are new in this version, but their pipeline is already here, so the update leaves them out. Add them to that pipeline yourself if you want them.",
+  "settingsAppPreviewSampleTitle": "Add sample records",
+  "settingsAppPreviewSampleCount": "{count} example records to try it with. Clear sample data removes them.",
+  "@settingsAppPreviewSampleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppPreviewSample": "Example records to try it with. Clear sample data removes them.",
+  "settingsLeadCaptureTitle": "Lead capture",
+  "settingsLeadCaptureWebForms": "Web forms",
+  "settingsLeadCaptureWebFormsHint": "Forms you embed on your own site",
+  "settingsLeadCaptureWebhooksFailed": "Could not load the webhooks.",
+  "settingsLeadCaptureNoWebhooks": "No webhooks yet. Create one on the web, where its fields are mapped. Here you can copy its URL, replace its key, switch it off and read its deliveries.",
+  "settingsLeadCaptureWebhooks": "Webhooks",
+  "settingsLeadCaptureUntitledWebhook": "Untitled webhook",
+  "settingsLeadCaptureNothingYet": "{preset} · nothing received yet",
+  "@settingsLeadCaptureNothingYet": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadCaptureLastPost": "{preset} · last post {when}",
+  "@settingsLeadCaptureLastPost": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadCaptureAddressAdded": "Address added",
+  "settingsLeadCaptureAddressSaved": "Address saved",
+  "settingsLeadCaptureAddressOff": "Address turned off",
+  "settingsLeadCaptureAddressOn": "Address turned on",
+  "settingsLeadCaptureAddresses": "Lead addresses",
+  "settingsLeadCaptureAddressesFailed": "Could not load the lead addresses.",
+  "settingsLeadCaptureNoAddresses": "No lead address yet. Forward an enquiry to one, or point a portal's notification emails at it, and each email becomes a lead.",
+  "settingsLeadCaptureAddAddress": "Add a lead address",
+  "settingsLeadCaptureTurnOff": "Turn off",
+  "settingsLeadCaptureTurnOn": "Turn on",
+  "settingsLeadCaptureKeyTitle": "Copy the new key now",
+  "settingsLeadCaptureKeyBody": "This is the only time the key is shown. Paste it into the tool that posts to this webhook; replace it again if it is lost.",
+  "settingsLeadCaptureKeyCopied": "Key copied",
+  "settingsLeadCaptureCopy": "Copy",
+  "settingsLeadIntakeUrlCopied": "URL copied",
+  "settingsLeadIntakeReplaceTitle": "Replace the key?",
+  "settingsLeadIntakeReplaceBody": "The current key keeps working for 7 days, so there is time to update whatever posts here. The URL stays the same.",
+  "settingsLeadIntakeReplaceKey": "Replace key",
+  "settingsLeadIntakeTurnedOff": "Turned off",
+  "settingsLeadIntakeTurnedOn": "Turned on",
+  "settingsLeadIntakeTitle": "Webhook",
+  "settingsLeadIntakeNotOffered": "This server has no lead webhooks.",
+  "settingsLeadIntakeLoadFailed": "Could not load the webhook.",
+  "settingsLeadIntakeMissing": "That webhook does not exist.",
+  "settingsLeadIntakeCopyUrl": "Copy URL",
+  "settingsLeadIntakeFieldMapping": "Field mapping",
+  "settingsLeadIntakeMappingOnWeb": "The mapping is edited on the web.",
+  "settingsLeadIntakeDeliveries": "Deliveries",
+  "settingsLeadIntakeKeyHidden": "Key hidden",
+  "settingsLeadIntakeKeyEnding": "Key ending {hint}",
+  "@settingsLeadIntakeKeyEnding": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeArriveAs": "Leads arrive as {source}",
+  "@settingsLeadIntakeArriveAs": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeArriveAsDetail": "Leads arrive as {source}, {detail}",
+  "@settingsLeadIntakeArriveAsDetail": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeNothingYet": "Nothing received yet",
+  "settingsLeadIntakeLastPost": "Last post {when}",
+  "@settingsLeadIntakeLastPost": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeAuthHint": "Send the key in an Authorization: Bearer header. Tools that only take a URL can add ?key= to it, but servers log URLs, so the header is safer.",
+  "settingsLeadIntakeDeliveriesFailed": "Could not load the deliveries. Pull to refresh.",
+  "settingsLeadIntakeNothingYetDot": "Nothing received yet.",
+  "settingsLeadIntakeExternalId": "id {id}",
+  "@settingsLeadIntakeExternalId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeAdminsOnly": "Administrators only",
+  "settingsLeadIntakeAdminsOnlyBody": "A webhook's URL and key let anything that holds them create leads in this organization, so only administrators can see or change them.",
+  "settingsLeadSourcesNew": "New source",
+  "settingsLeadSourcesAdded": "Source added",
+  "settingsLeadSourcesRenameTitle": "Rename {label}",
+  "@settingsLeadSourcesRenameTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesRenamed": "Source renamed",
+  "settingsLeadSourcesRetiredMsg": "Source retired",
+  "settingsLeadSourcesRestoredMsg": "Source restored",
+  "settingsLeadSourcesTitle": "Lead sources",
+  "settingsLeadSourcesRetiredNote": "A retired source stays on the leads, contacts and deals that have it, and cannot be picked for new ones. Sources are never deleted.",
+  "settingsLeadSourcesLabel": "Label",
+  "settingsLeadSourcesLabelHint": "Spring open day",
+  "settingsLeadSourcesRetiredBadge": "Retired",
+  "settingsLeadSourcesMoveUp": "Move {label} up",
+  "@settingsLeadSourcesMoveUp": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesMoveDown": "Move {label} down",
+  "@settingsLeadSourcesMoveDown": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesRename": "Rename",
+  "settingsLeadSourcesRetire": "Retire",
+  "settingsLeadSourcesRestore": "Restore",
+  "settingsLeadSourcesNotOffered": "This server has a fixed list of lead sources, so they cannot be changed here. A newer server lets an admin edit them.",
+  "settingsLeadSourcesLoadFailed": "Could not load the lead sources",
+  "settingsHubApps": "Apps",
+  "settingsHubAppsBody": "Industry apps, and the parts of BottleCRM this organization uses",
+  "settingsProfileSectionAlerts": "Alerts",
+  "settingsProfileLeadAlertsEmail": "Lead alerts by email",
+  "settingsProfileLeadAlertsEmailBody": "An email when a lead is assigned to you or enquires again",
+  "settingsProfileLeadAlertsPush": "Lead alerts on the phone",
+  "settingsProfileLeadAlertsPushBody": "A notification on this and your other phones",
+  "settingsOrgPlan": "Plan",
+  "settingsOrgEditSectionLeads": "Leads",
+  "settingsOrgEditLeadReminder": "Remind the assignee when a lead waits more than",
+  "settingsOrgEditLeadReminderHint": "Sent once per enquiry, to the assignee, or to the admins when nobody has the lead.",
+  "settingsOrgEditLeadReminderOff": "Off",
+  "settingsOrgEditLeadReminderMinutes": "{count, plural, one{{count} minute} other{{count} minutes}}",
+  "@settingsOrgEditLeadReminderMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMailboxFormCreates": "Mail here creates",
+  "settingsMailboxFormCreatesTickets": "Tickets",
+  "settingsMailboxFormCreatesLeads": "Leads",
+  "settingsMailboxFormGenerate": "Generate an address",
+  "settingsMailboxFormGenerateHint": "A new address at {domain}, ready to use. Nothing to set up with a mail provider.",
+  "@settingsMailboxFormGenerateHint": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormAddressHintLeads": "Mail to the old address stops becoming leads.",
+  "settingsMailboxFormSectionLeadArrives": "What a lead arrives with",
+  "settingsMailboxFormSubSource": "Sub-source (optional)",
+  "settingsMailboxFormAssigneeHintLeads": "Owns every lead this address makes.",
+  "settingsMailboxFormUnassignedLeads": "Unassigned",
+  "settingsMailboxFormDeactivatedHintLeads": "Deactivated users are not assigned. New leads from this address stay unassigned until you choose someone else.",
+  "settingsMailboxFormSecretPassword": "Basic-auth password",
+  "settingsMailboxFormSecretSigningKey": "Webhook signing key",
+  "settingsMailboxFormSecretStored": "A secret is stored. It is never shown; leave blank to keep it.",
+  "settingsMailboxFormSecretMissing": "No secret is stored, so every post to this address is refused.",
+  "settingsMailboxFormSecretPostmark": "Postmark sends it as the basic-auth password in the webhook URL.",
+  "settingsMailboxFormSecretMailgun": "This is your Mailgun account's HTTP webhook signing key.",
+  "settingsMailboxFormWebhookUrl": "Inbound webhook URL: {url}",
+  "@settingsMailboxFormWebhookUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormRouteAction": "Route action: {url}",
+  "@settingsMailboxFormRouteAction": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormSetupUrlLater": "The setup URL appears here once the address is saved.",
+  "settingsMailboxFormLeadSource": "Lead source",
+  "settingsMailboxFormSourcesFailed": "Could not load the sources. Close this and try again.",
+  "settingsMailboxFormSourcesLoading": "Loading the sources.",
+  "settingsProfileAlertsFailed": "Could not change that setting",
+  "settingsInboundEmailStatLeads": "creating leads",
+  "settingsHubLeadSources": "Lead sources",
+  "settingsHubLeadSourcesBody": "Where leads come from, as the pickers list it",
+  "settingsHubLeadCapture": "Lead capture",
+  "settingsHubLeadCaptureBody": "Web forms, webhooks and email addresses that bring leads in",
+  "settingsMoreProjects": "Projects",
+  "settingsMoreProjectsBody": "Client work, its time, budget and invoices",
+  "settingsWebhookFormFormatTeams": "Teams message",
+  "settingsObjectSettingsSaved": "Saved",
+  "settingsObjectSettingsAccessFailed": "Could not save who sees records.",
+  "settingsObjectSettingsGroupBoardBy": "Group the board by",
+  "settingsObjectSettingsBoardNeedsDropdown": "Add a dropdown field to group records on a board.",
+  "settingsObjectSettingsBoardOff": "Board turned off",
+  "settingsObjectSettingsBoardSaved": "Board field saved",
+  "settingsObjectSettingsBoardFailed": "Could not save the board field.",
+  "settingsObjectSettingsWhoSees": "Who sees records"
+}

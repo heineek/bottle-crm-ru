@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'custom_field_definition.dart';
 
@@ -102,7 +103,7 @@ class Contact {
 
   String get fullName {
     final name = '${firstName.trim()} ${lastName.trim()}'.trim();
-    return name.isEmpty ? (email ?? 'Unnamed contact') : name;
+    return name.isEmpty ? (email ?? appL10n.appUnnamedContact) : name;
   }
 
   String get initials {
@@ -276,7 +277,7 @@ class ContactAccountLink {
       final name = ref.name?.trim() ?? '';
       return ContactAccountLink(
         id: ref.id ?? '',
-        name: name.isNotEmpty ? name : 'Unnamed account',
+        name: name.isNotEmpty ? name : appL10n.appUnnamedAccount,
       );
     }
 

@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/enterprise_schema.g.dart' as enterprise;
 import '../data/models/support_ticket.dart';
@@ -46,7 +47,7 @@ class SupportRepository {
     if (!response.success || response.data == null) {
       return ApiResponse(
         success: false,
-        message: response.message ?? 'Could not load support tickets.',
+        message: response.message ?? appL10n.appMsgCouldNotLoadSupportTickets,
         statusCode: response.statusCode,
       );
     }
@@ -123,7 +124,7 @@ class SupportRepository {
     if (file == null) return null;
     final size = await file.length();
     if ((file.path ?? '').isEmpty || size == null) {
-      return 'That file could not be read. Try picking it again.';
+      return appL10n.appMsgThatFileCouldNotBeReadTry;
     }
     if (size > attachmentMaxBytes) {
       return 'Files must be 25 MB or smaller.';
@@ -136,7 +137,7 @@ class SupportRepository {
   ) {
     if (!response.success || response.data == null) {
       return SupportMutationResult(
-        error: response.message ?? 'The support request failed.',
+        error: response.message ?? appL10n.appMsgTheSupportRequestFailed,
       );
     }
     return SupportMutationResult(
@@ -155,7 +156,9 @@ class SupportTicketsNotifier extends AsyncNotifier<SupportTicketListData> {
     final response = await _repository.list();
     if (!response.success || response.data == null) {
       if (response.statusCode == 404) throw const SupportUnavailable();
-      throw Exception(response.message ?? 'Could not load support tickets.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadSupportTickets,
+      );
     }
     return response.data!;
   }

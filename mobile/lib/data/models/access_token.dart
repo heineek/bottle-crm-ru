@@ -10,6 +10,8 @@
 /// same rules.
 library;
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../api/schema.g.dart' as api;
 
 /// Who a token authenticates as. A token inherits its owner's role and org,
@@ -33,14 +35,15 @@ class TokenOwner {
 
   bool get isAdmin => role == 'ADMIN';
 
-  String get roleLabel => isAdmin ? 'Admin' : 'Member';
+  String get roleLabel =>
+      isAdmin ? appL10n.appRoleAdmin : appL10n.appRoleMember;
 
   /// Reads an `OrgAccessTokenOwner`, the org list's `owner` block.
   factory TokenOwner.fromJson(Map<String, dynamic> json) {
     final w = api.OrgAccessTokenOwner.fromJson(json);
     return TokenOwner(
       id: w.id ?? '',
-      name: w.name ?? 'Unknown',
+      name: w.name ?? appL10n.appUnknownPerson,
       role: w.role ?? 'USER',
       isActive: w.isActive ?? true,
     );
@@ -121,9 +124,9 @@ class AccessToken {
   /// Revoked and expired are different reasons for the same outcome, so they
   /// read differently and tone the same. Neither is a live credential.
   String get statusLabel {
-    if (revokedAt != null) return 'Revoked';
-    if (!isLive) return 'Expired';
-    return 'Live';
+    if (revokedAt != null) return appL10n.appTokenStatusRevoked;
+    if (!isLive) return appL10n.appTokenStatusExpired;
+    return appL10n.appTokenStatusLive;
   }
 
   /// When this token last did anything, falling back to when it was issued.
@@ -149,26 +152,26 @@ class AccessToken {
     final days = now.difference(since).inDays;
     if (days <= 90) return null;
     return lastUsedAt != null
-        ? 'unused for $days days'
-        : 'never used, issued $days days ago';
+        ? appL10n.appTokenUnusedFor(days)
+        : appL10n.appTokenNeverUsedIssued(days);
   }
 
   /// What this token may do, in the words the screen uses.
   ///
-  /// `ownerLabel` exists because the self-scoped list carries no `owner` block
-  /// (the endpoint is already narrowed to you), and "Everything its owner can"
-  /// reads oddly on a screen about your own tokens.
-  String scopeSummaryFor({String? ownerLabel}) {
+  /// [own] is the self-service list's wording, "Everything you can": that
+  /// list carries no `owner` block, and "Everything its owner can" reads oddly
+  /// about your own tokens. One message, so a language can agree the verb.
+  String scopeSummaryFor({bool own = false}) {
     if (scopes.isEmpty) {
-      if (ownerLabel != null && ownerLabel.isNotEmpty) {
-        return 'Everything $ownerLabel can';
-      }
+      if (own) return appL10n.appTokenScopeEverythingYou;
       final first = owner.firstName;
       return first.isEmpty
-          ? 'Everything its owner can'
-          : 'Everything $first can';
+          ? appL10n.appTokenScopeEverythingOwner
+          : appL10n.appTokenScopeEverythingOf(first);
     }
-    if (scopes.every((s) => s.endsWith(':read'))) return 'Read only';
+    if (scopes.every((s) => s.endsWith(':read'))) {
+      return appL10n.appTokenScopeReadOnly;
+    }
     return scopes.join(', ');
   }
 
@@ -239,19 +242,19 @@ typedef ExpiryChoice = ({String value, String label, int? days});
 /// needs, and "Never" is a named option rather than an empty field so the
 /// riskiest choice is a deliberate one. 90 days is first, so the default is an
 /// expiry rather than never.
-const List<ExpiryChoice> expiryChoices = [
-  (value: '90', label: 'In 90 days', days: 90),
-  (value: '30', label: 'In 30 days', days: 30),
-  (value: '365', label: 'In 1 year', days: 365),
-  (value: 'never', label: 'Never', days: null),
+List<ExpiryChoice> get expiryChoices => [
+  (value: '90', label: appL10n.appTokenExpiry90, days: 90),
+  (value: '30', label: appL10n.appTokenExpiry30, days: 30),
+  (value: '365', label: appL10n.appTokenExpiry365, days: 365),
+  (value: 'never', label: appL10n.appTokenExpiryNever, days: null),
 ];
 
 /// The two access choices. The backend grammar supports `leads:read`, but a
 /// picker listing thirty resources is a worse question than "may it change
 /// anything?". A caller wanting finer scopes creates the token through the API.
-const List<({String value, String label})> accessChoices = [
-  (value: 'read', label: 'Read only'),
-  (value: 'full', label: 'Everything the owner can'),
+List<({String value, String label})> get accessChoices => [
+  (value: 'read', label: appL10n.appTokenScopeReadOnly),
+  (value: 'full', label: appL10n.appTokenAccessFull),
 ];
 
 /// An ISO instant the API will accept, or null for "never".
@@ -292,52 +295,33 @@ Map<String, dynamic> tokenCreatePayload({
 /// exists so an empty field answers immediately rather than after a round trip.
 String? tokenNameProblem(String name) {
   final trimmed = name.trim();
-  if (trimmed.isEmpty) return 'Give the token a name.';
+  if (trimmed.isEmpty) return appL10n.appTokenValidateName;
   if (trimmed.length > 255) {
-    return 'That name is too long (255 characters max).';
+    return appL10n.appTokenValidateNameLength;
   }
   return null;
 }
 
 /// What revoking does, said before it is done.
-const String tokenRevokeExplanation =
-    'The token stops working on the next request that uses it. Anything built '
-    'on it, a script or an integration, fails until it is given a new one. '
-    'This cannot be undone: a revoked token is never reissued.';
+String get tokenRevokeExplanation => appL10n.appTokenRevokeExplanation;
 
 /// The line the screen shows beside a one-time reveal.
-const String tokenRevealWarning =
-    'This is the only time the full token is shown. Store it somewhere safe. '
-    'The server keeps only a hash, so it cannot be retrieved again.';
+String get tokenRevealWarning => appL10n.appTokenRevealWarning;
 
 /// "Last used 12 Aug 2026 · expires 4 Nov 2026", or the honest absences.
 ///
 /// Shared by the admin oversight screen and the self-service one, because a
 /// row means the same thing on both and a second copy is a second wording.
 String tokenActivityLine(AccessToken token) {
+  final l10n = appL10n;
   final used = token.lastUsedAt == null
-      ? 'Never used'
-      : 'Last used ${tokenHumanDate(token.lastUsedAt!)}';
+      ? l10n.appTokenNeverUsed
+      : l10n.appTokenLastUsed(tokenHumanDate(token.lastUsedAt!));
   final expiry = token.expiresAt == null
-      ? 'never expires'
-      : 'expires ${tokenHumanDate(token.expiresAt!)}';
+      ? l10n.appTokenNeverExpires
+      : l10n.appTokenExpires(tokenHumanDate(token.expiresAt!));
   return '$used · $expiry';
 }
 
-String tokenHumanDate(DateTime date) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${date.day} ${months[date.month - 1]} ${date.year}';
-}
+String tokenHumanDate(DateTime date) =>
+    localDateFormat('d MMM y', 'yMMMd').format(date);

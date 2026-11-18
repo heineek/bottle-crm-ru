@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/business_calendar.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import 'business_hours_form_sheet.dart';
@@ -32,9 +33,9 @@ class BusinessHoursScreen extends ConsumerWidget {
           timezone: result.timezone,
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Business hours saved')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.settingsBusinessHoursSaved)),
+    );
   }
 
   Future<void> _addHoliday(BuildContext context, WidgetRef ref) async {
@@ -53,7 +54,7 @@ class BusinessHoursScreen extends ConsumerWidget {
         ? outcome.error!
         : outcome.existingName != null
         ? holidayAlreadyExistedMessage(outcome.existingName!)
-        : 'Holiday added';
+        : context.l10n.settingsBusinessHoursHolidayAdded;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -67,17 +68,19 @@ class BusinessHoursScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Remove ${holiday.name}?'),
-        content: const Text(holidayRemovalExplanation),
+        title: Text(
+          context.l10n.settingsBusinessHoursRemoveTitle(holiday.name),
+        ),
+        content: Text(holidayRemovalExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsBusinessHoursKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Remove'),
+            child: Text(context.l10n.commonRemove),
           ),
         ],
       ),
@@ -87,9 +90,13 @@ class BusinessHoursScreen extends ConsumerWidget {
         .read(businessHoursProvider.notifier)
         .removeHoliday(holiday.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Holiday removed')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error ?? context.l10n.settingsBusinessHoursHolidayRemoved,
+        ),
+      ),
+    );
   }
 
   @override
@@ -100,7 +107,7 @@ class BusinessHoursScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Business hours'),
+        title: Text(context.l10n.settingsBusinessHoursTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -108,7 +115,7 @@ class BusinessHoursScreen extends ConsumerWidget {
           if (isAdmin && async.hasValue)
             IconButton(
               icon: const Icon(LucideIcons.pencil),
-              tooltip: 'Edit hours',
+              tooltip: context.l10n.settingsBusinessHoursEditHours,
               onPressed: () => _editHours(context, ref),
             ),
         ],
@@ -124,15 +131,15 @@ class BusinessHoursScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 96),
             children: [
               _Summary(calendar: calendar),
-              const _SectionHeader('The week'),
+              _SectionHeader(context.l10n.settingsBusinessHoursWeek),
               for (final day in calendar.days) _DayRow(day: day),
               _SectionHeader(
-                'Holidays',
+                context.l10n.settingsBusinessHoursHolidays,
                 action: isAdmin
                     ? TextButton.icon(
                         onPressed: () => _addHoliday(context, ref),
                         icon: const Icon(LucideIcons.plus, size: 16),
-                        label: const Text('Add'),
+                        label: Text(context.l10n.commonAdd),
                       )
                     : null,
               ),
@@ -203,10 +210,7 @@ class _Summary extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Every day below reads Closed, and a four-hour target '
-                      'still expires four hours after the ticket arrives, '
-                      'weekend or not. Open at least one day to make the '
-                      'calendar count.',
+                      context.l10n.settingsBusinessHoursAlwaysOnBanner,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textPrimary,
                       ),
@@ -245,14 +249,21 @@ class _DayRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            // Named, not blank. A blank cell reads as missing data.
-            day.isClosed ? 'Closed' : '${day.open} to ${day.close}',
-            style: AppTypography.body.copyWith(
-              color: day.isClosed
-                  ? AppColors.textTertiary
-                  : AppColors.textPrimary,
-              fontWeight: day.isClosed ? FontWeight.w400 : FontWeight.w500,
+          Flexible(
+            child: Text(
+              // Named, not blank. A blank cell reads as missing data.
+              day.isClosed
+                  ? context.l10n.settingsBusinessHoursClosed
+                  : context.l10n.settingsBusinessHoursRange(
+                      day.open!,
+                      day.close!,
+                    ),
+              style: AppTypography.body.copyWith(
+                color: day.isClosed
+                    ? AppColors.textTertiary
+                    : AppColors.textPrimary,
+                fontWeight: day.isClosed ? FontWeight.w400 : FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -298,7 +309,7 @@ class _HolidayRow extends StatelessWidget {
           if (canEdit)
             IconButton(
               icon: const Icon(LucideIcons.trash2, size: 18),
-              tooltip: 'Remove this holiday',
+              tooltip: context.l10n.settingsBusinessHoursRemoveHoliday,
               color: AppColors.danger600,
               onPressed: onRemove,
             ),
@@ -318,7 +329,7 @@ class _NoHolidays extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 1),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Text(
-        'No holidays set. Targets keep running on public holidays.',
+        context.l10n.settingsBusinessHoursNoHolidays,
         style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
       ),
     );
@@ -361,11 +372,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Text(
-        'A ticket that arrives after closing starts its clock when the week '
-        'next opens, so the hours in between do not spend a target. Service '
-        'analytics is measured on this calendar too. A holiday is a full day '
-        'off in this timezone, which is separate from the organization '
-        'timezone.',
+        context.l10n.settingsBusinessHoursFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -392,12 +399,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the business hours',
+              context.l10n.settingsBusinessHoursLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsBusinessHoursTryAgain),
+            ),
           ],
         ),
       ),

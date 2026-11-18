@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/approval_rule.dart';
 import '../../data/models/lookup_models.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lookup_provider.dart';
 
 /// Write or edit an approval rule.
@@ -96,6 +97,7 @@ class _ApprovalRuleFormSheetState
   /// Who could clear the rule as the form currently stands, so the answer is
   /// visible before saving rather than on the row afterwards.
   String get _clearedBy {
+    final l10n = context.l10n;
     final named = [
       for (final person in ref.read(usersProvider))
         if (_approverIds.contains(person.id)) person.displayName,
@@ -104,10 +106,14 @@ class _ApprovalRuleFormSheetState
     ];
     if (rolesThatExist.contains(_role)) {
       return named.isEmpty
-          ? 'any admin'
-          : 'any admin, or ${named.join(' or ')}';
+          ? l10n.settingsApprovalRuleFormAnyAdmin
+          : l10n.settingsApprovalRuleFormAnyAdminOr(
+              named.join(l10n.settingsApprovalRuleFormOrSeparator),
+            );
     }
-    return named.isEmpty ? 'nobody' : named.join(' or ');
+    return named.isEmpty
+        ? l10n.settingsApprovalRuleFormNobody
+        : named.join(l10n.settingsApprovalRuleFormOrSeparator);
   }
 
   @override
@@ -115,7 +121,8 @@ class _ApprovalRuleFormSheetState
     final people = ref.watch(usersProvider);
     final teams = ref.watch(teamsProvider);
     final offList = _offListNames;
-    final strandsTickets = _clearedBy == 'nobody';
+    final strandsTickets =
+        _clearedBy == context.l10n.settingsApprovalRuleFormNobody;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -130,7 +137,11 @@ class _ApprovalRuleFormSheetState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New approval rule' : 'Edit ${widget.existing!.name}',
+              _isCreate
+                  ? context.l10n.settingsApprovalRuleFormNewTitle
+                  : context.l10n.settingsApprovalRuleFormEditTitle(
+                      widget.existing!.name,
+                    ),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -138,23 +149,26 @@ class _ApprovalRuleFormSheetState
               controller: _name,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 128,
-              decoration: const InputDecoration(
-                labelText: 'Rule name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsApprovalRuleFormNameLabel,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
             const SizedBox(height: 16),
-            const _SectionLabel('What it gates'),
+            _SectionLabel(context.l10n.settingsApprovalRuleFormSectionGates),
             DropdownButtonFormField<String?>(
               initialValue: _priority,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Priority',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.commonPriority,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Any')),
+                DropdownMenuItem(
+                  value: null,
+                  child: Text(context.l10n.settingsApprovalRuleFormAny),
+                ),
                 for (final priority in approvalPriorities)
                   DropdownMenuItem(value: priority, child: Text(priority)),
               ],
@@ -164,12 +178,15 @@ class _ApprovalRuleFormSheetState
             DropdownButtonFormField<String?>(
               initialValue: _caseType,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Ticket type',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsApprovalRuleFormTicketType,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Any')),
+                DropdownMenuItem(
+                  value: null,
+                  child: Text(context.l10n.settingsApprovalRuleFormAny),
+                ),
                 for (final type in approvalCaseTypes)
                   DropdownMenuItem(value: type, child: Text(type)),
               ],
@@ -180,25 +197,30 @@ class _ApprovalRuleFormSheetState
               initialValue: teams.any((t) => t.id == _teamId) ? _teamId : null,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'Team',
-                helperText: teams.isEmpty ? 'No teams in this org yet.' : null,
+                labelText: context.l10n.settingsApprovalRuleFormTeam,
+                helperText: teams.isEmpty
+                    ? context.l10n.settingsApprovalRuleFormNoTeams
+                    : null,
                 border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Any team')),
+                DropdownMenuItem(
+                  value: null,
+                  child: Text(context.l10n.settingsApprovalRuleFormAnyTeam),
+                ),
                 for (final team in teams)
                   DropdownMenuItem(value: team.id, child: Text(team.name)),
               ],
               onChanged: (v) => setState(() => _teamId = v),
             ),
             const SizedBox(height: 16),
-            const _SectionLabel('Who can clear it'),
+            _SectionLabel(context.l10n.settingsApprovalRuleFormSectionWho),
             DropdownButtonFormField<String>(
               initialValue: _role,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Role',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsApprovalRuleFormRole,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final choice in approverRoleChoices)
@@ -211,8 +233,7 @@ class _ApprovalRuleFormSheetState
             ),
             const SizedBox(height: 12),
             Text(
-              'Anyone picked here can clear it as well as the role above, not '
-              'instead of it.',
+              context.l10n.settingsApprovalRuleFormPickedHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -235,7 +256,11 @@ class _ApprovalRuleFormSheetState
                 for (final entry in offList.entries)
                   if (_approverIds.contains(entry.key))
                     FilterChip(
-                      label: Text('${entry.value} (deactivated)'),
+                      label: Text(
+                        context.l10n.settingsApprovalRuleFormDeactivated(
+                          entry.value,
+                        ),
+                      ),
                       selected: true,
                       onSelected: (_) =>
                           setState(() => _approverIds.remove(entry.key)),
@@ -244,7 +269,7 @@ class _ApprovalRuleFormSheetState
             ),
             const SizedBox(height: 12),
             Text(
-              'Cleared by $_clearedBy',
+              context.l10n.settingsApprovalRuleFormClearedBy(_clearedBy),
               style: AppTypography.caption.copyWith(
                 color: strandsTickets
                     ? AppColors.danger600
@@ -255,9 +280,7 @@ class _ApprovalRuleFormSheetState
             if (strandsTickets) ...[
               const SizedBox(height: 6),
               Text(
-                'This organization has admins and members. There is no manager '
-                'role, so with nobody named here the first ticket this gates '
-                'cannot be closed by anyone.',
+                context.l10n.settingsApprovalRuleFormStrandsWarning,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.danger600,
                 ),
@@ -280,7 +303,7 @@ class _ApprovalRuleFormSheetState
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -290,7 +313,11 @@ class _ApprovalRuleFormSheetState
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add rule' : 'Save changes'),
+                      child: Text(
+                        _isCreate
+                            ? context.l10n.settingsApprovalRuleFormAddRule
+                            : context.l10n.settingsApprovalRuleFormSaveChanges,
+                      ),
                     ),
                   ),
                 ),

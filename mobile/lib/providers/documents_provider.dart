@@ -1,3 +1,4 @@
+import '../l10n/l10n.dart';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,7 +60,9 @@ class DocumentsNotifier extends AsyncNotifier<DocumentsData> {
     final query = includeArchived ? 'limit=1000' : 'limit=1000&status=active';
     final response = await _apiService.get('${ApiConfig.documents}?$query');
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load the documents.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadTheDocuments,
+      );
     }
 
     // The rows sit at `documents_active.documents_active`, nested under a key

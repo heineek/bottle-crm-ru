@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/routing_rule.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lookup_provider.dart';
 
 /// Write or edit a routing rule.
@@ -116,6 +117,7 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
     final people = ref.watch(usersProvider);
     final teams = ref.watch(teamsProvider);
     final offList = _offListNames;
+    final l10n = context.l10n;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -130,7 +132,11 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New routing rule' : 'Edit ${widget.existing!.name}',
+              _isCreate
+                  ? l10n.settingsRoutingRuleFormNewTitle
+                  : l10n.settingsRoutingRuleFormEditTitle(
+                      widget.existing!.name,
+                    ),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -138,8 +144,8 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
               controller: _name,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 255,
-              decoration: const InputDecoration(
-                labelText: 'Rule name',
+              decoration: InputDecoration(
+                labelText: l10n.settingsRoutingRuleFormNameLabel,
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -149,14 +155,14 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
               controller: _priority,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Order',
-                helperText: 'Lower runs first',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsRoutingRuleFormOrderLabel,
+                helperText: l10n.settingsRoutingRuleFormOrderHelper,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
-            const _SectionLabel('When a ticket matches'),
+            _SectionLabel(l10n.settingsRoutingRuleFormWhenSection),
             for (final (index, row) in _conditions.indexed)
               _ConditionRow(
                 key: ValueKey(index),
@@ -168,7 +174,7 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'With no conditions this rule matches every new ticket.',
+                  l10n.settingsRoutingRuleFormNoConditions,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.warning600,
                   ),
@@ -180,24 +186,24 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
                 onPressed: () =>
                     setState(() => _conditions.add(RoutingConditionDraft())),
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('Add a condition'),
+                label: Text(l10n.settingsRoutingRuleFormAddCondition),
               ),
             ),
             if (_conditions.length > 1)
               Text(
-                'All of these have to be true.',
+                l10n.settingsRoutingRuleFormAllTrue,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
             const SizedBox(height: 16),
-            const _SectionLabel('Assign it'),
+            _SectionLabel(l10n.settingsRoutingRuleFormAssignSection),
             DropdownButtonFormField<String>(
               initialValue: _strategy,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'How',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsRoutingRuleFormHowLabel,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final entry in routingStrategyLabels.entries)
@@ -212,9 +218,9 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
                     ? _teamId
                     : null,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Team',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.settingsRoutingRuleFormTeamLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final team in teams)
@@ -225,8 +231,8 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
             else ...[
               Text(
                 _strategy == RoutingRule.strategyDirect
-                    ? 'Everyone picked here is assigned.'
-                    : 'Picked one at a time, in turn.',
+                    ? l10n.settingsRoutingRuleFormDirectHint
+                    : l10n.settingsRoutingRuleFormRotationHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -249,7 +255,9 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
                   for (final entry in offList.entries)
                     if (_assigneeIds.contains(entry.key))
                       FilterChip(
-                        label: Text('${entry.value} (deactivated)'),
+                        label: Text(
+                          l10n.settingsRoutingRuleFormDeactivated(entry.value),
+                        ),
                         selected: true,
                         onSelected: (_) =>
                             setState(() => _assigneeIds.remove(entry.key)),
@@ -258,7 +266,7 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
               ),
               if (people.isEmpty && offList.isEmpty)
                 Text(
-                  'Nobody to pick yet. Invite someone from Team first.',
+                  l10n.settingsRoutingRuleFormNobodyToPick,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -269,13 +277,11 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
               contentPadding: EdgeInsets.zero,
               value: _stopProcessing,
               onChanged: (v) => setState(() => _stopProcessing = v),
-              title: const Text('Stop after this rule'),
+              title: Text(l10n.settingsRoutingRuleFormStopTitle),
               subtitle: Text(
                 _stopProcessing
-                    ? 'No rule below this one gets a turn, even if this one '
-                          'assigns nobody.'
-                    : 'A ticket this rule cannot assign falls through to the '
-                          'rules below.',
+                    ? l10n.settingsRoutingRuleFormStopOn
+                    : l10n.settingsRoutingRuleFormStopOff,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -298,7 +304,7 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -308,7 +314,11 @@ class _RoutingRuleFormSheetState extends ConsumerState<_RoutingRuleFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add rule' : 'Save changes'),
+                      child: Text(
+                        _isCreate
+                            ? l10n.settingsRoutingRuleFormAddRule
+                            : l10n.settingsRoutingRuleFormSaveChanges,
+                      ),
                     ),
                   ),
                 ),
@@ -362,6 +372,7 @@ class _ConditionRow extends StatelessWidget {
     // added to the backend since) gets its own entry, so opening the form
     // cannot rewrite a condition nobody touched. A select with no matching
     // option is how the web lost condition rows before it read them by index.
+    final l10n = context.l10n;
     final options = <String, String>{
       ...routingConditionFields,
       if (draft.field.isNotEmpty &&
@@ -386,9 +397,9 @@ class _ConditionRow extends StatelessWidget {
                   initialValue: draft.field.isEmpty ? null : draft.field,
                   isExpanded: true,
                   isDense: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Field',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.settingsRoutingRuleFormFieldLabel,
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
                     for (final entry in options.entries)
@@ -405,7 +416,7 @@ class _ConditionRow extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(LucideIcons.x, size: 18),
-                tooltip: 'Remove this condition',
+                tooltip: l10n.settingsRoutingRuleFormRemoveCondition,
                 onPressed: onRemove,
               ),
             ],
@@ -415,9 +426,9 @@ class _ConditionRow extends StatelessWidget {
             initialValue: draft.op,
             isExpanded: true,
             isDense: true,
-            decoration: const InputDecoration(
-              labelText: 'Test',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.settingsRoutingRuleFormTestLabel,
+              border: const OutlineInputBorder(),
             ),
             items: [
               for (final entry in routingConditionOps.entries)
@@ -432,8 +443,10 @@ class _ConditionRow extends StatelessWidget {
           TextFormField(
             initialValue: draft.value,
             decoration: InputDecoration(
-              labelText: 'Value',
-              helperText: draft.op == 'in' ? 'Separate with commas' : null,
+              labelText: l10n.settingsRoutingRuleFormValueLabel,
+              helperText: draft.op == 'in'
+                  ? l10n.settingsRoutingRuleFormCommaHelper
+                  : null,
               border: const OutlineInputBorder(),
             ),
             onChanged: (v) => draft.value = v,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// Knowledge Base solution: a reusable answer that can be linked to tickets.
@@ -109,14 +110,19 @@ class Solution {
 }
 
 enum SolutionStatus {
-  draft('draft', 'Draft', AppColors.gray500),
-  reviewed('reviewed', 'Reviewed', AppColors.warning500),
-  approved('approved', 'Approved', AppColors.success600);
+  draft('draft', AppColors.gray500),
+  reviewed('reviewed', AppColors.warning500),
+  approved('approved', AppColors.success600);
 
   final String value;
-  final String label;
   final Color color;
-  const SolutionStatus(this.value, this.label, this.color);
+  const SolutionStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    draft => appL10n.appSolutionStatusDraft,
+    reviewed => appL10n.appSolutionStatusReviewed,
+    approved => appL10n.appSolutionStatusApproved,
+  };
 
   static SolutionStatus fromString(String? value) {
     return SolutionStatus.values.firstWhere(

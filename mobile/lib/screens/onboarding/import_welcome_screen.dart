@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/contacts_provider.dart';
 import '../../providers/csv_import_provider.dart';
@@ -84,11 +85,10 @@ class _ImportWelcomeScreenState extends ConsumerState<ImportWelcomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Bring in your contacts', style: AppTypography.h2),
+                  Text(context.l10n.appWelcomeTitle, style: AppTypography.h2),
                   const SizedBox(height: 4),
                   Text(
-                    'Upload a spreadsheet and we will match its columns for '
-                    'you.',
+                    context.l10n.appWelcomeBody,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -96,8 +96,8 @@ class _ImportWelcomeScreenState extends ConsumerState<ImportWelcomeScreen> {
                   const SizedBox(height: 20),
                   _Choice(
                     icon: LucideIcons.users,
-                    title: 'Customers and people you work with',
-                    line: 'Import them as contacts.',
+                    title: context.l10n.appWelcomeContactsTitle,
+                    line: context.l10n.appWelcomeContactsLine,
                     onTap: () =>
                         _open(CsvImportTarget.contacts, leadsOn: leadsOn),
                   ),
@@ -105,8 +105,8 @@ class _ImportWelcomeScreenState extends ConsumerState<ImportWelcomeScreen> {
                     const SizedBox(height: 10),
                     _Choice(
                       icon: LucideIcons.target,
-                      title: "People you're trying to sell to",
-                      line: 'Import them as leads to follow up.',
+                      title: context.l10n.appWelcomeLeadsTitle,
+                      line: context.l10n.appWelcomeLeadsLine,
                       onTap: () => _open(CsvImportTarget.leads, leadsOn: true),
                     ),
                   ],
@@ -118,7 +118,7 @@ class _ImportWelcomeScreenState extends ConsumerState<ImportWelcomeScreen> {
                       ),
                     ),
                     onPressed: () => context.go(AppRoutes.dashboard),
-                    child: const Text('Skip for now'),
+                    child: Text(context.l10n.appSkipForNow),
                   ),
                 ],
               ),

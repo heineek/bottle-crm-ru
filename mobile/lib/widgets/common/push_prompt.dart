@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/device_registration.dart';
 import '../../services/push_messaging.dart';
+import '../../l10n/l10n.dart';
 
 const _askedKey = 'push_prompt_asked';
 
@@ -21,18 +22,16 @@ Future<void> offerPushPrompt(BuildContext context) async {
   final allow = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Get lead alerts'),
-      content: const Text(
-        'Allow notifications so a lead assigned to you reaches you at once.',
-      ),
+      title: Text(context.l10n.corePushPromptTitle),
+      content: Text(context.l10n.corePushPromptBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Not now'),
+          child: Text(context.l10n.corePushPromptNotNow),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Allow notifications'),
+          child: Text(context.l10n.corePushPromptAllow),
         ),
       ],
     ),

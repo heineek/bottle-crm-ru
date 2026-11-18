@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_object.dart';
 import '../../providers/custom_objects_provider.dart';
+import '../../l10n/l10n.dart';
 
 /// One link field on a record form. Only the records the user can open are
 /// held here; hidden ones are counted, never named, and never sent.
@@ -49,7 +50,7 @@ class LinkFieldPicker extends StatelessWidget {
         children: [
           label,
           const SizedBox(height: 6),
-          Text("Linked to a record you can't open", style: AppTypography.body),
+          Text(context.l10n.objectsLinkedHidden, style: AppTypography.body),
         ],
       );
     }
@@ -67,7 +68,9 @@ class LinkFieldPicker extends StatelessWidget {
                 InputChip(
                   label: Text(r.name.isEmpty ? r.id : r.name),
                   deleteIcon: const Icon(LucideIcons.x, size: 16),
-                  deleteButtonTooltipMessage: 'Remove ${r.name}',
+                  deleteButtonTooltipMessage: context.l10n.objectsRemoveNamed(
+                    r.name,
+                  ),
                   onDeleted: () => onChanged([
                     for (final s in selected)
                       if (s.id != r.id) s,
@@ -79,7 +82,7 @@ class LinkFieldPicker extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              "and ${value.hidden} you can't open",
+              context.l10n.objectsHiddenMore(value.hidden),
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -92,7 +95,7 @@ class LinkFieldPicker extends StatelessWidget {
           ),
           onPressed: () => _add(context),
           icon: const Icon(LucideIcons.plus, size: 16),
-          label: const Text('Add'),
+          label: Text(context.l10n.commonAdd),
         ),
       ],
     );
@@ -180,9 +183,9 @@ class LinkSearchSheetState extends ConsumerState<LinkSearchSheet> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: TextField(
             onChanged: _onChanged,
-            decoration: const InputDecoration(
-              hintText: 'Search',
-              prefixIcon: Icon(LucideIcons.search, size: 18),
+            decoration: InputDecoration(
+              hintText: context.l10n.commonSearch,
+              prefixIcon: const Icon(LucideIcons.search, size: 18),
             ),
           ),
         ),
@@ -193,7 +196,7 @@ class LinkSearchSheetState extends ConsumerState<LinkSearchSheet> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Could not search. Try again.'),
+                  Text(context.l10n.objectsSearchFailed),
                   TextButton(
                     style: TextButton.styleFrom(
                       minimumSize: const Size(44, 44),
@@ -204,7 +207,7 @@ class LinkSearchSheetState extends ConsumerState<LinkSearchSheet> {
                         query: _query,
                       )),
                     ),
-                    child: const Text('Retry'),
+                    child: Text(context.l10n.commonRetry),
                   ),
                 ],
               ),
@@ -215,7 +218,7 @@ class LinkSearchSheetState extends ConsumerState<LinkSearchSheet> {
                   if (!widget.taken.contains(r.id)) r,
               ];
               if (shown.isEmpty) {
-                return const Center(child: Text('No matches'));
+                return Center(child: Text(context.l10n.objectsNoMatches));
               }
               return ListView.builder(
                 controller: widget.controller,

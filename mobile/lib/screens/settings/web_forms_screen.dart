@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/web_form.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/web_forms_provider.dart';
@@ -60,7 +61,7 @@ class WebFormsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Web forms'),
+        title: Text(context.l10n.settingsWebFormsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -68,7 +69,7 @@ class WebFormsScreen extends ConsumerWidget {
       floatingActionButton: isAdmin
           ? FloatingActionButton(
               onPressed: () => _create(context, ref),
-              tooltip: 'New web form',
+              tooltip: context.l10n.settingsWebFormsNew,
               child: const Icon(LucideIcons.plus),
             )
           : null,
@@ -97,8 +98,10 @@ class WebFormsScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                     child: Text(
-                      'Showing the ${state.forms.length} most recent of '
-                      '${state.totals.count}.',
+                      context.l10n.settingsWebFormShowingRecent(
+                        state.forms.length,
+                        state.totals.count,
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -159,22 +162,19 @@ class _CreateDialogState extends ConsumerState<_CreateDialog> {
     final target = _target;
     if (target == null) {
       return AlertDialog(
-        title: const Text('New web form'),
-        content: const Text(
-          'Web forms create leads or tickets, and both are switched off. '
-          'An admin can switch one on in Apps settings.',
-        ),
+        title: Text(context.l10n.settingsWebFormsNew),
+        content: Text(context.l10n.settingsWebFormsNothingToCreate),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
         ],
       );
     }
     final targets = _targets;
     return AlertDialog(
-      title: const Text('New web form'),
+      title: Text(context.l10n.settingsWebFormsNew),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -185,28 +185,31 @@ class _CreateDialogState extends ConsumerState<_CreateDialog> {
               autofocus: true,
               textCapitalization: TextCapitalization.sentences,
               maxLength: 255,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                helperText: 'Internal only. The visitor never sees it',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.commonName,
+                helperText: context.l10n.settingsWebFormNameHelper,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 16),
-            Text('Each submission creates', style: AppTypography.label),
+            Text(
+              context.l10n.settingsWebFormsEachSubmissionCreates,
+              style: AppTypography.label,
+            ),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: [
                 if (targets.contains(WebForm.targetLead))
-                  const ButtonSegment(
+                  ButtonSegment(
                     value: WebForm.targetLead,
-                    label: Text('A lead'),
+                    label: Text(context.l10n.settingsWebFormsTargetLead),
                   ),
                 if (targets.contains(WebForm.targetTicket))
-                  const ButtonSegment(
+                  ButtonSegment(
                     value: WebForm.targetTicket,
-                    label: Text('A ticket'),
+                    label: Text(context.l10n.settingsWebFormsTargetTicket),
                   ),
               ],
               selected: {target},
@@ -219,11 +222,11 @@ class _CreateDialogState extends ConsumerState<_CreateDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: _submit,
-          child: const Text('Create and add fields'),
+          child: Text(context.l10n.settingsWebFormsCreateSubmit),
         ),
       ],
     );
@@ -248,12 +251,24 @@ class _Summary extends StatelessWidget {
         spacing: 20,
         runSpacing: 10,
         children: [
-          _Stat(value: '${totals.published}', label: 'published'),
+          _Stat(
+            value: '${totals.published}',
+            label: context.l10n.settingsWebFormsStatPublished,
+          ),
           if (totals.drafts > 0)
-            _Stat(value: '${totals.drafts}', label: 'drafts'),
-          _Stat(value: '${totals.submissions30d}', label: 'accepted, 30 days'),
+            _Stat(
+              value: '${totals.drafts}',
+              label: context.l10n.settingsWebFormsStatDrafts,
+            ),
+          _Stat(
+            value: '${totals.submissions30d}',
+            label: context.l10n.settingsWebFormsStatAccepted,
+          ),
           if (totals.spam30d > 0)
-            _Stat(value: '${totals.spam30d}', label: 'spam blocked'),
+            _Stat(
+              value: '${totals.spam30d}',
+              label: context.l10n.settingsWebFormStatSpam,
+            ),
         ],
       ),
     );
@@ -318,23 +333,24 @@ class _FormRow extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 StatusBadge(
-                  label: form.isPublished ? 'Published' : 'Draft',
+                  label: form.isPublished
+                      ? context.l10n.settingsWebFormPublished
+                      : context.l10n.settingsWebFormDraft,
                   color: form.isPublished
                       ? AppColors.success600
                       : AppColors.gray500,
                 ),
                 Text(
-                  '${form.isTicket ? 'Tickets' : 'Leads'} · '
-                  '${form.fieldCount} field'
-                  '${form.fieldCount == 1 ? '' : 's'}',
+                  '${form.isTicket ? context.l10n.settingsWebFormsRowTickets : context.l10n.settingsWebFormsRowLeads} · '
+                  '${context.l10n.settingsWebFormsFieldCount(form.fieldCount)}',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
                 ),
                 Text(
-                  form.submissionCount == 1
-                      ? '1 submission'
-                      : '${form.submissionCount} submissions',
+                  context.l10n.settingsWebFormsSubmissionCount(
+                    form.submissionCount,
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -344,7 +360,7 @@ class _FormRow extends StatelessWidget {
             if (quiet) ...[
               const SizedBox(height: 6),
               Text(
-                'Live but silent. Nothing has been submitted.',
+                context.l10n.settingsWebFormsLiveSilent,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.warning600,
                 ),
@@ -382,12 +398,7 @@ class _SecurityNote extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'A published form accepts posts from anyone. It has to: the '
-                'whole point is that a stranger can fill it in without an '
-                'account. A hidden honeypot field, per-address and per-form '
-                'rate limits, and disposable-address rejection are always on. '
-                'Unpublish a form the moment you take its snippet off your '
-                'site.',
+                context.l10n.settingsWebFormsSecurityNote,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textPrimary,
                 ),
@@ -420,18 +431,15 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No web forms yet',
+              context.l10n.settingsWebFormsEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'A web form is a page you embed on your own site. What '
-                        'people fill in becomes a lead or a ticket here, with '
-                        'no login and no copy-pasting.'
-                  : 'Nobody has built a web form for this organization yet. '
-                        'An administrator can create one.',
+                  ? context.l10n.settingsWebFormsEmptyAdmin
+                  : context.l10n.settingsWebFormsEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -464,12 +472,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the web forms',
+              context.l10n.settingsWebFormsLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsWebFormTryAgain),
+            ),
           ],
         ),
       ),

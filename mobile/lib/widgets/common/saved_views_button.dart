@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../providers/saved_views_provider.dart';
 
@@ -46,7 +47,7 @@ class SavedViewsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: 'Saved views',
+      tooltip: context.l10n.appSavedViews,
       icon: const Icon(LucideIcons.bookmark),
       onPressed: () => showModalBottomSheet<void>(
         context: context,
@@ -64,10 +65,11 @@ class SavedViewsButton extends StatelessWidget {
               SnackBar(
                 content: Text(
                   left == 0
-                      ? 'Showing ${view.name}'
-                      : 'Showing ${view.name}. '
-                            '${left == 1 ? '1 filter value' : '$left filter values'} '
-                            'in it cannot be shown here.',
+                      ? context.l10n.appSavedViewShowing(view.name)
+                      : context.l10n.appSavedViewShowingDropped(
+                          left,
+                          view.name,
+                        ),
                 ),
               ),
             );
@@ -119,7 +121,10 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
   }
 
   Future<void> _save() async {
-    final name = await _askName(context, title: 'Save current filters');
+    final name = await _askName(
+      context,
+      title: context.l10n.appSaveCurrentFilters,
+    );
     if (name == null || !mounted) return;
     final filters = savedViewFilters(
       await widget.currentQuery(),
@@ -132,7 +137,7 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
   Future<void> _rename(SavedView view) async {
     final name = await _askName(
       context,
-      title: 'Rename view',
+      title: context.l10n.appRenameView,
       initial: view.name,
     );
     if (name == null || name == view.name || !mounted) return;
@@ -143,20 +148,17 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete view?'),
-        content: Text(
-          '${view.name} will be removed. The records it shows are not '
-          'touched.',
-        ),
+        title: Text(context.l10n.appDeleteViewQ),
+        content: Text(context.l10n.appDeleteViewBody(view.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger700),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -193,14 +195,14 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Saved views',
+                    context.l10n.appSavedViews,
                     style: AppTypography.h3.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: context.l10n.commonClose,
                   icon: const Icon(LucideIcons.x, size: 20),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
@@ -216,10 +218,13 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Could not load your saved views.', style: secondary),
+                    Text(
+                      context.l10n.appSavedViewsLoadFailed,
+                      style: secondary,
+                    ),
                     TextButton(
                       onPressed: _notifier.reload,
-                      child: const Text('Retry'),
+                      child: Text(context.l10n.commonRetry),
                     ),
                   ],
                 ),
@@ -227,10 +232,7 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
               _ when data == null => const SizedBox(height: 48),
               _ when data.views.isEmpty => Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text(
-                  'No saved views yet. Filter the list, then save it here.',
-                  style: secondary,
-                ),
+                child: Text(context.l10n.appSavedViewsEmpty, style: secondary),
               ),
               _ => ListView.separated(
                 shrinkWrap: true,
@@ -269,8 +271,7 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: data != null && data.full
                 ? Text(
-                    'This list keeps at most ${data.limit} saved views. '
-                    'Delete one to save another.',
+                    context.l10n.appSavedViewsLimit(data.limit ?? 0),
                     style: secondary,
                   )
                 : FilledButton.icon(
@@ -284,7 +285,7 @@ class _SavedViewsSheetState extends ConsumerState<SavedViewsSheet> {
                     ),
                     onPressed: _busy || data == null ? null : _save,
                     icon: const Icon(LucideIcons.bookmarkPlus, size: 18),
-                    label: const Text('Save current filters'),
+                    label: Text(context.l10n.appSaveCurrentFilters),
                   ),
           ),
         ],
@@ -320,22 +321,24 @@ class _ViewRow extends StatelessWidget {
       subtitle: dropped == 0
           ? null
           : Text(
-              '${dropped == 1 ? '1 filter value' : '$dropped filter values'} '
-              'this screen cannot show',
+              context.l10n.appSavedViewDropped(dropped),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
       onTap: onApply,
       trailing: PopupMenuButton<String>(
-        tooltip: 'More for ${view.name}',
+        tooltip: context.l10n.appSavedViewMoreFor(view.name),
         enabled: enabled,
         style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
         icon: const Icon(LucideIcons.ellipsisVertical, size: 20),
         onSelected: (choice) => choice == 'rename' ? onRename() : onDelete(),
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: 'rename', child: Text('Rename')),
-          PopupMenuItem(value: 'delete', child: Text('Delete')),
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'rename', child: Text(context.l10n.appRename)),
+          PopupMenuItem(
+            value: 'delete',
+            child: Text(context.l10n.commonDelete),
+          ),
         ],
       ),
     );
@@ -390,14 +393,14 @@ class _NameDialogState extends State<_NameDialog> {
         maxLength: 100,
         textInputAction: TextInputAction.done,
         onSubmitted: (_) => _submit(),
-        decoration: const InputDecoration(hintText: 'View name'),
+        decoration: InputDecoration(hintText: context.l10n.appViewName),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
-        TextButton(onPressed: _submit, child: const Text('Save')),
+        TextButton(onPressed: _submit, child: Text(context.l10n.commonSave)),
       ],
     );
   }

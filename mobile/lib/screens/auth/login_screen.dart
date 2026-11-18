@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
 
@@ -66,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not open $url'),
+            content: Text(context.l10n.appCouldNotOpen(url)),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -172,13 +173,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
         const SizedBox(height: 28),
         Text(
-          'Your pipeline,\nin your pocket.',
+          context.l10n.appLoginTagline,
           textAlign: TextAlign.center,
           style: AppTypography.h1.copyWith(letterSpacing: -0.5, height: 1.15),
         ),
         const SizedBox(height: 10),
         Text(
-          'Sign in to BottleCRM.',
+          context.l10n.appLoginSubtitle,
           textAlign: TextAlign.center,
           style: AppTypography.body.copyWith(
             color: AppColors.textSecondary,
@@ -239,7 +240,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Continue with Google',
+                    context.l10n.appLoginGoogle,
                     style: AppTypography.button.copyWith(color: Colors.white),
                   ),
                 ],
@@ -262,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           color: _isLoading ? AppColors.textTertiary : AppColors.textPrimary,
         ),
         label: Text(
-          'Sign in with email code',
+          context.l10n.appLoginEmailCode,
           style: AppTypography.button.copyWith(
             color: _isLoading ? AppColors.textTertiary : AppColors.textPrimary,
           ),
@@ -298,15 +299,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       TextSpan(
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
         children: [
-          const TextSpan(text: 'By continuing you agree to our '),
+          TextSpan(text: context.l10n.appLoginAgreePrefix),
           TextSpan(
-            text: 'Terms',
+            text: context.l10n.appLoginTerms,
             style: linkStyle,
             recognizer: _recognizerFor('https://bottlecrm.io/terms-of-service'),
           ),
-          const TextSpan(text: ' and '),
+          TextSpan(text: context.l10n.appLoginAnd),
           TextSpan(
-            text: 'Privacy Policy',
+            text: context.l10n.appLoginPrivacy,
             style: linkStyle,
             recognizer: _recognizerFor('https://bottlecrm.io/privacy-policy'),
           ),

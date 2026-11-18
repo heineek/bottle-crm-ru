@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../data/models/auth_response.dart';
 import '../services/auth_service.dart';
 import 'accounts_provider.dart';
@@ -153,7 +154,7 @@ class AuthNotifier extends Notifier<AuthState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: 'Sign-in was cancelled or failed. Please try again.',
+          error: appL10n.appMsgSignInWasCancelledOrFailedPlease,
         );
 
         debugPrint('AuthNotifier: Google sign-in failed');
@@ -184,9 +185,7 @@ class AuthNotifier extends Notifier<AuthState> {
     final ok = await _authService.requestMagicCode(email);
     state = state.copyWith(
       isLoading: false,
-      error: ok
-          ? null
-          : 'Could not send code. Check your connection and try again.',
+      error: ok ? null : appL10n.appMsgCouldNotSendCodeCheckYourConnection,
     );
     return ok;
   }
@@ -205,7 +204,7 @@ class AuthNotifier extends Notifier<AuthState> {
       if (!ok) {
         state = state.copyWith(
           isLoading: false,
-          error: 'Invalid or expired code. Please try again.',
+          error: appL10n.appMsgInvalidOrExpiredCodePleaseTryAgain,
         );
         return false;
       }
@@ -250,7 +249,7 @@ class AuthNotifier extends Notifier<AuthState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: 'Failed to switch organization',
+          error: appL10n.appMsgFailedToSwitchOrganization,
         );
 
         return false;

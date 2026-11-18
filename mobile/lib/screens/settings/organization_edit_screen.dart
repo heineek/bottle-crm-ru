@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../data/models/org_locales.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/org_settings.dart';
@@ -34,7 +37,7 @@ class OrganizationEditScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Edit organization'),
+        title: Text(context.l10n.settingsOrgEditTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -43,10 +46,10 @@ class OrganizationEditScreen extends ConsumerWidget {
           ? const _MemberNotice()
           : async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Center(
+              error: (_, _) => Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text('Could not load the organization'),
+                  padding: const EdgeInsets.all(32),
+                  child: Text(context.l10n.settingsOrgLoadFailed),
                 ),
               ),
               data: (org) => _Form(org: org),
@@ -69,15 +72,13 @@ class _MemberNotice extends StatelessWidget {
             Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'Administrators only',
+              context.l10n.settingsOrgEditAdminsOnlyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Editing organization details is limited to administrators. Ask '
-              'one of yours if a company detail, currency, or survey setting '
-              'needs changing.',
+              context.l10n.settingsOrgEditAdminsOnlyBody,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -105,6 +106,7 @@ class _FormState extends ConsumerState<_Form> {
   late String _defaultCountry;
   late String _currency;
   late String _timezone;
+  late String _defaultLanguage;
   late String _datePart;
   late bool _csat;
   late bool _cascade;
@@ -142,6 +144,7 @@ class _FormState extends ConsumerState<_Form> {
     _defaultCountry = org.defaultCountry;
     _currency = org.defaultCurrency;
     _timezone = org.timezone;
+    _defaultLanguage = org.defaultLanguage;
     _datePart = org.numberDatePart;
     _csat = org.csatEnabled;
     _cascade = org.autoCloseChildren;
@@ -202,6 +205,7 @@ class _FormState extends ConsumerState<_Form> {
             defaultCurrency: _currency,
             defaultCountry: _defaultCountry,
             timezone: _timezone,
+            defaultLanguage: _defaultLanguage,
             csatEnabled: _csat,
             autoCloseChildren: _cascade,
             invoiceNumberPrefix: _value('invoice_number_prefix'),
@@ -224,13 +228,16 @@ class _FormState extends ConsumerState<_Form> {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Organization saved')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.settingsOrgEditSaved)));
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final zones = ref.watch(orgTimezonesProvider);
+    final countries =
+        ref.watch(orgLocalesProvider).value?.countries ??
+        OrgLocales.fallback.countries;
     final invoicesOn = ref.watch(moduleOnProvider('invoices'));
     final ticketsOn = ref.watch(moduleOnProvider('tickets'));
     final leadsOn = ref.watch(moduleOnProvider('leads'));
@@ -244,63 +251,75 @@ class _FormState extends ConsumerState<_Form> {
       children: [
         if (invoicesOn) ...[
           Text(
-            'Printed on every invoice and estimate. Changes apply from now on; '
-            'documents already sent keep what they were sent with.',
+            context.l10n.settingsOrgEditPrintedHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
         ],
-        _field('company_name', 'Legal name', maxLength: 255),
-        _field('name', 'Trading name', maxLength: 100),
-        _field('tax_id', 'Tax ID', maxLength: 50),
-        _field('phone', 'Phone', maxLength: 25, keyboard: TextInputType.phone),
-        _field('email', 'Email', keyboard: TextInputType.emailAddress),
-        _field('website', 'Website', keyboard: TextInputType.url),
-        _field('address_line', 'Address', maxLength: 255),
-        _field('city', 'City', maxLength: 100),
-        _field('state', 'State', maxLength: 100),
-        _field('postcode', 'Postcode', maxLength: 20),
+        _field(
+          'company_name',
+          context.l10n.settingsOrgLegalName,
+          maxLength: 255,
+        ),
+        _field('name', context.l10n.settingsOrgEditTradingName, maxLength: 100),
+        _field('tax_id', context.l10n.settingsOrgTaxId, maxLength: 50),
+        _field(
+          'phone',
+          context.l10n.commonPhone,
+          maxLength: 25,
+          keyboard: TextInputType.phone,
+        ),
+        _field(
+          'email',
+          context.l10n.commonEmail,
+          keyboard: TextInputType.emailAddress,
+        ),
+        _field(
+          'website',
+          context.l10n.settingsOrgWebsite,
+          keyboard: TextInputType.url,
+        ),
+        _field('address_line', context.l10n.settingsOrgAddress, maxLength: 255),
+        _field('city', context.l10n.settingsOrgEditCity, maxLength: 100),
+        _field('state', context.l10n.settingsOrgEditState, maxLength: 100),
+        _field('postcode', context.l10n.settingsOrgEditPostcode, maxLength: 20),
         _picker(
-          label: 'Country',
+          label: context.l10n.settingsOrgCountry,
           value: _country,
           // "Not recorded" is a real choice: the column is blank-able and an
           // org that has not said where it is should not be made to guess.
           options: [
-            (value: '', label: 'Not recorded'),
-            ...withCurrent(orgCountryOptions, _country),
+            (value: '', label: context.l10n.settingsOrgNotRecorded),
+            ...withCurrent(countries, _country),
           ],
           onChanged: (v) => setState(() => _country = v),
         ),
-        const _SectionLabel('Defaults'),
+        _SectionLabel(context.l10n.settingsOrgSectionDefaults),
         _picker(
-          label: 'Currency',
+          label: context.l10n.settingsOrgCurrency,
           value: _currency,
           helper: invoicesOn
-              ? 'Applied to new invoices and estimates. Existing ones keep '
-                    'theirs.'
-              : 'The default for new records that carry an amount. Existing '
-                    'ones keep theirs.',
+              ? context.l10n.settingsOrgCurrencyHintInvoices
+              : context.l10n.settingsOrgCurrencyHint,
           options: withCurrent(currencies, _currency),
           onChanged: (v) => setState(() => _currency = v),
         ),
         _picker(
-          label: 'Country default',
+          label: context.l10n.settingsOrgEditCountryDefault,
           value: _defaultCountry,
-          helper: 'Pre-filled on new addresses.',
+          helper: context.l10n.settingsOrgEditCountryDefaultHint,
           options: [
-            (value: '', label: 'Not set'),
-            ...withCurrent(orgCountryOptions, _defaultCountry),
+            (value: '', label: context.l10n.settingsOrgEditNotSet),
+            ...withCurrent(countries, _defaultCountry),
           ],
           onChanged: (v) => setState(() => _defaultCountry = v),
         ),
         _picker(
-          label: 'Time zone',
+          label: context.l10n.settingsOrgTimeZone,
           value: _timezone,
-          helper:
-              'When a day starts for this organization. Changing it moves what '
-              'counts as due today and overdue, for everyone here.',
+          helper: context.l10n.settingsOrgEditTimeZoneHint,
           // From the API, not the device: the two vocabularies disagree on
           // aliases, and a picker missing the stored zone would move the org.
           options: withCurrent([
@@ -309,11 +328,23 @@ class _FormState extends ConsumerState<_Form> {
           ], _timezone),
           onChanged: (v) => setState(() => _timezone = v),
         ),
+        _picker(
+          label: context.l10n.orgDefaultLanguageLabel,
+          value: _defaultLanguage,
+          helper: context.l10n.orgDefaultLanguageHint,
+          options: withCurrent([
+            for (final code in supportedLanguages)
+              (
+                value: code,
+                label: lookupAppLocalizations(Locale(code)).languageName,
+              ),
+          ], _defaultLanguage),
+          onChanged: (v) => setState(() => _defaultLanguage = v),
+        ),
         if (invoicesOn) ...[
-          const _SectionLabel('Invoice numbers'),
+          _SectionLabel(context.l10n.settingsOrgSectionInvoiceNumbers),
           Text(
-            'How new invoice and estimate numbers look. Numbers already issued '
-            'keep theirs.',
+            context.l10n.settingsOrgEditNumbersHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -321,25 +352,25 @@ class _FormState extends ConsumerState<_Form> {
           const SizedBox(height: 14),
           _field(
             'invoice_number_prefix',
-            'Invoice prefix',
+            context.l10n.settingsOrgEditInvoicePrefix,
             maxLength: 20,
             capitalization: TextCapitalization.characters,
           ),
           _field(
             'estimate_number_prefix',
-            'Estimate prefix',
+            context.l10n.settingsOrgEditEstimatePrefix,
             maxLength: 20,
             capitalization: TextCapitalization.characters,
           ),
           _picker(
-            label: 'Date in the number',
+            label: context.l10n.settingsOrgEditDatePart,
             value: _datePart,
             options: withCurrent(numberDatePartOptions, _datePart),
             onChanged: (v) => setState(() => _datePart = v),
           ),
           _field(
             'number_padding',
-            'Counter digits',
+            context.l10n.settingsOrgEditPadding,
             maxLength: 2,
             digits: true,
           ),
@@ -348,12 +379,10 @@ class _FormState extends ConsumerState<_Form> {
           if (_datePart == 'NONE')
             _field(
               'invoice_number_start',
-              'Start invoices at',
+              context.l10n.settingsOrgEditStart,
               maxLength: 9,
               digits: true,
-              helper:
-                  'To carry on a sequence from another system. If invoices here '
-                  'already go higher, numbering carries on from the highest.',
+              helper: context.l10n.settingsOrgEditStartHint,
             ),
           ListenableBuilder(
             listenable: Listenable.merge([
@@ -378,9 +407,10 @@ class _FormState extends ConsumerState<_Form> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Text(
-                  'New invoices look like '
-                  '${example('invoice_number_prefix', start: start)}, estimates '
-                  'like ${example('estimate_number_prefix')}.',
+                  context.l10n.settingsOrgEditExample(
+                    example('invoice_number_prefix', start: start),
+                    example('estimate_number_prefix'),
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -390,12 +420,12 @@ class _FormState extends ConsumerState<_Form> {
           ),
         ],
         if (ticketsOn) ...[
-          const _SectionLabel('Behaviour'),
+          _SectionLabel(context.l10n.settingsOrgSectionBehaviour),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: _csat,
             onChanged: (v) => setState(() => _csat = v),
-            title: const Text('Satisfaction surveys'),
+            title: Text(context.l10n.settingsOrgCsat),
             subtitle: Text(
               csatExplanation(_csat),
               style: AppTypography.caption.copyWith(
@@ -407,7 +437,7 @@ class _FormState extends ConsumerState<_Form> {
             contentPadding: EdgeInsets.zero,
             value: _cascade,
             onChanged: (v) => setState(() => _cascade = v),
-            title: const Text('Close child tickets with the parent'),
+            title: Text(context.l10n.settingsOrgCascade),
             subtitle: Text(
               '${cascadeDefaultExplanation(_cascade)} $cascadeWebGapNote',
               style: AppTypography.caption.copyWith(
@@ -417,24 +447,27 @@ class _FormState extends ConsumerState<_Form> {
           ),
         ],
         if (leadsOn) ...[
-          const _SectionLabel('Leads'),
+          _SectionLabel(context.l10n.settingsOrgEditSectionLeads),
           DropdownButtonFormField<int?>(
             initialValue: _reminder,
             isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Remind the assignee when a lead waits more than',
-              helperText:
-                  'Sent once per enquiry, to the assignee, or to the admins '
-                  'when nobody has the lead.',
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsOrgEditLeadReminder,
+              helperText: context.l10n.settingsOrgEditLeadReminderHint,
               helperMaxLines: 3,
               border: OutlineInputBorder(),
             ),
             items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('Off')),
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text(context.l10n.settingsOrgEditLeadReminderOff),
+              ),
               for (final minutes in withCurrentMinutes(_reminder))
                 DropdownMenuItem<int?>(
                   value: minutes,
-                  child: Text('$minutes minutes'),
+                  child: Text(
+                    context.l10n.settingsOrgEditLeadReminderMinutes(minutes),
+                  ),
                 ),
             ],
             onChanged: (v) => setState(() => _reminder = v),
@@ -453,7 +486,7 @@ class _FormState extends ConsumerState<_Form> {
           height: 48,
           child: FilledButton(
             onPressed: _busy ? null : _save,
-            child: const Text('Save changes'),
+            child: Text(context.l10n.settingsOrgEditSave),
           ),
         ),
         const SizedBox(height: 10),
@@ -461,7 +494,7 @@ class _FormState extends ConsumerState<_Form> {
           height: 48,
           child: OutlinedButton(
             onPressed: _busy ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
         ),
       ],

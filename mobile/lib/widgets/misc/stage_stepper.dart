@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/models.dart';
 
@@ -64,7 +65,7 @@ class StageStepper extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${lost.label}. Tap a stage to reopen.',
+                      context.l10n.appStageLostReopen(lost.label),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.danger600,
                         fontWeight: FontWeight.w600,

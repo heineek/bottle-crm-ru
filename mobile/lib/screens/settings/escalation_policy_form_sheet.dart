@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/escalation_policy.dart';
 import '../../data/models/lookup_models.dart';
+import '../../data/models/ticket.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lookup_provider.dart';
 
 /// The result of the sheet: which request to send, and what to send.
@@ -12,6 +14,15 @@ import '../../providers/lookup_provider.dart';
 /// create and `is_active` only on a create, so the two are built by separate
 /// functions rather than one payload with holes in it.
 typedef EscalationFormResult = Map<String, dynamic>;
+
+/// A priority code ("High") as the ticket screens name it, or the code itself
+/// for one this build does not know.
+String escalationPriorityName(String code) {
+  for (final p in TicketPriority.values) {
+    if (p.value == code) return p.displayName;
+  }
+  return code;
+}
 
 /// Write or edit an escalation policy.
 ///
@@ -159,8 +170,9 @@ class _EscalationPolicyFormSheetState
     required String label,
     required TextEditingController controller,
     required int defaultHours,
-    String helperText = 'Business hours. Blank uses the default.',
+    String? helperText,
   }) {
+    final l10n = context.l10n;
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
@@ -168,8 +180,8 @@ class _EscalationPolicyFormSheetState
         labelText: label,
         border: const OutlineInputBorder(),
         isDense: true,
-        hintText: '$defaultHours (default)',
-        helperText: helperText,
+        hintText: l10n.settingsEscalationPolicyFormHoursHint(defaultHours),
+        helperText: helperText ?? l10n.settingsEscalationPolicyFormHoursHelper,
         helperMaxLines: 4,
       ),
       onChanged: (_) {
@@ -183,6 +195,7 @@ class _EscalationPolicyFormSheetState
     final people = ref.watch(usersProvider);
     final teams = ref.watch(teamsProvider);
     final offList = _offListNames;
+    final l10n = context.l10n;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -198,8 +211,10 @@ class _EscalationPolicyFormSheetState
           children: [
             Text(
               _isCreate
-                  ? 'New escalation policy'
-                  : 'Edit the ${widget.existing!.priority} policy',
+                  ? l10n.settingsEscalationPolicyFormNewTitle
+                  : l10n.settingsEscalationPolicyFormEditTitle(
+                      escalationPriorityName(widget.existing!.priority),
+                    ),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -207,14 +222,17 @@ class _EscalationPolicyFormSheetState
               DropdownButtonFormField<String>(
                 initialValue: _priority,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Priority',
-                  helperText: 'Fixed once the policy is saved',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.commonPriority,
+                  helperText: l10n.settingsEscalationPolicyFormPriorityHelper,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final priority in widget.availablePriorities)
-                    DropdownMenuItem(value: priority, child: Text(priority)),
+                    DropdownMenuItem(
+                      value: priority,
+                      child: Text(escalationPriorityName(priority)),
+                    ),
                 ],
                 onChanged: (v) => setState(() => _priority = v ?? _priority),
               )
@@ -223,17 +241,18 @@ class _EscalationPolicyFormSheetState
               // `priority` from the body, so any control here would report a
               // change it did not make.
               Text(
-                'Priority ${widget.existing!.priority}. One policy per '
-                'priority, fixed after it is created.',
+                l10n.settingsEscalationPolicyFormPriorityFixed(
+                  escalationPriorityName(widget.existing!.priority),
+                ),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
             const SizedBox(height: 20),
-            const _SectionLabel('SLA targets'),
+            _SectionLabel(l10n.settingsEscalationPolicyFormSlaSection),
             const SizedBox(height: 8),
             _hoursField(
-              label: 'First response (hours)',
+              label: l10n.settingsEscalationPolicyFormFirstResponse,
               controller: _firstResponseHours,
               defaultHours: defaultSlaHours(
                 _priority,
@@ -245,17 +264,14 @@ class _EscalationPolicyFormSheetState
             // escalation scan, so its helper says both instead of inheriting
             // the business-hours line of the other two.
             _hoursField(
-              label: 'Next response (hours)',
+              label: l10n.settingsEscalationPolicyFormNextResponse,
               controller: _nextResponseHours,
               defaultHours: defaultNextResponseHours(_priority),
-              helperText:
-                  'Each reply after the first, counted around the clock. '
-                  'Measured in analytics only: missing it triggers no '
-                  'escalation. Blank uses the default.',
+              helperText: l10n.settingsEscalationPolicyFormNextHelper,
             ),
             const SizedBox(height: 12),
             _hoursField(
-              label: 'Resolution (hours)',
+              label: l10n.settingsEscalationPolicyFormResolution,
               controller: _resolutionHours,
               defaultHours: defaultSlaHours(
                 _priority,
@@ -273,11 +289,7 @@ class _EscalationPolicyFormSheetState
             ],
             const SizedBox(height: 8),
             Text(
-              'First response and resolution apply to tickets opened from now '
-              'on, and to any ticket moved to this priority. Tickets already '
-              'open keep the target they were given. Next response is read '
-              'whenever analytics are scored, so a change rescores past '
-              'replies too.',
+              l10n.settingsEscalationPolicyFormApplyNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -303,16 +315,19 @@ class _EscalationPolicyFormSheetState
               onTarget: (v) => setState(() => _resolutionTargetId = v),
             ),
             const SizedBox(height: 20),
-            const _SectionLabel('Also notify'),
+            _SectionLabel(l10n.settingsEscalationPolicyFormAlsoNotify),
             DropdownButtonFormField<String>(
               initialValue: teams.any((t) => t.id == _teamId) ? _teamId : '',
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Team',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.settingsEscalationPolicyFormTeamLabel,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: '', child: Text('No team')),
+                DropdownMenuItem(
+                  value: '',
+                  child: Text(l10n.settingsEscalationPolicyFormNoTeam),
+                ),
                 for (final team in teams)
                   DropdownMenuItem(value: team.id, child: Text(team.name)),
               ],
@@ -321,9 +336,8 @@ class _EscalationPolicyFormSheetState
             const SizedBox(height: 6),
             Text(
               teams.isEmpty
-                  ? 'No teams in this organization yet.'
-                  : 'Copied in alongside the target, on halves that notify. A '
-                        'team is never escalated to on its own.',
+                  ? l10n.settingsEscalationPolicyFormNoTeams
+                  : l10n.settingsEscalationPolicyFormTeamHint,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -336,7 +350,7 @@ class _EscalationPolicyFormSheetState
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -346,7 +360,11 @@ class _EscalationPolicyFormSheetState
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add policy' : 'Save changes'),
+                      child: Text(
+                        _isCreate
+                            ? l10n.settingsEscalationPolicyFormAddPolicy
+                            : l10n.settingsEscalationPolicyFormSaveChanges,
+                      ),
                     ),
                   ),
                 ),
@@ -381,6 +399,7 @@ class _HalfFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final knownIds = {'', ...people.map((p) => p.id), ...offList.keys};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,9 +408,9 @@ class _HalfFields extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: action,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Do what',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.settingsEscalationPolicyFormDoWhat,
+            border: const OutlineInputBorder(),
           ),
           items: [
             for (final entry in escalationActionLabels.entries)
@@ -403,12 +422,15 @@ class _HalfFields extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: knownIds.contains(targetId) ? targetId : '',
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'To whom',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.settingsEscalationPolicyFormToWhom,
+            border: const OutlineInputBorder(),
           ),
           items: [
-            const DropdownMenuItem(value: '', child: Text('Nobody')),
+            DropdownMenuItem(
+              value: '',
+              child: Text(l10n.settingsEscalationPolicyFormNobody),
+            ),
             for (final person in people)
               DropdownMenuItem(
                 value: person.id,
@@ -420,7 +442,9 @@ class _HalfFields extends StatelessWidget {
               if (entry.key != '' && !people.any((p) => p.id == entry.key))
                 DropdownMenuItem(
                   value: entry.key,
-                  child: Text('${entry.value} (deactivated)'),
+                  child: Text(
+                    l10n.settingsEscalationPolicyFormDeactivated(entry.value),
+                  ),
                 ),
           ],
           onChanged: (v) => onTarget(v ?? ''),
@@ -434,14 +458,13 @@ class _HalfFields extends StatelessWidget {
         ] else if (offList.containsKey(targetId)) ...[
           const SizedBox(height: 6),
           Text(
-            'This account is no longer active. It stays set until you change '
-            'it, and a breach sent here waits for somebody who cannot sign in.',
+            l10n.settingsEscalationPolicyFormInactiveTarget,
             style: AppTypography.caption.copyWith(color: AppColors.warning600),
           ),
         ] else if (!escalationActionNotifies(action)) ...[
           const SizedBox(height: 6),
           Text(
-            'Reassigns the ticket. No email is sent, to them or to the team.',
+            l10n.settingsEscalationPolicyFormReassignHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),

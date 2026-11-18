@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_objects_provider.dart';
 import '../../data/models/org_module.dart';
@@ -39,7 +40,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('More'),
+        title: Text(context.l10n.settingsMoreTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -52,23 +53,23 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             _buildProfileSection(),
 
             // Workspace Section. Destinations that aren't on the bottom nav.
-            _buildSectionHeader('Workspace'),
+            _buildSectionHeader(context.l10n.settingsMoreSectionWorkspace),
             MenuRow(
               icon: LucideIcons.building2,
-              label: 'Accounts',
-              description: 'The companies you sell to',
+              label: context.l10n.settingsMoreAccounts,
+              description: context.l10n.settingsMoreAccountsBody,
               onTap: () => context.push(AppRoutes.accounts),
             ),
             MenuRow(
               icon: LucideIcons.users,
-              label: 'Contacts',
-              description: 'The people at those companies',
+              label: context.l10n.settingsMoreContacts,
+              description: context.l10n.settingsMoreContactsBody,
               onTap: () => context.push(AppRoutes.contacts),
             ),
             MenuRow(
               icon: LucideIcons.bell,
-              label: 'Notifications',
-              description: 'Mentions and comments on your tickets',
+              label: context.l10n.settingsMoreNotifications,
+              description: context.l10n.settingsMoreNotificationsBody,
               onTap: () => context.push(AppRoutes.notifications),
             ),
             for (final key in _workspaceModuleKeys(
@@ -89,7 +90,9 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionHeader('Objects'),
+                    _buildSectionHeader(
+                      context.l10n.settingsMoreSectionObjects,
+                    ),
                     for (final o in objects)
                       MenuRow(
                         icon: LucideIcons.boxes,
@@ -103,10 +106,10 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             ),
 
             // Account Section
-            _buildSectionHeader('Account'),
+            _buildSectionHeader(context.l10n.settingsMoreSectionAccount),
             MenuRow(
               icon: LucideIcons.user,
-              label: 'Profile Settings',
+              label: context.l10n.settingsMoreProfileSettings,
               onTap: () => context.push(AppRoutes.profile),
             ),
             // Only worth showing to someone who has somewhere to switch to.
@@ -116,17 +119,17 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             if ((ref.watch(authProvider).organizations?.length ?? 0) > 1)
               MenuRow(
                 icon: LucideIcons.building2,
-                label: 'Switch Organization',
+                label: context.l10n.settingsMoreSwitchOrganization,
                 description: ref.watch(selectedOrgProvider)?.name,
                 onTap: () => context.push(AppRoutes.orgSelection),
               ),
 
             // Team Section
-            _buildSectionHeader('Team'),
+            _buildSectionHeader(context.l10n.settingsMoreSectionTeam),
             MenuRow(
               icon: LucideIcons.users,
-              label: 'Team',
-              description: 'Who is in this org, and what they can do',
+              label: context.l10n.settingsMoreTeam,
+              description: context.l10n.settingsMoreTeamBody,
               onTap: () => context.push(AppRoutes.team),
             ),
             // Not admin-gated, matching the web sidebar and the API: the
@@ -136,8 +139,8 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             // than one "Administration" block.
             MenuRow(
               icon: LucideIcons.slidersHorizontal,
-              label: 'Organization settings',
-              description: 'Custom fields and other org-wide rules',
+              label: context.l10n.settingsMoreOrgSettings,
+              description: context.l10n.settingsMoreOrgSettingsBody,
               onTap: () => context.push(AppRoutes.settings),
             ),
 
@@ -149,28 +152,34 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             // colour references, and there is no localisation to select.
 
             // Support Section
-            _buildSectionHeader('Support'),
+            _buildSectionHeader(context.l10n.settingsMoreSectionSupport),
             MenuRow(
               icon: LucideIcons.lifeBuoy,
-              label: 'Contact BottleCRM Support',
-              description: 'Open a ticket and follow replies',
+              label: context.l10n.settingsMoreContactSupport,
+              description: context.l10n.settingsMoreContactSupportBody,
               onTap: () => context.push(AppRoutes.help),
             ),
             MenuRow(
               icon: LucideIcons.helpCircle,
-              label: 'Help Center',
-              onTap: () => _openOnTheWeb('/docs', 'Help Center'),
+              label: context.l10n.settingsMoreHelpCenter,
+              onTap: () =>
+                  _openOnTheWeb('/docs', context.l10n.settingsMoreHelpCenter),
             ),
             MenuRow(
               icon: LucideIcons.fileText,
-              label: 'Terms of Service',
-              onTap: () =>
-                  _openOnTheWeb('/terms-of-service', 'Terms of Service'),
+              label: context.l10n.settingsMoreTerms,
+              onTap: () => _openOnTheWeb(
+                '/terms-of-service',
+                context.l10n.settingsMoreTerms,
+              ),
             ),
             MenuRow(
               icon: LucideIcons.shield,
-              label: 'Privacy Policy',
-              onTap: () => _openOnTheWeb('/privacy-policy', 'Privacy Policy'),
+              label: context.l10n.settingsMorePrivacy,
+              onTap: () => _openOnTheWeb(
+                '/privacy-policy',
+                context.l10n.settingsMorePrivacy,
+              ),
             ),
 
             // Sign Out Button
@@ -181,7 +190,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             const SizedBox(height: 24),
             Center(
               child: Text(
-                'Version 1.0.0',
+                context.l10n.settingsMoreVersion('1.0.0'),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -225,8 +234,8 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
   Widget _moduleRow(String key) => switch (key) {
     'tasks' => MenuRow(
       icon: LucideIcons.checkSquare,
-      label: 'Tasks',
-      description: 'Your to-dos across leads, deals and tickets',
+      label: context.l10n.settingsMoreTasks,
+      description: context.l10n.settingsMoreTasksBody,
       onTap: () => context.go(AppRoutes.tasks),
     ),
     // Not admin-gated. The list is open to any member and the API narrows it
@@ -234,38 +243,38 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     // admin-only and live behind the screen.
     'goals' => MenuRow(
       icon: LucideIcons.target,
-      label: 'Goals',
-      description: 'Targets for you and your teams, and how far along',
+      label: context.l10n.settingsMoreGoals,
+      description: context.l10n.settingsMoreGoalsBody,
       onTap: () => context.push(AppRoutes.goals),
     ),
     'knowledge_base' => MenuRow(
       icon: LucideIcons.bookOpen,
-      label: 'Knowledge base',
-      description: 'Articles for your team and your customers',
+      label: context.l10n.settingsMoreKnowledgeBase,
+      description: context.l10n.settingsMoreKnowledgeBaseBody,
       onTap: () => context.push(AppRoutes.solutions),
     ),
     'documents' => MenuRow(
       icon: LucideIcons.folder,
-      label: 'Documents',
-      description: 'Files shared with you and your teams',
+      label: context.l10n.settingsMoreDocuments,
+      description: context.l10n.settingsMoreDocumentsBody,
       onTap: () => context.push(AppRoutes.documents),
     ),
     'projects' => MenuRow(
       icon: LucideIcons.folderKanban,
-      label: 'Projects',
-      description: 'Client work, its time, budget and invoices',
+      label: context.l10n.settingsMoreProjects,
+      description: context.l10n.settingsMoreProjectsBody,
       onTap: () => context.push(AppRoutes.projects),
     ),
     'invoices' => MenuRow(
       icon: LucideIcons.receipt,
-      label: 'Invoices',
-      description: 'What is owed, and what has been paid',
+      label: context.l10n.settingsMoreInvoices,
+      description: context.l10n.settingsMoreInvoicesBody,
       onTap: () => context.push(AppRoutes.invoices),
     ),
     _ => MenuRow(
       icon: LucideIcons.clock,
-      label: 'Timesheet',
-      description: 'The hours you logged this week',
+      label: context.l10n.settingsMoreTimesheet,
+      description: context.l10n.settingsMoreTimesheetBody,
       onTap: () => context.push(AppRoutes.timesheet),
     ),
   };
@@ -274,7 +283,8 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     final authState = ref.watch(authProvider);
     final user = authState.user;
     final org = authState.selectedOrganization;
-    final displayName = user?.displayName ?? 'Signed-in user';
+    final displayName =
+        user?.displayName ?? context.l10n.settingsMoreSignedInUser;
     final email = user?.email ?? '';
     final role = org?.role ?? org?.name;
 
@@ -383,7 +393,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             Icon(LucideIcons.logOut, size: 20, color: AppColors.danger600),
             const SizedBox(width: 10),
             Text(
-              'Sign Out',
+              context.l10n.settingsMoreSignOut,
               style: AppTypography.button.copyWith(color: AppColors.danger600),
             ),
           ],
@@ -401,7 +411,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not open $label'),
+          content: Text(context.l10n.settingsMoreCouldNotOpen(label)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -412,12 +422,12 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        title: Text(context.l10n.settingsMoreSignOut),
+        content: Text(context.l10n.settingsMoreSignOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -429,15 +439,15 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
               if (mounted) {
                 context.go(AppRoutes.login);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Signed out successfully'),
+                  SnackBar(
+                    content: Text(context.l10n.settingsMoreSignedOut),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
             },
             child: Text(
-              'Sign Out',
+              context.l10n.settingsMoreSignOut,
               style: TextStyle(color: AppColors.danger600),
             ),
           ),

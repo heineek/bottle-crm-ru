@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// A call, meeting, email, WhatsApp, SMS or enquiry logged on a record, from
@@ -104,19 +105,25 @@ class Interaction {
   /// "Outgoing call", "Email received", "Enquiry via web form": the web's
   /// wording for a timeline row.
   String get title => switch (kind) {
-    InteractionKind.call => inbound ? 'Incoming call' : 'Outgoing call',
-    InteractionKind.meeting => 'Meeting',
-    InteractionKind.email => inbound ? 'Email received' : 'Email sent',
-    InteractionKind.whatsapp => inbound ? 'WhatsApp received' : 'WhatsApp sent',
-    InteractionKind.sms => inbound ? 'Text received' : 'Text sent',
+    InteractionKind.call =>
+      inbound ? appL10n.appInteractionCallIn : appL10n.appInteractionCallOut,
+    InteractionKind.meeting => appL10n.appInteractionMeeting,
+    InteractionKind.email =>
+      inbound ? appL10n.appInteractionEmailIn : appL10n.appInteractionEmailOut,
+    InteractionKind.whatsapp =>
+      inbound
+          ? appL10n.appInteractionWhatsappIn
+          : appL10n.appInteractionWhatsappOut,
+    InteractionKind.sms =>
+      inbound ? appL10n.appInteractionSmsIn : appL10n.appInteractionSmsOut,
     InteractionKind.enquiry => switch (origin) {
-      '' || 'manual' => 'Enquiry',
-      'webform' => 'Enquiry via web form',
-      'intake' => 'Enquiry via lead webhook',
-      'email' => 'Enquiry via email',
-      _ => 'Enquiry via $origin',
+      '' || 'manual' => appL10n.appInteractionEnquiry,
+      'webform' => appL10n.appInteractionEnquiryWebform,
+      'intake' => appL10n.appInteractionEnquiryIntake,
+      'email' => appL10n.appInteractionEnquiryEmail,
+      _ => appL10n.appInteractionEnquiryVia(origin),
     },
-    null => 'Activity',
+    null => appL10n.appInteractionActivity,
   };
 
   /// "about 4 min" when the phone estimated it, else "4 min"; null if unknown.
@@ -124,7 +131,7 @@ class Interaction {
     final seconds = durationSeconds;
     if (seconds == null) return null;
     final text = shortElapsed(Duration(seconds: seconds));
-    return durationEstimated ? 'about $text' : text;
+    return durationEstimated ? appL10n.appInteractionAbout(text) : text;
   }
 
   /// Reads an `Interaction`.
@@ -221,12 +228,17 @@ class InteractionDraft {
 /// "under a minute", "14 min", "2 h 14 min", "3 d 4 h": a call's length or a
 /// lead's wait, as the web writes it.
 String shortElapsed(Duration d) {
-  if (d.inMinutes < 1) return 'under a minute';
-  if (d.inMinutes < 60) return '${d.inMinutes} min';
+  final l10n = appL10n;
+  if (d.inMinutes < 1) return l10n.appElapsedUnderMinute;
+  if (d.inMinutes < 60) return l10n.appElapsedMinutes(d.inMinutes);
   if (d.inHours < 24) {
     final minutes = d.inMinutes % 60;
-    return minutes == 0 ? '${d.inHours} h' : '${d.inHours} h $minutes min';
+    return minutes == 0
+        ? l10n.appElapsedHours(d.inHours)
+        : l10n.appElapsedHoursMinutes(d.inHours, minutes);
   }
   final hours = d.inHours % 24;
-  return hours == 0 ? '${d.inDays} d' : '${d.inDays} d $hours h';
+  return hours == 0
+      ? l10n.appElapsedDays(d.inDays)
+      : l10n.appElapsedDaysHours(d.inDays, hours);
 }

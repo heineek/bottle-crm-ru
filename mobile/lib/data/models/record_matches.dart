@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/enterprise_schema.g.dart' as enterprise;
 
 /// One fact on a match row, such as "Price: 250,000".
@@ -36,8 +37,11 @@ class RecordMatches {
 
   /// "Matching requirements", from the other side's plural label.
   String get heading {
-    final plural = objectLabelPlural.isEmpty ? 'records' : objectLabelPlural;
-    return 'Matching ${plural.toLowerCase()}';
+    final l10n = appL10n;
+    final plural = objectLabelPlural.isEmpty
+        ? l10n.appRecordMatchesRecords
+        : objectLabelPlural;
+    return l10n.appRecordMatchesHeading(plural.toLowerCase());
   }
 
   /// Reads a `RealEstateMatches`.

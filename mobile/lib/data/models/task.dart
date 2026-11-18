@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'lead.dart';
 
 /// Related entity type for polymorphic relations
 enum RelatedEntityType {
-  lead('lead', 'Lead', LucideIcons.user),
-  account('account', 'Account', LucideIcons.building2),
-  opportunity('opportunity', 'Opportunity', LucideIcons.trendingUp),
-  ticket_('case', 'Ticket', LucideIcons.headset),
-  contact('contact', 'Contact', LucideIcons.contact);
+  lead('lead', LucideIcons.user),
+  account('account', LucideIcons.building2),
+  opportunity('opportunity', LucideIcons.trendingUp),
+  ticket_('case', LucideIcons.headset),
+  contact('contact', LucideIcons.contact);
 
   final String value;
-  final String label;
   final IconData icon;
 
-  const RelatedEntityType(this.value, this.label, this.icon);
+  const RelatedEntityType(this.value, this.icon);
+
+  String get label => switch (this) {
+    lead => appL10n.appRelatedLead,
+    account => appL10n.appRelatedAccount,
+    opportunity => appL10n.appRelatedOpportunity,
+    ticket_ => appL10n.appRelatedTicket,
+    contact => appL10n.appRelatedContact,
+  };
 
   static RelatedEntityType fromString(String? value) {
     if (value == null) return RelatedEntityType.lead;
@@ -57,15 +65,20 @@ class RelatedEntity {
 
 /// Task status enumeration matching backend STATUS_CHOICES
 enum TaskStatus {
-  newTask('New', 'New', AppColors.primary500),
-  inProgress('In Progress', 'In Progress', AppColors.warning500),
-  completed('Completed', 'Completed', AppColors.success500);
+  newTask('New', AppColors.primary500),
+  inProgress('In Progress', AppColors.warning500),
+  completed('Completed', AppColors.success500);
 
   final String value;
-  final String label;
   final Color color;
 
-  const TaskStatus(this.value, this.label, this.color);
+  const TaskStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    newTask => appL10n.appTaskStatusNew,
+    inProgress => appL10n.appTaskStatusInProgress,
+    completed => appL10n.appTaskStatusCompleted,
+  };
 
   static TaskStatus fromString(String? value) {
     if (value == null) return TaskStatus.newTask;
@@ -190,7 +203,7 @@ class Task {
 
   /// The first assignee's name, else their email's local part.
   String get assignedToName {
-    if (assignedTo == null || assignedTo!.isEmpty) return 'Unassigned';
+    if (assignedTo == null || assignedTo!.isEmpty) return appL10n.appUnassigned;
     final details = api.Profile.fromJson(assignedTo!.first).userDetails;
     final name = details?.name?.trim() ?? '';
     if (name.isNotEmpty) return name;
@@ -276,7 +289,7 @@ class Task {
       'description': description,
       'due_date': dueDate?.toIso8601String().split('T').first,
       'status': status.value,
-      'priority': priority.label,
+      'priority': priority.value,
     };
   }
 
@@ -348,15 +361,15 @@ enum TaskDueStatus {
   String get label {
     switch (this) {
       case TaskDueStatus.overdue:
-        return 'Overdue';
+        return appL10n.appTaskDueOverdue;
       case TaskDueStatus.today:
-        return 'Today';
+        return appL10n.appTaskDueToday;
       case TaskDueStatus.upcoming:
-        return 'Upcoming';
+        return appL10n.appTaskDueUpcoming;
       case TaskDueStatus.noDueDate:
-        return 'No Due Date';
+        return appL10n.appTaskDueNone;
       case TaskDueStatus.completed:
-        return 'Completed';
+        return appL10n.appTaskDueCompleted;
     }
   }
 }

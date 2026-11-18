@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/models/automation.dart';
+import '../../../l10n/l10n.dart';
 import '../../../services/automation_text.dart';
 import '../../../services/org_date.dart';
 import '../../../widgets/forms/multi_select_sheet.dart';
@@ -80,7 +81,7 @@ class RuleValueField extends StatelessWidget {
             decimal: true,
             signed: true,
           ),
-          decoration: _decoration('Value'),
+          decoration: _decoration(context.l10n.settingsAutomationValue),
           // A number that does not parse goes as typed, so the server names
           // the row rather than the phone dropping it.
           onChanged: (t) {
@@ -91,7 +92,7 @@ class RuleValueField extends StatelessWidget {
       case 'date':
         return _PickButton(
           icon: LucideIcons.calendar,
-          text: _single ?? 'Choose a date',
+          text: _single ?? context.l10n.settingsAutomationValueChooseDate,
           onPressed: () => _pickDate(context),
         );
       case 'choice':
@@ -112,7 +113,10 @@ class RuleValueField extends StatelessWidget {
           value: v == true || v == 'true'
               ? true
               : (v == false || v == 'false' ? false : null),
-          items: const [(true, 'Yes'), (false, 'No')],
+          items: [
+            (true, context.l10n.commonYes),
+            (false, context.l10n.commonNo),
+          ],
           onChanged: onChanged,
         );
       case 'choices':
@@ -122,7 +126,7 @@ class RuleValueField extends StatelessWidget {
     }
     return TextFormField(
       initialValue: value?.toString() ?? '',
-      decoration: _decoration('Value'),
+      decoration: _decoration(context.l10n.settingsAutomationValue),
       onChanged: (t) => onChanged(t.isEmpty ? null : t),
     );
   }
@@ -155,7 +159,9 @@ class RuleValueField extends StatelessWidget {
     ];
     return _PickButton(
       icon: LucideIcons.listChecks,
-      text: selected.isEmpty ? 'Choose' : selected.map(labelOf).join(', '),
+      text: selected.isEmpty
+          ? context.l10n.settingsAutomationValueChoose
+          : selected.map(labelOf).join(', '),
       onPressed: () async {
         final picked = await MultiSelectSheet.show<RuleOption>(
           context: context,
@@ -190,7 +196,7 @@ class _Select<T> extends StatelessWidget {
   Widget build(BuildContext context) => DropdownButtonFormField<T>(
     initialValue: value,
     isExpanded: true,
-    decoration: _decoration('Value'),
+    decoration: _decoration(context.l10n.settingsAutomationValue),
     items: [
       for (final (v, label) in items)
         DropdownMenuItem<T>(

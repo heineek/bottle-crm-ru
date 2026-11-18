@@ -6,21 +6,26 @@
 /// picks another source.
 library;
 
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 class LeadSource {
   const LeadSource({
     this.id = '',
     required this.key,
-    required this.label,
+    required String label,
     this.isActive = true,
     this.order = 0,
-  });
+  }) : _label = label;
 
   /// Empty for the fixed lists below and for a stored key the list lacks.
   final String id;
   final String key;
-  final String label;
+  final String _label;
+
+  /// The org's own wording; a fixed value without an id reads in the app's
+  /// language.
+  String get label => id.isEmpty ? (_fixedLabel(key) ?? _label) : _label;
 
   /// A retired source stays on the records that have it and cannot be picked
   /// for new ones. Sources are never deleted.
@@ -42,7 +47,23 @@ class LeadSource {
   /// A stored key that is not in the list being offered.
   bool get isUnlisted => id.isEmpty && !isActive;
 
-  String get pickerLabel => isActive || isUnlisted ? label : '$label (retired)';
+  String get pickerLabel =>
+      isActive || isUnlisted ? label : appL10n.appLeadSourceRetired(label);
+}
+
+String? _fixedLabel(String key) {
+  final l10n = appL10n;
+  return switch (key.toLowerCase()) {
+    'call' => l10n.appLeadSourceFixedCall,
+    'email' => l10n.appLeadSourceFixedEmail,
+    'existing customer' => l10n.appLeadSourceFixedExistingCustomer,
+    'partner' => l10n.appLeadSourceFixedPartner,
+    'public relations' => l10n.appLeadSourceFixedPublicRelations,
+    'compaign' || 'campaign' => l10n.appLeadSourceFixedCampaign,
+    'website' => l10n.appLeadSourceFixedWebsite,
+    'other' => l10n.appLeadSourceFixedOther,
+    _ => null,
+  };
 }
 
 /// What an API older than editable sources accepts on a lead: its seven fixed

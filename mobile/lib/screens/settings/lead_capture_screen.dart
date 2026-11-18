@@ -14,6 +14,8 @@ import '../../providers/settings_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/common.dart';
 import 'mailbox_form_sheet.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// Every way a lead arrives without anyone typing it: web forms, webhooks and
 /// lead addresses, as on the web's Lead capture page.
@@ -32,7 +34,7 @@ class LeadCaptureScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Lead capture'),
+        title: Text(context.l10n.settingsLeadCaptureTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -47,11 +49,11 @@ class LeadCaptureScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 48),
           children: [
-            const _SectionHeader('Web forms'),
+            _SectionHeader(context.l10n.settingsLeadCaptureWebForms),
             MenuRow(
               icon: LucideIcons.clipboardList,
-              label: 'Web forms',
-              description: 'Forms you embed on your own site',
+              label: context.l10n.settingsLeadCaptureWebForms,
+              description: context.l10n.settingsLeadCaptureWebFormsHint,
               onTap: () => context.push(AppRoutes.settingsWebForms),
             ),
             if (isAdmin) const _Webhooks(),
@@ -78,15 +80,11 @@ class _Webhooks extends ConsumerWidget {
       );
     } else if (async.hasError) {
       body = _Retry(
-        message: 'Could not load the webhooks.',
+        message: context.l10n.settingsLeadCaptureWebhooksFailed,
         onRetry: () => ref.read(leadIntakesProvider.notifier).refresh(),
       );
     } else if (async.value!.isEmpty) {
-      body = const _Note(
-        'No webhooks yet. Create one on the web, where its fields are mapped. '
-        'Here you can copy its URL, replace its key, switch it off and read '
-        'its deliveries.',
-      );
+      body = _Note(context.l10n.settingsLeadCaptureNoWebhooks);
     } else {
       body = Column(
         children: [
@@ -96,7 +94,10 @@ class _Webhooks extends ConsumerWidget {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [const _SectionHeader('Webhooks'), body],
+      children: [
+        _SectionHeader(context.l10n.settingsLeadCaptureWebhooks),
+        body,
+      ],
     );
   }
 }
@@ -127,7 +128,9 @@ class _IntakeRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      intake.name.isEmpty ? 'Untitled webhook' : intake.name,
+                      intake.name.isEmpty
+                          ? context.l10n.settingsLeadCaptureUntitledWebhook
+                          : intake.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.body.copyWith(
@@ -137,9 +140,13 @@ class _IntakeRow extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       received == null
-                          ? '${intake.presetLabel} · nothing received yet'
-                          : '${intake.presetLabel} · last post '
-                                '${intakeWhen.format(received)}',
+                          ? context.l10n.settingsLeadCaptureNothingYet(
+                              intake.presetLabel,
+                            )
+                          : context.l10n.settingsLeadCaptureLastPost(
+                              intake.presetLabel,
+                              intakeWhen.format(received),
+                            ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -168,7 +175,11 @@ class _IntakeRow extends StatelessWidget {
   }
 }
 
-final DateFormat intakeWhen = DateFormat('d MMM yyyy, HH:mm');
+/// Built per use, so it follows the current language.
+DateFormat get intakeWhen {
+  final date = localDateFormat('d MMM yyyy, HH:mm', 'yMMMd');
+  return currentLanguage == baseLanguage ? date : date.add_Hm();
+}
 
 class IntakeStatePill extends StatelessWidget {
   const IntakeStatePill({super.key, required this.intake});
@@ -177,7 +188,7 @@ class IntakeStatePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = intake.stateLabel == 'Receiving'
+    final color = intake.state == IntakeState.receiving
         ? AppColors.success600
         : AppColors.textSecondary;
     return Container(
@@ -224,7 +235,10 @@ class _LeadAddresses extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Address added' : 'Address saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsLeadCaptureAddressAdded
+                  : context.l10n.settingsLeadCaptureAddressSaved),
         ),
       ),
     );
@@ -244,7 +258,9 @@ class _LeadAddresses extends ConsumerWidget {
       SnackBar(
         content: Text(
           error ??
-              (mailbox.isActive ? 'Address turned off' : 'Address turned on'),
+              (mailbox.isActive
+                  ? context.l10n.settingsLeadCaptureAddressOff
+                  : context.l10n.settingsLeadCaptureAddressOn),
         ),
       ),
     );
@@ -258,9 +274,9 @@ class _LeadAddresses extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader('Lead addresses'),
+          _SectionHeader(context.l10n.settingsLeadCaptureAddresses),
           _Retry(
-            message: 'Could not load the lead addresses.',
+            message: context.l10n.settingsLeadCaptureAddressesFailed,
             onRetry: () => ref.read(mailboxesProvider.notifier).refresh(),
           ),
         ],
@@ -272,13 +288,9 @@ class _LeadAddresses extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader('Lead addresses'),
+        _SectionHeader(context.l10n.settingsLeadCaptureAddresses),
         if (addresses.isEmpty)
-          const _Note(
-            'No lead address yet. Forward an enquiry to one, or point a '
-            'portal\'s notification emails at it, and each email becomes a '
-            'lead.',
-          ),
+          _Note(context.l10n.settingsLeadCaptureNoAddresses),
         for (final mailbox in addresses)
           _AddressRow(
             mailbox: mailbox,
@@ -294,7 +306,7 @@ class _LeadAddresses extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _edit(context, ref, state, null),
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('Add a lead address'),
+                label: Text(context.l10n.settingsLeadCaptureAddAddress),
               ),
             ),
           ),
@@ -365,14 +377,18 @@ class _AddressRow extends StatelessWidget {
                   height: 44,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(context.l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
                   height: 44,
                   child: OutlinedButton(
                     onPressed: onToggle,
-                    child: Text(mailbox.isActive ? 'Turn off' : 'Turn on'),
+                    child: Text(
+                      mailbox.isActive
+                          ? context.l10n.settingsLeadCaptureTurnOff
+                          : context.l10n.settingsLeadCaptureTurnOn,
+                    ),
                   ),
                 ),
               ],
@@ -391,15 +407,14 @@ Future<void> showIntakeKey(BuildContext context, {required String keyValue}) {
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      title: const Text('Copy the new key now'),
+      title: Text(ctx.l10n.settingsLeadCaptureKeyTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'This is the only time the key is shown. Paste it into the tool '
-              'that posts to this webhook; replace it again if it is lost.',
+              ctx.l10n.settingsLeadCaptureKeyBody,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -429,16 +444,16 @@ Future<void> showIntakeKey(BuildContext context, {required String keyValue}) {
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: keyValue));
             if (!ctx.mounted) return;
-            ScaffoldMessenger.of(
-              ctx,
-            ).showSnackBar(const SnackBar(content: Text('Key copied')));
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(content: Text(ctx.l10n.settingsLeadCaptureKeyCopied)),
+            );
           },
           icon: const Icon(LucideIcons.copy, size: 16),
-          label: const Text('Copy'),
+          label: Text(ctx.l10n.settingsLeadCaptureCopy),
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Done'),
+          child: Text(ctx.l10n.commonDone),
         ),
       ],
     ),
@@ -503,7 +518,7 @@ class _Retry extends StatelessWidget {
           TextButton(
             style: TextButton.styleFrom(minimumSize: const Size(48, 44)),
             onPressed: onRetry,
-            child: const Text('Try again'),
+            child: Text(context.l10n.appTryAgain),
           ),
         ],
       ),

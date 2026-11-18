@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/timesheet.dart';
 import '../services/api_service.dart';
@@ -86,7 +87,9 @@ class TimesheetNotifier extends AsyncNotifier<TimesheetWeek> {
       ApiConfig.timesheet(start: range.startParam, end: range.endParam),
     );
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load your timesheet.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadYourTimesheet,
+      );
     }
     return TimesheetWeek.fromJson(response.data!);
   }

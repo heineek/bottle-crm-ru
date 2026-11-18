@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// A person in the org, as `/api/users/` returns them.
@@ -52,7 +53,9 @@ class TeamMember {
       userId: details?.id ?? '',
       // An invited person has no name until they sign in, so the email is the
       // only thing there is to call them.
-      name: name.isNotEmpty ? name : (email.isNotEmpty ? email : 'Unnamed'),
+      name: name.isNotEmpty
+          ? name
+          : (email.isNotEmpty ? email : appL10n.appUnnamedPerson),
       email: email,
       role: w.role ?? 'USER',
       isActive: w.isActive ?? true,

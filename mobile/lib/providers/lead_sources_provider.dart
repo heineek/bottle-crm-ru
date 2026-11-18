@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../l10n/l10n.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/lead_source.dart';
 import '../services/api_service.dart';
@@ -20,7 +21,7 @@ class LeadSourcesNotifier extends AsyncNotifier<LeadSourcesAnswer> {
     if (response.statusCode == 404) return const LeadSourcesAnswer.legacy();
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load the lead sources.');
+      throw Exception(response.message ?? appL10n.appLeadSourceLoadFailed);
     }
     final rows = api.LeadSourceListResponse.fromJson(data).sources;
     final sources = [
@@ -49,12 +50,12 @@ class LeadSourcesNotifier extends AsyncNotifier<LeadSourcesAnswer> {
   /// Moves one source a place and posts every key in the new order.
   Future<String?> move(String key, int step) async {
     final held = state.value;
-    if (held == null) return 'The sources are still loading.';
+    if (held == null) return appL10n.appLeadSourceStillLoading;
     final keys = held.sources.map((s) => s.key).toList();
     final at = keys.indexOf(key);
     final to = at + step;
     if (at < 0 || to < 0 || to >= keys.length) {
-      return 'That source cannot move further.';
+      return appL10n.appLeadSourceCannotMove;
     }
     keys.insert(to, keys.removeAt(at));
     return _write(_api.post(ApiConfig.leadSourcesOrder, {'keys': keys}));
@@ -65,10 +66,10 @@ class LeadSourcesNotifier extends AsyncNotifier<LeadSourcesAnswer> {
   ) async {
     final response = await request;
     if (response.statusCode == 403) {
-      return 'Only an admin can change lead sources.';
+      return appL10n.appLeadSourceAdminOnly;
     }
     if (!response.success) {
-      return response.message ?? 'Could not save the lead sources.';
+      return response.message ?? appL10n.appLeadSourceSaveFailed;
     }
     await refresh();
     return null;

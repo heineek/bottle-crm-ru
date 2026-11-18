@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../l10n/l10n.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/lead_intake.dart';
 import '../services/api_service.dart';
@@ -10,7 +11,7 @@ class LeadIntakesNotOffered implements Exception {
   const LeadIntakesNotOffered();
 
   @override
-  String toString() => 'Lead webhooks are not available here.';
+  String toString() => appL10n.appLeadIntakeNotOffered;
 }
 
 /// A key replace: the new key, shown once by the caller, or the error.
@@ -30,7 +31,7 @@ class LeadIntakesNotifier extends AsyncNotifier<List<LeadIntake>> {
     if (response.statusCode == 404) throw const LeadIntakesNotOffered();
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load the webhooks.');
+      throw Exception(response.message ?? appL10n.appLeadIntakeLoadFailed);
     }
     final rows = api.LeadIntakeListResponse.fromJson(data).intakes;
     return [
@@ -50,7 +51,7 @@ class LeadIntakesNotifier extends AsyncNotifier<List<LeadIntake>> {
       'is_active': active,
     });
     if (!response.success) {
-      return response.message ?? 'Could not change the webhook.';
+      return response.message ?? appL10n.appLeadIntakeChangeFailed;
     }
     await refresh();
     return null;
@@ -63,7 +64,7 @@ class LeadIntakesNotifier extends AsyncNotifier<List<LeadIntake>> {
     if (!response.success || key == null || key.isEmpty) {
       return (
         key: null,
-        error: response.message ?? 'Could not replace the key.',
+        error: response.message ?? appL10n.appLeadIntakeReplaceKeyFailed,
       );
     }
     await refresh();
@@ -89,7 +90,9 @@ final leadIntakeDeliveriesProvider = FutureProvider.autoDispose
       );
       final data = response.data;
       if (!response.success || data == null) {
-        throw Exception(response.message ?? 'Could not load the deliveries.');
+        throw Exception(
+          response.message ?? appL10n.appLeadIntakeDeliveriesFailed,
+        );
       }
       final rows = api.LeadIntakeDeliveriesResponse.fromJson(data).deliveries;
       return [

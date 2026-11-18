@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/lookup_models.dart';
@@ -49,7 +50,7 @@ class AccountsLookupNotifier extends AsyncNotifier<List<AccountLookup>> {
   Future<List<AccountLookup>> _fetch() async {
     final response = await _apiService.get(lookupUrl(ApiConfig.accounts));
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load accounts');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadAccounts);
     }
     // Inactive accounts sit under `closed_accounts.close_accounts` and are
     // deliberately not offered.
@@ -80,7 +81,7 @@ class ContactsLookupNotifier extends AsyncNotifier<List<ContactLookup>> {
   Future<List<ContactLookup>> _fetch() async {
     final response = await _apiService.get(lookupUrl(ApiConfig.contacts));
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load contacts');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadContacts);
     }
     final data = api.ContactListResponse.fromJson(response.data!);
     return [
@@ -108,7 +109,7 @@ class UsersLookupNotifier extends AsyncNotifier<List<UserLookup>> {
   Future<List<UserLookup>> _fetch() async {
     final response = await _apiService.get(ApiConfig.teamsAndUsers);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load users');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadUsers);
     }
     final data = api.TeamsAndUsersResponse.fromJson(response.data!);
     return [
@@ -139,7 +140,7 @@ class TeamsLookupNotifier extends AsyncNotifier<List<TeamLookup>> {
   Future<List<TeamLookup>> _fetch() async {
     final response = await _apiService.get(ApiConfig.teamsAndUsers);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load teams');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTeams);
     }
     final data = api.TeamsAndUsersResponse.fromJson(response.data!);
     return [
@@ -167,7 +168,7 @@ class TagsLookupNotifier extends AsyncNotifier<List<TagLookup>> {
   Future<List<TagLookup>> _fetch() async {
     final response = await _apiService.get(lookupUrl(ApiConfig.tags));
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load tags');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTags);
     }
     final data = api.TagsListResponse.fromJson(response.data!);
     return [
@@ -370,7 +371,9 @@ final customFieldDefinitionsProvider =
           .toString();
       final response = await _apiService.get(url);
       if (!response.success || response.data == null) {
-        throw Exception(response.message ?? 'Failed to load custom fields');
+        throw Exception(
+          response.message ?? appL10n.appMsgFailedToLoadCustomFields,
+        );
       }
       final data = api.CustomFieldDefinitionListResponse.fromJson(
         response.data!,

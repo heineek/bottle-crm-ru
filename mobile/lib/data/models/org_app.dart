@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'custom_field_definition.dart' show customFieldTargets;
 
@@ -161,16 +162,19 @@ const _typeOrder = [
   'product',
 ];
 
-const _typeTitles = {
-  'wording': 'Wording',
-  'object': 'Objects',
-  'field': 'Fields',
-  'pipeline': 'Pipelines',
-  'stage': 'Stages',
-  'tag': 'Tags',
-  'source': 'Lead sources',
-  'product': 'Products',
-};
+Map<String, String> get _typeTitles {
+  final l10n = appL10n;
+  return {
+    'wording': l10n.appOrgAppGroupWording,
+    'object': l10n.appOrgAppGroupObjects,
+    'field': l10n.appOrgAppGroupFields,
+    'pipeline': l10n.appOrgAppGroupPipelines,
+    'stage': l10n.appOrgAppGroupStages,
+    'tag': l10n.appOrgAppGroupTags,
+    'source': l10n.appOrgAppGroupLeadSources,
+    'product': l10n.appOrgAppGroupProducts,
+  };
+}
 
 /// `GET /api/apps/<id>/preview/?action=`: what an action would do, and
 /// whether sample records may come with an install.
@@ -216,9 +220,10 @@ class AppPreview {
       ..._typeOrder.where(byType.containsKey),
       ...byType.keys.where((t) => !_typeOrder.contains(t)),
     ];
+    final titles = _typeTitles;
     return [
       for (final t in types)
-        (title: _typeTitles[t] ?? _sentence(t), items: byType[t]!),
+        (title: titles[t] ?? _sentence(t), items: byType[t]!),
     ];
   }
 
@@ -229,38 +234,41 @@ class AppPreview {
 
 /// The short word beside a preview row.
 String appEffectLabel(String effect) => switch (effect) {
-  'add' => 'New',
-  'keep' => 'Kept',
-  'turn_off' => 'Turned off',
-  'turn_on' => 'Back on',
-  'restore_wording' => 'Back to default',
-  'skipped_module' => 'Module off',
-  'add_by_hand' => 'Add by hand',
-  'restore' => 'Comes back',
-  'conflict' => 'Not added',
+  'add' => appL10n.appOrgAppEffectAdd,
+  'keep' => appL10n.appOrgAppEffectKeep,
+  'turn_off' => appL10n.appOrgAppEffectTurnOff,
+  'turn_on' => appL10n.appOrgAppEffectTurnOn,
+  'restore_wording' => appL10n.appOrgAppEffectRestoreWording,
+  'skipped_module' => appL10n.appOrgAppEffectSkippedModule,
+  'add_by_hand' => appL10n.appOrgAppEffectAddByHand,
+  'restore' => appL10n.appOrgAppEffectRestore,
+  'conflict' => appL10n.appOrgAppEffectConflict,
   _ => _sentence(effect),
 };
 
 /// A line under a row that its short label alone would not explain.
 String? appEffectNote(String effect) => switch (effect) {
-  'conflict' => "None of the app's objects is added",
+  'conflict' => appL10n.appOrgAppEffectConflictNote,
   _ => null,
 };
 
-const _targetLabels = {
-  'lead': 'Leads',
-  'contact': 'Contacts',
-  'account': 'Accounts',
-  'deal': 'Deals',
-  'opportunity': 'Deals',
-  'ticket': 'Tickets',
-  'case': 'Tickets',
-  'task': 'Tasks',
-  'invoice': 'Invoices',
-  'estimate': 'Estimates',
-  'recurring_invoice': 'Recurring invoices',
-  'recurringinvoice': 'Recurring invoices',
-};
+Map<String, String> get _targetLabels {
+  final l10n = appL10n;
+  return {
+    'lead': l10n.appTargetLeads,
+    'contact': l10n.appTargetContacts,
+    'account': l10n.appTargetAccounts,
+    'deal': l10n.appTargetDeals,
+    'opportunity': l10n.appTargetDeals,
+    'ticket': l10n.appTargetTickets,
+    'case': l10n.appTargetTickets,
+    'task': l10n.appTargetTasks,
+    'invoice': l10n.appTargetInvoices,
+    'estimate': l10n.appTargetEstimates,
+    'recurring_invoice': l10n.appTargetRecurringInvoices,
+    'recurringinvoice': l10n.appTargetRecurringInvoices,
+  };
+}
 
 /// "Leads" for `lead` or `Lead`; an unknown target reads as itself.
 String appTargetLabel(String target) =>

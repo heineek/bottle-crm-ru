@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/webhook.dart';
@@ -70,7 +71,7 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
   Future<WebhooksState> _fetch() async {
     final response = await _api.get(ApiConfig.webhooks);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load webhooks');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadWebhooks);
     }
     final body = api.WebhookListResponse.fromJson(response.data!);
     return WebhooksState(
@@ -89,7 +90,7 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
     if (!response.success || response.data == null) {
       return (
         secret: null,
-        error: response.message ?? 'Could not add the webhook',
+        error: response.message ?? appL10n.appMsgCouldNotAddTheWebhook,
       );
     }
     final secret = api.WebhookEndpointCreated.fromJson(response.data!).secret;
@@ -98,11 +99,11 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
   }
 
   Future<String?> save(String id, WebhookDraft draft) =>
-      _patch(id, webhookPayload(draft), 'Could not save the webhook');
+      _patch(id, webhookPayload(draft), appL10n.appMsgCouldNotSaveTheWebhook);
 
   /// Only `is_active` is sent, so a switch can never carry a stale form.
   Future<String?> setActive(String id, bool active) =>
-      _patch(id, {'is_active': active}, 'Could not change the webhook');
+      _patch(id, {'is_active': active}, appL10n.appMsgCouldNotChangeTheWebhook);
 
   Future<String?> _patch(
     String id,
@@ -118,7 +119,7 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
   Future<String?> remove(String id) async {
     final response = await _api.delete(ApiConfig.webhook(id));
     if (!response.success) {
-      return response.message ?? 'Could not delete the webhook';
+      return response.message ?? appL10n.appMsgCouldNotDeleteTheWebhook;
     }
     await refresh();
     return null;
@@ -128,7 +129,7 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
     final response = await _api.post(ApiConfig.webhookTest(id), const {});
     return response.success
         ? null
-        : response.message ?? 'Could not send a test';
+        : response.message ?? appL10n.appMsgCouldNotSendATest;
   }
 
   Future<SecretResult> rotate(String id) async {
@@ -139,7 +140,7 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
     if (!response.success || response.data == null) {
       return (
         secret: null,
-        error: response.message ?? 'Could not rotate the secret',
+        error: response.message ?? appL10n.appMsgCouldNotRotateTheSecret,
       );
     }
     final secret = api.WebhookRotateSecretResponse.fromJson(
@@ -154,7 +155,9 @@ class WebhooksNotifier extends AsyncNotifier<WebhooksState> {
       ApiConfig.webhookRedeliver(deliveryId),
       const {},
     );
-    return response.success ? null : response.message ?? 'Could not redeliver';
+    return response.success
+        ? null
+        : response.message ?? appL10n.appMsgCouldNotRedeliver;
   }
 }
 
@@ -186,7 +189,9 @@ final webhookDeliveriesProvider =
         },
       );
       if (!response.success || response.data == null) {
-        throw Exception(response.message ?? 'Failed to load deliveries');
+        throw Exception(
+          response.message ?? appL10n.appMsgFailedToLoadDeliveries,
+        );
       }
       final body = api.WebhookDeliveryListResponse.fromJson(response.data!);
       final deliveries = (body.results ?? const <api.WebhookDelivery>[])

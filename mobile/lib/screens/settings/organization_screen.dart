@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/org_settings.dart';
 import '../../providers/auth_provider.dart';
@@ -46,7 +48,7 @@ class OrganizationScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Organization'),
+        title: Text(context.l10n.settingsOrgTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -54,7 +56,7 @@ class OrganizationScreen extends ConsumerWidget {
           if (isAdmin && async.value != null)
             IconButton(
               icon: const Icon(LucideIcons.pencil),
-              tooltip: 'Edit details',
+              tooltip: context.l10n.settingsOrgEditDetails,
               onPressed: () => context.push(AppRoutes.settingsOrganizationEdit),
             ),
         ],
@@ -73,42 +75,57 @@ class OrganizationScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 40),
             children: [
               _Header(org: org),
-              if (planName != null) _Field(label: 'Plan', value: planName),
-              const _SectionHeader('What customers see'),
-              _Field(label: 'Legal name', value: org.companyName),
-              _Field(label: 'Trading as', value: org.name),
-              _Field(label: 'Address', value: org.addressSummary),
-              _Field(label: 'Tax ID', value: org.taxId),
-              _Field(label: 'Email', value: org.email),
-              _Field(label: 'Phone', value: org.phone),
-              _Field(label: 'Website', value: org.website),
-              if (invoicesOn) const _PrintedNote(),
-              const _SectionHeader('Defaults'),
+              if (planName != null)
+                _Field(label: context.l10n.settingsOrgPlan, value: planName),
+              _SectionHeader(context.l10n.settingsOrgSectionCustomersSee),
               _Field(
-                label: 'Currency',
+                label: context.l10n.settingsOrgLegalName,
+                value: org.companyName,
+              ),
+              _Field(label: context.l10n.settingsOrgTradingAs, value: org.name),
+              _Field(
+                label: context.l10n.settingsOrgAddress,
+                value: org.addressSummary,
+              ),
+              _Field(label: context.l10n.settingsOrgTaxId, value: org.taxId),
+              _Field(label: context.l10n.commonEmail, value: org.email),
+              _Field(label: context.l10n.commonPhone, value: org.phone),
+              _Field(
+                label: context.l10n.settingsOrgWebsite,
+                value: org.website,
+              ),
+              if (invoicesOn) const _PrintedNote(),
+              _SectionHeader(context.l10n.settingsOrgSectionDefaults),
+              _Field(
+                label: context.l10n.settingsOrgCurrency,
                 value: '${org.defaultCurrency} ${org.currencySymbol}',
                 detail: invoicesOn
-                    ? 'Applied to new invoices and estimates. Existing ones '
-                          'keep theirs.'
-                    : 'The default for new records that carry an amount. '
-                          'Existing ones keep theirs.',
+                    ? context.l10n.settingsOrgCurrencyHintInvoices
+                    : context.l10n.settingsOrgCurrencyHint,
               ),
               _Field(
-                label: 'Country',
+                label: context.l10n.settingsOrgCountry,
                 value: org.defaultCountry,
-                detail: 'Default for new addresses.',
+                detail: context.l10n.settingsOrgCountryHint,
               ),
               _Field(
-                label: 'Time zone',
+                label: context.l10n.settingsOrgTimeZone,
                 value: org.timezoneLabel,
-                detail:
-                    'When a day starts here, so "due today" and "overdue" '
-                    'mean what your team expects.',
+                detail: context.l10n.settingsOrgTimeZoneHint,
+              ),
+              _Field(
+                label: context.l10n.orgDefaultLanguageLabel,
+                value: supportedLanguage(org.defaultLanguage) != null
+                    ? lookupAppLocalizations(
+                        Locale(org.defaultLanguage),
+                      ).languageName
+                    : org.defaultLanguage,
+                detail: context.l10n.orgDefaultLanguageHint,
               ),
               if (invoicesOn) ...[
-                const _SectionHeader('Invoice numbers'),
+                _SectionHeader(context.l10n.settingsOrgSectionInvoiceNumbers),
                 _Field(
-                  label: 'New invoices',
+                  label: context.l10n.settingsOrgNewInvoices,
                   value: exampleNumber(
                     prefix: org.invoiceNumberPrefix,
                     datePart: org.numberDatePart,
@@ -116,33 +133,35 @@ class OrganizationScreen extends ConsumerWidget {
                     start: org.invoiceNumberStart,
                     today: orgToday(),
                   ),
-                  detail:
-                      '${_datePartLabel(org.numberDatePart)}. Numbers already '
-                      'issued keep theirs.',
+                  detail: context.l10n.settingsOrgNumberingHint(
+                    _datePartLabel(org.numberDatePart),
+                  ),
                 ),
                 _Field(
-                  label: 'New estimates',
+                  label: context.l10n.settingsOrgNewEstimates,
                   value: exampleNumber(
                     prefix: org.estimateNumberPrefix,
                     datePart: org.numberDatePart,
                     padding: org.numberPadding,
                     today: orgToday(),
                   ),
-                  detail: 'Same format, own prefix.',
+                  detail: context.l10n.settingsOrgEstimatesHint,
                 ),
               ],
               if (ticketsOn) ...[
-                const _SectionHeader('Behaviour'),
+                _SectionHeader(context.l10n.settingsOrgSectionBehaviour),
                 _Field(
-                  label: 'Satisfaction surveys',
-                  value: org.csatEnabled ? 'Sending' : 'Off',
+                  label: context.l10n.settingsOrgCsat,
+                  value: org.csatEnabled
+                      ? context.l10n.settingsOrgCsatSending
+                      : context.l10n.settingsOrgCsatOff,
                   detail: csatExplanation(org.csatEnabled),
                 ),
                 _Field(
-                  label: 'Close child tickets with the parent',
+                  label: context.l10n.settingsOrgCascade,
                   value: org.autoCloseChildren
-                      ? 'Starts ticked'
-                      : 'Starts unticked',
+                      ? context.l10n.settingsOrgCascadeTicked
+                      : context.l10n.settingsOrgCascadeUnticked,
                   detail:
                       '${cascadeDefaultExplanation(org.autoCloseChildren)} '
                       '$cascadeWebGapNote',
@@ -180,12 +199,12 @@ class _Header extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            org.name.isEmpty ? 'Unnamed organization' : org.name,
+            org.name.isEmpty ? context.l10n.settingsOrgUnnamed : org.name,
             style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 3),
           Text(
-            '${org.memberCount} member${org.memberCount == 1 ? '' : 's'}',
+            context.l10n.settingsOrgMemberCount(org.memberCount),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -221,7 +240,7 @@ class _Field extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            shown.isEmpty ? 'Not recorded' : shown,
+            shown.isEmpty ? context.l10n.settingsOrgNotRecorded : shown,
             style: AppTypography.body.copyWith(
               fontWeight: FontWeight.w500,
               color: shown.isEmpty
@@ -252,9 +271,7 @@ class _PrintedNote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Text(
-        'These fields are printed on every invoice and estimate. Changing one '
-        'changes documents from that moment on; PDFs already sent keep what '
-        'they were sent with.',
+        context.l10n.settingsOrgPrintedNote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -279,10 +296,7 @@ class _ApiKeyNote extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'The organization API key is not here. It authenticates as the '
-              'whole organization, so it is never shown on a page you can '
-              'reach by browsing. For per-person programmatic access, use API '
-              'tokens, which can be revoked one at a time.',
+              context.l10n.settingsOrgApiKeyNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -334,12 +348,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the organization',
+              context.l10n.settingsOrgLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsOrgTryAgain),
+            ),
           ],
         ),
       ),

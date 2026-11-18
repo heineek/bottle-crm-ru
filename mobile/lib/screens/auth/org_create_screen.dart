@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/l10n.dart';
 import '../../config/api_config.dart';
 import '../../data/api/schema.g.dart' as api;
 import '../../data/models/org_settings.dart';
@@ -120,11 +121,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
     if (installFailure != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Your organization is ready, but the industry setup did not '
-            'install ($installFailure). You can install it from Apps in '
-            'Organization settings.',
-          ),
+          content: Text(context.l10n.appOrgCreateInstallFailed(installFailure)),
         ),
       );
     }
@@ -157,7 +154,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: const Text('New Organization'),
+          title: Text(context.l10n.appOrgCreateTitle),
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
@@ -175,20 +172,20 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
                     enabled: !_submitting,
-                    decoration: const InputDecoration(
-                      labelText: 'Organization name',
-                      hintText: 'e.g. Acme Inc.',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.appOrgNameLabel,
+                      hintText: context.l10n.appOrgNameHint,
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       final name = value?.trim() ?? '';
-                      if (name.isEmpty) return 'Give the organization a name';
+                      if (name.isEmpty) return context.l10n.appOrgNameRequired;
                       // Mirrors the server's `validate_name`, which is the rule
                       // that actually decides. This only saves a round trip.
                       if (RegExp(
                         r'''[~!@#$%^&*()+{}":;'/\[\]]''',
                       ).hasMatch(name)) {
-                        return 'Letters, numbers, spaces, hyphens and dots only';
+                        return context.l10n.appOrgNameChars;
                       }
                       return null;
                     },
@@ -203,8 +200,8 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _timezone,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Time zone',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.appTimeZone,
                         border: OutlineInputBorder(),
                       ),
                       items: _zones
@@ -228,15 +225,13 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     ),
                   const SizedBox(height: 6),
                   Text(
-                    'Sets when a day starts here, so "due today" and "overdue" '
-                    'mean what your team expects. You can change it later in '
-                    'Settings.',
+                    context.l10n.appOrgTimeZoneHint,
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   if (packs.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    const Text(
-                      'What kind of business is this?',
+                    Text(
+                      context.l10n.appOrgCreateIndustryTitle,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -244,8 +239,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Sets up a starter pipeline, tags and fields for your '
-                      'industry. You can change everything later.',
+                      context.l10n.appOrgCreateIndustryHint,
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     RadioGroup<String>(
@@ -257,8 +251,8 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                         children: [
                           _packOption(
                             '',
-                            'Skip for now',
-                            'Start with a blank workspace.',
+                            context.l10n.appOrgCreateSkip,
+                            context.l10n.appOrgCreateSkipHint,
                           ),
                           for (final pack in packs)
                             _packOption(pack.id, pack.name, pack.description),
@@ -277,7 +271,7 @@ class _OrgCreateScreenState extends ConsumerState<OrgCreateScreen> {
                               width: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Create organization'),
+                          : Text(context.l10n.appOrgCreateButton),
                     ),
                   ),
                 ],

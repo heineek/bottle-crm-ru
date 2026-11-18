@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/mailbox.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
@@ -42,7 +43,10 @@ class InboundEmailScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Address added' : 'Address saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsInboundEmailAdded
+                  : context.l10n.settingsInboundEmailSaved),
         ),
       ),
     );
@@ -56,16 +60,18 @@ class InboundEmailScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Turn off ${mailbox.address}?'),
-        content: const Text(mailboxDeactivateExplanation),
+        title: Text(
+          context.l10n.settingsInboundEmailTurnOffTitle(mailbox.address),
+        ),
+        content: Text(mailboxDeactivateExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Leave it on'),
+            child: Text(context.l10n.settingsInboundEmailLeaveOn),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Turn off'),
+            child: Text(context.l10n.settingsInboundEmailTurnOff),
           ),
         ],
       ),
@@ -75,9 +81,11 @@ class InboundEmailScreen extends ConsumerWidget {
         .read(mailboxesProvider.notifier)
         .deactivateMailbox(mailbox.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Address turned off')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsInboundEmailTurnedOffToast),
+      ),
+    );
   }
 
   Future<void> _turnOn(
@@ -89,9 +97,11 @@ class InboundEmailScreen extends ConsumerWidget {
         .read(mailboxesProvider.notifier)
         .activateMailbox(mailbox.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Address turned on')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsInboundEmailTurnedOnToast),
+      ),
+    );
   }
 
   Future<void> _delete(
@@ -102,17 +112,19 @@ class InboundEmailScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${mailbox.address}?'),
-        content: const Text(mailboxDeleteExplanation),
+        title: Text(
+          context.l10n.settingsInboundEmailDeleteTitle(mailbox.address),
+        ),
+        content: Text(mailboxDeleteExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsInboundEmailKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -122,9 +134,11 @@ class InboundEmailScreen extends ConsumerWidget {
         .read(mailboxesProvider.notifier)
         .deleteMailbox(mailbox.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Address deleted')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsInboundEmailDeleted),
+      ),
+    );
   }
 
   @override
@@ -135,7 +149,7 @@ class InboundEmailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Inbound email'),
+        title: Text(context.l10n.settingsInboundEmailTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -143,7 +157,7 @@ class InboundEmailScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'Add address',
+              tooltip: context.l10n.settingsInboundEmailAdd,
               onPressed: () => _edit(context, ref, null),
             ),
         ],
@@ -202,16 +216,22 @@ class _Summary extends StatelessWidget {
             children: [
               // Not the server's `active`, which counts the switch. This counts
               // the addresses that would actually open a ticket.
-              _Stat(value: '${state.delivering}', label: 'creating tickets'),
-              _Stat(value: '${state.count}', label: 'addresses'),
+              _Stat(
+                value: '${state.delivering}',
+                label: context.l10n.settingsInboundEmailStatDelivering,
+              ),
+              _Stat(
+                value: '${state.count}',
+                label: context.l10n.settingsInboundEmailStatAddresses,
+              ),
               _Stat(
                 value: '${state.casesLast30d}',
-                label: 'tickets in 30 days',
+                label: context.l10n.settingsInboundEmailStatTickets,
               ),
               if (state.deliveringLeads > 0)
                 _Stat(
                   value: '${state.deliveringLeads}',
-                  label: 'creating leads',
+                  label: context.l10n.settingsInboundEmailStatLeads,
                 ),
             ],
           ),
@@ -219,12 +239,10 @@ class _Summary extends StatelessWidget {
             const SizedBox(height: 14),
             _Warning(
               text: silent.length == 1
-                  ? '${silent.first.address} is switched on and creates '
-                        'nothing. Mail keeps arriving and nothing bounces, so '
-                        'whoever writes there gets no ticket and no error.'
-                  : '${silent.length} addresses are switched on and create '
-                        'nothing. Mail keeps arriving and nothing bounces, so '
-                        'whoever writes there gets no ticket and no error.',
+                  ? context.l10n.settingsInboundEmailSilentOne(
+                      silent.first.address,
+                    )
+                  : context.l10n.settingsInboundEmailSilentMany(silent.length),
             ),
           ],
         ],
@@ -354,7 +372,9 @@ class _MailboxRow extends StatelessWidget {
               ),
               if (!mailbox.createsLeads)
                 StatusBadge(
-                  label: '${mailbox.casesLast30d} in 30 days',
+                  label: context.l10n.settingsInboundEmailRowCases(
+                    mailbox.casesLast30d,
+                  ),
                   color: AppColors.gray500,
                 ),
             ],
@@ -381,7 +401,7 @@ class _MailboxRow extends StatelessWidget {
           Text(
             mailbox.createsLeads
                 ? mailbox.opensAs
-                : 'Opens as ${mailbox.opensAs}',
+                : context.l10n.settingsInboundEmailOpensAs(mailbox.opensAs),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -405,7 +425,7 @@ class _MailboxRow extends StatelessWidget {
                   height: 40,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(context.l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -413,11 +433,11 @@ class _MailboxRow extends StatelessWidget {
                   child: mailbox.isActive
                       ? OutlinedButton(
                           onPressed: onTurnOff,
-                          child: const Text('Turn off'),
+                          child: Text(context.l10n.settingsInboundEmailTurnOff),
                         )
                       : OutlinedButton(
                           onPressed: onTurnOn,
-                          child: const Text('Turn on'),
+                          child: Text(context.l10n.settingsInboundEmailTurnOn),
                         ),
                 ),
                 SizedBox(
@@ -427,7 +447,7 @@ class _MailboxRow extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger600,
                     ),
-                    child: const Text('Delete'),
+                    child: Text(context.l10n.commonDelete),
                   ),
                 ),
               ],
@@ -457,7 +477,7 @@ class _AuthNote extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'How a delivery is proved genuine',
+            context.l10n.settingsInboundEmailAuthTitle,
             style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
@@ -498,17 +518,15 @@ class _EmptyState extends StatelessWidget {
             Icon(LucideIcons.mail, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'No inbound addresses',
+              context.l10n.settingsInboundEmailEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'Add one and mail sent to it opens a ticket, once it is '
-                        'pinned to its SNS topic.'
-                  : 'Email does not open tickets here yet. An administrator '
-                        'sets these up.',
+                  ? context.l10n.settingsInboundEmailEmptyAdmin
+                  : context.l10n.settingsInboundEmailEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -541,12 +559,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the inbound addresses',
+              context.l10n.settingsInboundEmailLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsInboundEmailTryAgain),
+            ),
           ],
         ),
       ),

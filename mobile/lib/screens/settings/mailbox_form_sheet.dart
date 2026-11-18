@@ -5,6 +5,7 @@ import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/lead_source.dart';
 import '../../data/models/mailbox.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lead_sources_provider.dart';
 import '../../providers/lookup_provider.dart';
 
@@ -167,7 +168,6 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
     final offList = stored != null && !people.any((p) => p.id == stored.id)
         ? stored
         : null;
-    final made = _leads ? 'leads' : 'tickets';
 
     return Padding(
       padding: EdgeInsets.only(
@@ -182,7 +182,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isCreate ? 'New address' : 'Edit ${widget.existing!.address}',
+              _isCreate
+                  ? context.l10n.settingsMailboxFormNewTitle
+                  : context.l10n.settingsMailboxFormEditTitle(
+                      widget.existing!.address,
+                    ),
               style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -191,18 +195,18 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                 key: const ValueKey('mailbox-creates'),
                 initialValue: _creates,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Mail here creates',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsMailboxFormCreates,
+                  border: const OutlineInputBorder(),
                 ),
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: mailboxCreatesTickets,
-                    child: Text('Tickets'),
+                    child: Text(context.l10n.settingsMailboxFormCreatesTickets),
                   ),
                   DropdownMenuItem(
                     value: mailboxCreatesLeads,
-                    child: Text('Leads'),
+                    child: Text(context.l10n.settingsMailboxFormCreatesLeads),
                   ),
                 ],
                 onChanged: (v) => setState(() => _creates = v ?? _creates),
@@ -214,10 +218,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                 contentPadding: EdgeInsets.zero,
                 value: _generate,
                 onChanged: (v) => setState(() => _generate = v),
-                title: const Text('Generate an address'),
+                title: Text(context.l10n.settingsMailboxFormGenerate),
                 subtitle: Text(
-                  'A new address at ${widget.generatedDomain}, ready to use. '
-                  'Nothing to set up with a mail provider.',
+                  context.l10n.settingsMailboxFormGenerateHint(
+                    widget.generatedDomain ?? '',
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -228,10 +233,12 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
                 decoration: InputDecoration(
-                  labelText: 'Address',
+                  labelText: context.l10n.settingsMailboxFormAddress,
                   helperText: _isCreate
                       ? null
-                      : 'Mail to the old address stops becoming $made.',
+                      : _leads
+                      ? context.l10n.settingsMailboxFormAddressHintLeads
+                      : context.l10n.settingsMailboxFormAddressHint,
                   helperMaxLines: 2,
                   border: const OutlineInputBorder(),
                 ),
@@ -240,11 +247,9 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
               DropdownButtonFormField<String>(
                 initialValue: _provider,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Provider',
-                  helperText:
-                      'AWS SES, Postmark and Mailgun deliver. Mail to an IMAP '
-                      'address becomes nothing until that integration exists.',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsMailboxFormProvider,
+                  helperText: context.l10n.settingsMailboxFormProviderHint,
                   helperMaxLines: 4,
                   border: OutlineInputBorder(),
                 ),
@@ -267,14 +272,10 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                   keyboardType: TextInputType.url,
                   autocorrect: false,
                   enableSuggestions: false,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'SNS Topic ARN',
                     hintText: 'arn:aws:sns:us-east-1:123456789012:inbound-mail',
-                    helperText:
-                        'Mail is accepted only from this exact topic. Left blank, '
-                        'it is set by the first subscription AWS confirms from an '
-                        'AWS account this server allows. Clearing it stops mail '
-                        'until it is set again.',
+                    helperText: context.l10n.settingsMailboxFormTopicHint,
                     helperMaxLines: 5,
                     border: OutlineInputBorder(),
                   ),
@@ -282,26 +283,26 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
             ],
             const SizedBox(height: 16),
             if (_leads) ...[
-              const _SectionLabel('What a lead arrives with'),
+              _SectionLabel(context.l10n.settingsMailboxFormSectionLeadArrives),
               _leadSourceField(),
               const SizedBox(height: 12),
               TextField(
                 key: const ValueKey('mailbox-lead-source-detail'),
                 controller: _leadSourceDetail,
                 maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'Sub-source (optional)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsMailboxFormSubSource,
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
             ] else ...[
-              const _SectionLabel('What a ticket opens as'),
+              _SectionLabel(context.l10n.settingsMailboxFormSectionOpensAs),
               DropdownButtonFormField<String>(
                 initialValue: _priority,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Priority',
+                decoration: InputDecoration(
+                  labelText: context.l10n.commonPriority,
                   border: OutlineInputBorder(),
                 ),
                 items: [
@@ -314,12 +315,15 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
               DropdownButtonFormField<String?>(
                 initialValue: _caseType,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Type',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsMailboxFormType,
                   border: OutlineInputBorder(),
                 ),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('None')),
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(context.l10n.settingsMailboxFormNone),
+                  ),
                   for (final type in mailboxCaseTypes)
                     DropdownMenuItem(value: type, child: Text(type)),
                 ],
@@ -331,11 +335,10 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
               initialValue: _assigneeId,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'Assigned to',
+                labelText: context.l10n.commonAssignedTo,
                 helperText: _leads
-                    ? 'Owns every lead this address makes.'
-                    : 'Where a ticket goes after that is decided by routing, '
-                          'not by this.',
+                    ? context.l10n.settingsMailboxFormAssigneeHintLeads
+                    : context.l10n.settingsMailboxFormAssigneeHint,
                 helperMaxLines: 3,
                 border: const OutlineInputBorder(),
               ),
@@ -343,7 +346,9 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                 DropdownMenuItem(
                   value: null,
                   child: Text(
-                    _leads ? 'Unassigned' : 'Unassigned, then routed',
+                    _leads
+                        ? context.l10n.settingsMailboxFormUnassignedLeads
+                        : context.l10n.settingsMailboxFormUnassigned,
                   ),
                 ),
                 if (offList != null)
@@ -352,7 +357,9 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                     child: Text(
                       offList.isActive
                           ? offList.displayName
-                          : '${offList.displayName} (deactivated)',
+                          : context.l10n.settingsMailboxFormDeactivated(
+                              offList.displayName,
+                            ),
                     ),
                   ),
                 for (final person in people)
@@ -369,12 +376,8 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
               const SizedBox(height: 8),
               Text(
                 _leads
-                    ? 'Deactivated users are not assigned. New leads from this '
-                          'address stay unassigned until you choose someone '
-                          'else.'
-                    : 'Deactivated users are not assigned. New tickets from '
-                          'this address go to routing until you choose someone '
-                          'else.',
+                    ? context.l10n.settingsMailboxFormDeactivatedHintLeads
+                    : context.l10n.settingsMailboxFormDeactivatedHint,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.warning600,
                 ),
@@ -397,7 +400,7 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -407,7 +410,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
                     height: 48,
                     child: FilledButton(
                       onPressed: _submit,
-                      child: Text(_isCreate ? 'Add address' : 'Save changes'),
+                      child: Text(
+                        _isCreate
+                            ? context.l10n.settingsMailboxFormAddAddress
+                            : context.l10n.settingsMailboxFormSaveChanges,
+                      ),
                     ),
                   ),
                 ),
@@ -425,6 +432,7 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
     final existing = widget.existing;
     final stored = existing?.hasWebhookSecret ?? false;
     final postmark = _provider == 'postmark';
+    final l10n = context.l10n;
     final url = existing == null
         ? null
         : mailboxSetupUrl(_provider, existing.id, ApiConfig.baseUrl);
@@ -436,10 +444,12 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
         autocorrect: false,
         enableSuggestions: false,
         decoration: InputDecoration(
-          labelText: postmark ? 'Basic-auth password' : 'Webhook signing key',
+          labelText: postmark
+              ? l10n.settingsMailboxFormSecretPassword
+              : l10n.settingsMailboxFormSecretSigningKey,
           helperText:
-              '${stored ? 'A secret is stored. It is never shown; leave blank to keep it.' : 'No secret is stored, so every post to this address is refused.'} '
-              '${postmark ? 'Postmark sends it as the basic-auth password in the webhook URL.' : "This is your Mailgun account's HTTP webhook signing key."}',
+              '${stored ? l10n.settingsMailboxFormSecretStored : l10n.settingsMailboxFormSecretMissing} '
+              '${postmark ? l10n.settingsMailboxFormSecretPostmark : l10n.settingsMailboxFormSecretMailgun}',
           helperMaxLines: 5,
           border: const OutlineInputBorder(),
         ),
@@ -447,13 +457,15 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
       const SizedBox(height: 8),
       if (url != null)
         SelectableText(
-          '${postmark ? 'Inbound webhook URL' : 'Route action'}: $url',
+          postmark
+              ? l10n.settingsMailboxFormWebhookUrl(url)
+              : l10n.settingsMailboxFormRouteAction(url),
           key: const ValueKey('mailbox-setup-url'),
           style: AppTypography.caption,
         )
       else
         Text(
-          'The setup URL appears here once the address is saved.',
+          l10n.settingsMailboxFormSetupUrlLater,
           style: AppTypography.caption,
         ),
     ];
@@ -468,11 +480,11 @@ class _MailboxFormSheetState extends ConsumerState<_MailboxFormSheet> {
       initialValue: _leadSource.isEmpty ? null : _leadSource,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'Lead source',
+        labelText: context.l10n.settingsMailboxFormLeadSource,
         helperText: async.hasError
-            ? 'Could not load the sources. Close this and try again.'
+            ? context.l10n.settingsMailboxFormSourcesFailed
             : answer == null
-            ? 'Loading the sources.'
+            ? context.l10n.settingsMailboxFormSourcesLoading
             : null,
         border: const OutlineInputBorder(),
       ),

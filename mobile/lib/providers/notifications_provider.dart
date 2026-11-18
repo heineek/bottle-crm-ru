@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/app_notification.dart';
@@ -56,7 +57,9 @@ class NotificationsNotifier extends AsyncNotifier<NotificationFeed> {
       ApiConfig.notifications(limit: _feedLimit),
     );
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load notifications.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadNotifications,
+      );
     }
     final data = api.NotificationListResponse.fromJson(response.data!);
     final items = [
@@ -92,9 +95,9 @@ class NotificationsNotifier extends AsyncNotifier<NotificationFeed> {
   Future<ApiResponse<Map<String, dynamic>>> markRead(String id) async {
     final current = state.value;
     if (current == null) {
-      return const ApiResponse(
+      return ApiResponse(
         success: false,
-        message: 'Nothing loaded yet.',
+        message: appL10n.appMsgNothingLoadedYet,
         statusCode: 0,
       );
     }

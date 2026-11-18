@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// A record's custom fields for reading, one row per definition. Every detail
 /// screen uses this; the card around it is the screen's own.
@@ -52,7 +54,7 @@ class CustomFieldsDisplay extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          shown.isEmpty ? 'Not set' : shown,
+          shown.isEmpty ? appL10n.coreCustomFieldsDisplayNotSet : shown,
           style: AppTypography.body.copyWith(
             color: shown.isEmpty ? AppColors.textTertiary : null,
           ),
@@ -71,7 +73,9 @@ String customFieldDisplayValue(CustomFieldDefinition def, Object? raw) {
   if (raw == null || (raw is String && raw.trim().isEmpty)) return '';
   switch (def.fieldType) {
     case CustomFieldType.checkbox:
-      return raw == true || raw == 'true' || raw == 1 ? 'Yes' : 'No';
+      return raw == true || raw == 'true' || raw == 1
+          ? appL10n.commonYes
+          : appL10n.commonNo;
     case CustomFieldType.number:
       return raw is num
           ? NumberFormat.decimalPattern().format(raw)
@@ -87,7 +91,7 @@ String customFieldDisplayValue(CustomFieldDefinition def, Object? raw) {
       final parsed = DateTime.tryParse(raw.toString());
       return parsed == null
           ? raw.toString()
-          : DateFormat('MMM d, y').format(parsed);
+          : localDateFormat('MMM d, y', 'yMMMd').format(parsed);
     case CustomFieldType.text:
     case CustomFieldType.textarea:
       return raw.toString().trim();

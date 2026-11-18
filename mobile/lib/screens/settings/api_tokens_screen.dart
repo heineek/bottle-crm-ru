@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/access_token.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import 'api_token_form_sheet.dart';
@@ -38,7 +39,7 @@ class ApiTokensScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('API tokens'),
+        title: Text(context.l10n.settingsApiTokensTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -48,7 +49,7 @@ class ApiTokensScreen extends ConsumerWidget {
           ? FloatingActionButton.extended(
               onPressed: () => _create(context, ref),
               icon: const Icon(LucideIcons.plus),
-              label: const Text('New token'),
+              label: Text(context.l10n.settingsApiTokensNewToken),
             )
           : null,
     );
@@ -91,7 +92,7 @@ class ApiTokensScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: Text('"$name" created, copy it now'),
+        title: Text(ctx.l10n.settingsApiTokensCreatedTitle(name)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -128,16 +129,16 @@ class ApiTokensScreen extends ConsumerWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: value));
               if (!ctx.mounted) return;
-              ScaffoldMessenger.of(
-                ctx,
-              ).showSnackBar(const SnackBar(content: Text('Token copied')));
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(content: Text(ctx.l10n.settingsApiTokensCopied)),
+              );
             },
             icon: const Icon(LucideIcons.copy, size: 16),
-            label: const Text('Copy'),
+            label: Text(ctx.l10n.settingsApiTokensCopy),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Done'),
+            child: Text(ctx.l10n.commonDone),
           ),
         ],
       ),
@@ -160,15 +161,13 @@ class _MemberNotice extends StatelessWidget {
             Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'Administrators only',
+              context.l10n.settingsApiTokensAdminsOnlyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Reviewing every token in the organization is limited to '
-              'administrators, because a token authenticates as its owner. Ask '
-              'an admin if one needs issuing or revoking.',
+              context.l10n.settingsApiTokensAdminsOnlyBody,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -200,7 +199,7 @@ class _AdminBody extends ConsumerWidget {
             _Totals(totals: state.totals),
             if (state.totals.orphaned > 0)
               _OrphanBanner(count: state.totals.orphaned),
-            const _SectionHeader('Tokens'),
+            _SectionHeader(context.l10n.settingsApiTokensSectionTokens),
             if (state.tokens.isEmpty)
               const _Empty()
             else
@@ -230,12 +229,12 @@ class _Totals extends StatelessWidget {
         children: [
           _Stat(
             value: '${totals.live}',
-            label: 'live',
+            label: context.l10n.settingsApiTokensStatLive,
             tone: AppColors.textPrimary,
           ),
           _Stat(
             value: '${totals.orphaned}',
-            label: 'owner deactivated',
+            label: context.l10n.settingsApiTokensStatOrphaned,
             tone: totals.orphaned > 0
                 ? AppColors.warning600
                 : AppColors.textPrimary,
@@ -245,14 +244,14 @@ class _Totals extends StatelessWidget {
             // when it has never been used. A token created a minute ago is not
             // "unused for 90 days", which is what this used to claim.
             value: '${totals.unused90d}',
-            label: 'unused 90+ days',
+            label: context.l10n.settingsApiTokensStatUnused,
             tone: totals.unused90d > 0
                 ? AppColors.warning600
                 : AppColors.textPrimary,
           ),
           _Stat(
             value: '${totals.count}',
-            label: 'issued in total',
+            label: context.l10n.settingsApiTokensStatTotal,
             tone: AppColors.textPrimary,
           ),
         ],
@@ -284,9 +283,7 @@ class _OrphanBannerState extends ConsumerState<_OrphanBanner> {
       SnackBar(
         content: Text(
           result.error ??
-              'Revoked ${result.revoked} '
-                  '${result.revoked == 1 ? 'token' : 'tokens'} on deactivated '
-                  'accounts.',
+              context.l10n.settingsApiTokensRevokedOrphaned(result.revoked),
         ),
       ),
     );
@@ -294,7 +291,6 @@ class _OrphanBannerState extends ConsumerState<_OrphanBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final many = widget.count != 1;
     return Container(
       color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 1),
@@ -309,11 +305,7 @@ class _OrphanBannerState extends ConsumerState<_OrphanBanner> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '${widget.count} live ${many ? 'tokens belong' : 'token belongs'} '
-                  'to a deactivated account. Deactivating already stops '
-                  '${many ? 'them' : 'it'} at login, but '
-                  '${many ? 'they are' : 'it is'} not revoked. Reactivating '
-                  'the account would bring ${many ? 'them' : 'it'} back.',
+                  context.l10n.settingsApiTokensOrphanText(widget.count),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textPrimary,
                   ),
@@ -326,7 +318,9 @@ class _OrphanBannerState extends ConsumerState<_OrphanBanner> {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: _busy ? null : _revokeAll,
-              child: Text(many ? 'Revoke them all' : 'Revoke it'),
+              child: Text(
+                context.l10n.settingsApiTokensRevokeOrphaned(widget.count),
+              ),
             ),
           ),
         ],
@@ -344,16 +338,16 @@ class _TokenRow extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Revoke "${token.name}"?'),
+        title: Text(ctx.l10n.settingsApiTokensRevokeTitle(token.name)),
         content: Text(tokenRevokeExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Revoke'),
+            child: Text(ctx.l10n.settingsApiTokensRevoke),
           ),
         ],
       ),
@@ -364,9 +358,9 @@ class _TokenRow extends ConsumerWidget {
         .read(accessTokensProvider.notifier)
         .revokeToken(token.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Token revoked')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.settingsApiTokensRevoked)),
+    );
   }
 
   @override
@@ -408,8 +402,12 @@ class _TokenRow extends ConsumerWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '${token.owner.name} · ${token.owner.roleLabel}'
-              '${token.owner.isActive ? '' : ' · deactivated'}',
+              token.owner.isActive
+                  ? '${token.owner.name} · ${token.owner.roleLabel}'
+                  : context.l10n.settingsApiTokensOwnerDeactivated(
+                      token.owner.name,
+                      token.owner.roleLabel,
+                    ),
               style: AppTypography.caption.copyWith(
                 color: token.owner.isActive
                     ? AppColors.textSecondary
@@ -446,7 +444,7 @@ class _TokenRow extends ConsumerWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => _revoke(context, ref),
-                  child: const Text('Revoke'),
+                  child: Text(context.l10n.settingsApiTokensRevoke),
                 ),
               ),
             ],
@@ -543,7 +541,7 @@ class _Empty extends StatelessWidget {
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
       child: Text(
-        'No tokens have been issued in this organization.',
+        context.l10n.settingsApiTokensEmpty,
         style: AppTypography.body.copyWith(color: AppColors.textSecondary),
       ),
     );
@@ -558,10 +556,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Text(
-        'A token authenticates as its owner and inherits their role and '
-        'organization. Issue one per integration so a single revocation stops '
-        'a single thing, set an expiry, and revoke anything you cannot name a '
-        'use for.',
+        context.l10n.settingsApiTokensFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -588,12 +583,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load tokens',
+              context.l10n.settingsApiTokensLoadFailed,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsApiTokensTryAgain),
+            ),
           ],
         ),
       ),

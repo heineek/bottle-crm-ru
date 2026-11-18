@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/team_member.dart';
@@ -54,7 +55,7 @@ class TeamNotifier extends AsyncNotifier<TeamListData> {
       return const TeamListData(forbidden: true);
     }
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load the team.');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotLoadTheTeam);
     }
     final data = api.UsersListResponse.fromJson(response.data!);
     return TeamListData(

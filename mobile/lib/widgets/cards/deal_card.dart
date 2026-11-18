@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../data/models/models.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/org_modules_provider.dart';
@@ -37,11 +38,11 @@ class DealCard extends ConsumerWidget {
 
   String get closeDateText {
     if (daysUntilClose < 0) {
-      return '${-daysUntilClose}d overdue';
+      return appL10n.appDaysOverdue(-daysUntilClose);
     } else if (daysUntilClose == 0) {
-      return 'Today';
+      return appL10n.appTimeToday;
     } else {
-      return '${daysUntilClose}d left';
+      return appL10n.appDaysLeft(daysUntilClose);
     }
   }
 
@@ -63,7 +64,7 @@ class DealCard extends ConsumerWidget {
     }
     final assigneeLabel =
         assignee?.displayName ??
-        (deal.assignedTo == 'Unassigned' ? null : deal.assignedTo);
+        (deal.assignedTo == appL10n.appUnassigned ? null : deal.assignedTo);
 
     return GestureDetector(
       onTap: onTap,
@@ -230,7 +231,9 @@ class DealCard extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${deal.probability}% probability',
+                                context.l10n.appDealProbability(
+                                  deal.probability,
+                                ),
                                 style: AppTypography.caption.copyWith(
                                   color: AppColors.textTertiary,
                                   fontSize: 10,
@@ -271,7 +274,9 @@ class DealCard extends ConsumerWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${deal.products.length} product${deal.products.length > 1 ? 's' : ''}',
+                              context.l10n.appProductCount(
+                                deal.products.length,
+                              ),
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.textSecondary,
                                 fontSize: 11,
@@ -328,9 +333,9 @@ class DealNextStep extends StatelessWidget {
         next == null || (next.dueDate != null && next.dueDate!.isBefore(today));
     final color = late ? AppColors.danger600 : AppColors.textSecondary;
     final text = next == null
-        ? 'No next step'
+        ? context.l10n.appNoNextStep
         : '${next.title} · '
-              '${next.dueDate == null ? 'no date' : DateFormat('d MMM').format(next.dueDate!)}';
+              '${next.dueDate == null ? context.l10n.appNoDate : localDateFormat('d MMM', 'MMMd').format(next.dueDate!)}';
     return Row(
       children: [
         Icon(LucideIcons.calendarClock, size: 14, color: color),

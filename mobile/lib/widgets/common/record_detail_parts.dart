@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/api/schema.g.dart' as api;
 import 'avatar.dart';
+import '../../l10n/l10n.dart';
 
 /// One assignee, from a profile map (`{id, user_details: {name, email,
 /// profile_pic}}`).
@@ -19,7 +20,7 @@ class AssigneeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final details = api.Profile.fromJson(profile).userDetails;
-    String name = 'Unknown';
+    String name = context.l10n.appUnknownPerson;
     String? email;
     String? pic;
     if (details != null) {
@@ -88,7 +89,7 @@ class _EditNoteDialogState extends State<EditNoteDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Note'),
+      title: Text(context.l10n.coreRecordDetailEditNote),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -98,19 +99,19 @@ class _EditNoteDialogState extends State<EditNoteDialog> {
           if (widget.maxLength != null)
             LengthLimitingTextInputFormatter(widget.maxLength),
         ],
-        decoration: const InputDecoration(
-          hintText: 'Update your note...',
+        decoration: InputDecoration(
+          hintText: context.l10n.coreRecordDetailEditNoteHint,
           border: OutlineInputBorder(),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, _controller.text.trim()),
-          child: const Text('Save'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );
@@ -157,7 +158,7 @@ class NoteCard extends StatelessWidget {
             if (onEdit != null)
               ListTile(
                 leading: Icon(LucideIcons.pencil, color: AppColors.primary600),
-                title: const Text('Edit Note'),
+                title: Text(context.l10n.coreRecordDetailEditNote),
                 onTap: () {
                   Navigator.pop(context);
                   onEdit!();
@@ -167,7 +168,7 @@ class NoteCard extends StatelessWidget {
               ListTile(
                 leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
                 title: Text(
-                  'Delete Note',
+                  context.l10n.coreRecordDetailDeleteNote,
                   style: TextStyle(color: AppColors.danger600),
                 ),
                 onTap: () {
@@ -186,16 +187,19 @@ class NoteCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Note?'),
-        content: const Text('This action cannot be undone.'),
+        title: Text(context.l10n.coreRecordDetailDeleteNoteTitle),
+        content: Text(context.l10n.coreRecordDetailCannotUndo),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -242,7 +246,7 @@ class NoteCard extends StatelessWidget {
                         LucideIcons.moreVertical,
                         color: AppColors.textTertiary,
                       ),
-                      tooltip: 'Note options',
+                      tooltip: context.l10n.coreRecordDetailNoteOptions,
                       onPressed: () => _showOptions(context),
                     ),
                   ),
@@ -267,7 +271,7 @@ class NoteCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _relTime(timestamp),
+                  _relTime(context, timestamp),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -280,12 +284,15 @@ class NoteCard extends StatelessWidget {
     );
   }
 
-  String _relTime(DateTime dt) {
+  String _relTime(BuildContext context, DateTime dt) {
+    final l10n = context.l10n;
     final d = DateTime.now().difference(dt);
-    if (d.inDays > 30) return '${(d.inDays / 30).floor()}mo ago';
-    if (d.inDays > 0) return '${d.inDays}d ago';
-    if (d.inHours > 0) return '${d.inHours}h ago';
-    if (d.inMinutes > 0) return '${d.inMinutes}m ago';
-    return 'just now';
+    if (d.inDays > 30) {
+      return l10n.appRelativeMonthsAgo((d.inDays / 30).floor());
+    }
+    if (d.inDays > 0) return l10n.appRelativeDaysAgo(d.inDays);
+    if (d.inHours > 0) return l10n.appRelativeHoursAgo(d.inHours);
+    if (d.inMinutes > 0) return l10n.appRelativeMinutesAgo(d.inMinutes);
+    return l10n.appRelativeJustNowLower;
   }
 }

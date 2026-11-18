@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// The invoice reports, from `/invoices/reports/dashboard/` and
@@ -140,13 +141,16 @@ class AgingReport {
   final double overdue;
 
   /// The buckets' labels, in the order [byCurrencyFromJson] reads them.
-  static const _labels = [
-    'Not yet due',
-    '1 to 30 days',
-    '31 to 60 days',
-    '61 to 90 days',
-    'Over 90 days',
-  ];
+  static List<String> get _labels {
+    final l10n = appL10n;
+    return [
+      l10n.appAgingCurrent,
+      l10n.appAging1To30,
+      l10n.appAging31To60,
+      l10n.appAging61To90,
+      l10n.appAgingOver90,
+    ];
+  }
 
   /// Reads an `AgingReport`: one report per currency code the response has
   /// unpaid money in.

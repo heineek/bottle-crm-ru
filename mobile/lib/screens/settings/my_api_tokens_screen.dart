@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/access_token.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/settings_provider.dart';
 import 'api_token_form_sheet.dart';
 
@@ -35,7 +36,7 @@ class MyApiTokensScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Your API tokens'),
+        title: Text(context.l10n.settingsMyApiTokensTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -64,7 +65,7 @@ class MyApiTokensScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _create(context, ref),
         icon: const Icon(LucideIcons.plus),
-        label: const Text('New token'),
+        label: Text(context.l10n.settingsApiTokensNewToken),
       ),
     );
   }
@@ -106,7 +107,7 @@ class MyApiTokensScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: Text('"$name" created, copy it now'),
+        title: Text(ctx.l10n.settingsApiTokensCreatedTitle(name)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -143,16 +144,16 @@ class MyApiTokensScreen extends ConsumerWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: value));
               if (!ctx.mounted) return;
-              ScaffoldMessenger.of(
-                ctx,
-              ).showSnackBar(const SnackBar(content: Text('Token copied')));
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(content: Text(ctx.l10n.settingsApiTokensCopied)),
+              );
             },
             icon: const Icon(LucideIcons.copy, size: 16),
-            label: const Text('Copy'),
+            label: Text(ctx.l10n.settingsApiTokensCopy),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Done'),
+            child: Text(ctx.l10n.commonDone),
           ),
         ],
       ),
@@ -174,7 +175,7 @@ class _Summary extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 1),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Text(
-        '$live live of ${tokens.length} you have issued',
+        context.l10n.settingsMyApiTokensSummary(live, tokens.length),
         style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
       ),
     );
@@ -190,16 +191,16 @@ class _MyTokenRow extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Revoke "${token.name}"?'),
+        title: Text(ctx.l10n.settingsApiTokensRevokeTitle(token.name)),
         content: Text(tokenRevokeExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Revoke'),
+            child: Text(ctx.l10n.settingsApiTokensRevoke),
           ),
         ],
       ),
@@ -210,9 +211,9 @@ class _MyTokenRow extends ConsumerWidget {
         .read(myAccessTokensProvider.notifier)
         .revokeToken(token.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Token revoked')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.settingsApiTokensRevoked)),
+    );
   }
 
   @override
@@ -254,7 +255,7 @@ class _MyTokenRow extends ConsumerWidget {
             const SizedBox(height: 6),
             // No owner line: every row here is yours.
             Text(
-              token.scopeSummaryFor(ownerLabel: 'you'),
+              token.scopeSummaryFor(own: true),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -282,7 +283,7 @@ class _MyTokenRow extends ConsumerWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => _revoke(context, ref),
-                  child: const Text('Revoke'),
+                  child: Text(context.l10n.settingsApiTokensRevoke),
                 ),
               ),
             ],
@@ -343,17 +344,14 @@ class _SafetyNote extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'A token is you',
+                  context.l10n.settingsMyApiTokensSafetyTitle,
                   style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'It authenticates as your profile and inherits your role and '
-                  'your org, so anyone holding it can do what you can. Revoke '
-                  'it here the moment it is not needed. An admin can see and '
-                  'revoke it too.',
+                  context.l10n.settingsMyApiTokensSafetyBody,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -384,12 +382,13 @@ class _EmptyState extends StatelessWidget {
                 color: AppColors.textTertiary,
               ),
               const SizedBox(height: 16),
-              Text('No tokens yet', style: AppTypography.h3),
+              Text(
+                context.l10n.settingsMyApiTokensEmptyTitle,
+                style: AppTypography.h3,
+              ),
               const SizedBox(height: 8),
               Text(
-                'A token lets a script, an integration or an agent call the '
-                'API as you, with your role and your org. Create one when you '
-                'need it, and revoke it the moment you do not.',
+                context.l10n.settingsMyApiTokensEmptyBody,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -422,9 +421,15 @@ class _ErrorState extends StatelessWidget {
               color: AppColors.textTertiary,
             ),
             const SizedBox(height: 14),
-            Text('Could not load your tokens', style: AppTypography.h3),
+            Text(
+              context.l10n.settingsMyApiTokensLoadFailed,
+              style: AppTypography.h3,
+            ),
             const SizedBox(height: 14),
-            OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       ),

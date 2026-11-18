@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../l10n/l10n.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/org_app.dart';
 import '../services/api_service.dart';
@@ -26,7 +27,7 @@ class OrgAppsNotifier extends AsyncNotifier<OrgAppsAnswer?> {
     if (response.statusCode == 404) return null;
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load apps');
+      throw Exception(response.message ?? appL10n.appOrgAppLoadFailed);
     }
     return OrgAppsAnswer.fromJson(data, orgId: orgId);
   }
@@ -132,7 +133,9 @@ String _message(ApiResponse<Map<String, dynamic>> response) {
   final error = response.data?['error'];
   if (error is String && error.trim().isNotEmpty) return error;
   final raw = response.message;
-  return (raw == null || raw.trim().isEmpty) ? 'Something went wrong' : raw;
+  return (raw == null || raw.trim().isEmpty)
+      ? appL10n.appMsgSomethingWentWrong
+      : raw;
 }
 
 // No automatic retry, as with the modules list.

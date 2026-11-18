@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 import 'deal.dart' show Currency;
 import 'invoice.dart' show InvoiceStatus;
@@ -8,17 +9,25 @@ import 'project.dart' show ProjectRef;
 
 /// `invoices.models.ESTIMATE_STATUS`. Six values, no underscores this time.
 enum EstimateStatus {
-  draft('Draft', 'Draft', AppColors.gray500),
-  sent('Sent', 'Sent', AppColors.primary600),
-  viewed('Viewed', 'Viewed', AppColors.primary600),
-  accepted('Accepted', 'Accepted', AppColors.success600),
-  declined('Declined', 'Declined', AppColors.danger600),
-  expired('Expired', 'Expired', AppColors.warning600);
+  draft('Draft', AppColors.gray500),
+  sent('Sent', AppColors.primary600),
+  viewed('Viewed', AppColors.primary600),
+  accepted('Accepted', AppColors.success600),
+  declined('Declined', AppColors.danger600),
+  expired('Expired', AppColors.warning600);
 
-  const EstimateStatus(this.value, this.label, this.color);
+  const EstimateStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    draft => appL10n.appEstimateStatusDraft,
+    sent => appL10n.appEstimateStatusSent,
+    viewed => appL10n.appEstimateStatusViewed,
+    accepted => appL10n.appEstimateStatusAccepted,
+    declined => appL10n.appEstimateStatusDeclined,
+    expired => appL10n.appEstimateStatusExpired,
+  };
 
   final String value;
-  final String label;
   final Color color;
 
   static EstimateStatus? fromString(String? raw) {

@@ -5,11 +5,17 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/org_module.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/org_apps_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
 
-const _groupTitles = {'sell': 'Sell', 'serve': 'Serve', 'bill': 'Bill'};
+String _groupTitle(BuildContext context, String group) => switch (group) {
+  'sell' => context.l10n.settingsModulesGroupSell,
+  'serve' => context.l10n.settingsModulesGroupServe,
+  'bill' => context.l10n.settingsModulesGroupBill,
+  _ => group,
+};
 
 /// Switches the organization's modules off and on and orders them, the lower
 /// half of the Apps screen. The server refuses anyone but an admin, and says
@@ -55,17 +61,17 @@ class _ModulesSectionState extends ConsumerState<ModulesSection> {
     final sure = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Switch off ${m.label}?'),
+        title: Text(context.l10n.settingsModulesSwitchOffTitle(m.label)),
         content: Text(m.stops),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it on'),
+            child: Text(context.l10n.settingsModulesKeepOn),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Switch off'),
+            child: Text(context.l10n.settingsModulesSwitchOff),
           ),
         ],
       ),
@@ -87,13 +93,15 @@ class _ModulesSectionState extends ConsumerState<ModulesSection> {
       }
       if (async.hasError) {
         return _ErrorState(
-          message: 'Could not load modules',
+          message: context.l10n.settingsModulesLoadFailed,
           onRetry: () => ref.invalidate(orgModulesProvider),
         );
       }
-      return const _Notice('This server does not offer modules yet.');
+      return _Notice(context.l10n.settingsModulesNotOffered);
     }
-    if (!answer.canEdit) return const _Notice(_memberText);
+    if (!answer.canEdit) {
+      return _Notice(context.l10n.settingsModulesMemberOnly);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -101,14 +109,15 @@ class _ModulesSectionState extends ConsumerState<ModulesSection> {
         if (widget.showHeading)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
-            child: Text('Modules', style: AppTypography.h3),
+            child: Text(
+              context.l10n.settingsModulesTitle,
+              style: AppTypography.h3,
+            ),
           ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Text(
-            'Switch off what this organization does not use. Nothing is '
-            'deleted: switching a module back on brings everything back as it '
-            'was.',
+            context.l10n.settingsModulesIntro,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
         ),
@@ -120,7 +129,7 @@ class _ModulesSectionState extends ConsumerState<ModulesSection> {
             onInboundEmail: () => context.push(AppRoutes.settingsInboundEmail),
           ),
         for (final group in moduleGroups) ...[
-          _SectionHeader(_groupTitles[group] ?? group),
+          _SectionHeader(_groupTitle(context, group)),
           for (final m in answer.modules)
             if (m.group == group)
               _ModuleCard(
@@ -138,8 +147,6 @@ class _ModulesSectionState extends ConsumerState<ModulesSection> {
     );
   }
 }
-
-const _memberText = 'Only an organization admin can switch modules on or off.';
 
 class _ModuleCard extends StatelessWidget {
   const _ModuleCard({
@@ -211,8 +218,11 @@ class _ModuleCard extends StatelessWidget {
                   if (needOff) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Needs $needLabel.'
-                      '${module.enabled ? ' It comes back when $needLabel is switched on.' : ''}',
+                      module.enabled
+                          ? context.l10n.settingsModulesNeedsComesBack(
+                              needLabel,
+                            )
+                          : context.l10n.settingsModulesNeeds(needLabel),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.warning700,
                       ),
@@ -233,12 +243,12 @@ class _ModuleCard extends StatelessWidget {
           Column(
             children: [
               _MoveButton(
-                tooltip: 'Move up',
+                tooltip: context.l10n.settingsModulesMoveUp,
                 icon: LucideIcons.chevronUp,
                 onPressed: canUp && !saving ? () => onMove('up') : null,
               ),
               _MoveButton(
-                tooltip: 'Move down',
+                tooltip: context.l10n.settingsModulesMoveDown,
                 icon: LucideIcons.chevronDown,
                 onPressed: canDown && !saving ? () => onMove('down') : null,
               ),
@@ -316,12 +326,12 @@ class _RefusalBox extends StatelessWidget {
                 if (forms)
                   OutlinedButton(
                     onPressed: onWebForms,
-                    child: const Text('Web forms'),
+                    child: Text(context.l10n.settingsModulesWebForms),
                   ),
                 if (mail)
                   OutlinedButton(
                     onPressed: onInboundEmail,
-                    child: const Text('Inbound email'),
+                    child: Text(context.l10n.settingsModulesInboundEmail),
                   ),
               ],
             ),
@@ -391,7 +401,10 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(message, style: AppTypography.body, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          OutlinedButton(
+            onPressed: onRetry,
+            child: Text(context.l10n.settingsPipelineTryAgain),
+          ),
         ],
       ),
     ),

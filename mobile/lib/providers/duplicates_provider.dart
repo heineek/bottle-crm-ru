@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
+import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 import 'accounts_provider.dart';
 import 'contacts_provider.dart';
@@ -60,38 +61,46 @@ enum DuplicateModule {
     accounts => const ['name', 'email', 'phone', 'website'],
   };
 
+  /// The record kind in the current language, lowercase: "lead".
+  String get singularLabel => appL10n.appDupSingular(name);
+
   /// The rows the compare screen shows side by side, the same as the web's.
   /// Each reads the module's detail row: a `Lead`, `Contact` or `Account`.
-  List<(String, String Function(Map<String, dynamic>))> get compareFields =>
-      switch (this) {
-        leads => [
-          ('Name', _lead((l) => _personName(l.firstName, l.lastName))),
-          ('Company', _lead((l) => l.companyName)),
-          ('Email', _lead((l) => l.email)),
-          ('Phone', _lead((l) => l.phone)),
-          ('Website', _lead((l) => l.website)),
-          ('Status', _lead((l) => l.status)),
-          ('Created', _lead((l) => _day(l.createdAt))),
-        ],
-        contacts => [
-          ('Name', _contact((c) => _personName(c.firstName, c.lastName))),
-          ('Job title', _contact((c) => c.title)),
-          ('Company', _contact((c) => c.organization)),
-          ('Email', _contact((c) => c.email)),
-          ('Phone', _contact((c) => c.phone)),
-          ('City', _contact((c) => c.city)),
-          ('Created', _contact((c) => _day(c.createdAt))),
-        ],
-        accounts => [
-          ('Name', _account((a) => a.name)),
-          ('Website', _account((a) => a.website)),
-          ('Email', _account((a) => a.email)),
-          ('Phone', _account((a) => a.phone)),
-          ('Industry', _account((a) => a.industry)),
-          ('City', _account((a) => a.city)),
-          ('Created', _account((a) => _day(a.createdAt))),
-        ],
-      };
+  List<(String, String Function(Map<String, dynamic>))> get compareFields {
+    final l10n = appL10n;
+    return switch (this) {
+      leads => [
+        (l10n.commonName, _lead((l) => _personName(l.firstName, l.lastName))),
+        (l10n.appDupFieldCompany, _lead((l) => l.companyName)),
+        (l10n.commonEmail, _lead((l) => l.email)),
+        (l10n.commonPhone, _lead((l) => l.phone)),
+        (l10n.appWebFormFieldWebsite, _lead((l) => l.website)),
+        (l10n.commonStatus, _lead((l) => l.status)),
+        (l10n.appDupFieldCreated, _lead((l) => _day(l.createdAt))),
+      ],
+      contacts => [
+        (
+          l10n.commonName,
+          _contact((c) => _personName(c.firstName, c.lastName)),
+        ),
+        (l10n.appWebFormFieldJobTitle, _contact((c) => c.title)),
+        (l10n.appDupFieldCompany, _contact((c) => c.organization)),
+        (l10n.commonEmail, _contact((c) => c.email)),
+        (l10n.commonPhone, _contact((c) => c.phone)),
+        (l10n.appWebFormFieldCity, _contact((c) => c.city)),
+        (l10n.appDupFieldCreated, _contact((c) => _day(c.createdAt))),
+      ],
+      accounts => [
+        (l10n.commonName, _account((a) => a.name)),
+        (l10n.appWebFormFieldWebsite, _account((a) => a.website)),
+        (l10n.commonEmail, _account((a) => a.email)),
+        (l10n.commonPhone, _account((a) => a.phone)),
+        (l10n.appWebFormFieldIndustry, _account((a) => a.industry)),
+        (l10n.appWebFormFieldCity, _account((a) => a.city)),
+        (l10n.appDupFieldCreated, _account((a) => _day(a.createdAt))),
+      ],
+    };
+  }
 
   String nameOf(Map<String, dynamic> record) {
     final String name;
@@ -111,7 +120,7 @@ enum DuplicateModule {
         email = _text(a.email);
     }
     if (name.isNotEmpty) return name;
-    return email.isNotEmpty ? email : singular;
+    return email.isNotEmpty ? email : singularLabel;
   }
 }
 
@@ -141,7 +150,10 @@ String _day(String? raw) {
 /// "email and phone": the API names each rule in plain words already.
 String matchedLabel(List<String> reasons) {
   if (reasons.length <= 1) return reasons.join();
-  return '${reasons.sublist(0, reasons.length - 1).join(', ')} and ${reasons.last}';
+  return appL10n.appJoinAnd(
+    reasons.sublist(0, reasons.length - 1).join(', '),
+    reasons.last,
+  );
 }
 
 /// One possible duplicate. List-level fields only, which is all the API sends.
@@ -294,10 +306,9 @@ class DuplicatesApi {
     );
     if (response.success) return null;
     if (response.statusCode == 404) {
-      return 'One of these ${module.singular}s no longer exists, or you do '
-          'not have access to it.';
+      return appL10n.appDupMergeGone(module.name);
     }
-    return response.message ?? 'Could not merge these ${module.singular}s.';
+    return response.message ?? appL10n.appDupMergeFailed(module.name);
   }
 
   List<DuplicateHit> _hits(List<api.DuplicateHit>? rows) => [

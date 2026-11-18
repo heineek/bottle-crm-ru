@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 
+import '../l10n/l10n.dart';
 import 'api_service.dart';
 
 /// How an export ended. [cancelled] is not a failure: the person closed the
@@ -64,7 +65,7 @@ Future<RecordExportResult> exportRecordsCsv({
   if (!response.success || response.data == null) {
     return RecordExportResult(
       RecordExportOutcome.failed,
-      error: response.message ?? 'Could not export.',
+      error: response.message ?? appL10n.appExportFailed,
     );
   }
   final name = exportFileName(filePrefix, today ?? DateTime.now());
@@ -74,16 +75,16 @@ Future<RecordExportResult> exportRecordsCsv({
         ? const RecordExportResult(RecordExportOutcome.cancelled)
         : RecordExportResult(RecordExportOutcome.saved, fileName: name);
   } catch (_) {
-    return const RecordExportResult(
+    return RecordExportResult(
       RecordExportOutcome.failed,
-      error: 'Could not save the file.',
+      error: appL10n.appExportSaveFailed,
     );
   }
 }
 
 Future<String?> _saveWithPicker(Uint8List bytes, String fileName) async =>
     (await FilePicker.saveFile(
-      dialogTitle: 'Save CSV export',
+      dialogTitle: appL10n.appExportSaveDialog,
       fileName: fileName,
       bytes: bytes,
     ))?.toString();

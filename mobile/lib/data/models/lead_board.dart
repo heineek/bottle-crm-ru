@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 
 import '../api/schema.g.dart' as api;
 
@@ -141,7 +142,7 @@ class LeadBoardLane {
     final cards = _cards(w.leads);
     return LeadBoardLane(
       id: '',
-      name: 'No stage',
+      name: appL10n.appNoStage,
       count: w.leadCount ?? cards.length,
       cards: cards,
       isUnstaged: true,

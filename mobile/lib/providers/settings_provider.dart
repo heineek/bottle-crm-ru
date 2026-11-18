@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/access_token.dart';
@@ -14,6 +15,9 @@ import '../data/models/reopen_policy.dart';
 import '../data/models/routing_rule.dart';
 import '../data/models/tag.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import 'language_provider.dart';
+import '../data/models/org_locales.dart';
 
 /// The org settings cluster: every page of it, on the phone.
 ///
@@ -38,7 +42,9 @@ String _message(dynamic response) {
   final detail = response.data?['message'];
   if (detail is String && detail.trim().isNotEmpty) return detail;
   final raw = response.message as String?;
-  return (raw == null || raw.trim().isEmpty) ? 'Something went wrong' : raw;
+  return (raw == null || raw.trim().isEmpty)
+      ? appL10n.appMsgSomethingWentWrong
+      : raw;
 }
 
 /// The definition list plus the counts the settings screen shows above it.
@@ -109,7 +115,9 @@ class CustomFieldsNotifier extends AsyncNotifier<CustomFieldsState> {
   Future<CustomFieldsState> _fetch() async {
     final response = await _api.get(ApiConfig.customFieldDefinitions);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load custom fields');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadCustomFields,
+      );
     }
     final body = api.CustomFieldDefinitionListResponse.fromJson(response.data!);
     final fields = (body.definitions ?? const <api.CustomFieldDefinitionRow>[])
@@ -227,7 +235,9 @@ class MacrosNotifier extends AsyncNotifier<MacrosState> {
   Future<MacrosState> _fetch() async {
     final response = await _api.get(ApiConfig.macros);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load saved replies');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadSavedReplies,
+      );
     }
     final body = api.MacroListResponse.fromJson(response.data!);
     final macros = _macrosIn(body);
@@ -295,7 +305,7 @@ final activeMacrosProvider = FutureProvider<List<Macro>>((ref) async {
   ).replace(queryParameters: {'active': 'true'}).toString();
   final response = await ApiService().get(url);
   if (!response.success || response.data == null) {
-    throw Exception(response.message ?? 'Failed to load saved replies');
+    throw Exception(response.message ?? appL10n.appMsgFailedToLoadSavedReplies);
   }
   return _macrosIn(api.MacroListResponse.fromJson(response.data!));
 });
@@ -325,7 +335,7 @@ Future<({String? text, String? error})> renderMacro({
     response.data ?? {},
   ).renderedBody;
   if (rendered == null) {
-    return (text: null, error: 'The saved reply came back empty.');
+    return (text: null, error: appL10n.appMsgTheSavedReplyCameBackEmpty);
   }
   return (text: rendered, error: null);
 }
@@ -412,7 +422,7 @@ class TagsNotifier extends AsyncNotifier<TagsState> {
     ).replace(queryParameters: {'include_archived': 'true'}).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load tags');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTags);
     }
     final body = api.TagsListResponse.fromJson(response.data!);
     final usageLabels = body.usageLabels;
@@ -537,7 +547,9 @@ class RoutingRulesNotifier extends AsyncNotifier<RoutingRulesState> {
   Future<RoutingRulesState> _fetch() async {
     final response = await _api.get(ApiConfig.routingRules);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load routing rules');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadRoutingRules,
+      );
     }
     final body = api.RoutingRuleListResponse.fromJson(response.data!);
     final rules = (body.rules ?? const <api.RoutingRuleListRow>[])
@@ -626,7 +638,9 @@ class EscalationNotifier extends AsyncNotifier<EscalationState> {
   Future<EscalationState> _fetch() async {
     final response = await _api.get(ApiConfig.escalationPolicies);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load escalation policies');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadEscalationPolicies,
+      );
     }
     final body = api.EscalationPolicyListResponse.fromJson(response.data!);
     final policies = [
@@ -699,7 +713,9 @@ class BusinessHoursNotifier extends AsyncNotifier<BusinessCalendar> {
   Future<BusinessCalendar> _fetch() async {
     final response = await _api.get(ApiConfig.businessCalendar);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load business hours');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadBusinessHours,
+      );
     }
     return BusinessCalendar.fromJson(response.data!);
   }
@@ -715,7 +731,7 @@ class BusinessHoursNotifier extends AsyncNotifier<BusinessCalendar> {
     required String timezone,
   }) async {
     final calendar = state.value;
-    if (calendar == null) return 'The calendar has not loaded yet.';
+    if (calendar == null) return appL10n.appMsgTheCalendarHasNotLoadedYet;
     final response = await _api.put(
       ApiConfig.businessCalendarDetail(calendar.id),
       businessHoursPayload(days: days, name: name, timezone: timezone),
@@ -739,7 +755,10 @@ class BusinessHoursNotifier extends AsyncNotifier<BusinessCalendar> {
   }) async {
     final calendar = state.value;
     if (calendar == null) {
-      return (error: 'The calendar has not loaded yet.', existingName: null);
+      return (
+        error: appL10n.appMsgTheCalendarHasNotLoadedYet,
+        existingName: null,
+      );
     }
     final response = await _api.post(
       ApiConfig.businessHolidays(calendar.id),
@@ -760,7 +779,7 @@ class BusinessHoursNotifier extends AsyncNotifier<BusinessCalendar> {
   /// Permanent. `BusinessHolidayDetailView.delete` calls `holiday.delete()`.
   Future<String?> removeHoliday(String holidayId) async {
     final calendar = state.value;
-    if (calendar == null) return 'The calendar has not loaded yet.';
+    if (calendar == null) return appL10n.appMsgTheCalendarHasNotLoadedYet;
     final response = await _api.delete(
       ApiConfig.businessHoliday(calendar.id, holidayId),
     );
@@ -808,7 +827,9 @@ class ReopenPolicyNotifier extends AsyncNotifier<ReopenPolicy> {
   Future<ReopenPolicy> _fetch() async {
     final response = await _api.get(ApiConfig.reopenPolicy);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load the reopen policy');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadTheReopenPolicy,
+      );
     }
     return ReopenPolicy.fromJson(response.data!);
   }
@@ -866,7 +887,7 @@ class AccessTokensNotifier extends AsyncNotifier<AccessTokensState> {
   Future<AccessTokensState> _fetch() async {
     final response = await _api.get(ApiConfig.orgTokens);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load tokens');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTokens);
     }
     final body = api.OrgAccessTokenListResponse.fromJson(response.data!);
     final rows = [
@@ -909,13 +930,7 @@ class AccessTokensNotifier extends AsyncNotifier<AccessTokensState> {
     if (raw == null || raw.isEmpty) {
       // A 2xx with no value should not happen, and silently showing nothing
       // would look like the token was never created. It was.
-      return (
-        error:
-            'The token was created but its value did not come back. '
-            'Revoke it and create another.',
-        value: null,
-        name: null,
-      );
+      return (error: appL10n.appMsgTokenValueMissing, value: null, name: null);
     }
     return (error: null, value: raw, name: created.name ?? name.trim());
   }
@@ -987,7 +1002,7 @@ class MyAccessTokensNotifier extends AsyncNotifier<List<AccessToken>> {
   Future<List<AccessToken>> _fetch() async {
     final response = await _api.get(ApiConfig.profileTokens);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load your tokens');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadYourTokens);
     }
     final body = api.AccessTokenListResponse.fromJson(response.data!);
     return sortedTokens([
@@ -1021,13 +1036,7 @@ class MyAccessTokensNotifier extends AsyncNotifier<List<AccessToken>> {
     final raw = created.token;
     await refresh();
     if (raw == null || raw.isEmpty) {
-      return (
-        error:
-            'The token was created but its value did not come back. '
-            'Revoke it and create another.',
-        value: null,
-        name: null,
-      );
+      return (error: appL10n.appMsgTokenValueMissing, value: null, name: null);
     }
     return (error: null, value: raw, name: created.name ?? name.trim());
   }
@@ -1074,7 +1083,7 @@ class OrgSettingsNotifier extends AsyncNotifier<OrgSettings> {
     final response = await _api.get(ApiConfig.orgSettings);
     if (!response.success || response.data == null) {
       throw Exception(
-        response.message ?? 'Failed to load organization settings',
+        response.message ?? appL10n.appMsgFailedToLoadOrganizationSettings,
       );
     }
     return OrgSettings.fromJson(response.data!);
@@ -1083,8 +1092,16 @@ class OrgSettingsNotifier extends AsyncNotifier<OrgSettings> {
   /// Save the org. Admin-only server-side; a member's PATCH is a 403 whatever
   /// this app shows.
   Future<String?> save(Map<String, dynamic> payload) async {
+    final before = state.value?.defaultLanguage;
     final response = await _api.patch(ApiConfig.orgSettings, payload);
     if (!response.success) return _orgMessage(response);
+    // The org default reaches this app through the token's claims, so a
+    // changed one needs a fresh token before the screen can follow it.
+    if (payload['default_language'] != null &&
+        payload['default_language'] != before) {
+      await AuthService().refreshAccessToken();
+      ref.read(languageProvider.notifier).reload();
+    }
     await refresh();
     return null;
   }
@@ -1179,7 +1196,9 @@ class MailboxesNotifier extends AsyncNotifier<MailboxesState> {
   Future<MailboxesState> _fetch() async {
     final response = await _api.get(ApiConfig.mailboxes);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load inbound email');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadInboundEmail,
+      );
     }
     final body = api.InboundMailboxListResponse.fromJson(response.data!);
     final raw = body.generatedDomain ?? '';
@@ -1285,7 +1304,9 @@ class ApprovalRulesNotifier extends AsyncNotifier<ApprovalRulesState> {
   Future<ApprovalRulesState> _fetch() async {
     final response = await _api.get(ApiConfig.approvalRules);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load approval rules');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadApprovalRules,
+      );
     }
     final body = api.ApprovalRuleListResponse.fromJson(response.data!);
     final rules = (body.rules ?? const <api.ApprovalRuleListRow>[])
@@ -1361,4 +1382,14 @@ final orgTimezonesProvider = FutureProvider<List<TimezoneOption>>((ref) async {
   return zones.isEmpty
       ? const [TimezoneOption(name: 'UTC', offsetMinutes: 0)]
       : zones;
+});
+
+/// Countries for every country picker, named in the current language.
+/// Watches [languageProvider], so changing language refetches the names.
+final orgLocalesProvider = FutureProvider<OrgLocales>((ref) async {
+  ref.watch(languageProvider);
+  final response = await ApiService().get(ApiConfig.orgLocales);
+  if (!response.success || response.data == null) return OrgLocales.fallback;
+  final locales = OrgLocales.fromJson(response.data!);
+  return locales.countries.isEmpty ? OrgLocales.fallback : locales;
 });

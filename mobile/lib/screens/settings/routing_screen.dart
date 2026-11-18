@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/routing_rule.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/common/badge.dart';
@@ -37,7 +38,10 @@ class RoutingScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Rule added' : 'Rule saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.settingsRoutingRuleAdded
+                  : context.l10n.settingsRoutingRuleSaved),
         ),
       ),
     );
@@ -52,9 +56,11 @@ class RoutingScreen extends ConsumerWidget {
         .read(routingRulesProvider.notifier)
         .deactivateRule(rule.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Rule turned off')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsRoutingRuleTurnedOff),
+      ),
+    );
   }
 
   Future<void> _turnOn(
@@ -66,9 +72,11 @@ class RoutingScreen extends ConsumerWidget {
         .read(routingRulesProvider.notifier)
         .activateRule(rule.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Rule turned on')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? context.l10n.settingsRoutingRuleTurnedOn),
+      ),
+    );
   }
 
   Future<void> _delete(
@@ -80,17 +88,17 @@ class RoutingScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         // "Delete", not "Turn off", because this one really does delete.
-        title: Text('Delete ${rule.name}?'),
-        content: const Text(routingRemovalExplanation),
+        title: Text(context.l10n.settingsRoutingDeleteTitle(rule.name)),
+        content: Text(routingRemovalExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.settingsRoutingKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -100,9 +108,9 @@ class RoutingScreen extends ConsumerWidget {
         .read(routingRulesProvider.notifier)
         .deleteRule(rule.id);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Rule deleted')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.settingsRoutingRuleDeleted)),
+    );
   }
 
   @override
@@ -113,7 +121,7 @@ class RoutingScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Ticket routing'),
+        title: Text(context.l10n.settingsRoutingTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -121,7 +129,7 @@ class RoutingScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New rule',
+              tooltip: context.l10n.settingsRoutingNewRule,
               onPressed: () => _edit(context, ref, null),
             ),
         ],
@@ -166,6 +174,7 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -177,26 +186,23 @@ class _Summary extends StatelessWidget {
             spacing: 20,
             runSpacing: 10,
             children: [
-              _Stat(value: '${state.active}', label: 'running'),
+              _Stat(
+                value: '${state.active}',
+                label: l10n.settingsRoutingStatRunning,
+              ),
               _Stat(
                 value: '${state.count - state.active}',
-                label: 'turned off',
+                label: l10n.settingsRoutingStatTurnedOff,
               ),
               _Stat(
                 value: '${state.unroutedLast30d}',
-                label: 'unrouted in 30 days',
+                label: l10n.settingsRoutingStatUnrouted,
               ),
             ],
           ),
           if (state.dead > 0) ...[
             const SizedBox(height: 14),
-            _Warning(
-              text: state.dead == 1
-                  ? 'One running rule has nobody to assign to. It matches '
-                        'tickets and leaves them unassigned.'
-                  : '${state.dead} running rules have nobody to assign to. '
-                        'They match tickets and leave them unassigned.',
-            ),
+            _Warning(text: l10n.settingsRoutingDeadWarning(state.dead)),
           ],
         ],
       ),
@@ -290,21 +296,22 @@ class _RuleRow extends StatelessWidget {
   final VoidCallback onTurnOn;
   final VoidCallback onDelete;
 
-  String get _target {
+  String _target(AppLocalizations l10n) {
     if (rule.routesToTeam) {
       return rule.targetTeam == null
-          ? 'no team chosen'
-          : 'the ${rule.targetTeam!.name} team';
+          ? l10n.settingsRoutingTargetNoTeam
+          : l10n.settingsRoutingTargetTeam(rule.targetTeam!.name);
     }
-    if (rule.targetAssignees.isEmpty) return 'nobody';
+    if (rule.targetAssignees.isEmpty) return l10n.settingsRoutingTargetNobody;
     if (rule.targetAssignees.length == 1) {
       return rule.targetAssignees.first.name;
     }
-    return '${rule.targetAssignees.length} people';
+    return l10n.settingsRoutingTargetPeople(rule.targetAssignees.length);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final next = rule.nextInRotation;
     final inactive = rule.targetAssignees.where((p) => !p.isActive).toList();
     return Container(
@@ -354,7 +361,10 @@ class _RuleRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Goes to $_target, ${routingStrategyLabel(rule.strategy).toLowerCase()}',
+                  l10n.settingsRoutingGoesTo(
+                    _target(l10n),
+                    routingStrategyLabel(rule.strategy).toLowerCase(),
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -362,7 +372,7 @@ class _RuleRow extends StatelessWidget {
                 if (next != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    'Next in the rotation: ${next.name}',
+                    l10n.settingsRoutingNextInRotation(next.name),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textTertiary,
                     ),
@@ -375,16 +385,18 @@ class _RuleRow extends StatelessWidget {
                   children: [
                     if (!rule.isActive)
                       StatusBadge(
-                        label: 'Turned off',
+                        label: l10n.settingsRoutingBadgeTurnedOff,
                         color: AppColors.gray500,
                       ),
                     if (rule.stopProcessing)
                       StatusBadge(
-                        label: 'Stops here',
+                        label: l10n.settingsRoutingBadgeStopsHere,
                         color: AppColors.gray500,
                       ),
                     StatusBadge(
-                      label: '${rule.matchedLast30d} in 30 days',
+                      label: l10n.settingsRoutingBadgeMatched(
+                        rule.matchedLast30d,
+                      ),
                       color: AppColors.gray500,
                     ),
                   ],
@@ -395,11 +407,8 @@ class _RuleRow extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     rule.stopProcessing
-                        ? 'Nobody to assign to. Matching tickets are left '
-                              'unassigned, and this rule stops the ones below '
-                              'it from trying.'
-                        : 'Nobody to assign to. Matching tickets fall through '
-                              'to the rules below.',
+                        ? l10n.settingsRoutingNobodyStops
+                        : l10n.settingsRoutingNobodyFallsThrough,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.warning600,
                     ),
@@ -408,10 +417,8 @@ class _RuleRow extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     inactive.length == 1
-                        ? '${inactive.first.name} is deactivated and is '
-                              'skipped.'
-                        : '${inactive.length} of the people here are '
-                              'deactivated and are skipped.',
+                        ? l10n.settingsRoutingOneInactive(inactive.first.name)
+                        : l10n.settingsRoutingManyInactive(inactive.length),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.warning600,
                     ),
@@ -427,7 +434,7 @@ class _RuleRow extends StatelessWidget {
                         height: 40,
                         child: OutlinedButton(
                           onPressed: onEdit,
-                          child: const Text('Edit'),
+                          child: Text(l10n.commonEdit),
                         ),
                       ),
                       SizedBox(
@@ -435,11 +442,11 @@ class _RuleRow extends StatelessWidget {
                         child: rule.isActive
                             ? OutlinedButton(
                                 onPressed: onTurnOff,
-                                child: const Text('Turn off'),
+                                child: Text(l10n.settingsRoutingTurnOff),
                               )
                             : OutlinedButton(
                                 onPressed: onTurnOn,
-                                child: const Text('Turn on'),
+                                child: Text(l10n.settingsRoutingTurnOn),
                               ),
                       ),
                       SizedBox(
@@ -449,7 +456,7 @@ class _RuleRow extends StatelessWidget {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.danger600,
                           ),
-                          child: const Text('Delete'),
+                          child: Text(l10n.commonDelete),
                         ),
                       ),
                     ],
@@ -472,9 +479,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
-        'Rules run in this order and the first match wins. Routing happens once, '
-        'when a ticket is created, so changing a rule does not move tickets '
-        'that already exist.',
+        context.l10n.settingsRoutingFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -501,16 +506,15 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No routing rules',
+              context.l10n.settingsRoutingEmptyTitle,
               style: AppTypography.h3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               isAdmin
-                  ? 'New tickets arrive unassigned until a rule picks them up.'
-                  : 'New tickets arrive unassigned. An administrator sets '
-                        'these up.',
+                  ? context.l10n.settingsRoutingEmptyAdmin
+                  : context.l10n.settingsRoutingEmptyMember,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -543,12 +547,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the routing rules',
+              context.l10n.settingsRoutingLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsRoutingTryAgain),
+            ),
           ],
         ),
       ),

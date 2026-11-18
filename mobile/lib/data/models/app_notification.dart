@@ -1,4 +1,5 @@
 import '../../config/api_config.dart';
+import '../../l10n/l10n.dart';
 import '../../routes/app_routes.dart';
 import '../../routes/record_routes.dart';
 import '../../services/run_time.dart';
@@ -87,8 +88,8 @@ class AppNotification {
 
   bool get isUnread => readAt == null;
   String get displayActorName => verb.startsWith('support.')
-      ? 'BottleCRM Support'
-      : actorName ?? 'The system';
+      ? appL10n.appNotificationSupportActor
+      : actorName ?? appL10n.appNotificationSystemActor;
 
   /// Whether anything in the backend actually produces this verb. A row with
   /// an unknown verb still renders, as a readable sentence, so a new producer
@@ -163,7 +164,7 @@ class AppNotification {
   /// profile_pic}}`, with no name.
   static String _actorName(api.CommentUser actor) {
     final email = actor.userDetails?.email ?? '';
-    return email.isNotEmpty ? email : 'Someone';
+    return email.isNotEmpty ? email : appL10n.appNotificationSomeone;
   }
 
   static String? _record(String kind, String id) =>
@@ -188,21 +189,23 @@ class AppNotification {
       case 'automation.failed':
         final rule = ruleName, why = reason;
         if (rule == null || why == null) return null;
-        return 'The rule "$rule" failed: $why';
+        return appL10n.appAutomationRuleFailed(rule, why);
       case 'automation.paused':
         final names = ruleNames, why = reason;
         if (names == null || why == null) return null;
-        return '$why Paused: ${names.join(', ')}.';
+        return appL10n.appAutomationPaused(why, names.join(', '));
       case 'automation.limit':
         final at = windowStart;
         if (at == null) return null;
-        final from = runTimeLabel(at, zone: zone, now: now).replaceFirstMapped(
-          RegExp(r'^(Today|Yesterday) '),
-          (m) => m[0]!.toLowerCase(),
-        );
-        return 'Automation reached its limit of 1,000 runs in the hour from '
-            '$from. '
-            "The rest of that hour's runs were skipped.";
+        final l10n = appL10n;
+        final label = runTimeLabel(at, zone: zone, now: now);
+        final relative =
+            label.startsWith('${l10n.appTimeToday} ') ||
+            label.startsWith('${l10n.appTimeYesterday} ');
+        final from = relative
+            ? '${label[0].toLowerCase()}${label.substring(1)}'
+            : label;
+        return l10n.appAutomationLimit(from);
     }
     return null;
   }
@@ -215,8 +218,16 @@ class AppNotification {
     if (name == null || name.trim().isEmpty) return null;
     if (percent == null || percent <= 0) return null;
     if (kind != 'hours' && kind != 'amount') return null;
-    final used = percent >= 100 ? 'all of its' : '$percent% of its';
-    return '$name has used $used $kind budget';
+    final l10n = appL10n;
+    final hours = kind == 'hours';
+    if (percent >= 100) {
+      return hours
+          ? l10n.appNotifBudgetAllHours(name)
+          : l10n.appNotifBudgetAllAmount(name);
+    }
+    return hours
+        ? l10n.appNotifBudgetPercentHours(name, percent)
+        : l10n.appNotifBudgetPercentAmount(name, percent);
   }
 
   /// The sentence for a client's answer to an estimate, as the web's
@@ -228,12 +239,13 @@ class AppNotification {
     final number = estimateNumber?.trim() ?? '';
     if (number.isEmpty) return null;
     final client = clientName?.trim() ?? '';
-    final who = client.isEmpty ? 'The client' : client;
-    if (!accepted) return '$who declined estimate $number';
+    final l10n = appL10n;
+    final who = client.isEmpty ? l10n.appNotifEstimateClient : client;
+    if (!accepted) return l10n.appNotifEstimateDeclined(who, number);
     return [
-      '$who accepted estimate $number',
-      if ((startedProjectId ?? '').isNotEmpty) 'project started',
-      if ((depositInvoiceId ?? '').isNotEmpty) 'deposit invoice drafted',
+      l10n.appNotifEstimateAccepted(who, number),
+      if ((startedProjectId ?? '').isNotEmpty) l10n.appNotifProjectStarted,
+      if ((depositInvoiceId ?? '').isNotEmpty) l10n.appNotifDepositDrafted,
     ].join(', ');
   }
 
@@ -245,26 +257,27 @@ class AppNotification {
     final name = projectName?.trim() ?? '';
     final month = monthLabel(retainerMonth);
     if (number.isEmpty || name.isEmpty || month == null) return null;
-    return 'Retainer invoice $number for $month drafted for $name';
+    return appL10n.appNotifRetainerInvoice(number, month, name);
   }
 
   /// The line under a message naming the rule that sent it.
   String? get automationSource =>
       verb == 'automation.message' && automationText() != null
-      ? 'From the rule "$ruleName"'
+      ? appL10n.appAutomationFromRule(ruleName ?? '')
       : null;
 
   /// The sentence a lead alert reads as, or null for any other verb. The
   /// name is the row's own; the source label is `data.source`, absent when
   /// the lead came from nowhere in particular.
   String? get leadText {
-    final name = entityName ?? 'a lead';
+    final l10n = appL10n;
+    final name = entityName ?? l10n.appNotifLeadFallback;
     final from = (leadSource ?? '').isEmpty ? '' : ' ($leadSource)';
     return switch (verb) {
-      'lead.assigned' => 'New lead assigned: $name$from',
-      'lead.created' => 'New lead: $name$from',
-      'lead.enquired' => '$name enquired again$from',
-      'lead.waiting' => '$name is waiting for a reply',
+      'lead.assigned' => l10n.appNotifLeadAssigned(name, from),
+      'lead.created' => l10n.appNotifLeadCreated(name, from),
+      'lead.enquired' => '${l10n.appNotifLeadEnquired(name)}$from',
+      'lead.waiting' => l10n.appNotifLeadWaiting(name),
       _ => null,
     };
   }
@@ -272,12 +285,17 @@ class AppNotification {
   /// The sentence a custom-record alert reads as (a match, an open seat), or
   /// null for any other verb. The link is `/objects/<key>/<id>`.
   String? get recordAlertText {
-    final named = (entityName ?? '').isNotEmpty;
+    final l10n = appL10n;
+    final name = entityName ?? '';
     return switch (verb) {
       'real_estate.match' =>
-        '${named ? entityName : 'A record'} fits an open requirement',
+        name.isNotEmpty
+            ? l10n.appNotifRecordMatch(name)
+            : l10n.appNotifRecordMatchUnnamed,
       'education.seat_open' =>
-        'A seat opened in ${named ? entityName : 'a record'}',
+        name.isNotEmpty
+            ? l10n.appNotifSeatOpen(name)
+            : l10n.appNotifSeatOpenUnnamed,
       _ => null,
     };
   }
@@ -286,10 +304,13 @@ class AppNotification {
   /// readable fallback for the ones that do not: `case.sla_breached` reads as
   /// "sla breached" rather than as its identifier.
   String get verbPhrase {
-    if (verb == 'case.mentioned') return 'mentioned you on';
-    if (verb == 'case.commented') return 'commented on';
-    if (verb == 'support.replied') return 'replied to';
-    if (verb == 'support.status_changed') return 'updated';
+    final l10n = appL10n;
+    if (verb == 'case.mentioned') return l10n.appNotificationVerbMentioned;
+    if (verb == 'case.commented') return l10n.appNotificationVerbCommented;
+    if (verb == 'support.replied') return l10n.appNotificationVerbReplied;
+    if (verb == 'support.status_changed') {
+      return l10n.appNotificationVerbUpdated;
+    }
     return verb.replaceFirst(RegExp(r'^[^.]+\.'), '').replaceAll('_', ' ');
   }
 

@@ -1,0 +1,78 @@
+{
+  "commonSave": "Save",
+  "commonCancel": "Cancel",
+  "commonDelete": "Delete",
+  "commonEdit": "Edit",
+  "commonCreate": "Create",
+  "commonAdd": "Add",
+  "commonSearch": "Search",
+  "commonFilter": "Filter",
+  "commonClose": "Close",
+  "commonBack": "Back",
+  "commonYes": "Yes",
+  "commonNo": "No",
+  "commonRetry": "Retry",
+  "commonDone": "Done",
+  "commonNext": "Next",
+  "commonApply": "Apply",
+  "commonReset": "Reset",
+  "commonRemove": "Remove",
+  "commonConfirm": "Confirm",
+  "commonName": "Name",
+  "commonEmail": "Email",
+  "commonPhone": "Phone",
+  "commonStatus": "Status",
+  "commonOwner": "Owner",
+  "commonAssignedTo": "Assigned to",
+  "commonPriority": "Priority",
+  "commonDescription": "Description",
+  "commonNotes": "Notes",
+  "commonTags": "Tags",
+  "commonDueDate": "Due date",
+  "commonCouldNotSave": "Could not save.",
+  "commonCouldNotLoad": "Could not load.",
+  "languageName": "English",
+  "@languageName": {
+    "description": "The language's own name, shown in the language picker whatever the interface language is."
+  },
+  "languageScreenTitle": "Language",
+  "languageAutomatic": "Automatic",
+  "languageAutomaticDetail": "Your phone's language, then your organization's",
+  "languageHint": "Applies to every organization you belong to, on the web as well, and to the email you receive.",
+  "languageSaveFailed": "Could not save your language.",
+  "profileLanguageRow": "Language",
+  "orgDefaultLanguageLabel": "Default language",
+  "orgDefaultLanguageHint": "For members who have not chosen their own, and for every email and PDF your customers receive.",
+  "commonItemsCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@commonItemsCount": {
+    "description": "Example plural; keeps the plural forms of every locale exercised by tests.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreAfterTapGreeting": "Hi,",
+  "coreAfterTapGreetingNamed": "Hi {name},",
+  "@coreAfterTapGreetingNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreRecordDetailEditNote": "Edit Note",
+  "coreRecordDetailEditNoteHint": "Update your note...",
+  "coreRecordDetailDeleteNote": "Delete Note",
+  "coreRecordDetailDeleteNoteTitle": "Delete Note?",
+  "coreRecordDetailCannotUndo": "This action cannot be undone.",
+  "coreRecordDetailNoteOptions": "Note options",
+  "coreCustomFieldsDisplayNotSet": "Not set",
+  "corePushBannerDismiss": "Dismiss",
+  "corePushBannerOpen": "Open",
+  "corePushPromptTitle": "Get lead alerts",
+  "corePushPromptBody": "Allow notifications so a lead assigned to you reaches you at once.",
+  "corePushPromptNotNow": "Not now",
+  "corePushPromptAllow": "Allow notifications",
+  "coreCustomFieldsSectionHeading": "Custom fields"
+}

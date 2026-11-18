@@ -9,6 +9,7 @@ import '../../data/models/object_record_filters.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../forms/multi_select_sheet.dart';
+import '../../l10n/l10n.dart';
 
 /// Opens the filter sheet over a custom object's list. Answers the filters to
 /// show, or null when the sheet was dismissed.
@@ -77,7 +78,7 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
   Future<void> _pickPeople(List<UserLookup> people) async {
     final picked = await MultiSelectSheet.show<UserLookup>(
       context: context,
-      title: 'Assigned to',
+      title: context.l10n.commonAssignedTo,
       items: people,
       initialSelection: [
         for (final u in people)
@@ -85,7 +86,7 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
       ],
       labelOf: (u) => u.displayName,
       searchText: (u) => '${u.displayName} ${u.email}',
-      emptyMessage: 'No members',
+      emptyMessage: context.l10n.objectsFilterNoMembers,
     );
     if (picked == null) return;
     setState(
@@ -98,7 +99,7 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
   Future<void> _pickTags(List<TagLookup> tags) async {
     final picked = await MultiSelectSheet.show<TagLookup>(
       context: context,
-      title: 'Tags',
+      title: context.l10n.commonTags,
       items: tags,
       initialSelection: [
         for (final t in tags)
@@ -106,7 +107,7 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
       ],
       labelOf: (t) => t.name,
       searchText: (t) => t.name,
-      emptyMessage: 'No tags',
+      emptyMessage: context.l10n.objectsFilterNoTags,
     );
     if (picked == null) return;
     setState(
@@ -155,8 +156,13 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
     final tags = ref.watch(tagsProvider);
     final byId = {for (final u in people) u.id: u.displayName};
     final tagById = {for (final t in tags) t.id: t.name};
-    final others = _others.map((id) => byId[id] ?? 'Member').join(', ');
-    final tagNames = _draft.tagIds.map((id) => tagById[id] ?? 'Tag').join(', ');
+    final l10n = context.l10n;
+    final others = _others
+        .map((id) => byId[id] ?? l10n.objectsFilterMember)
+        .join(', ');
+    final tagNames = _draft.tagIds
+        .map((id) => tagById[id] ?? l10n.objectsFilterTag)
+        .join(', ');
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -172,14 +178,14 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Filters',
+                    l10n.objectsFilterTitle,
                     style: AppTypography.h3.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: l10n.commonClose,
                   icon: const Icon(LucideIcons.x, size: 20),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
@@ -192,14 +198,14 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _label('Assigned to'),
+                  _label(l10n.commonAssignedTo),
                   if (_meId case final me?) ...[
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
                       children: [
                         _chip(
-                          'Me',
+                          l10n.objectsFilterMe,
                           _mine,
                           () => setState(
                             () => _draft = _draft.copyWith(
@@ -213,13 +219,13 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
                   ],
                   _pickerTile(
                     LucideIcons.users,
-                    others.isEmpty ? 'Other members' : others,
+                    others.isEmpty ? l10n.objectsFilterOtherMembers : others,
                     () => _pickPeople(people),
                   ),
-                  _label('Tags'),
+                  _label(l10n.commonTags),
                   _pickerTile(
                     LucideIcons.tag,
-                    tagNames.isEmpty ? 'Any tag' : tagNames,
+                    tagNames.isEmpty ? l10n.objectsFilterAnyTag : tagNames,
                     () => _pickTags(tags),
                   ),
                   for (final f in filterableFields(widget.definition)) ...[
@@ -230,12 +236,12 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
                         runSpacing: 4,
                         children: [
                           _chip(
-                            'Yes',
+                            l10n.commonYes,
                             _draft.fields[f.key] == 'true',
                             () => _setField(f.key, 'true'),
                           ),
                           _chip(
-                            'No',
+                            l10n.commonNo,
                             _draft.fields[f.key] == 'false',
                             () => _setField(f.key, 'false'),
                           ),
@@ -283,7 +289,7 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
                     onPressed: () => setState(
                       () => _draft = ObjectRecordFilters(query: _draft.query),
                     ),
-                    child: const Text('Clear all'),
+                    child: Text(l10n.objectsFilterClearAll),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -295,7 +301,7 @@ class _ObjectFilterSheetState extends ConsumerState<ObjectFilterSheet> {
                       ),
                     ),
                     onPressed: () => Navigator.of(context).pop(_draft),
-                    child: const Text('Apply'),
+                    child: Text(l10n.commonApply),
                   ),
                 ),
               ],

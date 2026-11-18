@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../api/schema.g.dart' as api;
 
 /// Approval request for a ticket close (Tier 3).
@@ -80,15 +81,21 @@ class Approval {
 }
 
 enum ApprovalState {
-  pending('pending', 'Pending', AppColors.warning500),
-  approved('approved', 'Approved', AppColors.success600),
-  rejected('rejected', 'Rejected', AppColors.danger600),
-  cancelled('cancelled', 'Cancelled', AppColors.gray500);
+  pending('pending', AppColors.warning500),
+  approved('approved', AppColors.success600),
+  rejected('rejected', AppColors.danger600),
+  cancelled('cancelled', AppColors.gray500);
 
   final String value;
-  final String label;
   final Color color;
-  const ApprovalState(this.value, this.label, this.color);
+  const ApprovalState(this.value, this.color);
+
+  String get label => switch (this) {
+    pending => appL10n.appApprovalStatePending,
+    approved => appL10n.appApprovalStateApproved,
+    rejected => appL10n.appApprovalStateRejected,
+    cancelled => appL10n.appApprovalStateCancelled,
+  };
 
   static ApprovalState fromString(String? value) {
     return ApprovalState.values.firstWhere(

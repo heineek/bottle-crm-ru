@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/models.dart';
 import '../common/common.dart';
@@ -126,7 +127,7 @@ class LeadCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 2),
                     Text(
-                      'Hot',
+                      appL10n.appLeadRatingHot,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.danger600,
                         fontWeight: FontWeight.w600,
@@ -221,7 +222,7 @@ class LeadCard extends StatelessWidget {
         const Spacer(),
         if (hasAssignee) ...[
           Tooltip(
-            message: 'Assigned to ${lead.assignedToName}',
+            message: context.l10n.appAssignedToName(lead.assignedToName),
             child: UserAvatar(
               name: lead.assignedToName,
               imageUrl: lead.assignedToProfilePic,
@@ -233,7 +234,7 @@ class LeadCard extends StatelessWidget {
         if (hasPhone)
           _CardActionIcon(
             icon: LucideIcons.phone,
-            tooltip: 'Call ${lead.phone}',
+            tooltip: context.l10n.appCallNumber(lead.phone!),
             onTap:
                 onCall ??
                 () => _launch(context, Uri(scheme: 'tel', path: lead.phone!)),
@@ -242,7 +243,7 @@ class LeadCard extends StatelessWidget {
         if (hasEmail)
           _CardActionIcon(
             icon: LucideIcons.mail,
-            tooltip: 'Email ${lead.email}',
+            tooltip: context.l10n.appEmailAddress(lead.email),
             onTap:
                 onEmail ??
                 () => _launch(context, Uri(scheme: 'mailto', path: lead.email)),
@@ -281,9 +282,9 @@ class LeadCard extends StatelessWidget {
   Future<void> _launch(BuildContext context, Uri uri) async {
     final ok = await launchUrl(uri);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not open ${uri.scheme}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.appCouldNotOpen(uri.scheme))),
+      );
     }
   }
 
@@ -292,15 +293,15 @@ class LeadCard extends StatelessWidget {
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
+      return appL10n.appRelativeMonthsAgo((difference.inDays / 30).floor());
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return appL10n.appRelativeDaysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return appL10n.appRelativeHoursAgo(difference.inHours);
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return appL10n.appRelativeMinutesAgo(difference.inMinutes);
     } else {
-      return 'Just now';
+      return appL10n.appRelativeJustNow;
     }
   }
 }

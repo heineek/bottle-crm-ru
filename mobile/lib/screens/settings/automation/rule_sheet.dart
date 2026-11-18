@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 
 /// Opens one of the editor's bottom sheets in the record picker's style.
 Future<T?> showRuleSheet<T>(
@@ -83,7 +84,7 @@ class RuleSheetFrame extends StatelessWidget {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                 ),
@@ -93,7 +94,7 @@ class RuleSheetFrame extends StatelessWidget {
                     height: 48,
                     child: FilledButton(
                       onPressed: onDone,
-                      child: const Text('Done'),
+                      child: Text(context.l10n.commonDone),
                     ),
                   ),
                 ),

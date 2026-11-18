@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../l10n/l10n.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/project.dart';
 import '../data/models/task.dart';
@@ -98,7 +99,7 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
     final response = await _api.get(url);
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load projects.');
+      throw Exception(response.message ?? appL10n.appProjectsLoadFailed);
     }
     final body = api.ProjectListResponse.fromJson(data);
     final projects = [
@@ -161,7 +162,7 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
   Future<ProjectWrite> create(Map<String, dynamic> payload) async {
     final response = await _api.post(ApiConfig.projects, payload);
     if (!response.success) {
-      return (id: null, error: response.message ?? 'Could not save.');
+      return (id: null, error: response.message ?? appL10n.commonCouldNotSave);
     }
     final saved = api.ProjectSaved.fromJson(response.data ?? {});
     final id = saved.id ?? saved.project?.id;
@@ -175,7 +176,7 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
   ) async {
     final response = await _api.patch(ApiConfig.project(id), payload);
     if (!response.success) {
-      return (id: null, error: response.message ?? 'Could not save.');
+      return (id: null, error: response.message ?? appL10n.commonCouldNotSave);
     }
     await refresh();
     return (id: id, error: null);
@@ -184,7 +185,7 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
   Future<String?> delete(String id) async {
     final response = await _api.delete(ApiConfig.project(id));
     if (!response.success) {
-      return response.message ?? 'Could not delete this project.';
+      return response.message ?? appL10n.appProjectsDeleteFailed;
     }
     final current = state.value;
     if (current != null) {
@@ -209,7 +210,10 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
       'comment': comment,
     });
     if (!response.success) {
-      return (data: null, error: response.message ?? 'Could not add that.');
+      return (
+        data: null,
+        error: response.message ?? appL10n.appProjectsAddFailed,
+      );
     }
     return (data: response.data, error: null);
   }
@@ -223,7 +227,7 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
     try {
       url = ApiConfig.projectFromDeal(dealId);
     } on ArgumentError {
-      return (draft: null, error: 'That deal could not be found.');
+      return (draft: null, error: appL10n.appProjectsDealNotFound);
     }
     final response = await _api.get(url);
     final data = response.data;
@@ -231,8 +235,8 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
       return (
         draft: null,
         error: response.statusCode == 404
-            ? 'That deal could not be found.'
-            : response.message ?? 'Could not read that deal.',
+            ? appL10n.appProjectsDealNotFound
+            : response.message ?? appL10n.appProjectsDealReadFailed,
       );
     }
     return (draft: ProjectDraft.fromJson(data), error: null);
@@ -303,7 +307,7 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
     if (!response.success || data == null) {
       return (
         unbilled: null,
-        error: response.message ?? 'Could not read the unbilled time.',
+        error: response.message ?? appL10n.appProjectsUnbilledFailed,
       );
     }
     return (unbilled: ProjectUnbilled.fromJson(data), error: null);
@@ -323,7 +327,10 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
         'description': description.trim(),
     });
     if (!response.success) {
-      return (id: null, error: response.message ?? 'Could not invoice.');
+      return (
+        id: null,
+        error: response.message ?? appL10n.appProjectsInvoiceFailed,
+      );
     }
     final drafted = api.ProjectInvoiceAmount.fromJson(response.data ?? {});
     return (id: drafted.invoiceId, error: null);
@@ -338,7 +345,10 @@ class ProjectsNotifier extends AsyncNotifier<ProjectsListData> {
       'month': ?month,
     });
     if (!response.success) {
-      return (id: null, error: response.message ?? 'Could not bill the month.');
+      return (
+        id: null,
+        error: response.message ?? appL10n.appProjectsBillMonthFailed,
+      );
     }
     final billed = api.ProjectRetainerBill.fromJson(response.data ?? {});
     return (id: billed.invoiceId, error: null);

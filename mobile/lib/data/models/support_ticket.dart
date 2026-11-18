@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../api/enterprise_schema.g.dart' as enterprise;
 
 enum SupportCategory {
-  technical('technical', 'Technical issue'),
-  billing('billing', 'Billing'),
-  account('account', 'Account access'),
-  featureRequest('feature_request', 'Feature request'),
-  other('other', 'Other');
+  technical('technical'),
+  billing('billing'),
+  account('account'),
+  featureRequest('feature_request'),
+  other('other');
 
-  const SupportCategory(this.value, this.label);
+  const SupportCategory(this.value);
+
+  String get label => switch (this) {
+    technical => appL10n.appSupportCategoryTechnical,
+    billing => appL10n.appSupportCategoryBilling,
+    account => appL10n.appSupportCategoryAccount,
+    featureRequest => appL10n.appSupportCategoryFeatureRequest,
+    other => appL10n.appSupportCategoryOther,
+  };
   final String value;
-  final String label;
 
   static SupportCategory fromValue(String? value) => values.firstWhere(
     (item) => item.value == value,
@@ -21,19 +29,22 @@ enum SupportCategory {
 }
 
 enum SupportStatus {
-  open('open', 'Open', AppColors.danger600),
-  inProgress('in_progress', 'In progress', AppColors.warning600),
-  waitingOnCustomer(
-    'waiting_on_customer',
-    'Waiting on you',
-    AppColors.primary600,
-  ),
-  resolved('resolved', 'Resolved', AppColors.success600),
-  closed('closed', 'Closed', AppColors.gray500);
+  open('open', AppColors.danger600),
+  inProgress('in_progress', AppColors.warning600),
+  waitingOnCustomer('waiting_on_customer', AppColors.primary600),
+  resolved('resolved', AppColors.success600),
+  closed('closed', AppColors.gray500);
 
-  const SupportStatus(this.value, this.label, this.color);
+  const SupportStatus(this.value, this.color);
+
+  String get label => switch (this) {
+    open => appL10n.appSupportStatusOpen,
+    inProgress => appL10n.appSupportStatusInProgress,
+    waitingOnCustomer => appL10n.appSupportStatusWaiting,
+    resolved => appL10n.appSupportStatusResolved,
+    closed => appL10n.appSupportStatusClosed,
+  };
   final String value;
-  final String label;
   final Color color;
 
   static SupportStatus fromValue(String? value) => values.firstWhere(
@@ -67,7 +78,7 @@ class SupportMessage {
     final attachmentName = w.attachmentName ?? '';
     return SupportMessage(
       id: w.id ?? '',
-      authorLabel: w.authorLabel ?? 'Unknown',
+      authorLabel: w.authorLabel ?? appL10n.appUnknownPerson,
       isStaff: w.authorType == 'staff',
       body: w.body ?? '',
       attachmentName: attachmentName.isEmpty ? null : attachmentName,

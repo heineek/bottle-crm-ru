@@ -11,6 +11,7 @@ import '../../routes/app_router.dart';
 import '../common/common.dart';
 import '../misc/kanban_column.dart';
 import 'object_record_card.dart';
+import '../../l10n/l10n.dart';
 
 /// The records of an object laid out by one dropdown field. A card is picked
 /// up with a long press (only a card the viewer can edit) and dropped on another column to change that one
@@ -68,7 +69,7 @@ class ObjectBoardView extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Failed to load the board'),
+              Text(context.l10n.objectsBoardLoadFailed),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -79,7 +80,7 @@ class ObjectBoardView extends ConsumerWidget {
               TextButton(
                 onPressed: () =>
                     ref.read(objectBoardProvider(objectKey).notifier).refresh(),
-                child: const Text('Retry'),
+                child: Text(context.l10n.commonRetry),
               ),
             ],
           ),
@@ -88,9 +89,9 @@ class ObjectBoardView extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (board.columns.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: LucideIcons.columns3,
-        title: 'This board has no columns',
+        title: context.l10n.objectsBoardNoColumns,
       );
     }
     final required = definition.boardField?.isRequired ?? false;
@@ -149,9 +150,11 @@ class ObjectBoardView extends ConsumerWidget {
       count: column.count,
       cards: column.records,
       width: width,
-      emptyLabel: 'No ${definition.summary.labelPlural.toLowerCase()}',
+      emptyLabel: context.l10n.objectsBoardColumnEmpty(
+        definition.summary.labelPlural.toLowerCase(),
+      ),
       footnote: column.kind == BoardColumnKind.other
-          ? 'Values that are no longer options'
+          ? context.l10n.objectsBoardOtherValuesFootnote
           : null,
       draggable: (record) => canMove && record.canEdit,
       accepts: (record) =>

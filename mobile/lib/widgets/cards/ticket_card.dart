@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
 import '../../data/api/schema.g.dart' as api;
 import '../../data/models/ticket.dart';
@@ -128,7 +129,7 @@ class TicketCard extends StatelessWidget {
       pills.add(
         _pill(
           icon: LucideIcons.alertOctagon,
-          label: 'Problem',
+          label: appL10n.appTicketTypeProblem,
           bg: AppColors.warning100,
           fg: AppColors.warning700,
         ),
@@ -138,7 +139,7 @@ class TicketCard extends StatelessWidget {
       pills.add(
         _pill(
           icon: LucideIcons.cornerDownRight,
-          label: 'Sub-ticket',
+          label: appL10n.appSubTicket,
           bg: AppColors.primary100,
           fg: AppColors.primary700,
         ),
@@ -148,9 +149,7 @@ class TicketCard extends StatelessWidget {
       pills.add(
         _pill(
           icon: LucideIcons.gitBranch,
-          label:
-              '${ticketItem.childCount} '
-              'child${ticketItem.childCount == 1 ? '' : 'ren'}',
+          label: appL10n.appChildCount(ticketItem.childCount),
           bg: AppColors.gray100,
           fg: AppColors.gray700,
         ),
@@ -300,7 +299,9 @@ class TicketCard extends StatelessWidget {
     final email =
         api.Profile.fromJson(ticketItem.assignedTo.first).userDetails?.email ??
         '';
-    final name = email.isNotEmpty ? email.split('@').first : 'User';
+    final name = email.isNotEmpty
+        ? email.split('@').first
+        : appL10n.appUserFallback;
     final extra = ticketItem.assignedTo.length - 1;
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -347,7 +348,7 @@ class TicketCard extends StatelessWidget {
           Icon(LucideIcons.clock, size: 11, color: AppColors.warning600),
           const SizedBox(width: 3),
           Text(
-            'Due soon',
+            appL10n.appDueSoon,
             style: AppTypography.caption.copyWith(
               color: AppColors.warning600,
               fontWeight: FontWeight.w600,
@@ -377,7 +378,7 @@ class TicketCard extends StatelessWidget {
           Icon(LucideIcons.alertTriangle, size: 11, color: AppColors.danger600),
           const SizedBox(width: 3),
           Text(
-            isResolution ? 'SLA · Resolve' : 'SLA',
+            isResolution ? appL10n.appSlaResolve : 'SLA',
             style: AppTypography.caption.copyWith(
               color: AppColors.danger600,
               fontWeight: FontWeight.w600,
@@ -393,15 +394,15 @@ class TicketCard extends StatelessWidget {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
     if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
+      return appL10n.appRelativeMonthsAgo((difference.inDays / 30).floor());
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return appL10n.appRelativeDaysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return appL10n.appRelativeHoursAgo(difference.inHours);
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return appL10n.appRelativeMinutesAgo(difference.inMinutes);
     } else {
-      return 'Just now';
+      return appL10n.appRelativeJustNow;
     }
   }
 }

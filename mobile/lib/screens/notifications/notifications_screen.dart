@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/app_notification.dart';
 import '../../providers/notifications_provider.dart';
@@ -37,7 +38,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(context.l10n.appNotifications),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -45,7 +46,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           if (unreadCount > 0)
             TextButton(
               onPressed: _markAllRead,
-              child: const Text('Mark all read'),
+              child: Text(context.l10n.appMarkAllRead),
             ),
         ],
       ),
@@ -92,8 +93,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           Expanded(
             child: Text(
               feed.unreadCount == 0
-                  ? 'Nothing unread'
-                  : '${feed.unreadCount} unread',
+                  ? context.l10n.appNothingUnread
+                  : context.l10n.appUnreadCount(feed.unreadCount),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -106,9 +107,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               visualDensity: VisualDensity.compact,
               tapTargetSize: MaterialTapTargetSize.padded,
             ),
-            segments: const [
-              ButtonSegment(value: true, label: Text('Unread')),
-              ButtonSegment(value: false, label: Text('All')),
+            segments: [
+              ButtonSegment(
+                value: true,
+                label: Text(context.l10n.appUnreadTab),
+              ),
+              ButtonSegment(value: false, label: Text(context.l10n.appAllTab)),
             ],
             selected: {_unreadOnly},
             showSelectedIcon: false,
@@ -128,16 +132,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           Icon(LucideIcons.bellOff, size: 36, color: AppColors.textTertiary),
           const SizedBox(height: 12),
           Text(
-            nothingAtAll ? 'No notifications' : 'Nothing unread',
+            nothingAtAll
+                ? context.l10n.appNoNotifications
+                : context.l10n.appNothingUnread,
             style: AppTypography.h3,
           ),
           const SizedBox(height: 6),
           Text(
             ref.watch(moduleOnProvider('tickets'))
-                ? 'Notifications arrive for CRM ticket activity, automation '
-                      'rules, and updates from BottleCRM Support.'
-                : 'Notifications arrive for automation rules and updates from '
-                      'BottleCRM Support.',
+                ? context.l10n.appNotificationsHintTickets
+                : context.l10n.appNotificationsHint,
             textAlign: TextAlign.center,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
@@ -145,7 +149,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           if (!nothingAtAll && _unreadOnly)
             OutlinedButton(
               onPressed: () => setState(() => _unreadOnly = false),
-              child: const Text('Show read too'),
+              child: Text(context.l10n.appShowReadToo),
             ),
         ],
       ),
@@ -156,15 +160,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final destination = n.destinationPath;
     // Rows the system raised: a sentence and an icon instead of a person.
     final automation = n.verb.startsWith('automation.')
-        ? n.automationText() ?? 'An automation rule sent a notification.'
+        ? n.automationText() ?? appL10n.appAutomationSentNotification
         : n.verb == 'project.budget'
-        ? n.budgetText ?? 'A project reached a budget level.'
+        ? n.budgetText ?? appL10n.appNotifBudgetFallback
         : n.verb == 'estimate.accepted'
-        ? n.estimateText ?? 'A client accepted an estimate.'
+        ? n.estimateText ?? appL10n.appNotifEstimateAcceptedFallback
         : n.verb == 'estimate.declined'
-        ? n.estimateText ?? 'A client declined an estimate.'
+        ? n.estimateText ?? appL10n.appNotifEstimateDeclinedFallback
         : n.verb == 'project.retainer_invoice'
-        ? n.retainerText ?? 'A retainer invoice was drafted.'
+        ? n.retainerText ?? appL10n.appNotifRetainerFallback
         : n.verb.startsWith('lead.')
         ? n.leadText
         : n.verb == 'real_estate.match' || n.verb == 'education.seat_open'
@@ -277,7 +281,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       ),
                       if (!n.isKnownVerb)
                         Text(
-                          '${n.verb} has no producer',
+                          context.l10n.appNoProducer(n.verb),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textTertiary,
                           ),
@@ -339,15 +343,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// name shows none.
   static String _missingName(String verb) =>
       verb.startsWith('case.') || verb.startsWith('support.')
-      ? 'a ticket that no longer has a name'
+      ? appL10n.appUnnamedTicketLower
       : '';
 
   Widget _legacyNote(int count) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
-        '$count of these were written before the link was fixed at source and '
-        'still carry the old path. They open the right ticket here.',
+        appL10n.appLegacyLinks(count),
         style: AppTypography.caption.copyWith(
           color: AppColors.textTertiary,
           height: 1.5,
@@ -367,7 +370,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (!mounted || response.success) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(response.message ?? 'Could not mark that read.'),
+        content: Text(response.message ?? appL10n.appMarkReadFailed),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -380,7 +383,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (!mounted || response.success) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(response.message ?? 'Could not mark everything read.'),
+        content: Text(response.message ?? appL10n.appMarkAllReadFailed),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -389,11 +392,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// "4m ago" / "3h ago" / a date once it stops being useful as an interval.
   String _relative(DateTime when) {
     final diff = DateTime.now().difference(when);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return DateFormat('d MMM').format(when);
+    if (diff.inMinutes < 1) return appL10n.appRelativeJustNowLower;
+    if (diff.inMinutes < 60) {
+      return appL10n.appRelativeMinutesAgo(diff.inMinutes);
+    }
+    if (diff.inHours < 24) return appL10n.appRelativeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return appL10n.appRelativeDaysAgo(diff.inDays);
+    return localDateFormat('d MMM', 'MMMd').format(when);
   }
 }
 
@@ -460,7 +465,10 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.appTryAgain),
+            ),
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/models/profile.dart';
 import '../services/api_service.dart';
@@ -23,7 +24,7 @@ class ProfileNotifier extends AsyncNotifier<Profile> {
   Future<Profile> _fetch() async {
     final response = await _api.get(ApiConfig.profile);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load profile');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadProfile);
     }
     return Profile.fromJson(response.data!);
   }

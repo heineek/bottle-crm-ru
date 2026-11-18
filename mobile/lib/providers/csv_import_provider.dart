@@ -9,6 +9,7 @@ import '../config/api_config.dart';
 import '../data/api/enterprise_schema.g.dart' as enterprise;
 import '../data/api/schema.g.dart' as api;
 import '../data/models/custom_object.dart';
+import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 
 enum _CsvKind { contacts, tickets, leads, object }
@@ -42,9 +43,6 @@ class CsvImportTarget {
     kind: _CsvKind.contacts,
     singular: 'contact',
     plural: 'contacts',
-    description:
-        "Bring in a spreadsheet of contacts. You'll check how its columns "
-        'match, and nothing is written until you choose Import.',
     requiredHeaders: ['first_name', 'last_name'],
     templateHeaders: [
       'first_name',
@@ -94,10 +92,6 @@ class CsvImportTarget {
     kind: _CsvKind.tickets,
     singular: 'ticket',
     plural: 'tickets',
-    description:
-        "Upload a CSV of tickets. We'll validate every row before writing "
-        'anything. References (account, contacts, assignees) must already '
-        'exist in your org.',
     requiredHeaders: ['name', 'status', 'priority'],
     optionalHelp:
         'description, case_type, account_name, contact_emails, '
@@ -135,9 +129,6 @@ class CsvImportTarget {
     kind: _CsvKind.leads,
     singular: 'lead',
     plural: 'leads',
-    description:
-        "Bring in a spreadsheet of leads. You'll check how its columns match, "
-        'and nothing is written until you choose Import.',
     requiredHeaders: ['first_name', 'last_name'],
     templateHeaders: [
       'first_name',
@@ -181,7 +172,6 @@ class CsvImportTarget {
     required _CsvKind kind,
     required this.singular,
     required this.plural,
-    required this.description,
     required this.requiredHeaders,
     required this.templateHeaders,
     required this.templateExample,
@@ -214,9 +204,6 @@ class CsvImportTarget {
       fields: columns,
       singular: label.toLowerCase(),
       plural: lowerPlural,
-      description:
-          'Bring in a spreadsheet of $lowerPlural. You\'ll check how its '
-          'columns match, and nothing is written until you choose Import.',
       requiredHeaders: [nameLabel],
       templateHeaders: [
         nameLabel,
@@ -255,7 +242,12 @@ class CsvImportTarget {
 
   /// The web's description line, word for word: the ticket drawer's, or the
   /// contacts and leads import dialogs'.
-  final String description;
+  String get description => switch (_kind) {
+    _CsvKind.contacts => appL10n.appCsvDescriptionContacts,
+    _CsvKind.tickets => appL10n.appCsvDescriptionTickets,
+    _CsvKind.leads => appL10n.appCsvDescriptionLeads,
+    _CsvKind.object => appL10n.appCsvDescriptionObject(plural),
+  };
 
   /// The headers the template-only import refuses a file without, and the
   /// first columns of every template.
@@ -313,7 +305,7 @@ class CsvImportTarget {
         details = [
           text(r.status),
           text(r.priority),
-          if (r.accountId != null) 'account linked',
+          if (r.accountId != null) appL10n.appCsvAccountLinked,
         ];
       case _CsvKind.leads:
         final r = api.LeadImportRow.fromJson(row);
@@ -330,7 +322,7 @@ class CsvImportTarget {
         ].take(3).toList();
     }
     return (
-      title: title.isEmpty ? 'Unnamed' : title,
+      title: title.isEmpty ? appL10n.appUnnamedPerson : title,
       details: details.where((d) => d.isNotEmpty).join(' \u00b7 '),
     );
   }
@@ -350,7 +342,28 @@ class CsvImportTarget {
     templateExample.map((v) => v.contains(',') ? '"$v"' : v).join(','),
   ].join('\n');
 
-  String noun(int count) => count == 1 ? singular : plural;
+  /// The record kind for [count] records, in the current language.
+  /// The heading of the import sheet, with or without "from CSV".
+  String title({required bool mapping}) => switch (_kind) {
+    _CsvKind.object =>
+      mapping
+          ? appL10n.appCsvTitleObject(plural)
+          : appL10n.appCsvTitleFromCsvObject(plural),
+    _ =>
+      mapping
+          ? appL10n.appCsvTitle(_kind.name)
+          : appL10n.appCsvTitleFromCsv(_kind.name),
+  };
+
+  String get noneToImport => _kind == _CsvKind.object
+      ? appL10n.appCsvNoneToImportObject(plural)
+      : appL10n.appCsvNoneToImport(_kind.name);
+
+  /// A custom object's noun is its own label, which is never translated.
+  String noun(int count) => switch (_kind) {
+    _CsvKind.object => count == 1 ? singular : plural,
+    _ => appL10n.appCsvNoun(_kind.name, count),
+  };
 }
 
 /// Field keys the server never takes as import targets: they would collide
@@ -380,27 +393,21 @@ const int csvImportMaxBytes = 5 * 1024 * 1024;
 
 /// The web's wording for a 403 (`frontend/src/lib/server/v2/csv-import.ts`),
 /// kept identical so both clients say the same thing.
-const String csvImportForbiddenMessage =
-    'Importing needs an admin, or a member with sales access.';
+String get csvImportForbiddenMessage => appL10n.appCsvForbidden;
 
 /// The web's wording for a 429 from the per-user import throttle.
-const String csvImportThrottledMessage =
-    'Too many tries in a minute. Wait a moment, then try again.';
+String get csvImportThrottledMessage => appL10n.appCsvThrottled;
 
 /// The web's wording for a 413: a proxy refused the upload for its size
 /// before the API saw it, so the body is the proxy's own HTML page.
-const String csvImportTooLargeMessage =
-    'This file is too large to upload. Split it into smaller files.';
+String get csvImportTooLargeMessage => appL10n.appCsvTooLarge;
 
 /// The server's own sentence for a file that is neither `.xlsx` nor `.csv`.
-const String csvImportFileTypeMessage =
-    'Save it as .xlsx or .csv and try again.';
+String get csvImportFileTypeMessage => appL10n.appCsvFileType;
 
 /// Shown when no column matched any field, which usually means the first row
 /// of the sheet is a title rather than the column names. The web's wording.
-const String csvImportNoMatchHint =
-    "We couldn't match any columns. Make sure the first row of your sheet "
-    'holds the column names.';
+String get csvImportNoMatchHint => appL10n.appCsvNoMatch;
 
 /// How long a column change waits for the next one before the preview is
 /// asked again. Preview and commit share a per-user throttle of 30 a minute.
@@ -627,10 +634,7 @@ List<String> csvDroppedLines(
   final labels = {for (final f in fields) f.name: f.label};
   return [
     for (final MapEntry(key: field, value: count) in dropped.entries)
-      count == 1
-          ? "${labels[field] ?? field}: 1 value we couldn't use was left blank."
-          : "${labels[field] ?? field}: $count values we couldn't use were "
-                'left blank.',
+      appL10n.appCsvDropped(count, labels[field] ?? field),
   ];
 }
 
@@ -644,19 +648,18 @@ String csvImportSummaryLine(CsvImportTarget target, CsvImportPreview preview) {
       preview.skipped.isNotEmpty &&
       preview.skipped.every((s) => s.kind == 'duplicate');
   if (valid == 0) {
-    if (total == 0) return 'This file has no rows to import.';
+    if (total == 0) return appL10n.appCsvSummaryEmpty;
     // With nothing importable there is no earlier row to duplicate, so every
     // duplicate here is a record already in the org.
-    if (duplicates) return 'Everything in this file is already in BottleCRM.';
-    return 'Nothing in this file can be imported.';
+    if (duplicates) return appL10n.appCsvSummaryAllDuplicates;
+    return appL10n.appCsvSummaryNothing;
   }
-  final head = '$valid ${target.noun(valid)} will be imported';
-  if (skipped == 0) return '$head.';
-  final rows = skipped == 1 ? 'row' : 'rows';
+  final noun = target.noun(valid);
+  if (skipped == 0) return appL10n.appCsvSummaryValid(valid, noun);
   if (duplicates) {
-    return '$head, and $skipped duplicate $rows will be skipped.';
+    return appL10n.appCsvSummaryValidDuplicates(skipped, valid, noun);
   }
-  return '$head, and $skipped $rows will be skipped.';
+  return appL10n.appCsvSummaryValidSkipped(skipped, valid, noun);
 }
 
 /// Whether to offer importing the file as leads instead: a contact needs a
@@ -911,15 +914,15 @@ class CsvImportNotifier extends Notifier<CsvImportState> {
       bytes = await picked.readAsBytes();
     } catch (_) {
       if (ref.mounted) {
-        state = const CsvImportState(
-          error: 'That file could not be read. Try picking it again.',
-        );
+        state = CsvImportState(error: appL10n.appMsgThatFileCouldNotBeReadTry);
       }
       return;
     }
     if (!ref.mounted) return;
     final refusal = bytes.isEmpty
-        ? (target.usesMapping ? 'Choose a file.' : 'Choose a CSV file.')
+        ? (target.usesMapping
+              ? appL10n.appCsvChooseFile
+              : appL10n.appCsvChooseCsvFile)
         : _refuse(picked.name, bytes.length);
     if (refusal != null) {
       state = CsvImportState(error: refusal);
@@ -945,12 +948,13 @@ class CsvImportNotifier extends Notifier<CsvImportState> {
         return csvImportFileTypeMessage;
       }
     } else if (!lower.endsWith('.csv')) {
-      return '$name is not a CSV file. Choose a file ending in .csv.';
+      return appL10n.appCsvNotCsv(name);
     }
     if (size > csvImportMaxBytes) {
       final mb = (size / (1024 * 1024)).toStringAsFixed(1);
-      final what = target.usesMapping ? 'Files' : 'CSV files';
-      return '$name is $mb MB. $what must be 5 MB or smaller.';
+      return target.usesMapping
+          ? appL10n.appCsvFileTooBig(name, mb)
+          : appL10n.appCsvCsvFileTooBig(name, mb);
     }
     return null;
   }
@@ -999,7 +1003,9 @@ class CsvImportNotifier extends Notifier<CsvImportState> {
     if (!ref.mounted || mine != _seq) return;
     final body = response.data;
     if (!response.success || body == null) {
-      state = _keep(error: _failureMessage(response, 'Preview failed'));
+      state = _keep(
+        error: _failureMessage(response, appL10n.appCsvPreviewFailed),
+      );
       return;
     }
     final preview = CsvImportPreview.fromJson(body);
@@ -1039,7 +1045,7 @@ class CsvImportNotifier extends Notifier<CsvImportState> {
       return false;
     }
     state = _keep(
-      error: _failureMessage(response, 'Import failed'),
+      error: _failureMessage(response, appL10n.appCsvImportFailed),
       commitErrors: _rowErrors(body?['errors']),
     );
     return false;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../services/app_language.dart';
 import '../api/schema.g.dart' as api;
 import 'attachment.dart';
 import 'comment.dart';
@@ -105,29 +107,18 @@ DateTime? _day(Object? value) {
       : DateTime(parsed.year, parsed.month, parsed.day);
 }
 
-const _monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-/// "October 2026" from a `YYYY-MM` month or a `YYYY-MM-DD` date, or null.
-/// English whatever the device's language, as the web writes it.
+/// "October 2026" from a `YYYY-MM` month or a `YYYY-MM-DD` date, or null,
+/// in the app's language.
 String? monthLabel(String? raw) {
   final m = RegExp(r'^(\d{4})-(\d{2})(?:-\d{2})?$').firstMatch(raw ?? '');
   if (m == null) return null;
   final month = int.parse(m.group(2)!);
   if (month < 1 || month > 12) return null;
-  return '${_monthNames[month - 1]} ${m.group(1)}';
+  // Pinned to the app's language, not `Intl.defaultLocale`.
+  final format = currentLanguage == baseLanguage
+      ? DateFormat('MMMM y', 'en_US')
+      : DateFormat.yMMMM(currentLanguage);
+  return format.format(DateTime(int.parse(m.group(1)!), month));
 }
 
 /// Hours with the trailing zeros dropped: 12.50 reads "12.5", 40.00 "40".

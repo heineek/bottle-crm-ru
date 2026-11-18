@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../l10n/l10n.dart';
 import '../data/models/deal.dart' show Deal;
 import '../providers/auth_provider.dart';
 import '../providers/duplicates_provider.dart';
@@ -59,6 +60,7 @@ import '../screens/settings/more_screen.dart';
 import '../screens/settings/profile_screen.dart';
 import '../screens/settings/api_tokens_screen.dart';
 import '../screens/settings/calendar_feed_screen.dart';
+import '../screens/settings/language_screen.dart';
 import '../screens/settings/my_api_tokens_screen.dart';
 import '../screens/settings/approval_rules_screen.dart';
 import '../screens/settings/business_hours_screen.dart';
@@ -922,6 +924,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MyApiTokensScreen(),
       ),
       GoRoute(
+        path: AppRoutes.profileLanguage,
+        name: 'profileLanguage',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LanguageScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.profileCalendarFeed,
         name: 'profileCalendarFeed',
         parentNavigatorKey: _rootNavigatorKey,
@@ -1269,7 +1277,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             const Icon(LucideIcons.circleAlert, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              'Page not found',
+              context.l10n.appPageNotFound,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -1282,7 +1290,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => context.go(AppRoutes.dashboard),
-              child: const Text('Go to Dashboard'),
+              child: Text(context.l10n.appGoToDashboard),
             ),
           ],
         ),

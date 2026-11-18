@@ -6,6 +6,7 @@ import '../../core/theme/theme.dart';
 import '../../data/models/record_matches.dart';
 import '../../providers/custom_objects_provider.dart';
 import '../../routes/app_router.dart';
+import '../../l10n/l10n.dart';
 
 /// The records on the other side that fit this one, with dismiss and undo.
 /// A failed load shows a quiet line and never fails the record screen.
@@ -87,7 +88,9 @@ class _RecordMatchesCardState extends ConsumerState<RecordMatchesCard> {
         SnackBar(
           content: Text(
             response.message ??
-                (dismiss ? 'Could not dismiss that match' : 'Could not undo'),
+                (dismiss
+                    ? context.l10n.objectsMatchesDismissFailed
+                    : context.l10n.objectsMatchesUndoFailed),
           ),
           backgroundColor: AppColors.danger600,
         ),
@@ -119,7 +122,10 @@ class _RecordMatchesCardState extends ConsumerState<RecordMatchesCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(answer?.heading ?? 'Matches', style: AppTypography.h3),
+          Text(
+            answer?.heading ?? context.l10n.objectsMatchesTitle,
+            style: AppTypography.h3,
+          ),
           const SizedBox(height: 10),
           if (answer == null && _loading)
             const Padding(
@@ -137,12 +143,21 @@ class _RecordMatchesCardState extends ConsumerState<RecordMatchesCard> {
           else ...[
             if (_failed) _failedRow(),
             if (answer.matches.isEmpty)
-              _quiet(_showDismissed ? 'None dismissed.' : 'No matches yet.'),
+              _quiet(
+                _showDismissed
+                    ? context.l10n.objectsMatchesNoneDismissed
+                    : context.l10n.objectsMatchesNoneYet,
+              ),
             for (final row in answer.matches) _row(row),
             if (_showDismissed)
-              _toggle('Hide dismissed')
+              _toggle(context.l10n.objectsMatchesHideDismissed)
             else if (answer.dismissedCount > 0)
-              _toggle('${answer.dismissedCount} dismissed', action: 'Show'),
+              _toggle(
+                context.l10n.objectsMatchesDismissedCount(
+                  answer.dismissedCount,
+                ),
+                action: context.l10n.objectsMatchesShow,
+              ),
           ],
         ],
       ),
@@ -151,11 +166,11 @@ class _RecordMatchesCardState extends ConsumerState<RecordMatchesCard> {
 
   Widget _failedRow() => Row(
     children: [
-      Expanded(child: _quiet('Could not load matches')),
+      Expanded(child: _quiet(context.l10n.objectsMatchesLoadFailed)),
       TextButton(
         style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
         onPressed: _loading ? null : _load,
-        child: const Text('Retry'),
+        child: Text(context.l10n.commonRetry),
       ),
     ],
   );
@@ -190,7 +205,9 @@ class _RecordMatchesCardState extends ConsumerState<RecordMatchesCard> {
   Widget _row(MatchRow row) {
     final answer = _answer!;
     final busy = _busy.contains(row.id);
-    final name = row.name.isEmpty ? 'Untitled' : row.name;
+    final name = row.name.isEmpty
+        ? context.l10n.objectsMatchesUntitled
+        : row.name;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -233,8 +250,12 @@ class _RecordMatchesCardState extends ConsumerState<RecordMatchesCard> {
                 ? null
                 : () => _change(row, dismiss: !_showDismissed),
             child: Text(
-              _showDismissed ? 'Undo' : 'Dismiss',
-              semanticsLabel: '${_showDismissed ? 'Undo' : 'Dismiss'} $name',
+              _showDismissed
+                  ? context.l10n.objectsMatchesUndo
+                  : context.l10n.objectsMatchesDismiss,
+              semanticsLabel: _showDismissed
+                  ? context.l10n.objectsMatchesUndoFor(name)
+                  : context.l10n.objectsMatchesDismissFor(name),
             ),
           ),
         ],

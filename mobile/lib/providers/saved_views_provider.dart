@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../services/api_service.dart';
@@ -133,7 +134,7 @@ class SavedViewsNotifier extends AsyncNotifier<SavedViewsState> {
     ).replace(queryParameters: {'module': list.module}).toString();
     final response = await _api.get(url);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load saved views.');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotLoadSavedViews);
     }
     final body = api.SavedViewListResponse.fromJson(response.data!);
     return SavedViewsState(
@@ -158,17 +159,17 @@ class SavedViewsNotifier extends AsyncNotifier<SavedViewsState> {
           'name': name.trim(),
           'filters': filters,
         }),
-        'Could not save the view.',
+        appL10n.appMsgCouldNotSaveTheView,
       );
 
   Future<String?> rename(String id, String name) => _write(
     _api.patch(ApiConfig.savedView(id), {'name': name.trim()}),
-    'Could not rename the view.',
+    appL10n.appMsgCouldNotRenameTheView,
   );
 
   Future<String?> remove(String id) => _write(
     _api.delete(ApiConfig.savedView(id)),
-    'Could not delete the view.',
+    appL10n.appMsgCouldNotDeleteTheView,
   );
 
   Future<String?> _write(
@@ -180,7 +181,7 @@ class SavedViewsNotifier extends AsyncNotifier<SavedViewsState> {
     if (!response.success) {
       if (response.statusCode == 404) {
         await reload();
-        return 'That view no longer exists.';
+        return appL10n.appMsgThatViewNoLongerExists;
       }
       return firstSentence(response.data) ?? response.message ?? fallback;
     }

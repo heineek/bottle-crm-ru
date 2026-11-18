@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/deal_pipeline.dart';
@@ -26,8 +27,7 @@ import 'deals_provider.dart';
 /// carries the server's own "Only admins can change deal pipelines.".
 String dealPipelineMessage(ApiResponse<Map<String, dynamic>> response) {
   if (response.statusCode == 404) {
-    return 'That pipeline or stage no longer exists. Refresh to see the '
-        'current list.';
+    return appL10n.appMsgPipelineOrStageGone;
   }
   final errors = response.data?['errors'];
   if (errors is String && errors.trim().isNotEmpty) return errors;
@@ -38,7 +38,7 @@ String dealPipelineMessage(ApiResponse<Map<String, dynamic>> response) {
     }
   }
   final raw = response.message?.trim() ?? '';
-  return raw.isEmpty ? 'Something went wrong.' : raw;
+  return raw.isEmpty ? appL10n.appMsgSomethingWentWrongPeriod : raw;
 }
 
 class DealPipelinesNotifier extends AsyncNotifier<List<DealPipeline>> {
@@ -53,7 +53,9 @@ class DealPipelinesNotifier extends AsyncNotifier<List<DealPipeline>> {
     // still stores the six seeded codes, so the app keeps working against it.
     if (response.statusCode == 404) return [DealPipeline.legacy];
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Could not load the pipelines.');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadThePipelines,
+      );
     }
     final data = api.DealPipelineListResponse.fromJson(response.data!);
     return [

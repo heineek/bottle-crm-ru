@@ -10,6 +10,7 @@ import '../data/models/custom_object.dart';
 import '../data/models/lookup_models.dart';
 import '../data/models/object_board.dart';
 import '../data/models/object_record_filters.dart';
+import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
 
@@ -24,7 +25,9 @@ class CustomObjectsNotifier extends AsyncNotifier<CustomObjectsAnswer?> {
     if (response.statusCode == 404) return null;
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not load custom objects');
+      throw Exception(
+        response.message ?? appL10n.appMsgCouldNotLoadCustomObjects,
+      );
     }
     return CustomObjectsAnswer.fromJson(data);
   }
@@ -63,7 +66,9 @@ final objectDefinitionProvider = FutureProvider.autoDispose
       if (response.statusCode == 404) return null;
       final data = response.data;
       if (!response.success || data == null) {
-        throw Exception(response.message ?? 'Failed to load this object');
+        throw Exception(
+          response.message ?? appL10n.appMsgFailedToLoadThisObject,
+        );
       }
       return ObjectDefinition.fromJson(data);
     }, retry: (_, _) => null);
@@ -97,10 +102,10 @@ final objectSettingsProvider = FutureProvider.autoDispose
       final object = results[0];
       final fields = results[1];
       if (!object.success || object.data == null) {
-        throw Exception(object.message ?? 'Failed to load this object');
+        throw Exception(object.message ?? appL10n.appMsgFailedToLoadThisObject);
       }
       if (!fields.success || fields.data == null) {
-        throw Exception(fields.message ?? 'Failed to load its fields');
+        throw Exception(fields.message ?? appL10n.appMsgFailedToLoadItsFields);
       }
       final list = enterprise.CustomObjectFieldList.fromJson(fields.data!);
       return ObjectSettingsData(
@@ -166,7 +171,7 @@ class ObjectRecordsNotifier extends AsyncNotifier<ObjectRecordsData> {
     );
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Failed to load records');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadRecords);
     }
     final list = enterprise.CustomRecordList.fromJson(data);
     final records = [
@@ -257,7 +262,7 @@ class ObjectBoardNotifier extends AsyncNotifier<ObjectBoard> {
     final data = response.data;
     if (!response.success || data == null) {
       throw Exception(
-        settingsWriteError(response, 'Could not load the board.'),
+        settingsWriteError(response, appL10n.appObjectsBoardLoadFailed),
       );
     }
     return ObjectBoard.fromJson(data);
@@ -278,7 +283,7 @@ class ObjectBoardNotifier extends AsyncNotifier<ObjectBoard> {
   /// it landed.
   Future<String?> move(ObjectRecord record, ObjectBoardColumn target) async {
     final before = state.value;
-    if (before == null) return 'The board is not loaded.';
+    if (before == null) return appL10n.appObjectsBoardNotLoaded;
     final generation = ++_generation;
     state = AsyncData(before.moved(record, target));
     final response = await ref
@@ -310,14 +315,18 @@ final objectBoardProvider = AsyncNotifierProvider.autoDispose
 /// message, a 403's detail, or a plain fallback.
 String boardMoveError(ApiResponse<dynamic> response) => settingsWriteError(
   response,
-  'Could not move that card.',
+  appL10n.appObjectsBoardMoveFailed,
   labels: const {'value': ''},
 );
 
 /// What the server refused a note with: the text's message, a 403's detail
 /// (the plan, or whose notes these are), or a plain fallback.
 String noteError(ApiResponse<dynamic> response, String fallback) =>
-    settingsWriteError(response, fallback, labels: const {'comment': 'Note'});
+    settingsWriteError(
+      response,
+      fallback,
+      labels: {'comment': appL10n.appObjectsNoteField},
+    );
 
 const int linkSearchLimit = 20;
 
@@ -474,7 +483,7 @@ class CustomObjectsApi {
     );
     final data = response.data;
     if (!response.success || data == null) {
-      throw Exception(response.message ?? 'Could not search');
+      throw Exception(response.message ?? appL10n.appMsgCouldNotSearch);
     }
     return [
       for (final row in spec.rows(data).take(linkSearchLimit))
@@ -718,8 +727,10 @@ String recordWriteError(
     }
 
     if (data['name'] != null) add(definition.summary.nameLabel, data['name']);
-    if (data['assigned_to'] != null) add('Assigned to', data['assigned_to']);
-    if (data['tags'] != null) add('Tags', data['tags']);
+    if (data['assigned_to'] != null) {
+      add(appL10n.commonAssignedTo, data['assigned_to']);
+    }
+    if (data['tags'] != null) add(appL10n.commonTags, data['tags']);
     for (final section in const ['custom_fields', 'links']) {
       final nested = data[section];
       if (nested is! Map) continue;
@@ -737,7 +748,7 @@ String recordWriteError(
     final detail = _messageText(data['detail']);
     if (detail.isNotEmpty) return detail;
   }
-  return response.message ?? 'Could not save that record.';
+  return response.message ?? appL10n.appMsgCouldNotSaveThatRecord;
 }
 
 /// The write that chooses (or, with an empty key, clears) the board field.
@@ -754,7 +765,7 @@ List<ObjectField> boardChoices(List<ObjectField> fields) => ObjectDefinition(
 
 /// What the settings page says the board groups by.
 String boardLabelOf(ObjectSummary summary, List<ObjectField> fields) {
-  if (summary.boardField.isEmpty) return 'No board';
+  if (summary.boardField.isEmpty) return appL10n.appObjectsNoBoard;
   for (final f in fields) {
     if (f.key == summary.boardField) return f.label;
   }
@@ -840,27 +851,33 @@ Map<String, dynamic> fieldWriteBody({
 }
 
 /// The names the object form shows for the keys it sends.
-const objectFormLabels = {
-  'key': 'Key',
-  'label': 'Name (singular)',
-  'label_plural': 'Name (plural)',
-  'name_label': "What each record's name is called",
-  'description': 'Description',
-  'record_access': 'Who can see its records',
-  'board_field': 'Board field',
-};
+Map<String, String> get objectFormLabels {
+  final l10n = appL10n;
+  return {
+    'key': l10n.appObjectFormKey,
+    'label': l10n.appObjectFormLabelSingular,
+    'label_plural': l10n.appObjectFormLabelPlural,
+    'name_label': l10n.appObjectFormNameLabel,
+    'description': l10n.commonDescription,
+    'record_access': l10n.appObjectFormRecordAccess,
+    'board_field': l10n.appObjectFormBoardField,
+  };
+}
 
 /// The names the field form shows for the keys it sends.
-const fieldFormLabels = {
-  'key': 'Key',
-  'label': 'Label',
-  'field_type': 'Type',
-  'options': 'Options',
-  'target': 'Links to',
-  'many': 'How many',
-  'is_required': 'Required',
-  'display_order': 'Order',
-};
+Map<String, String> get fieldFormLabels {
+  final l10n = appL10n;
+  return {
+    'key': l10n.appObjectFormKey,
+    'label': l10n.appFieldFormLabel,
+    'field_type': l10n.appRoutingFieldType,
+    'options': l10n.appFieldFormOptions,
+    'target': l10n.appFieldFormTarget,
+    'many': l10n.appFieldFormMany,
+    'is_required': l10n.appFieldFormRequired,
+    'display_order': l10n.appFieldFormOrder,
+  };
+}
 
 /// What the server refused, as one readable line per field or its `detail`.
 /// [labels] says what the form calls each key; unknown keys keep their name.

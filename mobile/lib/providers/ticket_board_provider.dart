@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/ticket_board.dart';
@@ -46,7 +47,9 @@ class TicketBoardNotifier extends AsyncNotifier<TicketBoardData> {
   Future<TicketBoardData> _fetch() async {
     final listResponse = await _apiService.get(ApiConfig.casePipelines);
     if (!listResponse.success || listResponse.data == null) {
-      throw Exception(listResponse.message ?? 'Could not load the pipelines.');
+      throw Exception(
+        listResponse.message ?? appL10n.appMsgCouldNotLoadThePipelines,
+      );
     }
     final rows = api.CasePipelineListResponse.fromJson(
       listResponse.data!,
@@ -67,7 +70,9 @@ class TicketBoardNotifier extends AsyncNotifier<TicketBoardData> {
       queryParams: active == null ? null : {'pipeline_id': active.id},
     );
     if (!boardResponse.success || boardResponse.data == null) {
-      throw Exception(boardResponse.message ?? 'Could not load the board.');
+      throw Exception(
+        boardResponse.message ?? appL10n.appMsgCouldNotLoadTheBoard,
+      );
     }
     return TicketBoardData(
       pipelines: pipelines,
@@ -109,7 +114,7 @@ class TicketBoardNotifier extends AsyncNotifier<TicketBoardData> {
       return response;
     }
     if (response.statusCode == 404) {
-      return const ApiResponse(
+      return ApiResponse(
         success: false,
         statusCode: 404,
         message: ticketMoveNotAllowedMessage,
@@ -126,9 +131,7 @@ class TicketBoardNotifier extends AsyncNotifier<TicketBoardData> {
 }
 
 /// Shown when a move is answered 404.
-const ticketMoveNotAllowedMessage =
-    'You cannot move that ticket. You may not have access to it, or the '
-    'ticket or stage no longer exists.';
+String get ticketMoveNotAllowedMessage => appL10n.appMsgTicketMoveNotAllowed;
 
 final ticketBoardProvider =
     AsyncNotifierProvider<TicketBoardNotifier, TicketBoardData>(

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/attachment.dart';
@@ -237,7 +238,7 @@ class TasksNotifier extends AsyncNotifier<TasksListData> {
     if (f.statuses.isNotEmpty) {
       queryParams['status'] = f.statuses.map((s) => s.value).toList();
     }
-    if (f.priority != null) queryParams['priority'] = f.priority!.label;
+    if (f.priority != null) queryParams['priority'] = f.priority!.value;
     if (f.assignedToId != null && f.assignedToId!.isNotEmpty) {
       queryParams['assigned_to'] = f.assignedToId!;
     }
@@ -255,7 +256,7 @@ class TasksNotifier extends AsyncNotifier<TasksListData> {
     final response = await _apiService.get(url);
 
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load tasks');
+      throw Exception(response.message ?? appL10n.appMsgFailedToLoadTasks);
     }
 
     final data = api.TaskListResponse.fromJson(response.data!);

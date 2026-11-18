@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/audit_entry.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/audit_log_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 
 /// The security audit log, mirroring `/settings/audit-log` on the web:
 /// sign-ins, org switches, refused requests, and webhooks paused or turned
@@ -72,7 +73,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Audit log'),
+        title: Text(context.l10n.settingsAuditLogTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -130,7 +131,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                 spacing: 8,
                 children: [
                   Text(
-                    'Showing $_actorLabel only.',
+                    context.l10n.settingsAuditLogShowingOnly(_actorLabel),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -145,7 +146,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                       includeTokenRefresh: q.includeTokenRefresh,
                       offset: 0,
                     )),
-                    child: const Text('Show everyone'),
+                    child: Text(context.l10n.settingsAuditLogShowEveryone),
                   ),
                 ],
               ),
@@ -160,7 +161,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
             error: (error, _) => [
               _Message(
                 icon: LucideIcons.circleAlert,
-                title: 'That did not work',
+                title: context.l10n.settingsAuditLogErrorTitle,
                 body: error.toString().replaceFirst('Exception: ', ''),
                 onRetry: () => ref.invalidate(auditLogProvider(_query)),
               ),
@@ -169,13 +170,12 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
               if (page.entries.isEmpty)
                 _Message(
                   icon: LucideIcons.scrollText,
-                  title: filtered ? 'Nothing matches' : 'Nothing recorded yet',
+                  title: filtered
+                      ? context.l10n.settingsAuditLogNothingMatches
+                      : context.l10n.settingsAuditLogNothingYet,
                   body: filtered
-                      ? 'No entry matches these filters. Widen the dates or '
-                            'clear them.'
-                      : 'Sign-ins, org switches, refused requests, webhook '
-                            'pauses and API token or calendar feed changes '
-                            'appear here as they happen.',
+                      ? context.l10n.settingsAuditLogEmptyFilteredBody
+                      : context.l10n.settingsAuditLogEmptyBody,
                 )
               else
                 for (final entry in page.entries)
@@ -236,11 +236,10 @@ class _Filters extends StatelessWidget {
   final ValueChanged<bool> onTokenRefresh;
   final VoidCallback? onClear;
 
-  static final _day = DateFormat('d MMM yyyy');
-
   @override
   Widget build(BuildContext context) {
     const size = Size(0, 48);
+    final day = localDateFormat('d MMM yyyy', 'yMMMd');
     // The types arrive with the first page. Until then a chosen type reads as
     // "All events", because a dropdown whose value is not among its items
     // throws. The key rebuilds the field once they arrive.
@@ -257,11 +256,13 @@ class _Filters extends StatelessWidget {
             key: ValueKey('${selected ?? ''}|${eventTypes.length}'),
             initialValue: selected,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Event'),
+            decoration: InputDecoration(
+              labelText: context.l10n.settingsAuditLogEvent,
+            ),
             items: [
-              const DropdownMenuItem<String?>(
+              DropdownMenuItem<String?>(
                 value: null,
-                child: Text('All events'),
+                child: Text(context.l10n.settingsAuditLogAllEvents),
               ),
               for (final t in eventTypes)
                 DropdownMenuItem<String?>(
@@ -282,8 +283,10 @@ class _Filters extends StatelessWidget {
                 icon: const Icon(LucideIcons.calendar, size: 16),
                 label: Text(
                   query.from == null
-                      ? 'From'
-                      : 'From ${_day.format(query.from!)}',
+                      ? context.l10n.settingsAuditLogFrom
+                      : context.l10n.settingsAuditLogFromDate(
+                          day.format(query.from!),
+                        ),
                 ),
               ),
               OutlinedButton.icon(
@@ -291,14 +294,18 @@ class _Filters extends StatelessWidget {
                 onPressed: onTo,
                 icon: const Icon(LucideIcons.calendar, size: 16),
                 label: Text(
-                  query.to == null ? 'To' : 'To ${_day.format(query.to!)}',
+                  query.to == null
+                      ? context.l10n.settingsAuditLogTo
+                      : context.l10n.settingsAuditLogToDate(
+                          day.format(query.to!),
+                        ),
                 ),
               ),
               if (onClear != null)
                 TextButton(
                   style: TextButton.styleFrom(minimumSize: size),
                   onPressed: onClear,
-                  child: const Text('Clear'),
+                  child: Text(context.l10n.settingsAuditLogClear),
                 ),
             ],
           ),
@@ -310,7 +317,7 @@ class _Filters extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               value: query.includeTokenRefresh,
               onChanged: onTokenRefresh,
-              title: const Text('Show token refreshes'),
+              title: Text(context.l10n.settingsAuditLogShowRefreshes),
             ),
           ),
         ],
@@ -325,17 +332,15 @@ class _EntryRow extends StatelessWidget {
   final AuditEntry entry;
   final VoidCallback? onActor;
 
-  static final _when = DateFormat('d MMM yyyy, HH:mm');
-
   @override
   Widget build(BuildContext context) {
     final detail = entry.detail;
     final webhookId = entry.webhookId;
     final (label, color) = entry.success
-        ? ('OK', AppColors.success600)
-        : ('Refused', AppColors.danger600);
+        ? (context.l10n.settingsAuditLogOk, AppColors.success600)
+        : (context.l10n.settingsAuditLogRefused, AppColors.danger600);
     final meta = [
-      if (entry.createdAt != null) _when.format(entry.createdAt!.toLocal()),
+      if (entry.createdAt != null) _when(entry.createdAt!.toLocal()),
       if (entry.ipAddress.isNotEmpty) entry.ipAddress,
     ].join(' · ');
     return Container(
@@ -413,7 +418,7 @@ class _EntryRow extends StatelessWidget {
                   ),
                   onPressed: () =>
                       context.push(AppRoutes.settingsWebhook(webhookId)),
-                  child: const Text('Open webhook'),
+                  child: Text(context.l10n.settingsAuditLogOpenWebhook),
                 ),
             ],
           ),
@@ -422,6 +427,12 @@ class _EntryRow extends StatelessWidget {
     );
   }
 }
+
+/// Day and time as two locale formats, since [localDateFormat] takes one
+/// skeleton. English stays `d MMM yyyy, HH:mm`.
+String _when(DateTime at) =>
+    '${localDateFormat('d MMM yyyy', 'yMMMd').format(at)}, '
+    '${localDateFormat('HH:mm', 'Hm').format(at)}';
 
 class _Pager extends StatelessWidget {
   const _Pager({
@@ -450,13 +461,13 @@ class _Pager extends StatelessWidget {
               style: OutlinedButton.styleFrom(minimumSize: size),
               onPressed: () =>
                   onPage((offset - auditLogPageSize).clamp(0, offset)),
-              child: const Text('Newer'),
+              child: Text(context.l10n.settingsAuditLogNewer),
             ),
           if (older)
             OutlinedButton(
               style: OutlinedButton.styleFrom(minimumSize: size),
               onPressed: () => onPage(offset + auditLogPageSize),
-              child: const Text('Older'),
+              child: Text(context.l10n.settingsAuditLogOlder),
             ),
         ],
       ),
@@ -497,7 +508,7 @@ class _Message extends StatelessWidget {
             OutlinedButton(
               style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
               onPressed: onRetry,
-              child: const Text('Try again'),
+              child: Text(context.l10n.settingsAuditLogTryAgain),
             ),
           ],
         ],
@@ -511,12 +522,10 @@ class _MemberNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _Message(
+    return _Message(
       icon: LucideIcons.lock,
-      title: 'Administrators only',
-      body:
-          'The audit log records who signed in, from where, and what was '
-          'refused, so only administrators can read it.',
+      title: context.l10n.settingsAuditLogAdminsOnlyTitle,
+      body: context.l10n.settingsAuditLogAdminsOnlyBody,
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/help_center_settings.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/help_center_provider.dart';
 
 /// The public help center: one switch and one address, mirroring
@@ -26,7 +27,7 @@ class HelpCenterScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Help center'),
+        title: Text(context.l10n.settingsHelpCenterTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -44,19 +45,23 @@ class HelpCenterScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 96),
             children: [
               _Summary(settings: settings),
-              const _SectionHeader('Current setting'),
+              _SectionHeader(context.l10n.settingsHelpCenterSectionCurrent),
               _Row(
-                label: 'Public help center',
-                detail: 'Off means every public page answers "not found".',
-                value: settings.enabled ? 'On' : 'Off',
+                label: context.l10n.settingsHelpCenterPublicLabel,
+                detail: context.l10n.settingsHelpCenterOffHint,
+                value: settings.enabled
+                    ? context.l10n.settingsHelpCenterOn
+                    : context.l10n.settingsHelpCenterOff,
               ),
               _Row(
-                label: 'Address',
-                detail: settings.publicUrl ?? 'Not chosen yet',
+                label: context.l10n.settingsHelpCenterAddress,
+                detail:
+                    settings.publicUrl ??
+                    context.l10n.settingsHelpCenterNotChosen,
               ),
               if (settings.isLive) _OpenLink(url: settings.publicUrl!),
               if (settings.canEdit) ...[
-                const _SectionHeader('Change'),
+                _SectionHeader(context.l10n.settingsHelpCenterSectionChange),
                 _HelpCenterForm(settings: settings),
               ],
               const _Footnote(),
@@ -96,8 +101,8 @@ class _Summary extends StatelessWidget {
           Expanded(
             child: Text(
               settings.isLive
-                  ? 'Public, and open to search engines.'
-                  : 'Off. Nothing is published.',
+                  ? context.l10n.settingsHelpCenterSummaryLive
+                  : context.l10n.settingsHelpCenterSummaryOff,
               style: AppTypography.body,
             ),
           ),
@@ -170,7 +175,7 @@ class _OpenLink extends StatelessWidget {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the public page')),
+        SnackBar(content: Text(context.l10n.settingsHelpCenterOpenFailed)),
       );
     }
   }
@@ -187,7 +192,7 @@ class _OpenLink extends StatelessWidget {
           style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
           onPressed: () => _open(context),
           icon: const Icon(LucideIcons.externalLink, size: 16),
-          label: const Text('Open the public page'),
+          label: Text(context.l10n.settingsHelpCenterOpenPage),
         ),
       ),
     );
@@ -233,9 +238,9 @@ class _HelpCenterFormState extends ConsumerState<_HelpCenterForm> {
       _error = error;
     });
     if (error == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Help center saved')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.settingsHelpCenterSaved)),
+      );
     }
   }
 
@@ -252,10 +257,8 @@ class _HelpCenterFormState extends ConsumerState<_HelpCenterForm> {
           children: [
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Public help center'),
-              subtitle: const Text(
-                'Publish approved, published articles for anyone to read.',
-              ),
+              title: Text(context.l10n.settingsHelpCenterPublicLabel),
+              subtitle: Text(context.l10n.settingsHelpCenterPublicSubtitle),
               value: _enabled,
               onChanged: _saving ? null : (v) => setState(() => _enabled = v),
             ),
@@ -268,12 +271,10 @@ class _HelpCenterFormState extends ConsumerState<_HelpCenterForm> {
               maxLength: 50,
               textInputAction: TextInputAction.done,
               decoration: InputDecoration(
-                labelText: 'Address',
+                labelText: context.l10n.settingsHelpCenterAddress,
                 prefixText: '/help-center/',
                 hintText: 'your-company',
-                helperText:
-                    '3 to 50 lowercase letters, numbers and single hyphens. '
-                    'Required before the help center can be switched on.',
+                helperText: context.l10n.settingsHelpCenterSlugHint,
                 helperMaxLines: 3,
                 errorText: _error,
                 errorMaxLines: 3,
@@ -283,7 +284,11 @@ class _HelpCenterFormState extends ConsumerState<_HelpCenterForm> {
             FilledButton(
               style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
               onPressed: _saving ? null : _save,
-              child: Text(_saving ? 'Saving...' : 'Save'),
+              child: Text(
+                _saving
+                    ? context.l10n.settingsHelpCenterSaving
+                    : context.l10n.commonSave,
+              ),
             ),
           ],
         ),
@@ -320,10 +325,7 @@ class _Footnote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Text(
-        'Only articles that are both approved and published are shown, the '
-        'same ones customers see in the portal. Drafts, tags, linked tickets '
-        'and who wrote an article never are. Search engines can list these '
-        'pages.',
+        context.l10n.settingsHelpCenterFootnote,
         style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
       ),
     );
@@ -350,12 +352,15 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load the help center',
+              context.l10n.settingsHelpCenterLoadError,
               style: AppTypography.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.settingsHelpCenterTryAgain),
+            ),
           ],
         ),
       ),

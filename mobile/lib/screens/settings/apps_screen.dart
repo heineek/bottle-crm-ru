@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
@@ -13,6 +12,8 @@ import '../../providers/org_modules_provider.dart';
 import '../../widgets/common/badge.dart';
 import 'app_preview_sheet.dart';
 import 'modules_section.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// Settings › Apps: the industry apps, the modules, then sample data, as on the
 /// web. Admin only, as every write here is on the server.
@@ -48,7 +49,7 @@ class _AppsScreenState extends ConsumerState<AppsScreen> {
     setState(() => _busyId = null);
     final preview = asked.preview;
     if (preview == null) {
-      _say(asked.error ?? 'Could not load what this would change.');
+      _say(asked.error ?? context.l10n.settingsAppsPreviewFailed);
       return;
     }
 
@@ -73,9 +74,9 @@ class _AppsScreenState extends ConsumerState<AppsScreen> {
     _say(
       error ??
           switch (action) {
-            AppAction.install => '${app.name} installed.',
-            AppAction.upgrade => '${app.name} updated.',
-            AppAction.remove => '${app.name} removed. Every record stays.',
+            AppAction.install => context.l10n.settingsAppsInstalled(app.name),
+            AppAction.upgrade => context.l10n.settingsAppsUpdated(app.name),
+            AppAction.remove => context.l10n.settingsAppsRemoved(app.name),
           },
     );
   }
@@ -85,22 +86,17 @@ class _AppsScreenState extends ConsumerState<AppsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear sample data?'),
-        content: const Text(
-          'Permanently deletes every sample record an app created for this '
-          'organization. Your real records are never touched, and any sample '
-          'record you have since attached real work to is kept. This cannot '
-          'be undone.',
-        ),
+        title: Text(ctx.l10n.settingsAppsClearTitle),
+        content: Text(ctx.l10n.settingsAppsClearBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
+            child: Text(ctx.l10n.settingsAppsClear),
           ),
         ],
       ),
@@ -124,7 +120,11 @@ class _AppsScreenState extends ConsumerState<AppsScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(apps == null ? 'Modules' : 'Apps'),
+        title: Text(
+          apps == null
+              ? context.l10n.settingsAppsModulesTitle
+              : context.l10n.settingsAppsTitle,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -139,9 +139,10 @@ class _AppsScreenState extends ConsumerState<AppsScreen> {
     bool moduleOn(String key) => modules?.isOn(key) ?? true;
     String moduleLabel(String key) =>
         modules?.labelOf(key) ?? defaultModuleLabels[key] ?? key;
+    final l10n = context.l10n;
     final parts = ref.watch(productsOnProvider)
-        ? 'fields, pipelines, tags, lead sources and products'
-        : 'fields, pipelines, tags and lead sources';
+        ? l10n.settingsAppsPartsWithProducts
+        : l10n.settingsAppsParts;
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 48),
@@ -150,14 +151,12 @@ class _AppsScreenState extends ConsumerState<AppsScreen> {
         if (apps != null) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Text('Industry apps', style: AppTypography.h3),
+            child: Text(l10n.settingsAppsIndustryApps, style: AppTypography.h3),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
             child: Text(
-              'Each sets BottleCRM up for one kind of business: its wording, '
-              '$parts. You see what changes before anything does, and '
-              'removing an app keeps every record.',
+              l10n.settingsAppsIntro(parts),
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -200,52 +199,55 @@ class _AppCard extends StatelessWidget {
   final String Function(String module) moduleLabel;
   final void Function(AppAction action) onAction;
 
-  String? get _statusLine {
+  String? _statusLine(AppLocalizations l10n) {
     switch (app.status) {
       case AppStatus.notInstalled:
         return null;
       case AppStatus.removed:
-        return 'Removed. Its records stay, and installing again turns its '
-            'parts back on.';
+        return l10n.settingsAppsStatusRemoved;
       case AppStatus.installed:
         final by = app.installedByName;
         final at = app.installedAt;
-        final line = StringBuffer('Version ${app.installedVersion ?? '?'}');
-        line.write(' installed');
-        if (by != null) line.write(' by $by');
-        if (at != null) line.write(' on ${DateFormat('d MMM y').format(at)}');
+        final line = StringBuffer(
+          l10n.settingsAppsVersionInstalled(app.installedVersion ?? '?'),
+        );
+        if (by != null) line.write(l10n.settingsAppsInstalledBy(by));
+        if (at != null) {
+          final date = localDateFormat('d MMM y', 'yMMMd').format(at);
+          line.write(l10n.settingsAppsInstalledOn(date));
+        }
         line.write('.');
         if (app.updateAvailable) {
           line.write(
             app.version == app.installedVersion
-                ? ' An update adds the parts skipped while a module was off.'
-                : ' Version ${app.version} is available.',
+                ? l10n.settingsAppsUpdateSkipped
+                : l10n.settingsAppsVersionAvailable(app.version),
           );
         }
         return line.toString();
     }
   }
 
-  String? get _skippedLine {
+  String? _skippedLine(AppLocalizations l10n) {
     if (app.status != AppStatus.installed || app.skippedModules.isEmpty) {
       return null;
     }
     final names = app.skippedModules.map(moduleLabel).join(', ');
-    final one = app.skippedModules.length == 1;
+    final count = app.skippedModules.length;
     final waiting = app.skippedModules.where((m) => !moduleOn(m)).toList();
     final tail = waiting.isNotEmpty
-        ? ' Switch ${one ? 'it' : 'them'} on below, then update to add them.'
+        ? l10n.settingsAppsSwitchOn(count)
         : app.updateAvailable
-        ? ' Update adds them now.'
+        ? l10n.settingsAppsUpdateAddsNow
         : '';
-    return 'Parts for $names were skipped because '
-        '${one ? 'that module was' : 'those modules were'} off.$tail';
+    return '${l10n.settingsAppsSkipped(count, names)}$tail';
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = _statusLine;
-    final skipped = _skippedLine;
+    final l10n = context.l10n;
+    final status = _statusLine(l10n);
+    final skipped = _skippedLine(l10n);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       padding: const EdgeInsets.all(14),
@@ -269,9 +271,15 @@ class _AppCard extends StatelessWidget {
                 ),
               ),
               if (app.status == AppStatus.installed)
-                StatusBadge(label: 'Installed', color: AppColors.success600)
+                StatusBadge(
+                  label: l10n.settingsAppsBadgeInstalled,
+                  color: AppColors.success600,
+                )
               else if (app.status == AppStatus.removed)
-                StatusBadge(label: 'Removed', color: AppColors.gray500),
+                StatusBadge(
+                  label: l10n.settingsAppsBadgeRemoved,
+                  color: AppColors.gray500,
+                ),
             ],
           ),
           if (app.description.isNotEmpty) ...[
@@ -306,7 +314,7 @@ class _AppCard extends StatelessWidget {
             children: [
               for (final (i, action) in app.actions.indexed) ...[
                 if (i > 0) const SizedBox(width: 8),
-                Expanded(child: _button(action)),
+                Expanded(child: _button(l10n, action)),
               ],
             ],
           ),
@@ -315,23 +323,23 @@ class _AppCard extends StatelessWidget {
     );
   }
 
-  Widget _button(AppAction action) {
+  Widget _button(AppLocalizations l10n, AppAction action) {
     final onPressed = busy ? null : () => onAction(action);
     return SizedBox(
       height: 44,
       child: switch (action) {
         AppAction.install => FilledButton(
           onPressed: onPressed,
-          child: const Text('Install'),
+          child: Text(l10n.settingsAppsInstall),
         ),
         AppAction.upgrade => FilledButton(
           onPressed: onPressed,
-          child: const Text('Update'),
+          child: Text(l10n.settingsAppsUpdate),
         ),
         AppAction.remove => OutlinedButton(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger600),
-          child: const Text('Remove'),
+          child: Text(l10n.settingsAppsRemove),
         ),
       },
     );
@@ -356,7 +364,7 @@ class _SampleData extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: busy ? null : onClear,
               icon: const Icon(LucideIcons.trash2, size: 16),
-              label: const Text('Clear sample data'),
+              label: Text(context.l10n.settingsAppsClearButton),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.danger600,
               ),
@@ -364,8 +372,7 @@ class _SampleData extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Removes only the records an app added as samples. Your real '
-            'records are never touched.',
+            context.l10n.settingsAppsClearHint,
             style: AppTypography.caption.copyWith(
               color: AppColors.textTertiary,
             ),
@@ -389,7 +396,7 @@ class _AppsError extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Could not load the apps.',
+            context.l10n.settingsAppsLoadFailed,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
@@ -397,7 +404,7 @@ class _AppsError extends StatelessWidget {
             height: 44,
             child: OutlinedButton(
               onPressed: onRetry,
-              child: const Text('Try again'),
+              child: Text(context.l10n.appTryAgain),
             ),
           ),
         ],
@@ -419,7 +426,7 @@ class _MemberNotice extends StatelessWidget {
           Icon(LucideIcons.lock, size: 40, color: AppColors.textTertiary),
           const SizedBox(height: 16),
           Text(
-            'Only an organization admin can manage apps and modules.',
+            context.l10n.settingsAppsMemberNotice,
             style: AppTypography.body,
             textAlign: TextAlign.center,
           ),

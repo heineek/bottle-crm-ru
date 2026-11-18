@@ -16,15 +16,13 @@ import '../../providers/profile_provider.dart';
 import '../../providers/saved_views_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/common.dart';
+import '../../l10n/l10n.dart';
 import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/saved_views_button.dart';
 import '../../widgets/forms/csv_import_sheet.dart';
 import '../../widgets/objects/object_board_view.dart';
 import '../../widgets/objects/object_filter_sheet.dart';
 import '../../widgets/objects/object_record_card.dart';
-
-const _missingObject =
-    'This object does not exist, or you do not have access to it.';
 
 /// The records of one custom object, searchable and paged by the server.
 class ObjectRecordsScreen extends ConsumerStatefulWidget {
@@ -144,13 +142,13 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
 
     return definition.when(
       loading: () => _shell(
-        title: 'Records',
+        title: context.l10n.objectsRecordsTitle,
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => _shell(
-        title: 'Records',
+        title: context.l10n.objectsRecordsTitle,
         body: _ErrorView(
-          message: 'Failed to load this object',
+          message: context.l10n.objectsLoadObjectFailed,
           onRetry: () =>
               ref.invalidate(objectDefinitionProvider(widget.objectKey)),
         ),
@@ -158,10 +156,10 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
       data: (def) {
         if (def == null) {
           return _shell(
-            title: 'Records',
-            body: const EmptyState(
+            title: context.l10n.objectsRecordsTitle,
+            body: EmptyState(
               icon: LucideIcons.boxes,
-              title: _missingObject,
+              title: context.l10n.objectsMissingObject,
             ),
           );
         }
@@ -199,7 +197,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
           fab: canWrite
               ? AppFAB(
                   icon: LucideIcons.plus,
-                  label: 'New ${def.summary.label}',
+                  label: context.l10n.objectsNewRecord(def.summary.label),
                   onPressed: () => context.push(
                     AppRoutes.objectRecordCreate(widget.objectKey),
                   ),
@@ -212,7 +210,9 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
 
   List<Widget> _actions(ObjectDefinition def, bool canImport, int active) => [
     IconButton(
-      tooltip: active == 0 ? 'Filters' : 'Filters ($active on)',
+      tooltip: active == 0
+          ? context.l10n.objectsFilterTitle
+          : context.l10n.objectsListFiltersOn(active),
       icon: Badge(
         isLabelVisible: active > 0,
         label: Text('$active'),
@@ -222,7 +222,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
     ),
     if (canImport)
       IconButton(
-        tooltip: 'Import from a spreadsheet',
+        tooltip: context.l10n.objectsListImport,
         icon: const Icon(LucideIcons.upload),
         onPressed: () => _import(def),
       ),
@@ -266,9 +266,15 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
       child: SegmentedButton<bool>(
         showSelectedIcon: false,
         style: SegmentedButton.styleFrom(minimumSize: const Size(0, 44)),
-        segments: const [
-          ButtonSegment(value: false, label: Text('List')),
-          ButtonSegment(value: true, label: Text('Board')),
+        segments: [
+          ButtonSegment(
+            value: false,
+            label: Text(context.l10n.objectsListModeList),
+          ),
+          ButtonSegment(
+            value: true,
+            label: Text(context.l10n.objectsListModeBoard),
+          ),
         ],
         selected: {_board},
         onSelectionChanged: (v) => _showBoard(v.first),
@@ -285,7 +291,9 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
         style: AppTypography.body,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search ${summary.labelPlural.toLowerCase()}',
+          hintText: context.l10n.objectsSearchHint(
+            summary.labelPlural.toLowerCase(),
+          ),
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -295,7 +303,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
           suffixIcon: _search.text.isEmpty
               ? null
               : IconButton(
-                  tooltip: 'Clear search',
+                  tooltip: context.l10n.objectsClearSearch,
                   icon: Icon(
                     LucideIcons.x,
                     color: AppColors.textTertiary,
@@ -328,7 +336,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
     }
     if (async.hasError && (data == null || data.records.isEmpty)) {
       return _ErrorView(
-        message: 'Failed to load records',
+        message: context.l10n.objectsLoadRecordsFailed,
         onRetry: notifier.refresh,
       );
     }
@@ -345,8 +353,12 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
               child: EmptyState(
                 icon: LucideIcons.boxes,
                 title: searching
-                    ? 'No matching ${def.summary.labelPlural.toLowerCase()}'
-                    : 'No ${def.summary.labelPlural.toLowerCase()} yet',
+                    ? context.l10n.objectsNoMatching(
+                        def.summary.labelPlural.toLowerCase(),
+                      )
+                    : context.l10n.objectsEmpty(
+                        def.summary.labelPlural.toLowerCase(),
+                      ),
               ),
             ),
           ),
@@ -398,7 +410,7 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(message, style: AppTypography.label),
           const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(context.l10n.commonRetry)),
         ],
       ),
     );

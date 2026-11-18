@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/sales_goal.dart';
@@ -104,7 +105,9 @@ class GoalsNotifier extends AsyncNotifier<GoalsData> {
 
     final listResponse = results[0];
     if (!listResponse.success || listResponse.data == null) {
-      throw Exception(listResponse.message ?? 'Could not load the goals.');
+      throw Exception(
+        listResponse.message ?? appL10n.appMsgCouldNotLoadTheGoals,
+      );
     }
 
     final list = api.SalesGoalListResponse.fromJson(listResponse.data!);
@@ -191,7 +194,7 @@ final goalHistoryProvider = FutureProvider<List<GoalHistoryPeriod>>((
 ) async {
   final response = await ApiService().get(ApiConfig.goalsHistory);
   if (!response.success || response.data == null) {
-    throw Exception(response.message ?? 'Could not load goal history.');
+    throw Exception(response.message ?? appL10n.appMsgCouldNotLoadGoalHistory);
   }
   final data = api.SalesGoalHistory.fromJson(response.data!);
   return [
@@ -229,7 +232,7 @@ Map<String, dynamic> goalWeightFields(Map<String, String> entered) {
 final goalProvider = FutureProvider.family<SalesGoal, String>((ref, id) async {
   final response = await ApiService().get(ApiConfig.goal(id));
   if (!response.success || response.data == null) {
-    throw Exception(response.message ?? 'Could not load that goal.');
+    throw Exception(response.message ?? appL10n.appMsgCouldNotLoadThatGoal);
   }
   return SalesGoal.fromJson(response.data!);
 });

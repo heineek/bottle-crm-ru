@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../config/api_config.dart';
 import '../data/api/schema.g.dart' as api;
 import '../data/models/calendar_feed.dart';
@@ -23,7 +24,9 @@ class CalendarFeedNotifier extends AsyncNotifier<CalendarFeed> {
   Future<CalendarFeed> _fetch() async {
     final response = await _api.get(ApiConfig.calendarFeed);
     if (!response.success || response.data == null) {
-      throw Exception(response.message ?? 'Failed to load your calendar feed');
+      throw Exception(
+        response.message ?? appL10n.appMsgFailedToLoadYourCalendarFeed,
+      );
     }
     return CalendarFeed.fromJson(response.data!);
   }
@@ -39,7 +42,7 @@ class CalendarFeedNotifier extends AsyncNotifier<CalendarFeed> {
     ).url;
     if (!response.success || url == null || url.isEmpty) {
       return (
-        error: response.message ?? 'Could not create the calendar feed.',
+        error: response.message ?? appL10n.appMsgCouldNotCreateTheCalendarFeed,
         url: null,
       );
     }
@@ -53,7 +56,7 @@ class CalendarFeedNotifier extends AsyncNotifier<CalendarFeed> {
   Future<String?> disable() async {
     final response = await _api.delete(ApiConfig.calendarFeed);
     if (!response.success) {
-      return response.message ?? 'Could not turn the calendar feed off.';
+      return response.message ?? appL10n.appMsgCouldNotTurnTheCalendarFeedOff;
     }
     state = const AsyncValue.data(CalendarFeed());
     return null;
