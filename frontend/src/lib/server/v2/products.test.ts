@@ -23,3 +23,9 @@ describe('CURRENCY_CHOICES', () => {
     expect(CURRENCY_SYMBOLS.ZAR).toBe('R');
   });
 });
+
+describe('CURRENCY_CHOICES names', () => {
+  it('names the currency and keeps the code', () => {
+    expect(CURRENCY_CHOICES.find((c) => c.code === 'EUR')?.label).toBe('EUR, Euro');
+  });
+});

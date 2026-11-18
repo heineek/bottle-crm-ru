@@ -9,6 +9,7 @@ import {
   saveRefusal
 } from '#lib/server/v2/record-custom-fields.js';
 import { getNumbering } from '#lib/server/v2/organization.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 import type { FormBody } from '#lib/api-helpers.js';
@@ -41,10 +42,10 @@ export const load: PageServerLoad = async ({ cookies }) => {
   ]);
 
   return {
-    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || 'Unnamed account' })),
+    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || m.invoices_unnamed_account() })),
     contacts: contacts.results.map((c: ContactRow) => ({
       id: c.id,
-      name: c.name || c.email || 'Unnamed contact',
+      name: c.name || c.email || m.invoices_unnamed_contact(),
       account_id: c.account?.id ?? null,
       account_name: c.account?.name ?? ''
     })),
@@ -77,7 +78,7 @@ export const actions: Actions = {
       parsed = null;
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return fail(400, { error: 'The invoice form could not be read. Please try again.' });
+      return fail(400, { error: m.invoices_form_unreadable() });
     }
     const body = parsed as FormBody<Schemas['InvoiceBodyRequest']>;
 
@@ -87,10 +88,10 @@ export const actions: Actions = {
     if (custom.refusal) return fail(503, custom.refusal);
     if (custom.values) body.custom_fields = custom.values;
 
-    if (!body.account_id) return fail(400, { error: 'Choose an account.' });
-    if (!body.contact_id) return fail(400, { error: 'Choose a contact.' });
+    if (!body.account_id) return fail(400, { error: m.invoices_recurring_choose_account() });
+    if (!body.contact_id) return fail(400, { error: m.invoices_recurring_choose_contact() });
     if (!Array.isArray(body.line_items) || body.line_items.length === 0) {
-      return fail(400, { error: 'Add at least one line with a description and an amount.' });
+      return fail(400, { error: m.invoices_lines_required() });
     }
 
     let created;
@@ -98,7 +99,7 @@ export const actions: Actions = {
       created = await createInvoice({ cookies }, body);
     } catch (err) {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
-        ...saveRefusal(err, custom.definitions, 'Could not create the invoice.')
+        ...saveRefusal(err, custom.definitions, m.invoices_create_failed())
       });
     }
 

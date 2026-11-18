@@ -11,6 +11,7 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { enhance } from '$app/forms';
   import { ChevronRight, Lock } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -33,11 +34,11 @@
   let saving = $state(false);
 </script>
 
-<PageHeader title="New product" record center width="62ch">
+<PageHeader title={m.invoices_products_new_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('invoices/products')}>Products</a>
+    <a href={resolve('invoices/products')}>{m.invoices_products_title()}</a>
     <ChevronRight size={12} />
-    <span>New</span>
+    <span>{m.common_new()}</span>
   {/snippet}
 </PageHeader>
 
@@ -47,15 +48,14 @@
       <div class="v2-next" role="note">
         <Lock size={17} style="flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">Admins only</div>
+          <div style="font-weight:600">{m.common_admins_only()}</div>
           <div class="v2-sub" style="margin-top:2px">
-            The product catalogue is shared across the org, so only an administrator can add to it.
-            You can still use any product on your invoices and estimates.
+            {m.invoices_products_add_admin_note()}
           </div>
         </div>
       </div>
       <a class="v2-btn" href={resolve('invoices/products')} style="margin-top:16px"
-        >Back to products</a
+        >{m.invoices_products_back()}</a
       >
     </div>
   {:else}
@@ -80,20 +80,20 @@
       {/if}
 
       <label class="v2-field">
-        <span class="v2-label">Name</span>
+        <span class="v2-label">{m.common_name()}</span>
         <input
           class="v2-input"
           name="name"
           required
           maxlength="255"
           value={values.name ?? ''}
-          placeholder="Platform licence, per seat"
+          placeholder={m.invoices_products_name_placeholder()}
         />
       </label>
 
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <label class="v2-field" style="flex:2;min-width:180px">
-          <span class="v2-label">List price</span>
+          <span class="v2-label">{m.invoices_products_list_price()}</span>
           <input
             class="v2-input"
             name="price"
@@ -106,7 +106,7 @@
           />
         </label>
         <label class="v2-field" style="flex:1;min-width:130px">
-          <span class="v2-label">Currency</span>
+          <span class="v2-label">{m.invoices_currency()}</span>
           <select class="v2-input" name="currency" value={values.currency ?? 'USD'}>
             {#each data.currencies as c (c.code)}
               <option value={c.code}>{c.label}</option>
@@ -117,17 +117,17 @@
 
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <label class="v2-field" style="flex:1;min-width:160px">
-          <span class="v2-label">Category</span>
+          <span class="v2-label">{m.invoices_products_category()}</span>
           <input
             class="v2-input"
             name="category"
             maxlength="100"
             value={values.category ?? ''}
-            placeholder="Licence, Module, Service…"
+            placeholder={m.invoices_products_category_placeholder()}
           />
         </label>
         <label class="v2-field" style="flex:1;min-width:160px">
-          <span class="v2-label">SKU</span>
+          <span class="v2-label">{m.invoices_products_sku()}</span>
           <input
             class="v2-input"
             name="sku"
@@ -138,38 +138,37 @@
         </label>
       </div>
       <p class="v2-sub" style="font-size:11.5px;margin:-6px 0 16px">
-        Category groups the catalogue; leave it blank and the product sits under "Uncategorised". A
-        SKU is optional but must be unique here if you set one.
+        {m.invoices_products_category_hint()}
       </p>
 
       <label class="v2-field">
-        <span class="v2-label">Availability</span>
+        <span class="v2-label">{m.invoices_products_availability()}</span>
         <select
           class="v2-input"
           name="is_active"
           value={values.is_active === false ? 'false' : 'true'}
         >
-          <option value="true">Sellable, appears in the line-item picker</option>
-          <option value="false">Retired, kept for history, hidden from the picker</option>
+          <option value="true">{m.invoices_products_sellable_option()}</option>
+          <option value="false">{m.invoices_products_retired_option()}</option>
         </select>
       </label>
 
       <label class="v2-field">
-        <span class="v2-label">Description</span>
+        <span class="v2-label">{m.common_description()}</span>
         <textarea
           class="v2-input"
           name="description"
           rows="3"
-          placeholder="What it is, in the words a client would see on an invoice."
+          placeholder={m.invoices_products_description_placeholder()}
           >{values.description ?? ''}</textarea
         >
       </label>
 
       <div style="display:flex;gap:9px;margin-top:6px">
         <button class="v2-btn v2-btn-primary" type="submit" disabled={saving}>
-          {saving ? 'Adding…' : 'Add product'}
+          {saving ? m.invoices_products_adding() : m.invoices_products_add()}
         </button>
-        <a class="v2-btn" href={resolve('invoices/products')}>Cancel</a>
+        <a class="v2-btn" href={resolve('invoices/products')}>{m.common_cancel()}</a>
       </div>
     </form>
   {/if}

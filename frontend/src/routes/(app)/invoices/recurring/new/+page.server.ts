@@ -2,6 +2,7 @@ import { fail, redirect, type ActionFailure } from '@sveltejs/kit';
 import { listAccounts } from '#lib/server/v2/accounts.js';
 import { listContacts } from '#lib/server/v2/contacts.js';
 import { listProducts } from '#lib/server/v2/products.js';
+import { m } from '#lib/paraglide/messages.js';
 import { createRecurringInvoice, type RecurringValues } from '#lib/server/v2/recurring.js';
 import {
   fieldsForNew,
@@ -34,10 +35,10 @@ export const load: PageServerLoad = async ({ cookies }) => {
   ]);
 
   return {
-    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || 'Unnamed account' })),
+    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || m.invoices_unnamed_account() })),
     contacts: contacts.results.map((c: ContactRow) => ({
       id: c.id,
-      name: c.name || c.email || 'Unnamed contact',
+      name: c.name || c.email || m.invoices_unnamed_contact(),
       account_id: c.account?.id ?? null,
       account_name: c.account?.name ?? ''
     })),
@@ -70,7 +71,7 @@ export const actions: Actions = {
       parsed = null;
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return fail(400, { error: 'The schedule form could not be read. Please try again.' });
+      return fail(400, { error: m.invoices_recurring_form_unreadable() });
     }
     const values = parsed as RecurringValues;
 
@@ -84,7 +85,7 @@ export const actions: Actions = {
       await createRecurringInvoice({ cookies }, values);
     } catch (err) {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
-        ...saveRefusal(err, custom.definitions, 'Could not create the schedule.')
+        ...saveRefusal(err, custom.definitions, m.invoices_recurring_create_failed())
       });
     }
 

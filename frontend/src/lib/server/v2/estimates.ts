@@ -40,6 +40,7 @@
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { sumByCurrency } from '#lib/v2/format.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -92,9 +93,9 @@ function toRow(row: Schemas['EstimateList']) {
   return {
     id: row.id,
     estimate_number: row.estimate_number ?? '',
-    title: row.title || '(untitled estimate)',
+    title: row.title || m.invoices_estimate_untitled(),
     status: row.status,
-    account: { id: row.account ?? null, name: row.account_name ?? '(no account)' },
+    account: { id: row.account ?? null, name: row.account_name ?? m.invoices_no_account() },
     contact: row.contact_name ?? row.client_name ?? '',
     opportunity: opp ? { id: opp.id, name: opp.name } : null,
     total_amount: num(row.total_amount),
@@ -258,7 +259,7 @@ export async function estimateFromDeal({ cookies }: { cookies: Cookies }, id: st
     opportunity_id: deal.id ?? id,
     account_id: deal.account?.id ?? '',
     currency: deal.currency || '',
-    title: deal.name ? `Estimate for ${deal.name}` : '',
+    title: deal.name ? m.invoices_estimate_title_for_deal({ deal: deal.name }) : '',
     // The detail GET lists only contacts the caller may open.
     contact_ids: (response.contacts ?? []).map((c) => c.id),
     items: (deal.line_items ?? []).map((li) => ({

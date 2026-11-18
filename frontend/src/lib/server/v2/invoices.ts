@@ -43,6 +43,7 @@ import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { fieldsForDetail, fieldsForEdit } from '#lib/server/v2/record-custom-fields.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -94,7 +95,7 @@ function toRow(row: Schemas['InvoiceList']) {
     invoice_number: row.invoice_number ?? '',
     invoice_title: row.invoice_title ?? '',
     status: row.status,
-    account: { id: row.account ?? null, name: row.account_name ?? '(no account)' },
+    account: { id: row.account ?? null, name: row.account_name ?? m.invoices_no_account() },
     total_amount: num(row.total_amount),
     amount_due: num(row.amount_due),
     amount_paid: num(row.amount_paid),
@@ -114,7 +115,7 @@ function toRow(row: Schemas['InvoiceList']) {
 function toLineItem(item: Schemas['InvoiceLineItem']) {
   return {
     id: item.id,
-    name: item.name || item.product_name || 'Item',
+    name: item.name || item.product_name || m.invoices_line_fallback_name(),
     detail: item.description ?? '',
     quantity: num(item.quantity),
     rate: num(item.unit_price),
@@ -134,7 +135,7 @@ function toDetail(inv: Schemas['Invoice']) {
     invoice_number: inv.invoice_number ?? '',
     invoice_title: inv.invoice_title ?? '',
     status: inv.status,
-    account: { id: account?.id ?? null, name: account?.name ?? '(no account)' },
+    account: { id: account?.id ?? null, name: account?.name ?? m.invoices_no_account() },
     currency: inv.currency ?? 'USD',
     issued_date: inv.issue_date ?? null,
     due_date: inv.due_date ?? null,
@@ -231,7 +232,7 @@ export async function getInvoice({ cookies }: { cookies: Cookies }, id: string) 
   } catch (err) {
     rethrowModuleOff(err);
     if (apiStatus(err) === 404) {
-      error(404, 'That invoice does not exist, or you do not have access to it.');
+      error(404, m.invoices_not_found());
     }
     throw err;
   }

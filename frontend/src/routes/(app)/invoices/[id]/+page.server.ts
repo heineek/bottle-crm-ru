@@ -11,6 +11,7 @@ import { readableError } from '#lib/server/v2/form-errors.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { readCustomFields, saveRefusal } from '#lib/server/v2/record-custom-fields.js';
 import type { Actions, PageServerLoad } from './$types';
+import { m } from '#lib/paraglide/messages.js';
 
 /** One invoice, with its line items. */
 export const load: PageServerLoad = async ({ cookies, params, url }) => {
@@ -44,7 +45,7 @@ export const actions: Actions = {
         const { error, fieldErrors } = saveRefusal(
           err,
           custom.definitions,
-          'Could not save these fields.'
+          m.invoices_fields_save_failed()
         );
         return fail(apiStatus(err) === 404 ? 404 : 400, {
           fieldsError: error,
@@ -62,7 +63,7 @@ export const actions: Actions = {
       await sendInvoice({ cookies }, params.id);
     } catch (err) {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not send this invoice.')
+        error: readableError(err, m.invoices_send_failed())
       });
     }
     return { sent: true };
@@ -84,7 +85,7 @@ export const actions: Actions = {
       );
     } catch (err) {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not record that payment.')
+        error: readableError(err, m.invoices_payment_failed())
       });
     }
     return { paid: true };
@@ -96,7 +97,7 @@ export const actions: Actions = {
       await cancelInvoice({ cookies }, params.id);
     } catch (err) {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not cancel this invoice.')
+        error: readableError(err, m.invoices_cancel_failed())
       });
     }
     return { cancelled: true };
@@ -112,7 +113,7 @@ export const actions: Actions = {
       created = await duplicateInvoice({ cookies }, params.id);
     } catch (err) {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not duplicate this invoice.')
+        error: readableError(err, m.invoices_duplicate_failed())
       });
     }
     const newId = created?.invoice?.id;

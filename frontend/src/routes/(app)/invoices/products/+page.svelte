@@ -18,6 +18,8 @@
   import { money, count } from '#lib/v2/format.js';
   import { Plus, Package, Pencil } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -43,15 +45,18 @@
   });
 </script>
 
-<PageHeader title="Products">
+<PageHeader title={m.invoices_products_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.active)}</span> sellable ·
-    <span class="v2-num">{count(totals.count - totals.active)}</span> retired
+    {#each messageParts(m.invoices_products_sub( { active: slot('active'), retired: slot('retired') } )) as p, i (i)}{#if p.key === 'active'}<span
+          class="v2-num">{count(totals.active)}</span
+        >{:else if p.key === 'retired'}<span class="v2-num"
+          >{count(totals.count - totals.active)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if canManage}
       <a class="v2-btn v2-btn-primary" href={resolve('invoices/products/new')}
-        ><Plus />New product</a
+        ><Plus />{m.invoices_products_new_button()}</a
       >
     {/if}
   {/snippet}
@@ -62,16 +67,15 @@
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if data.products.length === 0}
-      <EmptyState
-        title="Nothing in the catalogue"
-        body="Add the things you sell and their list prices. Line items on invoices and estimates pick from here, so the price is right without anyone remembering it."
-      >
+      <EmptyState title={m.invoices_products_empty_title()} body={m.invoices_products_empty_body()}>
         {#snippet icon()}<Package size={21} />{/snippet}
         {#snippet actions()}
           {#if canManage}
-            <a class="v2-btn v2-btn-primary" href={resolve('invoices/products/new')}>New product</a>
+            <a class="v2-btn v2-btn-primary" href={resolve('invoices/products/new')}
+              >{m.invoices_products_new_button()}</a
+            >
           {:else}
-            <span class="v2-sub" style="font-size:12px">Ask an admin to add products.</span>
+            <span class="v2-sub" style="font-size:12px">{m.invoices_products_ask_admin()}</span>
           {/if}
         {/snippet}
       </EmptyState>
@@ -86,14 +90,15 @@
                 <span class="v2-sub" style="font-size:11.5px">
                   <span class="v2-num">{p.sku}</span>
                   {#if isOn(data.modules, 'invoices')}
-                    · on <span class="v2-num">{p.used_on}</span>
-                    {p.used_on === 1 ? 'invoice' : 'invoices'}
+                    · {#each messageParts(m.invoices_products_used_on( { count: p.used_on, shown: slot('shown') } )) as part, i (i)}{#if part.key === 'shown'}<span
+                          class="v2-num">{p.used_on}</span
+                        >{:else}{part.text}{/if}{/each}
                   {/if}
                 </span>
               </div>
               {#if !p.is_active}
                 <!-- Retired, not gone. Says why it is still listed. -->
-                <Pill tone="slate">Retired</Pill>
+                <Pill tone="slate">{m.invoices_products_retired()}</Pill>
               {/if}
               <span class="v2-num" style="font-weight:600;font-size:13px">
                 {money(p.price, p.currency || data.org.currency)}
@@ -102,7 +107,7 @@
                 <a
                   class="prod-edit"
                   href={resolve(`invoices/products/${p.id}/edit`)}
-                  title="Edit {p.name}"
+                  title={m.invoices_products_edit_title({ name: p.name })}
                 >
                   <Pencil size={14} />
                 </a>
@@ -113,8 +118,7 @@
       {/each}
 
       <p class="v2-sub" style="font-size:11.5px">
-        Retired products stay listed because they appear on invoices already issued. Removing one
-        would change what those invoices say was sold.
+        {m.invoices_products_retired_note()}
       </p>
     {/if}
   </div>

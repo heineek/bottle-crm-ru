@@ -1,6 +1,7 @@
 import { fail, redirect, error } from '@sveltejs/kit';
 import { getInvoiceTemplateForEdit, updateInvoiceTemplate } from '#lib/server/v2/templates.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -20,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
   try {
     return await getInvoiceTemplateForEdit(event, event.params.id);
   } catch (err) {
-    if (apiStatus(err) === 404) error(404, 'Template not found');
+    if (apiStatus(err) === 404) error(404, m.invoices_template_not_found());
     throw err;
   }
 };
@@ -54,7 +55,7 @@ export const actions: Actions = {
     const values = readValues(form);
 
     if (!values.name.trim()) {
-      return fail(400, { values, error: 'Give the template a name.' });
+      return fail(400, { values, error: m.invoices_template_name_required() });
     }
 
     try {
@@ -63,11 +64,11 @@ export const actions: Actions = {
       if (apiStatus(err) === 403) {
         return fail(403, {
           values,
-          error: 'Only an administrator can change invoice templates.'
+          error: m.invoices_template_change_admin_only()
         });
       }
-      if (apiStatus(err) === 404) error(404, 'Template not found');
-      return fail(400, { values, error: readableError(err, 'Could not save this template.') });
+      if (apiStatus(err) === 404) error(404, m.invoices_template_not_found());
+      return fail(400, { values, error: readableError(err, m.invoices_template_save_failed()) });
     }
 
     redirect(303, '/invoices/templates');

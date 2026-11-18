@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import * as env from '$app/env/public';
 import { moduleOffDetail } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -15,7 +16,7 @@ import type { RequestHandler } from './$types';
  */
 export const GET: RequestHandler = async ({ params, cookies }) => {
   const token = cookies.get('jwt_access');
-  if (!token) error(401, 'Not signed in.');
+  if (!token) error(401, m.invoices_not_signed_in());
 
   const upstream = await fetch(`${env.PUBLIC_DJANGO_API_URL}/api/invoices/${params.id}/pdf/`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -27,9 +28,9 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
     // 403/404 collapse to 404: do not confirm an invoice exists to someone who
     // may not read it. 503 means WeasyPrint is missing on the server.
     if (upstream.status === 403 || upstream.status === 404) {
-      error(404, 'That invoice does not exist, or you do not have access to it.');
+      error(404, m.invoices_not_found());
     }
-    error(502, 'Could not generate the PDF.');
+    error(502, m.invoices_pdf_failed());
   }
 
   const body = await upstream.arrayBuffer();

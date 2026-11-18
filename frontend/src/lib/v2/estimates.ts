@@ -6,6 +6,7 @@
  * Browser-safe: no server or framework imports, so pages, server modules and
  * tests share it. The API computes the deposit and checks every field again.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { money } from '#lib/v2/format.js';
 import { divHalfUp, hundredths, num, type Figure } from '#lib/v2/line-items.js';
 
@@ -23,15 +24,13 @@ const isSet = (v: Figure) => v !== null && v !== undefined && String(v).trim() !
 export function depositPercentError(percent: Figure) {
   if (!isSet(percent)) return '';
   const v = Number(percent);
-  if (!Number.isFinite(v) || v <= 0) return 'A deposit must be more than 0%.';
-  if (v > 100) return 'A deposit cannot be more than 100%.';
-  return Math.abs(v * 100 - Math.round(v * 100)) > 1e-6
-    ? 'A deposit can have at most two decimal places.'
-    : '';
+  if (!Number.isFinite(v) || v <= 0) return m.invoices_deposit_min();
+  if (v > 100) return m.invoices_deposit_max();
+  return Math.abs(v * 100 - Math.round(v * 100)) > 1e-6 ? m.invoices_deposit_decimals() : '';
 }
 
 /** What the builder shows for a deposit that rounds to nothing: the API drafts none. */
-export const DEPOSIT_ROUNDS_TO_ZERO = 'Rounds to 0.00, so no deposit invoice is drafted.';
+export const depositRoundsToZero = () => m.invoices_deposit_rounds_to_zero();
 
 /**
  * The deposit as its invoice will bill it (`deposit_part`, `estimate_deposit`):
@@ -105,10 +104,11 @@ export function depositOffer(
   deposit: { percent: Figure; amount: Figure; currency: string } | null | undefined
 ) {
   if (!deposit) return null;
-  return `When you accept, a deposit invoice for ${percentText(deposit.percent)} (${money(num(deposit.amount), deposit.currency)}) follows.`;
+  return m.invoices_deposit_offer({
+    percent: percentText(deposit.percent),
+    amount: money(num(deposit.amount), deposit.currency)
+  });
 }
-
-export const DEPOSIT_FOLLOWS = 'A deposit invoice will follow.';
 
 /**
  * What "Raise invoice" says first when the estimate already has a deposit
@@ -120,14 +120,17 @@ export function convertNote(
   currency: string
 ) {
   if (!deposit || deposit.status === 'Cancelled') return null;
-  return `Deposit invoice ${deposit.invoice_number} for ${money(deposit.total_amount, currency)} is not taken off automatically. Edit the new invoice before you send it.`;
+  return m.invoices_convert_deposit_note({
+    number: deposit.invoice_number,
+    amount: money(deposit.total_amount, currency)
+  });
 }
 
 /** The row's copy when an estimate notification's data cannot be read, as on the phone. */
-const ESTIMATE_FALLBACK: Record<string, string> = {
-  'estimate.accepted': 'A client accepted an estimate.',
-  'estimate.declined': 'A client declined an estimate.'
-};
+const estimateFallback = (verb: string) =>
+  verb === 'estimate.accepted'
+    ? m.invoices_estimate_notice_accepted_fallback()
+    : m.invoices_estimate_notice_declined_fallback();
 
 /**
  * The sentence for an `estimate.accepted` or `estimate.declined`
@@ -138,15 +141,26 @@ export function estimateNotificationText(verb: string | undefined, data: unknown
   if (verb !== 'estimate.accepted' && verb !== 'estimate.declined') return null;
   const d = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
   if (typeof d.estimate_number !== 'string' || !d.estimate_number.trim()) {
-    return ESTIMATE_FALLBACK[verb];
+    return estimateFallback(verb);
   }
-  const client = (typeof d.client_name === 'string' && d.client_name.trim()) || 'The client';
-  if (verb === 'estimate.declined') return `${client} declined estimate ${d.estimate_number}`;
+  const client =
+    (typeof d.client_name === 'string' && d.client_name.trim()) ||
+    m.invoices_estimate_notice_the_client();
+  if (verb === 'estimate.declined') {
+    return m.invoices_estimate_notice_declined({ client, number: d.estimate_number });
+  }
   const done = [
-    typeof d.project_id === 'string' && d.project_id ? 'project started' : '',
+    typeof d.project_id === 'string' && d.project_id
+      ? m.invoices_estimate_notice_project_started()
+      : '',
     typeof d.deposit_invoice_id === 'string' && d.deposit_invoice_id
-      ? 'deposit invoice drafted'
+      ? m.invoices_estimate_notice_deposit_drafted()
       : ''
   ].filter(Boolean);
-  return [`${client} accepted estimate ${d.estimate_number}`, ...done].join(', ');
+  return [m.invoices_estimate_notice_accepted({ client, number: d.estimate_number }), ...done].join(
+    ', '
+  );
 }
+
+// Kept until the customer portal reads its own message.
+export const DEPOSIT_FOLLOWS = 'A deposit invoice will follow.';

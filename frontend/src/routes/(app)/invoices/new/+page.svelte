@@ -56,6 +56,8 @@
     taxRateError
   } from '#lib/v2/line-items.js';
   import { Info } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   type Schemas = components['schemas'];
@@ -181,19 +183,19 @@
   });
 </script>
 
-<PageHeader title="New invoice">
+<PageHeader title={m.invoices_new_title()}>
   {#snippet sub()}
-    Nothing is sent until you send it. Saving leaves it as a draft
+    {m.invoices_estimate_new_sub()}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('invoices')}>Cancel</a>
+    <a class="v2-btn" href={resolve('invoices')}>{m.common_cancel()}</a>
     <button
       type="submit"
       form="invoice-form"
       class="v2-btn v2-btn-primary"
       disabled={!ready || saving}
     >
-      {saving ? 'Saving…' : 'Save as draft'}
+      {saving ? m.invoices_form_saving() : m.invoices_form_save_draft()}
     </button>
   {/snippet}
 </PageHeader>
@@ -230,13 +232,13 @@
       <!-- ── the form ─────────────────────────────────────────────────── -->
       <div>
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:12px">Who and when</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_form_who_when()}</div>
 
           <div class="grid2">
             <label class="f">
-              <span>Account</span>
+              <span>{m.invoices_col_account()}</span>
               <select bind:value={accountId} onchange={() => (contactId = '')}>
-                <option value="">Choose an account</option>
+                <option value="">{m.invoices_form_choose_account()}</option>
                 {#each data.accounts as a (a.id)}
                   <option value={a.id}>{a.name}</option>
                 {/each}
@@ -244,9 +246,13 @@
             </label>
 
             <label class="f">
-              <span>Contact</span>
+              <span>{m.invoices_form_contact()}</span>
               <select bind:value={contactId} disabled={!accountId}>
-                <option value="">{accountId ? 'Choose a contact' : 'Pick an account first'}</option>
+                <option value=""
+                  >{accountId
+                    ? m.invoices_form_choose_contact()
+                    : m.invoices_form_pick_account_first()}</option
+                >
                 {#each contactOptions as c (c.id)}
                   <option value={c.id}
                     >{c.name}{c.account_name ? ` · ${c.account_name}` : ''}</option
@@ -256,17 +262,17 @@
             </label>
 
             <label class="f">
-              <span>Title</span>
-              <input bind:value={title} placeholder="What this invoice covers" required />
+              <span>{m.invoices_form_title()}</span>
+              <input bind:value={title} placeholder={m.invoices_title_placeholder()} required />
             </label>
 
             <label class="f">
-              <span>Issue date</span>
+              <span>{m.invoices_form_issue_date()}</span>
               <input type="date" bind:value={issueDate} />
             </label>
 
             <label class="f">
-              <span>Currency</span>
+              <span>{m.invoices_currency()}</span>
               <select bind:value={currency}>
                 {#each CURRENCIES as c (c.value)}
                   <option value={c.value}>{c.label}</option>
@@ -275,7 +281,7 @@
             </label>
 
             <label class="f">
-              <span>Payment terms</span>
+              <span>{m.invoices_form_payment_terms()}</span>
               <select bind:value={paymentTerms}>
                 {#each Object.entries(PAYMENT_TERMS_LABEL) as [value, label] (value)}
                   <option {value}>{label}</option>
@@ -285,7 +291,7 @@
 
             {#if paymentTerms === 'CUSTOM'}
               <label class="f">
-                <span>Due date</span>
+                <span>{m.common_due_date()}</span>
                 <input type="date" bind:value={customDueDate} />
               </label>
             {/if}
@@ -298,8 +304,9 @@
             <p class="warn">
               <Info size={13} />
               <span>
-                Custom terms with no date set becomes <b>Net 30</b> on save, the server falls back to
-                30 days rather than leaving the date empty.
+                {#each messageParts(m.invoices_custom_terms_fallback( { terms: slot('terms') } )) as p, i (i)}{#if p.key === 'terms'}<b
+                      >{PAYMENT_TERMS_LABEL.NET_30}</b
+                    >{:else}{p.text}{/if}{/each}
               </span>
             </p>
           {/if}
@@ -308,19 +315,23 @@
         <LineItemsEditor bind:items products={data.products} {currency} />
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:12px">Adjustments</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_form_adjustments()}</div>
           <div class="grid2">
             <label class="f">
-              <span>Discount</span>
+              <span>{m.invoices_discount()}</span>
               <select bind:value={discountType}>
-                <option value="">None</option>
-                <option value="PERCENTAGE">Percentage</option>
-                <option value="FIXED">Fixed amount</option>
+                <option value="">{m.invoices_form_discount_none()}</option>
+                <option value="PERCENTAGE">{m.invoices_form_discount_percentage()}</option>
+                <option value="FIXED">{m.invoices_form_discount_fixed()}</option>
               </select>
             </label>
             {#if discountType}
               <label class="f">
-                <span>{discountType === 'PERCENTAGE' ? 'Percent off' : 'Amount off'}</span>
+                <span
+                  >{discountType === 'PERCENTAGE'
+                    ? m.invoices_form_percent_off()
+                    : m.invoices_form_amount_off()}</span
+                >
                 <input
                   type="number"
                   min="0"
@@ -335,7 +346,7 @@
               </label>
             {/if}
             <label class="f">
-              <span>Tax rate %</span>
+              <span>{m.invoices_form_tax_rate()}</span>
               <input
                 type="number"
                 min="0"
@@ -349,7 +360,7 @@
               {/if}
             </label>
             <label class="f">
-              <span>Shipping</span>
+              <span>{m.invoices_shipping()}</span>
               <input
                 type="number"
                 min="0"
@@ -363,14 +374,14 @@
             </label>
           </div>
           <p class="hint">
-            Tax applies to the subtotal after the discount. Shipping is added afterwards and is not
-            taxed.
+            {m.invoices_form_tax_shipping_hint()}
           </p>
         </div>
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:8px">Notes to the customer</div>
-          <textarea rows="3" bind:value={notes} placeholder="Appears on the invoice"></textarea>
+          <div class="v2-label" style="margin-bottom:8px">{m.invoices_form_notes()}</div>
+          <textarea rows="3" bind:value={notes} placeholder={m.invoices_notes_placeholder()}
+          ></textarea>
         </div>
         {#if data.customFields?.length}
           <div class="v2-card" style="padding:16px 18px;margin-top:14px">
@@ -388,7 +399,7 @@
       <div>
         <div class="v2-card preview">
           <div class="v2-card-head">
-            <span class="v2-label">What the customer will see</span>
+            <span class="v2-label">{m.invoices_form_preview_title()}</span>
           </div>
           <div style="padding:14px 16px 16px">
             {#if usableLines.length}
@@ -406,41 +417,40 @@
               />
             {:else}
               <p class="empty">
-                Add a line with a description and an amount, and the customer's copy appears here.
+                {m.invoices_form_preview_empty()}
               </p>
             {/if}
           </div>
         </div>
 
         <div class="v2-card" style="padding:15px 16px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:9px">When it falls due</div>
+          <div class="v2-label" style="margin-bottom:9px">{m.invoices_when_due()}</div>
           {#if derivedDueDate}
             <div class="due">{longDate(derivedDueDate)}</div>
             <p class="hint" style="margin-top:5px">
               {#if paymentTerms === 'CUSTOM'}
-                Set by hand.
+                {m.invoices_due_set_by_hand()}
               {:else}
-                {PAYMENT_TERMS_LABEL[paymentTerms]} from the issue date. The server recalculates this
-                on save from the same two fields.
+                {m.invoices_due_from_terms({ terms: PAYMENT_TERMS_LABEL[paymentTerms] })}
               {/if}
             </p>
           {:else}
-            <p class="hint" style="margin:0">Set an issue date to see the due date.</p>
+            <p class="hint" style="margin:0">{m.invoices_due_needs_issue_date()}</p>
           {/if}
         </div>
 
         <div class="v2-card" style="padding:15px 16px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:9px">Assigned on save</div>
+          <div class="v2-label" style="margin-bottom:9px">{m.invoices_form_assigned_on_save()}</div>
           <dl class="derived">
             {#if data.numbering}
-              <dt>Invoice number</dt>
+              <dt>{m.invoices_form_invoice_number()}</dt>
               <dd class="v2-num">{numberPattern(data.numbering, 'invoice', today)}</dd>
             {/if}
-            <dt>Customer link</dt>
-            <dd>Generated, and only sent when you send the invoice</dd>
+            <dt>{m.invoices_form_customer_link()}</dt>
+            <dd>{m.invoices_customer_link_hint()}</dd>
           </dl>
           <p class="hint" style="margin-top:9px">
-            Both come from the server so that two people saving at once cannot collide.
+            {m.invoices_assigned_hint()}
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { getNewProductOptions, createProduct } from '#lib/server/v2/products.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -37,16 +38,16 @@ export const actions: Actions = {
     const values = { name, sku, price, currency, category, description, is_active };
 
     // UX-side mirrors of the serializer's rules. The API enforces both again.
-    if (!name) return fail(400, { values, error: 'Give the product a name.' });
-    if (!priceOk(price)) return fail(400, { values, error: 'Enter a list price of 0 or more.' });
+    if (!name) return fail(400, { values, error: m.invoices_product_name_required() });
+    if (!priceOk(price)) return fail(400, { values, error: m.invoices_product_price_invalid() });
 
     try {
       await createProduct(event, values);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { values, error: 'Only an administrator can add products.' });
+        return fail(403, { values, error: m.invoices_product_add_admin_only() });
       }
-      return fail(400, { values, error: readableError(err, 'Could not create this product.') });
+      return fail(400, { values, error: readableError(err, m.invoices_product_create_failed()) });
     }
 
     redirect(303, '/invoices/products');

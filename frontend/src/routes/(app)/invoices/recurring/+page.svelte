@@ -20,6 +20,8 @@
   import { money, count, shortDate, daysSince } from '#lib/v2/format.js';
   import { RECURRING_FREQUENCY_LABEL, PAYMENT_TERMS_LABEL } from '#lib/v2/enums.js';
   import { Plus, RefreshCw, Hand, Pause, Play } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -28,17 +30,18 @@
 
   const frequency = (s: { frequency: string; custom_days: number | null }) =>
     s.frequency === 'CUSTOM'
-      ? `Every ${s.custom_days} days`
+      ? m.invoices_recurring_every_days({ days: s.custom_days ?? 0 })
       : RECURRING_FREQUENCY_LABEL[s.frequency];
 
   /** Next run, or why there isn't one. A paused schedule has no next run. */
   function nextRun(s: { is_active: boolean; next_generation_date: string | null }) {
-    if (!s.is_active) return { text: 'Paused', tone: 'muted' };
+    if (!s.is_active) return { text: m.invoices_recurring_paused(), tone: 'muted' };
     const n = daysSince(s.next_generation_date);
     if (n === null) return { text: shortDate(s.next_generation_date), tone: 'normal' };
-    if (n > 0) return { text: `${n}d overdue`, tone: 'late' };
-    if (n === 0) return { text: 'Today', tone: 'soon' };
-    if (Math.abs(n) <= 7) return { text: `in ${Math.abs(n)}d`, tone: 'soon' };
+    if (n > 0) return { text: m.invoices_recurring_overdue({ n }), tone: 'late' };
+    if (n === 0) return { text: m.invoices_recurring_today(), tone: 'soon' };
+    if (Math.abs(n) <= 7)
+      return { text: m.invoices_recurring_in_days({ n: Math.abs(n) }), tone: 'soon' };
     return { text: shortDate(s.next_generation_date), tone: 'normal' };
   }
 
@@ -50,14 +53,17 @@
   };
 </script>
 
-<PageHeader title="Recurring">
+<PageHeader title={m.invoices_recurring_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.active)}</span> active schedules ·
-    <span class="v2-num">{money(totals.monthly_run_rate, data.org.currency)}</span> a month
+    {#each messageParts(m.invoices_recurring_sub( { count: slot('count'), rate: slot('rate') } )) as p, i (i)}{#if p.key === 'count'}<span
+          class="v2-num">{count(totals.active)}</span
+        >{:else if p.key === 'rate'}<span class="v2-num"
+          >{money(totals.monthly_run_rate, data.org.currency)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     <a class="v2-btn v2-btn-primary" href={resolve('invoices/recurring/new')}
-      ><Plus />New schedule</a
+      ><Plus />{m.invoices_recurring_new_title()}</a
     >
   {/snippet}
 </PageHeader>
@@ -66,7 +72,7 @@
 
 {#if page.url.search}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered list.
+    {m.invoices_filtered_note()}
   </p>
 {/if}
 
@@ -79,33 +85,36 @@
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
     <StatCard
-      label="Monthly run rate"
+      label={m.invoices_recurring_stat_rate()}
       value={money(totals.monthly_run_rate, data.org.currency)}
       tone="ink"
-      detail="Every active schedule, normalised to a month"
+      detail={m.invoices_recurring_stat_rate_detail()}
     />
-    <StatCard label="Active" value={count(totals.active)} tone="moss" />
+    <StatCard label={m.invoices_recurring_stat_active()} value={count(totals.active)} tone="moss" />
     <StatCard
-      label="Generating within 7 days"
+      label={m.invoices_recurring_stat_soon()}
       value={count(totals.due_within_7d)}
       tone="clay"
-      detail="Drafts to check before they send"
+      detail={m.invoices_recurring_stat_soon_detail()}
     />
-    <StatCard label="Schedules" value={count(totals.count)} tone="slate" />
+    <StatCard
+      label={m.invoices_recurring_stat_schedules()}
+      value={count(totals.count)}
+      tone="slate"
+    />
   </div>
 </div>
 
-<FilterBar page="recurring" url={page.url} meta="Active first, then soonest to generate" />
+<FilterBar page="recurring" url={page.url} meta={m.invoices_recurring_meta()} />
 
 <div class="v2-scroll">
   {#if data.schedules.length === 0}
-    <EmptyState
-      title="Nothing on a schedule"
-      body="A recurring invoice is a template plus a cadence. Set one up for anything you bill on the same day every month and stop retyping it."
-    >
+    <EmptyState title={m.invoices_recurring_empty_title()} body={m.invoices_recurring_empty_body()}>
       {#snippet icon()}<RefreshCw size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('invoices/recurring/new')}>New schedule</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('invoices/recurring/new')}
+          >{m.invoices_recurring_new_title()}</a
+        >
       {/snippet}
     </EmptyState>
   {:else}
@@ -113,12 +122,12 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Schedule</th>
-            <th>Account</th>
-            <th>Every</th>
-            <th>When it generates</th>
-            <th class="v2-r">Amount</th>
-            <th class="v2-r">Next</th>
+            <th>{m.invoices_col_schedule()}</th>
+            <th>{m.invoices_col_account()}</th>
+            <th>{m.invoices_col_every()}</th>
+            <th>{m.invoices_col_when_generates()}</th>
+            <th class="v2-r">{m.invoices_col_amount()}</th>
+            <th class="v2-r">{m.invoices_col_next()}</th>
           </tr>
         </thead>
         <tbody>
@@ -128,8 +137,9 @@
               <td>
                 <span class="v2-table-primary">{s.title}</span>
                 <span class="v2-table-secondary" style="display:block">
-                  {PAYMENT_TERMS_LABEL[s.payment_terms]} ·
-                  <span class="v2-num">{s.invoices_generated}</span> raised so far
+                  {#each messageParts(m.invoices_recurring_raised_so_far( { terms: PAYMENT_TERMS_LABEL[s.payment_terms], count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+                        class="v2-num">{s.invoices_generated}</span
+                      >{:else}{p.text}{/if}{/each}
                 </span>
               </td>
               <td>
@@ -143,16 +153,16 @@
                 <!-- Sends itself, or waits for a person. Two different jobs,
                      and the row says which one this is. -->
                 {#if s.auto_send}
-                  <Pill tone="moss" dot>Sends automatically</Pill>
+                  <Pill tone="moss" dot>{m.invoices_recurring_sends_auto()}</Pill>
                 {:else}
                   <span style="display:inline-flex;gap:6px;align-items:center">
                     <Hand size={13} style="color:var(--v2-clay)" />
-                    <span style="font-size:12.5px">Drafts, waits for you</span>
+                    <span style="font-size:12.5px">{m.invoices_recurring_waits()}</span>
                   </span>
                 {/if}
                 {#if endingSoon(s)}
                   <span class="v2-table-secondary" style="display:block;color:var(--v2-clay)">
-                    Ends {shortDate(s.end_date)}, last invoice after that
+                    {m.invoices_recurring_ends({ date: shortDate(s.end_date) })}
                   </span>
                 {/if}
               </td>
@@ -178,7 +188,9 @@
                   <form method="POST" action="?/toggle" use:enhance>
                     <input type="hidden" name="id" value={s.id} />
                     <button class="v2-btn v2-btn-sm rec-toggle" type="submit">
-                      {#if s.is_active}<Pause size={12} />Pause{:else}<Play size={12} />Resume{/if}
+                      {#if s.is_active}<Pause size={12} />{m.invoices_recurring_pause()}{:else}<Play
+                          size={12}
+                        />{m.invoices_recurring_resume()}{/if}
                     </button>
                   </form>
                 </div>
@@ -189,8 +201,10 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{data.schedules.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.invoices_showing_of( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{data.schedules.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   {/if}
 </div>

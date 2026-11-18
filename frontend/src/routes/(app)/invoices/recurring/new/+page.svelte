@@ -53,6 +53,7 @@
   } from '#lib/v2/line-items.js';
   import { todayIn } from '#lib/v2/dates.js';
   import { CURRENCY_CODES } from '#lib/constants/filters.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -170,19 +171,19 @@
   });
 </script>
 
-<PageHeader title="New schedule">
+<PageHeader title={m.invoices_recurring_new_title()}>
   {#snippet sub()}
-    Nothing generates until the first run date arrives. Saving creates the schedule
+    {m.invoices_recurring_new_sub()}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('invoices/recurring')}>Cancel</a>
+    <a class="v2-btn" href={resolve('invoices/recurring')}>{m.common_cancel()}</a>
     <button
       type="submit"
       form="recurring-form"
       class="v2-btn v2-btn-primary"
       disabled={!ready || saving}
     >
-      {saving ? 'Saving…' : 'Save schedule'}
+      {saving ? m.invoices_form_saving() : m.invoices_recurring_save()}
     </button>
   {/snippet}
 </PageHeader>
@@ -219,13 +220,13 @@
       <!-- the form -->
       <div>
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:12px">Who and what</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_recurring_who_what()}</div>
 
           <div class="grid2">
             <label class="f">
-              <span>Account</span>
+              <span>{m.invoices_col_account()}</span>
               <select bind:value={accountId} onchange={() => (contactId = '')}>
-                <option value="">Choose an account</option>
+                <option value="">{m.invoices_form_choose_account()}</option>
                 {#each data.accounts as a (a.id)}
                   <option value={a.id}>{a.name}</option>
                 {/each}
@@ -233,9 +234,13 @@
             </label>
 
             <label class="f">
-              <span>Contact</span>
+              <span>{m.invoices_form_contact()}</span>
               <select bind:value={contactId} disabled={!accountId}>
-                <option value="">{accountId ? 'Choose a contact' : 'Pick an account first'}</option>
+                <option value=""
+                  >{accountId
+                    ? m.invoices_form_choose_contact()
+                    : m.invoices_form_pick_account_first()}</option
+                >
                 {#each contactOptions as c (c.id)}
                   <option value={c.id}
                     >{c.name}{c.account_name ? ` · ${c.account_name}` : ''}</option
@@ -245,18 +250,22 @@
             </label>
 
             <label class="f" style="grid-column:1/-1">
-              <span>Title</span>
-              <input bind:value={title} placeholder="What this schedule is for" required />
+              <span>{m.invoices_form_title()}</span>
+              <input
+                bind:value={title}
+                placeholder={m.invoices_recurring_title_placeholder()}
+                required
+              />
             </label>
           </div>
         </div>
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:12px">Cadence</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_recurring_cadence()}</div>
 
           <div class="grid2">
             <label class="f">
-              <span>Frequency</span>
+              <span>{m.invoices_recurring_frequency()}</span>
               <select bind:value={frequency}>
                 {#each Object.entries(RECURRING_FREQUENCY_LABEL) as [value, label] (value)}
                   <option {value}>{label}</option>
@@ -266,13 +275,13 @@
 
             {#if frequency === 'CUSTOM'}
               <label class="f">
-                <span>Every N days</span>
+                <span>{m.invoices_recurring_every_n_days()}</span>
                 <input type="number" min="1" step="1" bind:value={customDays} required />
               </label>
             {/if}
 
             <label class="f">
-              <span>Start date</span>
+              <span>{m.invoices_recurring_start_date()}</span>
               <input
                 type="date"
                 bind:value={startDate}
@@ -283,7 +292,7 @@
             </label>
 
             <label class="f">
-              <span>Next generation date</span>
+              <span>{m.invoices_recurring_next_date()}</span>
               <input
                 type="date"
                 min={startDate}
@@ -293,12 +302,15 @@
             </label>
 
             <label class="f">
-              <span>End date <span class="opt">(optional)</span></span>
+              <span
+                >{m.invoices_recurring_end_date()}
+                <span class="opt">{m.invoices_form_optional()}</span></span
+              >
               <input type="date" bind:value={endDate} />
             </label>
 
             <label class="f">
-              <span>Payment terms</span>
+              <span>{m.invoices_form_payment_terms()}</span>
               <select bind:value={paymentTerms}>
                 {#each Object.entries(PAYMENT_TERMS_LABEL) as [value, label] (value)}
                   <option {value}>{label}</option>
@@ -307,7 +319,7 @@
             </label>
 
             <label class="f">
-              <span>Currency</span>
+              <span>{m.invoices_currency()}</span>
               <select bind:value={currency}>
                 {#each CURRENCIES as c (c)}
                   <option value={c}>{c}</option>
@@ -319,12 +331,12 @@
           <label class="check">
             <input type="checkbox" bind:checked={autoSend} />
             <span>
-              Send automatically when generated
-              <span class="hint-inline">off leaves a draft for you to review and send</span>
+              {m.invoices_recurring_auto_send()}
+              <span class="hint-inline">{m.invoices_recurring_auto_send_hint()}</span>
             </span>
           </label>
           {#if needsLine}
-            <p class="field-err" role="alert">Add at least one line before turning on auto-send.</p>
+            <p class="field-err" role="alert">{m.invoices_recurring_auto_send_needs_line()}</p>
           {/if}
         </div>
 
@@ -332,19 +344,23 @@
         <LineItemsEditor bind:items products={data.products} {currency} />
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:12px">Adjustments</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_form_adjustments()}</div>
           <div class="grid2">
             <label class="f">
-              <span>Discount</span>
+              <span>{m.invoices_discount()}</span>
               <select bind:value={discountType}>
-                <option value="">None</option>
-                <option value="PERCENTAGE">Percentage</option>
-                <option value="FIXED">Fixed amount</option>
+                <option value="">{m.invoices_form_discount_none()}</option>
+                <option value="PERCENTAGE">{m.invoices_form_discount_percentage()}</option>
+                <option value="FIXED">{m.invoices_form_discount_fixed()}</option>
               </select>
             </label>
             {#if discountType}
               <label class="f">
-                <span>{discountType === 'PERCENTAGE' ? 'Percent off' : 'Amount off'}</span>
+                <span
+                  >{discountType === 'PERCENTAGE'
+                    ? m.invoices_form_percent_off()
+                    : m.invoices_form_amount_off()}</span
+                >
                 <input
                   type="number"
                   min="0"
@@ -359,7 +375,7 @@
               </label>
             {/if}
             <label class="f">
-              <span>Tax rate %</span>
+              <span>{m.invoices_form_tax_rate()}</span>
               <input
                 type="number"
                 min="0"
@@ -374,17 +390,21 @@
             </label>
           </div>
           <p class="hint">
-            Tax applies to the subtotal after the discount, on every invoice raised.
+            {m.invoices_recurring_tax_hint()}
           </p>
         </div>
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:8px">Notes to the customer</div>
-          <textarea rows="3" bind:value={notes} placeholder="Appears on every invoice raised"
-          ></textarea>
-          <div class="v2-label" style="margin:14px 0 8px">Terms</div>
-          <textarea rows="3" bind:value={terms} placeholder="Payment terms and conditions"
-          ></textarea>
+          <div class="v2-label" style="margin-bottom:8px">{m.invoices_form_notes()}</div>
+          <textarea
+            rows="3"
+            bind:value={notes}
+            placeholder={m.invoices_recurring_notes_placeholder()}></textarea>
+          <div class="v2-label" style="margin:14px 0 8px">{m.invoices_form_terms()}</div>
+          <textarea
+            rows="3"
+            bind:value={terms}
+            placeholder={m.invoices_recurring_terms_placeholder()}></textarea>
         </div>
         {#if data.customFields?.length}
           <div class="v2-card" style="padding:16px 18px;margin-top:14px">
@@ -402,7 +422,7 @@
       <div>
         <div class="v2-card preview">
           <div class="v2-card-head">
-            <span class="v2-label">Each invoice this schedule raises</span>
+            <span class="v2-label">{m.invoices_recurring_preview_title()}</span>
           </div>
           <div style="padding:14px 16px 16px">
             {#if usableLines.length}
@@ -419,24 +439,20 @@
               />
             {:else}
               <p class="empty">
-                Lines are optional here unless each invoice is sent automatically. Add one to
-                preview what each generated invoice will total, or save the schedule without pricing
-                it yet.
+                {m.invoices_recurring_preview_empty()}
               </p>
             {/if}
           </div>
         </div>
 
         <div class="v2-card" style="padding:15px 16px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:9px">On save</div>
+          <div class="v2-label" style="margin-bottom:9px">{m.invoices_recurring_on_save()}</div>
           <dl class="derived">
-            <dt>Subtotal, total</dt>
-            <dd>Recalculated by the server on every save and every generated invoice</dd>
-            <dt>Visibility</dt>
+            <dt>{m.invoices_recurring_subtotal_total()}</dt>
+            <dd>{m.invoices_recurring_subtotal_total_hint()}</dd>
+            <dt>{m.invoices_recurring_visibility()}</dt>
             <dd>
-              Any signed-in teammate may create one. After that only the creator, an assignee, or an
-              admin can see or change it, and this form has no way to add an assignee, so only you
-              and an admin will see this schedule
+              {m.invoices_recurring_visibility_hint()}
             </dd>
           </dl>
         </div>

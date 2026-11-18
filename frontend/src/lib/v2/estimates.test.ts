@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   convertNote,
-  DEPOSIT_FOLLOWS,
-  DEPOSIT_ROUNDS_TO_ZERO,
+  depositRoundsToZero,
   depositAmount,
   depositOffer,
   depositPercentError,
@@ -78,7 +77,7 @@ describe('depositAmount', () => {
       pretax: 0,
       total: 0
     });
-    expect(DEPOSIT_ROUNDS_TO_ZERO).toBe('Rounds to 0.00, so no deposit invoice is drafted.');
+    expect(depositRoundsToZero()).toBe('Rounds to 0.00, so no deposit invoice is drafted.');
   });
 });
 
@@ -183,10 +182,6 @@ describe('the portal deposit lines', () => {
   it('says nothing without a deposit', () => {
     expect(depositOffer(null)).toBeNull();
     expect(depositOffer(undefined)).toBeNull();
-  });
-
-  it('has a line for after accepting', () => {
-    expect(DEPOSIT_FOLLOWS).toBe('A deposit invoice will follow.');
   });
 });
 

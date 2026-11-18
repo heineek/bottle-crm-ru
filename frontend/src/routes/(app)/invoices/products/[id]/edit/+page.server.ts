@@ -1,6 +1,7 @@
 import { fail, redirect, error } from '@sveltejs/kit';
 import { getProductForEdit, updateProduct, deleteProduct } from '#lib/server/v2/products.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -16,7 +17,7 @@ export const load: PageServerLoad = async (event) => {
   try {
     return await getProductForEdit(event, event.params.id);
   } catch (err) {
-    if (apiStatus(err) === 404) error(404, 'Product not found');
+    if (apiStatus(err) === 404) error(404, m.invoices_product_not_found());
     throw err;
   }
 };
@@ -41,17 +42,17 @@ export const actions: Actions = {
 
     const values = { name, sku, price, currency, category, description, is_active };
 
-    if (!name) return fail(400, { values, error: 'Give the product a name.' });
-    if (!priceOk(price)) return fail(400, { values, error: 'Enter a list price of 0 or more.' });
+    if (!name) return fail(400, { values, error: m.invoices_product_name_required() });
+    if (!priceOk(price)) return fail(400, { values, error: m.invoices_product_price_invalid() });
 
     try {
       await updateProduct(event, event.params.id, values);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { values, error: 'Only an administrator can change products.' });
+        return fail(403, { values, error: m.invoices_product_change_admin_only() });
       }
-      if (apiStatus(err) === 404) error(404, 'Product not found');
-      return fail(400, { values, error: readableError(err, 'Could not save this product.') });
+      if (apiStatus(err) === 404) error(404, m.invoices_product_not_found());
+      return fail(400, { values, error: readableError(err, m.invoices_product_save_failed()) });
     }
 
     redirect(303, '/invoices/products');
@@ -62,11 +63,11 @@ export const actions: Actions = {
       await deleteProduct(event, event.params.id);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { error: 'Only an administrator can delete products.' });
+        return fail(403, { error: m.invoices_product_delete_admin_only() });
       }
       // 404 means it is already gone: fall through to the list either way.
       if (apiStatus(err) !== 404) {
-        return fail(400, { error: readableError(err, 'Could not delete this product.') });
+        return fail(400, { error: readableError(err, m.invoices_product_delete_failed()) });
       }
     }
 

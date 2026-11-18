@@ -13,6 +13,8 @@
   import { enhance } from '$app/forms';
   import { Download, Plus, Receipt } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -33,7 +35,7 @@
         ? data.org.currency
         : (totals.currencies[0] ?? data.org.currency)
   );
-  let m = $derived(totals.byCurrency[cur] ?? totals.blank);
+  let sums = $derived(totals.byCurrency[cur] ?? totals.blank);
 
   /** Rows with a send in flight, so the button can show it is working. */
   let sending = $state<Record<string, boolean>>({});
@@ -51,23 +53,25 @@
     if (SETTLED.includes(inv.status)) return '—';
     const n = daysSince(inv.due_date);
     if (n === null) return '—';
-    if (n > 0) return `${n}d late`;
-    if (n === 0) return 'due today';
-    return `${Math.abs(n)}d left`;
+    if (n > 0) return m.invoices_age_late({ n });
+    if (n === 0) return m.invoices_age_due_today();
+    return m.invoices_age_left({ n: Math.abs(n) });
   }
 
   const isLate = (inv: Dated) =>
     !SETTLED.includes(inv.status) && inv.due_date && (daysSince(inv.due_date) ?? 0) > 0;
 </script>
 
-<PageHeader title="Invoices">
+<PageHeader title={m.invoices_title()}>
   {#snippet sub()}
     <!--
       These aggregates come from the API over the whole result set. v1 summed
       the loaded page, so a 50-row list showed pills adding up to 10.
     -->
-    <span class="v2-num">{count(totals.count)}</span> invoices ·
-    <span class="v2-num">{money(m.outstanding, cur)}</span> outstanding
+    {#each messageParts(m.invoices_list_sub( { count: slot('count'), outstanding: slot('outstanding') } )) as p, i (i)}{#if p.key === 'count'}<span
+          class="v2-num">{count(totals.count)}</span
+        >{:else if p.key === 'outstanding'}<span class="v2-num">{money(sums.outstanding, cur)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     <!-- The page's own query string: the export rebuilds the same API query
@@ -77,9 +81,11 @@
       href="{resolve('api/invoices/export')}?{page.url.searchParams}"
       data-sveltekit-reload
     >
-      <Download />Export
+      <Download />{m.common_export()}
     </a>
-    <a class="v2-btn v2-btn-primary" href={resolve('invoices/new')}><Plus />New invoice</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('invoices/new')}
+      ><Plus />{m.invoices_new_button()}</a
+    >
   {/snippet}
 </PageHeader>
 
@@ -92,14 +98,27 @@
   <CurrencySwitch currencies={totals.currencies} current={cur} onpick={(c) => (picked = c)} />
   <div class="v2-stats">
     <StatCard
-      label="Overdue"
-      value={money(m.overdue, cur)}
+      label={m.invoices_stat_overdue()}
+      value={money(sums.overdue, cur)}
       tone="rust"
-      detail="Chase these first"
+      detail={m.invoices_stat_overdue_detail()}
     />
-    <StatCard label="Due this month" value={money(m.due_this_month, cur)} tone="clay" />
-    <StatCard label="Paid this quarter" value={money(m.paid_this_quarter, cur)} tone="moss" />
-    <StatCard label="Draft" value={money(m.draft, cur)} tone="slate" detail="Not sent yet" />
+    <StatCard
+      label={m.invoices_stat_due_this_month()}
+      value={money(sums.due_this_month, cur)}
+      tone="clay"
+    />
+    <StatCard
+      label={m.invoices_stat_paid_this_quarter()}
+      value={money(sums.paid_this_quarter, cur)}
+      tone="moss"
+    />
+    <StatCard
+      label={m.invoices_stat_draft()}
+      value={money(sums.draft, cur)}
+      tone="slate"
+      detail={m.invoices_stat_draft_detail()}
+    />
   </div>
 </div>
 
@@ -115,7 +134,7 @@
   accounts={data.accounts}
   meId={data.meId}
   saved={data.savedViews}
-  meta="Oldest due first"
+  meta={m.invoices_list_meta()}
 />
 
 {#if form?.error}
@@ -127,16 +146,15 @@
 <div class="v2-scroll">
   {#if invoices.length === 0}
     <EmptyState
-      title="Nothing billed yet"
-      body={isOn(data.modules, 'deals')
-        ? 'Invoices show up here once you raise one. A won deal is usually the place to start. The amount and the account are already there.'
-        : 'Invoices show up here once you raise one.'}
+      title={m.invoices_empty_title()}
+      body={isOn(data.modules, 'deals') ? m.invoices_empty_body_deals() : m.invoices_empty_body()}
     >
       {#snippet icon()}<Receipt size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('invoices/new')}>New invoice</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('invoices/new')}>{m.invoices_new_button()}</a
+        >
         {#if isOn(data.modules, 'deals')}
-          <a class="v2-btn" href={resolve('pipeline')}>Go to pipeline</a>
+          <a class="v2-btn" href={resolve('pipeline')}>{m.invoices_go_to_pipeline()}</a>
         {/if}
       {/snippet}
     </EmptyState>
@@ -145,12 +163,12 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Invoice</th>
-            <th>Account</th>
-            <th>Status</th>
-            <th class="v2-r">Amount</th>
-            <th>Due</th>
-            <th class="v2-r">Age</th>
+            <th>{m.invoices_col_invoice()}</th>
+            <th>{m.invoices_col_account()}</th>
+            <th>{m.common_status()}</th>
+            <th class="v2-r">{m.invoices_col_amount()}</th>
+            <th>{m.invoices_col_due()}</th>
+            <th class="v2-r">{m.invoices_col_age()}</th>
             <th style="width:130px"></th>
           </tr>
         </thead>
@@ -195,8 +213,7 @@
                   >
                     <input type="hidden" name="id" value={inv.id} />
                     <button class="v2-btn v2-btn-sm" disabled={sending[inv.id]}>
-                      {#if sending[inv.id]}Sending…{:else if inv.status === 'Overdue'}Send a
-                        reminder{:else}Send{/if}
+                      {#if sending[inv.id]}{m.invoices_sending()}{:else if inv.status === 'Overdue'}{m.invoices_send_reminder()}{:else}{m.invoices_send()}{/if}
                     </button>
                   </form>
                 {/if}
@@ -207,8 +224,10 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{invoices.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.invoices_showing_of( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{invoices.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   {/if}
 </div>

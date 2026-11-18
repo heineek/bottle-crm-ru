@@ -17,6 +17,7 @@ import { isOrgAdmin } from '#lib/admin.js';
 import type { Actions, PageServerLoad } from './$types';
 import type { FormBody } from '#lib/api-helpers.js';
 import type { components } from '#lib/api-schema.js';
+import { m } from '#lib/paraglide/messages.js';
 
 type Schemas = components['schemas'];
 
@@ -64,10 +65,10 @@ export const load: PageServerLoad = async ({ cookies, locals, url }) => {
 
   return {
     modules: (await modulesP)?.modules ?? null,
-    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || 'Unnamed account' })),
+    accounts: accounts.results.map((a) => ({ id: a.id, name: a.name || m.invoices_unnamed_account() })),
     contacts: contacts.results.map((c: ContactRow) => ({
       id: c.id,
-      name: c.name || c.email || 'Unnamed contact',
+      name: c.name || c.email || m.invoices_unnamed_contact(),
       account_id: c.account?.id ?? null,
       account_name: c.account?.name ?? ''
     })),
@@ -108,7 +109,7 @@ export const actions: Actions = {
       parsed = null;
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return fail(400, { error: 'The estimate form could not be read. Please try again.' });
+      return fail(400, { error: m.invoices_estimate_form_unreadable() });
     }
     const body = parsed as FormBody<Schemas['EstimateBodyRequest']>;
 
@@ -122,18 +123,18 @@ export const actions: Actions = {
     if (custom.refusal) return fail(503, custom.refusal);
     if (custom.values) body.custom_fields = custom.values;
 
-    if (!body.account_id) return fail(400, { error: 'Choose an account.' });
-    if (!body.contact_id) return fail(400, { error: 'Choose a contact.' });
-    if (!body.title) return fail(400, { error: 'Give the estimate a title.' });
+    if (!body.account_id) return fail(400, { error: m.invoices_recurring_choose_account() });
+    if (!body.contact_id) return fail(400, { error: m.invoices_recurring_choose_contact() });
+    if (!body.title) return fail(400, { error: m.invoices_estimate_title_required() });
     if (!Array.isArray(body.line_items) || body.line_items.length === 0) {
-      return fail(400, { error: 'Add at least one line with a description and an amount.' });
+      return fail(400, { error: m.invoices_lines_required() });
     }
 
     try {
       await createEstimate({ cookies }, body);
     } catch (err) {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
-        ...saveRefusal(err, custom.definitions, 'Could not create the estimate.')
+        ...saveRefusal(err, custom.definitions, m.invoices_estimate_create_failed())
       });
     }
 

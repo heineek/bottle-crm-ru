@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { listInvoiceTemplates, setDefaultTemplate } from '#lib/server/v2/templates.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -27,7 +28,7 @@ export const actions: Actions = {
   setDefault: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which template? None was given.' });
+    if (!id) return fail(400, { error: m.invoices_which_template() });
 
     try {
       await setDefaultTemplate({ cookies }, id);
@@ -35,8 +36,8 @@ export const actions: Actions = {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
         error:
           apiStatus(err) === 403
-            ? 'Only an administrator can change invoice templates.'
-            : readableError(err, 'Could not change the default template.')
+            ? m.invoices_template_change_admin_only()
+            : readableError(err, m.invoices_template_default_failed())
       });
     }
     return { defaulted: true };

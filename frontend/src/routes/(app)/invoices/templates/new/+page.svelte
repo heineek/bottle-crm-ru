@@ -24,6 +24,7 @@
   import { enhance } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { ChevronRight, Lock } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -46,11 +47,11 @@
   let saving = $state(false);
 </script>
 
-<PageHeader title="New template" record center width="62ch">
+<PageHeader title={m.invoices_templates_new_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('invoices/templates')}>Templates</a>
+    <a href={resolve('invoices/templates')}>{m.invoices_templates_title()}</a>
     <ChevronRight size={12} />
-    <span>New</span>
+    <span>{m.common_new()}</span>
   {/snippet}
 </PageHeader>
 
@@ -60,16 +61,14 @@
       <div class="v2-next" role="note">
         <Lock size={17} style="flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">Admins only</div>
+          <div style="font-weight:600">{m.common_admins_only()}</div>
           <div class="v2-sub" style="margin-top:2px">
-            Invoice templates are shared config for the whole org, every invoice's look, so only an
-            administrator can create one. You can still see how existing templates look on the
-            templates page.
+            {m.invoices_templates_create_admin_note()}
           </div>
         </div>
       </div>
       <a class="v2-btn" href={resolve('invoices/templates')} style="margin-top:16px"
-        >Back to templates</a
+        >{m.invoices_templates_back()}</a
       >
     </div>
   {:else}
@@ -95,20 +94,20 @@
       {/if}
 
       <label class="v2-field">
-        <span class="v2-label">Name</span>
+        <span class="v2-label">{m.common_name()}</span>
         <input
           class="v2-input"
           name="name"
           required
           maxlength="100"
           value={values.name ?? ''}
-          placeholder="Standard invoice"
+          placeholder={m.invoices_templates_name_placeholder()}
         />
       </label>
 
       <div class="color-row">
         <label class="color-field">
-          <span class="v2-label">Primary colour</span>
+          <span class="v2-label">{m.invoices_templates_primary_colour()}</span>
           <input
             class="color-swatch"
             type="color"
@@ -117,7 +116,7 @@
           />
         </label>
         <label class="color-field">
-          <span class="v2-label">Secondary colour</span>
+          <span class="v2-label">{m.invoices_templates_secondary_colour()}</span>
           <input
             class="color-swatch"
             type="color"
@@ -127,55 +126,67 @@
         </label>
       </div>
       <p class="v2-sub" style="font-size:11.5px;margin:-6px 0 16px">
-        Picked, not typed, so the value sent is always a valid six digit hex.
+        {m.invoices_templates_colour_hint()}
       </p>
 
       <label class="v2-field">
-        <span class="v2-label">Logo <span class="opt">(optional)</span></span>
+        <span class="v2-label"
+          >{m.invoices_templates_logo()} <span class="opt">{m.invoices_form_optional()}</span></span
+        >
         <input class="v2-input" type="file" name="logo" accept="image/*" />
       </label>
 
       <label class="v2-field">
-        <span class="v2-label">Default notes <span class="opt">(optional)</span></span>
+        <span class="v2-label"
+          >{m.invoices_templates_default_notes()}
+          <span class="opt">{m.invoices_form_optional()}</span></span
+        >
         <textarea
           class="v2-input"
           name="default_notes"
           rows="3"
-          placeholder="Thanks for your business.">{values.default_notes ?? ''}</textarea
+          placeholder={m.invoices_templates_notes_placeholder()}
+          >{values.default_notes ?? ''}</textarea
         >
       </label>
 
       <label class="v2-field">
-        <span class="v2-label">Default terms <span class="opt">(optional)</span></span>
+        <span class="v2-label"
+          >{m.invoices_templates_default_terms()}
+          <span class="opt">{m.invoices_form_optional()}</span></span
+        >
         <textarea
           class="v2-input"
           name="default_terms"
           rows="3"
-          placeholder="Payment due within 30 days.">{values.default_terms ?? ''}</textarea
+          placeholder={m.invoices_templates_terms_placeholder()}
+          >{values.default_terms ?? ''}</textarea
         >
       </label>
 
       <label class="v2-field">
-        <span class="v2-label">Footer text <span class="opt">(optional)</span></span>
+        <span class="v2-label"
+          >{m.invoices_templates_footer_text()}
+          <span class="opt">{m.invoices_form_optional()}</span></span
+        >
         <textarea class="v2-input" name="footer_text" rows="2">{values.footer_text ?? ''}</textarea>
       </label>
 
       <label class="flag">
         <input type="checkbox" name="is_default" checked={values.is_default === true} />
         <span>
-          <strong>Make this the default template</strong>
+          <strong>{m.invoices_templates_make_default()}</strong>
           <span class="v2-sub">
-            Only one template can be the default at a time. Turning this on replaces whichever
-            template holds it now, new invoices will print with this one instead.
+            {m.invoices_templates_make_default_hint()}
           </span>
         </span>
       </label>
 
       <div style="display:flex;gap:9px;margin-top:6px">
         <button class="v2-btn v2-btn-primary" type="submit" disabled={saving}>
-          {saving ? 'Creating…' : 'Create template'}
+          {saving ? m.invoices_templates_creating() : m.invoices_templates_create()}
         </button>
-        <a class="v2-btn" href={resolve('invoices/templates')}>Cancel</a>
+        <a class="v2-btn" href={resolve('invoices/templates')}>{m.common_cancel()}</a>
       </div>
     </form>
   {/if}

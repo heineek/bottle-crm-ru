@@ -16,6 +16,7 @@ import * as env from '$app/env/public';
 import { apiRequest } from '#lib/api-helpers.js';
 import { moduleOffDetail, rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import type { components } from '#lib/api-schema.js';
 
@@ -100,7 +101,7 @@ export async function getStatement(
     if (apiStatus(err) === 403) return { can_view: false, statement: null, error: null };
     rethrowModuleOff(err);
     if (apiStatus(err) === 404) {
-      error(404, 'That account does not exist, or you do not have access to it.');
+      error(404, m.invoices_statement_account_not_found());
     }
     if (apiStatus(err) === 400) {
       // `{"end_date": ["..."]}`: the sentence alone, the field is on the form.
@@ -110,7 +111,7 @@ export async function getStatement(
       return {
         can_view: true,
         statement: null,
-        error: said ?? readableError(err, 'Those dates do not make a period.')
+        error: said ?? readableError(err, m.invoices_statement_bad_period())
       };
     }
     throw err;
@@ -155,9 +156,12 @@ export async function forwardStatementPdf({
   );
 
   if (!upstream.ok || !upstream.body) {
-    return new Response((await moduleOffDetail(upstream)) ?? `Upstream error: ${upstream.status}`, {
-      status: upstream.status || 502
-    });
+    return new Response(
+      (await moduleOffDetail(upstream)) ?? m.invoices_upstream_error({ status: upstream.status }),
+      {
+        status: upstream.status || 502
+      }
+    );
   }
 
   return new Response(upstream.body, {

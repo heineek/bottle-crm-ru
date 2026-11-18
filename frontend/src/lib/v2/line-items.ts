@@ -13,6 +13,8 @@
  * up, so a float never moves a cent.
  */
 
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * A figure as a builder holds it: a number from an input, a decimal string from
  * the API, or nothing yet.
@@ -170,8 +172,8 @@ const cents = (v: number) => Math.round(v * 100) / 100;
  */
 function discountError(type: string, value: Figure, cap: number, capMessage: string) {
   const v = num(value);
-  if (v < 0) return 'A discount cannot be negative.';
-  if (type === 'PERCENTAGE') return v > 100 ? 'A percentage discount cannot exceed 100.' : '';
+  if (v < 0) return m.invoices_discount_negative();
+  if (type === 'PERCENTAGE') return v > 100 ? m.invoices_discount_percent_max() : '';
   return v > cents(cap) ? capMessage : '';
 }
 
@@ -180,7 +182,7 @@ function discountError(type: string, value: Figure, cap: number, capMessage: str
  * discount only once a type is chosen, so no type is nothing to check.
  */
 export const documentDiscountError = (type: string, value: Figure, subtotal: number) =>
-  type ? discountError(type, value, subtotal, 'A discount cannot exceed the subtotal.') : '';
+  type ? discountError(type, value, subtotal, m.invoices_discount_over_subtotal()) : '';
 
 /**
  * A line's own discount against its gross. A line only carries one from the
@@ -193,7 +195,7 @@ export const lineDiscountError = (line: Line) =>
         line.discount_type ?? '',
         line.discount_value,
         num(line.quantity) * num(line.unit_price),
-        "A discount cannot exceed the line's amount."
+        m.invoices_discount_over_line()
       )
     : '';
 
@@ -203,9 +205,9 @@ export const lineDiscountError = (line: Line) =>
  */
 export function taxRateError(value: Figure) {
   const v = num(value);
-  if (v < 0) return 'Tax rate cannot be negative.';
-  return v > 100 ? 'Tax rate cannot exceed 100.' : '';
+  if (v < 0) return m.invoices_tax_rate_negative();
+  return v > 100 ? m.invoices_tax_rate_max() : '';
 }
 
 export const shippingError = (value: Figure) =>
-  num(value) < 0 ? 'Shipping cannot be negative.' : '';
+  num(value) < 0 ? m.invoices_shipping_negative() : '';

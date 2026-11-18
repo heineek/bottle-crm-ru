@@ -6,6 +6,7 @@ import { getOrgPeopleAndTeams, resolveMe } from '#lib/server/v2/org-people.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { loadSavedViews, savedViewActions } from '#lib/server/v2/saved-views.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -58,13 +59,13 @@ export const actions: Actions = {
   send: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which invoice?' });
+    if (!id) return fail(400, { error: m.invoices_which_invoice() });
 
     try {
       await sendInvoice({ cookies }, id);
     } catch (err) {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not send that invoice.')
+        error: readableError(err, m.invoices_send_that_failed())
       });
     }
     return { sent: id };

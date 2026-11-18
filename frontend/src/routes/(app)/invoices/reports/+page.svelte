@@ -27,6 +27,8 @@
   import StatCard from '#lib/v2/components/StatCard.svelte';
   import CurrencySwitch from '#lib/v2/components/CurrencySwitch.svelte';
   import { money, count } from '#lib/v2/format.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -53,35 +55,37 @@
 
   /** "2026-07" → "Jul". The year only appears where it changes. */
   const MONTH = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
+    m.invoices_month_jan,
+    m.invoices_month_feb,
+    m.invoices_month_mar,
+    m.invoices_month_apr,
+    m.invoices_month_may,
+    m.invoices_month_jun,
+    m.invoices_month_jul,
+    m.invoices_month_aug,
+    m.invoices_month_sep,
+    m.invoices_month_oct,
+    m.invoices_month_nov,
+    m.invoices_month_dec
   ];
   // `period` is null only for a row the API could not date, which has no month.
   const monthLabel = (period: string | null) =>
-    period ? MONTH[Number(period.slice(5, 7)) - 1] : '';
+    period ? MONTH[Number(period.slice(5, 7)) - 1]() : '';
 
   let collected = $derived(
     d.total_invoiced ? Math.round((d.total_paid / d.total_invoiced) * 100) : 0
   );
 </script>
 
-<PageHeader title="Invoices">
+<PageHeader title={m.invoices_title()}>
   {#snippet sub()}
     {#if canView}
-      Last <span class="v2-num">{data.window_months}</span> months ·
-      <span class="v2-num">{count(data.invoice_count)}</span> invoices
+      {#each messageParts(m.invoices_reports_sub( { months: data.window_months, shown: slot('shown'), count: slot('count') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{data.window_months}</span
+          >{:else if p.key === 'count'}<span class="v2-num">{count(data.invoice_count)}</span
+          >{:else}{p.text}{/if}{/each}
     {:else}
-      Financial reports
+      {m.invoices_reports_title()}
     {/if}
   {/snippet}
 </PageHeader>
@@ -91,12 +95,11 @@
 {#if !canView}
   <div class="v2-pad" style="padding-top:40px">
     <div class="v2-card rep-locked">
-      <strong>These reports are for administrators.</strong>
+      <strong>{m.invoices_reports_locked_title()}</strong>
       <p>
-        Invoiced and collected totals, revenue by month and accounts-receivable aging cover the
-        whole organisation's money, so they are limited to admins. Your own invoices and estimates
-        are on the <a href={resolve('invoices')}>Invoices</a> and
-        <a href={resolve('invoices/estimates')}>Estimates</a> tabs.
+        {m.invoices_reports_locked_body()}
+        <a href={resolve('invoices')}>{m.invoices_title()}</a> ·
+        <a href={resolve('invoices/estimates')}>{m.invoices_estimates_title()}</a>
       </p>
     </div>
   </div>
@@ -104,24 +107,28 @@
   <div class="v2-pad" style="padding-top:16px;flex:none">
     <CurrencySwitch currencies={data.currencies} current={cur} onpick={(c) => (picked = c)} />
     <div class="v2-stats">
-      <StatCard label="Invoiced" value={money(d.total_invoiced, cur)} tone="ink" />
       <StatCard
-        label="Collected"
+        label={m.invoices_reports_invoiced()}
+        value={money(d.total_invoiced, cur)}
+        tone="ink"
+      />
+      <StatCard
+        label={m.invoices_reports_collected()}
         value={money(d.total_paid, cur)}
         tone="moss"
-        detail="{collected}% of invoiced"
+        detail={m.invoices_reports_collected_detail({ percent: collected })}
       />
       <StatCard
-        label="Overdue"
+        label={m.invoices_stat_overdue()}
         value={money(d.overdue_amount, cur)}
         tone={d.overdue_amount > 0 ? 'rust' : 'slate'}
-        detail="{count(aging.overdue_count)} invoices past their due date"
+        detail={m.invoices_reports_overdue_detail({ count: count(aging.overdue_count) })}
       />
       <StatCard
-        label="Average time to pay"
-        value={`${data.average_days_to_pay}d`}
+        label={m.invoices_reports_avg_time()}
+        value={m.invoices_reports_days_short({ n: data.average_days_to_pay })}
         tone="slate"
-        detail="From issue to payment"
+        detail={m.invoices_reports_avg_time_detail()}
       />
     </div>
   </div>
@@ -130,7 +137,9 @@
     <div class="v2-pad" style="padding-bottom:32px">
       <div class="v2-split-wide">
         <div>
-          <div class="v2-label" style="margin-bottom:12px">Invoiced and collected, by month</div>
+          <div class="v2-label" style="margin-bottom:12px">
+            {m.invoices_reports_by_month()}
+          </div>
           <div class="v2-card" style="padding:16px 18px 14px">
             <!-- Side by side, never stacked: a stacked column's height would
                read as invoiced + paid, which is not a quantity anyone has. -->
@@ -138,10 +147,11 @@
               {#each v.revenue as r (r.period)}
                 <div
                   class="v2-col"
-                  title="{monthLabel(r.period)}: {money(r.invoiced, cur)} invoiced, {money(
-                    r.paid,
-                    cur
-                  )} collected"
+                  title={m.invoices_reports_bar_title({
+                    month: monthLabel(r.period),
+                    invoiced: money(r.invoiced, cur),
+                    paid: money(r.paid, cur)
+                  })}
                 >
                   <i class="in" style="height:{(r.invoiced / peak) * 100}%"></i>
                   <i class="out" style="height:{(r.paid / peak) * 100}%"></i>
@@ -155,20 +165,20 @@
             </div>
 
             <div class="v2-sub" style="font-size:11.5px;margin-top:12px">
-              <i class="v2-swatch v2-swatch-in"></i>invoiced
-              <i class="v2-swatch" style="margin-left:10px"></i>collected
+              <i class="v2-swatch v2-swatch-in"></i>{m.invoices_reports_legend_invoiced()}
+              <i class="v2-swatch" style="margin-left:10px"
+              ></i>{m.invoices_reports_legend_collected()}
             </div>
 
             <!-- Said once, here, rather than left to be misread every month. -->
             <p class="v2-sub" style="font-size:11.5px;margin:11px 0 0;line-height:1.5">
-              Each is counted in the month it happened, so they do not line up: the gap in the most
-              recent month is earlier invoices still being paid, not a drop in sales.
+              {m.invoices_reports_by_month_note()}
             </p>
           </div>
         </div>
 
         <div>
-          <div class="v2-label" style="margin-bottom:12px">How late the overdue money is</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_reports_aging_title()}</div>
           <div class="v2-card" style="padding:16px 18px">
             <div style="display:flex;flex-direction:column;gap:13px">
               {#each aging.buckets as b (b.key)}
@@ -176,8 +186,9 @@
                   <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
                     <span style="font-size:12.5px">{b.label}</span>
                     <span class="v2-sub" style="font-size:11px">
-                      <span class="v2-num">{count(b.count)}</span>
-                      {b.count === 1 ? 'invoice' : 'invoices'}
+                      {#each messageParts(m.invoices_reports_bucket_count( { count: b.count, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+                            class="v2-num">{count(b.count)}</span
+                          >{:else}{p.text}{/if}{/each}
                     </span>
                     <span class="v2-num" style="margin-left:auto;font-size:13px;font-weight:600">
                       {money(b.amount, cur)}
@@ -200,12 +211,12 @@
             one it dwarfs the rest and makes late money look small.
           -->
             <div class="v2-aging-note">
-              <span class="v2-sub">Not yet due</span>
+              <span class="v2-sub">{m.invoices_reports_not_yet_due()}</span>
               <span class="v2-num" style="font-size:13px"
                 >{money(aging.not_yet_due.amount, cur)}</span
               >
               <span class="v2-sub" style="font-size:11px">
-                across {count(aging.not_yet_due.count)} invoices, not late, not shown above
+                {m.invoices_reports_not_yet_due_note({ count: count(aging.not_yet_due.count) })}
               </span>
             </div>
           </div>
@@ -216,15 +227,15 @@
          enough in height to sit side by side; adding the table to either
          column left the other one blank for a third of the page. -->
       <div>
-        <div class="v2-label" style="margin:22px 0 10px">Who owes it</div>
+        <div class="v2-label" style="margin:22px 0 10px">{m.invoices_reports_who_owes()}</div>
         <div class="v2-table-wrap">
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Account</th>
-                <th style="text-align:right">Invoices</th>
-                <th style="text-align:right">Oldest</th>
-                <th style="text-align:right">Overdue</th>
+                <th>{m.invoices_col_account()}</th>
+                <th style="text-align:right">{m.invoices_title()}</th>
+                <th style="text-align:right">{m.invoices_reports_oldest()}</th>
+                <th style="text-align:right">{m.invoices_stat_overdue()}</th>
               </tr>
             </thead>
             <tbody>
@@ -243,7 +254,7 @@
                     class="v2-num"
                     style="text-align:right;{a.oldest_days > 90 ? 'color:var(--v2-rust)' : ''}"
                   >
-                    {a.oldest_days}d
+                    {m.invoices_reports_days_short({ n: a.oldest_days })}
                   </td>
                   <td class="v2-num" style="text-align:right;font-weight:600"
                     >{money(a.amount, cur)}</td
@@ -254,8 +265,7 @@
           </table>
         </div>
         <p class="v2-sub" style="font-size:11.5px;margin-top:10px">
-          These {v.overdueByAccount.length} accounts are the whole overdue balance, not the top few of
-          a longer list.
+          {m.invoices_reports_who_owes_note({ count: v.overdueByAccount.length })}
         </p>
       </div>
     </div>

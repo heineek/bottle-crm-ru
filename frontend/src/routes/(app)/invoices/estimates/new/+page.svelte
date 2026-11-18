@@ -42,11 +42,12 @@
   import { addDays, todayIn } from '#lib/v2/dates.js';
   import { numberPattern } from '#lib/v2/document-numbers.js';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
   import { isOrgAdmin } from '#lib/admin.js';
   import { money } from '#lib/v2/format.js';
   import { BILLING_TYPE_LABEL } from '#lib/v2/projects.js';
   import {
-    DEPOSIT_ROUNDS_TO_ZERO,
+    depositRoundsToZero,
     INTRODUCTION_MAX,
     PROJECT_BILLING_TYPES,
     depositAmount,
@@ -209,19 +210,19 @@
   }
 </script>
 
-<PageHeader title="New estimate">
+<PageHeader title={m.invoices_estimate_new_title()}>
   {#snippet sub()}
-    Nothing is sent until you send it. Saving leaves it as a draft
+    {m.invoices_estimate_new_sub()}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('invoices/estimates')}>Cancel</a>
+    <a class="v2-btn" href={resolve('invoices/estimates')}>{m.common_cancel()}</a>
     <button
       type="submit"
       form="estimate-form"
       class="v2-btn v2-btn-primary"
       disabled={!ready || saving}
     >
-      {saving ? 'Saving…' : 'Save as draft'}
+      {saving ? m.invoices_form_saving() : m.invoices_form_save_draft()}
     </button>
   {/snippet}
 </PageHeader>
@@ -255,13 +256,13 @@
     <div class="v2-split">
       <div>
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:12px">Who and when</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_form_who_when()}</div>
 
           <div class="grid2">
             <label class="f">
-              <span>Account</span>
+              <span>{m.invoices_col_account()}</span>
               <select bind:value={accountId} onchange={accountChanged}>
-                <option value="">Choose an account</option>
+                <option value="">{m.invoices_form_choose_account()}</option>
                 {#each data.accounts as a (a.id)}
                   <option value={a.id}>{a.name}</option>
                 {/each}
@@ -269,9 +270,13 @@
             </label>
 
             <label class="f">
-              <span>Contact</span>
+              <span>{m.invoices_form_contact()}</span>
               <select bind:value={contactId} disabled={!accountId}>
-                <option value="">{accountId ? 'Choose a contact' : 'Pick an account first'}</option>
+                <option value=""
+                  >{accountId
+                    ? m.invoices_form_choose_contact()
+                    : m.invoices_form_pick_account_first()}</option
+                >
                 {#each contactOptions as c (c.id)}
                   <option value={c.id}
                     >{c.name}{c.account_name ? ` · ${c.account_name}` : ''}</option
@@ -281,15 +286,22 @@
             </label>
 
             <label class="f">
-              <span>Title</span>
-              <input bind:value={title} placeholder="What this estimate covers" required />
+              <span>{m.invoices_form_title()}</span>
+              <input
+                bind:value={title}
+                placeholder={m.invoices_estimate_title_placeholder()}
+                required
+              />
             </label>
 
             {#if isOn(data.modules, 'deals')}
               <label class="f">
-                <span>Deal <span class="opt">(optional)</span></span>
+                <span
+                  >{m.invoices_form_deal()}
+                  <span class="opt">{m.invoices_form_optional()}</span></span
+                >
                 <select bind:value={dealId} disabled={!accountId}>
-                  <option value="">No deal</option>
+                  <option value="">{m.invoices_form_no_deal()}</option>
                   {#each dealOptions as d (d.id)}
                     <option value={d.id}>{d.name}</option>
                   {/each}
@@ -298,17 +310,17 @@
             {/if}
 
             <label class="f">
-              <span>Issue date</span>
+              <span>{m.invoices_form_issue_date()}</span>
               <input type="date" bind:value={issueDate} />
             </label>
 
             <label class="f">
-              <span>Valid until</span>
+              <span>{m.invoices_form_valid_until()}</span>
               <input type="date" bind:value={expiryDate} min={issueDate} />
             </label>
 
             <label class="f">
-              <span>Currency</span>
+              <span>{m.invoices_currency()}</span>
               <select bind:value={currency}>
                 {#each CURRENCIES as c (c.value)}
                   <option value={c.value}>{c.label}</option>
@@ -318,37 +330,43 @@
           </div>
 
           {#if datesBackwards}
-            <p class="warn" role="alert">The estimate cannot expire before it is issued.</p>
+            <p class="warn" role="alert">{m.invoices_estimate_dates_backwards()}</p>
           {/if}
         </div>
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
           <label class="f">
-            <span>Introduction <span class="opt">(optional)</span></span>
+            <span
+              >{m.invoices_proposal_introduction()} <span class="opt">{m.invoices_form_optional()}</span></span
+            >
             <textarea
               rows="5"
               maxlength={INTRODUCTION_MAX}
               bind:value={introduction}
-              placeholder="What you will do and why. Shown above the lines"></textarea>
+              placeholder={m.invoices_proposal_introduction_placeholder()}></textarea>
           </label>
         </div>
 
         <LineItemsEditor bind:items products={data.products} {currency} />
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:12px">Adjustments</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_form_adjustments()}</div>
           <div class="grid2">
             <label class="f">
-              <span>Discount</span>
+              <span>{m.invoices_discount()}</span>
               <select bind:value={discountType}>
-                <option value="">None</option>
-                <option value="PERCENTAGE">Percentage</option>
-                <option value="FIXED">Fixed amount</option>
+                <option value="">{m.invoices_form_discount_none()}</option>
+                <option value="PERCENTAGE">{m.invoices_form_discount_percentage()}</option>
+                <option value="FIXED">{m.invoices_form_discount_fixed()}</option>
               </select>
             </label>
             {#if discountType}
               <label class="f">
-                <span>{discountType === 'PERCENTAGE' ? 'Percent off' : 'Amount off'}</span>
+                <span
+                  >{discountType === 'PERCENTAGE'
+                    ? m.invoices_form_percent_off()
+                    : m.invoices_form_amount_off()}</span
+                >
                 <input
                   type="number"
                   min="0"
@@ -363,7 +381,7 @@
               </label>
             {/if}
             <label class="f">
-              <span>Tax rate %</span>
+              <span>{m.invoices_form_tax_rate()}</span>
               <input
                 type="number"
                 min="0"
@@ -377,20 +395,20 @@
               {/if}
             </label>
           </div>
-          <p class="hint">Tax applies to the subtotal after the discount.</p>
+          <p class="hint">{m.invoices_form_tax_hint()}</p>
         </div>
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:12px">When the client accepts</div>
+          <div class="v2-label" style="margin-bottom:12px">{m.invoices_proposal_on_accept()}</div>
           <div class="beside">
             <label class="f">
-              <span>Deposit on acceptance %</span>
+              <span>{m.invoices_proposal_deposit_percent()}</span>
               <input
                 type="number"
                 min="0"
                 max="100"
                 step="0.01"
-                placeholder="No deposit"
+                placeholder={m.invoices_proposal_no_deposit()}
                 bind:value={depositPercent}
                 aria-invalid={Boolean(depositError)}
                 aria-describedby={depositError ? 'deposit-error' : undefined}
@@ -398,25 +416,27 @@
             </label>
             {#if deposit && deposit.total > 0}
               <span class="v2-num deposit-amount">
-                {money(deposit.total, currency)}{num(taxRate) ? ' with tax' : ''}
+                {num(taxRate)
+                  ? m.invoices_proposal_deposit_with_tax({ amount: money(deposit.total, currency) })
+                  : money(deposit.total, currency)}
               </span>
             {/if}
           </div>
           {#if depositError}
             <small id="deposit-error" class="field-err" role="alert">{depositError}</small>
           {:else if deposit && deposit.total === 0}
-            <p class="hint">{DEPOSIT_ROUNDS_TO_ZERO}</p>
+            <p class="hint">{depositRoundsToZero()}</p>
           {/if}
-          <p class="hint">The deposit invoice is drafted for you to send, never sent on its own.</p>
+          <p class="hint">{m.invoices_proposal_deposit_never_sent()}</p>
 
           {#if projectsOn && isAdmin}
             <label class="check">
               <input type="checkbox" bind:checked={startProject} />
-              <span>Start a project when accepted</span>
+              <span>{m.invoices_proposal_start_project()}</span>
             </label>
             {#if startProject}
               <label class="f" style="margin-top:12px">
-                <span>Project billing</span>
+                <span>{m.invoices_proposal_project_billing()}</span>
                 <select bind:value={billingType}>
                   {#each PROJECT_BILLING_TYPES as t (t)}
                     <option value={t}>{BILLING_TYPE_LABEL[t]}</option>
@@ -425,10 +445,9 @@
               </label>
               <p class="hint">
                 {#if billingType === 'non_billable'}
-                  The project gets this estimate's account, deal and people.
+                  {m.invoices_proposal_project_gets()}
                 {:else}
-                  The project gets this estimate's account, deal and people, and its total before
-                  tax as the budget.
+                  {m.invoices_proposal_project_gets_budget()}
                 {/if}
               </p>
             {/if}
@@ -437,17 +456,23 @@
 
         <div class="v2-card" style="padding:16px 18px;margin-top:14px">
           <label class="f">
-            <span>Notes to the customer</span>
-            <textarea rows="3" bind:value={notes} placeholder="Appears on the estimate"></textarea>
+            <span>{m.invoices_form_notes()}</span>
+            <textarea
+              rows="3"
+              bind:value={notes}
+              placeholder={m.invoices_estimate_notes_placeholder()}></textarea>
           </label>
           <label class="f" style="margin-top:12px">
-            <span>Terms</span>
-            <textarea rows="3" bind:value={terms} placeholder="Scope, what is excluded"></textarea>
+            <span>{m.invoices_form_terms()}</span>
+            <textarea
+              rows="3"
+              bind:value={terms}
+              placeholder={m.invoices_estimate_terms_placeholder()}></textarea>
           </label>
         </div>
         {#if data.customFields?.length}
           <div class="v2-card" style="padding:16px 18px;margin-top:14px">
-            <div class="v2-label" style="margin-bottom:12px">Details</div>
+            <div class="v2-label" style="margin-bottom:12px">{m.common_details()}</div>
             <RecordFieldInputs
               fields={data.customFields}
               errors={form?.fieldErrors}
@@ -460,7 +485,7 @@
       <div>
         <div class="v2-card preview">
           <div class="v2-card-head">
-            <span class="v2-label">What the customer will see</span>
+            <span class="v2-label">{m.invoices_form_preview_title()}</span>
           </div>
           <div style="padding:14px 16px 16px">
             {#if introduction.trim()}
@@ -483,21 +508,21 @@
               {/if}
             {:else}
               <p class="empty">
-                Add a line with a description and an amount, and the customer's copy appears here.
+                {m.invoices_form_preview_empty()}
               </p>
             {/if}
           </div>
         </div>
 
         <div class="v2-card" style="padding:15px 16px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:9px">Assigned on save</div>
+          <div class="v2-label" style="margin-bottom:9px">{m.invoices_form_assigned_on_save()}</div>
           <dl class="derived">
             {#if data.numbering}
-              <dt>Estimate number</dt>
+              <dt>{m.invoices_form_estimate_number()}</dt>
               <dd class="v2-num">{numberPattern(data.numbering, 'estimate', today)}</dd>
             {/if}
-            <dt>Customer link</dt>
-            <dd>Generated, and only sent when you send the estimate</dd>
+            <dt>{m.invoices_form_customer_link()}</dt>
+            <dd>{m.invoices_estimate_customer_link_hint()}</dd>
           </dl>
         </div>
       </div>

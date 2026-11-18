@@ -31,6 +31,7 @@
  * undercount, and that ceiling is called out where it is set.
  */
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -95,9 +96,9 @@ function monthlyRunRate(s: ScheduleRow) {
 function toRow(row: Schemas['RecurringInvoiceList']) {
   return {
     id: row.id,
-    title: row.title || '(untitled schedule)',
+    title: row.title || m.invoices_recurring_untitled(),
     is_active: Boolean(row.is_active),
-    account: { id: row.account ?? null, name: row.account_name ?? '(no account)' },
+    account: { id: row.account ?? null, name: row.account_name ?? m.invoices_no_account() },
     contact: row.contact_name ?? row.client_name ?? '',
     frequency: row.frequency,
     custom_days: row.custom_days ?? null,
@@ -290,15 +291,16 @@ export async function createRecurringInvoice(
   { cookies }: { cookies: Cookies },
   values: RecurringValues
 ): Promise<Schemas['RecurringInvoice']> {
-  if (!values.account_id) throw new Error('Choose an account.');
-  if (!values.contact_id) throw new Error('Choose a contact.');
-  if (!(values.title ?? '').toString().trim()) throw new Error('Give the schedule a title.');
+  if (!values.account_id) throw new Error(m.invoices_recurring_choose_account());
+  if (!values.contact_id) throw new Error(m.invoices_recurring_choose_contact());
+  if (!(values.title ?? '').toString().trim())
+    throw new Error(m.invoices_recurring_title_required());
   if (values.frequency === 'CUSTOM' && !values.custom_days) {
-    throw new Error('A custom frequency needs an interval in days.');
+    throw new Error(m.invoices_recurring_custom_days_required());
   }
   // The server's rule: a schedule that mails each invoice needs a line.
   if (values.auto_send && !values.line_items?.length) {
-    throw new Error('Add at least one line before turning on auto-send.');
+    throw new Error(m.invoices_recurring_auto_send_needs_line());
   }
 
   const body = buildBody(CREATE_FIELDS, values);
