@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/models/interaction.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/interactions_provider.dart';
 import '../../services/after_tap.dart';
 import 'log_interaction_sheet.dart';
@@ -59,7 +60,7 @@ mixin AfterTapLogging<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Could not open ${uri.scheme}'),
+        content: Text(context.l10n.interactionsCouldNotOpen(uri.scheme)),
         behavior: SnackBarBehavior.floating,
       ),
     );

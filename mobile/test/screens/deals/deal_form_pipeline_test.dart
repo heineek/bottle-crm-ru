@@ -178,12 +178,10 @@ class _FakeDeals extends DealsNotifier {
   Future<DealsListData> build() async => const DealsListData();
 
   @override
-  Future<({bool success, String? error, Deal? deal})> createDeal(
-    Deal deal, {
-    bool withLeadSource = false,
-  }) async {
+  Future<({bool success, String? error, Deal? deal, String? nameError})>
+  createDeal(Deal deal, {bool withLeadSource = false}) async {
     created.add(deal.toJson(withLeadSource: withLeadSource));
-    return (success: true, error: null, deal: null);
+    return (success: true, error: null, deal: null, nameError: null);
   }
 }
 

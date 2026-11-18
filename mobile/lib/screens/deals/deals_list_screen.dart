@@ -3,17 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/deal_pipelines_provider.dart';
 import '../../providers/deals_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/saved_views_provider.dart';
+import '../../services/app_language.dart';
 import '../../widgets/cards/deal_card.dart';
 import '../../widgets/misc/kanban_column.dart';
 import '../../widgets/common/common.dart';
@@ -202,7 +203,9 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
     if (!result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.error ?? 'Failed to move "${deal.title}"'),
+          content: Text(
+            result.error ?? context.l10n.dealsMoveFailed(deal.title),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -217,12 +220,12 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Moved "${deal.title}" to ${newStage.label}'),
+        content: Text(context.l10n.dealsMovedTo(deal.title, newStage.label)),
         behavior: SnackBarBehavior.floating,
         action: previous == null
             ? null
             : SnackBarAction(
-                label: 'Undo',
+                label: context.l10n.dealsUndo,
                 onPressed: () {
                   board.moveDeal(movedDeal(deal, newStage), previous);
                 },
@@ -236,21 +239,25 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(won ? 'Mark as Won?' : 'Mark as Lost?'),
+        title: Text(
+          won
+              ? context.l10n.dealsMarkWonTitle
+              : context.l10n.dealsMarkLostTitle,
+        ),
         content: Text(
           won
-              ? 'Closing "${deal.title}" as Won will lock in ${_formatValue(deal)}. You can still reopen it later.'
-              : 'Closing "${deal.title}" as Lost will move it out of the active pipeline.',
+              ? context.l10n.dealsMarkWonBody(deal.title, _formatValue(deal))
+              : context.l10n.dealsMarkLostBody(deal.title),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              won ? 'Mark Won' : 'Mark Lost',
+              won ? context.l10n.dealsMarkWon : context.l10n.dealsMarkLost,
               style: TextStyle(
                 color: won ? AppColors.success600 : AppColors.danger600,
               ),
@@ -393,8 +400,8 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
       SnackBar(
         content: Text(
           failures == 0
-              ? 'Moved ${ids.length} deal${ids.length == 1 ? '' : 's'} to ${stage.label}'
-              : '$failures of ${ids.length} failed to move',
+              ? context.l10n.dealsBulkMoved(ids.length, stage.label)
+              : context.l10n.dealsBulkMoveFailed(failures, ids.length),
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -406,18 +413,19 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete deals?'),
-        content: Text(
-          'Permanently delete ${ids.length} deal${ids.length == 1 ? '' : 's'}? This cannot be undone.',
-        ),
+        title: Text(context.l10n.dealsBulkDeleteTitle),
+        content: Text(context.l10n.dealsBulkDeleteBody(ids.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -436,8 +444,8 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
       SnackBar(
         content: Text(
           failures == 0
-              ? 'Deleted ${ids.length} deal${ids.length == 1 ? '' : 's'}'
-              : '$failures of ${ids.length} failed to delete',
+              ? context.l10n.dealsBulkDeleted(ids.length)
+              : context.l10n.dealsBulkDeleteFailed(failures, ids.length),
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -502,7 +510,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
 
   PreferredSizeWidget _buildNormalAppBar() {
     return AppBar(
-      title: const Text('Deals'),
+      title: Text(context.l10n.dealsListTitle),
       backgroundColor: AppColors.surface,
       elevation: 0,
       scrolledUnderElevation: 1,
@@ -573,17 +581,17 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
         icon: const Icon(LucideIcons.x),
         onPressed: _clearSelection,
       ),
-      title: Text('${_selectedIds.length} selected'),
+      title: Text(context.l10n.dealsSelectedCount(_selectedIds.length)),
       actions: [
         if (canMoveAll)
           IconButton(
             icon: const Icon(LucideIcons.arrowRightLeft, size: 20),
-            tooltip: 'Change stage',
+            tooltip: context.l10n.dealsChangeStageTooltip,
             onPressed: _bulkChangeStage,
           ),
         IconButton(
           icon: Icon(LucideIcons.trash2, size: 20, color: AppColors.danger600),
-          tooltip: 'Delete',
+          tooltip: context.l10n.commonDelete,
           onPressed: _bulkDelete,
         ),
       ],
@@ -615,7 +623,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
         style: AppTypography.body,
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
-          hintText: 'Search deals...',
+          hintText: context.l10n.dealsSearchHint,
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -677,7 +685,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             // Mine
             _QuickChip(
               icon: LucideIcons.user,
-              label: 'Mine',
+              label: context.l10n.dealsQuickMine,
               selected: mineActive,
               onTap: myProfileId == null
                   ? null
@@ -694,7 +702,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             // Rotten
             _QuickChip(
               icon: LucideIcons.alertOctagon,
-              label: 'Stalled',
+              label: context.l10n.dealsQuickStalled,
               selected: filters.rottenOnly,
               onTap: () {
                 final notifier = ref.read(dealsProvider.notifier);
@@ -708,8 +716,8 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             _QuickChip(
               icon: LucideIcons.slidersHorizontal,
               label: filters.badgeCount == 0
-                  ? 'Filters'
-                  : 'Filters · ${filters.badgeCount}',
+                  ? context.l10n.dealsQuickFilters
+                  : context.l10n.dealsQuickFiltersCount(filters.badgeCount),
               selected: filters.badgeCount > 0,
               onTap: _openFilterSheet,
             ),
@@ -717,7 +725,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             // Sort
             _QuickChip(
               icon: LucideIcons.arrowDownUp,
-              label: _sort.label,
+              label: _sortLabel(context, _sort),
               selected: false,
               onTap: _openSortSheet,
             ),
@@ -731,7 +739,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
                       .setFilters(const DealFilters());
                 },
                 icon: const Icon(LucideIcons.x, size: 14),
-                label: const Text('Clear'),
+                label: Text(context.l10n.dealsClear),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.textSecondary,
                   minimumSize: const Size(0, 28),
@@ -767,11 +775,11 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Sort by', style: AppTypography.h3),
+              child: Text(context.l10n.dealsSortBy, style: AppTypography.h3),
             ),
             for (final s in DealSort.values)
               ListTile(
-                title: Text(s.label),
+                title: Text(_sortLabel(context, s)),
                 trailing: _sort == s
                     ? Icon(LucideIcons.check, color: AppColors.primary600)
                     : null,
@@ -831,7 +839,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    current?.name ?? 'Pipeline',
+                    current?.name ?? context.l10n.dealsPipeline,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.label.copyWith(
@@ -865,12 +873,17 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Pipeline', style: AppTypography.h3),
+                child: Text(
+                  context.l10n.dealsPipeline,
+                  style: AppTypography.h3,
+                ),
               ),
               for (final p in pipelines)
                 ListTile(
                   title: Text(p.name),
-                  subtitle: p.isDefault ? const Text('Default') : null,
+                  subtitle: p.isDefault
+                      ? Text(context.l10n.dealsPipelineDefault)
+                      : null,
                   trailing: p.id == currentId
                       ? Icon(LucideIcons.check, color: AppColors.primary600)
                       : null,
@@ -924,7 +937,9 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
                   primary.totalValue,
                   primary.currency.symbol,
                 ),
-                sublabel: summary.loadedSubset ? '~ Pipeline' : 'Pipeline',
+                sublabel: summary.loadedSubset
+                    ? context.l10n.dealsPipelineApprox
+                    : context.l10n.dealsPipeline,
               ),
               const SizedBox(width: 8),
               _SummaryChip(
@@ -933,21 +948,21 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
                   primary.weightedValue,
                   primary.currency.symbol,
                 ),
-                sublabel: 'Forecast',
+                sublabel: context.l10n.dealsForecast,
               ),
               const SizedBox(width: 8),
             ],
             _SummaryChip(
               icon: LucideIcons.briefcase,
               label: '$activeCount',
-              sublabel: 'Active',
+              sublabel: context.l10n.dealsActive,
             ),
             if (summary.isMixed) ...[
               const SizedBox(width: 8),
               _SummaryChip(
                 icon: LucideIcons.globe,
                 label: '${summary.buckets.length}',
-                sublabel: 'Currencies',
+                sublabel: context.l10n.dealsCurrencies,
               ),
             ],
           ],
@@ -980,8 +995,8 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
           // The board keeps what it last showed; say the reload failed.
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not refresh the board'),
+            SnackBar(
+              content: Text(context.l10n.dealsBoardRefreshFailed),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -1076,11 +1091,15 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
     if (allDeals.isEmpty) {
       return EmptyState(
         icon: LucideIcons.briefcase,
-        title: filters.isEmpty ? 'No deals yet' : 'No results found',
+        title: filters.isEmpty
+            ? context.l10n.dealsEmptyTitle
+            : context.l10n.dealsNoResultsTitle,
         description: filters.isEmpty
-            ? 'Start by creating your first deal'
-            : 'Try adjusting your filters',
-        actionLabel: filters.isEmpty ? 'Add Deal' : 'Clear filters',
+            ? context.l10n.dealsEmptyBody
+            : context.l10n.dealsNoResultsBody,
+        actionLabel: filters.isEmpty
+            ? context.l10n.dealsAddDeal
+            : context.l10n.dealsClearFilters,
         onAction: filters.isEmpty
             ? () async {
                 final result = await context.push('/deals/create');
@@ -1193,7 +1212,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
           const Spacer(),
           if (primary != null)
             Text(
-              '${_formatCurrency(primary.total, primary.currency.symbol)}${mixed ? ' + mix' : ''}',
+              '${_formatCurrency(primary.total, primary.currency.symbol)}${mixed ? context.l10n.dealsMixedCurrencySuffix : ''}',
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
@@ -1220,7 +1239,10 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen> {
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: _refreshAll, child: const Text('Retry')),
+          ElevatedButton(
+            onPressed: _refreshAll,
+            child: Text(context.l10n.commonRetry),
+          ),
         ],
       ),
     );
@@ -1425,7 +1447,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
                 children: [
-                  Text('Filter deals', style: AppTypography.h3),
+                  Text(context.l10n.dealsFilterTitle, style: AppTypography.h3),
                   const Spacer(),
                   TextButton(
                     // Themed buttons carry an infinite minimum width, which a Row
@@ -1436,7 +1458,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                     ),
                     onPressed: () =>
                         setState(() => _draft = const DealFilters()),
-                    child: const Text('Reset'),
+                    child: Text(context.l10n.commonReset),
                   ),
                 ],
               ),
@@ -1446,7 +1468,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 children: [
-                  _sectionHeader('Stage'),
+                  _sectionHeader(context.l10n.dealsFilterStage),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -1465,10 +1487,10 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _sectionHeader('Assigned to'),
+                  _sectionHeader(context.l10n.commonAssignedTo),
                   if (widget.users.isEmpty)
                     Text(
-                      'No users loaded',
+                      context.l10n.dealsFilterNoUsers,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -1498,7 +1520,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                     ),
                   const SizedBox(height: 16),
                   if (widget.tags.isNotEmpty) ...[
-                    _sectionHeader('Tags'),
+                    _sectionHeader(context.l10n.commonTags),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -1521,7 +1543,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  _sectionHeader('Created'),
+                  _sectionHeader(context.l10n.dealsFilterCreated),
                   _dateRangePicker(
                     fromValue: _draft.createdFrom,
                     toValue: _draft.createdTo,
@@ -1532,7 +1554,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                         setState(() => _draft = _draft.copyWith(createdTo: d)),
                   ),
                   const SizedBox(height: 16),
-                  _sectionHeader('Closing'),
+                  _sectionHeader(context.l10n.dealsFilterClosing),
                   _dateRangePicker(
                     fromValue: _draft.closingFrom,
                     toValue: _draft.closingTo,
@@ -1543,16 +1565,16 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                         setState(() => _draft = _draft.copyWith(closingTo: d)),
                   ),
                   const SizedBox(height: 16),
-                  _sectionHeader('Amount'),
+                  _sectionHeader(context.l10n.dealsFilterAmount),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _amountMinController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Min',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: context.l10n.dealsFilterMin,
+                            border: const OutlineInputBorder(),
                           ),
                           onChanged: (v) {
                             final parsed = double.tryParse(v);
@@ -1565,9 +1587,9 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                         child: TextField(
                           controller: _amountMaxController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Max',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: context.l10n.dealsFilterMax,
+                            border: const OutlineInputBorder(),
                           ),
                           onChanged: (v) {
                             final parsed = double.tryParse(v);
@@ -1580,9 +1602,9 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                   const SizedBox(height: 16),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Only stalled deals'),
+                    title: Text(context.l10n.dealsFilterStalledOnly),
                     subtitle: Text(
-                      'Deals rotting in their stage, past its expected days',
+                      context.l10n.dealsFilterStalledHint,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -1604,14 +1626,14 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, _draft),
-                      child: const Text('Apply'),
+                      child: Text(context.l10n.commonApply),
                     ),
                   ),
                 ],
@@ -1642,7 +1664,7 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
     required ValueChanged<DateTime?> onFromChanged,
     required ValueChanged<DateTime?> onToChanged,
   }) {
-    final fmt = DateFormat('MMM d, yyyy');
+    final fmt = localDateFormat('MMM d, yyyy', 'yMMMd');
     Widget chip(String label, DateTime? value, ValueChanged<DateTime?> setter) {
       return InkWell(
         onTap: () async {
@@ -1669,12 +1691,15 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 8),
-              Text(
-                value == null ? label : fmt.format(value),
-                style: AppTypography.body.copyWith(
-                  color: value == null
-                      ? AppColors.textSecondary
-                      : AppColors.textPrimary,
+              Flexible(
+                child: Text(
+                  value == null ? label : fmt.format(value),
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.body.copyWith(
+                    color: value == null
+                        ? AppColors.textSecondary
+                        : AppColors.textPrimary,
+                  ),
                 ),
               ),
               if (value != null) ...[
@@ -1696,12 +1721,24 @@ class _DealFilterSheetState extends State<_DealFilterSheet> {
 
     return Row(
       children: [
-        Expanded(child: chip('From', fromValue, onFromChanged)),
+        Expanded(
+          child: chip(context.l10n.dealsFilterFrom, fromValue, onFromChanged),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: chip('To', toValue, onToChanged)),
+        Expanded(child: chip(context.l10n.dealsFilterTo, toValue, onToChanged)),
       ],
     );
   }
+}
+
+String _sortLabel(BuildContext context, DealSort sort) {
+  final l10n = context.l10n;
+  return switch (sort) {
+    DealSort.closeDateAsc => l10n.dealsSortCloseDate,
+    DealSort.valueDesc => l10n.dealsSortValue,
+    DealSort.stageAgeDesc => l10n.dealsSortStageAge,
+    DealSort.updatedDesc => l10n.dealsSortUpdated,
+  };
 }
 
 class _SelectableChip extends StatelessWidget {

@@ -1,0 +1,409 @@
+{
+  "dealsMoveFailed": "Failed to move \"{name}\"",
+  "@dealsMoveFailed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsMovedTo": "Moved \"{name}\" to {stage}",
+  "@dealsMovedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsUndo": "Undo",
+  "dealsMarkWonTitle": "Mark as Won?",
+  "dealsMarkLostTitle": "Mark as Lost?",
+  "dealsMarkWonBody": "Closing \"{name}\" as Won will lock in {value}. You can still reopen it later.",
+  "@dealsMarkWonBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsMarkLostBody": "Closing \"{name}\" as Lost will move it out of the active pipeline.",
+  "@dealsMarkLostBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsMarkWon": "Mark Won",
+  "dealsMarkLost": "Mark Lost",
+  "dealsBulkMoved": "{count, plural, =1{Moved 1 deal to {stage}} other{Moved {count} deals to {stage}}}",
+  "@dealsBulkMoved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsBulkMoveFailed": "{failures} of {total} failed to move",
+  "@dealsBulkMoveFailed": {
+    "placeholders": {
+      "failures": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsBulkDeleteTitle": "Delete deals?",
+  "dealsBulkDeleteBody": "{count, plural, =1{Permanently delete 1 deal? This cannot be undone.} other{Permanently delete {count} deals? This cannot be undone.}}",
+  "@dealsBulkDeleteBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsBulkDeleted": "{count, plural, =1{Deleted 1 deal} other{Deleted {count} deals}}",
+  "@dealsBulkDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsBulkDeleteFailed": "{failures} of {total} failed to delete",
+  "@dealsBulkDeleteFailed": {
+    "placeholders": {
+      "failures": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsListTitle": "Deals",
+  "dealsSelectedCount": "{count} selected",
+  "@dealsSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsChangeStageTooltip": "Change stage",
+  "dealsSearchHint": "Search deals...",
+  "dealsQuickMine": "Mine",
+  "dealsQuickStalled": "Stalled",
+  "dealsQuickFilters": "Filters",
+  "dealsQuickFiltersCount": "Filters · {count}",
+  "@dealsQuickFiltersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsClear": "Clear",
+  "dealsSortBy": "Sort by",
+  "dealsSortCloseDate": "Closest close date",
+  "dealsSortValue": "Largest value",
+  "dealsSortStageAge": "Stalest first",
+  "dealsSortUpdated": "Recently updated",
+  "dealsPipeline": "Pipeline",
+  "dealsPipelineApprox": "~ Pipeline",
+  "dealsPipelineDefault": "Default",
+  "dealsForecast": "Forecast",
+  "dealsActive": "Active",
+  "dealsCurrencies": "Currencies",
+  "dealsBoardRefreshFailed": "Could not refresh the board",
+  "dealsEmptyTitle": "No deals yet",
+  "dealsNoResultsTitle": "No results found",
+  "dealsEmptyBody": "Start by creating your first deal",
+  "dealsNoResultsBody": "Try adjusting your filters",
+  "dealsAddDeal": "Add Deal",
+  "dealsClearFilters": "Clear filters",
+  "dealsMixedCurrencySuffix": " + mix",
+  "dealsFilterTitle": "Filter deals",
+  "dealsFilterStage": "Stage",
+  "dealsFilterNoUsers": "No users loaded",
+  "dealsFilterCreated": "Created",
+  "dealsFilterClosing": "Closing",
+  "dealsFilterAmount": "Amount",
+  "dealsFilterMin": "Min",
+  "dealsFilterMax": "Max",
+  "dealsFilterStalledOnly": "Only stalled deals",
+  "dealsFilterStalledHint": "Deals rotting in their stage, past its expected days",
+  "dealsFilterFrom": "From",
+  "dealsFilterTo": "To",
+  "dealsDetailNotFoundBody": "It may have been deleted, or you may not have access to it",
+  "dealsDetailCheckConnection": "Check your connection and try again",
+  "dealsDetailNotFoundTitle": "Deal not found",
+  "dealsDetailLoadFailed": "Could not load this deal",
+  "dealsDetailTabOverview": "Overview",
+  "dealsDetailTabActivity": "Activity",
+  "dealsDetailTabNotes": "Notes",
+  "dealsDetailTabNotesCount": "Notes ({count})",
+  "@dealsDetailTabNotesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsDetailTabFiles": "Files",
+  "dealsDetailTabFilesCount": "Files ({count})",
+  "@dealsDetailTabFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsDetailOverdue": "Overdue",
+  "dealsDetailClosesIn": "Closes in {days}d",
+  "@dealsDetailClosesIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsDetailWinProbability": "Win Probability",
+  "dealsDetailInfo": "Deal Information",
+  "dealsDetailNotes": "Notes",
+  "dealsDetailProducts": "Products",
+  "dealsDetailContacts": "Contacts",
+  "dealsDetailCustomFields": "Custom Fields",
+  "dealsDetailAssignedTo": "Assigned To",
+  "dealsDetailTeams": "Teams",
+  "dealsDetailTags": "Tags",
+  "dealsDetailMetadata": "Metadata",
+  "dealsDetailAmountLabel": "AMOUNT",
+  "dealsDetailExpectedCloseLabel": "EXPECTED CLOSE",
+  "dealsDetailNotSet": "Not set",
+  "dealsDetailTypeLabel": "TYPE",
+  "dealsDetailSourceLabel": "SOURCE",
+  "dealsDetailCurrencyLabel": "CURRENCY",
+  "dealsDetailQty": "Qty: {quantity}",
+  "@dealsDetailQty": {
+    "placeholders": {
+      "quantity": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailTotalLabel": "TOTAL",
+  "dealsDetailContactFallback": "Contact",
+  "dealsDetailUnassigned": "Unassigned",
+  "dealsDetailCreatedByLabel": "CREATED BY",
+  "dealsDetailCreatedOnLabel": "CREATED ON",
+  "dealsDetailWonByLabel": "WON BY",
+  "dealsDetailClosedByLabel": "CLOSED BY",
+  "dealsDetailClosedOnLabel": "CLOSED ON",
+  "dealsDetailTimelineCommented": "commented",
+  "dealsDetailTimelineSomeone": "Someone",
+  "dealsDetailTimelineUploaded": "uploaded {fileName}",
+  "@dealsDetailTimelineUploaded": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailTimelineCreatedBy": "created the deal",
+  "dealsDetailTimelineCreated": "Deal created",
+  "dealsDetailNoNotes": "No notes yet",
+  "dealsDetailNoNotesBody": "Add a note to keep track of important details",
+  "dealsDetailAddNoteHint": "Add a note...",
+  "dealsDetailNoteAdded": "Note added",
+  "dealsDetailNoteAddFailed": "Failed to add note",
+  "dealsDetailNoteUpdated": "Note updated",
+  "dealsDetailNoteUpdateFailed": "Failed to update note",
+  "dealsDetailNoteDeleted": "Note deleted",
+  "dealsDetailNoteDeleteFailed": "Failed to delete note",
+  "dealsDetailNoFiles": "No files attached",
+  "dealsDetailNoFilesBody": "Attach a contract, a quote, or a photo.",
+  "dealsDetailAttachmentNoFile": "That attachment has no file.",
+  "dealsDetailDownloadFailed": "Could not download that file.",
+  "dealsDetailWonBanner": "Deal Won!",
+  "dealsDetailLostBanner": "Deal Lost",
+  "dealsDetailCreateInvoice": "Create invoice",
+  "dealsDetailUpdating": "Updating...",
+  "dealsDetailMoveTo": "Move to {stage}",
+  "@dealsDetailMoveTo": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailMarkAsLost": "Mark as Lost",
+  "dealsDetailInvoiceCreated": "Draft invoice created",
+  "dealsDetailReopenTitle": "Reopen as {stage}?",
+  "@dealsDetailReopenTitle": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailMoveTitle": "Move to {stage}?",
+  "@dealsDetailMoveTitle": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailReopenBody": "This deal is lost. Reopening will move it back into the pipeline.",
+  "dealsDetailMoveBody": "This will update the deal stage.",
+  "dealsDetailReopen": "Reopen",
+  "dealsDetailMove": "Move",
+  "dealsDetailMarkLostBody": "Are you sure you want to mark this deal as lost?",
+  "dealsDetailMovedTo": "Deal moved to {stage}",
+  "@dealsDetailMovedTo": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailStageUpdateFailed": "Failed to update stage",
+  "dealsDetailEditDeal": "Edit Deal",
+  "dealsDetailCreateEstimate": "Create estimate",
+  "dealsDetailDeleteDeal": "Delete Deal",
+  "dealsDetailDeleteTitle": "Delete Deal?",
+  "dealsDetailCannotUndo": "This action cannot be undone.",
+  "dealsDetailDeleted": "Deal deleted",
+  "dealsDetailDeleteFailed": "Failed to delete deal",
+  "dealsDetailHintWon": "Deal won",
+  "dealsDetailHintLost": "Deal lost",
+  "dealsDetailHintDefault": "Default for {stage}",
+  "@dealsDetailHintDefault": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsDetailHintHigh": "High chance of winning",
+  "dealsDetailHintGood": "Good progress, keep pushing",
+  "dealsDetailHintEarly": "Still early stage",
+  "dealsDetailHintLow": "Low probability",
+  "dealsDetailMovedToday": "Moved into this stage today",
+  "dealsDetailDaysInStage": "{days, plural, =1{1 day in this stage} other{{days} days in this stage}}",
+  "@dealsDetailDaysInStage": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsFormFirstOpenStage": "First open stage",
+  "dealsFormLoadFailed": "Failed to load deal",
+  "dealsFormFixErrors": "Please fix the errors in the form",
+  "dealsFormFieldRequired": "{field} is required",
+  "@dealsFormFieldRequired": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsFormUpdated": "Deal updated successfully",
+  "dealsFormCreated": "Deal created successfully",
+  "dealsFormSaveFailed": "Failed to save deal",
+  "dealsFormEditTitle": "Edit Deal",
+  "dealsFormNewTitle": "New Deal",
+  "dealsFormUpdateButton": "Update Deal",
+  "dealsFormCreateButton": "Create Deal",
+  "dealsFormSaveAndAddAnother": "Save & Add Another",
+  "dealsFormSectionBasic": "Basic Information",
+  "dealsFormSectionDetails": "Deal Details",
+  "dealsFormSectionRelationships": "Relationships",
+  "dealsFormSectionClassification": "Classification",
+  "dealsFormSectionCustomFields": "Custom Fields",
+  "dealsFormSectionNotes": "Notes",
+  "dealsFormNotesLabel": "Notes",
+  "dealsFormNotesHint": "Add any additional notes about this deal...",
+  "dealsFormNameLabel": "Deal Name *",
+  "dealsFormNameHint": "Enterprise Contract",
+  "dealsFormNameRequired": "Deal name is required",
+  "dealsFormNameTooLong": "Deal name must be 255 characters or fewer",
+  "dealsFormInvalidNumber": "Enter a valid number",
+  "dealsFormAmountNegative": "Amount must be ≥ 0",
+  "dealsFormAmountTooLarge": "Amount is too large",
+  "dealsFormPipelineLabel": "Pipeline",
+  "dealsFormDefaultPipeline": "Default pipeline",
+  "dealsFormStageLabel": "Stage",
+  "dealsFormProbabilityLabel": "Probability (%)",
+  "dealsFormProbabilityRange": "Probability must be 0-100",
+  "dealsFormCloseDateLabel": "Expected Close Date",
+  "dealsFormAccountLabel": "Account",
+  "dealsFormAccountPlaceholder": "Select account",
+  "dealsFormContactsLabel": "Contacts",
+  "dealsFormContactsPlaceholder": "Select contacts",
+  "dealsFormAssignedToLabel": "Assigned To",
+  "dealsFormAssigneesPlaceholder": "Select assignees",
+  "dealsFormTeamsLabel": "Teams",
+  "dealsFormTeamsPlaceholder": "Select teams",
+  "dealsFormTagsLabel": "Tags",
+  "dealsFormTagsPlaceholder": "Select tags",
+  "dealsFormTypeLabel": "Opportunity Type",
+  "dealsFormSourceLabel": "Lead Source",
+  "dealsFormLoading": "Loading...",
+  "dealsFormMoreCount": "+{count} more",
+  "@dealsFormMoreCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsFormSelectDate": "Select date",
+  "dealsFormSelectPipeline": "Select Pipeline",
+  "dealsFormPipelineDefault": "Default",
+  "dealsFormStagesLoading": "The stages are still loading. Try again shortly.",
+  "dealsFormSelectStage": "Select Stage",
+  "dealsFormSelectType": "Select Opportunity Type",
+  "dealsFormSelectSource": "Select Lead Source",
+  "dealsFormSelectCurrency": "Select Currency",
+  "dealsFormSelectAccount": "Select Account",
+  "dealsFormSearchAccounts": "Search accounts...",
+  "dealsFormNoAccounts": "No accounts found",
+  "dealsFormSelectContacts": "Select Contacts",
+  "dealsFormSearchContacts": "Search contacts...",
+  "dealsFormNoContacts": "No contacts found",
+  "dealsFormAssignTo": "Assign To",
+  "dealsFormSearchUsers": "Search users...",
+  "dealsFormNoUsers": "No users found",
+  "dealsFormSelectTeams": "Select Teams",
+  "dealsFormSearchTeams": "Search teams...",
+  "dealsFormNoTeams": "No teams found",
+  "dealsFormSelectTags": "Select Tags",
+  "dealsFormSearchTags": "Search tags...",
+  "dealsFormNoTags": "No tags found",
+  "dealsFormDoneCount": "Done ({count})",
+  "@dealsFormDoneCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dealsDetailStartProject": "Start a project",
+  "dealsDetailNone": "None",
+  "dealsFormSourceNone": "None",
+  "dealsFormSourcesLoadFailed": "Could not load the lead sources. Try again."
+}

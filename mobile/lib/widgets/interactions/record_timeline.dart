@@ -3,6 +3,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/interaction.dart';
+import '../../l10n/l10n.dart';
+import 'log_interaction_sheet.dart' show callOutcomeLabel;
 
 /// One row of a record's timeline: a comment, a file, an interaction or the
 /// record's creation.
@@ -53,7 +55,10 @@ class TimelineEvent {
       summary: i.title,
       detail: _join([
         i.loggedByName,
-        CallOutcome.parse(i.outcome)?.label,
+        switch (CallOutcome.parse(i.outcome)) {
+          final o? => callOutcomeLabel(o),
+          null => null,
+        },
         i.durationText,
         i.subject,
       ]),
@@ -120,7 +125,11 @@ class TimelineEventRow extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const TextSpan(text: ' '),
+                                TextSpan(
+                                  text: context
+                                      .l10n
+                                      .interactionsTimelineActorSeparator,
+                                ),
                               ],
                               TextSpan(text: event.summary),
                             ],
@@ -136,7 +145,7 @@ class TimelineEventRow extends StatelessWidget {
                       ),
                       if (event.onEdit != null || event.onDelete != null)
                         PopupMenuButton<VoidCallback>(
-                          tooltip: 'Note actions',
+                          tooltip: context.l10n.interactionsNoteActions,
                           icon: Icon(
                             LucideIcons.ellipsis,
                             size: 18,
@@ -148,13 +157,13 @@ class TimelineEventRow extends StatelessWidget {
                             if (event.onEdit != null)
                               PopupMenuItem(
                                 value: event.onEdit,
-                                child: const Text('Edit'),
+                                child: Text(context.l10n.commonEdit),
                               ),
                             if (event.onDelete != null)
                               PopupMenuItem(
                                 value: event.onDelete,
                                 child: Text(
-                                  'Delete',
+                                  context.l10n.commonDelete,
                                   style: TextStyle(color: AppColors.danger600),
                                 ),
                               ),
@@ -199,11 +208,14 @@ class TimelineEventRow extends StatelessWidget {
 
   String _relTime(DateTime dt) {
     final d = DateTime.now().difference(dt);
-    if (d.inDays > 30) return '${(d.inDays / 30).floor()}mo';
-    if (d.inDays > 0) return '${d.inDays}d';
-    if (d.inHours > 0) return '${d.inHours}h';
-    if (d.inMinutes > 0) return '${d.inMinutes}m';
-    return 'now';
+    final l10n = appL10n;
+    if (d.inDays > 30) {
+      return l10n.interactionsAgoMonths((d.inDays / 30).floor());
+    }
+    if (d.inDays > 0) return l10n.interactionsAgoDays(d.inDays);
+    if (d.inHours > 0) return l10n.interactionsAgoHours(d.inHours);
+    if (d.inMinutes > 0) return l10n.interactionsAgoMinutes(d.inMinutes);
+    return l10n.interactionsAgoNow;
   }
 }
 
@@ -229,13 +241,15 @@ class InteractionsBar extends StatelessWidget {
             style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: onLog,
             icon: const Icon(LucideIcons.notebookPen, size: 16),
-            label: const Text('Log activity'),
+            label: Text(context.l10n.interactionsLogActivity),
           ),
           if (hidden > 0) ...[
             const SizedBox(height: 8),
             Text(
-              'Showing the newest ${answer.items.length} of '
-              '${answer.count} activities.',
+              context.l10n.interactionsShowingNewest(
+                answer.count,
+                answer.items.length,
+              ),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),

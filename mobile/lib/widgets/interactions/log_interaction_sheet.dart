@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/interaction.dart';
+import '../../l10n/l10n.dart';
 import '../../services/after_tap.dart';
 
 /// "Log this call to Maria?" after a tap, or "Log activity" when [tap] is
@@ -91,11 +92,12 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
 
   String get _title {
     final tap = widget.tap;
-    if (tap == null) return 'Log activity';
+    final l10n = context.l10n;
+    if (tap == null) return l10n.interactionsLogActivity;
     final who = tap.personName.trim();
     return who.isEmpty
-        ? 'Log this ${tap.kind.noun}?'
-        : 'Log this ${tap.kind.noun} to $who?';
+        ? l10n.interactionsLogTitle(tap.kind.value)
+        : l10n.interactionsLogTitleTo(tap.kind.value, who);
   }
 
   Future<void> _submit() async {
@@ -108,7 +110,7 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
       } else if (_minutes.text.trim().isNotEmpty) {
         final minutes = int.tryParse(_minutes.text.trim());
         if (minutes == null || minutes < 0) {
-          setState(() => _error = 'Duration is a whole number of minutes.');
+          setState(() => _error = context.l10n.interactionsDurationInvalid);
           return;
         }
         seconds = minutes * 60;
@@ -173,18 +175,21 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
                   _chips<InteractionKind>(
                     options: InteractionKind.loggable,
                     selected: _kind,
-                    label: (k) => k.label,
+                    label: interactionKindLabel,
                     onSelected: (k) => setState(() => _kind = k ?? _kind),
                   ),
                 ],
                 if (_kind == InteractionKind.call) ...[
                   const SizedBox(height: 12),
-                  Text('Outcome', style: AppTypography.labelSmall),
+                  Text(
+                    context.l10n.interactionsOutcome,
+                    style: AppTypography.labelSmall,
+                  ),
                   const SizedBox(height: 6),
                   _chips<CallOutcome>(
                     options: CallOutcome.values,
                     selected: _outcome,
-                    label: (o) => o.label,
+                    label: callOutcomeLabel,
                     onSelected: (o) => setState(() => _outcome = o),
                   ),
                 ],
@@ -198,10 +203,10 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
                       if (_estimate != null) setState(() => _estimate = null);
                     },
                     decoration: InputDecoration(
-                      labelText: 'Duration',
-                      suffixText: 'min',
+                      labelText: context.l10n.interactionsDuration,
+                      suffixText: context.l10n.interactionsMinutesSuffix,
                       helperText: _estimate != null
-                          ? 'Estimated from your time away'
+                          ? context.l10n.interactionsDurationEstimated
                           : null,
                     ),
                   ),
@@ -213,7 +218,9 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
                   maxLines: 5,
                   inputFormatters: [LengthLimitingTextInputFormatter(10000)],
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Note'),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.interactionsNote,
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 8),
@@ -235,7 +242,11 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
                         onPressed: _saving
                             ? null
                             : () => Navigator.of(context).pop(false),
-                        child: Text(widget.tap == null ? 'Cancel' : 'Skip'),
+                        child: Text(
+                          widget.tap == null
+                              ? context.l10n.commonCancel
+                              : context.l10n.interactionsSkip,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -253,7 +264,11 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(failed ? 'Retry' : 'Log'),
+                            : Text(
+                                failed
+                                    ? context.l10n.commonRetry
+                                    : context.l10n.interactionsLog,
+                              ),
                       ),
                     ),
                   ],
@@ -286,4 +301,28 @@ class _LogInteractionSheetState extends State<LogInteractionSheet> {
       ],
     );
   }
+}
+
+/// The kind as the sheet and the timeline name it.
+String interactionKindLabel(InteractionKind kind) {
+  final l10n = appL10n;
+  return switch (kind) {
+    InteractionKind.call => l10n.interactionsKindCall,
+    InteractionKind.meeting => l10n.interactionsKindMeeting,
+    InteractionKind.email => l10n.interactionsKindEmail,
+    InteractionKind.whatsapp => l10n.interactionsKindWhatsapp,
+    InteractionKind.sms => l10n.interactionsKindSms,
+    InteractionKind.enquiry => l10n.interactionsKindEnquiry,
+  };
+}
+
+String callOutcomeLabel(CallOutcome outcome) {
+  final l10n = appL10n;
+  return switch (outcome) {
+    CallOutcome.connected => l10n.interactionsOutcomeConnected,
+    CallOutcome.noAnswer => l10n.interactionsOutcomeNoAnswer,
+    CallOutcome.voicemail => l10n.interactionsOutcomeVoicemail,
+    CallOutcome.busy => l10n.interactionsOutcomeBusy,
+    CallOutcome.wrongNumber => l10n.interactionsOutcomeWrongNumber,
+  };
 }

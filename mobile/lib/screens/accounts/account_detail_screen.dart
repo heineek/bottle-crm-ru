@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../data/models/lookup_models.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/account.dart';
 import '../../data/models/deal.dart' show Currency;
@@ -15,6 +16,7 @@ import '../../routes/app_router.dart';
 import '../../widgets/common/custom_fields_display.dart';
 import '../../widgets/duplicates/duplicates_panel.dart';
 import '../../widgets/objects/related_objects_section.dart';
+import '../../l10n/l10n.dart';
 
 /// One account: who they are, what they are worth, and what is open against
 /// them.
@@ -60,8 +62,8 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
       // and one this user may not open. Offline or a 500 is "could not load".
       if (account == null) {
         _error = notFound
-            ? 'This account does not exist, or you do not have access to it'
-            : 'Could not load this account';
+            ? context.l10n.accountsDetailNotFound
+            : context.l10n.accountsFormLoadFailed;
       }
     });
   }
@@ -77,19 +79,19 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this account?'),
-        content: Text(
-          'Deleting ${account.name} cannot be undone. Its deals and tickets '
-          'are deleted with it, and its contacts lose the link.',
-        ),
+        title: Text(context.l10n.accountsDetailDeleteTitle),
+        content: Text(context.l10n.accountsDetailDeleteBody(account.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -118,7 +120,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(account?.name ?? 'Account'),
+        title: Text(account?.name ?? context.l10n.accountsDetailTitleFallback),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -134,14 +136,14 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
               ref.watch(moduleOnProvider('invoices')))
             IconButton(
               icon: const Icon(LucideIcons.receiptText, size: 20),
-              tooltip: 'Statement',
+              tooltip: context.l10n.accountsDetailStatementTooltip,
               onPressed: () =>
                   context.push('${AppRoutes.accounts}/${account.id}/statement'),
             ),
           if (account != null)
             IconButton(
               icon: const Icon(LucideIcons.edit3, size: 20),
-              tooltip: 'Edit account',
+              tooltip: context.l10n.accountsDetailEditTooltip,
               onPressed: () async {
                 await context.push('${AppRoutes.accounts}/${account.id}/edit');
                 if (mounted) _load();
@@ -150,7 +152,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
           if (_canDelete)
             IconButton(
               icon: const Icon(LucideIcons.trash2, size: 20),
-              tooltip: 'Delete account',
+              tooltip: context.l10n.accountsDetailDeleteTooltip,
               onPressed: _deleting ? null : _confirmDelete,
             ),
         ],
@@ -170,12 +172,15 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
             Icon(LucideIcons.alertCircle, size: 40, color: AppColors.danger500),
             const SizedBox(height: 12),
             Text(
-              _error ?? 'Could not load this account',
+              _error ?? context.l10n.accountsFormLoadFailed,
               textAlign: TextAlign.center,
               style: AppTypography.body,
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _load, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _load,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -193,17 +198,29 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
           _rollups(account),
           _details(account),
           _customFields(account),
-          _relationSection('Contacts', LucideIcons.users, account.contacts),
+          _relationSection(
+            context.l10n.accountsDetailContacts,
+            LucideIcons.users,
+            account.contacts,
+          ),
           if (ref.watch(moduleOnProvider('deals')))
             _relationSection(
-              'Deals',
+              context.l10n.accountsDetailDeals,
               LucideIcons.trendingUp,
               account.opportunities,
             ),
           if (ref.watch(moduleOnProvider('tickets')))
-            _relationSection('Tickets', LucideIcons.lifeBuoy, account.cases),
+            _relationSection(
+              context.l10n.accountsDetailTickets,
+              LucideIcons.lifeBuoy,
+              account.cases,
+            ),
           if (ref.watch(moduleOnProvider('tasks')))
-            _relationSection('Tasks', LucideIcons.checkCheck, account.tasks),
+            _relationSection(
+              context.l10n.accountsDetailTasks,
+              LucideIcons.checkCheck,
+              account.tasks,
+            ),
           RelatedObjectsSection(to: 'account', recordId: account.id),
         ],
       ),
@@ -225,12 +242,19 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
         children: [
           if (dealsOn) ...[
             _metric(
-              'Open pipeline',
+              context.l10n.accountsDetailOpenPipeline,
               _perCurrency(account, rollups, (m) => m.openPipeline),
             ),
-            _metric('Won', _perCurrency(account, rollups, (m) => m.wonAmount)),
+            _metric(
+              context.l10n.accountsDetailWon,
+              _perCurrency(account, rollups, (m) => m.wonAmount),
+            ),
           ],
-          if (ticketsOn) _metric('Open tickets', '${rollups.openTickets ?? 0}'),
+          if (ticketsOn)
+            _metric(
+              context.l10n.accountsDetailOpenTickets,
+              '${rollups.openTickets ?? 0}',
+            ),
         ],
       ),
     );
@@ -278,33 +302,40 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
   }
 
   Widget _details(Account account) {
+    final l10n = context.l10n;
     final rows = <(String, String?)>[
-      ('Website', account.website),
-      ('Email', account.email),
-      ('Phone', account.phone),
-      ('Industry', account.industry),
+      (l10n.accountsFormWebsite, account.website),
+      (l10n.commonEmail, account.email),
+      (l10n.commonPhone, account.phone),
       (
-        'Employees',
+        l10n.accountsFormIndustry,
+        account.industry == null ? null : industryLabel(account.industry),
+      ),
+      (
+        l10n.accountsDetailEmployees,
         account.numberOfEmployees == null
             ? null
             : '${account.numberOfEmployees}',
       ),
-      ('Annual revenue', account.annualRevenue),
-      ('Address', _address(account)),
+      (l10n.accountsDetailAnnualRevenue, account.annualRevenue),
+      (l10n.accountsFormAddress, _address(account)),
       (
-        'Assigned to',
+        l10n.commonAssignedTo,
         account.assignedToNames.isEmpty
             ? null
             : account.assignedToNames.join(', '),
       ),
-      ('Tags', account.tagNames.isEmpty ? null : account.tagNames.join(', ')),
-      ('Notes', account.description),
+      (
+        l10n.commonTags,
+        account.tagNames.isEmpty ? null : account.tagNames.join(', '),
+      ),
+      (l10n.commonNotes, account.description),
     ].where((row) => row.$2 != null && row.$2!.trim().isNotEmpty).toList();
 
     if (rows.isEmpty) {
       return _card(
         child: Text(
-          'No details recorded yet.',
+          l10n.accountsDetailNoDetails,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
       );
@@ -355,7 +386,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                'Custom fields',
+                context.l10n.accountsDetailCustomFields,
                 style: AppTypography.label.copyWith(
                   color: AppColors.textSecondary,
                 ),

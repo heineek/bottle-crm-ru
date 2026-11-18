@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../config/api_config.dart';
@@ -13,6 +12,8 @@ import '../../routes/app_router.dart';
 import '../../services/attachment_upload.dart';
 import '../invoices/invoice_format.dart';
 import '../invoices/invoice_shell.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// An account's statement (#810): per currency, the opening balance, the
 /// period's invoices, payments and cancellations with a running balance, and
@@ -81,7 +82,9 @@ class _AccountStatementScreenState
     if (!result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.error ?? 'Could not save the statement'),
+          content: Text(
+            result.error ?? context.l10n.accountsStatementSaveFailed,
+          ),
           backgroundColor: AppColors.danger600,
         ),
       );
@@ -96,7 +99,7 @@ class _AccountStatementScreenState
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Statement'),
+        title: Text(context.l10n.accountsStatementTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -108,7 +111,7 @@ class _AccountStatementScreenState
           if (statement != null && !async.hasError)
             IconButton(
               icon: const Icon(LucideIcons.download, size: 20),
-              tooltip: 'Save PDF',
+              tooltip: context.l10n.accountsStatementSavePdf,
               onPressed: _saving ? null : () => _savePdf(statement),
             ),
         ],
@@ -118,14 +121,13 @@ class _AccountStatementScreenState
         error: (error, _) {
           if (error is StatementRefusal && error.forbidden) {
             return InvoiceErrorState(
-              message: 'Statements are for administrators',
+              message: context.l10n.accountsStatementAdminsOnly,
               detail: error.message,
             );
           }
           if (error is StatementRefusal && error.statusCode == 404) {
-            return const InvoiceErrorState(
-              message:
-                  'This account does not exist, or you do not have access to it',
+            return InvoiceErrorState(
+              message: context.l10n.accountsDetailNotFound,
             );
           }
           if (error is StatementRefusal) {
@@ -147,7 +149,7 @@ class _AccountStatementScreenState
             );
           }
           return InvoiceErrorState(
-            message: 'Could not load the statement',
+            message: context.l10n.accountsStatementLoadFailed,
             onRetry: () => ref.invalidate(accountStatementProvider(_request)),
           );
         },
@@ -162,8 +164,7 @@ class _AccountStatementScreenState
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                   child: Text(
-                    'Nothing was billed or paid in this period, and nothing '
-                    'is owed.',
+                    context.l10n.accountsStatementNothing,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -198,7 +199,7 @@ class _AccountStatementScreenState
             ),
           if (start != null && end != null)
             Text(
-              '${_day(start)} to ${_day(end)}',
+              context.l10n.accountsStatementPeriod(_day(start), _day(end)),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -211,7 +212,7 @@ class _AccountStatementScreenState
             children: [
               OutlinedButton.icon(
                 icon: const Icon(LucideIcons.calendarRange, size: 16),
-                label: const Text('Change period'),
+                label: Text(context.l10n.accountsStatementChangePeriod),
                 onPressed: () => _pickPeriod(statement),
               ),
               if (start != null)
@@ -220,11 +221,11 @@ class _AccountStatementScreenState
                     final previous = previousMonth(start);
                     _show(previous.start, previous.end);
                   },
-                  child: const Text('Previous month'),
+                  child: Text(context.l10n.accountsStatementPreviousMonth),
                 ),
               TextButton(
                 onPressed: () => _show(null, null),
-                child: const Text('This month'),
+                child: Text(context.l10n.accountsStatementThisMonth),
               ),
             ],
           ),
@@ -234,6 +235,7 @@ class _AccountStatementScreenState
   }
 
   Widget _summary(StatementSection section, {required bool labelled}) {
+    final l10n = context.l10n;
     final symbol = Currency.symbolFor(section.currency);
     final inCredit = section.closingBalance < 0;
     return Container(
@@ -247,7 +249,7 @@ class _AccountStatementScreenState
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                'In ${section.currency}',
+                l10n.accountsStatementInCurrency(section.currency),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w600,
@@ -255,22 +257,27 @@ class _AccountStatementScreenState
               ),
             ),
           InvoiceFactRow(
-            label: 'Opening balance',
+            label: l10n.accountsStatementOpeningBalance,
             value: money(section.openingBalance, symbol),
           ),
           InvoiceFactRow(
-            label: 'Invoiced',
+            label: l10n.accountsStatementInvoiced,
             value: money(section.invoiced, symbol),
           ),
-          InvoiceFactRow(label: 'Paid', value: money(section.paid, symbol)),
+          InvoiceFactRow(
+            label: l10n.accountsStatementPaid,
+            value: money(section.paid, symbol),
+          ),
           if (section.cancelled > 0)
             InvoiceFactRow(
-              label: 'Cancelled',
+              label: l10n.accountsStatementCancelled,
               value: money(section.cancelled, symbol),
             ),
           const Divider(height: 18),
           InvoiceFactRow(
-            label: inCredit ? 'In credit' : 'Balance due',
+            label: inCredit
+                ? l10n.accountsStatementInCredit
+                : l10n.accountsStatementBalanceDue,
             value: money(section.closingBalance.abs(), symbol),
           ),
         ],
@@ -332,7 +339,9 @@ class _AccountStatementScreenState
                           ),
                         ),
                         Text(
-                          'Balance ${money(entry.balance, symbol)}',
+                          context.l10n.accountsStatementEntryBalance(
+                            money(entry.balance, symbol),
+                          ),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -355,5 +364,5 @@ String _ymd(DateTime d) =>
 
 String _day(String iso) {
   final day = DateTime.tryParse(iso);
-  return day == null ? iso : DateFormat('d MMM yyyy').format(day);
+  return day == null ? iso : localDateFormat('d MMM yyyy', 'yMMMd').format(day);
 }
