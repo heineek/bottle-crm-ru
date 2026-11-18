@@ -4,6 +4,7 @@
   import ProjectForm from '#lib/v2/components/ProjectForm.svelte';
   import { isOrgAdmin } from '#lib/admin.js';
   import { ChevronRight } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -16,13 +17,13 @@
   );
 </script>
 
-<PageHeader title="Edit project" record center width="62ch">
+<PageHeader title={m.projects_edit_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('projects')}>Projects</a>
+    <a href={resolve('projects')}>{m.projects_title()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`projects/${data.project.id}`)}>{data.project.name}</a>
     <ChevronRight size={12} />
-    <span>Edit</span>
+    <span>{m.common_edit()}</span>
   {/snippet}
 </PageHeader>
 
@@ -30,7 +31,7 @@
   <div class="v2-pad">
     <ProjectForm
       action="?/save"
-      submitLabel="Save changes"
+      submitLabel={m.projects_save_changes()}
       values={data.values}
       typed={form?.values}
       error={form?.error}

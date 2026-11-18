@@ -17,6 +17,7 @@
   import {
     INVOICE_STATUS_TONE,
     TASK_STATUS,
+    TASK_STATUS_LABEL,
     TASK_STATUS_TONE,
     invoiceStatusLabel
   } from '#lib/v2/enums.js';
@@ -37,6 +38,8 @@
   import { isBilled } from '#lib/v2/time-entry.js';
   import { ChevronRight, Play, Plus, Square, Trash2 } from '@lucide/svelte';
   import type { components } from '#lib/api-schema.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -64,12 +67,12 @@
   );
 
   const TABS: { key: string; label: string; on: 'tasks' | 'timesheet' | 'invoices' | null }[] = [
-    { key: 'overview', label: 'Overview', on: null },
-    { key: 'tasks', label: 'Tasks', on: 'tasks' },
-    { key: 'time', label: 'Time', on: 'timesheet' },
-    { key: 'invoices', label: 'Invoices', on: 'invoices' },
-    { key: 'files', label: 'Files', on: null },
-    { key: 'comments', label: 'Comments', on: null }
+    { key: 'overview', label: m.projects_tab_overview(), on: null },
+    { key: 'tasks', label: m.projects_tab_tasks(), on: 'tasks' },
+    { key: 'time', label: m.projects_tab_time(), on: 'timesheet' },
+    { key: 'invoices', label: m.projects_tab_invoices(), on: 'invoices' },
+    { key: 'files', label: m.projects_tab_files(), on: null },
+    { key: 'comments', label: m.projects_tab_comments(), on: null }
   ];
   let tabs = $derived(TABS.filter((t) => !t.on || data.on[t.on]));
 
@@ -125,7 +128,7 @@
 
 <PageHeader title={project.name} record>
   {#snippet crumb()}
-    <a href={resolve('projects')}>Projects</a>
+    <a href={resolve('projects')}>{m.projects_title()}</a>
     {#if project.account.id}
       <ChevronRight size={12} />
       <a href={resolve(`accounts/${project.account.id}`)}>{project.account.name}</a>
@@ -137,27 +140,35 @@
     </Pill>
     <span>{BILLING_TYPE_LABEL[project.billing_type] ?? ''}</span>
     {#if project.deal}
-      <span>· from <a href={resolve(`pipeline/${project.deal.id}`)}>{project.deal.name}</a></span>
+      <span
+        >· {#each messageParts(m.projects_from_deal({ deal: slot('deal') })) as p, i (i)}{#if p.key === 'deal'}<a
+              href={resolve(`pipeline/${project.deal.id}`)}>{project.deal.name}</a
+            >{:else}{p.text}{/if}{/each}</span
+      >
     {/if}
     {#if project.estimate}
-      <span>· from estimate <span class="v2-num">{project.estimate.estimate_number}</span></span>
+      <span
+        >· {#each messageParts(m.projects_from_estimate({ number: slot('number') })) as p, i (i)}{#if p.key === 'number'}<span
+              class="v2-num">{project.estimate.estimate_number}</span
+            >{:else}{p.text}{/if}{/each}</span
+      >
     {/if}
   {/snippet}
   {#snippet actions()}
     {#if data.canEdit}
-      <a class="v2-btn" href={resolve(`projects/${project.id}/edit`)}>Edit</a>
+      <a class="v2-btn" href={resolve(`projects/${project.id}/edit`)}>{m.common_edit()}</a>
     {/if}
     {#if data.offers.billTime}
       <a class="v2-btn" href={resolve(asInternalPath(`/projects/${project.id}?bill=1`))}
-        >Bill time</a
+        >{m.projects_bill_time()}</a
       >
     {/if}
     {#if data.canDelete}
       <ConfirmAction
         action="?/delete"
-        label="Delete"
-        confirmLabel="Delete for good"
-        explain="Deletes {project.name}. Its tasks, time and invoices stay, no longer linked to it."
+        label={m.common_delete()}
+        confirmLabel={m.projects_delete_confirm()}
+        explain={m.projects_delete_explain({ name: project.name })}
       />
     {/if}
   {/snippet}
@@ -169,7 +180,7 @@
   </div>
 {/if}
 
-<nav class="v2-tabs" aria-label="Project sections">
+<nav class="v2-tabs" aria-label={m.projects_sections_label()}>
   {#each tabs as t (t.key)}
     <a
       href={resolve(asInternalPath(`/projects/${project.id}?tab=${t.key}`))}
@@ -187,34 +198,33 @@
       {@const u = data.bill.unbilled}
       <section class="v2-card panel" aria-labelledby="bill-head">
         <div class="panel-head">
-          <div class="v2-label" id="bill-head">Bill time</div>
-          <a class="v2-btn v2-btn-sm" href={resolve(`projects/${project.id}`)}>Close</a>
+          <div class="v2-label" id="bill-head">{m.projects_bill_time()}</div>
+          <a class="v2-btn v2-btn-sm" href={resolve(`projects/${project.id}`)}>{m.common_close()}</a>
         </div>
         <form method="GET" class="bill-date">
           <input type="hidden" name="bill" value="1" />
           <label class="v2-field">
-            <span class="v2-label">Bill up to</span>
+            <span class="v2-label">{m.projects_bill_up_to()}</span>
             <input class="v2-input" type="date" name="up_to" value={data.bill.upTo} />
           </label>
-          <button class="v2-btn" type="submit">Check</button>
+          <button class="v2-btn" type="submit">{m.projects_bill_check()}</button>
         </form>
         {#if u === null}
           <p class="v2-sub panel-text">
-            The preview could not be loaded. The invoice still takes every billable entry not yet
-            billed up to this date.
+            {m.projects_bill_preview_failed()}
           </p>
         {:else if u.entry_count === 0}
           <p class="v2-sub panel-text">
-            Nothing to bill up to {longDate(data.bill.upTo)}. Every billable entry before then is
-            already billed.
+            {m.projects_bill_nothing({ date: longDate(data.bill.upTo) })}
           </p>
         {:else}
           <p class="panel-text">
-            <b class="v2-num">{u.entry_count}</b>
-            {u.entry_count === 1 ? 'entry' : 'entries'},
-            <b class="v2-num">{hoursText(u.hours)}</b>,
-            <b class="v2-num">{money(u.value, u.currency ?? project.currency)}</b>
-            not yet billed, up to {longDate(data.bill.upTo)}.
+            {#each messageParts(m.projects_bill_summary({ count: u.entry_count, entries: slot('entries'), hours: slot('hours'), value: slot('value'), date: longDate(data.bill.upTo) })) as p, i (i)}{#if p.key === 'entries'}<b
+                  class="v2-num">{u.entry_count}</b
+                >{:else if p.key === 'hours'}<b class="v2-num">{hoursText(u.hours)}</b
+                >{:else if p.key === 'value'}<b class="v2-num"
+                  >{money(u.value, u.currency ?? project.currency)}</b
+                >{:else}{p.text}{/if}{/each}
           </p>
           {#if unratedText(u.unrated_count)}
             <p class="panel-text unrated">{unratedText(u.unrated_count)}</p>
@@ -234,7 +244,7 @@
         >
           <input type="hidden" name="up_to" value={data.bill.upTo} />
           <label class="v2-field">
-            <span class="v2-label">Invoice lines</span>
+            <span class="v2-label">{m.projects_bill_lines()}</span>
             <select class="v2-input" name="group_by" value="entry">
               {#each BILL_GROUPINGS as g (g.value)}
                 <option value={g.value}>{g.label}</option>
@@ -246,11 +256,11 @@
             type="submit"
             disabled={billing || (u !== null && u.entry_count === 0)}
           >
-            Create draft invoice
+            {m.projects_create_draft_invoice()}
           </button>
         </form>
         <p class="v2-hint">
-          The entries are marked billed. Cancelling the invoice frees them to be billed again.
+          {m.projects_bill_hint()}
         </p>
         {#if form?.billError}
           <p class="v2-error" role="alert">{form.billError}</p>
@@ -261,7 +271,7 @@
     {#if shown === 'overview'}
       {#if retainer}
         <section class="v2-card panel retainer" aria-labelledby="retainer-head">
-          <div class="v2-label" id="retainer-head">Retainer</div>
+          <div class="v2-label" id="retainer-head">{m.projects_billing_retainer()}</div>
           <p class="retainer-fee v2-num">{retainer.fee}</p>
           {#if retainer.usage}<p class="retainer-line">{retainer.usage}</p>{/if}
           {#if retainer.overage}<p class="retainer-line">{retainer.overage}</p>{/if}
@@ -271,10 +281,10 @@
             <div class="retainer-bill">
               <ConfirmAction
                 action="?/billRetainer"
-                label="Bill {retainerMonth}"
-                confirmLabel="Bill {retainerMonth}"
+                label={m.projects_bill_month({ month: retainerMonth })}
+                confirmLabel={m.projects_bill_month({ month: retainerMonth })}
                 hidden={{ month: data.retainerUsage?.month ?? '' }}
-                explain="Drafts one invoice for {retainerMonth}, marks that time billed, then opens the invoice."
+                explain={m.projects_bill_month_explain({ month: retainerMonth })}
               />
             </div>
           {/if}
@@ -286,35 +296,41 @@
 
       <div class="v2-stats">
         <StatCard
-          label="Hours logged"
+          label={m.projects_stat_hours_logged()}
           value={hoursText(burn.logged_hours)}
           tone={hoursMeter?.tone ?? 'ink'}
           detail={project.budget_hours !== null
-            ? `${burn.hours_percent ?? 0}% of ${hoursText(project.budget_hours)}`
-            : 'No hours budget'}
+            ? m.projects_percent_of({
+                percent: String(burn.hours_percent ?? 0),
+                total: hoursText(project.budget_hours)
+              })
+            : m.projects_no_hours_budget()}
         />
         <StatCard
-          label="Billable value"
+          label={m.projects_stat_billable_value()}
           value={money(burn.billable_value, project.currency)}
           tone={amountMeter?.tone ?? 'slate'}
           detail={project.budget_amount !== null
-            ? `${burn.amount_percent ?? 0}% of ${money(project.budget_amount, project.currency)}`
-            : 'No budget amount'}
+            ? m.projects_percent_of({
+                percent: String(burn.amount_percent ?? 0),
+                total: money(project.budget_amount, project.currency)
+              })
+            : m.projects_no_budget_amount()}
         />
         <StatCard
-          label="Not yet billed"
+          label={m.projects_stat_unbilled()}
           value={money(burn.unbilled_value, project.currency)}
           tone={burn.unbilled_value > 0 ? 'clay' : 'slate'}
-          detail="Billable time with no invoice"
+          detail={m.projects_stat_unbilled_detail()}
         />
         {#if burn.invoiced_amount !== null}
           <StatCard
-            label="Invoiced"
+            label={m.projects_stat_invoiced()}
             value={money(burn.invoiced_amount, project.currency)}
             tone="slate"
             detail={isFixedFee && project.budget_amount !== null
-              ? `of a ${money(project.budget_amount, project.currency)} fee`
-              : 'Invoices not cancelled'}
+              ? m.projects_of_fee({ fee: money(project.budget_amount, project.currency) })
+              : m.projects_stat_invoiced_detail()}
           />
         {/if}
       </div>
@@ -324,34 +340,44 @@
           {#if hoursMeter}
             <div>
               <div class="meter-head">
-                <span class="v2-label">Hours budget</span>
+                <span class="v2-label">{m.projects_hours_budget()}</span>
                 <span class="v2-num" style="color:var(--v2-{hoursMeter.tone})"
                   >{hoursMeter.percent}%</span
                 >
               </div>
-              <div class="v2-bar" role="img" aria-label="{hoursMeter.percent}% of the hours budget">
+              <div class="v2-bar" role="img" aria-label={m.projects_meter_hours_label({ percent: String(hoursMeter.percent) })}>
                 <i style="width:{hoursMeter.width}%;background:var(--v2-{hoursMeter.tone})"></i>
               </div>
               <div class="v2-bar-legend">
-                <span>{hoursText(burn.logged_hours)} logged</span>
-                <span>{hoursText(project.budget_hours)} budget</span>
+                <span>{m.projects_legend_logged({ value: hoursText(burn.logged_hours) })}</span>
+                <span>{m.projects_legend_budget({ value: hoursText(project.budget_hours) })}</span>
               </div>
             </div>
           {/if}
           {#if amountMeter}
             <div>
               <div class="meter-head">
-                <span class="v2-label">{isFixedFee ? 'Fee' : 'Budget amount'}</span>
+                <span class="v2-label"
+                  >{isFixedFee ? m.projects_fee() : m.projects_field_budget_amount()}</span
+                >
                 <span class="v2-num" style="color:var(--v2-{amountMeter.tone})"
                   >{amountMeter.percent}%</span
                 >
               </div>
-              <div class="v2-bar" role="img" aria-label="{amountMeter.percent}% of the budget">
+              <div class="v2-bar" role="img" aria-label={m.projects_meter_amount_label({ percent: String(amountMeter.percent) })}>
                 <i style="width:{amountMeter.width}%;background:var(--v2-{amountMeter.tone})"></i>
               </div>
               <div class="v2-bar-legend">
-                <span>{money(burn.billable_value, project.currency)} billable</span>
-                <span>{money(project.budget_amount, project.currency)} budget</span>
+                <span
+                  >{m.projects_legend_billable({
+                    value: money(burn.billable_value, project.currency)
+                  })}</span
+                >
+                <span
+                  >{m.projects_legend_budget({
+                    value: money(project.budget_amount, project.currency)
+                  })}</span
+                >
               </div>
             </div>
           {/if}
@@ -360,24 +386,26 @@
 
       {#if data.offers.invoiceAmount}
         <details class="v2-card panel" open={Boolean(form?.amountError)}>
-          <summary class="v2-btn">Invoice an amount</summary>
+          <summary class="v2-btn">{m.projects_invoice_amount()}</summary>
           <form method="POST" action="?/invoiceAmount" class="amount-form" use:enhance>
             <input type="hidden" name="budget_amount" value={project.budget_amount ?? ''} />
-            <div class="amount-modes" role="radiogroup" aria-label="Invoice">
+            <div class="amount-modes" role="radiogroup" aria-label={m.projects_invoice_mode_label()}>
               <label class="amount-mode">
                 <input type="radio" name="mode" value="amount" bind:group={amountMode} />
-                An amount
+                {m.projects_mode_amount()}
               </label>
               {#if project.budget_amount !== null}
                 <label class="amount-mode">
                   <input type="radio" name="mode" value="percent" bind:group={amountMode} />
-                  A percentage of the fee
+                  {m.projects_mode_percent()}
                 </label>
               {/if}
             </div>
             <label class="v2-field">
               <span class="v2-label">
-                {amountMode === 'percent' ? 'Percentage' : `Amount in ${project.currency}`}
+                {amountMode === 'percent'
+                  ? m.projects_percentage()
+                  : m.projects_amount_in({ currency: project.currency })}
               </span>
               <input
                 class="v2-input"
@@ -391,21 +419,25 @@
               />
             </label>
             <label class="v2-field">
-              <span class="v2-label">Line description</span>
+              <span class="v2-label">{m.projects_line_description()}</span>
               <input
                 class="v2-input"
                 name="description"
                 maxlength="255"
-                placeholder="{project.name}, fixed fee"
+                placeholder={m.projects_line_placeholder({ name: project.name })}
               />
             </label>
-            <button class="v2-btn v2-btn-primary" type="submit">Create draft invoice</button>
+            <button class="v2-btn v2-btn-primary" type="submit"
+              >{m.projects_create_draft_invoice()}</button
+            >
             {#if form?.amountError}
               <p class="v2-error" role="alert">{form.amountError}</p>
             {/if}
             <p class="v2-hint">
-              One line, in {project.currency}, for {project.account.name}. It opens as a draft for
-              you to check and send.
+              {m.projects_invoice_amount_hint({
+                currency: project.currency,
+                account: project.account.name
+              })}
             </p>
           </form>
         </details>
@@ -413,9 +445,9 @@
 
       <div class="overview">
         <div>
-          <div class="v2-label section-head">Project</div>
+          <div class="v2-label section-head">{m.projects_col_project()}</div>
           <dl class="v2-kv">
-            <dt>Account</dt>
+            <dt>{m.projects_account()}</dt>
             <dd>
               {#if project.account.id}
                 <a href={resolve(`accounts/${project.account.id}`)}>{project.account.name}</a>
@@ -424,38 +456,42 @@
               {/if}
             </dd>
             {#if project.deal}
-              <dt>Deal</dt>
+              <dt>{m.projects_deal()}</dt>
               <dd><a href={resolve(`pipeline/${project.deal.id}`)}>{project.deal.name}</a></dd>
             {/if}
-            <dt>Billing</dt>
+            <dt>{m.projects_col_billing()}</dt>
             <dd>{BILLING_TYPE_LABEL[project.billing_type] ?? ''}</dd>
-            <dt>Hourly rate</dt>
+            <dt>{m.projects_field_hourly_rate()}</dt>
             <dd class="v2-num">
               {project.hourly_rate !== null
-                ? `${money(project.hourly_rate, project.currency)}/hr`
-                : 'Not set'}
+                ? m.projects_per_hour({ amount: money(project.hourly_rate, project.currency) })
+                : m.projects_not_set()}
             </dd>
-            <dt>Budget hours</dt>
-            <dd>{project.budget_hours !== null ? hoursText(project.budget_hours) : 'Not set'}</dd>
-            <dt>{isFixedFee ? 'Fee' : 'Budget'}</dt>
+            <dt>{m.projects_field_budget_hours()}</dt>
+            <dd>
+              {project.budget_hours !== null
+                ? hoursText(project.budget_hours)
+                : m.projects_not_set()}
+            </dd>
+            <dt>{isFixedFee ? m.projects_fee() : m.projects_budget()}</dt>
             <dd class="v2-num">
               {project.budget_amount !== null
                 ? money(project.budget_amount, project.currency)
-                : 'Not set'}
+                : m.projects_not_set()}
             </dd>
-            <dt>Start</dt>
-            <dd>{project.start_date ? longDate(project.start_date) : 'Not set'}</dd>
-            <dt>Due</dt>
-            <dd>{project.due_date ? longDate(project.due_date) : 'Not set'}</dd>
+            <dt>{m.projects_start()}</dt>
+            <dd>{project.start_date ? longDate(project.start_date) : m.projects_not_set()}</dd>
+            <dt>{m.projects_col_due()}</dt>
+            <dd>{project.due_date ? longDate(project.due_date) : m.projects_not_set()}</dd>
             {#if project.tags.length}
-              <dt>Tags</dt>
+              <dt>{m.common_tags()}</dt>
               <dd class="tags">
                 {#each project.tags as tag (tag)}<Pill>{tag}</Pill>{/each}
               </dd>
             {/if}
           </dl>
           {#if project.description}
-            <div class="v2-label section-head">Description</div>
+            <div class="v2-label section-head">{m.common_description()}</div>
             <p class="description">{project.description}</p>
           {/if}
           {#if data.customFields?.length}
@@ -464,29 +500,32 @@
         </div>
 
         <div>
-          <div class="v2-label section-head">People</div>
+          <div class="v2-label section-head">{m.projects_people()}</div>
           {#each project.assigned_to as p (p.id)}
             {@const rate = project.rates.find((r) => r.profile.id === p.id)}
             <div class="person">
               <Avatar name={p.name} size={24} />
               <span class="person-name">{p.name}</span>
               {#if rate && rate.hourly_rate !== null}
-                <span class="v2-num v2-sub">{money(rate.hourly_rate, project.currency)}/hr</span>
+                <span class="v2-num v2-sub"
+                  >{m.projects_per_hour({ amount: money(rate.hourly_rate, project.currency) })}</span
+                >
               {/if}
             </div>
           {:else}
-            <p class="v2-sub small">Nobody is on this project yet.</p>
+            <p class="v2-sub small">{m.projects_people_empty()}</p>
           {/each}
           {#each offTeamRates as r (r.profile.id)}
             <div class="person">
               <Avatar name={r.profile.name} size={24} />
               <span class="person-name">{r.profile.name}</span>
-              <span class="v2-num v2-sub">{money(r.hourly_rate, project.currency)}/hr</span>
+              <span class="v2-num v2-sub"
+                >{m.projects_per_hour({ amount: money(r.hourly_rate, project.currency) })}</span
+              >
             </div>
           {/each}
           <p class="v2-hint">
-            Time logged here takes the person's rate on this project, else the project's hourly
-            rate.
+            {m.projects_rates_hint()}
           </p>
         </div>
       </div>
@@ -495,41 +534,41 @@
         <span class="v2-sub">
           {data.tasks === null
             ? ''
-            : `${data.tasks.length} ${data.tasks.length === 1 ? 'task' : 'tasks'}`}
+            : m.projects_task_count({ count: data.tasks.length })}
         </span>
-        <div class="seg" role="group" aria-label="View">
+        <div class="seg" role="group" aria-label={m.projects_view_label()}>
           <button
             type="button"
             aria-pressed={tasksView === 'list'}
-            onclick={() => (tasksView = 'list')}>List</button
+            onclick={() => (tasksView = 'list')}>{m.projects_view_list()}</button
           >
           <button
             type="button"
             aria-pressed={tasksView === 'board'}
-            onclick={() => (tasksView = 'board')}>By status</button
+            onclick={() => (tasksView = 'board')}>{m.projects_view_board()}</button
           >
         </div>
         <a
           class="v2-btn v2-btn-primary"
           href={resolve(asInternalPath(`/tasks/new?project=${project.id}`))}
-          ><Plus size={13} />New task</a
+          ><Plus size={13} />{m.projects_new_task()}</a
         >
       </div>
       {#if data.tasks === null}
-        <p class="v2-sub small">The tasks could not be loaded. Nothing else here is affected.</p>
+        <p class="v2-sub small">{m.projects_tasks_failed()}</p>
       {:else if data.tasks.length === 0}
-        <p class="v2-sub small">No tasks yet. Add the first piece of work for this project.</p>
+        <p class="v2-sub small">{m.projects_tasks_empty()}</p>
       {:else if tasksView === 'list'}
         <div class="v2-card" style="overflow:hidden">
           <div class="v2-table-wrap">
             <table class="v2-table">
               <thead>
                 <tr>
-                  <th>Task</th>
-                  <th>Status</th>
-                  <th>Due</th>
-                  <th>People</th>
-                  {#if data.on.timesheet && !myTimer}<th class="v2-r">Timer</th>{/if}
+                  <th>{m.projects_task()}</th>
+                  <th>{m.common_status()}</th>
+                  <th>{m.projects_col_due()}</th>
+                  <th>{m.projects_people()}</th>
+                  {#if data.on.timesheet && !myTimer}<th class="v2-r">{m.projects_timer()}</th>{/if}
                 </tr>
               </thead>
               <tbody>
@@ -540,8 +579,14 @@
                         <span class="v2-table-primary">{t.title}</span>
                       </a>
                     </td>
-                    <td data-m="tag"><Pill tone={TASK_STATUS_TONE[t.status]}>{t.status}</Pill></td>
-                    <td data-m="meta">{t.due_date ? `Due ${shortDate(t.due_date)}` : ''}</td>
+                    <td data-m="tag"
+                      ><Pill tone={TASK_STATUS_TONE[t.status]}
+                        >{TASK_STATUS_LABEL[t.status] ?? t.status}</Pill
+                      ></td
+                    >
+                    <td data-m="meta"
+                      >{t.due_date ? m.projects_due_on({ date: shortDate(t.due_date) }) : ''}</td
+                    >
                     <td data-m="meta" class="v2-sub">{t.assigned_names.join(', ')}</td>
                     {#if data.on.timesheet && !myTimer}
                       <td class="v2-r" data-m="meta">
@@ -549,7 +594,7 @@
                           <input type="hidden" name="task" value={t.id} />
                           <input type="hidden" name="billable" value={String(billable)} />
                           <button class="v2-btn v2-btn-sm" disabled={timeBusy}>
-                            <Play size={11} />Start
+                            <Play size={11} />{m.projects_start_timer_short()}
                           </button>
                         </form>
                       </td>
@@ -566,18 +611,20 @@
             {@const lane = data.tasks.filter((t) => t.status === status)}
             <section class="lane">
               <div class="v2-lane-head">
-                <span class="v2-label">{status}</span>
+                <span class="v2-label">{TASK_STATUS_LABEL[status] ?? status}</span>
                 <span class="v2-num">{lane.length}</span>
               </div>
               {#each lane as t (t.id)}
                 <a class="v2-deal-card" href={resolve(`tasks/${t.id}`)}>
                   <div style="font-weight:600">{t.title}</div>
                   {#if t.due_date}
-                    <div class="v2-sub" style="font-size:11.5px">Due {shortDate(t.due_date)}</div>
+                    <div class="v2-sub" style="font-size:11.5px">
+                      {m.projects_due_on({ date: shortDate(t.due_date) })}
+                    </div>
                   {/if}
                 </a>
               {:else}
-                <p class="v2-sub small">Nothing here.</p>
+                <p class="v2-sub small">{m.projects_lane_empty()}</p>
               {/each}
             </section>
           {/each}
@@ -587,12 +634,13 @@
       <section class="v2-card panel">
         <div class="time-head">
           <div class="time-title">
-            <div class="v2-label">Time</div>
+            <div class="v2-label">{m.projects_tab_time()}</div>
             <div class="v2-sub small">
-              <b class="v2-num">{hoursText(burn.logged_hours)}</b> logged by everyone ·
-              {hoursText(burn.billable_hours)} billable ·
+              {#each messageParts(m.projects_time_summary({ logged: slot('logged'), billable: hoursText(burn.billable_hours) })) as p, i (i)}{#if p.key === 'logged'}<b
+                    class="v2-num">{hoursText(burn.logged_hours)}</b
+                  >{:else}{p.text}{/if}{/each} ·
               <a href={resolve(asInternalPath(`/timesheet/report?project=${project.id}`))}
-                >Who logged it</a
+                >{m.projects_who_logged()}</a
               >
             </div>
           </div>
@@ -600,21 +648,24 @@
             <form method="POST" action="?/stopTimer" use:enhance={timeSubmit}>
               <input type="hidden" name="entry_id" value={myTimer.id} />
               <button class="v2-btn v2-btn-primary" disabled={timeBusy}>
-                <Square size={12} />Stop {hm(runningMinutes(myTimer))}
+                <Square size={12} />{m.projects_stop_timer({
+                  time: hm(runningMinutes(myTimer))
+                })}
               </button>
             </form>
           {:else if data.canEdit}
             <form method="POST" action="?/startTimer" use:enhance={timeSubmit}>
               <input type="hidden" name="billable" value={String(billable)} />
-              <button class="v2-btn" disabled={timeBusy}><Play size={12} />Start timer</button>
+              <button class="v2-btn" disabled={timeBusy}><Play size={12} />{m.projects_start_timer()}</button
+              >
             </form>
           {/if}
           {#if data.canEdit}
             <details class="time-log">
-              <summary class="v2-btn"><Plus size={12} />Log time</summary>
+              <summary class="v2-btn"><Plus size={12} />{m.projects_log_time()}</summary>
               <form method="POST" action="?/logTime" use:enhance={timeSubmit} class="time-form">
                 <label class="v2-field">
-                  <span class="v2-label">Minutes</span>
+                  <span class="v2-label">{m.projects_minutes()}</span>
                   <input
                     class="v2-input"
                     name="minutes"
@@ -629,7 +680,7 @@
                 </label>
                 {#if isAdmin}
                   <label class="v2-field">
-                    <span class="v2-label">Rate per hour</span>
+                    <span class="v2-label">{m.projects_rate_per_hour()}</span>
                     <input
                       class="v2-input"
                       name="hourly_rate"
@@ -637,15 +688,15 @@
                       inputmode="decimal"
                       min="0"
                       step="0.01"
-                      placeholder="From the project"
+                      placeholder={m.projects_rate_placeholder()}
                     />
                   </label>
                 {/if}
                 {#if data.tasks?.length}
                   <label class="v2-field wide">
-                    <span class="v2-label">Task</span>
+                    <span class="v2-label">{m.projects_task()}</span>
                     <select class="v2-input" name="task">
-                      <option value="">No task</option>
+                      <option value="">{m.projects_no_task()}</option>
                       {#each data.tasks as t (t.id)}
                         <option value={t.id}>{t.title}</option>
                       {/each}
@@ -653,11 +704,11 @@
                   </label>
                 {/if}
                 <label class="v2-field wide">
-                  <span class="v2-label">What was done</span>
+                  <span class="v2-label">{m.projects_what_was_done()}</span>
                   <input
                     class="v2-input"
                     name="description"
-                    placeholder="Drafted the homepage copy"
+                    placeholder={m.projects_what_was_done_placeholder()}
                     required
                   />
                 </label>
@@ -665,15 +716,15 @@
                   {#if billable}
                     <label class="check">
                       <input type="checkbox" name="billable" checked />
-                      Billable
+                      {m.projects_billable()}
                     </label>
                   {/if}
-                  <button class="v2-btn v2-btn-primary" disabled={timeBusy}>Log time</button>
+                  <button class="v2-btn v2-btn-primary" disabled={timeBusy}
+                    >{m.projects_log_time()}</button
+                  >
                 </div>
                 <p class="v2-hint wide">
-                  {isAdmin
-                    ? "Counted back from now. With no rate typed, the entry takes the person's rate on this project, else the project's hourly rate."
-                    : "Counted back from now. The entry takes your rate on this project, else the project's hourly rate."}
+                  {isAdmin ? m.projects_log_hint_admin() : m.projects_log_hint_member()}
                 </p>
               </form>
             </details>
@@ -684,47 +735,51 @@
           <p class="v2-error" role="alert">
             <span>{form.timeError}</span>
             {#if form.runningProjectId}
-              <a href={resolve(`projects/${form.runningProjectId}`)}>Open that project</a>
+              <a href={resolve(`projects/${form.runningProjectId}`)}>{m.projects_open_running_project()}</a
+              >
             {:else if form.runningTicketId}
-              <a href={resolve(`tickets/${form.runningTicketId}`)}>Open that ticket</a>
+              <a href={resolve(`tickets/${form.runningTicketId}`)}>{m.projects_open_running_ticket()}</a
+              >
             {/if}
           </p>
         {/if}
 
         {#if entries === null}
           <p class="v2-sub small">
-            The time entries could not be loaded. Nothing else on this project is affected.
+            {m.projects_time_failed()}
           </p>
         {:else if entries.length === 0}
           <p class="v2-sub small">
-            No time logged yet. Start the timer, or log a session you have already worked.
+            {m.projects_time_empty()}
           </p>
         {:else}
           <div class="v2-table-wrap" style="margin-top:10px">
             <table class="v2-table">
               <thead>
                 <tr>
-                  <th>What was done</th>
-                  <th>Who</th>
-                  <th>When</th>
-                  <th class="v2-r">Logged</th>
-                  <th class="v2-r">Billing</th>
+                  <th>{m.projects_what_was_done()}</th>
+                  <th>{m.projects_who()}</th>
+                  <th>{m.projects_when()}</th>
+                  <th class="v2-r">{m.projects_col_logged()}</th>
+                  <th class="v2-r">{m.projects_col_billing()}</th>
                 </tr>
               </thead>
               <tbody>
                 {#each entries as e (e.id)}
                   <tr>
                     <td data-m="title">
-                      {e.description || 'No description'}
-                      {#if !e.ended_at}<span class="running">Running</span>{/if}
+                      {e.description || m.projects_no_description()}
+                      {#if !e.ended_at}<span class="running">{m.projects_running()}</span>{/if}
                       {#if e.task && taskTitles.get(e.task)}
                         <span class="v2-sub entry-task">{taskTitles.get(e.task)}</span>
                       {/if}
                     </td>
                     <td data-m="meta">
-                      {e.profile?.user_details?.name || e.profile?.user_details?.email || 'Someone'}
+                      {e.profile?.user_details?.name ||
+                        e.profile?.user_details?.email ||
+                        m.projects_someone()}
                     </td>
-                    <td data-m="meta">{shortAge(e.started_at)} ago</td>
+                    <td data-m="meta">{m.projects_ago({ age: shortAge(e.started_at) })}</td>
                     <td class="v2-num v2-r" data-m="tag">
                       {e.ended_at ? hm(e.duration_minutes) : hm(runningMinutes(e))}
                     </td>
@@ -733,30 +788,33 @@
                         <form method="POST" action="?/stopTimer" use:enhance={timeSubmit}>
                           <input type="hidden" name="entry_id" value={e.id} />
                           <button class="v2-btn v2-btn-sm" disabled={timeBusy}>
-                            <Square size={11} />Stop
+                            <Square size={11} />{m.projects_stop()}
                           </button>
                         </form>
                       {:else if isBilled(e)}
                         {#if e.invoice}
-                          <a class="v2-sub" href={resolve(`invoices/${e.invoice}`)}>Invoiced</a>
+                          <a class="v2-sub" href={resolve(`invoices/${e.invoice}`)}
+                            >{m.projects_invoiced()}</a
+                          >
                         {:else}
-                          <span class="v2-sub">Invoiced</span>
+                          <span class="v2-sub">{m.projects_invoiced()}</span>
                         {/if}
                       {:else if confirmDelete === e.id}
                         <form method="POST" action="?/deleteTime" use:enhance={timeSubmit}>
                           <input type="hidden" name="entry_id" value={e.id} />
-                          <button class="v2-btn v2-btn-sm danger" disabled={timeBusy}>Delete</button
+                          <button class="v2-btn v2-btn-sm danger" disabled={timeBusy}
+                            >{m.common_delete()}</button
                           >
                         </form>
                         <button
                           type="button"
                           class="v2-btn v2-btn-sm"
-                          onclick={() => (confirmDelete = '')}>Keep</button
+                          onclick={() => (confirmDelete = '')}>{m.projects_keep()}</button
                         >
                       {:else}
                         {#if !billable}
                           <!-- A non-billable project's time stays non-billable. -->
-                          <span class="v2-sub">Not billable</span>
+                          <span class="v2-sub">{m.projects_not_billable()}</span>
                         {:else}
                           <form method="POST" action="?/setBillable" use:enhance={timeSubmit}>
                             <input type="hidden" name="entry_id" value={e.id} />
@@ -769,14 +827,16 @@
                               class="v2-btn v2-btn-sm"
                               class:billable={e.billable}
                               disabled={timeBusy}
-                              title={e.billable ? 'Mark as non-billable' : 'Mark as billable'}
+                              title={e.billable
+                                ? m.projects_mark_non_billable()
+                                : m.projects_mark_billable()}
                             >
                               {#if e.billable}
                                 {e.hourly_rate
-                                  ? money(e.hourly_rate, e.currency) + '/hr'
-                                  : 'Billable'}
+                                  ? m.projects_per_hour({ amount: money(e.hourly_rate, e.currency) })
+                                  : m.projects_billable()}
                               {:else}
-                                Not billable
+                                {m.projects_not_billable()}
                               {/if}
                             </button>
                           </form>
@@ -784,8 +844,8 @@
                         <button
                           type="button"
                           class="v2-btn v2-btn-sm"
-                          aria-label="Delete this entry"
-                          title="Delete this entry"
+                          aria-label={m.projects_delete_entry()}
+                          title={m.projects_delete_entry()}
                           onclick={() => (confirmDelete = e.id)}
                         >
                           <Trash2 size={11} />
@@ -802,8 +862,8 @@
     {:else if shown === 'invoices'}
       {#if project.invoices.length === 0}
         <p class="v2-sub small">
-          No invoices for this project yet.
-          {#if data.offers.billTime}Bill its time from the button at the top.{/if}
+          {m.projects_invoices_empty()}
+          {#if data.offers.billTime}{m.projects_invoices_empty_bill()}{/if}
         </p>
       {:else}
         <div class="v2-card" style="overflow:hidden">
@@ -811,10 +871,10 @@
             <table class="v2-table">
               <thead>
                 <tr>
-                  <th>Invoice</th>
-                  <th>Status</th>
-                  <th>Issued</th>
-                  <th class="v2-r">Total</th>
+                  <th>{m.projects_invoice()}</th>
+                  <th>{m.common_status()}</th>
+                  <th>{m.projects_issued()}</th>
+                  <th class="v2-r">{m.projects_total()}</th>
                 </tr>
               </thead>
               <tbody>
@@ -822,7 +882,7 @@
                   <tr>
                     <td data-m="title">
                       <a class="v2-row-link" href={resolve(`invoices/${inv.id}`)}>
-                        <span class="v2-table-primary">{inv.invoice_number || 'Draft'}</span>
+                        <span class="v2-table-primary">{inv.invoice_number || m.projects_invoice_draft()}</span>
                       </a>
                     </td>
                     <td data-m="tag">
@@ -842,25 +902,29 @@
         </div>
         {#if burn.invoiced_amount !== null}
           <p class="v2-sub small" style="margin-top:10px">
-            {money(burn.invoiced_amount, project.currency)} invoiced{isFixedFee &&
-            project.budget_amount !== null
-              ? ` of a ${money(project.budget_amount, project.currency)} fee`
-              : ''}, not counting cancelled invoices.
+            {isFixedFee && project.budget_amount !== null
+              ? m.projects_invoiced_total_of_fee({
+                  amount: money(burn.invoiced_amount, project.currency),
+                  fee: money(project.budget_amount, project.currency)
+                })
+              : m.projects_invoiced_total({
+                  amount: money(burn.invoiced_amount, project.currency)
+                })}
           </p>
         {/if}
       {/if}
     {:else if shown === 'files'}
       <CommentComposer
         error={form?.noteError}
-        placeholder="A note to go with the file (optional)"
+        placeholder={m.projects_file_note_placeholder()}
       />
-      <FileList files={data.files} empty="No files on this project yet." />
+      <FileList files={data.files} empty={m.projects_files_empty()} />
     {:else if shown === 'comments'}
       <CommentComposer error={form?.noteError} />
       {#if data.comments.length}
         <Timeline events={data.comments} />
       {:else}
-        <p class="v2-sub small">No comments yet.</p>
+        <p class="v2-sub small">{m.projects_comments_empty()}</p>
       {/if}
     {/if}
   </div>

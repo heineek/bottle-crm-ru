@@ -10,6 +10,7 @@
  * as null: a project without a budget is not a project with a budget of 0.
  */
 import { authorText } from '#lib/v2/author.js';
+import { m } from '#lib/paraglide/messages.js';
 import { error, type Cookies } from '@sveltejs/kit';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
@@ -44,7 +45,7 @@ function intOrNull(value: unknown) {
  */
 export function toPerson(profile: Schemas['Profile'] | null | undefined) {
   const user = profile?.user_details;
-  return { id: profile?.id ?? '', name: user?.name || user?.email || 'Someone' };
+  return { id: profile?.id ?? '', name: user?.name || user?.email || m.projects_someone() };
 }
 
 function toBurn(burn: Partial<Schemas['ProjectBurn']> | null | undefined) {
@@ -77,7 +78,7 @@ function toRow(p: Schemas['ProjectList']) {
   return {
     id: p.id,
     name: p.name ?? '',
-    account: { id: p.account?.id ?? null, name: p.account?.name ?? 'No account' },
+    account: { id: p.account?.id ?? null, name: p.account?.name ?? m.projects_no_account() },
     deal: p.deal?.id ? { id: p.deal.id, name: p.deal.name ?? '' } : null,
     status: p.status ?? 'active',
     billing_type: p.billing_type ?? 'time_and_materials',
@@ -120,7 +121,7 @@ export function toFiles(attachments: Schemas['Attachments'][] | undefined) {
   return (attachments ?? [])
     .map((a) => ({
       id: String(a.id),
-      name: a.file_name || 'Attachment',
+      name: a.file_name || m.projects_attachment(),
       at: a.created_at ?? null,
       href: attachmentHref(a.id)
     }))
@@ -219,7 +220,7 @@ export async function getProject({ cookies }: { cookies: Cookies }, id: string) 
   } catch (err) {
     rethrowModuleOff(err);
     if (apiStatus(err) === 404) {
-      error(404, 'That project does not exist, or you do not have access to it.');
+      error(404, m.projects_error_not_found());
     }
     throw err;
   }

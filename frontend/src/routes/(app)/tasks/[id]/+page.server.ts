@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { getTask, setTaskDone, updateTask, deleteTask, addTaskNote } from '#lib/server/v2/tasks.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { loadRelated, relatedActions } from '#lib/server/v2/related-records.js';
 import { isOrgAdmin } from '#lib/admin.js';
 import { apiStatus } from '#lib/api-errors.js';
@@ -36,7 +37,7 @@ export const actions: Actions = {
     try {
       await setTaskDone({ cookies }, params.id, done);
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not change the status.') });
+      return fail(400, { error: readableError(err, m.tasks_error_status()) });
     }
     return { done };
   },
@@ -60,13 +61,13 @@ export const actions: Actions = {
       picked && typeof picked === 'object' && 'size' in picked && picked.size > 0 ? picked : null;
 
     if (!body && !file) {
-      return fail(400, { error: 'Write a comment or attach a file first.' });
+      return fail(400, { error: m.tasks_error_comment_empty() });
     }
 
     try {
       await addTaskNote({ cookies }, params.id, body, file);
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not post that comment.') });
+      return fail(400, { error: readableError(err, m.tasks_error_comment()) });
     }
     return { commented: true };
   },
@@ -88,7 +89,7 @@ export const actions: Actions = {
     try {
       await updateTask({ cookies }, params.id, { assigned_to: ids });
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not reassign this task.') });
+      return fail(400, { error: readableError(err, m.tasks_error_reassign()) });
     }
     return { assigned: true };
   },
@@ -107,8 +108,8 @@ export const actions: Actions = {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
         error:
           apiStatus(err) === 403
-            ? 'Only an admin or whoever created this task can delete it.'
-            : readableError(err, 'Could not delete this task.')
+            ? m.tasks_error_delete_forbidden()
+            : readableError(err, m.tasks_error_delete())
       });
     }
     redirect(303, '/tasks');

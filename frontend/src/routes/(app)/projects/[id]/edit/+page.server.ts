@@ -10,6 +10,7 @@ import {
 import { isOn } from '#lib/v2/modules.js';
 import { projectBody, projectValues } from '#lib/v2/projects.js';
 import { apiStatus } from '#lib/api-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** A stored figure as the form's text, blank when unset. */
@@ -87,7 +88,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not save the project.')
+        ...saveRefusal(err, custom.definitions, m.projects_error_save())
       });
     }
     redirect(303, `/projects/${event.params.id}`);

@@ -23,6 +23,8 @@
   import { TASK_PRIORITY_TONE, TASK_STATUS_TONE } from '#lib/v2/enums.js';
   import { enhance } from '$app/forms';
   import { CircleCheck, Circle, Plus } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { taskKindLabel, taskPriorityLabel, taskStatusLabel } from './labels.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -41,19 +43,23 @@
   };
 </script>
 
-<PageHeader title="Tasks">
+<PageHeader title={m.tasks_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.open)}</span> open ·
-    <span class="v2-num" style="color:var(--v2-rust)">{count(totals.overdue)}</span> overdue
+    <span class="v2-num">{count(totals.open)}</span>
+    {m.tasks_list_sub_open({ count: totals.open })} ·
+    <span class="v2-num" style="color:var(--v2-rust)">{count(totals.overdue)}</span>
+    {m.tasks_list_sub_overdue({ count: totals.overdue })}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn v2-btn-primary" href={resolve('tasks/new')}><Plus />New task</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('tasks/new')}
+      ><Plus />{m.tasks_list_new_task()}</a
+    >
   {/snippet}
 </PageHeader>
 
 {#if page.url.search}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered list.
+    {m.tasks_list_filtered_note()}
   </p>
 {/if}
 
@@ -62,13 +68,15 @@
 <div class="v2-pad" style="padding-top:14px;flex:none">
   <div class="v2-stats">
     <StatCard
-      label="Overdue"
+      label={m.tasks_stat_overdue()}
       value={count(totals.overdue)}
       tone={totals.overdue ? 'rust' : 'slate'}
-      detail={totals.overdue ? 'Do these before anything else' : 'Nothing late'}
+      detail={totals.overdue
+        ? m.tasks_stat_overdue_detail_some()
+        : m.tasks_stat_overdue_detail_none()}
     />
-    <StatCard label="Due this week" value={count(totals.due_this_week)} tone="clay" />
-    <StatCard label="Open" value={count(totals.open)} tone="ink" />
+    <StatCard label={m.tasks_stat_due_week()} value={count(totals.due_this_week)} tone="clay" />
+    <StatCard label={m.tasks_stat_open()} value={count(totals.open)} tone="ink" />
     <!-- The mock's fourth card was "Done this week". `Task` has no
          `completed_at`, so nothing records when a task was finished and that
          number could only have been invented. This one is real, and it is the
@@ -76,15 +84,23 @@
          and never appears in "due this week", so nothing ever puts it in front
          of anyone. -->
     <StatCard
-      label="No due date"
+      label={m.tasks_stat_no_due()}
       value={count(totals.no_due_date)}
       tone={totals.no_due_date ? 'clay' : 'slate'}
-      detail={totals.no_due_date ? 'These never come up on their own' : 'Everything is dated'}
+      detail={totals.no_due_date
+        ? m.tasks_stat_no_due_detail_some()
+        : m.tasks_stat_no_due_detail_none()}
     />
   </div>
 </div>
 
-<FilterBar page="tasks" url={page.url} people={data.people} meId={data.meId} meta="Newest first" />
+<FilterBar
+  page="tasks"
+  url={page.url}
+  people={data.people}
+  meId={data.meId}
+  meta={m.tasks_list_meta_newest()}
+/>
 
 {#if form?.error}
   <p class="v2-pad v2-form-error" role="alert">{form.error}</p>
@@ -93,16 +109,14 @@
 <div class="v2-scroll">
   {#if tasks.length === 0}
     <EmptyState
-      title={data.showAll ? 'No tasks yet' : 'Nothing on your list'}
-      body={data.showAll
-        ? 'Tasks show up here when you add one, or when a deal, ticket or lead needs a follow-up scheduled.'
-        : 'Everything on your list is done. Show completed to see what you finished.'}
+      title={data.showAll ? m.tasks_list_empty_all_title() : m.tasks_list_empty_mine_title()}
+      body={data.showAll ? m.tasks_list_empty_all_body() : m.tasks_list_empty_mine_body()}
     >
       {#snippet icon()}<CircleCheck size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('tasks/new')}>New task</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('tasks/new')}>{m.tasks_list_new_task()}</a>
         {#if !data.showAll}
-          <a class="v2-btn" href={resolve('tasks?all=1')}>Show completed</a>
+          <a class="v2-btn" href={resolve('tasks?all=1')}>{m.tasks_list_show_completed()}</a>
         {/if}
       {/snippet}
     </EmptyState>
@@ -111,13 +125,13 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th style="width:38px"><span class="v2-sr-only">Done</span></th>
-            <th>Task</th>
-            <th>Attached to</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Owner</th>
-            <th class="v2-r">Due</th>
+            <th style="width:38px"><span class="v2-sr-only">{m.tasks_col_done()}</span></th>
+            <th>{m.tasks_field_task()}</th>
+            <th>{m.tasks_field_attached()}</th>
+            <th>{m.common_priority()}</th>
+            <th>{m.common_status()}</th>
+            <th>{m.common_owner()}</th>
+            <th class="v2-r">{m.tasks_field_due()}</th>
           </tr>
         </thead>
         <tbody>
@@ -145,7 +159,9 @@
                     type="submit"
                     class="v2-tick"
                     disabled={saving[t.id]}
-                    aria-label={t.is_done ? `Reopen ${t.title}` : `Mark ${t.title} done`}
+                    aria-label={t.is_done
+                      ? m.tasks_row_reopen({ title: t.title })
+                      : m.tasks_row_mark_done({ title: t.title })}
                   >
                     {#if t.is_done}
                       <CircleCheck size={17} style="color:var(--v2-moss)" />
@@ -170,14 +186,19 @@
                   <a href={resolve(asInternalPath(t.related.href))} style="color:inherit"
                     >{t.related.name}</a
                   >
-                  <span class="v2-table-secondary v2-task-kind">{t.related.kind}</span>
+                  <span class="v2-table-secondary v2-task-kind"
+                    >{taskKindLabel(t.related.kind)}</span
+                  >
                 {:else}
                   <span class="v2-muted">—</span>
                 {/if}
               </td>
-              <td><Pill tone={TASK_PRIORITY_TONE[t.priority]}>{t.priority}</Pill></td>
+              <td
+                ><Pill tone={TASK_PRIORITY_TONE[t.priority]}>{taskPriorityLabel(t.priority)}</Pill
+                ></td
+              >
               <td data-m="tag">
-                <Pill tone={TASK_STATUS_TONE[t.status]}>{t.status}</Pill>
+                <Pill tone={TASK_STATUS_TONE[t.status]}>{taskStatusLabel(t.status)}</Pill>
               </td>
               <td data-m="hide">
                 {#if t.assigned_names.length}
@@ -187,7 +208,7 @@
                     {/each}
                   </span>
                 {:else}
-                  <span class="v2-muted">nobody</span>
+                  <span class="v2-muted">{m.tasks_list_nobody()}</span>
                 {/if}
               </td>
               <td
@@ -196,9 +217,9 @@
                 style={late ? 'color:var(--v2-rust);font-weight:600' : ''}
               >
                 {#if !t.due_date}
-                  <span class="v2-muted">no due date</span>
+                  <span class="v2-muted">{m.tasks_no_due_date()}</span>
                 {:else if late}
-                  {late}d late
+                  {m.tasks_days_late({ days: late })}
                 {:else}
                   {relativeDays(t.due_date)}
                 {/if}
@@ -209,13 +230,18 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{tasks.length}</span> of
+      {m.tasks_list_foot_showing()} <span class="v2-num">{tasks.length}</span>
+      {m.tasks_list_foot_of()}
       <span class="v2-num">{count(data.showAll ? totals.count : totals.open)}</span>
-      {data.showAll ? 'tasks' : 'open'}
+      {data.showAll
+        ? m.tasks_list_foot_tasks({ count: totals.count })
+        : m.tasks_list_foot_open({ count: totals.open })}
       {#if !data.showAll}
-        · <a href={resolve('tasks?all=1')} style="color:inherit">include completed</a>
+        · <a href={resolve('tasks?all=1')} style="color:inherit"
+          >{m.tasks_list_include_completed()}</a
+        >
       {:else}
-        · <a href={resolve('tasks')} style="color:inherit">open only</a>
+        · <a href={resolve('tasks')} style="color:inherit">{m.tasks_list_open_only()}</a>
       {/if}
     </p>
   {/if}

@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getTimesheet, stopTimer } from '#lib/server/v2/timesheet.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -21,7 +22,7 @@ export const actions: Actions = {
     try {
       await stopTimer(event, entryId);
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not stop the timer.') });
+      return fail(400, { error: readableError(err, m.timesheet_error_stop_failed()) });
     }
 
     return { stopped: true };

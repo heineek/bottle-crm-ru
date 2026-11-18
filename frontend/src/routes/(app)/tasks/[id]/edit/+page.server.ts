@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import { getTask, getTaskFormOptions, updateTask, type TaskValues } from '#lib/server/v2/tasks.js';
 import { listTickets } from '#lib/server/v2/tickets.js';
 import { listDeals } from '#lib/server/v2/deals.js';
@@ -15,7 +16,7 @@ const NONE: { results: never[] } = { results: [] };
 export const load: PageServerLoad = async (event) => {
   // Asked directly: `parent()` would rerun the whole shell load.
   const modulesP = getModules(event);
-  const when = (key: string) => modulesP.then((m) => isOn(m?.modules ?? null, key));
+  const when = (key: string) => modulesP.then((mods) => isOn(mods?.modules ?? null, key));
   const [{ task, customFieldInputs }, answer] = await Promise.all([
     getTask(event, event.params.id),
     modulesP
@@ -61,7 +62,7 @@ export const load: PageServerLoad = async (event) => {
               `${l.first_name} ${l.last_name}`.trim() ||
               l.company_name ||
               l.email ||
-              '(unnamed lead)'
+              m.tasks_unnamed_lead()
           }))
         : []
   };
@@ -145,7 +146,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values: { ...values, parent_kind: kind, parent_id: id },
-        ...saveRefusal(err, custom.definitions, 'Could not save this task.')
+        ...saveRefusal(err, custom.definitions, m.tasks_error_save())
       });
     }
 

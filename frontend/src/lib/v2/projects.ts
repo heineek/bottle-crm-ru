@@ -8,6 +8,9 @@
  */
 import { missingOptions } from '#lib/v2/pickers.js';
 import { money } from '#lib/v2/format.js';
+import { intlLocale } from '#lib/i18n/locale.js';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import type { FormBody } from '#lib/api-helpers.js';
 import type { components } from '#lib/api-schema.js';
 
@@ -17,11 +20,20 @@ type Grouping = NonNullable<
 
 export const PROJECT_STATUSES = ['active', 'on_hold', 'completed', 'cancelled'];
 
+// Getters, so each read takes the language of the request.
 export const PROJECT_STATUS_LABEL: Record<string, string> = {
-  active: 'Active',
-  on_hold: 'On hold',
-  completed: 'Completed',
-  cancelled: 'Cancelled'
+  get active() {
+    return m.projects_status_active();
+  },
+  get on_hold() {
+    return m.projects_status_on_hold();
+  },
+  get completed() {
+    return m.projects_status_completed();
+  },
+  get cancelled() {
+    return m.projects_status_cancelled();
+  }
 };
 
 export const PROJECT_STATUS_TONE: Record<string, 'ink' | 'slate' | 'clay' | 'rust' | 'moss'> = {
@@ -34,18 +46,46 @@ export const PROJECT_STATUS_TONE: Record<string, 'ink' | 'slate' | 'clay' | 'rus
 export const BILLING_TYPES = ['time_and_materials', 'fixed_fee', 'retainer', 'non_billable'];
 
 export const BILLING_TYPE_LABEL: Record<string, string> = {
-  time_and_materials: 'Time and materials',
-  fixed_fee: 'Fixed fee',
-  retainer: 'Retainer',
-  non_billable: 'Non-billable'
+  get time_and_materials() {
+    return m.projects_billing_time_and_materials();
+  },
+  get fixed_fee() {
+    return m.projects_billing_fixed_fee();
+  },
+  get retainer() {
+    return m.projects_billing_retainer();
+  },
+  get non_billable() {
+    return m.projects_billing_non_billable();
+  }
 };
 
 /** How a bill of time groups its lines; `entry` is the API's default. */
-export const BILL_GROUPINGS: { value: Grouping; label: string }[] = [
-  { value: 'single', label: 'One line for everything' },
-  { value: 'person', label: 'One line per person' },
-  { value: 'task', label: 'One line per task' },
-  { value: 'entry', label: 'One line per entry' }
+export const BILL_GROUPINGS: { value: Grouping; readonly label: string }[] = [
+  {
+    value: 'single',
+    get label() {
+      return m.projects_group_single();
+    }
+  },
+  {
+    value: 'person',
+    get label() {
+      return m.projects_group_person();
+    }
+  },
+  {
+    value: 'task',
+    get label() {
+      return m.projects_group_task();
+    }
+  },
+  {
+    value: 'entry',
+    get label() {
+      return m.projects_group_entry();
+    }
+  }
 ];
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -68,12 +108,14 @@ export function isoDateOrNull(value: unknown): string | null {
 /** Decimal hours as the page writes time: "40h", "12h 30m", "45m". */
 export function hoursText(hours: number | string | null | undefined): string {
   const n = Number(hours ?? 0);
-  if (!Number.isFinite(n) || n <= 0) return '0h';
+  if (!Number.isFinite(n) || n <= 0) return m.projects_hours_short({ hours: '0' });
   const minutes = Math.round(n * 60);
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (!h) return `${m}m`;
-  return m ? `${h}h ${m}m` : `${h}h`;
+  const h = String(Math.floor(minutes / 60));
+  const min = String(minutes % 60);
+  if (h === '0') return m.projects_minutes_short({ minutes: min });
+  return min !== '0'
+    ? m.projects_hours_minutes_short({ hours: h, minutes: min })
+    : m.projects_hours_short({ hours: h });
 }
 
 /**
@@ -118,8 +160,11 @@ export function rowBurn(
   const pick = hours && (!amount || hours.percent >= amount.percent) ? 'hours' : 'amount';
   const meter = pick === 'hours' ? hours : amount;
   if (!meter) return null;
-  const noun = pick === 'hours' ? 'hours' : 'budget';
-  return { kind: pick, label: `${meter.percent}% of ${noun}`, ...meter };
+  const label =
+    pick === 'hours'
+      ? m.projects_burn_of_hours({ percent: String(meter.percent) })
+      : m.projects_burn_of_budget({ percent: String(meter.percent) });
+  return { kind: pick, label, ...meter };
 }
 
 /**
@@ -132,8 +177,15 @@ export function budgetNotificationText(data: unknown): string | null {
   if (kind !== 'hours' && kind !== 'amount') return null;
   if (typeof project !== 'string' || !project.trim()) return null;
   if (typeof percent !== 'number' || !Number.isFinite(percent) || percent <= 0) return null;
-  const used = percent >= 100 ? 'all' : `${Math.round(percent)}%`;
-  return `${project} has used ${used} of its ${kind} budget`;
+  const share = String(Math.round(percent));
+  if (kind === 'hours') {
+    return percent >= 100
+      ? m.projects_notify_hours_all({ project })
+      : m.projects_notify_hours_share({ project, percent: share });
+  }
+  return percent >= 100
+    ? m.projects_notify_amount_all({ project })
+    : m.projects_notify_amount_share({ project, percent: share });
 }
 
 /**
@@ -148,11 +200,11 @@ function decimalOrNull(raw: unknown): string | null | undefined {
   return n.toFixed(2);
 }
 
-const DECIMAL_LABEL = {
-  budget_hours: 'Budget hours',
-  budget_amount: 'Budget amount',
-  hourly_rate: 'Hourly rate'
-} as Record<string, string>;
+const DECIMAL_LABEL: Record<string, () => string> = {
+  budget_hours: () => m.projects_field_budget_hours(),
+  budget_amount: () => m.projects_field_budget_amount(),
+  hourly_rate: () => m.projects_field_hourly_rate()
+};
 
 /**
  * A project form's fields as `projectValues` reads them and `projectBody`
@@ -292,11 +344,11 @@ export function projectBody(values: ProjectValues): { body: ProjectBody; errors:
 
   if ('name' in values) {
     body.name = String(values.name ?? '').trim();
-    if (!body.name) errors.push('Give the project a name.');
+    if (!body.name) errors.push(m.projects_error_name());
   }
   if ('account' in values) {
     body.account = values.account || null;
-    if (!body.account) errors.push('Pick the account this project is for.');
+    if (!body.account) errors.push(m.projects_error_account());
   }
   if ('deal' in values) body.deal = values.deal || null;
   if ('status' in values && values.status) body.status = values.status;
@@ -306,7 +358,7 @@ export function projectBody(values: ProjectValues): { body: ProjectBody; errors:
   for (const key of ['budget_hours', 'budget_amount', 'hourly_rate'] as const) {
     if (!(key in values)) continue;
     const parsed = decimalOrNull(values[key]);
-    if (parsed === undefined) errors.push(`${DECIMAL_LABEL[key]} must be a number of 0 or more.`);
+    if (parsed === undefined) errors.push(m.projects_error_not_number({ field: DECIMAL_LABEL[key]() }));
     else body[key] = parsed;
   }
   for (const key of ['start_date', 'due_date'] as const) {
@@ -316,7 +368,7 @@ export function projectBody(values: ProjectValues): { body: ProjectBody; errors:
   const start = isoDateOrNull(values.start_date);
   const due = isoDateOrNull(values.due_date);
   if (start && due && due < start) {
-    errors.push('The due date cannot be before the start date.');
+    errors.push(m.projects_error_due_before_start());
   }
   if ('description' in values) body.description = String(values.description ?? '');
   if ('assigned_to' in values) body.assigned_to = [...new Set(values.assigned_to ?? [])];
@@ -328,11 +380,11 @@ export function projectBody(values: ProjectValues): { body: ProjectBody; errors:
       if (!row?.profile) continue;
       const rate = decimalOrNull(row.hourly_rate);
       if (!rate) {
-        errors.push('Each person on the rates list needs a rate of 0 or more.');
+        errors.push(m.projects_error_rate_missing());
         continue;
       }
       if (seen.has(row.profile)) {
-        errors.push('A person can have only one rate on a project.');
+        errors.push(m.projects_error_rate_duplicate());
         continue;
       }
       seen.add(row.profile);
@@ -352,31 +404,31 @@ function appendRetainer(values: ProjectValues, body: ProjectBody, errors: string
   const isRetainer = values.billing_type === 'retainer';
   const parsed = (raw: string | undefined, label: string) => {
     const n = decimalOrNull(raw);
-    if (n === undefined) errors.push(`${label} must be a number of 0 or more.`);
+    if (n === undefined) errors.push(m.projects_error_not_number({ field: label }));
     return n ?? null;
   };
   let fee: string | null = null;
   let hours: string | null = null;
   let overage: string | null = null;
   if ('retainer_fee' in values) {
-    fee = parsed(values.retainer_fee, 'Monthly fee');
-    if (isRetainer && !(Number(fee) >= 0.01)) errors.push('Set the monthly fee.');
+    fee = parsed(values.retainer_fee, m.projects_field_monthly_fee());
+    if (isRetainer && !(Number(fee) >= 0.01)) errors.push(m.projects_error_monthly_fee());
     body.retainer_fee = fee;
   }
   if ('retainer_hours' in values) {
-    hours = parsed(values.retainer_hours, 'Hours included each month');
+    hours = parsed(values.retainer_hours, m.projects_field_included_hours());
     body.retainer_hours = hours;
   }
   if ('retainer_overage_rate' in values) {
-    overage = parsed(values.retainer_overage_rate, 'Rate for hours over the allowance');
+    overage = parsed(values.retainer_overage_rate, m.projects_field_overage_rate());
     body.retainer_overage_rate = overage;
   }
   if (isRetainer && hours !== null && overage === null) {
-    errors.push('Set the rate for hours over the allowance.');
+    errors.push(m.projects_error_overage_rate());
   }
   if ('retainer_carried_hours' in values) {
     body.retainer_carried_hours =
-      parsed(values.retainer_carried_hours, 'Carried hours') ?? (0).toFixed(2);
+      parsed(values.retainer_carried_hours, m.projects_field_carried_hours()) ?? (0).toFixed(2);
   }
   if ('retainer_rollover' in values) body.retainer_rollover = values.retainer_rollover === true;
 }
@@ -439,17 +491,17 @@ export function invoiceAmountBody(
   const body: components['schemas']['InvoiceAmountRequest'] = {};
   if (mode === 'percent') {
     if (budgetAmount === null || !(budgetAmount > 0)) {
-      return { error: 'Set a budget amount on the project before invoicing a percentage of it.' };
+      return { error: m.projects_error_percent_needs_budget() };
     }
     if (!Number.isFinite(n) || n <= 0 || n > 100) {
-      return { error: 'The percentage must be more than 0 and at most 100.' };
+      return { error: m.projects_error_percent_range() };
     }
     body.percent = String(Math.round(n * 100) / 100);
   } else if (mode === 'amount') {
-    if (!Number.isFinite(n) || n <= 0) return { error: 'The amount must be more than 0.' };
+    if (!Number.isFinite(n) || n <= 0) return { error: m.projects_error_amount_positive() };
     body.amount = n.toFixed(2);
   } else {
-    return { error: 'Choose an amount or a percentage of the fee.' };
+    return { error: m.projects_error_amount_mode() };
   }
   const text = String(description ?? '').trim();
   if (text) body.description = text;
@@ -477,8 +529,7 @@ export function taskProject(value: unknown): { id: string; name: string } | null
 export function unratedText(unrated: number | null | undefined): string {
   const n = Number(unrated) || 0;
   if (n <= 0) return '';
-  if (n === 1) return '1 entry has no rate and will be billed at 0.';
-  return `${n} of these entries have no rate and will be billed at 0.`;
+  return m.projects_unrated_entries({ count: n });
 }
 
 /**
@@ -514,26 +565,16 @@ export function defaultBillable(billingType: string | null | undefined): boolean
   return billingType !== 'non_billable';
 }
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
-];
-
-/** "October 2026" from `YYYY-MM` or `YYYY-MM-DD`, else ''. Never goes through a Date, so no zone shifts it. */
+/** "October 2026" from `YYYY-MM` or `YYYY-MM-DD`, else ''. Formatted in UTC, so no zone shifts the month. */
 export function monthLabel(value: unknown): string {
-  const m = typeof value === 'string' ? value.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/) : null;
-  const name = m ? MONTH_NAMES[Number(m[2]) - 1] : undefined;
-  return m && name ? `${name} ${m[1]}` : '';
+  const match = typeof value === 'string' ? value.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/) : null;
+  const month = match ? Number(match[2]) : 0;
+  if (!match || month < 1 || month > 12) return '';
+  return new Intl.DateTimeFormat(intlLocale(getLocale(), 'date'), {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(Date.UTC(Number(match[1]), month - 1, 1)));
 }
 
 /** Hours as a plain number for a sentence: "12", "12.5", "0.25". */
@@ -541,8 +582,6 @@ function hoursFigure(hours: unknown): string {
   const n = Number(hours);
   return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : '0';
 }
-
-const hoursNoun = (hours: unknown) => (hoursFigure(hours) === '1' ? 'hour' : 'hours');
 
 /** What the API's `retainer_usage` holds, numbers already read. */
 export type RetainerUsage = {
@@ -577,31 +616,39 @@ export function retainerPanel(p: {
   if (u && month) {
     usage =
       u.available_hours === null
-        ? `${hoursFigure(u.used_hours)} ${hoursNoun(u.used_hours)} in ${month}`
-        : `${hoursFigure(u.used_hours)} of ${hoursFigure(u.available_hours)} hours used in ${month}`;
+        ? m.projects_retainer_used_in({ count: Number(hoursFigure(u.used_hours)), month })
+        : m.projects_retainer_used_of({
+            used: Number(hoursFigure(u.used_hours)),
+            count: Number(hoursFigure(u.available_hours)),
+            month
+          });
   }
   let overage: string | null = null;
   if (u && u.overage_hours > 0) {
     const amount =
       p.retainer_overage_rate === null
-        ? ''
-        : `, ${money(Math.round(u.overage_hours * p.retainer_overage_rate * 100) / 100, p.currency)}`;
-    overage = `${hoursFigure(u.overage_hours)} ${hoursNoun(u.overage_hours)} over the allowance so far${amount}`;
+        ? null
+        : money(Math.round(u.overage_hours * p.retainer_overage_rate * 100) / 100, p.currency);
+    const hours = Number(hoursFigure(u.overage_hours));
+    overage =
+      amount === null
+        ? m.projects_retainer_overage({ count: hours })
+        : m.projects_retainer_overage_amount({ count: hours, amount });
   }
   const carriedHours = p.retainer_carried_hours ?? 0;
   const ended = monthLabel(p.retainer_last_month);
   return {
     fee:
       p.retainer_fee === null
-        ? 'No monthly fee set'
-        : `${money(p.retainer_fee, p.currency)} a month`,
+        ? m.projects_retainer_no_fee()
+        : m.projects_retainer_fee({ amount: money(p.retainer_fee, p.currency) }),
     usage,
     overage,
     carried:
       carriedHours > 0
-        ? `${hoursFigure(carriedHours)} ${hoursNoun(carriedHours)} carried in from earlier months`
+        ? m.projects_retainer_carried({ count: Number(hoursFigure(carriedHours)) })
         : null,
-    ended: ended ? `Ended after ${ended}` : null
+    ended: ended ? m.projects_retainer_ended({ month: ended }) : null
   };
 }
 
@@ -615,5 +662,5 @@ export function retainerInvoiceNotificationText(data: unknown): string | null {
   const label = monthLabel(month);
   if (typeof project !== 'string' || !project.trim()) return null;
   if (typeof invoice_number !== 'string' || !invoice_number.trim() || !label) return null;
-  return `Retainer invoice ${invoice_number} for ${label} drafted for ${project}`;
+  return m.projects_notify_retainer_invoice({ number: invoice_number, month: label, project });
 }

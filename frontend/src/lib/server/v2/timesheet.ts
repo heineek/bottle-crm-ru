@@ -23,6 +23,7 @@
  * the caller's own rows for a non-admin, and answers 403 on someone else's
  * entry. Nothing below should be read as having re-checked that.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
@@ -68,7 +69,7 @@ export async function stopTimer(
   { cookies }: { cookies: Cookies },
   entryId: string
 ): Promise<Schemas['TimeEntry']> {
-  if (!entryId) throw new Error('Which time entry? No entry id was given.');
+  if (!entryId) throw new Error(m.timesheet_error_no_entry());
 
   return await apiRequest(`/time-entries/${entryId}/stop/`, { method: 'POST' }, { cookies });
 }
@@ -144,7 +145,7 @@ export async function listTicketTime(
   { cookies }: { cookies: Cookies },
   ticketId: string
 ): Promise<Schemas['TimeEntry'][]> {
-  if (!ticketId) throw new Error('Which ticket? No ticket id was given.');
+  if (!ticketId) throw new Error(m.timesheet_error_no_ticket());
 
   const entries: Schemas['TimeEntry'][] = await apiRequest(
     `/cases/${ticketId}/time-entries/`,
@@ -168,7 +169,7 @@ export async function startTicketTimer(
   { cookies }: { cookies: Cookies },
   ticketId: string
 ): Promise<Schemas['TimeEntry']> {
-  if (!ticketId) throw new Error('Which ticket? No ticket id was given.');
+  if (!ticketId) throw new Error(m.timesheet_error_no_ticket());
 
   return await apiRequest(
     `/cases/${ticketId}/time-entries/start/`,
@@ -209,7 +210,7 @@ export async function logTicketTime(
     currency?: string | null;
   }
 ): Promise<Schemas['TimeEntry']> {
-  if (!ticketId) throw new Error('Which ticket? No ticket id was given.');
+  if (!ticketId) throw new Error(m.timesheet_error_no_ticket());
 
   return await apiRequest(
     `/cases/${ticketId}/time-entries/`,
@@ -232,10 +233,10 @@ export function loggedEntryBody(entry: {
 }): FormBody<Schemas['TimeEntryCreateRequest']> {
   const minutes = Number(entry.minutes);
   if (!Number.isInteger(minutes) || minutes < 1 || minutes > MAX_ENTRY_MINUTES) {
-    throw new Error(`Minutes must be a whole number between 1 and ${MAX_ENTRY_MINUTES}.`);
+    throw new Error(m.timesheet_error_minutes({ max: MAX_ENTRY_MINUTES }));
   }
   const description = (entry.description ?? '').trim();
-  if (!description) throw new Error('Say what the time was spent on.');
+  if (!description) throw new Error(m.timesheet_error_description());
 
   const ended = new Date();
   const started = new Date(ended.getTime() - minutes * 60000);
@@ -251,7 +252,7 @@ export function loggedEntryBody(entry: {
   // difference between an invoice line worth something and one worth 0.00.
   if (entry.hourlyRate !== null && entry.hourlyRate !== undefined && entry.hourlyRate !== '') {
     const rate = Number(entry.hourlyRate);
-    if (!Number.isFinite(rate) || rate < 0) throw new Error('The rate must be a positive number.');
+    if (!Number.isFinite(rate) || rate < 0) throw new Error(m.timesheet_error_rate());
     body.hourly_rate = rate.toFixed(2);
   }
   if (entry.currency) body.currency = entry.currency;
@@ -272,7 +273,7 @@ export async function setEntryBillable(
   entryId: string,
   billable: boolean
 ): Promise<Schemas['TimeEntry']> {
-  if (!entryId) throw new Error('Which time entry? No entry id was given.');
+  if (!entryId) throw new Error(m.timesheet_error_no_entry());
 
   return await apiRequest(
     `/time-entries/${entryId}/`,
@@ -293,7 +294,7 @@ export async function deleteEntry(
   { cookies }: { cookies: Cookies },
   entryId: string
 ): Promise<null> {
-  if (!entryId) throw new Error('Which time entry? No entry id was given.');
+  if (!entryId) throw new Error(m.timesheet_error_no_entry());
 
   return await apiRequest(`/time-entries/${entryId}/`, { method: 'DELETE' }, { cookies });
 }

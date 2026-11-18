@@ -44,6 +44,7 @@ import { apiStatus } from '#lib/api-errors.js';
 import { fieldsForDetail, fieldsForEdit } from '#lib/server/v2/record-custom-fields.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
+import { m } from '#lib/paraglide/messages.js';
 import { taskProject } from '#lib/v2/projects.js';
 import type { components } from '#lib/api-schema.js';
 
@@ -95,7 +96,9 @@ function toRelated(row: TaskRecord) {
       return {
         kind: parent.kind,
         id: value.id,
-        name: value.name || (parent.kind === 'project' ? 'A project' : '(unnamed)'),
+        name:
+          value.name ||
+          (parent.kind === 'project' ? m.tasks_parent_project_unnamed() : m.tasks_unnamed()),
         href: parent.href(value.id)
       };
     }
@@ -231,7 +234,7 @@ export async function getTask({ cookies }: { cookies: Cookies }, id: string) {
   } catch (err) {
     rethrowModuleOff(err);
     if (apiStatus(err) === 404) {
-      error(404, 'That task does not exist, or it belongs to another team.');
+      error(404, m.tasks_error_not_found());
     }
     if (apiStatus(err) === 403) error(403);
     throw err;
@@ -293,7 +296,7 @@ function buildTaskActivity(response: Schemas['TaskDetailResponse']) {
       type: 'file',
       at: a.created_at,
       by: null,
-      body: a.file_name || 'Attachment',
+      body: a.file_name || m.tasks_activity_attachment(),
       href: attachmentHref(a.id)
     });
   }
@@ -305,7 +308,7 @@ function buildTaskActivity(response: Schemas['TaskDetailResponse']) {
       type: 'status',
       at: task.created_at,
       by: null,
-      body: 'Task created'
+      body: m.tasks_activity_created()
     });
   }
 

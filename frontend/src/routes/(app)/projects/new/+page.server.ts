@@ -8,6 +8,7 @@ import {
 } from '#lib/server/v2/record-custom-fields.js';
 import { isOn } from '#lib/v2/modules.js';
 import { draftValues, isUuid, projectBody, projectValues } from '#lib/v2/projects.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -49,9 +50,9 @@ export const load: PageServerLoad = async (event) => {
     stored: draft
       ? {
           account: fromDraft.account
-            ? { id: fromDraft.account, name: accountName || 'The deal’s account' }
+            ? { id: fromDraft.account, name: accountName || m.projects_draft_account() }
             : null,
-          deal: fromDraft.deal ? { id: fromDraft.deal, name: fromDraft.name || 'The deal' } : null
+          deal: fromDraft.deal ? { id: fromDraft.deal, name: fromDraft.name || m.projects_draft_deal() } : null
         }
       : {}
   };
@@ -75,7 +76,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not create the project.')
+        ...saveRefusal(err, custom.definitions, m.projects_error_create())
       });
     }
     redirect(303, created.id ? `/projects/${created.id}` : '/projects');

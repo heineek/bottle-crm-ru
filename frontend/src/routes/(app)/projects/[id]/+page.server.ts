@@ -22,6 +22,7 @@ import { isOn } from '#lib/v2/modules.js';
 import { isOrgAdmin } from '#lib/admin.js';
 import { todayIn } from '#lib/v2/dates.js';
 import { billGrouping, invoiceAmountBody, isoDateOrNull } from '#lib/v2/projects.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** A refusal's own 4xx status for `fail`, or 400 for anything else. */
@@ -120,7 +121,7 @@ export const actions: Actions = {
       await deleteProject(event, event.params.id);
     } catch (err) {
       const code = clientStatus(err);
-      return fail(code, { error: readableError(err, 'Could not delete this project.') });
+      return fail(code, { error: readableError(err, m.projects_error_delete()) });
     }
     redirect(303, '/projects');
   },
@@ -136,7 +137,7 @@ export const actions: Actions = {
     } catch (err) {
       const body = apiErrorBody(err);
       return fail(apiStatus(err) === 409 ? 409 : 400, {
-        timeError: readableError(err, 'Could not start the timer.'),
+        timeError: readableError(err, m.projects_error_timer_start()),
         runningTicketId: body?.running_case_id ?? null,
         runningProjectId: body?.running_project_id ?? null
       });
@@ -149,7 +150,7 @@ export const actions: Actions = {
     try {
       await stopTimer(event, form.get('entry_id')?.toString() ?? '');
     } catch (err) {
-      return fail(400, { timeError: readableError(err, 'Could not stop the timer.') });
+      return fail(400, { timeError: readableError(err, m.projects_error_timer_stop()) });
     }
     return { timeStopped: true };
   },
@@ -168,7 +169,7 @@ export const actions: Actions = {
         task: form.get('task')?.toString() ?? ''
       });
     } catch (err) {
-      return fail(400, { timeError: readableError(err, 'Could not log this time.') });
+      return fail(400, { timeError: readableError(err, m.projects_error_log_time()) });
     }
     return { timeLogged: true };
   },
@@ -182,7 +183,7 @@ export const actions: Actions = {
         form.get('billable') === 'true'
       );
     } catch (err) {
-      return fail(400, { timeError: readableError(err, 'Could not change this entry.') });
+      return fail(400, { timeError: readableError(err, m.projects_error_entry_change()) });
     }
     return { timeUpdated: true };
   },
@@ -192,7 +193,7 @@ export const actions: Actions = {
     try {
       await deleteEntry(event, form.get('entry_id')?.toString() ?? '');
     } catch (err) {
-      return fail(400, { timeError: readableError(err, 'Could not delete this entry.') });
+      return fail(400, { timeError: readableError(err, m.projects_error_entry_delete()) });
     }
     return { timeDeleted: true };
   },
@@ -208,7 +209,7 @@ export const actions: Actions = {
       });
     } catch (err) {
       const code = clientStatus(err);
-      return fail(code, { billError: readableError(err, 'Could not bill this time.') });
+      return fail(code, { billError: readableError(err, m.projects_error_bill_time()) });
     }
     redirect(303, made?.invoice_id ? `/invoices/${made.invoice_id}` : '/invoices');
   },
@@ -221,7 +222,7 @@ export const actions: Actions = {
       made = await billProjectRetainer(event, event.params.id, form.get('month')?.toString() ?? '');
     } catch (err) {
       const code = clientStatus(err);
-      return fail(code, { retainerError: readableError(err, 'Could not bill this month.') });
+      return fail(code, { retainerError: readableError(err, m.projects_error_bill_month()) });
     }
     redirect(303, made?.invoice_id ? `/invoices/${made.invoice_id}` : '/invoices');
   },
@@ -244,7 +245,7 @@ export const actions: Actions = {
       made = await invoiceProjectAmount(event, event.params.id, body);
     } catch (err) {
       const code = clientStatus(err);
-      return fail(code, { amountError: readableError(err, 'Could not make that invoice.') });
+      return fail(code, { amountError: readableError(err, m.projects_error_invoice_amount()) });
     }
     redirect(303, made?.invoice_id ? `/invoices/${made.invoice_id}` : '/invoices');
   }

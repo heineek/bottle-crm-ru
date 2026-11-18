@@ -14,6 +14,8 @@
     rowBurn
   } from '#lib/v2/projects.js';
   import { Briefcase, Plus, Search } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -26,13 +28,14 @@
   );
 </script>
 
-<PageHeader title="Projects">
+<PageHeader title={m.projects_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(data.totals.count)}</span>
-    {data.totals.count === 1 ? 'project' : 'projects'}
+    {#each messageParts(m.projects_list_count({ count: data.totals.count, shown: slot('shown') })) as p, i (i)}{#if p.key === 'shown'}<span
+          class="v2-num">{count(data.totals.count)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn v2-btn-primary" href={resolve('projects/new')}><Plus />New project</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('projects/new')}><Plus />{m.projects_new_button()}</a>
   {/snippet}
 </PageHeader>
 
@@ -42,7 +45,7 @@
   people={data.people}
   accounts={data.accounts}
   meId={data.meId}
-  meta="Newest first"
+  meta={m.projects_list_meta()}
 />
 
 <div class="v2-pad" style="padding-top:10px;flex:none">
@@ -55,24 +58,22 @@
       type="search"
       name="q"
       value={data.q}
-      placeholder="Search by name"
-      aria-label="Search projects by name"
+      placeholder={m.projects_search_placeholder()}
+      aria-label={m.projects_search_label()}
     />
-    <button class="v2-btn" type="submit"><Search size={13} />Search</button>
+    <button class="v2-btn" type="submit"><Search size={13} />{m.common_search()}</button>
   </form>
 </div>
 
 {#if projects.length === 0}
   <div class="v2-scroll">
     <EmptyState
-      title={data.q || page.url.search ? 'No projects match' : 'No projects yet'}
-      body={data.q || page.url.search
-        ? 'Nothing matches this view. Clear a filter or the search to see more.'
-        : 'A project holds the work for a client: its tasks, the time logged on it, and the invoices that bill it. Start one here, or from a won deal.'}
+      title={data.q || page.url.search ? m.projects_empty_match_title() : m.projects_empty_title()}
+      body={data.q || page.url.search ? m.projects_empty_match_body() : m.projects_empty_body()}
     >
       {#snippet icon()}<Briefcase size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('projects/new')}>New project</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('projects/new')}>{m.projects_new_button()}</a>
       {/snippet}
     </EmptyState>
   </div>
@@ -82,12 +83,12 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Project</th>
-            <th>Status</th>
-            <th>Budget used</th>
-            <th class="v2-r">Logged</th>
-            <th>Due</th>
-            <th>Billing</th>
+            <th>{m.projects_col_project()}</th>
+            <th>{m.common_status()}</th>
+            <th>{m.projects_col_budget_used()}</th>
+            <th class="v2-r">{m.projects_col_logged()}</th>
+            <th>{m.projects_col_due()}</th>
+            <th>{m.projects_col_billing()}</th>
           </tr>
         </thead>
         <tbody>
@@ -112,13 +113,13 @@
                   </div>
                   <div class="burn-label" style="color:var(--v2-{burn.tone})">{burn.label}</div>
                 {:else}
-                  <span class="v2-sub burn-label">No budget set</span>
+                  <span class="v2-sub burn-label">{m.projects_no_budget()}</span>
                 {/if}
               </td>
               <td class="v2-r v2-num" data-m="meta" data-l="logged">
                 {hoursText(p.burn.logged_hours)}
               </td>
-              <td data-m="meta">{p.due_date ? `Due ${shortDate(p.due_date)}` : ''}</td>
+              <td data-m="meta">{p.due_date ? m.projects_due_on({ date: shortDate(p.due_date) }) : ''}</td>
               <td data-m="hide" class="v2-sub">{BILLING_TYPE_LABEL[p.billing_type] ?? ''}</td>
             </tr>
           {/each}
@@ -126,8 +127,10 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{projects.length}</span> of
-      <span class="v2-num">{count(data.totals.count)}</span>
+      {#each messageParts(m.projects_showing_of({ shown: slot('shown'), total: slot('total') })) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{projects.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(data.totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   </div>
 {/if}

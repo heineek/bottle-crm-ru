@@ -4,6 +4,8 @@
   import ProjectForm from '#lib/v2/components/ProjectForm.svelte';
   import { isOrgAdmin } from '#lib/admin.js';
   import { ChevronRight } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -16,11 +18,11 @@
   );
 </script>
 
-<PageHeader title="New project" record center width="62ch">
+<PageHeader title={m.projects_new_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('projects')}>Projects</a>
+    <a href={resolve('projects')}>{m.projects_title()}</a>
     <ChevronRight size={12} />
-    <span>New</span>
+    <span>{m.projects_crumb_new()}</span>
   {/snippet}
 </PageHeader>
 
@@ -28,16 +30,17 @@
   <div class="v2-pad">
     {#if data.fromDeal}
       <p class="v2-sub note">
-        Filled from the deal {data.fromDeal.name}. Nothing is saved until you create the project.
+        {#each messageParts(m.projects_from_deal_note({ deal: slot('deal') })) as p, i (i)}{#if p.key === 'deal'}{data
+              .fromDeal.name}{:else}{p.text}{/if}{/each}
       </p>
     {:else if data.draftMissed}
       <p class="v2-sub note">
-        That deal could not be opened, so the form starts empty. Pick the account below.
+        {m.projects_draft_missed()}
       </p>
     {/if}
     <ProjectForm
       action="?/create"
-      submitLabel="Create project"
+      submitLabel={m.projects_create_button()}
       values={data.values}
       typed={form?.values}
       error={form?.error}

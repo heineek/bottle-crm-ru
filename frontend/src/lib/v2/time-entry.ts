@@ -1,3 +1,5 @@
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * Whether a time entry is billed. `invoiced` stays true while Invoices is
  * switched off, when `invoice` is emptied; an older answer carries only `invoice`.
@@ -29,7 +31,8 @@ export function entryParent(
   if (ticket) {
     const id = typeof ticket === 'object' ? ticket.id : ticket;
     if (typeof id === 'string' && id) {
-      const name = (typeof ticket === 'object' && ticket.name) || 'A ticket';
+      const name =
+        (typeof ticket === 'object' && ticket.name) || m.timesheet_parent_ticket_unnamed();
       return { kind: 'ticket', id, name, href: `/tickets/${id}` };
     }
   }
@@ -39,7 +42,7 @@ export function entryParent(
     const name =
       entry?.project_name ||
       (project && typeof project === 'object' && project.name) ||
-      'A project';
+      m.timesheet_parent_project_unnamed();
     return { kind: 'project', id: projectId, name, href: `/projects/${projectId}` };
   }
   return null;

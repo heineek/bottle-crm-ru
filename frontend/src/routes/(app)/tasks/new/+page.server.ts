@@ -12,6 +12,7 @@ import {
   readCustomFields,
   saveRefusal
 } from '#lib/server/v2/record-custom-fields.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const NONE: { results: never[] } = { results: [] };
@@ -29,7 +30,7 @@ const NONE: { results: never[] } = { results: [] };
 export const load: PageServerLoad = async (event) => {
   // Asked directly: `parent()` would rerun the whole shell load.
   const modulesP = getModules(event);
-  const when = (key: string) => modulesP.then((m) => isOn(m?.modules ?? null, key));
+  const when = (key: string) => modulesP.then((mods) => isOn(mods?.modules ?? null, key));
   const [options, tickets, deals, leads, customFields, projects] = await Promise.allSettled([
     getTaskFormOptions(event),
     when('tickets').then(async (on) =>
@@ -77,7 +78,7 @@ export const load: PageServerLoad = async (event) => {
               `${l.first_name} ${l.last_name}`.trim() ||
               l.company_name ||
               l.email ||
-              '(unnamed lead)'
+              m.tasks_unnamed_lead()
           }))
         : []
   };
@@ -110,7 +111,7 @@ function readParent(form: FormData): { parent?: Record<string, string>; error?: 
   const id = form.get(`parent_${kind}`)?.toString() ?? '';
   if (!id) {
     return {
-      error: 'Pick which record this is attached to, or set "Attached to" back to Nothing.'
+      error: m.tasks_error_parent_missing()
     };
   }
   return { parent: { [kind]: id } };
@@ -164,7 +165,7 @@ export const actions: Actions = {
     } catch (err) {
       return refuse(400, {
         values: { ...values, parent_kind: kind },
-        ...saveRefusal(err, custom.definitions, 'Could not save this task.')
+        ...saveRefusal(err, custom.definitions, m.tasks_error_save())
       });
     }
 

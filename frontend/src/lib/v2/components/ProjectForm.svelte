@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import { untrack } from 'svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import { asInternalPath } from '#lib/utils/paths.js';
   import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import { CURRENCY_CODES } from '#lib/constants/filters.js';
@@ -110,7 +111,9 @@
   let accountName = $derived(
     [...accounts, stored.account].find((a) => a?.id === v.account)?.name ?? ''
   );
-  let personName = $derived((id: string) => allPeople.find((p) => p.id === id)?.name ?? 'Someone');
+  let personName = $derived(
+    (id: string) => allPeople.find((p) => p.id === id)?.name ?? m.projects_someone()
+  );
   const isSet = (value: unknown) => value !== null && value !== undefined && value !== '';
 
   function addRate() {
@@ -139,22 +142,22 @@
   {/if}
 
   <label class="v2-field">
-    <span class="v2-label">Project</span>
+    <span class="v2-label">{m.projects_col_project()}</span>
     <input
       class="v2-input"
       name="name"
       required
       maxlength="255"
       value={v.name ?? ''}
-      placeholder="Website rebuild, phase one"
+      placeholder={m.app_project_form_name_placeholder()}
     />
   </label>
 
   {#if isAdmin || !edit}
     <label class="v2-field">
-      <span class="v2-label">Account</span>
+      <span class="v2-label">{m.projects_account()}</span>
       <select class="v2-input" name="account" required value={v.account ?? ''}>
-        <option value="">Choose the client…</option>
+        <option value="">{m.app_project_form_choose_client()}</option>
         {#if extraAccount}
           <option value={extraAccount.id}>{extraAccount.name}</option>
         {/if}
@@ -165,16 +168,16 @@
     </label>
   {:else}
     <div class="v2-field">
-      <span class="v2-label">Account</span>
-      <p class="pf-static">{accountName || 'Not set'}</p>
+      <span class="v2-label">{m.projects_account()}</span>
+      <p class="pf-static">{accountName || m.projects_not_set()}</p>
     </div>
   {/if}
 
   {#if deals}
     <label class="v2-field">
-      <span class="v2-label">From deal</span>
+      <span class="v2-label">{m.app_project_form_from_deal()}</span>
       <select class="v2-input" name="deal" value={v.deal ?? ''}>
-        <option value="">None</option>
+        <option value="">{m.app_project_form_no_deal()}</option>
         {#if extraDeal}
           <option value={extraDeal.id}>{extraDeal.name}</option>
         {/if}
@@ -188,12 +191,12 @@
   <div class="pf-row">
     {#if lockStatus}
       <div class="v2-field">
-        <span class="v2-label">Status, set by an admin</span>
+        <span class="v2-label">{m.app_project_form_status_admin()}</span>
         <p class="pf-static">{PROJECT_STATUS_LABEL[v.status ?? ''] ?? ''}</p>
       </div>
     {:else}
       <label class="v2-field">
-        <span class="v2-label">Status</span>
+        <span class="v2-label">{m.common_status()}</span>
         <select class="v2-input" name="status" value={v.status || 'active'}>
           {#each PROJECT_STATUSES as s (s)}
             <option value={s}>{PROJECT_STATUS_LABEL[s]}</option>
@@ -203,7 +206,7 @@
     {/if}
     {#if isAdmin}
       <label class="v2-field">
-        <span class="v2-label">Billing</span>
+        <span class="v2-label">{m.projects_col_billing()}</span>
         <select class="v2-input" name="billing_type" bind:value={billingType}>
           {#each BILLING_TYPES as b (b)}
             <option value={b}>{BILLING_TYPE_LABEL[b]}</option>
@@ -211,7 +214,7 @@
         </select>
       </label>
       <label class="v2-field">
-        <span class="v2-label">Currency</span>
+        <span class="v2-label">{m.app_project_form_currency()}</span>
         <select class="v2-input" name="currency" value={v.currency ?? ''}>
           {#each currencies as c (c.value)}
             <option value={c.value}>{c.value}</option>
@@ -224,7 +227,7 @@
   {#if isAdmin}
     <div class="pf-row">
       <label class="v2-field">
-        <span class="v2-label">Budget hours</span>
+        <span class="v2-label">{m.projects_field_budget_hours()}</span>
         <input
           class="v2-input"
           name="budget_hours"
@@ -233,11 +236,15 @@
           min="0"
           step="0.01"
           value={v.budget_hours ?? ''}
-          placeholder="Optional"
+          placeholder={m.common_optional()}
         />
       </label>
       <label class="v2-field">
-        <span class="v2-label">{billingType === 'fixed_fee' ? 'Fixed fee' : 'Budget amount'}</span>
+        <span class="v2-label"
+          >{billingType === 'fixed_fee'
+            ? m.projects_billing_fixed_fee()
+            : m.projects_field_budget_amount()}</span
+        >
         <input
           class="v2-input"
           name="budget_amount"
@@ -246,11 +253,11 @@
           min="0"
           step="0.01"
           value={v.budget_amount ?? ''}
-          placeholder="Optional"
+          placeholder={m.common_optional()}
         />
       </label>
       <label class="v2-field">
-        <span class="v2-label">Hourly rate</span>
+        <span class="v2-label">{m.projects_field_hourly_rate()}</span>
         <input
           class="v2-input"
           name="hourly_rate"
@@ -259,7 +266,7 @@
           min="0"
           step="0.01"
           value={v.hourly_rate ?? ''}
-          placeholder="Optional"
+          placeholder={m.common_optional()}
         />
       </label>
     </div>
@@ -267,7 +274,7 @@
       <input type="hidden" name="retainer__rendered" value="1" />
       <div class="pf-row">
         <label class="v2-field">
-          <span class="v2-label">Monthly fee</span>
+          <span class="v2-label">{m.projects_field_monthly_fee()}</span>
           <input
             class="v2-input"
             name="retainer_fee"
@@ -280,7 +287,7 @@
           />
         </label>
         <label class="v2-field">
-          <span class="v2-label">Hours included each month</span>
+          <span class="v2-label">{m.projects_field_included_hours()}</span>
           <input
             class="v2-input"
             name="retainer_hours"
@@ -289,13 +296,13 @@
             min="0"
             step="0.01"
             value={v.retainer_hours ?? ''}
-            placeholder="Optional"
+            placeholder={m.common_optional()}
           />
         </label>
       </div>
       <div class="pf-row">
         <label class="v2-field">
-          <span class="v2-label">Rate for hours over the allowance</span>
+          <span class="v2-label">{m.projects_field_overage_rate()}</span>
           <input
             class="v2-input"
             name="retainer_overage_rate"
@@ -304,12 +311,12 @@
             min="0"
             step="0.01"
             value={v.retainer_overage_rate ?? ''}
-            placeholder="Needed when hours are included"
+            placeholder={m.app_project_form_overage_placeholder()}
           />
         </label>
         {#if edit}
           <label class="v2-field">
-            <span class="v2-label">Carried hours</span>
+            <span class="v2-label">{m.projects_field_carried_hours()}</span>
             <input
               class="v2-input"
               name="retainer_carried_hours"
@@ -330,73 +337,87 @@
       </div>
       <label class="pf-check">
         <input type="checkbox" name="retainer_rollover" bind:checked={rollover} />
-        <span>Roll unused hours over</span>
+        <span>{m.app_project_form_rollover()}</span>
       </label>
       <p class="v2-sub pf-hint">
-        Each month's invoice holds the fee, plus any hours over the allowance at the rate above.
-        Unused hours carry into the next invoice when rolling over.
+        {m.app_project_form_retainer_hint()}
       </p>
     {/if}
     <p class="v2-sub pf-hint">
-      Time logged on the project takes the person's own rate below, else this hourly rate. You hear
-      at 80% and at 100% of either budget.
+      {m.app_project_form_rates_hint()}
     </p>
   {:else if edit}
     <div class="v2-field">
-      <span class="v2-label">Billing, set by an admin</span>
+      <span class="v2-label">{m.app_project_form_billing_admin()}</span>
       <dl class="v2-kv pf-kv">
-        <dt>Billing</dt>
+        <dt>{m.projects_col_billing()}</dt>
         <dd>{BILLING_TYPE_LABEL[v.billing_type ?? ''] ?? ''}</dd>
-        <dt>Currency</dt>
+        <dt>{m.app_project_form_currency()}</dt>
         <dd>{v.currency ?? ''}</dd>
-        <dt>Budget hours</dt>
-        <dd>{isSet(v.budget_hours) ? hoursText(v.budget_hours) : 'Not set'}</dd>
-        <dt>{v.billing_type === 'fixed_fee' ? 'Fixed fee' : 'Budget amount'}</dt>
-        <dd>{isSet(v.budget_amount) ? money(v.budget_amount, v.currency) : 'Not set'}</dd>
-        <dt>Hourly rate</dt>
-        <dd>{isSet(v.hourly_rate) ? `${money(v.hourly_rate, v.currency)}/hr` : 'Not set'}</dd>
+        <dt>{m.projects_field_budget_hours()}</dt>
+        <dd>{isSet(v.budget_hours) ? hoursText(v.budget_hours) : m.projects_not_set()}</dd>
+        <dt>
+          {v.billing_type === 'fixed_fee'
+            ? m.projects_billing_fixed_fee()
+            : m.projects_field_budget_amount()}
+        </dt>
+        <dd>
+          {isSet(v.budget_amount) ? money(v.budget_amount, v.currency) : m.projects_not_set()}
+        </dd>
+        <dt>{m.projects_field_hourly_rate()}</dt>
+        <dd>
+          {isSet(v.hourly_rate)
+            ? m.projects_per_hour({ amount: money(v.hourly_rate, v.currency) })
+            : m.projects_not_set()}
+        </dd>
         {#if v.billing_type === 'retainer'}
-          <dt>Monthly fee</dt>
-          <dd>{isSet(v.retainer_fee) ? money(v.retainer_fee, v.currency) : 'Not set'}</dd>
-          <dt>Hours included each month</dt>
-          <dd>{isSet(v.retainer_hours) ? hoursText(v.retainer_hours) : 'Not set'}</dd>
-          <dt>Roll unused hours over</dt>
-          <dd>{v.retainer_rollover ? 'Yes' : 'No'}</dd>
-          <dt>Rate for hours over the allowance</dt>
+          <dt>{m.projects_field_monthly_fee()}</dt>
+          <dd>
+            {isSet(v.retainer_fee) ? money(v.retainer_fee, v.currency) : m.projects_not_set()}
+          </dd>
+          <dt>{m.projects_field_included_hours()}</dt>
+          <dd>{isSet(v.retainer_hours) ? hoursText(v.retainer_hours) : m.projects_not_set()}</dd>
+          <dt>{m.app_project_form_rollover()}</dt>
+          <dd>{v.retainer_rollover ? m.common_yes() : m.common_no()}</dd>
+          <dt>{m.projects_field_overage_rate()}</dt>
           <dd>
             {isSet(v.retainer_overage_rate)
-              ? `${money(v.retainer_overage_rate, v.currency)}/hr`
-              : 'Not set'}
+              ? m.projects_per_hour({ amount: money(v.retainer_overage_rate, v.currency) })
+              : m.projects_not_set()}
           </dd>
         {/if}
         {#each rates as r (r.key)}
           <dt>{personName(r.profile)}</dt>
-          <dd>{isSet(r.hourly_rate) ? `${money(r.hourly_rate, v.currency)}/hr` : 'Not set'}</dd>
+          <dd>
+            {isSet(r.hourly_rate)
+              ? m.projects_per_hour({ amount: money(r.hourly_rate, v.currency) })
+              : m.projects_not_set()}
+          </dd>
         {/each}
       </dl>
     </div>
   {:else}
     <p class="v2-sub pf-hint">
-      An admin sets the billing, budgets and rates once the project exists.
+      {m.app_project_form_member_hint()}
     </p>
   {/if}
 
   <div class="pf-row">
     <label class="v2-field">
-      <span class="v2-label">Start</span>
+      <span class="v2-label">{m.projects_start()}</span>
       <input class="v2-input" type="date" name="start_date" value={v.start_date ?? ''} />
     </label>
     <label class="v2-field">
-      <span class="v2-label">Due</span>
+      <span class="v2-label">{m.projects_col_due()}</span>
       <input class="v2-input" type="date" name="due_date" value={v.due_date ?? ''} />
     </label>
   </div>
 
   <fieldset class="v2-field pf-set">
-    <legend class="v2-label">People</legend>
+    <legend class="v2-label">{m.projects_people()}</legend>
     {#if peopleFailed}
       <p class="v2-sub pf-hint">
-        The team could not be loaded, so the people and rates are left as they are.
+        {m.app_project_form_people_failed()}
       </p>
     {:else}
       <input type="hidden" name="assigned__rendered" value="1" />
@@ -407,7 +428,7 @@
             <span>{p.name}</span>
           </label>
         {:else}
-          <p class="v2-sub pf-hint">Nobody to add yet.</p>
+          <p class="v2-sub pf-hint">{m.app_project_form_nobody()}</p>
         {/each}
       </div>
     {/if}
@@ -415,12 +436,17 @@
 
   {#if isAdmin && !peopleFailed}
     <fieldset class="v2-field pf-set">
-      <legend class="v2-label">Rates per person</legend>
+      <legend class="v2-label">{m.app_project_form_rates_per_person()}</legend>
       <input type="hidden" name="rates__rendered" value="1" />
       {#each rates as r (r.key)}
         <div class="pf-rate">
-          <select class="v2-input" name="rate_profile" bind:value={r.profile} aria-label="Person">
-            <option value="">Choose a person…</option>
+          <select
+            class="v2-input"
+            name="rate_profile"
+            bind:value={r.profile}
+            aria-label={m.app_list_filters_person()}
+          >
+            <option value="">{m.app_project_form_choose_person()}</option>
             {#each allPeople as p (p.id)}
               <option value={p.id}>{p.name}</option>
             {/each}
@@ -433,26 +459,28 @@
             min="0"
             step="0.01"
             bind:value={r.hourly_rate}
-            placeholder="Rate per hour"
-            aria-label="Rate per hour"
+            placeholder={m.app_project_form_rate_per_hour()}
+            aria-label={m.app_project_form_rate_per_hour()}
           />
           <button
             type="button"
             class="v2-btn pf-drop"
             onclick={() => dropRate(r.key)}
-            aria-label="Remove this rate"
-            title="Remove this rate"
+            aria-label={m.app_project_form_remove_rate()}
+            title={m.app_project_form_remove_rate()}
           >
             <X size={13} />
           </button>
         </div>
       {/each}
-      <button type="button" class="v2-btn" onclick={addRate}><Plus size={13} />Add a rate</button>
+      <button type="button" class="v2-btn" onclick={addRate}
+        ><Plus size={13} />{m.app_project_form_add_rate()}</button
+      >
     </fieldset>
   {/if}
 
   <label class="v2-field">
-    <span class="v2-label">Description</span>
+    <span class="v2-label">{m.common_description()}</span>
     <textarea class="v2-input" name="description" rows="4" value={v.description ?? ''}></textarea>
   </label>
 
@@ -461,12 +489,12 @@
     typed={typed?.custom_fields}
     errors={fieldErrors}
     {edit}
-    heading="Details"
+    heading={m.common_details()}
   />
 
   <div class="pf-actions">
     <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>{submitLabel}</button>
-    <a class="v2-btn" href={resolve(asInternalPath(cancelHref))}>Cancel</a>
+    <a class="v2-btn" href={resolve(asInternalPath(cancelHref))}>{m.common_cancel()}</a>
   </div>
 </form>
 

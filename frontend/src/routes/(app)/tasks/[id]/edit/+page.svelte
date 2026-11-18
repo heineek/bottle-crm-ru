@@ -13,20 +13,20 @@
   import { untrack } from 'svelte';
   import { ChevronRight } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import {
+    parentKinds,
+    taskPriorityLabel,
+    taskStatusLabel,
+    TASK_PRIORITY_CODES,
+    TASK_STATUS_CODES
+  } from '../../labels.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
 
-  const KINDS = [
-    { key: '', label: 'Nothing' },
-    { key: 'account', label: 'An account' },
-    { key: 'opportunity', label: 'A deal', module: 'deals' },
-    { key: 'case', label: 'A ticket', module: 'tickets' },
-    { key: 'lead', label: 'A lead', module: 'leads' },
-    { key: 'project', label: 'A project', module: 'projects' }
-  ];
   let kinds = $derived(
-    KINDS.filter(
+    parentKinds().filter(
       (k) => !k.module || isOn(data.modules, k.module) || k.key === data.form.parent_kind
     )
   );
@@ -37,13 +37,13 @@
   let currentId = $derived(form?.values?.parent_id ?? data.form.parent_id ?? '');
 </script>
 
-<PageHeader title="Edit task" record center width="62ch">
+<PageHeader title={m.tasks_edit_title()} record center width="62ch">
   {#snippet crumb()}
-    <a href={resolve('tasks')}>Tasks</a>
+    <a href={resolve('tasks')}>{m.tasks_title()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`tasks/${data.task.id}`)}>{data.task.title}</a>
     <ChevronRight size={12} />
-    <span>Edit</span>
+    <span>{m.common_edit()}</span>
   {/snippet}
 </PageHeader>
 
@@ -63,35 +63,35 @@
     <input type="hidden" name="parent_id_original" value={data.form.parent_id} />
 
     <label class="v2-field">
-      <span class="v2-label">Task</span>
+      <span class="v2-label">{m.tasks_field_task()}</span>
       <input class="v2-input" name="title" required maxlength="200" value={values.title ?? ''} />
     </label>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <label class="v2-field" style="flex:1;min-width:150px">
-        <span class="v2-label">Priority</span>
+        <span class="v2-label">{m.common_priority()}</span>
         <select class="v2-input" name="priority" value={values.priority ?? 'Medium'}>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
+          {#each TASK_PRIORITY_CODES as code (code)}
+            <option value={code}>{taskPriorityLabel(code)}</option>
+          {/each}
         </select>
       </label>
       <label class="v2-field" style="flex:1;min-width:150px">
-        <span class="v2-label">Status</span>
+        <span class="v2-label">{m.common_status()}</span>
         <select class="v2-input" name="status" value={values.status ?? 'New'}>
-          <option value="New">New</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
+          {#each TASK_STATUS_CODES as code (code)}
+            <option value={code}>{taskStatusLabel(code)}</option>
+          {/each}
         </select>
       </label>
       <label class="v2-field" style="flex:1;min-width:150px">
-        <span class="v2-label">Due</span>
+        <span class="v2-label">{m.tasks_field_due()}</span>
         <input class="v2-input" type="date" name="due_date" value={values.due_date ?? ''} />
       </label>
     </div>
 
     <label class="v2-field">
-      <span class="v2-label">Attached to</span>
+      <span class="v2-label">{m.tasks_field_attached()}</span>
       <select class="v2-input" name="parent_kind" bind:value={kind}>
         {#each kinds as k (k.key)}
           <option value={k.key}>{k.label}</option>
@@ -101,9 +101,9 @@
 
     {#if kind}
       <label class="v2-field">
-        <span class="v2-label">Which one</span>
+        <span class="v2-label">{m.tasks_field_which()}</span>
         <select class="v2-input" name="parent_{kind}" required>
-          <option value="">Choose…</option>
+          <option value="">{m.tasks_form_choose()}</option>
           {#each options as option (option.id)}
             <option value={option.id} selected={currentId === option.id}>{option.name}</option>
           {/each}
@@ -112,7 +112,7 @@
     {/if}
 
     <label class="v2-field">
-      <span class="v2-label">Assign to</span>
+      <span class="v2-label">{m.tasks_field_assign()}</span>
       <select
         class="v2-input"
         name="assigned_to"
@@ -126,12 +126,12 @@
         {/each}
       </select>
       <span class="v2-sub" style="font-size:11.5px">
-        Everyone selected here is on the task. Deselecting a name takes them off it.
+        {m.tasks_form_assign_hint_edit()}
       </span>
     </label>
 
     <label class="v2-field">
-      <span class="v2-label">Note</span>
+      <span class="v2-label">{m.tasks_field_note()}</span>
       <textarea class="v2-input" name="description" rows="4">{values.description ?? ''}</textarea>
     </label>
 
@@ -139,12 +139,12 @@
       fields={data.customFields ?? []}
       typed={form?.values?.custom_fields}
       errors={form?.fieldErrors}
-      heading="Details"
+      heading={m.common_details()}
     />
 
     <div style="display:flex;gap:9px;margin-top:6px">
-      <button class="v2-btn v2-btn-primary" type="submit">Save</button>
-      <a class="v2-btn" href={resolve(`tasks/${data.task.id}`)}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit">{m.common_save()}</button>
+      <a class="v2-btn" href={resolve(`tasks/${data.task.id}`)}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>
