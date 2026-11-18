@@ -6,6 +6,7 @@
  * anything this page sends, so there is no parameter here worth tampering with.
  */
 
+import { m } from '#lib/paraglide/messages.js';
 import { error, redirect, type Cookies } from '@sveltejs/kit';
 import {
   ACCESS_COOKIE,
@@ -38,7 +39,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
       toLogin(cookies);
     }
     if (err instanceof PortalError && err.status === 404) {
-      error(404, 'There is nothing to show here right now.');
+      error(404, m.public_portal_articles_nothing());
     }
     throw err;
   }

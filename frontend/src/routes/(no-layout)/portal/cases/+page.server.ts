@@ -6,6 +6,7 @@
  * tampering with a query string.
  */
 
+import { m } from '#lib/paraglide/messages.js';
 import { fail, redirect, type Cookies } from '@sveltejs/kit';
 import { apiStatus } from '#lib/api-errors.js';
 import {
@@ -55,7 +56,7 @@ export const actions: Actions = {
     const description = String(form.get('description') || '').trim();
     const priority = String(form.get('priority') || 'Normal');
 
-    if (!name) return fail(400, { error: 'Give your request a short summary.' });
+    if (!name) return fail(400, { error: m.public_portal_cases_summary_required() });
 
     try {
       const data = await createCase(token, { name, description, priority });
@@ -64,7 +65,9 @@ export const actions: Actions = {
       if (apiStatus(err) === 303) throw err;
       if (err instanceof PortalError) {
         if (err.status === 401 || err.status === 403) toLogin(cookies);
-        return fail(err.status, { error: err.data?.name?.[0] || 'Could not send that request.' });
+        return fail(err.status, {
+          error: err.data?.name?.[0] || m.public_portal_cases_send_failed()
+        });
       }
       throw err;
     }

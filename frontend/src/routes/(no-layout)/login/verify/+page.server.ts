@@ -18,16 +18,15 @@ import { fail, redirect } from '@sveltejs/kit';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
 import { relayHeaders } from '#lib/server/relay.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 import type { Actions, PageServerLoad } from './$types';
 
 type Schemas = components['schemas'];
 
-const MISSING = 'Missing verification token.';
-
 export const load: PageServerLoad = async ({ url }) => {
   if (!url.searchParams.get('token')) {
-    return { error: MISSING };
+    return { error: m.public_verify_missing_token() };
   }
   return {};
 };
@@ -38,7 +37,7 @@ export const actions: Actions = {
   default: async ({ url, cookies, getClientAddress, request }) => {
     const token = url.searchParams.get('token');
     if (!token) {
-      return fail(400, { error: MISSING });
+      return fail(400, { error: m.public_verify_missing_token() });
     }
 
     try {
@@ -75,7 +74,7 @@ export const actions: Actions = {
       });
     } catch (error) {
       const failure = error as { response?: { data?: { error?: unknown } } };
-      return fail(400, { error: failure.response?.data?.error || 'Verification failed' });
+      return fail(400, { error: failure.response?.data?.error || m.public_verify_failed() });
     }
 
     // Success - redirect to org selection (same as Google OAuth)

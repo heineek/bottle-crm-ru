@@ -13,14 +13,17 @@
    */
   import { resolve } from '$app/paths';
   import HelpCenterShell from '#lib/v2/components/HelpCenterShell.svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
 
   let title = $derived(
-    data.q ? `Search: ${data.q} | ${data.name} help center` : `${data.name} help center`
+    data.q
+      ? m.public_help_search_title({ q: data.q, name: data.name })
+      : m.public_help_title({ name: data.name })
   );
-  let description = $derived(`Answers and guides from ${data.name}.`);
+  let description = $derived(m.public_help_description({ name: data.name }));
 
   /** The query string for page `n`, keeping the search. */
   function pageQuery(n: number) {
@@ -44,33 +47,31 @@
 </svelte:head>
 
 <HelpCenterShell name={data.name} slug={data.slug}>
-  <h1>How can we help?</h1>
+  <h1>{m.public_help_heading()}</h1>
 
   <form method="GET" class="find" role="search">
-    <label class="sr-only" for="q">Search help articles</label>
+    <label class="sr-only" for="q">{m.public_help_search_label()}</label>
     <input
       id="q"
       name="q"
       type="search"
       value={data.q}
       maxlength="200"
-      placeholder="Search for an answer"
+      placeholder={m.public_help_search_placeholder()}
     />
-    <button type="submit">Search</button>
+    <button type="submit">{m.public_help_search_button()}</button>
   </form>
 
   {#if data.q}
     <p class="meta">
-      {data.count === 1 ? '1 article matches' : `${data.count} articles match`} "{data.q}".
-      <a href={resolve(`help-center/${data.slug}`)}>Show all</a>
+      {m.public_help_matches({ count: data.count, q: data.q })}
+      <a href={resolve(`help-center/${data.slug}`)}>{m.public_help_show_all()}</a>
     </p>
   {/if}
 
   {#if data.articles.length === 0}
     <p class="empty">
-      {data.q
-        ? 'Nothing matches that. Try a different word.'
-        : 'There are no help articles here yet.'}
+      {data.q ? m.public_help_no_matches() : m.public_help_empty()}
     </p>
   {:else}
     <ul class="list">
@@ -88,17 +89,18 @@
   {/if}
 
   {#if data.pages > 1}
-    <nav class="pager" aria-label="Pages">
+    <nav class="pager" aria-label={m.public_help_pages_label()}>
       {#if data.page > 1}
         <a href="{resolve(`help-center/${data.slug}`)}{pageQuery(data.page - 1)}" rel="prev"
-          >Previous</a
+          >{m.public_help_previous()}</a
         >
       {:else}
         <span></span>
       {/if}
-      <span class="where">Page {data.page} of {data.pages}</span>
+      <span class="where">{m.public_help_page_of({ page: data.page, pages: data.pages })}</span>
       {#if data.page < data.pages}
-        <a href="{resolve(`help-center/${data.slug}`)}{pageQuery(data.page + 1)}" rel="next">Next</a
+        <a href="{resolve(`help-center/${data.slug}`)}{pageQuery(data.page + 1)}" rel="next"
+          >{m.public_help_next()}</a
         >
       {:else}
         <span></span>

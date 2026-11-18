@@ -24,9 +24,12 @@
    */
   import { enhance } from '$app/forms';
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { ESTIMATE_STATUS_LABEL } from '#lib/v2/enums.js';
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
   import { money, longDate } from '#lib/v2/format.js';
-  import { DEPOSIT_FOLLOWS, depositOffer } from '#lib/v2/estimates.js';
+  import { depositOffer } from '#lib/v2/estimates.js';
   import { Download, CheckCircle2, XCircle, AlertTriangle } from '@lucide/svelte';
   import type { PageProps, SubmitFunction } from './$types';
 
@@ -56,6 +59,12 @@
   let acceptedByName = $state('');
   let acceptedByEmail = $state('');
 
+  let ref = $derived(
+    messageParts(
+      m.public_portal_estimate_ref({ number: slot('number'), date: longDate(est.issue_date) })
+    )
+  );
+
   let addr = $derived(est.client_address || {});
   let addressLines = $derived(
     [addr.line, addr.city, addr.state, addr.postcode, addr.country].filter(Boolean)
@@ -76,7 +85,12 @@
 </script>
 
 <svelte:head>
-  <title>{est.estimate_number} from {est.org.name}</title>
+  <title
+    >{m.public_portal_invoice_title({
+      number: est.estimate_number,
+      org: est.org.name ?? ''
+    })}</title
+  >
 </svelte:head>
 
 <PortalShell>
@@ -86,8 +100,8 @@
         <div class="from">{est.org.name}</div>
         <h1>{est.title}</h1>
         <div class="ref">
-          Estimate <span class="v2-num">{est.estimate_number}</span> · issued
-          {longDate(est.issue_date)}
+          {#each ref as p, i (i)}{#if p.key}<span class="v2-num">{est.estimate_number}</span
+              >{:else}{p.text}{/if}{/each}
         </div>
       </div>
       <!-- A backend download endpoint, not a SvelteKit route: rel="external"
@@ -97,7 +111,7 @@
         class="v2-btn v2-btn-sm"
         href="/api/public/estimate/{token}/pdf/"
         rel="external"
-        aria-label="Download this estimate as a PDF"
+        aria-label={m.public_portal_estimate_download()}
       >
         <Download size={13} />PDF
       </a>
@@ -105,18 +119,20 @@
 
     <section class="amount">
       <div>
-        <div class="amount-label">Total if accepted</div>
+        <div class="amount-label">{m.public_portal_estimate_total()}</div>
         <div class="amount-value v2-num">{money(est.total_amount, est.currency)}</div>
         <div class="amount-sub">
           {#if expired}
-            Expired {longDate(est.expiry_date)}
+            {m.public_portal_estimate_expired_on({ date: longDate(est.expiry_date) })}
           {:else if daysToExpiry === 0}
-            Valid until end of today
+            {m.public_portal_estimate_valid_today()}
           {:else if daysToExpiry !== null}
-            Valid until {longDate(est.expiry_date)} · {daysToExpiry}
-            {daysToExpiry === 1 ? 'day' : 'days'} left
+            {m.public_portal_estimate_valid_until({
+              date: longDate(est.expiry_date),
+              count: daysToExpiry
+            })}
           {:else}
-            No expiry date set
+            {m.public_portal_estimate_no_expiry()}
           {/if}
         </div>
       </div>
@@ -134,17 +150,18 @@
       <section class="decided" class:no={est.status === 'Declined'}>
         {#if est.status === 'Accepted'}<CheckCircle2 size={18} />{:else}<XCircle size={18} />{/if}
         <div>
-          <b>{est.status}</b>
+          <b>{ESTIMATE_STATUS_LABEL[est.status]}</b>
           {#if est.status === 'Accepted'}
             <p>
-              {est.org.name} has been notified and will raise an invoice for
-              {money(est.total_amount, est.currency)}.
-              {#if est.deposit}{DEPOSIT_FOLLOWS}{/if}
+              {m.public_portal_estimate_accepted_body({
+                org: est.org.name ?? '',
+                total: money(est.total_amount, est.currency)
+              })}
+              {#if est.deposit}{m.public_portal_estimate_deposit_follows()}{/if}
             </p>
           {:else}
             <p>
-              {est.org.name} has been notified. If you declined by mistake, reply to the email this link
-              came from. This page cannot undo it.
+              {m.public_portal_estimate_declined_body({ org: est.org.name ?? '' })}
             </p>
           {/if}
         </div>
@@ -155,10 +172,12 @@
       <section class="expired">
         <AlertTriangle size={17} />
         <div>
-          <b>This estimate has expired</b>
+          <b>{m.public_portal_estimate_expired_title()}</b>
           <p>
-            Prices were held until {longDate(est.expiry_date)}. Reply to the email this link came
-            from and {est.org.name} can send a current quote.
+            {m.public_portal_estimate_expired_body({
+              date: longDate(est.expiry_date),
+              org: est.org.name ?? ''
+            })}
           </p>
         </div>
       </section>
@@ -166,39 +185,45 @@
       <section class="decide">
         {#if !confirming}
           <div class="decide-copy">
-            <b>Ready to go ahead?</b>
-            <p>Accepting authorises {est.org.name} to invoice you for the amounts above.</p>
+            <b>{m.public_portal_estimate_ready()}</b>
+            <p>{m.public_portal_estimate_ready_body({ org: est.org.name ?? '' })}</p>
             {#if offer}<p>{offer}</p>{/if}
           </div>
           <div class="decide-actions">
             <button class="v2-btn v2-btn-primary" onclick={() => (confirming = true)}>
-              Accept this estimate
+              {m.public_portal_estimate_accept()}
             </button>
             <form method="POST" action="?/decline" use:enhance={respond}>
-              <button class="v2-btn" type="submit" disabled={submitting}>Decline</button>
+              <button class="v2-btn" type="submit" disabled={submitting}
+                >{m.public_portal_estimate_decline()}</button
+              >
             </form>
           </div>
         {:else}
           <!-- Step two. The total is repeated here on purpose: it is the number
                being agreed to, and it should be under the thumb that agrees. -->
           <form class="confirm" method="POST" action="?/accept" use:enhance={respond}>
-            <b>Confirm acceptance of {money(est.total_amount, est.currency)}</b>
+            <b
+              >{m.public_portal_estimate_confirm({
+                total: money(est.total_amount, est.currency)
+              })}</b
+            >
             <p>
-              This tells {est.org.name} to raise an invoice. It cannot be undone from this page.
+              {m.public_portal_estimate_confirm_body({ org: est.org.name ?? '' })}
             </p>
             {#if offer}<p>{offer}</p>{/if}
             <label class="field">
-              <span>Your name</span>
+              <span>{m.public_portal_estimate_your_name()}</span>
               <input
                 name="name"
                 bind:value={acceptedByName}
-                placeholder="Who is accepting"
+                placeholder={m.public_portal_estimate_name_placeholder()}
                 autocomplete="name"
                 required
               />
             </label>
             <label class="field">
-              <span>Your email</span>
+              <span>{m.public_portal_estimate_your_email()}</span>
               <input
                 name="email"
                 type="email"
@@ -209,15 +234,14 @@
               />
             </label>
             <p class="field-note">
-              Recorded with your acceptance: {est.org.name} keeps this as the record of who authorised
-              the invoice.
+              {m.public_portal_estimate_record_note({ org: est.org.name ?? '' })}
             </p>
             <div class="decide-actions">
               <button class="v2-btn v2-btn-primary" type="submit" disabled={submitting}>
-                {submitting ? 'Accepting…' : 'Yes, accept'}
+                {submitting ? m.public_portal_estimate_accepting() : m.public_portal_estimate_yes()}
               </button>
               <button class="v2-btn" type="button" onclick={() => (confirming = false)}>
-                Go back
+                {m.public_portal_estimate_go_back()}
               </button>
             </div>
           </form>
@@ -226,7 +250,7 @@
     {/if}
 
     <section class="block">
-      <div class="v2-label">Prepared for</div>
+      <div class="v2-label">{m.public_portal_estimate_prepared_for()}</div>
       <div class="addr">
         <div class="addr-name">{est.client_name}</div>
         {#each addressLines as line, i (i)}
@@ -243,7 +267,7 @@
     {/if}
 
     <section class="block">
-      <div class="v2-label">What is included</div>
+      <div class="v2-label">{m.public_portal_estimate_included()}</div>
       <PortalLineItems
         items={est.line_items}
         currency={est.currency}
@@ -259,20 +283,20 @@
 
     {#if est.notes}
       <section class="block">
-        <div class="v2-label">Notes</div>
+        <div class="v2-label">{m.common_notes()}</div>
         <p class="note">{est.notes}</p>
       </section>
     {/if}
 
     {#if est.terms}
       <section class="block">
-        <div class="v2-label">Terms</div>
+        <div class="v2-label">{m.public_portal_estimate_terms()}</div>
         <p class="note">{est.terms}</p>
       </section>
     {/if}
 
     <footer class="doc-foot">
-      <p>Questions? Reply to the email this estimate arrived with.</p>
+      <p>{m.public_portal_estimate_questions()}</p>
       {#if est.template?.footer_text}
         <p class="foot-org">{est.template.footer_text}</p>
       {/if}

@@ -9,6 +9,7 @@ import { error, fail } from '@sveltejs/kit';
 import { apiStatus } from '#lib/api-errors.js';
 import * as env from '$app/env/public';
 import { relayHeaders } from '#lib/server/relay.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 import type { components } from '#lib/api-schema.js';
 
@@ -23,7 +24,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
   const { token } = params;
 
   if (!token) {
-    throw error(400, 'Estimate token is required');
+    throw error(400, m.public_portal_estimate_token_required());
   }
 
   try {
@@ -34,9 +35,9 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 
     if (!response.ok) {
       if (response.status === 404) {
-        throw error(404, 'Estimate not found or link has expired');
+        throw error(404, m.public_portal_estimate_not_found());
       }
-      throw error(response.status, 'Failed to load estimate');
+      throw error(response.status, m.public_portal_estimate_load_failed());
     }
 
     const estimate = (await response.json()) as Schemas['PublicEstimate'];
@@ -45,7 +46,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
   } catch (err) {
     if (apiStatus(err)) throw err;
     console.error('Error loading public estimate:', err);
-    throw error(500, 'Failed to load estimate');
+    throw error(500, m.public_portal_estimate_load_failed());
   }
 };
 
@@ -63,7 +64,7 @@ export const actions: Actions = {
 
     if (!name || !email) {
       return fail(400, {
-        error: 'Please enter your name and email to accept this estimate.',
+        error: m.public_portal_estimate_identity_required(),
         values: { name, email }
       });
     }
@@ -82,7 +83,7 @@ export const actions: Actions = {
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as { message?: string };
         return fail(response.status, {
-          error: data.message || 'Failed to accept estimate',
+          error: data.message || m.public_portal_estimate_accept_failed(),
           values: { name, email }
         });
       }
@@ -90,7 +91,7 @@ export const actions: Actions = {
       return { success: true, action: 'accepted' };
     } catch (err) {
       console.error('Error accepting estimate:', err);
-      return fail(500, { error: 'Failed to accept estimate' });
+      return fail(500, { error: m.public_portal_estimate_accept_failed() });
     }
   },
 
@@ -107,13 +108,15 @@ export const actions: Actions = {
 
       if (!response.ok) {
         const data = (await response.json()) as { message?: string };
-        return fail(response.status, { error: data.message || 'Failed to decline estimate' });
+        return fail(response.status, {
+          error: data.message || m.public_portal_estimate_decline_failed()
+        });
       }
 
       return { success: true, action: 'declined' };
     } catch (err) {
       console.error('Error declining estimate:', err);
-      return fail(500, { error: 'Failed to decline estimate' });
+      return fail(500, { error: m.public_portal_estimate_decline_failed() });
     }
   }
 };

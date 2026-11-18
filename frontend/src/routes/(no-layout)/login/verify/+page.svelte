@@ -3,6 +3,7 @@
   import '../../../../app.css';
   import '#lib/v2/styles/v2.css';
   import imgLogo from '#lib/assets/images/logo.png';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -12,7 +13,7 @@
 </script>
 
 <svelte:head>
-  <title>Sign in · BottleCRM</title>
+  <title>{m.public_login_title()}</title>
   <!-- same-origin, not no-referrer: under no-referrer the browser sends
        `Origin: null` on the form POST, and SvelteKit's CSRF check refuses it
        as cross-site (403). same-origin still keeps the token in this URL out of
@@ -30,14 +31,16 @@
     <div class="v2-auth-card" style="text-align:center">
       {#if error}
         <div class="v2-auth-head" style="margin-bottom:16px">
-          <h1>Link expired or invalid</h1>
+          <h1>{m.public_verify_invalid_title()}</h1>
           <p>{error}</p>
         </div>
-        <a href={resolve('login')} class="v2-btn v2-btn-block">Back to sign in</a>
+        <a href={resolve('login')} class="v2-btn v2-btn-block"
+          >{m.public_verify_back_to_sign_in()}</a
+        >
       {:else}
         <div class="v2-auth-head" style="margin-bottom:16px">
-          <h1>Sign in to BottleCRM</h1>
-          <p>Press the button to finish signing in.</p>
+          <h1>{m.public_verify_heading()}</h1>
+          <p>{m.public_verify_hint()}</p>
         </div>
         <!-- A plain submit, never an automatic one: see +page.server.ts. No
              `action` attribute, so it posts back to this URL, token included. -->
@@ -45,9 +48,9 @@
           <button type="submit" class="v2-btn v2-btn-primary v2-btn-block" disabled={submitting}>
             {#if submitting}
               <span class="v2-spin"></span>
-              <span>Signing in…</span>
+              <span>{m.public_verify_signing_in()}</span>
             {:else}
-              <span>Continue to BottleCRM</span>
+              <span>{m.public_verify_continue()}</span>
             {/if}
           </button>
         </form>

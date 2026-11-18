@@ -7,6 +7,7 @@
   import imgGoogle from '#lib/assets/images/google.svg';
   import imgLogo from '#lib/assets/images/logo.png';
   import { Mail, Check } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   let { data = {} }: { data?: { google_url?: string | null } } = $props();
 
@@ -28,20 +29,17 @@
       if (result?.type === 'success') {
         magicLinkSent = true;
       } else if (result?.type === 'failure') {
-        magicLinkError = result.data?.error || 'Something went wrong. Please try again.';
+        magicLinkError = result.data?.error || m.public_login_generic_error();
       } else if (!result) {
-        magicLinkError = 'Something went wrong. Please try again.';
+        magicLinkError = m.public_login_generic_error();
       }
     };
   };
 </script>
 
 <svelte:head>
-  <title>Sign in · BottleCRM</title>
-  <meta
-    name="description"
-    content="Sign in to BottleCRM to manage your contacts, deals, and grow your business."
-  />
+  <title>{m.public_login_title()}</title>
+  <meta name="description" content={m.public_login_meta_description()} />
 </svelte:head>
 
 <div class="v2-root v2-auth">
@@ -53,8 +51,8 @@
 
     <div class="v2-auth-card">
       <div class="v2-auth-head">
-        <h1>Sign in</h1>
-        <p>Welcome back. Choose how you'd like to continue.</p>
+        <h1>{m.public_login_heading()}</h1>
+        <p>{m.public_login_subtitle()}</p>
       </div>
 
       <!-- Primary path. Google's mark keeps a white tile so it stays legible on
@@ -69,22 +67,22 @@
       >
         {#if isLoading}
           <span class="v2-spin"></span>
-          <span>Redirecting…</span>
+          <span>{m.public_login_redirecting()}</span>
         {:else}
           <img src={imgGoogle} alt="" class="v2-auth-gicon" />
-          <span>Continue with Google</span>
+          <span>{m.public_login_google()}</span>
         {/if}
       </a>
 
-      <div class="v2-auth-divider">or</div>
+      <div class="v2-auth-divider">{m.public_login_or()}</div>
 
       {#if magicLinkSent}
         <div class="v2-auth-note v2-auth-note-ok">
           <Check />
           <div>
-            <b>Check your email.</b>
+            <b>{m.public_login_check_email()}</b>
             <div style="font-weight:400;margin-top:2px">
-              We sent a sign-in link. It expires in 10 minutes.
+              {m.public_login_link_sent()}
             </div>
           </div>
         </div>
@@ -94,7 +92,7 @@
           use:enhance={handleMagicLink}
           style="display:flex;flex-direction:column;gap:9px"
         >
-          <label for="email" class="v2-sr-only">Email address</label>
+          <label for="email" class="v2-sr-only">{m.public_login_email_label()}</label>
           <input
             id="email"
             type="email"
@@ -108,10 +106,10 @@
           <button type="submit" class="v2-btn v2-btn-block" disabled={isSendingLink}>
             {#if isSendingLink}
               <span class="v2-spin"></span>
-              <span>Sending…</span>
+              <span>{m.public_login_sending()}</span>
             {:else}
               <Mail size={15} />
-              <span>Continue with email</span>
+              <span>{m.public_login_email_button()}</span>
             {/if}
           </button>
         </form>
@@ -124,13 +122,13 @@
     </div>
 
     <p class="v2-sub" style="text-align:center;margin:14px 0 0">
-      New here? Enter your email above to get started.
+      {m.public_login_new_here()}
     </p>
 
     <div class="v2-auth-foot">
-      <a href="https://bottlecrm.io/privacy-policy">Privacy</a>
+      <a href="https://bottlecrm.io/privacy-policy">{m.public_login_privacy()}</a>
       <span class="v2-auth-dot"></span>
-      <a href="https://bottlecrm.io/terms-of-service">Terms</a>
+      <a href="https://bottlecrm.io/terms-of-service">{m.public_login_terms()}</a>
       <span class="v2-auth-dot"></span>
       <a href="https://github.com/django-crm/Django-CRM" target="_blank" rel="noopener">GitHub</a>
     </div>

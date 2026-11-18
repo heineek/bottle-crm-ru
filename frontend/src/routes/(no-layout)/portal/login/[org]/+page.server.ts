@@ -9,6 +9,7 @@
  */
 
 import { fail, redirect } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import {
   ACCESS_COOKIE,
   ORG_COOKIE,
@@ -37,7 +38,7 @@ export const actions: Actions = {
   request: async ({ request, params, getClientAddress }) => {
     const form = await request.formData();
     const email = String(form.get('email') || '').trim();
-    if (!email) return fail(400, { error: 'Enter your email address.' });
+    if (!email) return fail(400, { error: m.public_portal_login_email_required() });
 
     // The API answers identically whether or not this address is a contact
     // here, and so must this page. Anything conditional on the result would
@@ -54,7 +55,8 @@ export const actions: Actions = {
     const form = await request.formData();
     const email = String(form.get('email') || '').trim();
     const code = String(form.get('code') || '').trim();
-    if (!code) return fail(400, { error: 'Enter the code from your email.', stage: 'code', email });
+    if (!code)
+      return fail(400, { error: m.public_portal_login_code_required(), stage: 'code', email });
 
     try {
       const result = await verifyLogin(params.org, email, code);
@@ -62,7 +64,7 @@ export const actions: Actions = {
     } catch (err) {
       if (err instanceof PortalError) {
         return fail(400, {
-          error: err.data?.error || 'That code is not valid. Request a new one.',
+          error: err.data?.error || m.public_portal_login_code_invalid(),
           stage: 'code',
           email
         });

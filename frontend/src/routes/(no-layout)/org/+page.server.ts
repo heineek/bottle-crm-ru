@@ -14,6 +14,7 @@ import { redirect, fail } from '@sveltejs/kit';
 import axios from 'axios';
 import { describeError } from '#lib/server/log-safe.js';
 import { relayHeaders } from '#lib/server/relay.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -65,7 +66,7 @@ export const actions: Actions = {
     const orgId = formData.get('org_id')?.toString();
 
     if (!orgId || !UUID_RE.test(orgId)) {
-      return fail(400, { error: 'Invalid Organization ID' });
+      return fail(400, { error: m.public_org_invalid_id() });
     }
 
     const jwtAccess = cookies.get('jwt_access');
@@ -128,7 +129,7 @@ export const actions: Actions = {
         throw error; // Re-throw redirect
       }
       console.error('Org switch failed:', describeError(error));
-      return fail(500, { error: 'Failed to switch organization' });
+      return fail(500, { error: m.public_org_switch_failed() });
     }
   }
 };

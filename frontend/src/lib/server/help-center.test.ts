@@ -114,6 +114,13 @@ describe('API calls', () => {
     await expect(getHelpCenter(event(), 'acme')).rejects.toMatchObject({ status: 429 });
   });
 
+  it('words the 404 for the visitor', async () => {
+    fetchMock.mockResolvedValue(reply(404, {}));
+    await expect(getHelpCenter(event(), 'acme')).rejects.toMatchObject({
+      body: { message: 'Not found' }
+    });
+  });
+
   it('walks every page for the sitemap and stops at the count', async () => {
     const page = (n: number, start: number) =>
       Array.from({ length: n }, (_, i) => ({

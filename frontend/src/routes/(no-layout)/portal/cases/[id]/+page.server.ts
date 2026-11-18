@@ -6,6 +6,7 @@
  * never loaded here at all. Nothing on this page needs to hide anything.
  */
 
+import { m } from '#lib/paraglide/messages.js';
 import { error, fail, redirect, type Cookies } from '@sveltejs/kit';
 import {
   ACCESS_COOKIE,
@@ -42,7 +43,7 @@ export const load: PageServerLoad = async ({ cookies, params, url }) => {
       if (err.status === 401 || err.status === 403) toLogin(cookies, url);
       // The API answers 404 both for "no such case" and "not yours", so that
       // an id cannot be probed to learn whether it belongs to a colleague.
-      if (err.status === 404) throw error(404, 'Request not found');
+      if (err.status === 404) throw error(404, m.public_portal_case_not_found());
     }
     throw err;
   }
@@ -55,7 +56,7 @@ export const actions: Actions = {
 
     const form = await request.formData();
     const comment = String(form.get('comment') || '').trim();
-    if (!comment) return fail(400, { error: 'Write a message before sending.' });
+    if (!comment) return fail(400, { error: m.public_portal_case_reply_required() });
 
     try {
       await postReply(token, params.id, comment);
@@ -63,7 +64,7 @@ export const actions: Actions = {
       if (err instanceof PortalError) {
         if (err.status === 401 || err.status === 403) toLogin(cookies, url);
         return fail(err.status, {
-          error: err.data?.comment?.[0] || 'Could not send that reply.'
+          error: err.data?.comment?.[0] || m.public_portal_case_reply_failed()
         });
       }
       throw err;

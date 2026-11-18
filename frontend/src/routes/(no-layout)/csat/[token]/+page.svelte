@@ -21,6 +21,8 @@
    */
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import PortalShell from '#lib/v2/components/PortalShell.svelte';
   import { longDate, relativeDays } from '#lib/v2/format.js';
   import { Star, CheckCircle2, Clock } from '@lucide/svelte';
@@ -40,11 +42,26 @@
   let hover = $state(0);
   let submitting = $state(false);
 
-  const SCALE_ENDS: Record<number, string> = { 1: 'Not good', 5: 'Great' };
+  const SCALE_ENDS: Record<number, string> = {
+    1: m.public_csat_scale_low(),
+    5: m.public_csat_scale_high()
+  };
+
+  let prior = $derived(
+    survey?.respondedAt && survey?.editableUntil
+      ? messageParts(
+          m.public_csat_prior({
+            score: slot('score'),
+            when: relativeDays(survey.respondedAt),
+            until: longDate(survey.editableUntil)
+          })
+        )
+      : []
+  );
 </script>
 
 <svelte:head>
-  <title>How did we do?, {survey?.orgName ?? 'Feedback'}</title>
+  <title>{m.public_csat_title({ name: survey?.orgName ?? m.public_csat_feedback() })}</title>
 </svelte:head>
 
 <PortalShell>
@@ -54,43 +71,45 @@
            copy does not apologise; it gives the one route that still works. -->
       <section class="card center">
         <Clock size={22} />
-        <h1>This survey has closed</h1>
+        <h1>{m.public_csat_closed_title()}</h1>
         <p>
-          Survey links stay open for a limited time after a ticket is closed. If there is still
-          something you want the team to know, reply to the email this link came from and it will
-          reach them.
+          {m.public_csat_closed_body()}
         </p>
       </section>
     {:else if data.invalid}
       <section class="card center">
         <Clock size={22} />
-        <h1>This link isn't valid</h1>
-        <p>We couldn't verify this link. Please use the most recent one from your email.</p>
+        <h1>{m.public_csat_invalid_title()}</h1>
+        <p>{m.public_csat_invalid_body()}</p>
       </section>
     {:else if data.error}
       <section class="card center">
         <Clock size={22} />
-        <h1>Something went wrong</h1>
+        <h1>{m.public_csat_error_title()}</h1>
         <p>{data.error}</p>
       </section>
     {:else if form?.success}
       <section class="card center">
         <div class="tick"><CheckCircle2 size={26} /></div>
-        <h1>Thank you</h1>
+        <h1>{m.public_csat_thanks_title()}</h1>
         <p>
-          Your rating of {form.rating} of 5 went straight to {survey?.agentName ?? 'the team'} and their
-          team lead. You can change it for the next 24 hours by reopening this link.
+          {survey?.agentName
+            ? m.public_csat_thanks_agent({ rating: form.rating, agent: survey.agentName })
+            : m.public_csat_thanks_team({ rating: form.rating })}
         </p>
       </section>
     {:else if survey}
       <section class="card">
         <header>
           <div class="org">{survey.orgName}</div>
-          <h1>How did we do?</h1>
+          <h1>{m.public_csat_heading()}</h1>
           <p class="ctx">
-            {survey.agentName}
-            {#if survey.closedAt}closed your request {relativeDays(survey.closedAt)}{:else}handled
-              your request{/if},
+            {survey.closedAt
+              ? m.public_csat_ctx_closed({
+                  agent: survey.agentName,
+                  when: relativeDays(survey.closedAt)
+                })
+              : m.public_csat_ctx_handled({ agent: survey.agentName })},
             <span class="subject">“{survey.ticketSubject}”</span>
           </p>
         </header>
@@ -99,10 +118,9 @@
           <!-- Coming back to an answered survey. Say what is on file and by when
                it can change, rather than silently showing a pre-filled form. -->
           <div class="prior">
-            You rated this <b>{survey.rating} of 5</b>
-            {relativeDays(survey.respondedAt)}. You can change it until {longDate(
-              survey.editableUntil
-            )}.
+            {#each prior as p, i (i)}{#if p.key}<b
+                  >{m.public_csat_score({ rating: survey.rating ?? '' })}</b
+                >{:else}{p.text}{/if}{/each}
           </div>
         {/if}
 
@@ -119,7 +137,7 @@
         >
           <input type="hidden" name="rating" value={rating} />
 
-          <div class="stars" role="radiogroup" aria-label="Rate from 1 to 5">
+          <div class="stars" role="radiogroup" aria-label={m.public_csat_rate_label()}>
             {#each [1, 2, 3, 4, 5] as n (n)}
               <button
                 type="button"
@@ -148,14 +166,14 @@
                matters. -->
           {#if rating}
             <label class="comment">
-              <span>Anything you want to add? <i>Optional</i></span>
+              <span>{m.public_csat_comment_label()} <i>{m.common_optional()}</i></span>
               <textarea
                 name="comment"
                 rows="3"
                 bind:value={comment}
                 placeholder={rating <= 2
-                  ? 'What went wrong? This goes to the team lead, not just the agent.'
-                  : 'What worked well?'}></textarea>
+                  ? m.public_csat_comment_low()
+                  : m.public_csat_comment_high()}></textarea>
             </label>
 
             {#if form?.error}
@@ -163,13 +181,17 @@
             {/if}
 
             <button class="v2-btn v2-btn-primary submit" type="submit" disabled={submitting}>
-              {submitting ? 'Sending…' : survey.respondedAt ? 'Update my rating' : 'Send'}
+              {submitting
+                ? m.public_csat_sending()
+                : survey.respondedAt
+                  ? m.public_csat_update()
+                  : m.public_csat_send()}
             </button>
           {/if}
         </form>
 
         <p class="fine">
-          Your answer goes to {survey.orgName}'s support team. It is not published anywhere.
+          {m.public_csat_fine_print({ org: survey.orgName ?? '' })}
         </p>
       </section>
     {/if}

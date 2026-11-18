@@ -17,6 +17,7 @@ import * as publicEnv from '$app/env/public';
 import { generateCodeVerifier, generateCodeChallenge, generateState } from '#lib/utils/pkce.js';
 import { describeError } from '#lib/server/log-safe.js';
 import { relayHeaders } from '#lib/server/relay.js';
+import { m } from '#lib/paraglide/messages.js';
 import { rememberSignupSource } from '#lib/server/signup-source.js';
 import type { components } from '#lib/api-schema.js';
 import type { PageServerLoad } from './$types';
@@ -57,7 +58,7 @@ export const load: PageServerLoad = async ({ url, cookies, getClientAddress, req
     console.error('Google OAuth error:', error, errorDescription);
     return {
       google_url: null,
-      error: errorDescription || `OAuth error: ${error}`
+      error: errorDescription || m.public_login_oauth_error({ error })
     };
   }
 
@@ -216,7 +217,7 @@ export const actions: Actions = {
     const email = String(formData.get('email') ?? '').trim();
 
     if (!email) {
-      return { success: false, error: 'Email is required' };
+      return { success: false, error: m.public_login_email_required() };
     }
 
     try {

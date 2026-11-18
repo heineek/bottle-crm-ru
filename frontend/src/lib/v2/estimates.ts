@@ -161,6 +161,3 @@ export function estimateNotificationText(verb: string | undefined, data: unknown
     ', '
   );
 }
-
-// Kept until the customer portal reads its own message.
-export const DEPOSIT_FOLLOWS = 'A deposit invoice will follow.';
