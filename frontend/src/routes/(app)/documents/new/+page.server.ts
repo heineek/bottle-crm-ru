@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { getUploadOptions, uploadDocument, STATUS_CHOICES } from '#lib/server/v2/documents.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -37,10 +38,10 @@ export const actions: Actions = {
     // Mirror the server's required-field checks so an obvious miss does not cost
     // a round trip. The serializer enforces both regardless.
     if (!title) {
-      return fail(400, { values, error: 'Give the document a title.' });
+      return fail(400, { values, error: m.documents_error_title_short() });
     }
     if (!(file instanceof File) || file.size === 0) {
-      return fail(400, { values, error: 'Choose a file to upload.' });
+      return fail(400, { values, error: m.documents_error_file() });
     }
 
     try {
@@ -48,11 +49,11 @@ export const actions: Actions = {
     } catch (err) {
       const code = apiStatus(err);
       if (code === 401 || code === 403) {
-        return fail(code, { values, error: 'You do not have permission to upload here.' });
+        return fail(code, { values, error: m.documents_error_upload_forbidden() });
       }
       return fail(400, {
         values,
-        error: readableError(err, 'Could not upload this document.')
+        error: readableError(err, m.documents_error_upload_failed())
       });
     }
 

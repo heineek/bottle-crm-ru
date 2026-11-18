@@ -36,6 +36,7 @@
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
 import { getOrgPeopleAndTeams } from './org-people.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -124,7 +125,7 @@ const LEADERBOARD_PERIOD = 'MONTHLY';
 /** A person's display name from a nested ProfileSerializer row. */
 function personName(detail: Schemas['Profile']) {
   const d = detail.user_details;
-  return d?.name || d?.email || 'Unnamed';
+  return d?.name || d?.email || m.goals_person_unnamed();
 }
 
 /**
@@ -174,7 +175,7 @@ function toLeaderRow(r: Schemas['SalesGoalLeaderboardRow']) {
   return {
     rank: r.rank,
     goal_id: r.goal_id,
-    user: r.user?.name || 'Unknown',
+    user: r.user?.name || m.goals_person_unknown(),
     // The board ranks every goal type together, so each row says whether its
     // figures are money (and in what) or a count.
     goal_type: r.goal_type,

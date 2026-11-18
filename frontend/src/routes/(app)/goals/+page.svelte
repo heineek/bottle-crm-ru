@@ -29,6 +29,8 @@
     PERIOD_TYPE_LABEL
   } from '#lib/v2/enums.js';
   import { Plus, Target, Trophy, History } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -74,7 +76,11 @@
    * finished period is reported as met or missed instead.
    */
   const statusLabel = (g: Goal) =>
-    isOver(g) ? (g.progress_percent >= 100 ? 'Target met' : 'Missed') : GOAL_STATUS_LABEL[g.status];
+    isOver(g)
+      ? g.progress_percent >= 100
+        ? m.goals_status_target_met()
+        : m.goals_status_missed()
+      : GOAL_STATUS_LABEL[g.status];
 
   const statusTone = (g: Goal) =>
     isOver(g) ? (g.progress_percent >= 100 ? 'moss' : 'slate') : GOAL_STATUS_TONE[g.status];
@@ -103,18 +109,25 @@
   const moneyTotal = (list: { currency: string; amount: number }[]) => moneyEach(list) || '—';
 </script>
 
-<PageHeader title="Goals">
+<PageHeader title={m.goals_title()}>
   {#snippet sub()}
     {#if totals.revenue}
-      <span class="v2-num">{moneyTotal(totals.achieved)}</span> of
-      <span class="v2-num">{moneyTotal(totals.target)}</span> booked,
+      {#each messageParts(m.goals_header_summary_revenue( { achieved: slot('achieved'), target: slot('target'), count: totals.active, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'achieved'}<span
+            class="v2-num">{moneyTotal(totals.achieved)}</span
+          >{:else if p.key === 'target'}<span class="v2-num">{moneyTotal(totals.target)}</span
+          >{:else if p.key === 'shown'}<span class="v2-num">{count(totals.active)}</span
+          >{:else}{p.text}{/if}{/each}
+    {:else}
+      {#each messageParts(m.goals_header_summary( { count: totals.active, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{count(totals.active)}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
-    <span class="v2-num">{count(totals.active)}</span> active goals
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('goals/history')}><History />History</a>
+    <a class="v2-btn" href={resolve('goals/history')}><History />{m.goals_history_link()}</a>
     {#if data.can_edit}
-      <a class="v2-btn v2-btn-primary" href={resolve('goals/new')}><Plus />New goal</a>
+      <a class="v2-btn v2-btn-primary" href={resolve('goals/new')}><Plus />{m.goals_new_button()}</a
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -124,24 +137,24 @@
     <!-- Money only, so revenue goals only, one figure per currency: a deals
          target is not an amount, and there are no exchange rates. -->
     <StatCard
-      label="Committed"
+      label={m.goals_stat_committed()}
       value={moneyTotal(totals.target)}
       tone="ink"
-      detail="Active revenue goals"
+      detail={m.goals_stat_committed_detail()}
     />
     <StatCard
-      label="Booked"
+      label={m.goals_stat_booked()}
       value={moneyTotal(totals.achieved)}
       tone="moss"
-      detail="Closed-won in period"
+      detail={m.goals_stat_booked_detail()}
     />
     <StatCard
-      label="Behind pace"
+      label={m.goals_stat_behind()}
       value={count(totals.behind)}
       tone={totals.behind ? 'rust' : 'slate'}
-      detail={totals.behind ? 'Slower than the calendar' : 'Everyone is on pace'}
+      detail={totals.behind ? m.goals_stat_behind_detail() : m.goals_stat_behind_none()}
     />
-    <StatCard label="Active goals" value={count(totals.active)} tone="slate" />
+    <StatCard label={m.goals_stat_active()} value={count(totals.active)} tone="slate" />
   </div>
 
   <form class="filters" method="GET" data-sveltekit-reset="false" data-sveltekit-replacestate>
@@ -150,23 +163,27 @@
       type="search"
       name="q"
       value={filters.q}
-      placeholder="Search goals by name"
-      aria-label="Search goals by name"
+      placeholder={m.goals_filter_search()}
+      aria-label={m.goals_filter_search()}
     />
-    <select class="v2-input" name="period_type" aria-label="Filter by period">
-      <option value="">Any period</option>
+    <select class="v2-input" name="period_type" aria-label={m.goals_filter_period_label()}>
+      <option value="">{m.goals_filter_period_any()}</option>
       {#each Object.entries(PERIOD_TYPE_LABEL) as [key, label] (key)}
         <option value={key} selected={filters.period_type === key}>{label}</option>
       {/each}
     </select>
-    <select class="v2-input" name="window" aria-label="Filter by window">
-      <option value="">All goals</option>
-      <option value="current" selected={filters.window === 'current'}>Running today</option>
-      <option value="active" selected={filters.window === 'active'}>Not paused</option>
+    <select class="v2-input" name="window" aria-label={m.goals_filter_window_label()}>
+      <option value="">{m.goals_filter_window_all()}</option>
+      <option value="current" selected={filters.window === 'current'}
+        >{m.goals_filter_window_current()}</option
+      >
+      <option value="active" selected={filters.window === 'active'}
+        >{m.goals_filter_window_active()}</option
+      >
     </select>
-    <button class="v2-btn" type="submit">Filter</button>
+    <button class="v2-btn" type="submit">{m.common_filter()}</button>
     {#if filtered}
-      <a class="v2-btn" href={resolve('goals')}>Clear</a>
+      <a class="v2-btn" href={resolve('goals')}>{m.goals_filter_clear()}</a>
     {/if}
   </form>
 </div>
@@ -182,26 +199,22 @@
            so saying "no goals set" would send someone off to create a duplicate
            of one they already have. -->
       {#if filtered}
-        <EmptyState
-          title="No goals match this filter"
-          body="Nothing here matches the search and period you picked. Clearing the filter shows everything you can see."
-        >
+        <EmptyState title={m.goals_empty_filtered_title()} body={m.goals_empty_filtered_body()}>
           {#snippet icon()}<Target size={21} />{/snippet}
           {#snippet actions()}
-            <a class="v2-btn" href={resolve('goals')}>Clear filter</a>
+            <a class="v2-btn" href={resolve('goals')}>{m.goals_filter_clear_filter()}</a>
           {/snippet}
         </EmptyState>
       {:else}
         <EmptyState
-          title={data.can_edit ? 'No goals set' : 'Nothing assigned to you'}
-          body={data.can_edit
-            ? 'A goal is a target and a period. Once one exists, closed-won deals count towards it automatically. Nobody has to update a number.'
-            : 'Nothing is assigned to you or your teams. An administrator sets these, and closed-won deals count towards them automatically once one exists.'}
+          title={data.can_edit ? m.goals_empty_admin_title() : m.goals_empty_member_title()}
+          body={data.can_edit ? m.goals_empty_admin_body() : m.goals_empty_member_body()}
         >
           {#snippet icon()}<Target size={21} />{/snippet}
           {#snippet actions()}
             {#if data.can_edit}
-              <a class="v2-btn v2-btn-primary" href={resolve('goals/new')}>New goal</a>
+              <a class="v2-btn v2-btn-primary" href={resolve('goals/new')}>{m.goals_new_button()}</a
+              >
             {/if}
           {/snippet}
         </EmptyState>
@@ -209,7 +222,7 @@
     {:else}
       <div class="v2-split v2-split-wide">
         <div>
-          <div class="v2-label" style="margin-bottom:10px">This period</div>
+          <div class="v2-label" style="margin-bottom:10px">{m.goals_list_this_period()}</div>
           <div style="display:flex;flex-direction:column;gap:10px">
             {#each data.goals as g (g.id)}
               {@const elapsed = elapsedPercent(g)}
@@ -226,8 +239,8 @@
                            checking the arithmetic against the pipeline needs to
                            know that before they file a bug. -->
                       {#if weightedTypes(g)}
-                        · <span title="Some deal types count at an adjusted value"
-                          >weighted ({weightedTypes(g)})</span
+                        · <span title={m.goals_card_weighted_title()}
+                          >{m.goals_card_weighted({ count: weightedTypes(g) })}</span
                         >
                       {/if}
                     </div>
@@ -237,7 +250,8 @@
                     {#if data.can_edit}
                       <a
                         href={resolve(`goals/${g.id}/edit`)}
-                        style="font-size:11px;color:var(--v2-slate);text-decoration:none">Edit</a
+                        style="font-size:11px;color:var(--v2-slate);text-decoration:none"
+                        >{m.common_edit()}</a
                       >
                     {/if}
                   </div>
@@ -248,7 +262,7 @@
                     {value(g, g.progress_value)}
                   </span>
                   <span class="v2-sub" style="font-size:12px">
-                    of {value(g, g.target_value)}
+                    {m.goals_card_of_target({ target: value(g, g.target_value) })}
                   </span>
                   <!-- The server's progress_percent, not a division done here.
                        SalesGoal floors it (int()) and caps it at 100, so
@@ -272,7 +286,7 @@
                     <span
                       class="v2-bar-pace"
                       style="left:calc({elapsed}% - 1px)"
-                      title="{elapsed}% through the period"
+                      title={m.goals_card_elapsed({ percent: `${elapsed}%` })}
                     ></span>
                   {/if}
                 </div>
@@ -281,16 +295,18 @@
                     {#if g.assigned_to}
                       {g.assigned_to.name}
                     {:else if g.team}
-                      {g.team.name} (team)
+                      {m.goals_owner_team({ team: g.team.name })}
                     {:else}
-                      Whole org
+                      {m.goals_owner_whole_org()}
                     {/if}
                   </span>
                   <span>
                     {#if over}
-                      Period ended {shortDate(g.period_end)}
+                      {m.goals_card_period_ended({ date: shortDate(g.period_end) })}
                     {:else}
-                      <span class="v2-num">{elapsed}%</span> through the period
+                      {#each messageParts(m.goals_card_elapsed( { percent: slot('percent') } )) as p, i (i)}{#if p.key === 'percent'}<span
+                            class="v2-num">{elapsed}%</span
+                          >{:else}{p.text}{/if}{/each}
                     {/if}
                   </span>
                 </div>
@@ -302,7 +318,7 @@
         <div>
           <div class="v2-label" style="margin-bottom:10px">
             <Trophy size={12} style="vertical-align:-1px;margin-right:4px" />
-            Leaderboard
+            {m.goals_leaderboard_title()}
           </div>
           <div class="v2-card" style="overflow:hidden">
             {#each data.leaderboard as row (row.goal_id)}
@@ -317,7 +333,10 @@
                 <div style="flex:1;min-width:0">
                   <div style="font-size:12.5px;font-weight:550">{row.user}</div>
                   <div class="v2-sub v2-num" style="font-size:11px">
-                    {value(row, row.achieved)} of {value(row, row.target)}
+                    {m.goals_leaderboard_figures({
+                      achieved: value(row, row.achieved),
+                      target: value(row, row.target)
+                    })}
                   </div>
                 </div>
                 <!-- Uncapped on purpose: 104% is the interesting number, and
@@ -338,16 +357,14 @@
                    sees nothing here rather than the whole org. An empty card
                    under a heading reads as a failure, so it says why. -->
               <p class="v2-sub" style="padding:14px;margin:0;font-size:12px">
-                Nothing to rank yet. The board covers monthly goals running today, and shows the
-                ones you can see: your own, and your teams'.
+                {m.goals_leaderboard_empty()}
               </p>
             {/each}
           </div>
 
           {#if data.leaderboard.length}
             <p class="v2-sub" style="font-size:11.5px;margin-top:11px">
-              Ranked on attainment against each person's own target, not on raw revenue. Otherwise
-              the biggest patch wins every quarter regardless of who worked hardest.
+              {m.goals_leaderboard_note()}
             </p>
           {/if}
         </div>

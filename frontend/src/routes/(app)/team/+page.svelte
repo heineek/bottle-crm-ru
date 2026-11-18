@@ -29,6 +29,8 @@
   import { ROLE_LABEL, ROLE_TONE } from '#lib/v2/enums.js';
   import { enhance, type SubmitFunction } from '$app/forms';
   import { UserPlus, KeyRound } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -57,42 +59,48 @@
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="Team and access" />
+  <PageHeader title={m.team_title()} />
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Admins only"
-      text="Managing people, roles and access is limited to organization admins. Ask an admin on your team if you need someone added or a role changed."
-    />
+    <NextAction label={m.team_forbidden_label()} text={m.team_forbidden_text()} />
   </div>
 {:else}
-  <PageHeader title="Team and access">
+  <PageHeader title={m.team_title()}>
     {#snippet sub()}
-      <span class="v2-num">{count(data.totals.count)}</span> people ·
-      <span class="v2-num">{count(data.totals.admins)}</span> admins
+      {#each messageParts(m.team_sub_people( { count: data.totals.count, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{count(data.totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
+      ·
+      {#each messageParts(m.team_sub_admins( { count: data.totals.admins, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{count(data.totals.admins)}</span
+          >{:else}{p.text}{/if}{/each}
     {/snippet}
     {#snippet actions()}
       <button class="v2-btn v2-btn-primary" onclick={() => (inviting = !inviting)}>
-        <UserPlus />Invite
+        <UserPlus />{m.team_invite_button()}
       </button>
     {/snippet}
   </PageHeader>
 
   <div class="v2-pad" style="padding-top:16px;flex:none">
     <div class="v2-stats">
-      <StatCard label="Active people" value={count(data.totals.count)} tone="ink" />
+      <StatCard label={m.team_stat_active()} value={count(data.totals.count)} tone="ink" />
       <StatCard
-        label="Admins"
+        label={m.team_stat_admins()}
         value={count(data.totals.admins)}
         tone="clay"
-        detail="Can change roles and org settings"
+        detail={m.team_stat_admins_detail()}
       />
       <StatCard
-        label="Never signed in"
+        label={m.team_stat_never()}
         value={count(data.totals.never_signed_in)}
         tone={data.totals.never_signed_in ? 'clay' : 'slate'}
-        detail={data.totals.never_signed_in ? 'Invited, seat unclaimed' : 'Everyone has signed in'}
+        detail={data.totals.never_signed_in ? m.team_stat_never_some() : m.team_stat_never_none()}
       />
-      <StatCard label="Deactivated" value={count(data.totals.deactivated)} tone="slate" />
+      <StatCard
+        label={m.team_stat_deactivated()}
+        value={count(data.totals.deactivated)}
+        tone="slate"
+      />
     </div>
   </div>
 
@@ -108,7 +116,7 @@
         >
           <div style="flex:1;min-width:220px">
             <label class="v2-label" for="invite-email" style="display:block;margin-bottom:4px">
-              Invite by email
+              {m.team_invite_label()}
             </label>
             <input
               id="invite-email"
@@ -117,21 +125,21 @@
               required
               class="v2-input"
               style="width:100%"
-              placeholder="name@company.com"
+              placeholder={m.team_invite_placeholder()}
             />
           </div>
           <div>
             <label class="v2-label" for="invite-role" style="display:block;margin-bottom:4px">
-              Role
+              {m.team_role_label()}
             </label>
             <select id="invite-role" name="role" class="v2-input" style="width:130px">
-              <option value="USER">Member</option>
-              <option value="ADMIN">Admin</option>
+              <option value="USER">{m.team_role_member()}</option>
+              <option value="ADMIN">{m.team_role_admin()}</option>
             </select>
           </div>
-          <button class="v2-btn v2-btn-primary" disabled={busy}>Send invite</button>
+          <button class="v2-btn v2-btn-primary" disabled={busy}>{m.team_send_invite()}</button>
           <button type="button" class="v2-btn" disabled={busy} onclick={() => (inviting = false)}>
-            Cancel
+            {m.common_cancel()}
           </button>
           {#if form?.invite?.error}
             <p
@@ -149,12 +157,11 @@
           class="v2-sub"
           style="color:var(--v2-moss);font-size:12.5px;margin:0 0 16px;font-weight:550"
         >
-          {form.invited} is a member now. They show below as “never” signed in until they log in with
-          that email.
+          {m.team_invited({ email: form.invited })}
         </p>
       {:else if form?.error}
         <div style="margin-bottom:16px">
-          <NextAction label="That did not work" text={form.error} tone="rust" />
+          <NextAction label={m.team_error_label()} text={form.error} tone="rust" />
         </div>
       {/if}
 
@@ -168,81 +175,85 @@
         -->
         <div style="margin-bottom:20px">
           <NextAction
-            label="Loose end"
-            text={`${data.totals.tokens_on_deactivated} API ${data.totals.tokens_on_deactivated === 1 ? 'token belongs' : 'tokens belong'} to a deactivated account. Deactivating already stops them at login, but they are not revoked. Reactivating the account would bring them back. Revoke to close that off.`}
-            action="Review tokens"
+            label={m.team_loose_end_label()}
+            text={m.team_loose_end_text({ count: data.totals.tokens_on_deactivated })}
+            action={m.team_review_tokens()}
             href="/settings/api-tokens"
           />
         </div>
       {/if}
 
-      <div class="v2-label" style="margin-bottom:10px">People</div>
+      <div class="v2-label" style="margin-bottom:10px">{m.team_people()}</div>
       <div class="v2-table-wrap" style="margin-bottom:26px">
         <table class="v2-table">
           <thead>
             <tr>
-              <th>Person</th>
-              <th>Role</th>
-              <th>Teams</th>
-              <th data-m="hide">Tokens</th>
-              <th class="v2-r">Last signed in</th>
-              <th class="v2-r">Manage</th>
+              <th>{m.team_col_person()}</th>
+              <th>{m.team_col_role()}</th>
+              <th>{m.team_col_teams()}</th>
+              <th data-m="hide">{m.team_col_tokens()}</th>
+              <th class="v2-r">{m.team_col_last_login()}</th>
+              <th class="v2-r">{m.team_col_manage()}</th>
             </tr>
           </thead>
           <tbody>
-            {#each [...data.active, ...data.inactive] as m (m.id)}
-              {@const isLastAdmin = m.user_id === data.last_admin_id}
-              <tr style={m.is_active ? '' : 'opacity:.62'}>
+            {#each [...data.active, ...data.inactive] as member (member.id)}
+              {@const isLastAdmin = member.user_id === data.last_admin_id}
+              <tr style={member.is_active ? '' : 'opacity:.62'}>
                 <td>
                   <span style="display:flex;gap:9px;align-items:center">
-                    <Avatar name={m.name} size={27} />
+                    <Avatar name={member.name} size={27} />
                     <span style="min-width:0">
                       <span class="v2-table-primary">
-                        {m.name}{#if m.is_you}<span class="v2-sub" style="font-weight:400"
-                            >, you</span
+                        {member.name}{#if member.is_you}<span class="v2-sub" style="font-weight:400"
+                            >{m.team_you_suffix()}</span
                           >{/if}
                       </span>
-                      <span class="v2-table-secondary" style="display:block">{m.email}</span>
+                      <span class="v2-table-secondary" style="display:block">{member.email}</span>
                     </span>
                   </span>
                 </td>
                 <td data-m="tag">
-                  <Pill tone={m.is_active ? ROLE_TONE[m.role] : 'slate'}>{ROLE_LABEL[m.role]}</Pill>
-                  {#if !m.is_active}
-                    <span class="v2-table-secondary" style="display:block">Deactivated</span>
+                  <Pill tone={member.is_active ? ROLE_TONE[member.role] : 'slate'}
+                    >{ROLE_LABEL[member.role]}</Pill
+                  >
+                  {#if !member.is_active}
+                    <span class="v2-table-secondary" style="display:block"
+                      >{m.team_deactivated()}</span
+                    >
                   {/if}
                 </td>
                 <td>
-                  {#if m.teams.length}
-                    {m.teams.join(', ')}
+                  {#if member.teams.length}
+                    {member.teams.join(', ')}
                   {:else}
                     <span class="v2-muted">—</span>
                   {/if}
                 </td>
                 <td data-m="hide">
-                  {#if m.active_token_count}
+                  {#if member.active_token_count}
                     <a
                       href={resolve('settings/api-tokens')}
-                      style="display:inline-flex;gap:5px;align-items:center;color:{m.is_active
+                      style="display:inline-flex;gap:5px;align-items:center;color:{member.is_active
                         ? 'inherit'
-                        : 'var(--v2-clay)'};font-weight:{m.is_active ? 400 : 600}"
+                        : 'var(--v2-clay)'};font-weight:{member.is_active ? 400 : 600}"
                     >
                       <KeyRound size={13} />
-                      <span class="v2-num">{m.active_token_count}</span>
+                      <span class="v2-num">{member.active_token_count}</span>
                     </a>
                   {:else}
                     <span class="v2-muted">—</span>
                   {/if}
                 </td>
                 <td class="v2-r">
-                  {#if m.last_login}
-                    {relativeDays(m.last_login)}
+                  {#if member.last_login}
+                    {relativeDays(member.last_login)}
                   {:else}
-                    <span style="color:var(--v2-clay);font-weight:600">never</span>
+                    <span style="color:var(--v2-clay);font-weight:600">{m.team_never()}</span>
                   {/if}
                 </td>
                 <td class="v2-r">
-                  {#if m.is_you}
+                  {#if member.is_you}
                     <span class="v2-muted" style="font-size:11.5px">—</span>
                   {:else}
                     <span
@@ -252,40 +263,40 @@
                            destination is clearer than a picker. The last admin
                            cannot be demoted; the server enforces it too. -->
                       <form method="POST" action="?/setRole" use:enhance={working}>
-                        <input type="hidden" name="userId" value={m.user_id} />
+                        <input type="hidden" name="userId" value={member.user_id} />
                         <input
                           type="hidden"
                           name="role"
-                          value={m.role === 'ADMIN' ? 'USER' : 'ADMIN'}
+                          value={member.role === 'ADMIN' ? 'USER' : 'ADMIN'}
                         />
                         <button
                           class="v2-btn v2-btn-sm"
-                          disabled={busy || (m.role === 'ADMIN' && isLastAdmin)}
-                          title={m.role === 'ADMIN' && isLastAdmin
-                            ? 'The org must keep at least one admin'
+                          disabled={busy || (member.role === 'ADMIN' && isLastAdmin)}
+                          title={member.role === 'ADMIN' && isLastAdmin
+                            ? m.team_last_admin_hint()
                             : ''}
                         >
-                          {m.role === 'ADMIN' ? 'Make member' : 'Make admin'}
+                          {member.role === 'ADMIN' ? m.team_make_member() : m.team_make_admin()}
                         </button>
                       </form>
                       <!-- Activate / deactivate. The last active admin cannot
                            be deactivated; the server refuses it with a 400. -->
                       <form method="POST" action="?/setStatus" use:enhance={working}>
-                        <input type="hidden" name="userId" value={m.user_id} />
+                        <input type="hidden" name="userId" value={member.user_id} />
                         <input
                           type="hidden"
                           name="status"
-                          value={m.is_active ? 'Inactive' : 'Active'}
+                          value={member.is_active ? 'Inactive' : 'Active'}
                         />
                         <button
                           class="v2-btn v2-btn-sm"
-                          disabled={busy || (m.is_active && isLastAdmin)}
-                          title={m.is_active && isLastAdmin
-                            ? 'The org must keep at least one active admin'
+                          disabled={busy || (member.is_active && isLastAdmin)}
+                          title={member.is_active && isLastAdmin
+                            ? m.team_last_active_admin_hint()
                             : ''}
-                          style={m.is_active ? 'color:var(--v2-rust)' : ''}
+                          style={member.is_active ? 'color:var(--v2-rust)' : ''}
                         >
-                          {m.is_active ? 'Deactivate' : 'Reactivate'}
+                          {member.is_active ? m.team_deactivate() : m.team_reactivate()}
                         </button>
                       </form>
                     </span>
@@ -297,7 +308,7 @@
         </table>
       </div>
 
-      <div class="v2-label" style="margin-bottom:10px">Teams</div>
+      <div class="v2-label" style="margin-bottom:10px">{m.team_teams()}</div>
       <div class="v2-card" style="overflow:hidden;margin-bottom:14px">
         {#each data.teams as t (t.id)}
           <div class="v2-setting">
@@ -306,21 +317,18 @@
               <span class="v2-sub" style="font-size:11.5px">{t.description}</span>
             </div>
             <span class="v2-sub v2-num" style="font-size:12px">
-              {t.member_count}
-              {t.member_count === 1 ? 'member' : 'members'}
+              {m.team_member_count({ count: t.member_count })}
             </span>
           </div>
         {:else}
           <div class="v2-setting">
-            <span class="v2-sub" style="font-size:12px">No teams yet.</span>
+            <span class="v2-sub" style="font-size:12px">{m.team_no_teams()}</span>
           </div>
         {/each}
       </div>
 
       <p class="v2-sub" style="font-size:11.5px">
-        Roles are Admin and Member, the only two the API recognises. Admins can invite people,
-        change roles and edit org settings; the server refuses to let anyone change their own role
-        or deactivate the last admin. Editing team membership is not available here yet.
+        {m.team_footer()}
       </p>
     </div>
   </div>

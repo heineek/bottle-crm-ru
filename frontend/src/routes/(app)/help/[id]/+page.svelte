@@ -6,6 +6,7 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import { shortDate } from '#lib/v2/format.js';
   import { Paperclip, Send } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { Tone } from '#lib/v2/enums.js';
   import type { PageProps } from './$types';
 
@@ -24,7 +25,11 @@
 
 <PageHeader title={ticket.subject} center width="840px">
   {#snippet sub()}
-    {ticket.reference} · {ticket.categoryLabel} · opened {shortDate(ticket.createdAt)}
+    {m.help_detail_sub({
+      reference: ticket.reference,
+      category: ticket.categoryLabel,
+      date: shortDate(ticket.createdAt)
+    })}
   {/snippet}
   {#snippet actions()}
     <Pill tone={STATUS_TONE[ticket.status]}>{ticket.statusLabel}</Pill>
@@ -36,19 +41,19 @@
     class="v2-pad"
     style="padding-top:18px;padding-bottom:32px;max-width:840px;margin-inline:auto"
   >
-    <a class="back" href={resolve('help')}>Back to help</a>
+    <a class="back" href={resolve('help')}>{m.help_detail_back()}</a>
 
     <div class="summary v2-card">
-      <span><b>Status</b>{ticket.statusLabel}</span>
-      <span><b>Priority</b>{ticket.priorityLabel}</span>
+      <span><b>{m.help_detail_status()}</b>{ticket.statusLabel}</span>
+      <span><b>{m.help_detail_priority()}</b>{ticket.priorityLabel}</span>
       <span
-        ><b>Assigned</b>{ticket.assigned
-          ? 'Support agent assigned'
-          : 'Waiting for assignment'}</span
+        ><b>{m.help_detail_assigned()}</b>{ticket.assigned
+          ? m.help_detail_agent_assigned()
+          : m.help_detail_waiting()}</span
       >
     </div>
 
-    <div class="v2-label" style="margin:22px 0 10px">Conversation</div>
+    <div class="v2-label" style="margin:22px 0 10px">{m.help_detail_conversation()}</div>
     <div class="conversation">
       {#each ticket.messages as message (message.id)}
         <article class:staff={message.authorType === 'staff'} class="message v2-card">
@@ -67,12 +72,12 @@
     </div>
 
     {#if form?.error}<p class="v2-card error">{form.error}</p>{/if}
-    {#if form?.sent}<p class="v2-card sent">Your reply was sent.</p>{/if}
+    {#if form?.sent}<p class="v2-card sent">{m.help_detail_sent()}</p>{/if}
 
     {#if ticket.status === 'closed'}
       <div class="v2-card closed">
-        This ticket is closed. Open a new ticket if you still need help.
-        <a class="v2-btn" href={resolve('help/new')}>New ticket</a>
+        {m.help_detail_closed()}
+        <a class="v2-btn" href={resolve('help/new')}>{m.help_new_ticket_button()}</a>
       </div>
     {:else}
       <form
@@ -89,21 +94,25 @@
         }}
       >
         <div class="v2-field">
-          <label for="reply">Reply</label>
+          <label for="reply">{m.help_detail_reply()}</label>
           <textarea
             id="reply"
             class="v2-input"
             name="body"
             rows="5"
             maxlength="10000"
-            placeholder="Add any details that will help us investigate."
-            >{form?.body ?? ''}</textarea
+            placeholder={m.help_detail_reply_placeholder()}>{form?.body ?? ''}</textarea
           >
         </div>
         <div class="compose-actions">
-          <input class="v2-input" type="file" name="attachment" aria-label="Attach a file" />
+          <input
+            class="v2-input"
+            type="file"
+            name="attachment"
+            aria-label={m.help_detail_attach()}
+          />
           <button class="v2-btn v2-btn-primary" type="submit" disabled={submitting}
-            ><Send />{submitting ? 'Sending…' : 'Send reply'}</button
+            ><Send />{submitting ? m.help_detail_sending() : m.help_detail_send()}</button
           >
         </div>
       </form>

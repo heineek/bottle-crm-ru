@@ -8,6 +8,7 @@ import {
   type GoalValues
 } from '#lib/server/v2/goals.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -43,11 +44,11 @@ export const actions: Actions = {
       await createGoal(event, values);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { values, error: 'Only an admin can create goals.' });
+        return fail(403, { values, error: m.goals_error_create_forbidden() });
       }
       return fail(400, {
         values,
-        error: readableError(err, 'Could not create this goal.')
+        error: readableError(err, m.goals_error_create_failed())
       });
     }
 

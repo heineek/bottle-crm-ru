@@ -6,6 +6,7 @@ vi.mock('#lib/api-helpers.js', () => ({
 }));
 
 const {
+  SUPPORT_CATEGORIES,
   createSupportTicket,
   getSupportTicket,
   listSupportTickets,
@@ -157,5 +158,11 @@ describe('support API adapter', () => {
     expect(url).toContain(`/support/${apiTicket().id}/replies/`);
     expect([...options.body.keys()]).toEqual(['body']);
     expect(options.body.get('body')).toBe('Still broken');
+  });
+});
+
+describe('support categories', () => {
+  it('labels each category', () => {
+    expect(SUPPORT_CATEGORIES.find((c) => c.value === 'billing')?.label).toBe('Billing');
   });
 });

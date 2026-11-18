@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getSupportTicket, replyToSupportTicket } from '#lib/server/v2/support.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ cookies, params }) => {
@@ -15,7 +16,7 @@ export const actions: Actions = {
     const attachment =
       picked && typeof picked === 'object' && 'size' in picked && picked.size > 0 ? picked : null;
     if (!body && !attachment) {
-      return fail(400, { body, error: 'Write a reply or attach a file before sending.' });
+      return fail(400, { body, error: m.help_reply_empty() });
     }
     try {
       await replyToSupportTicket({ cookies }, params.id, { body, attachment });
@@ -23,7 +24,7 @@ export const actions: Actions = {
     } catch (error) {
       return fail(400, {
         body,
-        error: readableError(error, 'Could not send this reply.')
+        error: readableError(error, m.help_reply_failed())
       });
     }
   }

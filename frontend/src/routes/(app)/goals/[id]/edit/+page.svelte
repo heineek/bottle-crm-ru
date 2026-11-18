@@ -9,6 +9,8 @@
   import { money, count } from '#lib/v2/format.js';
   import { CURRENCY_CODES } from '#lib/constants/filters.js';
   import { TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps, SubmitFunction } from './$types';
 
   let { data, form: result }: PageProps = $props();
@@ -50,18 +52,18 @@
 
   let errors = $derived.by(() => {
     const e: Record<string, string> = {};
-    if (!String(form.name).trim()) e.name = 'Give the goal a name you would recognise in a list.';
+    if (!String(form.name).trim()) e.name = m.goals_form_name_error();
 
     const target = Number(form.target_value);
     if (form.target_value === '' || form.target_value === null)
-      e.target_value = 'What is the target?';
+      e.target_value = m.goals_form_target_required();
     else if (!Number.isFinite(target) || target <= 0)
-      e.target_value = 'Target has to be a number greater than zero.';
+      e.target_value = m.goals_form_target_invalid();
 
-    if (!form.period_start) e.period_start = 'When does the period start?';
-    if (!form.period_end) e.period_end = 'When does the period end?';
+    if (!form.period_start) e.period_start = m.goals_form_start_required();
+    if (!form.period_end) e.period_end = m.goals_form_end_required();
     else if (form.period_start && form.period_end <= form.period_start)
-      e.period_end = 'The end has to be after the start.';
+      e.period_end = m.goals_form_end_before_start();
 
     return e;
   });
@@ -86,18 +88,15 @@
 </script>
 
 {#if !data.can_edit}
-  <PageHeader title="Edit goal">
-    {#snippet crumb()}<a href={resolve('goals')}>Goals</a> ›{/snippet}
+  <PageHeader title={m.goals_edit_title()}>
+    {#snippet crumb()}<a href={resolve('goals')}>{m.goals_title()}</a> ›{/snippet}
   </PageHeader>
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Admins only"
-      text="Changing goals is limited to admins. Ask an admin on your team to adjust a quota or target."
-    />
+    <NextAction label={m.common_admins_only()} text={m.goals_form_edit_admins_text()} />
   </div>
 {:else}
-  <PageHeader title="Edit goal" center>
-    {#snippet crumb()}<a href={resolve('goals')}>Goals</a> ›{/snippet}
+  <PageHeader title={m.goals_edit_title()} center>
+    {#snippet crumb()}<a href={resolve('goals')}>{m.goals_title()}</a> ›{/snippet}
     {#snippet sub()}{data.goal.name}{/snippet}
   </PageHeader>
 
@@ -111,14 +110,14 @@
         >
           <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
           <div class="v2-next-body">
-            <div style="font-weight:600">The server refused this change</div>
+            <div style="font-weight:600">{m.goals_form_edit_refused()}</div>
             <div class="v2-sub" style="margin-top:2px">{result.error}</div>
           </div>
         </div>
       {/if}
 
       <div class="v2-field">
-        <label for="f-name">Goal name</label>
+        <label for="f-name">{m.goals_form_name_label()}</label>
         <input
           id="f-name"
           name="name"
@@ -133,7 +132,7 @@
 
       <div class="v2-pair">
         <div class="v2-field">
-          <label for="f-type">Measured in</label>
+          <label for="f-type">{m.goals_form_type_label()}</label>
           <select id="f-type" name="goal_type" class="v2-input" bind:value={form.goal_type}>
             {#each Object.entries(GOAL_TYPE_LABEL) as [key, label] (key)}
               <option value={key}>{label}</option>
@@ -142,7 +141,7 @@
         </div>
 
         <div class="v2-field">
-          <label for="f-target">Target</label>
+          <label for="f-target">{m.goals_form_target_label()}</label>
           <input
             id="f-target"
             name="target_value"
@@ -169,21 +168,20 @@
            keeps (or, on create, defaults) the org's currency. -->
       {#if form.goal_type === 'REVENUE'}
         <div class="v2-field">
-          <label for="f-currency">Currency</label>
+          <label for="f-currency">{m.goals_form_currency_label()}</label>
           <select id="f-currency" name="currency" class="v2-input" bind:value={form.currency}>
             {#each currencyOptions as c (c.value)}
               <option value={c.value}>{c.label}</option>
             {/each}
           </select>
           <p class="v2-hint">
-            Only closed-won deals in this currency count toward the target. Amounts are never
-            converted between currencies.
+            {m.goals_form_currency_hint()}
           </p>
         </div>
       {/if}
 
       <div class="v2-field">
-        <label for="f-period">Period</label>
+        <label for="f-period">{m.goals_form_period_label()}</label>
         <select id="f-period" name="period_type" class="v2-input" bind:value={form.period_type}>
           {#each Object.entries(PERIOD_TYPE_LABEL) as [key, label] (key)}
             <option value={key}>{label}</option>
@@ -195,7 +193,7 @@
 
       <div class="v2-pair">
         <div class="v2-field">
-          <label for="f-start">Period start</label>
+          <label for="f-start">{m.goals_form_start_label()}</label>
           <input
             id="f-start"
             name="period_start"
@@ -209,7 +207,7 @@
         </div>
 
         <div class="v2-field">
-          <label for="f-end">Period end</label>
+          <label for="f-end">{m.goals_form_end_label()}</label>
           <input
             id="f-end"
             name="period_end"
@@ -225,18 +223,18 @@
 
       <div class="v2-pair">
         <div class="v2-field">
-          <label for="f-owner">Whose goal</label>
+          <label for="f-owner">{m.goals_form_owner_label()}</label>
           <select id="f-owner" name="target" class="v2-input" bind:value={form.target}>
-            <option value="org">Whole org</option>
+            <option value="org">{m.goals_owner_whole_org()}</option>
             {#if data.people?.length}
-              <optgroup label="Person">
+              <optgroup label={m.goals_form_owner_person()}>
                 {#each data.people as p (p.id)}
                   <option value="profile:{p.id}">{p.name}</option>
                 {/each}
               </optgroup>
             {/if}
             {#if data.teams?.length}
-              <optgroup label="Team">
+              <optgroup label={m.goals_form_owner_team()}>
                 {#each data.teams as t (t.id)}
                   <option value="team:{t.id}">{t.name}</option>
                 {/each}
@@ -246,20 +244,22 @@
         </div>
 
         <div class="v2-field">
-          <label for="f-active">Status</label>
+          <label for="f-active">{m.common_status()}</label>
           <select id="f-active" name="is_active" class="v2-input" bind:value={form.is_active}>
-            <option value="true">Active. Counts towards totals</option>
-            <option value="false">Paused, kept, but not counted</option>
+            <option value="true">{m.goals_form_status_active()}</option>
+            <option value="false">{m.goals_form_status_paused()}</option>
           </select>
         </div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:center;margin-top:22px">
-        <button class="v2-btn v2-btn-primary" type="submit">Save goal</button>
-        <a class="v2-btn" href={resolve('goals')}>Cancel</a>
+        <button class="v2-btn v2-btn-primary" type="submit">{m.goals_form_save_button()}</button>
+        <a class="v2-btn" href={resolve('goals')}>{m.common_cancel()}</a>
         <span class="v2-sub" style="margin-left:auto;font-size:12px">
-          <span class="v2-num">{REQUIRED.filter((f) => !errors[f]).length}</span>
-          of <span class="v2-num">{REQUIRED.length}</span> required fields done
+          {#each messageParts(m.goals_form_required_done( { done: slot('done'), total: slot('total') } )) as p, i (i)}{#if p.key === 'done'}<span
+                class="v2-num">{REQUIRED.filter((f) => !errors[f]).length}</span
+              >{:else if p.key === 'total'}<span class="v2-num">{REQUIRED.length}</span
+              >{:else}{p.text}{/if}{/each}
         </span>
       </div>
     </form>
@@ -275,21 +275,22 @@
           class="v2-btn"
           type="button"
           style="color:var(--v2-rust)"
-          onclick={() => (confirmingDelete = true)}>Delete this goal</button
+          onclick={() => (confirmingDelete = true)}>{m.goals_delete_button()}</button
         >
         <p class="v2-sub" style="font-size:12px;margin-top:8px">
-          A finished goal is usually better paused than deleted. Paused keeps its history. Delete
-          only when it was created by mistake.
+          {m.goals_delete_hint()}
         </p>
       {:else}
         <form method="POST" action="?/delete" use:enhance>
           <div style="display:flex;gap:8px;align-items:center">
-            <span class="v2-sub" style="font-size:13px">Delete “{data.goal.name}” for good?</span>
+            <span class="v2-sub" style="font-size:13px"
+              >{m.goals_delete_confirm({ name: data.goal.name })}</span
+            >
             <button class="v2-btn v2-btn-primary" type="submit" style="background:var(--v2-rust)"
-              >Yes, delete</button
+              >{m.goals_delete_yes()}</button
             >
             <button class="v2-btn" type="button" onclick={() => (confirmingDelete = false)}
-              >Keep it</button
+              >{m.goals_delete_keep()}</button
             >
           </div>
         </form>
