@@ -1,4 +1,5 @@
 import { daysSince, shortDate } from '#lib/v2/format.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * A deal's next open task as a phrase for the pipeline card and list row, or
@@ -26,7 +27,7 @@ export function dealNextStep(
   if (deal.stage_kind !== 'open') return null;
   const next = deal.next_activity;
   if (next === undefined) return null;
-  if (next === null) return { text: 'No next step', late: true };
-  const due = next.due_date ? shortDate(next.due_date, now) : 'no date';
+  if (next === null) return { text: m.pipeline_next_step_none(), late: true };
+  const due = next.due_date ? shortDate(next.due_date, now) : m.pipeline_next_step_no_date();
   return { text: `${next.title} · ${due}`, late: (daysSince(next.due_date, now) ?? 0) > 0 };
 }

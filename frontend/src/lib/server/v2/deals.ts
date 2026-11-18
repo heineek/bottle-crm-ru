@@ -32,6 +32,7 @@ import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
 import { sumByCurrency } from '#lib/v2/format.js';
 import { canMoveCard } from '#lib/v2/board-drag.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -115,7 +116,7 @@ function toRow(deal: DealFields) {
     name: deal.name ?? '',
     account: {
       id: deal.account?.id ?? null,
-      name: deal.account?.name ?? 'No account'
+      name: deal.account?.name ?? m.pipeline_no_account()
     },
     pipeline: deal.pipeline ?? null,
     stage: deal.stage,
@@ -373,7 +374,7 @@ export async function getDeal({ cookies }: { cookies: Cookies }, id: string) {
     // Newest first, through the download proxy. Comments are in `activity`.
     files: (response.attachments ?? []).map((a) => ({
       id: String(a.id),
-      name: a.file_name || 'Attachment',
+      name: a.file_name || m.pipeline_attachment_fallback(),
       at: a.created_at ?? null,
       href: attachmentHref(a.id)
     })),
@@ -456,7 +457,7 @@ function buildActivity(response: Schemas['OpportunityDetailResponse']) {
       by: null,
       // Deliberately not "moved from X to Y". The previous stage is not
       // recorded anywhere, and inventing it would be inventing history.
-      body: 'Moved into this stage'
+      body: m.pipeline_timeline_moved_into_stage()
     });
   }
 
@@ -465,7 +466,7 @@ function buildActivity(response: Schemas['OpportunityDetailResponse']) {
     type: 'stage',
     at: deal.created_at,
     by: deal.created_by?.email ?? null,
-    body: 'Deal created'
+    body: m.pipeline_timeline_deal_created()
   });
 
   return events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -529,7 +530,7 @@ async function listOwners(cookies: Cookies) {
     );
     return (response.profiles ?? []).map((profile) => ({
       id: profile.id,
-      name: profile.user_details?.email || 'Unknown'
+      name: profile.user_details?.email || m.pipeline_owner_unknown()
     }));
   } catch {
     return [];
@@ -749,7 +750,7 @@ async function fetchDetail(
     rethrowModuleOff(err);
     // On the status, not on the wording. See `api-helpers.js`.
     if (apiStatus(err) === 404) {
-      error(404, 'That deal does not exist, or you do not have access to it.');
+      error(404, m.pipeline_detail_not_found());
     }
     throw err;
   }

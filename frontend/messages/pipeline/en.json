@@ -1,0 +1,195 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "pipeline_no_account": "No account",
+  "pipeline_timeline_moved_into_stage": "Moved into this stage",
+  "pipeline_timeline_deal_created": "Deal created",
+  "pipeline_owner_unknown": "Unknown",
+  "pipeline_detail_not_found": "That deal does not exist, or you do not have access to it.",
+  "pipeline_next_step_none": "No next step",
+  "pipeline_next_step_no_date": "no date",
+  "pipeline_title": "Pipeline",
+  "pipeline_list_sub_weighted": "weighted",
+  "pipeline_view_list": "List",
+  "pipeline_view_board": "Board",
+  "pipeline_export": "Export",
+  "pipeline_new_deal": "New deal",
+  "pipeline_list_filtered_note": "These numbers describe the filtered pipeline.",
+  "pipeline_all_pipelines": "All pipelines",
+  "pipeline_board_meta": "Open stages only. Drag a card to change its stage",
+  "pipeline_list_meta": "Sorted by value",
+  "pipeline_move_failed_reverted": "Could not move the deal; reverted.",
+  "pipeline_move_failed_reverted_network": "Could not move the deal, reverted.",
+  "pipeline_board_truncated": "Showing the first {count}. Filter to see the rest.",
+  "pipeline_aging_days_short": "{label} · {days}d",
+  "pipeline_days_short": "{days}d",
+  "pipeline_board_lane_empty": "Nothing in this stage.",
+  "pipeline_empty_title": "No deals here",
+  "pipeline_empty_body_leads": "Nothing matches this view. Start a deal from an account you are already talking to, convert a lead that is ready, or clear a filter to see more.",
+  "pipeline_empty_body": "Nothing matches this view. Start a deal from an account you are already talking to, or clear a filter to see more.",
+  "pipeline_empty_go_to_leads": "Go to leads",
+  "pipeline_col_deal": "Deal",
+  "pipeline_col_stage": "Stage",
+  "pipeline_col_health": "Health",
+  "pipeline_col_next_step": "Next step",
+  "pipeline_col_value": "Value",
+  "pipeline_col_closing": "Closing",
+  "pipeline_col_in_stage": "In stage",
+  "pipeline_col_owner": "Owner",
+  "pipeline_list_showing": "Showing {shown} of {total}",
+  "pipeline_move_missing": "Missing card or column.",
+  "pipeline_move_failed": "Could not move the deal.",
+  "pipeline_new_sub": "Five fields to start. Everything else can wait until you know it.",
+  "pipeline_error_name": "Give the deal a name you would recognise in a list.",
+  "pipeline_error_account_pick": "Pick the account this deal belongs to.",
+  "pipeline_error_amount_missing": "How much is it worth?",
+  "pipeline_error_amount_positive": "Amount has to be a number greater than zero.",
+  "pipeline_error_close_missing": "When do you expect this to close?",
+  "pipeline_error_close_past": "That date has passed. Pick the date you now expect.",
+  "pipeline_error_probability": "Probability is a percentage between 0 and 100.",
+  "pipeline_new_server_refused": "The server refused this deal",
+  "pipeline_form_marked_below": "They are marked below. Nothing has been saved.",
+  "pipeline_field_name": "Deal name",
+  "pipeline_field_name_placeholder": "Platform renewal",
+  "pipeline_field_name_hint": "What you would say out loud, “40 seats plus onboarding”, not “Opportunity 118”.",
+  "pipeline_field_account": "Account",
+  "pipeline_field_account_choose": "Choose an account…",
+  "pipeline_field_amount": "Amount",
+  "pipeline_field_expected_close": "Expected close",
+  "pipeline_field_pipeline": "Pipeline",
+  "pipeline_field_stage": "Stage",
+  "pipeline_new_stage_hint": "A new deal cannot start closed. Won and lost are things you do to a deal that exists, so they are not offered here.",
+  "pipeline_new_more_fields": "More fields",
+  "pipeline_new_more_fields_list": ". Type, probability, source, owner, notes",
+  "pipeline_field_type": "Type",
+  "pipeline_field_probability": "Probability",
+  "pipeline_field_owner": "Owner",
+  "pipeline_new_owner_hint": "Defaults to you. Who created the deal is recorded separately and is not editable.",
+  "pipeline_field_source": "Source",
+  "pipeline_field_source_placeholder": "Existing customer",
+  "pipeline_field_notes": "Notes",
+  "pipeline_new_submit": "Create deal",
+  "pipeline_cancel": "Cancel",
+  "pipeline_new_required_done": "{done} of {total} required fields done",
+  "pipeline_new_create_failed": "Could not create the deal.",
+  "pipeline_edit_title": "Edit {name}",
+  "pipeline_edit_sub_in_stage": "{stage} for {days} days",
+  "pipeline_edit_saved": "Saved.",
+  "pipeline_edit_saved_body": "“{name}” has been updated.",
+  "pipeline_edit_back_to_deal": "Back to the deal",
+  "pipeline_edit_server_refused": "The server refused this change",
+  "pipeline_form_nothing_saved": "Nothing has been saved.",
+  "pipeline_error_account_required": "A deal has to belong to an account.",
+  "pipeline_error_won_amount": "A won deal has to record what it was worth.",
+  "pipeline_error_amount_number": "Amount has to be a number.",
+  "pipeline_error_amount_negative": "Amount cannot be negative.",
+  "pipeline_error_closed_needs_date": "{stage} needs the date it closed.",
+  "pipeline_error_closed_stage_needs_date": "A closed stage needs the date it closed.",
+  "pipeline_edit_clock_before": "The stage clock restarts. This deal currently reads",
+  "pipeline_edit_clock_after": "on the board; after saving it reads 0 days and On pace, because aging is measured from the last stage change and not from the last time anyone did anything.",
+  "pipeline_edit_aging_days": "{label} · {days} days",
+  "pipeline_edit_from_line_items": "From line items",
+  "pipeline_edit_line_items_total": "add up to {total}. The server refuses a different figure on a deal with line items, so this cannot be typed over. Edit the line items instead.",
+  "pipeline_edit_amount_manual_hint": "Typed by hand. Adding line items to this deal would take the field over.",
+  "pipeline_field_closed_on": "Closed on",
+  "pipeline_edit_required": "required",
+  "pipeline_edit_closed_on_hint": "The date it actually closed, not the date you are recording it.",
+  "pipeline_edit_owner_nobody": "Nobody",
+  "pipeline_edit_submit": "Save changes",
+  "pipeline_edit_last_stage_change": "Last stage change {date}",
+  "pipeline_edit_save_failed": "Could not save the deal.",
+  "pipeline_detail_edit": "Edit",
+  "pipeline_detail_create_estimate": "Create estimate",
+  "pipeline_detail_create_invoice": "Create invoice",
+  "pipeline_detail_delete": "Delete",
+  "pipeline_detail_delete_confirm": "Delete for good",
+  "pipeline_detail_delete_explain": "Deletes {name} permanently. This cannot be undone.",
+  "pipeline_detail_aging": "{label} · {days} days in {stage}",
+  "pipeline_detail_activity": "Activity",
+  "pipeline_detail_line_items": "Line items",
+  "pipeline_detail_col_product": "Product",
+  "pipeline_detail_col_qty": "Qty",
+  "pipeline_detail_col_unit_price": "Unit price",
+  "pipeline_detail_col_discount": "Discount",
+  "pipeline_detail_col_total": "Total",
+  "pipeline_detail_subtotal": "Subtotal",
+  "pipeline_detail_discounts": "Discounts",
+  "pipeline_detail_rail_deal": "Deal",
+  "pipeline_detail_value": "Value",
+  "pipeline_detail_unassigned": "Unassigned",
+  "pipeline_detail_stage_since": "Stage since",
+  "pipeline_detail_people": "People",
+  "pipeline_detail_no_title": "No title recorded",
+  "pipeline_detail_no_people": "Nobody is linked to this deal yet. Add the person who signs it.",
+  "pipeline_detail_invoice_failed": "Could not raise an invoice from this deal.",
+  "pipeline_detail_delete_failed": "Could not delete this deal.",
+  "pipeline_list_sub_deals": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "deals",
+        "countPlural=other": "deals"
+      }
+    }
+  ],
+  "pipeline_list_sub_stalled": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "stalled",
+        "countPlural=other": "stalled"
+      }
+    }
+  ],
+  "pipeline_form_fields_need_you": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} field still needs you",
+        "countPlural=other": "{countShown} fields still need you"
+      }
+    }
+  ],
+  "pipeline_edit_line_items_link": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} line items",
+        "countPlural=other": "{countShown} line items"
+      }
+    }
+  ],
+  "pipeline_source_not_specified": "Not specified",
+  "pipeline_source_not_recorded": "Not recorded",
+  "pipeline_detail_log_activity": "Log activity",
+  "pipeline_detail_interactions_failed": "Calls and messages could not be loaded, so they are missing below.",
+  "pipeline_detail_start_project": "Start a project",
+  "pipeline_detail_interactions_more": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Showing the latest calls and messages; {countShown} older one is not shown.",
+        "countPlural=other": "Showing the latest calls and messages; {countShown} older ones are not shown."
+      }
+    }
+  ],
+  "pipeline_detail_files": "Files",
+  "pipeline_detail_files_empty": "No files on this deal yet. Attach one with a comment above.",
+  "pipeline_attachment_fallback": "Attachment"
+}

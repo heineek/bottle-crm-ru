@@ -12,6 +12,7 @@ import {
   withInteractions
 } from '#lib/server/v2/interactions.js';
 import type { Actions, PageServerLoad } from './$types';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async (event) => {
   const [deal, related, { sources }, logged] = await Promise.all([
@@ -52,7 +53,7 @@ export const actions: Actions = {
       return fail(apiStatus(err) === 404 ? 404 : 400, {
         error:
           (typeof message === 'string' && message) ||
-          readableError(err, 'Could not raise an invoice from this deal.')
+          readableError(err, m.pipeline_detail_invoice_failed())
       });
     }
     redirect(303, created?.id ? `/invoices/${created.id}` : '/invoices');
@@ -68,7 +69,7 @@ export const actions: Actions = {
     } catch (err) {
       const status = apiStatus(err);
       const code = status !== undefined && status >= 400 && status < 500 ? status : 400;
-      return fail(code, { error: readableError(err, 'Could not delete this deal.') });
+      return fail(code, { error: readableError(err, m.pipeline_detail_delete_failed()) });
     }
     redirect(303, '/pipeline');
   }

@@ -22,6 +22,8 @@
   import { refreshAll } from '$app/navigation';
   import { deserialize } from '$app/forms';
   import { holdLockedCard } from '#lib/v2/board-drag.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageData, PageProps } from './$types';
 
   type Lane = PageData['lanes'][number];
@@ -134,9 +136,9 @@
         return;
       }
       const refusal = result.type === 'failure' ? result.data?.error : undefined;
-      moveError = (typeof refusal === 'string' && refusal) || 'Could not move the deal; reverted.';
+      moveError = (typeof refusal === 'string' && refusal) || m.pipeline_move_failed_reverted();
     } catch {
-      moveError = 'Could not move the deal, reverted.';
+      moveError = m.pipeline_move_failed_reverted_network();
     }
     await refreshAll();
   }
@@ -183,25 +185,32 @@
   });
 </script>
 
-<PageHeader title="Pipeline">
+<PageHeader title={m.pipeline_title()}>
   {#snippet sub()}
     <!-- Totals come from the API aggregate, never from the rows on screen.
          Not "open deals": the default view is now the pipeline's own "All
          deals" preset (empty params), which includes closed stages, so a word
          that was only ever true under the old hardcoded ?open=true would lie
          here as soon as somebody switched presets. -->
-    <span class="v2-num">{count(totals.count)}</span> deals ·
+    <span class="v2-num">{count(totals.count)}</span>
+    {m.pipeline_list_sub_deals({ count: totals.count })} ·
     <span class="v2-num">{perCurrency(totals.amount_by_currency)}</span> ·
-    <span class="v2-num">{perCurrency(totals.weighted_by_currency)}</span> weighted ·
-    <span class="v2-num" style="color:var(--v2-rust)">{totals.stalled_count}</span> stalled
+    <span class="v2-num">{perCurrency(totals.weighted_by_currency)}</span>
+    {m.pipeline_list_sub_weighted()} ·
+    <span class="v2-num" style="color:var(--v2-rust)">{totals.stalled_count}</span>
+    {m.pipeline_list_sub_stalled({ count: totals.stalled_count })}
   {/snippet}
   {#snippet actions()}
     {#if view === 'board'}
-      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(listHref))}><List />List</a>
-      <span class="v2-btn" aria-current="true"><Columns3 />Board</span>
+      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(listHref))}
+        ><List />{m.pipeline_view_list()}</a
+      >
+      <span class="v2-btn" aria-current="true"><Columns3 />{m.pipeline_view_board()}</span>
     {:else}
-      <span class="v2-btn" aria-current="true"><List />List</span>
-      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(boardHref))}><Columns3 />Board</a>
+      <span class="v2-btn" aria-current="true"><List />{m.pipeline_view_list()}</span>
+      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(boardHref))}
+        ><Columns3 />{m.pipeline_view_board()}</a
+      >
     {/if}
     <!-- The page's own query string: the export rebuilds the same API query
          from it, so the file holds every row this list would page through. -->
@@ -210,15 +219,17 @@
       href="{resolve('api/deals/export')}?{page.url.searchParams}"
       data-sveltekit-reload
     >
-      <Download />Export
+      <Download />{m.pipeline_export()}
     </a>
-    <a class="v2-btn v2-btn-primary" href={resolve('pipeline/new')}><Plus />New deal</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('pipeline/new')}
+      ><Plus />{m.pipeline_new_deal()}</a
+    >
   {/snippet}
 </PageHeader>
 
 {#if isFiltered}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered pipeline.
+    {m.pipeline_list_filtered_note()}
   </p>
 {/if}
 
@@ -227,7 +238,7 @@
     url={page.url}
     pipelines={data.pipelines}
     current={data.pipelineId}
-    allLabel={view === 'board' ? null : 'All pipelines'}
+    allLabel={view === 'board' ? null : m.pipeline_all_pipelines()}
   />
 </div>
 
@@ -242,7 +253,7 @@
   saved={data.savedViews}
   onlyFields={data.onlyFields}
   onlyPresets={data.onlyPresets}
-  meta={view === 'board' ? 'Open stages only. Drag a card to change its stage' : 'Sorted by value'}
+  meta={view === 'board' ? m.pipeline_board_meta() : m.pipeline_list_meta()}
 />
 
 {#if moveError}
@@ -270,8 +281,9 @@
                silently stops. Outside the dndzone below, so it never becomes a
                drop target of its own. -->
           <p class="v2-sub" style="padding:0 2px 6px;font-size:11.5px">
-            Showing the first <span class="v2-num">{lane.rows.length}</span>. Filter to see the
-            rest.
+            {#each messageParts(m.pipeline_board_truncated( { count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+                  class="v2-num">{lane.rows.length}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
         <div
@@ -309,8 +321,12 @@
               {/if}
               <div style="margin-top:9px">
                 <Pill tone={AGING_TONE[d.aging_status]} dot>
-                  {AGING_LABEL[d.aging_status] +
-                    (d.aging_status === 'green' ? '' : ` · ${d.days_in_current_stage}d`)}
+                  {d.aging_status === 'green'
+                    ? AGING_LABEL[d.aging_status]
+                    : m.pipeline_aging_days_short({
+                        label: AGING_LABEL[d.aging_status],
+                        days: d.days_in_current_stage
+                      })}
                 </Pill>
               </div>
               <div class="v2-deal-card-foot">
@@ -322,7 +338,9 @@
               </div>
             </div>
           {:else}
-            <p class="v2-sub" style="padding:10px 2px;font-size:12px">Nothing in this stage.</p>
+            <p class="v2-sub" style="padding:10px 2px;font-size:12px">
+              {m.pipeline_board_lane_empty()}
+            </p>
           {/each}
         </div>
       </section>
@@ -331,16 +349,14 @@
 {:else if deals.length === 0}
   <div class="v2-scroll">
     <EmptyState
-      title="No deals here"
-      body={isOn(data.modules, 'leads')
-        ? 'Nothing matches this view. Start a deal from an account you are already talking to, convert a lead that is ready, or clear a filter to see more.'
-        : 'Nothing matches this view. Start a deal from an account you are already talking to, or clear a filter to see more.'}
+      title={m.pipeline_empty_title()}
+      body={isOn(data.modules, 'leads') ? m.pipeline_empty_body_leads() : m.pipeline_empty_body()}
     >
       {#snippet icon()}<Columns3 size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('pipeline/new')}>New deal</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('pipeline/new')}>{m.pipeline_new_deal()}</a>
         {#if isOn(data.modules, 'leads')}
-          <a class="v2-btn" href={resolve('leads')}>Go to leads</a>
+          <a class="v2-btn" href={resolve('leads')}>{m.pipeline_empty_go_to_leads()}</a>
         {/if}
       {/snippet}
     </EmptyState>
@@ -351,14 +367,14 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Deal</th>
-            <th>Stage</th>
-            <th>Health</th>
-            {#if tasksOn}<th>Next step</th>{/if}
-            <th class="v2-r">Value</th>
-            <th>Closing</th>
-            <th class="v2-r">In stage</th>
-            <th>Owner</th>
+            <th>{m.pipeline_col_deal()}</th>
+            <th>{m.pipeline_col_stage()}</th>
+            <th>{m.pipeline_col_health()}</th>
+            {#if tasksOn}<th>{m.pipeline_col_next_step()}</th>{/if}
+            <th class="v2-r">{m.pipeline_col_value()}</th>
+            <th>{m.pipeline_col_closing()}</th>
+            <th class="v2-r">{m.pipeline_col_in_stage()}</th>
+            <th>{m.pipeline_col_owner()}</th>
           </tr>
         </thead>
         <tbody>
@@ -404,7 +420,7 @@
                   ? 'color:var(--v2-rust);font-weight:600'
                   : 'color:var(--v2-slate)'}
               >
-                {d.days_in_current_stage}d
+                {m.pipeline_days_short({ days: d.days_in_current_stage })}
               </td>
               <td data-m="hide"><Avatar name={d.assigned_to} size={22} /></td>
             </tr>
@@ -413,8 +429,10 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{deals.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.pipeline_list_showing( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{deals.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   </div>
 {/if}

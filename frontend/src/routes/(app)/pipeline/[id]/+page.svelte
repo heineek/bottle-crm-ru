@@ -15,6 +15,7 @@
   import { isOn } from '#lib/v2/modules.js';
   import { money, longDate } from '#lib/v2/format.js';
   import { AGING_TONE, AGING_LABEL, OPPORTUNITY_TYPE_LABEL } from '#lib/v2/enums.js';
+  import { m } from '#lib/paraglide/messages.js';
   import { sourceLabel } from '#lib/v2/lead-sources.js';
   import { Check, ChevronRight } from '@lucide/svelte';
   import type { PageProps } from './$types';
@@ -54,7 +55,7 @@
 
 <PageHeader title={deal.name} record>
   {#snippet crumb()}
-    <a href={resolve('pipeline')}>Pipeline</a>
+    <a href={resolve('pipeline')}>{m.pipeline_title()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`accounts/${deal.account.id}`)}>{deal.account.name}</a>
   {/snippet}
@@ -62,16 +63,18 @@
     <!-- "Move stage" was a second button that did nothing. Stage is edited on
          the form below, where the page can show what moving it costs, the
          aging clock resets, instead of moving it in one anonymous click. -->
-    <a class="v2-btn" href={resolve(`pipeline/${deal.id}/edit`)}>Edit</a>
+    <a class="v2-btn" href={resolve(`pipeline/${deal.id}/edit`)}>{m.pipeline_detail_edit()}</a>
     {#if isOn(data.modules, 'invoices')}
       <a class="v2-btn" href="{resolve('invoices/estimates/new')}?opportunity={deal.id}"
-        >Create estimate</a
+        >{m.pipeline_detail_create_estimate()}</a
       >
     {/if}
     {#if deal.stage_kind === 'won' && isOn(data.modules, 'projects')}
       <!-- Opens the new-project form filled from this deal; nothing is
            created until that form is saved. -->
-      <a class="v2-btn" href="{resolve('projects/new')}?deal={deal.id}">Start a project</a>
+      <a class="v2-btn" href="{resolve('projects/new')}?deal={deal.id}"
+        >{m.pipeline_detail_start_project()}</a
+      >
     {/if}
     {#if deal.stage_kind === 'won' && isOn(data.modules, 'invoices')}
       <form
@@ -87,7 +90,7 @@
         }}
       >
         <button class="v2-btn v2-btn-primary" type="submit" disabled={invoicing}>
-          Create invoice
+          {m.pipeline_detail_create_invoice()}
         </button>
       </form>
     {/if}
@@ -96,9 +99,9 @@
            DELETE asks the same rule again. -->
       <ConfirmAction
         action="?/delete"
-        label="Delete"
-        confirmLabel="Delete for good"
-        explain="Deletes {deal.name} permanently. This cannot be undone."
+        label={m.pipeline_detail_delete()}
+        confirmLabel={m.pipeline_detail_delete_confirm()}
+        explain={m.pipeline_detail_delete_explain({ name: deal.name })}
       />
     {/if}
   {/snippet}
@@ -131,7 +134,11 @@
       {/each}
       <span style="margin-left:auto">
         <Pill tone={AGING_TONE[deal.aging_status]} dot>
-          {`${AGING_LABEL[deal.aging_status]} · ${deal.days_in_current_stage} days in ${deal.stage_label}`}
+          {m.pipeline_detail_aging({
+            label: AGING_LABEL[deal.aging_status],
+            days: deal.days_in_current_stage,
+            stage: deal.stage_label
+          })}
         </Pill>
       </span>
     </div>
@@ -151,10 +158,10 @@
         {/if}
 
         <div class="act-head">
-          <div class="v2-label">Activity</div>
+          <div class="v2-label">{m.pipeline_detail_activity()}</div>
           {#if data.interactions.live && !logging}
             <button class="v2-btn v2-btn-sm" type="button" onclick={() => (logging = true)}>
-              Log activity
+              {m.pipeline_detail_log_activity()}
             </button>
           {/if}
         </div>
@@ -172,7 +179,7 @@
         <CommentComposer error={form?.noteError} />
         {#if data.interactions.failed}
           <p class="deal-error" style="margin-bottom:12px">
-            Calls and messages could not be loaded, so they are missing below.
+            {m.pipeline_detail_interactions_failed()}
           </p>
         {/if}
         {#if form?.activity?.deleteError}
@@ -183,21 +190,21 @@
         <Timeline events={activity} />
         {#if data.interactions.more}
           <p class="v2-sub" style="font-size:12px">
-            Showing the latest calls and messages; {data.interactions.more} older ones are not shown.
+            {m.pipeline_detail_interactions_more({ count: data.interactions.more })}
           </p>
         {/if}
 
         {#if lineItems.length}
-          <div class="v2-label" style="margin:22px 0 10px">Line items</div>
+          <div class="v2-label" style="margin:22px 0 10px">{m.pipeline_detail_line_items()}</div>
           <div class="v2-card" style="overflow:hidden">
             <table class="v2-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th class="v2-r">Qty</th>
-                  <th class="v2-r">Unit price</th>
-                  <th class="v2-r">Discount</th>
-                  <th class="v2-r">Total</th>
+                  <th>{m.pipeline_detail_col_product()}</th>
+                  <th class="v2-r">{m.pipeline_detail_col_qty()}</th>
+                  <th class="v2-r">{m.pipeline_detail_col_unit_price()}</th>
+                  <th class="v2-r">{m.pipeline_detail_col_discount()}</th>
+                  <th class="v2-r">{m.pipeline_detail_col_total()}</th>
                 </tr>
               </thead>
               <tbody>
@@ -220,23 +227,20 @@
               style="display:flex;justify-content:flex-end;gap:24px;padding:11px 14px;border-top:1px solid var(--v2-line);font-size:13px"
             >
               {#if discount > 0}
-                <span class="v2-muted">Subtotal</span>
+                <span class="v2-muted">{m.pipeline_detail_subtotal()}</span>
                 <span class="v2-num v2-muted">{money(subtotal, deal.currency)}</span>
-                <span class="v2-muted">Discounts</span>
+                <span class="v2-muted">{m.pipeline_detail_discounts()}</span>
                 <span class="v2-num v2-muted">−{money(discount, deal.currency)}</span>
               {/if}
-              <span style="font-weight:650">Total</span>
+              <span style="font-weight:650">{m.pipeline_detail_col_total()}</span>
               <span class="v2-num" style="font-weight:650">{money(deal.amount, deal.currency)}</span
               >
             </div>
           </div>
         {/if}
 
-        <div class="v2-label" style="margin:22px 0 10px">Files</div>
-        <FileList
-          files={data.files}
-          empty="No files on this deal yet. Attach one with a comment above."
-        />
+        <div class="v2-label" style="margin:22px 0 10px">{m.pipeline_detail_files()}</div>
+        <FileList files={data.files} empty={m.pipeline_detail_files_empty()} />
 
         <RelatedRecords {related} error={form?.related?.error} />
       </div>
@@ -244,37 +248,37 @@
   </div>
 
   <aside class="v2-rail">
-    <div class="v2-label v2-rail-head">Deal</div>
+    <div class="v2-label v2-rail-head">{m.pipeline_detail_rail_deal()}</div>
     <dl class="v2-kv">
       {#if data.pipeline}
-        <dt>Pipeline</dt>
+        <dt>{m.pipeline_field_pipeline()}</dt>
         <dd>{data.pipeline.name}</dd>
       {/if}
-      <dt>Stage</dt>
+      <dt>{m.pipeline_field_stage()}</dt>
       <dd>{deal.stage_label}</dd>
-      <dt>Value</dt>
+      <dt>{m.pipeline_detail_value()}</dt>
       <dd class="v2-num">{money(deal.amount, deal.currency)}</dd>
-      <dt>Probability</dt>
+      <dt>{m.pipeline_field_probability()}</dt>
       <dd class="v2-num">{deal.probability}%</dd>
-      <dt>Expected close</dt>
+      <dt>{m.pipeline_field_expected_close()}</dt>
       <dd>{longDate(deal.closed_on)}</dd>
-      <dt>Type</dt>
+      <dt>{m.pipeline_field_type()}</dt>
       <dd>{OPPORTUNITY_TYPE_LABEL[deal.opportunity_type]}</dd>
-      <dt>Source</dt>
-      <dd>{sourceLabel(data.sources, deal.lead_source) || 'Not recorded'}</dd>
-      <dt>Owner</dt>
-      <dd>{deal.assigned_to || 'Unassigned'}</dd>
+      <dt>{m.pipeline_field_source()}</dt>
+      <dd>{sourceLabel(data.sources, deal.lead_source) || m.pipeline_source_not_recorded()}</dd>
+      <dt>{m.pipeline_field_owner()}</dt>
+      <dd>{deal.assigned_to || m.pipeline_detail_unassigned()}</dd>
       <!--
         "Last activity" used to be here, reading a `last_activity_at` the model
         does not have. Aging is measured from the last stage change, a
         narrower claim, and the one the board is actually coloured by, so that
         is what this row says now.
       -->
-      <dt>Stage since</dt>
+      <dt>{m.pipeline_detail_stage_since()}</dt>
       <dd>{longDate(deal.stage_changed_at)}</dd>
     </dl>
 
-    <div class="v2-label v2-rail-head">People</div>
+    <div class="v2-label v2-rail-head">{m.pipeline_detail_people()}</div>
     {#each contacts as c (c.id)}
       <!-- A link now that `/contacts/<uuid>` resolves. These names were
            plain text because the contacts module was still fixtures. -->
@@ -289,13 +293,13 @@
           <!-- `relationship` (Champion, Blocker) was a fixture field. Contact
                has `title` and `department`, so the line says those. -->
           <div class="v2-sub" style="font-size:11px">
-            {[c.title, c.department].filter(Boolean).join(' · ') || 'No title recorded'}
+            {[c.title, c.department].filter(Boolean).join(' · ') || m.pipeline_detail_no_title()}
           </div>
         </div>
       </a>
     {:else}
       <p class="v2-sub" style="font-size:12px">
-        Nobody is linked to this deal yet. Add the person who signs it.
+        {m.pipeline_detail_no_people()}
       </p>
     {/each}
 

@@ -12,6 +12,7 @@ import {
   saveRefusal
 } from '#lib/server/v2/record-custom-fields.js';
 import type { Actions, PageServerLoad } from './$types';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async (event) => {
   // The currency hint under the amount comes from the shell (`data.org.currency`
@@ -48,7 +49,7 @@ export const actions: Actions = {
       // distrust a create page.
       return fail(400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not create the deal.')
+        ...saveRefusal(err, custom.definitions, m.pipeline_new_create_failed())
       });
     }
 

@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import {
   EDITABLE_FIELDS,
   getDealForEdit,
@@ -59,7 +60,7 @@ export const actions: Actions = {
       // checks are a UX hint and the serializer is the rule.
       return fail(400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not save the deal.')
+        ...saveRefusal(err, custom.definitions, m.pipeline_edit_save_failed())
       });
     }
 
