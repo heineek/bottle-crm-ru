@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../data/api/enterprise_schema.g.dart' as enterprise;
 import '../../data/models/custom_object.dart';
 import '../../data/models/lookup_models.dart';
 import '../../providers/custom_objects_provider.dart';
@@ -46,7 +49,9 @@ class _ObjectRecordFormScreenState
   Map<String, dynamic> _custom = {};
   Map<String, List<LinkedRecord>> _links = {};
   List<String> _assignees = [];
+  List<String> _tagIds = [];
   final Map<String, String> _storedNames = {};
+  final Map<String, String> _tagNames = {};
 
   bool _saving = false;
   bool _dirty = false;
@@ -111,6 +116,39 @@ class _ObjectRecordFormScreenState
     for (final p in original.assignedTo) {
       _storedNames[p.id] = p.name.isNotEmpty ? p.name : p.email;
     }
+    _tagIds = [for (final t in original.tags) t.id];
+    for (final t in original.tags) {
+      _tagNames[t.id] = t.name;
+    }
+  }
+
+  Future<void> _pickTags(List<TagLookup> tags) async {
+    final picked = await MultiSelectSheet.show<TagLookup>(
+      context: context,
+      title: context.l10n.commonTags,
+      items: tags,
+      initialSelection: [
+        for (final t in tags)
+          if (_tagIds.contains(t.id)) t,
+      ],
+      labelOf: (t) => t.name,
+      searchText: (t) => t.name,
+      emptyMessage: context.l10n.objectsFilterNoTags,
+    );
+    if (picked == null) return;
+    final listed = {for (final t in tags) t.id};
+    setState(() {
+      // A tag the record carries that is turned off is not offered, and stays.
+      _tagIds = [
+        for (final id in _tagIds)
+          if (!listed.contains(id)) id,
+        for (final t in picked) t.id,
+      ];
+      for (final t in picked) {
+        _tagNames[t.id] = t.name;
+      }
+      _dirty = true;
+    });
   }
 
   List<UserLookup> _people(List<UserLookup> active) {
@@ -164,6 +202,7 @@ class _ObjectRecordFormScreenState
         for (final e in _links.entries) e.key: [for (final r in e.value) r.id],
       },
       assignees: _assignees,
+      tags: _tagIds,
       original: _original,
     );
     final api = ref.read(customObjectsApiProvider);
@@ -197,12 +236,15 @@ class _ObjectRecordFormScreenState
     }
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ref.invalidate(objectRecordsProvider(widget.objectKey));
+    // Refresh in place: the list keeps its filters and its search text.
+    unawaited(
+      ref.read(objectRecordsProvider(widget.objectKey).notifier).refresh(),
+    );
     if (_editing) {
       context.pop();
       return;
     }
-    final id = response.data?['id']?.toString();
+    final id = enterprise.CustomRecordDetail.fromJson(response.data ?? {}).id;
     if (id == null || id.isEmpty) {
       context.pop();
     } else {
@@ -274,8 +316,9 @@ class _ObjectRecordFormScreenState
         final title = _editing
             ? l10n.objectsEditRecord(def.summary.label)
             : l10n.objectsNewRecord(def.summary.label);
-        if (answerState.isLoading) return _shell(title, loading);
-        if (customObjectsFailed(answerState)) {
+        final decided = def.summary.writable != null;
+        if (!decided && answerState.isLoading) return _shell(title, loading);
+        if (!decided && customObjectsFailed(answerState)) {
           return _shell(
             title,
             _message(
@@ -284,7 +327,7 @@ class _ObjectRecordFormScreenState
             ),
           );
         }
-        if (answer?.hasCustomObjects != true) {
+        if (!canWriteObject(def.summary, answer)) {
           return _shell(title, _message(objectsTurnedOffNotice));
         }
         if (_editing) {
@@ -315,6 +358,13 @@ class _ObjectRecordFormScreenState
   Widget _form(ObjectDefinition def, String title) {
     final people = _people(ref.watch(usersProvider));
     final byId = {for (final u in people) u.id: u};
+    final tags = ref.watch(tagsProvider);
+    // "No longer active" is only known once the list has loaded; while it
+    // loads, or after it fails, a carried tag shows plainly.
+    final tagsLoaded = ref.watch(tagsLookupProvider).hasValue;
+    for (final t in tags) {
+      _tagNames[t.id] = t.name;
+    }
     final original = _original;
     final l10n = context.l10n;
     return UnsavedChangesGuard(
@@ -402,6 +452,54 @@ class _ObjectRecordFormScreenState
                   onPressed: () => _pickAssignees(people),
                   icon: const Icon(LucideIcons.userPlus, size: 16),
                   label: Text(l10n.objectsChoose),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.commonTags,
+                  style: AppTypography.label.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                if (_tagIds.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      for (final id in _tagIds)
+                        if (!tagsLoaded || tags.any((t) => t.id == id))
+                          Chip(
+                            label: Text(_tagNames[id] ?? l10n.objectsFilterTag),
+                          )
+                        else
+                          // Turned off since it was applied: not offered in the
+                          // picker, so this is the only way to drop it.
+                          InputChip(
+                            label: Text(
+                              l10n.objectsFormTagInactive(
+                                _tagNames[id] ?? l10n.objectsFilterTag,
+                              ),
+                            ),
+                            onDeleted: () => setState(() {
+                              _tagIds = [
+                                for (final t in _tagIds)
+                                  if (t != id) t,
+                              ];
+                              _dirty = true;
+                            }),
+                            deleteButtonTooltipMessage:
+                                l10n.objectsFormRemoveTag,
+                          ),
+                    ],
+                  ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(44, 44),
+                    alignment: Alignment.centerLeft,
+                  ),
+                  onPressed: () => _pickTags(tags),
+                  icon: const Icon(LucideIcons.tag, size: 16),
+                  label: Text(l10n.objectsFormChooseTags),
                 ),
                 if (_saveError != null) ...[
                   const SizedBox(height: 16),

@@ -5,12 +5,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_object.dart';
+import '../../data/models/object_record_filters.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/csv_import_provider.dart';
 import '../../providers/custom_objects_provider.dart';
+import '../../providers/profile_provider.dart';
+import '../../providers/saved_views_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/common.dart';
 import '../../l10n/l10n.dart';
+import '../../widgets/common/export_csv_button.dart';
+import '../../widgets/common/saved_views_button.dart';
+import '../../widgets/forms/csv_import_sheet.dart';
+import '../../widgets/objects/object_board_view.dart';
+import '../../widgets/objects/object_filter_sheet.dart';
+import '../../widgets/objects/object_record_card.dart';
 
 /// The records of one custom object, searchable and paged by the server.
 class ObjectRecordsScreen extends ConsumerStatefulWidget {
@@ -27,6 +39,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
   final _search = TextEditingController();
   final _scroll = ScrollController();
   Timer? _debounce;
+  bool _board = false;
 
   static const _debounceMs = 300;
 
@@ -53,17 +66,74 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
   void _onSearchChanged(String value) {
     setState(() {});
     _debounce?.cancel();
-    _debounce = Timer(
-      const Duration(milliseconds: _debounceMs),
-      () => ref
+    _debounce = Timer(const Duration(milliseconds: _debounceMs), () async {
+      await ref
           .read(objectRecordsProvider(widget.objectKey).notifier)
-          .setQuery(value),
-    );
+          .setQuery(value);
+      _syncBoard();
+    });
   }
 
   void _clearSearch() {
     _search.clear();
     _onSearchChanged('');
+  }
+
+  ObjectRecordsNotifier get _records =>
+      ref.read(objectRecordsProvider(widget.objectKey).notifier);
+
+  /// The board reads the list's filters, so it is told whenever they move.
+  void _syncBoard() {
+    if (!_board) return;
+    ref
+        .read(objectBoardProvider(widget.objectKey).notifier)
+        .setFilters(_records.filters);
+  }
+
+  void _showBoard(bool on) {
+    setState(() => _board = on);
+    if (on) _syncBoard();
+  }
+
+  Future<void> _openFilters(ObjectDefinition def) async {
+    final next = await showObjectFilterSheet(
+      context,
+      definition: def,
+      current: _records.filters,
+    );
+    if (next == null || !mounted) return;
+    await _records.setFilters(next.copyWith(query: _records.filters.query));
+    _syncBoard();
+  }
+
+  void _applySavedView(
+    ObjectDefinition def,
+    Map<String, List<String>> filters,
+  ) {
+    final next = ObjectRecordFilters.fromSavedView(filters, {
+      for (final f in filterableFields(def)) f.key,
+    });
+    _debounce?.cancel();
+    _search.text = next.query;
+    setState(() {});
+    _records.setFilters(next).then((_) => _syncBoard());
+  }
+
+  Future<void> _import(ObjectDefinition def) async {
+    await showCsvImportSheet(
+      context,
+      CsvImportTarget.forObject(
+        key: widget.objectKey,
+        label: def.summary.label,
+        labelPlural: def.summary.labelPlural,
+        nameLabel: def.summary.nameLabel,
+        fields: def.fields,
+      ),
+      onImported: () async {
+        await _records.refresh();
+        _syncBoard();
+      },
+    );
   }
 
   @override
@@ -93,17 +163,35 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
             ),
           );
         }
-        final canWrite =
-            shownCustomObjects(
-              ref.watch(customObjectsProvider),
-            )?.hasCustomObjects ==
-            true;
+        final canWrite = canWriteObject(
+          def.summary,
+          shownCustomObjects(ref.watch(customObjectsProvider)),
+        );
+        // As on the web: an admin, or a member with sales access. The import
+        // views refuse anyone else.
+        final canImport =
+            canWrite &&
+            (ref.watch(isOrgAdminProvider) ||
+                (ref.watch(profileProvider).value?.hasSalesAccess ?? false));
+        final filtered =
+            ref.watch(objectRecordsProvider(widget.objectKey)).value?.filters ??
+            const ObjectRecordFilters();
         return _shell(
           title: def.summary.labelPlural,
+          actions: _actions(def, canImport, filtered.count),
           body: Column(
             children: [
               _searchBar(def.summary),
-              Expanded(child: _list(def)),
+              if (def.boardField != null) _modeToggle(),
+              Expanded(
+                child: _board && def.boardField != null
+                    ? ObjectBoardView(
+                        objectKey: widget.objectKey,
+                        definition: def,
+                        canMove: canWrite,
+                      )
+                    : _list(def),
+              ),
             ],
           ),
           fab: canWrite
@@ -120,10 +208,48 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
     );
   }
 
-  Widget _shell({required String title, required Widget body, Widget? fab}) {
+  List<Widget> _actions(ObjectDefinition def, bool canImport, int active) => [
+    IconButton(
+      tooltip: active == 0
+          ? context.l10n.objectsFilterTitle
+          : context.l10n.objectsListFiltersOn(active),
+      icon: Badge(
+        isLabelVisible: active > 0,
+        label: Text('$active'),
+        child: const Icon(LucideIcons.listFilter),
+      ),
+      onPressed: () => _openFilters(def),
+    ),
+    if (canImport)
+      IconButton(
+        tooltip: context.l10n.objectsListImport,
+        icon: const Icon(LucideIcons.upload),
+        onPressed: () => _import(def),
+      ),
+    SavedViewsButton(
+      list: SavedViewList.object(widget.objectKey),
+      keys: objectSavedViewKeys(def),
+      multi: const {'assigned_to', 'tags'},
+      currentQuery: () async => _records.filters.toQuery(),
+      onApply: (filters) => _applySavedView(def, filters),
+    ),
+    ExportCsvButton(
+      endpoint: ApiConfig.objectRecordsExport(widget.objectKey),
+      filePrefix: widget.objectKey,
+      query: () async => _records.filters.toQuery(),
+    ),
+  ];
+
+  Widget _shell({
+    required String title,
+    required Widget body,
+    Widget? fab,
+    List<Widget> actions = const [],
+  }) {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
+        actions: actions,
         title: Text(title),
         backgroundColor: AppColors.surface,
         elevation: 0,
@@ -131,6 +257,28 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
       ),
       body: body,
       floatingActionButton: fab,
+    );
+  }
+
+  Widget _modeToggle() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      child: SegmentedButton<bool>(
+        showSelectedIcon: false,
+        style: SegmentedButton.styleFrom(minimumSize: const Size(0, 44)),
+        segments: [
+          ButtonSegment(
+            value: false,
+            label: Text(context.l10n.objectsListModeList),
+          ),
+          ButtonSegment(
+            value: true,
+            label: Text(context.l10n.objectsListModeBoard),
+          ),
+        ],
+        selected: {_board},
+        onSelectionChanged: (v) => _showBoard(v.first),
+      ),
     );
   }
 
@@ -194,7 +342,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
     }
     final records = data?.records ?? const <ObjectRecord>[];
     if (records.isEmpty) {
-      final searching = (data?.query ?? '').isNotEmpty;
+      final searching = !(data?.filters.isEmpty ?? true);
       return RefreshIndicator(
         onRefresh: notifier.refresh,
         child: LayoutBuilder(
@@ -233,7 +381,7 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          return _RecordRow(
+          return ObjectRecordCard(
             record: records[i],
             fields: def.customFields,
             onTap: () => context.push(
@@ -241,88 +389,6 @@ class _ObjectRecordsScreenState extends ConsumerState<ObjectRecordsScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _RecordRow extends StatelessWidget {
-  const _RecordRow({
-    required this.record,
-    required this.fields,
-    required this.onTap,
-  });
-
-  final ObjectRecord record;
-  final List<ObjectField> fields;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = [
-      for (final f in fields)
-        if (hasFieldValue(record.customFields[f.key]))
-          '${f.label}: ${displayValue(f, record.customFields[f.key])}',
-    ].take(2).toList();
-    final assignees = record.assignedTo.length;
-
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      record.name,
-                      style: AppTypography.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    for (final line in shown)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          line,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (assignees > 0) ...[
-                const SizedBox(width: 12),
-                Icon(
-                  LucideIcons.users,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '$assignees',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
       ),
     );
   }

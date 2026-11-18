@@ -17,7 +17,7 @@ from cases.models import Case, RoutingRule, RoutingRuleState
 from cases.routing import evaluate
 from cases.serializer import RoutingRuleSerializer
 from common.models import Activity
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, is_org_admin, may_configure
 
 # Window the routing page reports match / unrouted counts over.
 ROUTING_WINDOW_DAYS = 30
@@ -65,12 +65,44 @@ def _admin_required():
     )
 
 
+class RoutingRuleRotationStateSerializer(serializers.Serializer):
+    last_assigned_index = serializers.IntegerField()
+
+
+class RoutingRuleListRowSerializer(RoutingRuleSerializer):
+    """Schema only: a rule as the list returns it, with the keys the view adds."""
+
+    matched_last_30d = serializers.IntegerField(read_only=True)
+    state = RoutingRuleRotationStateSerializer(read_only=True, allow_null=True)
+
+    class Meta(RoutingRuleSerializer.Meta):
+        fields = (*RoutingRuleSerializer.Meta.fields, "matched_last_30d", "state")
+
+
 class RoutingRuleListCreateView(APIView):
     """GET lists rules ordered by priority_order; POST creates one (admin)."""
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
-    @extend_schema(tags=["Routing"], responses={200: RoutingRuleSerializer(many=True)})
+    @extend_schema(
+        tags=["Routing"],
+        responses={
+            200: inline_serializer(
+                name="RoutingRuleListResponse",
+                fields={
+                    "rules": RoutingRuleListRowSerializer(many=True),
+                    "totals": inline_serializer(
+                        name="RoutingRuleListTotals",
+                        fields={
+                            "count": serializers.IntegerField(),
+                            "active": serializers.IntegerField(),
+                            "unrouted_last_30d": serializers.IntegerField(),
+                        },
+                    ),
+                },
+            )
+        },
+    )
     def get(self, request, *args, **kwargs):
         org = request.profile.org
         qs = (
@@ -111,7 +143,7 @@ class RoutingRuleListCreateView(APIView):
         responses={201: RoutingRuleSerializer},
     )
     def post(self, request, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         serializer = RoutingRuleSerializer(
@@ -150,11 +182,11 @@ class RoutingRuleDetailView(APIView):
 
     @extend_schema(
         tags=["Routing"],
-        request=RoutingRuleSerializer,
+        request=RoutingRuleSerializer(partial=True),
         responses={200: RoutingRuleSerializer},
     )
     def put(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         obj = self._get_object(pk, org)
@@ -190,7 +222,7 @@ class RoutingRuleDetailView(APIView):
         },
     )
     def delete(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         obj = self._get_object(pk, request.profile.org)
         if not obj:

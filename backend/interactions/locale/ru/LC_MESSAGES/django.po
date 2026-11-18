@@ -1,0 +1,112 @@
+# Russian translation of the interactions app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-18 15:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgctxt "interaction kind"
+msgid "Call"
+msgstr "Звонок"
+
+msgctxt "interaction kind"
+msgid "Meeting"
+msgstr "Встреча"
+
+msgctxt "interaction kind"
+msgid "Email"
+msgstr "Эл. почта"
+
+msgctxt "interaction kind"
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+msgctxt "interaction kind"
+msgid "SMS"
+msgstr "SMS"
+
+msgctxt "interaction kind"
+msgid "Enquiry"
+msgstr "Запрос"
+
+msgctxt "interaction direction"
+msgid "Inbound"
+msgstr "Входящее"
+
+msgctxt "interaction direction"
+msgid "Outbound"
+msgstr "Исходящее"
+
+msgctxt "call outcome"
+msgid "Connected"
+msgstr "Состоялся"
+
+msgctxt "call outcome"
+msgid "No answer"
+msgstr "Нет ответа"
+
+msgctxt "call outcome"
+msgid "Voicemail"
+msgstr "Голосовая почта"
+
+msgctxt "call outcome"
+msgid "Busy"
+msgstr "Занято"
+
+msgctxt "call outcome"
+msgid "Wrong number"
+msgstr "Неверный номер"
+
+msgid "Lead"
+msgstr "Лид"
+
+msgid "Contact"
+msgstr "Контакт"
+
+msgid "Account"
+msgstr "Компания"
+
+msgid "Deal"
+msgstr "Сделка"
+
+msgid "Ticket"
+msgstr "Обращение"
+
+msgid "Enquiries are recorded when a lead arrives; they cannot be logged."
+msgstr ""
+"Заявки записываются автоматически, когда приходит лид, добавить их вручную "
+"нельзя."
+
+msgid "The kind of an interaction cannot be changed."
+msgstr "Тип взаимодействия изменить нельзя."
+
+msgid "The record an interaction is on cannot be changed."
+msgstr "Запись, к которой относится взаимодействие, изменить нельзя."
+
+msgid "Name exactly one record: lead, contact, account, opportunity or case."
+msgstr ""
+"Укажите ровно одну запись: lead, contact, account, opportunity или case."
+
+msgid "This is more than five minutes in the future."
+msgstr "Это время больше чем на пять минут в будущем."
+
+msgid "Only a call has an outcome."
+msgstr "Результат бывает только у звонка."
+
+msgid ""
+"Enquiries, and interactions written by an integration, cannot be changed."
+msgstr "Заявки и взаимодействия, записанные интеграцией, изменить нельзя."
+
+msgid "Only the person who logged this, or an admin, can change it."
+msgstr "Изменить это может только тот, кто это записал, или администратор."
+
+msgid "No such record."
+msgstr "Такой записи нет."

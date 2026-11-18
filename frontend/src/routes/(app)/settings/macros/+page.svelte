@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Canned replies.
    *
@@ -43,14 +43,15 @@
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { Plus, TriangleAlert } from '@lucide/svelte';
+  import type { PageProps } from './$types';
+  import type { MacroRow } from '#lib/server/v2/macros.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // `null` when the panel is closed, `'new'` when adding, or the macro
   // object when editing that row. One panel, two modes, so two rows can
   // never be open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<'new' | MacroRow | null>(null);
 
   // The scope currently selected in the form. Bound separately from `editing`
   // so the select works the same way in both modes: seeded from the row on
@@ -63,9 +64,9 @@
     scope = 'personal';
   }
 
-  function openEdit(mac) {
-    editing = mac;
-    scope = mac.scope;
+  function openEdit(m: MacroRow) {
+    editing = m;
+    scope = m.scope;
   }
 
   /**
@@ -77,8 +78,8 @@
    * (403 on someone else's org macro, 404 on someone else's personal one)
    * and would refuse the write even if this returned true by mistake.
    */
-  function canWrite(mac) {
-    return mac.scope === 'org' ? data.can_create_org : mac.owner?.id === data.my_profile_id;
+  function canWrite(m: MacroRow) {
+    return m.scope === 'org' ? data.can_create_org : m.owner?.id === data.my_profile_id;
   }
 
   let totals = $derived(data.totals);
@@ -97,7 +98,7 @@
    * `macros/render.py` precisely so clients cannot drift from it. A copy in
    * this file would eventually mark a working macro as broken.
    */
-  function segments(macro) {
+  function segments(macro: { body: string; unknown_placeholders: string[] }) {
     const re = /%[a-zA-Z_][a-zA-Z0-9_]*%/g;
     const out = [];
     let last = 0;
@@ -150,19 +151,20 @@
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-bottom:32px">
     {#if editing}
+      {@const current = editing}
       <SettingsFormPanel
-        title={editing === 'new'
+        title={current === 'new'
           ? m.settings_macros_new()
-          : m.settings_macros_edit_title({ title: editing.title })}
-        action={editing === 'new' ? '?/create' : '?/update'}
-        error={editing === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={editing === 'new' ? m.settings_macros_add() : m.settings_macros_save()}
+          : m.settings_macros_edit_title({ title: current.title })}
+        action={current === 'new' ? '?/create' : '?/update'}
+        error={current === 'new' ? form?.create?.error : form?.update?.error}
+        submitLabel={current === 'new' ? m.settings_macros_add() : m.settings_macros_save()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
         {#snippet fields()}
-          {#if editing !== 'new'}
-            <input type="hidden" name="id" value={editing.id} />
+          {#if current !== 'new'}
+            <input type="hidden" name="id" value={current.id} />
           {/if}
 
           <div class="v2-field">
@@ -173,7 +175,7 @@
               name="title"
               maxlength="255"
               required
-              value={editing === 'new' ? '' : editing.title}
+              value={current === 'new' ? '' : current.title}
             />
           </div>
 
@@ -193,7 +195,7 @@
           <div class="v2-field v2-sfp-wide">
             <label for="m-body">{m.settings_macros_body_label()}</label>
             <textarea id="m-body" class="v2-input" name="body" rows="5"
-              >{editing === 'new' ? '' : editing.body}</textarea
+              >{current === 'new' ? '' : current.body}</textarea
             >
             <p class="v2-hint">
               {m.settings_macros_body_hint()}
@@ -207,8 +209,8 @@
             <select id="m-status" class="v2-input" name="set_status">
               <option value="">{m.settings_macros_no_change()}</option>
               {#each data.statuses as s (s)}
-                <option value={s} selected={editing !== 'new' && editing.set_status === s}
-                  >{CASE_STATUS_LABEL[s] ?? s}</option
+                <option value={s} selected={current !== 'new' && current.set_status === s}
+                  >{s}</option
                 >
               {/each}
             </select>
@@ -219,8 +221,8 @@
             <select id="m-priority" class="v2-input" name="set_priority">
               <option value="">{m.settings_macros_no_change()}</option>
               {#each CASE_PRIORITIES as p (p)}
-                <option value={p} selected={editing !== 'new' && editing.set_priority === p}
-                  >{CASE_PRIORITY_LABEL[p] ?? p}</option
+                <option value={p} selected={current !== 'new' && current.set_priority === p}
+                  >{p}</option
                 >
               {/each}
             </select>
@@ -235,10 +237,10 @@
               multiple
               size="4"
             >
-              {#each editing === 'new' ? data.people : editing.assignee_options as p (p.id)}
+              {#each current === 'new' ? data.people : current.assignee_options as p (p.id)}
                 <option
                   value={p.id}
-                  selected={editing !== 'new' && editing.set_assignees.includes(p.id)}
+                  selected={current !== 'new' && current.set_assignees.includes(p.id)}
                   >{p.name}</option
                 >
               {/each}
@@ -249,8 +251,8 @@
           <div class="v2-field">
             <label for="m-tags">{m.settings_macros_tags_label()}</label>
             <select id="m-tags" class="v2-input m-multi" name="add_tags" multiple size="4">
-              {#each editing === 'new' ? data.tags : editing.tag_options as t (t.id)}
-                <option value={t.id} selected={editing !== 'new' && editing.add_tags.includes(t.id)}
+              {#each current === 'new' ? data.tags : current.tag_options as t (t.id)}
+                <option value={t.id} selected={current !== 'new' && current.add_tags.includes(t.id)}
                   >{t.name}</option
                 >
               {/each}
@@ -310,7 +312,7 @@
   </div>
 </div>
 
-{#snippet macro(mac)}
+{#snippet macro(mac: MacroRow)}
   <div class="v2-card" style="padding:14px 16px;opacity:{mac.is_active ? 1 : 0.62}">
     <div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">
       <b style="font-size:13.5px">{mac.title}</b>

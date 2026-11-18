@@ -1,4 +1,5 @@
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 
 /// The module names to show when a server sends none of its own.
 Map<String, String> get defaultModuleLabels {
@@ -11,14 +12,13 @@ Map<String, String> get defaultModuleLabels {
     'tickets': l10n.appTargetTickets,
     'knowledge_base': l10n.appModuleKnowledgeBase,
     'documents': l10n.appModuleDocuments,
+    'projects': l10n.appModuleProjects,
     'invoices': l10n.appTargetInvoices,
     'timesheet': l10n.appModuleTimesheet,
   };
 }
 
 const moduleGroups = ['sell', 'serve', 'bill'];
-
-String _str(dynamic v, [String fallback = '']) => v is String ? v : fallback;
 
 /// One row of `GET /api/org/modules/`.
 class OrgModule {
@@ -42,21 +42,21 @@ class OrgModule {
     this.needs,
   });
 
+  /// Reads an `OrgModuleRow`.
   factory OrgModule.fromJson(Map<String, dynamic> json) {
-    final key = _str(json['key']);
-    final enabled = json['enabled'] is bool ? json['enabled'] as bool : true;
-    final need = json['needs'];
+    final w = api.OrgModuleRow.fromJson(json);
+    final key = w.key ?? '';
+    final enabled = w.enabled ?? true;
+    final need = w.needs ?? '';
     return OrgModule(
       key: key,
-      label: _str(json['label'], defaultModuleLabels[key] ?? key),
-      group: _str(json['group']),
-      covers: _str(json['covers']),
-      stops: _str(json['stops']),
+      label: w.label ?? defaultModuleLabels[key] ?? key,
+      group: w.group ?? '',
+      covers: w.covers ?? '',
+      stops: w.stops ?? '',
       enabled: enabled,
-      available: json['available'] is bool
-          ? json['available'] as bool
-          : enabled,
-      needs: need is String && need.isNotEmpty ? need : null,
+      available: w.available ?? enabled,
+      needs: need.isEmpty ? null : need,
     );
   }
 }
@@ -73,22 +73,19 @@ class OrgModulesAnswer {
     this.canEdit = false,
   });
 
+  /// Reads an `OrgModulesResponse`, the answer to both GET and PUT.
   factory OrgModulesAnswer.fromJson(
     Map<String, dynamic> json, {
     String? orgId,
   }) {
-    final rows = json['modules'];
+    final w = api.OrgModulesResponse.fromJson(json);
     return OrgModulesAnswer(
       orgId: orgId,
       modules: [
-        if (rows is List)
-          for (final r in rows)
-            if (r is Map &&
-                r['key'] is String &&
-                (r['key'] as String).isNotEmpty)
-              OrgModule.fromJson(Map<String, dynamic>.from(r)),
+        for (final r in w.modules ?? const <api.OrgModuleRow>[])
+          if (r.key?.isNotEmpty ?? false) OrgModule.fromJson(r.json),
       ],
-      canEdit: json['can_edit'] == true,
+      canEdit: w.canEdit ?? false,
     );
   }
 

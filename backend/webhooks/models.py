@@ -8,7 +8,12 @@ from common.base import BaseOrgModel
 
 JSON = "json"
 SLACK = "slack"
-FORMATS = ((JSON, "Signed JSON"), (SLACK, "Slack incoming webhook"))
+TEAMS = "teams"
+FORMATS = (
+    (JSON, "Signed JSON"),
+    (SLACK, "Slack incoming webhook"),
+    (TEAMS, "Teams message"),
+)
 
 PENDING = "pending"
 SUCCEEDED = "succeeded"
@@ -30,8 +35,8 @@ class WebhookEndpoint(BaseOrgModel):
 
     url = models.URLField(max_length=500)
     description = models.CharField(max_length=255, blank=True, default="")
-    # Event names from `webhooks.events.EVENT_NAMES`; the serializer refuses
-    # anything else.
+    # Event names from the org's catalogue (`webhooks.events.event_names`); the
+    # serializer refuses any other new one.
     events = models.JSONField(default=list)
     format = models.CharField(max_length=10, choices=FORMATS, default=JSON)
     is_active = models.BooleanField(default=True)
@@ -39,6 +44,15 @@ class WebhookEndpoint(BaseOrgModel):
     # switch. Cleared when an admin turns it back on.
     disabled_reason = models.CharField(max_length=255, blank=True, default="")
     secret = models.CharField(max_length=100, default=generate_secret, editable=False)
+    # The app member (`common.app_members`) whose subscription this is, or null
+    # for an admin's endpoint. Set by server code only; see webhooks/views.py.
+    app = models.ForeignKey(
+        "common.Profile",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="app_webhooks",
+    )
 
     class Meta:
         db_table = "webhook_endpoint"

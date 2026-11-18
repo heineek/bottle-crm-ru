@@ -51,5 +51,28 @@
         "type": "int"
       }
     }
-  }
+  },
+  "coreAfterTapGreeting": "Hi,",
+  "coreAfterTapGreetingNamed": "Hi {name},",
+  "@coreAfterTapGreetingNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreRecordDetailEditNote": "Edit Note",
+  "coreRecordDetailEditNoteHint": "Update your note...",
+  "coreRecordDetailDeleteNote": "Delete Note",
+  "coreRecordDetailDeleteNoteTitle": "Delete Note?",
+  "coreRecordDetailCannotUndo": "This action cannot be undone.",
+  "coreRecordDetailNoteOptions": "Note options",
+  "coreCustomFieldsDisplayNotSet": "Not set",
+  "corePushBannerDismiss": "Dismiss",
+  "corePushBannerOpen": "Open",
+  "corePushPromptTitle": "Get lead alerts",
+  "corePushPromptBody": "Allow notifications so a lead assigned to you reaches you at once.",
+  "corePushPromptNotNow": "Not now",
+  "corePushPromptAllow": "Allow notifications",
+  "coreCustomFieldsSectionHeading": "Custom fields"
 }

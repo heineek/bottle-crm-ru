@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/estimate.dart';
 import '../data/models/invoice_report.dart';
 import '../data/models/invoice_template.dart';
@@ -14,9 +15,9 @@ import '../services/api_service.dart';
 ///
 /// One file because each is a thin list over one endpoint sharing the same
 /// `{count, next, results}` envelope and the same error handling. Splitting
-/// them into five near-identical providers would be five copies of `_rows`
-/// and `_message` to keep in step. Invoices itself stays separate: it has
-/// paging, filters, totals and four writes.
+/// them into five near-identical providers would be five copies of `_message`
+/// to keep in step. Invoices itself stays separate: it has paging, filters,
+/// totals and four writes.
 
 /// The server's own message where there is one, since these endpoints refuse
 /// for reasons the user can act on ("Only an administrator can change the
@@ -35,12 +36,6 @@ String _message(dynamic response) {
   return (raw == null || raw.trim().isEmpty)
       ? appL10n.appMsgSomethingWentWrong
       : raw;
-}
-
-List<Map<String, dynamic>> _rows(Map<String, dynamic> body) {
-  final results = body['results'];
-  if (results is! List) return const [];
-  return results.whereType<Map<String, dynamic>>().toList();
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +80,11 @@ class EstimatesNotifier extends AsyncNotifier<List<Estimate>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadEstimates);
     }
-    return _rows(response.data!).map(Estimate.fromJson).toList(growable: false);
+    final page = api.EstimatePage.fromJson(response.data!);
+    return [
+      for (final row in page.results ?? const <api.EstimateList>[])
+        Estimate.fromJson(row.json),
+    ];
   }
 
   /// Raises an invoice from the estimate. Returns the new invoice's id on
@@ -95,11 +94,8 @@ class EstimatesNotifier extends AsyncNotifier<List<Estimate>> {
     final response = await _api.post(ApiConfig.estimateConvert(id), const {});
     if (!response.success) return (invoiceId: null, error: _message(response));
     await refresh();
-    final invoice = response.data?['invoice'];
-    final invoiceId = invoice is Map<String, dynamic>
-        ? invoice['id']?.toString()
-        : null;
-    return (invoiceId: invoiceId, error: null);
+    final saved = api.InvoiceSaved.fromJson(response.data ?? {});
+    return (invoiceId: saved.invoice?.id, error: null);
   }
 
   Future<String?> send(String id) async {
@@ -161,9 +157,11 @@ class RecurringNotifier extends AsyncNotifier<List<RecurringInvoice>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadSchedules);
     }
-    return _rows(
-      response.data!,
-    ).map(RecurringInvoice.fromJson).toList(growable: false);
+    final page = api.RecurringInvoicePage.fromJson(response.data!);
+    return [
+      for (final row in page.results ?? const <api.RecurringInvoiceList>[])
+        RecurringInvoice.fromJson(row.json),
+    ];
   }
 
   /// Pauses a running schedule or resumes a paused one.
@@ -231,7 +229,11 @@ class ProductsNotifier extends AsyncNotifier<List<Product>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadProducts);
     }
-    return _rows(response.data!).map(Product.fromJson).toList(growable: false);
+    final page = api.ProductPage.fromJson(response.data!);
+    return [
+      for (final row in page.results ?? const <api.Product>[])
+        Product.fromJson(row.json),
+    ];
   }
 
   /// Writes are admin-only server-side. The screen hides the buttons from
@@ -296,9 +298,11 @@ class InvoiceTemplatesNotifier extends AsyncNotifier<List<InvoiceTemplate>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadTemplates);
     }
-    return _rows(
-      response.data!,
-    ).map(InvoiceTemplate.fromJson).toList(growable: false);
+    final page = api.InvoiceTemplatePage.fromJson(response.data!);
+    return [
+      for (final row in page.results ?? const <api.InvoiceTemplateList>[])
+        InvoiceTemplate.fromJson(row.json),
+    ];
   }
 
   /// Returns null on success, the server's message otherwise.

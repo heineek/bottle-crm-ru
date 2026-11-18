@@ -26,7 +26,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -111,9 +112,45 @@ def _record(case, action, metadata, actor):
     )
 
 
+@extend_schema_field(
+    {"type": "array", "items": {"$ref": "#/components/schemas/CaseTreeNodeResponse"}}
+)
+class _TreeChildrenField(serializers.JSONField):
+    """Schema only: a node's children, each a node itself."""
+
+
+class CaseTreeNodeResponseSerializer(serializers.Serializer):
+    """Schema only: a `_build_tree` node. A node the caller may not open
+    (`_redacted`) has a null name, `restricted`, and no priority, problem flag
+    or assignees; one at the depth limit has `truncated` and no children."""
+
+    id = serializers.CharField()
+    name = serializers.CharField(allow_null=True)
+    status = serializers.CharField()
+    is_active = serializers.BooleanField()
+    priority = serializers.CharField(required=False)
+    is_problem = serializers.BooleanField(required=False)
+    assigned_to = serializers.ListField(child=serializers.CharField(), required=False)
+    restricted = serializers.BooleanField(required=False)
+    truncated = serializers.BooleanField(required=False)
+    children = _TreeChildrenField()
+
+
 class CaseTreeView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        responses={
+            200: inline_serializer(
+                name="CaseTreeResponse",
+                fields={
+                    "root": CaseTreeNodeResponseSerializer(),
+                    "focus_id": serializers.CharField(),
+                },
+            )
+        },
+    )
     def get(self, request, pk):
         org = request.profile.org
         # The same answer the ticket detail GET gives: 404 outside the org and
@@ -137,6 +174,31 @@ class CaseTreeView(APIView):
 class CaseLinkParentView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        request=inline_serializer(
+            name="CaseLinkParentRequest",
+            fields={"parent_id": serializers.CharField(allow_null=True)},
+        ),
+        responses={
+            # `parent` is null after an unlink.
+            200: inline_serializer(
+                name="CaseLinkParentResponse",
+                fields={
+                    "id": serializers.CharField(),
+                    "parent": inline_serializer(
+                        name="CaseLinkedParent",
+                        fields={
+                            "id": serializers.CharField(),
+                            "name": serializers.CharField(),
+                            "status": serializers.CharField(),
+                        },
+                        allow_null=True,
+                    ),
+                },
+            )
+        },
+    )
     @transaction.atomic
     def post(self, request, pk):
         org = request.profile.org
@@ -288,6 +350,29 @@ def _close(case):
 class CaseCloseWithChildrenView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        request=inline_serializer(
+            name="CaseCloseWithChildrenRequest",
+            fields={
+                "cascade": serializers.BooleanField(required=False),
+                "resolution_comment": serializers.CharField(required=False),
+            },
+        ),
+        responses={
+            200: inline_serializer(
+                name="CaseCloseWithChildrenResponse",
+                fields={
+                    "id": serializers.CharField(),
+                    "status": serializers.CharField(),
+                    "cascaded_case_ids": serializers.ListField(
+                        child=serializers.CharField()
+                    ),
+                    "resolution_comment": serializers.CharField(),
+                },
+            )
+        },
+    )
     @transaction.atomic
     def post(self, request, pk):
         org = request.profile.org

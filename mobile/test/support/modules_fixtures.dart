@@ -1,7 +1,10 @@
 import 'package:bottle_crm/data/models/org_module.dart';
 import 'package:bottle_crm/providers/auth_provider.dart';
+import 'package:bottle_crm/providers/org_apps_provider.dart';
 import 'package:bottle_crm/providers/org_modules_provider.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+
+import 'apps_fixtures.dart';
 
 const _groups = {
   'deals': 'sell',
@@ -11,13 +14,15 @@ const _groups = {
   'tickets': 'serve',
   'knowledge_base': 'serve',
   'documents': 'serve',
+  'projects': 'serve',
   'invoices': 'bill',
   'timesheet': 'bill',
 };
 
-const _needs = {'goals': 'deals', 'timesheet': 'tickets'};
+// Timesheet needs nothing since projects: time hangs off tickets or projects.
+const _needs = {'goals': 'deals'};
 
-/// The nine modules in default order. [off] lists the keys whose own switch is
+/// The ten modules in default order. [off] lists the keys whose own switch is
 /// off; a module whose need is off is unavailable even when its switch is on.
 OrgModulesAnswer modulesAnswer({
   List<String> off = const [],
@@ -68,8 +73,14 @@ class FakeOrgModules extends OrgModulesNotifier {
   }
 }
 
-List<Override> modulesOverrides(FakeOrgModules fake, {bool admin = true}) => [
+/// [apps] defaults to an older server with no `/api/apps/`.
+List<Override> modulesOverrides(
+  FakeOrgModules fake, {
+  bool admin = true,
+  FakeOrgApps? apps,
+}) => [
   isOrgAdminProvider.overrideWithValue(admin),
   selectedOrgProvider.overrideWithValue(null),
   orgModulesProvider.overrideWith(() => fake),
+  orgAppsProvider.overrideWith(() => apps ?? FakeOrgApps(() async => null)),
 ];

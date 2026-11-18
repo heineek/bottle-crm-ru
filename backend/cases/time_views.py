@@ -24,18 +24,24 @@ Entry-scoped (registered at the project root under ``/api/time-entries/``):
 * ``PUT    /api/time-entries/<pk>/``: owner or admin
 * ``DELETE /api/time-entries/<pk>/``: owner or admin
 * ``GET    /api/time-entries/timesheet/``: week view, grouped by day
-* ``GET    /api/time-entries/report/``: totals by agent, ticket or account
+* ``GET    /api/time-entries/report/``: totals by agent, ticket, project or account
 * ``GET    /api/time-entries/report/export/``: the same window as ``text/csv``
+
+Projects log time through ``projects/views.py``, which calls `create_entry`
+and `start_timer` here with a project in place of a ticket.
 """
 
 from collections import OrderedDict
 from datetime import datetime, timedelta
 
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from rest_framework import status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -44,6 +50,7 @@ from cases import time_reports
 from cases.access import assert_case_write_access, get_case_or_404
 from cases.models import TimeEntry
 from cases.serializer import (
+    CaseTimeSummarySerializer,
     TimeEntryCreateSerializer,
     TimeEntrySerializer,
     TimeEntryUpdateSerializer,
@@ -55,6 +62,8 @@ from common.modules import module_is_available
 from common.permissions import HasOrgContext, is_org_admin
 from common.renderers import CSV_RENDERERS
 from common.validators import uuid_param
+from projects.burn import check_budget_alerts
+from projects.entries import billable_on, rate_for, task_on_project
 
 # How far back a report reaches when it is asked for without a window. Long
 # enough to cover "what did we do this month", short enough that a stray click
@@ -62,12 +71,109 @@ from common.validators import uuid_param
 DEFAULT_REPORT_DAYS = 30
 
 
+class _TimesheetEntrySchema(TimeEntrySerializer):
+    """A timesheet entry as `TimesheetView` sends it: the entry with its ticket
+    and invoice expanded, and a live duration while the timer runs."""
+
+    case = inline_serializer(
+        "TimesheetEntryCase",
+        {"id": serializers.UUIDField(), "name": serializers.CharField()},
+        allow_null=True,
+    )
+    invoice = inline_serializer(
+        "TimesheetEntryInvoice",
+        {"id": serializers.UUIDField(), "invoice_number": serializers.CharField()},
+        allow_null=True,
+    )
+    is_running = serializers.BooleanField()
+    live_duration_minutes = serializers.IntegerField(required=False)
+
+    class Meta(TimeEntrySerializer.Meta):
+        ref_name = "TimesheetEntry"
+        fields = (
+            *TimeEntrySerializer.Meta.fields,
+            "is_running",
+            "live_duration_minutes",
+        )
+
+
+def _minutes():
+    return {
+        "total_minutes": serializers.IntegerField(),
+        "billable_minutes": serializers.IntegerField(),
+    }
+
+
+_TIMESHEET = inline_serializer(
+    "Timesheet",
+    {
+        "profile_id": serializers.UUIDField(),
+        "profile": inline_serializer(
+            "TimesheetProfile",
+            {"id": serializers.UUIDField(), "name": serializers.CharField()},
+        ),
+        "start": serializers.DateField(),
+        "end": serializers.DateField(),
+        "days": inline_serializer(
+            "TimesheetDay",
+            {
+                "date": serializers.DateField(),
+                "entries": _TimesheetEntrySchema(many=True),
+                **_minutes(),
+            },
+            many=True,
+        ),
+        **_minutes(),
+        "running_count": serializers.IntegerField(),
+        "server_now": serializers.DateTimeField(),
+    },
+)
+
+
+def _report_money():
+    return serializers.DecimalField(max_digits=None, decimal_places=2)
+
+
+_TIME_REPORT = inline_serializer(
+    "TimeReport",
+    {
+        "start": serializers.DateField(),
+        "end": serializers.DateField(),
+        "group_by": serializers.ChoiceField(choices=time_reports.GROUPINGS),
+        "rows": inline_serializer(
+            "TimeReportRow",
+            {
+                "key": serializers.CharField(allow_null=True),
+                "name": serializers.CharField(),
+                **_minutes(),
+                "billable_value": _report_money(),
+                "entry_count": serializers.IntegerField(),
+                # Only when grouped by agent; null for an agent with no time.
+                "billable_share": serializers.FloatField(
+                    required=False, allow_null=True
+                ),
+            },
+            many=True,
+        ),
+        "totals": inline_serializer(
+            "TimeReportTotals",
+            {
+                **_minutes(),
+                "billable_value": _report_money(),
+                "entry_count": serializers.IntegerField(),
+            },
+        ),
+        "currencies": serializers.ListField(child=serializers.CharField()),
+    },
+)
+
+
 def _visible_entry_qs(profile):
     """Org-scoped queryset honouring agent-vs-admin visibility."""
     qs = TimeEntry.objects.filter(org=profile.org)
     if not is_org_admin(profile):
         qs = qs.filter(profile=profile)
-    return qs.select_related("profile", "profile__user", "case")
+    return qs.select_related("profile", "profile__user", "case", "project")
 
 
 def _parse_date(value):
@@ -90,7 +196,8 @@ def _report_entries(request):
     """Return ``(entries, start, end)`` for a report request.
 
     Only stopped entries, inside the window, narrowed by the optional
-    ``profile``, ``account`` and ``billable`` filters. Visibility is
+    ``profile``, ``account``, ``project`` and ``billable`` filters. An entry's
+    account is its ticket's or its project's. Visibility is
     `_visible_entry_qs`'s: an agent reports on their own time, an admin on the
     org's, and asking for somebody else's without being an admin is a 403
     rather than an empty report, because a silent empty answer reads as "that
@@ -112,7 +219,13 @@ def _report_entries(request):
 
     account = uuid_param(request.query_params, "account")
     if account:
-        entries = entries.filter(case__account_id=account)
+        entries = entries.filter(
+            Q(case__account_id=account) | Q(project__account_id=account)
+        )
+
+    project = uuid_param(request.query_params, "project")
+    if project:
+        entries = entries.filter(project_id=project)
 
     billable = request.query_params.get("billable")
     if billable is not None:
@@ -138,9 +251,108 @@ def _report_entries(request):
     return entries, start, end
 
 
+def _project_fields(request, project):
+    """What an entry on ``project`` takes beyond the body: its task (checked
+    against the project) and the project's currency."""
+    if project is None:
+        return {}
+    return {
+        "task": task_on_project(project, request.data, request.profile),
+        "currency": project.currency,
+    }
+
+
+def _billable(data):
+    """``billable`` on a timer start: a JSON boolean or ``"true"``/``"false"``,
+    ``None`` when absent. Anything else is a 400, rather than a truthy string
+    such as ``"false"`` starting a billable timer."""
+    value = data.get("billable") if hasattr(data, "get") else None
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.lower() in ("true", "false"):
+        return value.lower() == "true"
+    raise ValidationError({"billable": [_("Send true or false.")]})
+
+
+def create_entry(request, *, case=None, project=None):
+    """``POST .../time-entries/`` on a ticket or a project the caller may work."""
+    serializer = TimeEntryCreateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = {**serializer.validated_data, **_project_fields(request, project)}
+    if project is not None and not is_org_admin(request.profile):
+        # On a project the rate is the project's rule unless an admin types one.
+        data.pop("hourly_rate", None)
+    if project is not None and data.get("hourly_rate") is None:
+        data["hourly_rate"] = rate_for(project, request.profile)
+    if project is not None:
+        data["billable"] = billable_on(project, data.get("billable"))
+    try:
+        entry = TimeEntry.objects.create(
+            org=request.profile.org,
+            case=case,
+            project=project,
+            profile=request.profile,
+            **data,
+        )
+    except IntegrityError as exc:
+        # Most likely the partial unique on (profile) for active timers,
+        # or the end-after-start CheckConstraint as a defense-in-depth.
+        return Response(
+            {"detail": str(exc).splitlines()[0][:200]},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if project is not None:
+        check_budget_alerts(project)
+    return Response(TimeEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+
+
+def start_timer(request, *, case=None, project=None):
+    """``POST .../time-entries/start/``; call inside a transaction."""
+    extra = _project_fields(request, project)
+    billable = _billable(request.data)
+    if project is not None:
+        billable = billable_on(project, billable)
+    # Reject if this profile already has a running timer (anywhere). The
+    # one_active_timer_per_profile partial unique would also catch this
+    # at INSERT time, but a 409 naming the running entry is friendlier
+    # than a 400 from IntegrityError.
+    running = (
+        TimeEntry.objects.select_for_update()
+        .filter(profile=request.profile, ended_at__isnull=True)
+        .first()
+    )
+    if running is not None:
+        return Response(
+            {
+                "detail": _("You already have a running timer."),
+                "running_entry_id": str(running.id),
+                "running_case_id": str(running.case_id) if running.case_id else None,
+                "running_project_id": (
+                    str(running.project_id) if running.project_id else None
+                ),
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    if project is not None:
+        extra["hourly_rate"] = rate_for(project, request.profile)
+    entry = TimeEntry.objects.create(
+        org=request.profile.org,
+        case=case,
+        project=project,
+        profile=request.profile,
+        started_at=timezone.now(),
+        description=(request.data.get("description") or "").strip(),
+        billable=bool(billable),
+        **extra,
+    )
+    return Response(TimeEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+
+
 class TimeEntryListCreateView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(tags=["Cases"], responses={200: TimeEntrySerializer(many=True)})
     def get(self, request, pk):
         case = get_case_or_404(request.profile, pk)
         entries = (
@@ -148,64 +360,36 @@ class TimeEntryListCreateView(APIView):
         )
         return Response(TimeEntrySerializer(entries, many=True).data)
 
+    @extend_schema(
+        tags=["Cases"],
+        request=TimeEntryCreateSerializer,
+        responses={201: TimeEntrySerializer},
+    )
     def post(self, request, pk):
         case = get_case_or_404(request.profile, pk)
         assert_case_write_access(request.profile, case)
-        serializer = TimeEntryCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            entry = TimeEntry.objects.create(
-                org=request.profile.org,
-                case=case,
-                profile=request.profile,
-                **serializer.validated_data,
-            )
-        except IntegrityError as exc:
-            # Most likely the partial unique on (profile) for active timers,
-            # or the end-after-start CheckConstraint as a defense-in-depth.
-            return Response(
-                {"detail": str(exc).splitlines()[0][:200]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response(TimeEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+        return create_entry(request, case=case)
 
 
 class TimeEntryStartView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        request=inline_serializer(
+            name="TimeEntryStartRequest",
+            fields={
+                "description": serializers.CharField(required=False),
+                "billable": serializers.BooleanField(required=False),
+            },
+        ),
+        responses={201: TimeEntrySerializer},
+    )
     @transaction.atomic
     def post(self, request, pk):
         case = get_case_or_404(request.profile, pk)
         assert_case_write_access(request.profile, case)
-
-        # Reject if this profile already has a running timer (anywhere). The
-        # one_active_timer_per_profile partial unique would also catch this
-        # at INSERT time, but a 409 with the offending case id is friendlier
-        # than a 400 from IntegrityError.
-        running = (
-            TimeEntry.objects.select_for_update()
-            .filter(profile=request.profile, ended_at__isnull=True)
-            .first()
-        )
-        if running is not None:
-            return Response(
-                {
-                    "detail": _("You already have a running timer."),
-                    "running_entry_id": str(running.id),
-                    "running_case_id": str(running.case_id),
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        entry = TimeEntry.objects.create(
-            org=request.profile.org,
-            case=case,
-            profile=request.profile,
-            started_at=timezone.now(),
-            description=(request.data.get("description") or "").strip(),
-            billable=bool(request.data.get("billable", False)),
-        )
-        return Response(TimeEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+        return start_timer(request, case=case)
 
 
 class TimeSummaryView(APIView):
@@ -217,6 +401,7 @@ class TimeSummaryView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(tags=["Cases"], responses={200: CaseTimeSummarySerializer})
     def get(self, request, pk):
         case = get_case_or_404(request.profile, pk)
         qs = case.time_entries.filter(ended_at__isnull=False)
@@ -250,6 +435,14 @@ class TimeSummaryView(APIView):
         )
 
 
+class TimeEntryUpdateBodySerializer(TimeEntryUpdateSerializer):
+    # The view checks `task` against the entry's project itself.
+    task = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta(TimeEntryUpdateSerializer.Meta):
+        fields = (*TimeEntryUpdateSerializer.Meta.fields, "task")
+
+
 class TimeEntryDetailView(APIView):
     """PUT/DELETE for a specific time entry. Owner or admin only."""
 
@@ -266,6 +459,10 @@ class TimeEntryDetailView(APIView):
             return False  # Sentinel: row exists but caller is not authorized.
         return entry
 
+    @extend_schema(
+        request=TimeEntryUpdateBodySerializer(partial=True),
+        responses=TimeEntrySerializer,
+    )
     @transaction.atomic
     def put(self, request, pk):
         entry = self._get_entry(request, pk)
@@ -285,12 +482,33 @@ class TimeEntryDetailView(APIView):
             )
         serializer = TimeEntryUpdateSerializer(entry, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        changes = dict(serializer.validated_data)
+        if "task" in request.data:
+            if entry.project is None:
+                if request.data.get("task") not in (None, ""):
+                    return Response(
+                        {"task": [_("Only time on a project can name a task.")]},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                changes["task"] = task_on_project(
+                    entry.project, request.data, request.profile
+                )
+        if entry.project is not None:
+            changes.pop("currency", None)
+            if not is_org_admin(request.profile):
+                changes.pop("hourly_rate", None)
+            if entry.project.billing_type == "non_billable":
+                changes["billable"] = False
         # Apply allowed fields explicitly so we never overwrite invoice/profile/case.
-        for field, value in serializer.validated_data.items():
+        for field, value in changes.items():
             setattr(entry, field, value)
         entry.save()
+        if entry.project is not None:
+            check_budget_alerts(entry.project)
         return Response(TimeEntrySerializer(entry).data)
 
+    @extend_schema(responses={204: None})
     @transaction.atomic
     def delete(self, request, pk):
         entry = self._get_entry(request, pk)
@@ -317,6 +535,7 @@ class TimeEntryStopView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(request=None, responses=TimeEntrySerializer)
     @transaction.atomic
     def post(self, request, pk):
         entry = (
@@ -340,6 +559,8 @@ class TimeEntryStopView(APIView):
             )
         entry.ended_at = timezone.now()
         entry.save()
+        if entry.project is not None:
+            check_budget_alerts(entry.project)
         return Response(TimeEntrySerializer(entry).data)
 
 
@@ -351,6 +572,7 @@ class UnbilledEntriesView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(responses=TimeEntrySerializer(many=True))
     def get(self, request):
         account_id = uuid_param(request.query_params, "account")
         qs = (
@@ -373,6 +595,7 @@ class TimesheetView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(responses=_TIMESHEET)
     def get(self, request):
         profile_param = uuid_param(request.query_params, "profile")
         target_profile_id = request.profile.id
@@ -409,7 +632,7 @@ class TimesheetView(APIView):
                 started_at__date__gte=start,
                 started_at__date__lte=end,
             )
-            .select_related("case", "profile", "profile__user", "invoice")
+            .select_related("case", "project", "profile", "profile__user", "invoice")
             .order_by("started_at")
         )
         days = OrderedDict()
@@ -438,7 +661,11 @@ class TimesheetView(APIView):
             # entry to its invoice, so expand these two FKs from the bare ids
             # the serializer emits. Both are select_related above, so this adds
             # no per-row queries.
-            data["case"] = {"id": str(entry.case_id), "name": entry.case.name}
+            data["case"] = (
+                {"id": str(entry.case_id), "name": entry.case.name}
+                if entry.case_id
+                else None
+            )
             data["invoice"] = (
                 {
                     "id": str(entry.invoice_id),
@@ -504,8 +731,8 @@ class TimeReportView(APIView):
     """``GET /api/time-entries/report/``: where the time went.
 
     ``?start=&end=`` (YYYY-MM-DD, inclusive, defaulting to the last 30 days),
-    ``?group_by=agent|ticket|account``, and the optional ``profile``,
-    ``account`` and ``billable`` filters. One row per group with the minutes,
+    ``?group_by=agent|ticket|project|account``, and the optional ``profile``,
+    ``account``, ``project`` and ``billable`` filters. One row per group with the minutes,
     the billable split, the value at each entry's own rate, and how many
     entries went into it.
 
@@ -515,6 +742,7 @@ class TimeReportView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(responses=_TIME_REPORT)
     def get(self, request):
         group_by = request.query_params.get("group_by") or "agent"
         try:
@@ -549,6 +777,7 @@ class TimeReportExportView(APIView):
     # for `Accept: text/csv` was answered 406 without this.
     renderer_classes = CSV_RENDERERS
 
+    @extend_schema(responses={(200, "text/csv"): OpenApiTypes.BINARY})
     def get(self, request):
         try:
             entries, start, end = _report_entries(request)

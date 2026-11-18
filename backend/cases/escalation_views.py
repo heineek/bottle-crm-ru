@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from business_hours.calendar import add_business_hours, get_default_calendar
 from cases.models import Case, EscalationPolicy
 from cases.serializer import EscalationPolicySerializer
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 
 # Cases opened within this many days form the cohort the breach counts report on.
 BREACH_WINDOW_DAYS = 30
@@ -112,13 +112,33 @@ def _admin_required():
     )
 
 
+class EscalationBreachCountsSerializer(serializers.Serializer):
+    first_response = serializers.IntegerField()
+    resolution = serializers.IntegerField()
+
+
+class EscalationPolicyListRowSerializer(EscalationPolicySerializer):
+    """Schema only: a policy as the list returns it, with its breach counts."""
+
+    breaches_last_30d = EscalationBreachCountsSerializer(read_only=True)
+
+    class Meta(EscalationPolicySerializer.Meta):
+        fields = (*EscalationPolicySerializer.Meta.fields, "breaches_last_30d")
+
+
 class EscalationPolicyListCreateView(APIView):
     """GET lists policies for the org; POST creates one (admin)."""
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
     @extend_schema(
-        tags=["Escalation"], responses={200: EscalationPolicySerializer(many=True)}
+        tags=["Escalation"],
+        responses={
+            200: inline_serializer(
+                name="EscalationPolicyListResponse",
+                fields={"policies": EscalationPolicyListRowSerializer(many=True)},
+            )
+        },
     )
     def get(self, request, *args, **kwargs):
         org = request.profile.org
@@ -139,7 +159,7 @@ class EscalationPolicyListCreateView(APIView):
         responses={201: EscalationPolicySerializer},
     )
     def post(self, request, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         serializer = EscalationPolicySerializer(
@@ -178,11 +198,11 @@ class EscalationPolicyDetailView(APIView):
 
     @extend_schema(
         tags=["Escalation"],
-        request=EscalationPolicySerializer,
+        request=EscalationPolicySerializer(partial=True),
         responses={200: EscalationPolicySerializer},
     )
     def put(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         obj = self._get_object(pk, org)
@@ -221,7 +241,7 @@ class EscalationPolicyDetailView(APIView):
         },
     )
     def delete(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         obj = self._get_object(pk, request.profile.org)
         if not obj:

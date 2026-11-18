@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 import 'accounts_provider.dart';
@@ -14,18 +15,31 @@ import 'leads_provider.dart';
 /// refuses a merge the caller may not make. `canDelete` on a hit is a hint that
 /// spares somebody a refusal, not a gate.
 enum DuplicateModule {
-  leads('leads', 'lead', 'lead_obj'),
-  contacts('contacts', 'contact', 'contact_obj'),
-  accounts('accounts', 'account', 'account_obj');
+  leads('leads', 'lead'),
+  contacts('contacts', 'contact'),
+  accounts('accounts', 'account');
 
-  const DuplicateModule(this.path, this.singular, this.recordKey);
+  const DuplicateModule(this.path, this.singular);
 
   /// The API and router segment: `/leads/...`.
   final String path;
   final String singular;
 
-  /// Where the detail endpoint nests the record.
-  final String recordKey;
+  /// The id and the row the detail response nests under `lead_obj`,
+  /// `contact_obj` or `account_obj`, or null if it carries none.
+  (String?, Map<String, dynamic>)? _recordIn(Map<String, dynamic> body) {
+    switch (this) {
+      case leads:
+        final row = api.LeadDetailResponse.fromJson(body).leadObj;
+        return row == null ? null : (row.id, row.json);
+      case contacts:
+        final row = api.ContactDetailResponse.fromJson(body).contactObj;
+        return row == null ? null : (row.id, row.json);
+      case accounts:
+        final row = api.AccountDetailResponse.fromJson(body).accountObj;
+        return row == null ? null : (row.id, row.json);
+    }
+  }
 
   static DuplicateModule? parse(String? value) {
     for (final module in values) {
@@ -51,57 +65,86 @@ enum DuplicateModule {
   String get singularLabel => appL10n.appDupSingular(name);
 
   /// The rows the compare screen shows side by side, the same as the web's.
+  /// Each reads the module's detail row: a `Lead`, `Contact` or `Account`.
   List<(String, String Function(Map<String, dynamic>))> get compareFields {
     final l10n = appL10n;
     return switch (this) {
       leads => [
-        (l10n.commonName, _personName),
-        (l10n.appDupFieldCompany, (o) => _text(o['company_name'])),
-        (l10n.commonEmail, (o) => _text(o['email'])),
-        (l10n.commonPhone, (o) => _text(o['phone'])),
-        (l10n.appWebFormFieldWebsite, (o) => _text(o['website'])),
-        (l10n.commonStatus, (o) => _text(o['status'])),
-        (l10n.appDupFieldCreated, _created),
+        (l10n.commonName, _lead((l) => _personName(l.firstName, l.lastName))),
+        (l10n.appDupFieldCompany, _lead((l) => l.companyName)),
+        (l10n.commonEmail, _lead((l) => l.email)),
+        (l10n.commonPhone, _lead((l) => l.phone)),
+        (l10n.appWebFormFieldWebsite, _lead((l) => l.website)),
+        (l10n.commonStatus, _lead((l) => l.status)),
+        (l10n.appDupFieldCreated, _lead((l) => _day(l.createdAt))),
       ],
       contacts => [
-        (l10n.commonName, _personName),
-        (l10n.appWebFormFieldJobTitle, (o) => _text(o['title'])),
-        (l10n.appDupFieldCompany, (o) => _text(o['organization'])),
-        (l10n.commonEmail, (o) => _text(o['email'])),
-        (l10n.commonPhone, (o) => _text(o['phone'])),
-        (l10n.appWebFormFieldCity, (o) => _text(o['city'])),
-        (l10n.appDupFieldCreated, _created),
+        (
+          l10n.commonName,
+          _contact((c) => _personName(c.firstName, c.lastName)),
+        ),
+        (l10n.appWebFormFieldJobTitle, _contact((c) => c.title)),
+        (l10n.appDupFieldCompany, _contact((c) => c.organization)),
+        (l10n.commonEmail, _contact((c) => c.email)),
+        (l10n.commonPhone, _contact((c) => c.phone)),
+        (l10n.appWebFormFieldCity, _contact((c) => c.city)),
+        (l10n.appDupFieldCreated, _contact((c) => _day(c.createdAt))),
       ],
       accounts => [
-        (l10n.commonName, (o) => _text(o['name'])),
-        (l10n.appWebFormFieldWebsite, (o) => _text(o['website'])),
-        (l10n.commonEmail, (o) => _text(o['email'])),
-        (l10n.commonPhone, (o) => _text(o['phone'])),
-        (l10n.appWebFormFieldIndustry, (o) => _text(o['industry'])),
-        (l10n.appWebFormFieldCity, (o) => _text(o['city'])),
-        (l10n.appDupFieldCreated, _created),
+        (l10n.commonName, _account((a) => a.name)),
+        (l10n.appWebFormFieldWebsite, _account((a) => a.website)),
+        (l10n.commonEmail, _account((a) => a.email)),
+        (l10n.commonPhone, _account((a) => a.phone)),
+        (l10n.appWebFormFieldIndustry, _account((a) => a.industry)),
+        (l10n.appWebFormFieldCity, _account((a) => a.city)),
+        (l10n.appDupFieldCreated, _account((a) => _day(a.createdAt))),
       ],
     };
   }
 
   String nameOf(Map<String, dynamic> record) {
-    final name = this == accounts ? _text(record['name']) : _personName(record);
+    final String name;
+    final String email;
+    switch (this) {
+      case leads:
+        final l = api.Lead.fromJson(record);
+        name = _personName(l.firstName, l.lastName);
+        email = _text(l.email);
+      case contacts:
+        final c = api.Contact.fromJson(record);
+        name = _personName(c.firstName, c.lastName);
+        email = _text(c.email);
+      case accounts:
+        final a = api.Account.fromJson(record);
+        name = _text(a.name);
+        email = _text(a.email);
+    }
     if (name.isNotEmpty) return name;
-    final email = _text(record['email']);
     return email.isNotEmpty ? email : singularLabel;
   }
 }
 
-String _text(dynamic value) => value == null ? '' : value.toString().trim();
+String Function(Map<String, dynamic>) _lead(String? Function(api.Lead) read) =>
+    (o) => _text(read(api.Lead.fromJson(o)));
 
-String _personName(Map<String, dynamic> o) => [
-  _text(o['first_name']),
-  _text(o['last_name']),
-].where((s) => s.isNotEmpty).join(' ');
+String Function(Map<String, dynamic>) _contact(
+  String? Function(api.Contact) read,
+) =>
+    (o) => _text(read(api.Contact.fromJson(o)));
 
-String _created(Map<String, dynamic> o) {
-  final raw = _text(o['created_at']);
-  return raw.length >= 10 ? raw.substring(0, 10) : raw;
+String Function(Map<String, dynamic>) _account(
+  String? Function(api.Account) read,
+) =>
+    (o) => _text(read(api.Account.fromJson(o)));
+
+String _text(String? value) => value?.trim() ?? '';
+
+String _personName(String? first, String? last) =>
+    [_text(first), _text(last)].where((s) => s.isNotEmpty).join(' ');
+
+String _day(String? raw) {
+  final text = _text(raw);
+  return text.length >= 10 ? text.substring(0, 10) : text;
 }
 
 /// "email and phone": the API names each rule in plain words already.
@@ -135,17 +178,18 @@ class DuplicateHit {
 
   String get matchedLabelText => matchedLabel(matchedOn);
 
-  factory DuplicateHit.fromJson(Map<String, dynamic> json) => DuplicateHit(
-    id: json['id']?.toString() ?? '',
-    name: _text(json['name']),
-    email: _text(json['email']),
-    phone: _text(json['phone']),
-    matchedOn: [
-      for (final r in (json['matched_on'] as List<dynamic>? ?? const []))
-        r.toString(),
-    ],
-    canDelete: json['can_delete'] == true,
-  );
+  /// Reads a `DuplicateHit`.
+  factory DuplicateHit.fromJson(Map<String, dynamic> json) {
+    final w = api.DuplicateHit.fromJson(json);
+    return DuplicateHit(
+      id: w.id ?? '',
+      name: _text(w.name),
+      email: _text(w.email),
+      phone: _text(w.phone),
+      matchedOn: w.matchedOn ?? const [],
+      canDelete: w.canDelete == true,
+    );
+  }
 }
 
 class RecordDuplicates {
@@ -203,7 +247,7 @@ class DuplicatesApi {
       query,
     );
     if (!response.success || response.data == null) return const [];
-    return _hits(response.data!);
+    return _hits(api.DuplicatesResponse.fromJson(response.data!).duplicates);
   }
 
   /// Possible duplicates of a saved record. None when the check fails.
@@ -214,9 +258,10 @@ class DuplicatesApi {
     if (!response.success || response.data == null) {
       return const RecordDuplicates();
     }
+    final data = api.RecordDuplicatesResponse.fromJson(response.data!);
     return RecordDuplicates(
-      canDelete: response.data!['can_delete'] == true,
-      hits: _hits(response.data!),
+      canDelete: data.canDelete == true,
+      hits: _hits(data.duplicates),
     );
   }
 
@@ -228,14 +273,21 @@ class DuplicatesApi {
       _api.get(ApiConfig.recordDuplicates(module.path, id)),
     ]);
     final detail = results[0];
-    final record = detail.data?[module.recordKey];
-    if (!detail.success || record is! Map<String, dynamic>) {
+    final body = detail.data;
+    final found = detail.success && body != null
+        ? module._recordIn(body)
+        : null;
+    if (found == null) {
       throw MergeSideError(notFound: detail.statusCode == 404);
     }
+    final (recordId, record) = found;
+    final duplicates = results[1].data;
     return MergeSide(
-      id: record['id']?.toString() ?? id,
+      id: recordId ?? id,
       name: module.nameOf(record),
-      canDelete: results[1].data?['can_delete'] == true,
+      canDelete:
+          duplicates != null &&
+          api.RecordDuplicatesResponse.fromJson(duplicates).canDelete == true,
       fields: [
         for (final (label, read) in module.compareFields) (label, read(record)),
       ],
@@ -259,9 +311,9 @@ class DuplicatesApi {
     return response.message ?? appL10n.appDupMergeFailed(module.name);
   }
 
-  List<DuplicateHit> _hits(Map<String, dynamic> data) => [
-    for (final raw in (data['duplicates'] as List<dynamic>? ?? const []))
-      if (raw is Map<String, dynamic>) DuplicateHit.fromJson(raw),
+  List<DuplicateHit> _hits(List<api.DuplicateHit>? rows) => [
+    for (final row in rows ?? const <api.DuplicateHit>[])
+      DuplicateHit.fromJson(row.json),
   ];
 }
 

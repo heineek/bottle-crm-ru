@@ -1,4 +1,4 @@
-"""The module catalogue: nine parts of the CRM an org admin can switch off.
+"""The module catalogue: ten parts of the CRM an org admin can switch off.
 
 State lives in three ``Org`` fields (``modules_off``, ``module_order``,
 ``modules_on_at``). Everything here reads them defensively: unknown or
@@ -82,7 +82,7 @@ MODULES = (
         stops=_(
             "{label} leave every menu and Today, SLA escalation stops, CSAT survey "
             "links stop opening, and customers stop seeing their tickets in the "
-            "portal. Timesheet switches off too."
+            "portal."
         ),
     ),
     Module(
@@ -101,6 +101,19 @@ MODULES = (
         group="serve",
         covers=_("Documents and their downloads."),
         stops=_("{label} leave every menu, and their downloads stop opening."),
+    ),
+    Module(
+        key="projects",
+        label=_("Projects"),
+        group="serve",
+        covers=_(
+            "Projects, their people, rates and budgets, tasks and time on them, "
+            "and billing a project's time."
+        ),
+        stops=_(
+            "{label} leave every menu, time can no longer be logged on them, and "
+            "budget notifications stop."
+        ),
     ),
     Module(
         key="invoices",
@@ -122,11 +135,10 @@ MODULES = (
         key="timesheet",
         label=_("Timesheet"),
         group="bill",
-        needs="tickets",
         covers=_("Time entries, the timesheet and the time report."),
         stops=_(
-            "Time entries leave every menu and ticket, and running timers are no "
-            "longer stopped automatically."
+            "Time entries leave every menu, ticket and project, and running timers "
+            "are no longer stopped automatically."
         ),
     ),
 )
@@ -134,7 +146,14 @@ MODULES = (
 KEYS = tuple(m.key for m in MODULES)
 _BY_KEY = {m.key: m for m in MODULES}
 
-_LEADS = ("Lead", "LeadPipeline", "LeadStage")
+# LeadSource is left unplaced: deals and contacts carry its keys too.
+_LEADS = (
+    "Lead",
+    "LeadPipeline",
+    "LeadStage",
+    "LeadIntake",
+    "LeadIntakeEvent",
+)
 _DEALS = ("DealPipeline", "DealStage", "Opportunity", "OpportunityLineItem")
 _TASKS = (
     "Board",
@@ -170,6 +189,8 @@ MODEL_MODULES: dict[str, str] = {
     "macros.Macro": "tickets",
     **{f"invoices.{n}": "invoices" for n in _INVOICES},
     "common.Document": "documents",
+    "projects.Project": "projects",
+    "projects.ProjectRate": "projects",
 }
 
 
@@ -294,15 +315,20 @@ NAMESPACE_MODULES: dict[str, Requires] = {
     "api_cases": Requires(("tickets",)),
     "api_business_hours": Requires(("tickets",)),
     "api_macros": Requires(("tickets",)),
-    "api_time_entries": Requires(("tickets", "timesheet")),
+    # Time sits on tickets or projects, so the entry routes need either.
+    "api_time_entries": Requires(("timesheet",), any_of=("tickets", "projects")),
+    "api_projects": Requires(("projects",)),
     "api_invoices": Requires(("invoices",)),
     "public_help": Requires(("knowledge_base",)),
     "public_invoices": Requires(("invoices",)),
+    "public_leads": Requires(("leads",)),
     "api_accounts": CORE,
     "api_contacts": CORE,
     "api_webforms": CORE,
     "api_webhooks": CORE,
     "api_automation": CORE,
+    # Each request is checked against its record's module in the view.
+    "api_interactions": CORE,
     "public_webforms": CORE,
 }
 
@@ -317,9 +343,21 @@ ROUTE_MODULES: dict[str, Requires] = {
     "api/cases/<uid:pk>/solution-suggestions/": Requires(("tickets", "knowledge_base")),
     "api/cases/<uid:pk>/time-entries/": Requires(("tickets", "timesheet")),
     "api/cases/<uid:pk>/time-summary/": Requires(("tickets", "timesheet")),
+    # A mailbox makes tickets or leads; each webhook checks its own in the view.
+    "api/cases/mailboxes/": Requires(any_of=("tickets", "leads")),
+    "api/cases/inbound/": Requires(any_of=("tickets", "leads")),
     "api/invoices/products/": Requires(any_of=("invoices", "deals")),
     "api/invoices/from-opportunity/": Requires(("invoices", "deals")),
-    "api/invoices/from-time-entries/": Requires(("invoices", "tickets", "timesheet")),
+    # The view also needs Tickets to bill an account, Projects to bill a project.
+    "api/invoices/from-time-entries/": Requires(
+        ("invoices", "timesheet"), any_of=("tickets", "projects")
+    ),
+    "api/projects/<uid:pk>/time-entries/": Requires(("projects", "timesheet")),
+    "api/projects/<uid:pk>/unbilled/": Requires(("projects", "invoices", "timesheet")),
+    "api/projects/<uid:pk>/invoice-amount/": Requires(("projects", "invoices")),
+    "api/projects/<uid:pk>/retainer/": Requires(("projects", "invoices")),
+    "api/projects/from-deal/": Requires(("projects", "deals")),
+    "api/leads/sources/": CORE,
     "api/documents/": Requires(("documents",)),
     "api/profile/calendar-feed/": Requires(("tasks",)),
     "api/public/calendar/": Requires(("tasks",)),
@@ -331,10 +369,12 @@ ROUTE_MODULES: dict[str, Requires] = {
     "api/schema/": CORE,
     "api/activities/": CORE,
     "api/api-settings/": CORE,
+    "api/apps/": CORE,
     "api/attachments/": CORE,
     "api/auth/": CORE,
     "api/custom-fields/": CORE,
     "api/dashboard/": CORE,
+    "api/devices/": CORE,
     "api/notifications/": CORE,
     "api/org/": CORE,
     "api/packs/": CORE,
@@ -383,6 +423,8 @@ VIEW_CHECKED_ROUTES: frozenset[str] = frozenset(
         "api/portal/cases/<uid:pk>/",
         "api/portal/cases/<uid:pk>/comment/",
         "api/cases/inbound/<uid:mailbox_id>/",
+        "api/cases/inbound/email/",
+        "api/public/leads/<uid:intake_id>/",
     }
 )
 

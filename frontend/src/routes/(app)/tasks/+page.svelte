@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -25,18 +25,18 @@
   import { CircleCheck, Circle, Plus } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { taskKindLabel, taskPriorityLabel, taskStatusLabel } from './labels.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let totals = $derived(data.totals);
   let tasks = $derived(data.tasks);
 
   /** Rows with a save in flight, so the tick can show it is thinking. */
-  let saving = $state(/** @type {Record<string, boolean>} */ ({}));
+  let saving = $state<Record<string, boolean>>({});
 
   /** Overdue is only meaningful for something still open. */
-  const overdueDays = (/** @type {any} */ t) => {
+  const overdueDays = (t: { due_date: string | null; is_done: boolean }) => {
     if (!t.due_date || t.is_done) return 0;
     const n = daysSince(t.due_date) ?? 0;
     return n > 0 ? n : 0;

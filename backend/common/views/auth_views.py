@@ -27,9 +27,22 @@ from common.throttles import (
     MagicLinkGlobalThrottle,
     MagicLinkIPThrottle,
 )
-from common.utils import CURRENCY_SYMBOLS
+from common.utils import CURRENCY_SYMBOLS, ROLES
 
 logger = logging.getLogger(__name__)
+
+
+class AuthOrgSerializer(serializers.Serializer):
+    """Response-only: the shape `_org_payload` builds."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    default_currency = serializers.CharField()
+    currency_symbol = serializers.CharField()
+    default_country = serializers.CharField(allow_null=True)
+    timezone = serializers.CharField()
+    role = serializers.ChoiceField(choices=ROLES, required=False)
+    is_organization_admin = serializers.BooleanField(required=False)
 
 
 def _org_payload(org, profile=None):
@@ -132,7 +145,13 @@ class GoogleOAuthCallbackView(APIView):
                 fields={
                     "access_token": serializers.CharField(),
                     "refresh_token": serializers.CharField(),
-                    "user": serializers.DictField(),
+                    "user": inline_serializer(
+                        name="GoogleOAuthUser",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "email": serializers.EmailField(),
+                        },
+                    ),
                 },
             )
         },
@@ -296,8 +315,16 @@ class GoogleIdTokenView(APIView):
                 fields={
                     "JWTtoken": serializers.CharField(),
                     "refresh_token": serializers.CharField(),
-                    "user": serializers.DictField(),
-                    "organizations": serializers.ListField(),
+                    "user": inline_serializer(
+                        name="GoogleIdTokenUser",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "email": serializers.EmailField(),
+                            "name": serializers.CharField(),
+                            "profileImage": serializers.CharField(allow_null=True),
+                        },
+                    ),
+                    "organizations": AuthOrgSerializer(many=True),
                 },
             )
         },
@@ -680,8 +707,15 @@ class OrgSwitchView(APIView):
                 fields={
                     "access_token": serializers.CharField(),
                     "refresh_token": serializers.CharField(),
-                    "current_org": serializers.DictField(),
-                    "profile": serializers.DictField(),
+                    "current_org": AuthOrgSerializer(),
+                    "profile": inline_serializer(
+                        name="OrgSwitchProfile",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "role": serializers.ChoiceField(choices=ROLES),
+                            "is_organization_admin": serializers.BooleanField(),
+                        },
+                    ),
                 },
             )
         },
@@ -846,7 +880,8 @@ class MagicLinkVerifyView(APIView):
                 fields={
                     "access_token": serializers.CharField(),
                     "refresh_token": serializers.CharField(),
-                    "user": serializers.DictField(),
+                    "user": serializer.UserDetailSerializer(),
+                    "current_org": AuthOrgSerializer(required=False),
                 },
             )
         },
@@ -967,7 +1002,9 @@ class MagicLinkVerifyCodeView(APIView):
                 fields={
                     "access_token": serializers.CharField(),
                     "refresh_token": serializers.CharField(),
-                    "user": serializers.DictField(),
+                    "user": serializer.UserDetailSerializer(),
+                    "organizations": AuthOrgSerializer(many=True),
+                    "current_org": AuthOrgSerializer(required=False),
                 },
             )
         },

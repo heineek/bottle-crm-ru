@@ -1,16 +1,18 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { untrack, tick } from 'svelte';
   import { enhance } from '$app/forms';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { OPPORTUNITY_TYPE_LABEL } from '#lib/v2/enums.js';
   import { money } from '#lib/v2/format.js';
+  import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { ChevronDown, ChevronRight, TriangleAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   /**
    * v1's create form asked for 28 fields before it would accept a deal, so
@@ -54,36 +56,30 @@
     }))
   );
 
-  /** @type {any[]} */
   const pipelines = untrack(() => data.pipelines);
   /* A new deal cannot start closed, so only the chosen pipeline's open
      stages are offered. */
   let openStages = $derived(
-    (pipelines.find((p) => p.id === form.pipeline)?.stages ?? []).filter(
-      (/** @type {any} */ s) => s.kind === 'open'
-    )
+    (pipelines.find((p) => p.id === form.pipeline)?.stages ?? []).filter((s) => s.kind === 'open')
   );
 
   /**
    * Picking another pipeline starts the deal on that pipeline's first open
    * stage; a code from the previous pipeline may not exist in this one.
-   *
-   * @param {string} pipelineId
    */
-  function pipelineChanged(pipelineId) {
+  function pipelineChanged(pipelineId: string) {
     const next = pipelines.find((p) => p.id === pipelineId)?.stages ?? [];
-    form.stage = next.find((/** @type {any} */ s) => s.kind === 'open')?.code ?? '';
+    form.stage = next.find((s) => s.kind === 'open')?.code ?? '';
   }
 
   let more = $state(false);
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state<Record<string, boolean>>({});
   let submitted = $state(false);
 
   const REQUIRED = ['name', 'account', 'amount', 'closed_on'];
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = m.pipeline_error_name();
     if (!form.account) e.account = m.pipeline_error_account_pick();
 
@@ -103,16 +99,14 @@
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   /**
    * On success the action redirects to the new deal, so there is no success
    * state to render here. The next thing anyone does after creating a deal is
    * look at it.
-   *
-   * @type {import('./$types').SubmitFunction}
    */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       // Send focus to the first field that needs work rather than only
@@ -121,8 +115,7 @@
       // do not exist until Svelte flushes, so querying now finds nothing.
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
     }
   };
@@ -357,13 +350,28 @@
 
           <div class="v2-field">
             <label for="f-source">{m.pipeline_field_source()}</label>
-            <input
-              id="f-source"
-              name="lead_source"
-              class="v2-input"
-              bind:value={form.lead_source}
-              placeholder={m.pipeline_field_source_placeholder()}
-            />
+            {#if data.sourcesLive}
+              <select
+                id="f-source"
+                name="lead_source"
+                class="v2-input"
+                bind:value={form.lead_source}
+              >
+                <option value="">{m.pipeline_source_not_specified()}</option>
+                {#each sourceOptions(data.sources, form.lead_source) as s (s.key)}
+                  <option value={s.key}>{s.label}</option>
+                {/each}
+              </select>
+            {:else}
+              <!-- An API without the org's source list takes its own values. -->
+              <input
+                id="f-source"
+                name="lead_source"
+                class="v2-input"
+                bind:value={form.lead_source}
+                placeholder={m.pipeline_field_source_placeholder()}
+              />
+            {/if}
           </div>
 
           <div class="v2-field">
@@ -378,6 +386,13 @@
         </div>
       {/if}
     </div>
+
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={result?.values?.custom_fields}
+      errors={result?.fieldErrors}
+      heading={m.common_details()}
+    />
 
     <div style="display:flex;gap:8px;align-items:center;margin-top:22px">
       <button class="v2-btn v2-btn-primary" type="submit">{m.pipeline_new_submit()}</button>

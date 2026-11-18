@@ -3,8 +3,10 @@
 import uuid
 
 from django.db import transaction
+from django.utils import timezone
 from django.utils.translation import gettext as _
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -90,9 +92,53 @@ def _refusal_outcome(case_id, errors):
     return {"id": case_id, "status": "invalid", "detail": errors}
 
 
+@extend_schema_field(
+    {
+        "oneOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": "string"}},
+            {"type": "object", "additionalProperties": {}},
+        ]
+    }
+)
+class _BulkDetailField(serializers.JSONField):
+    """Schema only: a refusal's `detail`, a message, a list of them, or the
+    field errors of an `invalid` ticket."""
+
+
+class BulkCaseOutcomeSerializer(serializers.Serializer):
+    """Schema only: one ticket's row in a bulk reply. `status` is `updated`,
+    `deleted`, `no_access`, `merged`, `approval_required` or `invalid`; the
+    last three carry a `detail`."""
+
+    id = serializers.CharField()
+    status = serializers.CharField()
+    detail = _BulkDetailField(required=False)
+
+
 class BulkUpdateCasesView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        request=inline_serializer(
+            name="BulkUpdateCasesRequest",
+            fields={
+                "ids": serializers.ListField(child=serializers.CharField()),
+                "fields": serializers.DictField(),
+            },
+        ),
+        responses={
+            200: inline_serializer(
+                name="BulkUpdateCasesResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "updated": serializers.IntegerField(),
+                    "results": BulkCaseOutcomeSerializer(many=True),
+                },
+            )
+        },
+    )
     def post(self, request):
         refusal = _oversized_batch(request.data.get("ids"))
         if refusal:
@@ -225,6 +271,23 @@ class BulkUpdateCasesView(APIView):
 class BulkDeleteCasesView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Cases"],
+        request=inline_serializer(
+            name="BulkDeleteCasesRequest",
+            fields={"ids": serializers.ListField(child=serializers.CharField())},
+        ),
+        responses={
+            200: inline_serializer(
+                name="BulkDeleteCasesResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "deleted": serializers.IntegerField(),
+                    "results": BulkCaseOutcomeSerializer(many=True),
+                },
+            )
+        },
+    )
     def post(self, request):
         refusal = _oversized_batch(request.data.get("ids"))
         if refusal:
@@ -256,7 +319,7 @@ class BulkDeleteCasesView(APIView):
         if deletable:
             deleted_count = Case.objects.filter(
                 id__in=[row["id"] for row in deletable]
-            ).update(is_active=False)
+            ).update(is_active=False, updated_at=timezone.now())
             # queryset.update() bypasses signals, so emit Activity rows here.
             Activity.objects.bulk_create(
                 [

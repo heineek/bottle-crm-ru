@@ -6,9 +6,16 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../data/models/time_billing.dart';
 import '../../data/models/time_entry.dart';
 import '../../l10n/l10n.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/invoices_provider.dart';
+import '../../providers/org_modules_provider.dart';
 import '../../providers/tickets_provider.dart';
+import '../../routes/app_routes.dart';
+import '../time/bill_time_sheet.dart';
+import '../time/time_entry_parts.dart';
 
 /// Time tracking panel: start/stop timer, manual entry, recent entries.
 ///
@@ -26,11 +33,16 @@ class TicketTimePanel extends ConsumerStatefulWidget {
   /// gated on it.
   final bool canLogTime;
 
+  /// The ticket's account. Billing a ticket's time drafts the invoice for it,
+  /// so without one there is nothing to bill to.
+  final String? accountId;
+
   const TicketTimePanel({
     super.key,
     required this.ticketId,
     required this.canLogTime,
     this.initialSummary,
+    this.accountId,
   });
 
   @override
@@ -88,22 +100,24 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
       await _load();
       return;
     }
-    // 409: user has a running timer on another ticket. The backend includes
-    // `running_case_id` so we can offer a one-tap jump to stop it there.
-    final otherCaseId = res.data?['running_case_id']?.toString();
-    if (res.statusCode == 409 &&
-        otherCaseId != null &&
-        otherCaseId.isNotEmpty) {
+    // 409: a timer is already running, on a ticket or a project. The body
+    // names it, so the snackbar offers a one-tap jump to stop it there.
+    final running = runningTimerPath(res.data);
+    if (res.statusCode == 409 && running != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.l10n.ticketsPanelTimeOtherRunning),
+          content: Text(
+            running.startsWith('/projects/')
+                ? context.l10n.ticketsPanelTimeProjectRunning
+                : context.l10n.ticketsPanelTimeOtherRunning,
+          ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 6),
           action: SnackBarAction(
             label: context.l10n.ticketsPanelTimeView,
             textColor: Colors.white,
-            onPressed: () => context.push('/tickets/$otherCaseId'),
+            onPressed: () => context.push(running),
           ),
         ),
       );
@@ -137,18 +151,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
   }
 
   Future<void> _addManual() async {
-    final result = await showModalBottomSheet<_ManualEntryResult>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: const _ManualEntrySheet(),
-      ),
-    );
+    final result = await ManualEntrySheet.show(context);
     if (result == null || !mounted) return;
     setState(() => _isBusy = true);
     final res = await ref
@@ -175,9 +178,40 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
     }
   }
 
+  /// Admins only, as the API: the ticket's unbilled billable entries, drafted
+  /// onto one invoice for its account.
+  Future<void> _billTime(List<TimeEntry> unbilled) async {
+    final invoiceId = await BillTimeSheet.show(
+      context,
+      entries: unbilled,
+      offerTaskGrouping: false,
+      onBill: (grouping, _) => ref
+          .read(invoicesProvider.notifier)
+          .createFromTimeEntries(
+            accountId: widget.accountId,
+            entryIds: [for (final e in unbilled) e.id],
+            groupBy: grouping.value,
+          ),
+    );
+    if (invoiceId == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.ticketsPanelTimeInvoiceCreated),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    await _load();
+    if (mounted) context.push('${AppRoutes.invoices}/$invoiceId');
+  }
+
   @override
   Widget build(BuildContext context) {
     final running = _running;
+    final unbilled = unbilledEntries(_entries);
+    final mayBill =
+        ref.watch(isOrgAdminProvider) &&
+        ref.watch(moduleOnProvider('invoices')) &&
+        unbilled.isNotEmpty;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -214,12 +248,12 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
               children: [
                 _StatTile(
                   label: context.l10n.ticketsPanelTimeTotal,
-                  value: _formatMinutes(_summary!.totalMinutes),
+                  value: formatMinutes(_summary!.totalMinutes),
                 ),
                 const SizedBox(width: 12),
                 _StatTile(
                   label: context.l10n.ticketsPanelTimeBillable,
-                  value: _formatMinutes(_summary!.billableMinutes),
+                  value: formatMinutes(_summary!.billableMinutes),
                   color: AppColors.success600,
                 ),
               ],
@@ -227,7 +261,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
           ],
           const SizedBox(height: 12),
           if (running != null)
-            _RunningTimerCard(
+            RunningTimerCard(
               entry: running,
               isBusy: _isBusy,
               onStop: () => _stopTimer(running),
@@ -246,7 +280,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
             ..._entries
                 .where((e) => !e.isRunning)
                 .take(5)
-                .map((e) => _EntryRow(entry: e)),
+                .map((e) => TimeEntryRow(entry: e)),
             if (_entries.where((e) => !e.isRunning).length > 5)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -260,20 +294,32 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
                 ),
               ),
           ],
+          if (mayBill) ...[
+            const SizedBox(height: 12),
+            if (widget.accountId == null)
+              Text(
+                context.l10n.ticketsPanelTimeLinkAccount,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: _isBusy ? null : () => _billTime(unbilled),
+                  icon: const Icon(LucideIcons.receipt, size: 16),
+                  label: Text(
+                    context.l10n.ticketsPanelTimeBill(unbilled.length),
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
   }
-}
-
-String _formatMinutes(int minutes) {
-  final l10n = appL10n;
-  if (minutes <= 0) return l10n.ticketsPanelTimeZero;
-  final h = minutes ~/ 60;
-  final m = minutes % 60;
-  if (h == 0) return l10n.ticketsPanelPropsMinutes(m);
-  if (m == 0) return l10n.ticketsPanelTimeHours(h);
-  return l10n.ticketsPanelPropsHoursMinutes(h, m);
 }
 
 class _StatTile extends StatelessWidget {
@@ -308,281 +354,6 @@ class _StatTile extends StatelessWidget {
                 color: color ?? AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RunningTimerCard extends StatelessWidget {
-  final TimeEntry entry;
-  final bool isBusy;
-  final VoidCallback onStop;
-
-  const _RunningTimerCard({
-    required this.entry,
-    required this.isBusy,
-    required this.onStop,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final d = entry.liveDuration;
-    final running =
-        '${d.inHours.toString().padLeft(2, '0')}:'
-        '${(d.inMinutes % 60).toString().padLeft(2, '0')}:'
-        '${(d.inSeconds % 60).toString().padLeft(2, '0')}';
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.primary50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.primary200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: AppColors.primary600,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.ticketsPanelTimeRunning,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.primary700,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  running,
-                  style: AppTypography.h3.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    color: AppColors.primary700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          OutlinedButton.icon(
-            onPressed: isBusy ? null : onStop,
-            icon: const Icon(LucideIcons.square, size: 14),
-            label: Text(context.l10n.ticketsPanelTimeStop),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.danger600,
-              side: BorderSide(color: AppColors.danger300),
-              // Override the global theme's `minimumSize: Size.fromHeight(..)`
-              // which is `Size(∞, X)`. Needed so this in-row button doesn't
-              // try to layout at infinite width when there's no Expanded parent.
-              minimumSize: const Size(0, 36),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EntryRow extends StatelessWidget {
-  final TimeEntry entry;
-  const _EntryRow({required this.entry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          if (entry.billable)
-            Icon(LucideIcons.dollarSign, size: 14, color: AppColors.success600)
-          else
-            Icon(LucideIcons.minus, size: 14, color: AppColors.gray400),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.description?.isNotEmpty == true
-                      ? entry.description!
-                      : (entry.profileName ??
-                            context.l10n.ticketsPanelTimeEntry),
-                  style: AppTypography.body.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (entry.description?.isNotEmpty == true &&
-                    entry.profileName != null)
-                  Text(
-                    entry.profileName!,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Text(
-            _formatMinutes(entry.durationMinutes ?? 0),
-            style: AppTypography.label.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ManualEntryResult {
-  final DateTime startedAt;
-  final DateTime endedAt;
-  final bool billable;
-  final String description;
-  const _ManualEntryResult({
-    required this.startedAt,
-    required this.endedAt,
-    required this.billable,
-    required this.description,
-  });
-}
-
-class _ManualEntrySheet extends StatefulWidget {
-  const _ManualEntrySheet();
-
-  @override
-  State<_ManualEntrySheet> createState() => _ManualEntrySheetState();
-}
-
-class _ManualEntrySheetState extends State<_ManualEntrySheet> {
-  final _descController = TextEditingController();
-  int _minutes = 30;
-  bool _billable = false;
-
-  @override
-  void dispose() {
-    _descController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.gray300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              context.l10n.ticketsPanelTimeSheetTitle,
-              style: AppTypography.h3,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              context.l10n.ticketsPanelTimeDuration,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [15, 30, 45, 60, 90, 120].map((m) {
-                final sel = _minutes == m;
-                return ChoiceChip(
-                  label: Text(_formatMinutes(m)),
-                  selected: sel,
-                  onSelected: (_) => setState(() => _minutes = m),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            // Required, not optional: `TimeEntryCreateSerializer` rejects a
-            // blank description on a manual entry. The hint used to say
-            // optional, so leaving it empty got a 400 and a "Failed to add
-            // entry" snackbar with nothing pointing at the empty box.
-            TextField(
-              controller: _descController,
-              maxLines: 2,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: context.l10n.ticketsPanelTimeDescriptionHint,
-                filled: true,
-                fillColor: AppColors.gray50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Checkbox(
-                  value: _billable,
-                  onChanged: (v) => setState(() => _billable = v ?? false),
-                ),
-                Text(context.l10n.ticketsPanelTimeBillable),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(context.l10n.commonCancel),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    // Disabled until there is something to send, so the
-                    // refusal happens under the empty field rather than as a
-                    // snackbar after a round trip.
-                    onPressed: _descController.text.trim().isEmpty
-                        ? null
-                        : () {
-                            final end = DateTime.now();
-                            final start = end.subtract(
-                              Duration(minutes: _minutes),
-                            );
-                            Navigator.pop(
-                              context,
-                              _ManualEntryResult(
-                                startedAt: start,
-                                endedAt: end,
-                                billable: _billable,
-                                description: _descController.text.trim(),
-                              ),
-                            );
-                          },
-                    child: Text(context.l10n.ticketsPanelTimeAddEntry),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

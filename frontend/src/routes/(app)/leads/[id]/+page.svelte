@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -25,19 +25,19 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import DuplicatesPanel from '#lib/v2/components/DuplicatesPanel.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
-  import { money, relativeDays, daysSince, shortDate } from '#lib/v2/format.js';
-  import {
-    LEAD_SOURCE_LABEL,
-    LEAD_STATUS_TONE,
-    LEAD_STATUS_LABEL,
-    industryLabel
-  } from '#lib/v2/enums.js';
+  import LogActivity from '#lib/v2/components/LogActivity.svelte';
+  import InteractionIcon from '#lib/v2/components/InteractionIcon.svelte';
+  import { money, relativeDays, relativeTime, daysSince, shortDate } from '#lib/v2/format.js';
+  import { responseTimeText, secondsSince, spanText, whatsappHref } from '#lib/v2/interactions.js';
+  import { LEAD_STATUS_TONE, LEAD_STATUS_LABEL, industryLabel } from '#lib/v2/enums.js';
+  import { sourceLabel } from '#lib/v2/lead-sources.js';
   import { t } from '#lib/terminology.js';
   import { m } from '#lib/paraglide/messages.js';
   import { enhance } from '$app/forms';
   import {
     ChevronRight,
     Mail,
+    MessageCircle,
     Phone,
     Pencil,
     Paperclip,
@@ -46,11 +46,14 @@
     X
   } from '@lucide/svelte';
   import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  type ActivityEvent = PageData['activity'][number];
+
+  let { data, form }: PageProps = $props();
   let dealsOn = $derived(isOn(data.modules, 'deals'));
   let related = $derived(relatedView(data.related));
 
@@ -74,16 +77,31 @@
   let note = $state('');
   let saving = $state(false);
 
+  // Notes stay comments; calls and messages are interactions, logged through
+  // their own form when the API has them.
+  let logLive = $derived(data.interactions.live);
+  let composer = $state<'note' | 'log'>('note');
+  let logKind = $state('call');
+  let composerEl: HTMLElement | undefined = $state();
+  let whatsapp = $derived(whatsappHref(lead.phone_e164));
+  let waited = $derived(lead.is_unanswered ? spanText(secondsSince(lead.waiting_since)) : '');
+
+  /** Opens the form set to `kind`; the link itself still dials or opens WhatsApp. */
+  function startLog(kind: string) {
+    if (!logLive) return;
+    logKind = kind;
+    composer = 'log';
+    composerEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
   // The picked file's name, mirrored out of the input so the composer can show
   // and clear it. `fileInput` is the element itself. A file input's value can
   // only be cleared through the DOM, not by rebinding.
   let fileName = $state('');
-  /** @type {HTMLInputElement | undefined} */
-  let fileInput;
+  let fileInput: HTMLInputElement | undefined = $state();
 
-  /** @param {Event} e */
-  function pickFile(e) {
-    fileName = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0]?.name ?? '';
+  function pickFile(e: Event) {
+    fileName = (e.currentTarget as HTMLInputElement).files?.[0]?.name ?? '';
   }
   function clearFile() {
     if (fileInput) fileInput.value = '';
@@ -91,35 +109,28 @@
   }
 
   // ── activity feed ──────────────────────────────────────────────────────────
-  // Three real kinds (note / file / created). The filter only appears once there
-  // is a file to filter. With nothing but notes it would be a control that
-  // sorts one pile.
-  let hasFiles = $derived(activity.some((/** @type {any} */ e) => e.type === 'file'));
-  let filter = $state(/** @type {'all'|'notes'|'files'} */ ('all'));
-  let shown = $derived(
-    filter === 'files'
-      ? activity.filter((/** @type {any} */ e) => e.type === 'file')
-      : filter === 'notes'
-        ? activity.filter((/** @type {any} */ e) => e.type !== 'file')
-        : activity
+  // Notes, logged calls and messages, files, and the creation. The filter
+  // appears once there are two of the first three to choose between.
+  let filter = $state<'all' | 'note' | 'interaction' | 'file'>('all');
+  let kinds = $derived(
+    ['note', 'interaction', 'file'].filter((k) => activity.some((e) => e.type === k))
   );
+  let shown = $derived(filter === 'all' ? activity : activity.filter((e) => e.type === filter));
   let newestId = $derived(shown[0]?.id ?? null);
 
   /**
    * The line under an event: "Attached" for a file, the author where known, then
    * how long ago, joined so no separator dangles when a part is missing.
-   * @param {{type:string,by:string|null,at:string}} e
    */
-  function metaFor(e) {
+  function metaFor(e: { type: string; by: string | null; at: string | null }) {
     const parts = [];
     if (e.type === 'file') parts.push(m.leads_detail_attached());
     if (e.by) parts.push(e.by);
-    parts.push(relativeDays(e.at));
+    parts.push(relativeTime(e.at));
     return parts.join(' · ');
   }
 
-  /** @param {string} iso */
-  function dayGroup(iso) {
+  function dayGroup(iso: string | null) {
     const n = daysSince(iso);
     if (n === 0) return m.leads_detail_today();
     if (n === 1) return m.leads_detail_yesterday();
@@ -128,8 +139,10 @@
 
   // Interleave day headers so each date is announced once, in order.
   let feed = $derived.by(() => {
-    /** @type {Array<{kind:'day',id:string,label:string}|{kind:'event',id:string,event:any}>} */
-    const out = [];
+    const out: Array<
+      | { kind: 'day'; id: string; label: string }
+      | { kind: 'event'; id: string; event: ActivityEvent }
+    > = [];
     let last = null;
     for (const e of shown) {
       const g = dayGroup(e.at);
@@ -148,10 +161,13 @@
    * owns, then one that has gone cold without a first conversation. A converted
    * lead has none of these problems, so it gets no banner. A page that always
    * shouts is a page people stop reading.
-   *
-   * @type {{ tone: 'ember'|'rust', label: string, text: string, action: string|null } | null}
    */
-  let headline = $derived.by(() => {
+  let headline: {
+    tone: 'ember' | 'rust';
+    label: string;
+    text: string;
+    action: string | null;
+  } | null = $derived.by(() => {
     if (isConverted) return null;
     if (!lead.email && !lead.phone) {
       return {
@@ -173,6 +189,14 @@
         action: m.leads_detail_assign_owner()
       };
     }
+    if (waited) {
+      return {
+        tone: 'ember',
+        label: m.leads_detail_waiting_label(),
+        text: m.leads_detail_waiting_text({ span: waited, name: firstName }),
+        action: null
+      };
+    }
     if (!lead.last_contacted && (daysSince(lead.created_at) ?? 0) > 7) {
       return {
         tone: 'ember',
@@ -188,11 +212,8 @@
    * A website is user-entered and often has no scheme. Prepend https when it is
    * missing; refuse to linkify anything carrying another scheme (a `javascript:`
    * value becomes plain text, never an href).
-   *
-   * @param {string} url
-   * @returns {string|null}
    */
-  function webHref(url) {
+  function webHref(url: string): string | null {
     const u = String(url).trim();
     if (/^https?:\/\//i.test(u)) return u;
     if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return null;
@@ -220,7 +241,18 @@
       <a class="v2-btn" href="mailto:{lead.email}"><Mail />{m.leads_detail_email_action()}</a>
     {/if}
     {#if lead.phone}
-      <a class="v2-btn" href="tel:{lead.phone}"><Phone />{m.leads_detail_call()}</a>
+      <a class="v2-btn" href="tel:{lead.phone}" onclick={() => startLog('call')}
+        ><Phone />{m.leads_detail_call()}</a
+      >
+    {/if}
+    {#if whatsapp}
+      <a
+        class="v2-btn"
+        href={whatsapp}
+        target="_blank"
+        rel="external noreferrer noopener"
+        onclick={() => startLog('whatsapp')}><MessageCircle />WhatsApp</a
+      >
     {/if}
     <a class="v2-btn" href={resolve(`leads/${lead.id}/edit`)}><Pencil />{m.common_edit()}</a>
     {#if data.canDelete}
@@ -348,101 +380,136 @@
           <div class="v2-card about">{lead.description}</div>
         {/if}
 
-        <!-- Per-org custom fields. Every active definition shows, filled or
-             not: on a real-estate org these ARE the record, and an unfilled
-             "Possession by" is worth seeing rather than silently omitted. -->
-        {#if customFields.length > 0}
-          <div class="v2-label" style="margin:22px 0 10px">{m.common_details()}</div>
-          <div class="v2-card cf">
-            {#each customFields as f (f.key)}
-              <div class="cf-row">
-                <span class="cf-label">{f.label}</span>
-                <span class="cf-value" class:v2-muted={!f.filled}>
-                  {f.filled ? f.value : '—'}
-                </span>
-              </div>
-            {/each}
-          </div>
-        {/if}
+        <CustomFieldsCard fields={customFields} />
 
         <RelatedRecords {related} error={form?.related?.error} />
 
         <div class="act-head">
           <div class="v2-label">{m.leads_detail_activity()}</div>
-          {#if hasFiles}
-            <!-- Only real kinds. There is no calls/emails/meetings split because
-                 there are no such records to split on. -->
-            <div class="seg" role="tablist" aria-label={m.leads_detail_filter_activity()}>
-              <button class:on={filter === 'all'} onclick={() => (filter = 'all')}
+          {#if kinds.length > 1}
+            <div class="seg" role="group" aria-label={m.leads_detail_filter_activity()}>
+              <button aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}
                 >{m.leads_detail_filter_all()}</button
               >
-              <button class:on={filter === 'notes'} onclick={() => (filter = 'notes')}
-                >{m.leads_detail_filter_notes()}</button
-              >
-              <button class:on={filter === 'files'} onclick={() => (filter = 'files')}
-                >{m.leads_detail_filter_files()}</button
-              >
+              {#if kinds.includes('interaction')}
+                <button
+                  aria-pressed={filter === 'interaction'}
+                  onclick={() => (filter = 'interaction')}
+                  >{m.leads_detail_filter_conversations()}</button
+                >
+              {/if}
+              {#if kinds.includes('note')}
+                <button aria-pressed={filter === 'note'} onclick={() => (filter = 'note')}
+                  >{m.leads_detail_filter_notes()}</button
+                >
+              {/if}
+              {#if kinds.includes('file')}
+                <button aria-pressed={filter === 'file'} onclick={() => (filter = 'file')}
+                  >{m.leads_detail_filter_files()}</button
+                >
+              {/if}
             </div>
           {/if}
         </div>
 
-        <!-- The composer. `reset: false` plus clearing state by hand on success
-             keeps the box and the binding in step; a failed save keeps the words
-             and the picked file. A file only sends with a note. The button
-             stays disabled until there is one, which matches what the API stores. -->
-        <form
-          method="POST"
-          action="?/note"
-          enctype="multipart/form-data"
-          class="note-form"
-          use:enhance={() => {
-            saving = true;
-            return async ({ result, update }) => {
-              saving = false;
-              if (result.type === 'success') {
-                note = '';
-                clearFile();
-              }
-              await update({ reset: false });
-            };
-          }}
-        >
-          <textarea
-            name="comment"
-            rows="2"
-            bind:value={note}
-            class="note-input"
-            placeholder={m.leads_detail_note_placeholder()}></textarea>
-          <div class="note-actions">
-            <button class="v2-btn v2-btn-primary" type="submit" disabled={saving || !note.trim()}>
-              {saving ? m.leads_saving() : m.leads_detail_add_note()}
-            </button>
-            <label class="v2-btn" class:has-file={fileName}>
-              <Paperclip size={14} />
-              <span class="attach-label">{fileName || m.leads_detail_attach_file()}</span>
-              <input
-                bind:this={fileInput}
-                type="file"
-                name="attachment"
-                onchange={pickFile}
-                hidden
-              />
-            </label>
-            {#if fileName}
-              <button
-                type="button"
-                class="v2-btn-quiet clear-file"
-                onclick={clearFile}
-                title={m.leads_detail_remove_file()}
+        <div class="composer" bind:this={composerEl}>
+          {#if logLive}
+            <div
+              class="seg composer-switch"
+              role="group"
+              aria-label={m.leads_detail_composer_switch()}
+            >
+              <button aria-pressed={composer === 'note'} onclick={() => (composer = 'note')}
+                >{m.leads_detail_composer_note()}</button
               >
-                <X size={13} />
-              </button>
-            {/if}
-            {#if form?.message}
-              <span class="note-err">{form.message}</span>
-            {/if}
-          </div>
-        </form>
+              <button aria-pressed={composer === 'log'} onclick={() => (composer = 'log')}
+                >{m.leads_detail_composer_log()}</button
+              >
+            </div>
+          {/if}
+          {#if composer === 'log' && logLive}
+            <LogActivity
+              bind:kind={logKind}
+              result={form?.activity}
+              timeZone={data.org?.timezone}
+              oncancel={() => (composer = 'note')}
+              onlogged={() => (composer = 'note')}
+            />
+          {:else}
+            <!-- The note composer. `reset: false` plus clearing state by hand on
+                 success keeps the box and the binding in step; a failed save
+                 keeps the words and the picked file. A file only sends with a
+                 note, and the button stays disabled until there is one. -->
+            <form
+              method="POST"
+              action="?/note"
+              enctype="multipart/form-data"
+              class="note-form"
+              use:enhance={() => {
+                saving = true;
+                return async ({ result, update }) => {
+                  saving = false;
+                  if (result.type === 'success') {
+                    note = '';
+                    clearFile();
+                  }
+                  await update({ reset: false });
+                };
+              }}
+            >
+              <textarea
+                name="comment"
+                rows="2"
+                bind:value={note}
+                class="note-input"
+                placeholder={logLive
+                  ? m.leads_detail_note_placeholder_short()
+                  : m.leads_detail_note_placeholder()}></textarea>
+              <div class="note-actions">
+                <button
+                  class="v2-btn v2-btn-primary"
+                  type="submit"
+                  disabled={saving || !note.trim()}
+                >
+                  {saving ? m.leads_saving() : m.leads_detail_add_note()}
+                </button>
+                <label class="v2-btn" class:has-file={fileName}>
+                  <Paperclip size={14} />
+                  <span class="attach-label">{fileName || m.leads_detail_attach_file()}</span>
+                  <input
+                    bind:this={fileInput}
+                    type="file"
+                    name="attachment"
+                    onchange={pickFile}
+                    hidden
+                  />
+                </label>
+                {#if fileName}
+                  <button
+                    type="button"
+                    class="v2-btn-quiet clear-file"
+                    onclick={clearFile}
+                    title={m.leads_detail_remove_file()}
+                  >
+                    <X size={13} />
+                  </button>
+                {/if}
+                {#if form?.message}
+                  <span class="note-err">{form.message}</span>
+                {/if}
+              </div>
+            </form>
+          {/if}
+        </div>
+
+        {#if data.interactions.failed}
+          <p class="note-err" style="margin:0 0 12px">
+            {m.leads_detail_interactions_failed()}
+          </p>
+        {/if}
+        {#if form?.activity?.deleteError}
+          <p class="note-err" role="alert" style="margin:0 0 12px">{form.activity.deleteError}</p>
+        {/if}
 
         <div class="tl">
           {#each feed as row (row.id)}
@@ -454,10 +521,17 @@
                 <span class="tl-ico" data-kind={e.type}>
                   {#if e.type === 'file'}<Paperclip size={13} />
                   {:else if e.type === 'status'}<Sparkles size={13} />
+                  {:else if e.type === 'interaction'}<InteractionIcon
+                      kind={e.kind}
+                      direction={e.direction}
+                    />
                   {:else}<MessageSquare size={13} />{/if}
                 </span>
                 <div class="tl-body">
-                  {#if e.type === 'file' && e.href}
+                  {#if e.type === 'interaction'}
+                    <div class="tl-text">{e.body}</div>
+                    {#if e.detail}<div class="tl-detail">{e.detail}</div>{/if}
+                  {:else if e.type === 'file' && e.href}
                     <a
                       class="tl-file"
                       href={resolve(asInternalPath(e.href))}
@@ -470,10 +544,26 @@
                     <div class="tl-text" class:note={e.type === 'note'}>{e.body}</div>
                   {/if}
                   <div class="tl-meta">{metaFor(e)}</div>
+                  {#if e.type === 'interaction' && e.canDelete}
+                    <div class="tl-act">
+                      <ConfirmAction
+                        action="?/deleteActivity"
+                        hidden={{ interaction: e.interaction }}
+                        label={m.leads_detail_activity_delete()}
+                        confirmLabel={m.leads_detail_activity_delete_confirm()}
+                        explain={m.leads_detail_activity_delete_explain()}
+                      />
+                    </div>
+                  {/if}
                 </div>
               </div>
             {/if}
           {/each}
+          {#if data.interactions.more}
+            <p class="v2-sub" style="font-size:12px">
+              {m.leads_detail_interactions_more({ count: data.interactions.more })}
+            </p>
+          {/if}
         </div>
       </div>
     </div>
@@ -526,7 +616,15 @@
       <dt>{m.common_owner()}</dt>
       <dd>{lead.assigned_to || m.leads_owner_nobody()}</dd>
       <dt>{m.leads_detail_source()}</dt>
-      <dd>{lead.source ? (LEAD_SOURCE_LABEL[lead.source] ?? lead.source) : '—'}</dd>
+      <dd>{sourceLabel(data.sources, lead.source) || m.leads_detail_not_recorded()}</dd>
+      {#if lead.source_detail}
+        <dt>{m.leads_field_source_detail()}</dt>
+        <dd>{lead.source_detail}</dd>
+      {/if}
+      {#if lead.source_ref}
+        <dt>{m.leads_field_source_ref()}</dt>
+        <dd class="v2-num" style="font-size:12px;overflow-wrap:anywhere">{lead.source_ref}</dd>
+      {/if}
       <dt>{m.leads_detail_industry()}</dt>
       <dd>{industryLabel(lead.industry) || '—'}</dd>
       <dt>{m.leads_detail_est_value()}</dt>
@@ -539,6 +637,25 @@
     <dl class="v2-kv">
       <dt>{m.leads_detail_last_contacted()}</dt>
       <dd>{lead.last_contacted ? relativeDays(lead.last_contacted) : m.leads_detail_never()}</dd>
+      {#if waited}
+        <dt>{m.leads_detail_waiting()}</dt>
+        <dd class="waiting">{waited}</dd>
+      {/if}
+      {#if lead.first_response_at}
+        <dt>{m.leads_detail_first_reply()}</dt>
+        <dd>
+          {lead.first_response_by
+            ? m.leads_detail_first_reply_by({
+                span: responseTimeText(lead),
+                name: lead.first_response_by
+              })
+            : responseTimeText(lead)}
+        </dd>
+      {/if}
+      {#if lead.last_enquiry_at}
+        <dt>{m.leads_detail_last_enquiry()}</dt>
+        <dd>{relativeDays(lead.last_enquiry_at)}</dd>
+      {/if}
       <dt>{m.common_created()}</dt>
       <dd>{relativeDays(lead.created_at)}</dd>
     </dl>
@@ -551,39 +668,6 @@
     font-size: 13px;
     line-height: 1.6;
     white-space: pre-wrap;
-  }
-  .cf {
-    padding: 4px 16px;
-    font-size: 13px;
-  }
-  .cf-row {
-    display: flex;
-    gap: 16px;
-    align-items: baseline;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--v2-line);
-  }
-  .cf-row:last-child {
-    border-bottom: 0;
-  }
-  .cf-label {
-    flex: 0 0 40%;
-    color: var(--v2-ink-soft);
-  }
-  .cf-value {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  /* Stack on narrow screens, matching the list's data-m card treatment. */
-  @media (max-width: 767px) {
-    .cf-row {
-      display: block;
-    }
-    .cf-label {
-      display: block;
-      margin-bottom: 2px;
-    }
   }
   .note-form {
     margin-bottom: 22px;
@@ -661,10 +745,44 @@
   .seg button + button {
     border-left: 1px solid var(--v2-line);
   }
-  .seg button.on {
+  .seg button[aria-pressed='true'] {
     color: var(--v2-ink);
     background: var(--v2-hover);
     font-weight: 600;
+  }
+  .act-head {
+    flex-wrap: wrap;
+  }
+  .composer {
+    margin-bottom: 22px;
+  }
+  .composer .note-form {
+    margin-bottom: 0;
+  }
+  .composer-switch {
+    display: inline-flex;
+    margin-bottom: 8px;
+  }
+  .tl-detail {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--v2-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin-top: 2px;
+  }
+  .tl-act {
+    margin-top: 4px;
+  }
+  .waiting {
+    color: var(--v2-rust);
+    font-weight: 600;
+  }
+  @media (max-width: 767px) {
+    .seg button {
+      min-height: 40px;
+      padding: 6px 12px;
+    }
   }
 
   .tl-day {

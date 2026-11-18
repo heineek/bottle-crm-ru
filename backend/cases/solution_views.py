@@ -8,7 +8,6 @@ from django.db.models import Count, Q
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,8 +23,10 @@ from cases.solution_serializers import (
     SolutionCreateUpdateSerializer,
     SolutionDetailSerializer,
     SolutionSerializer,
+    SolutionWriteSerializer,
 )
 from common.models import Tags
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext
 from common.validators import uuid_list_param
 
@@ -83,7 +84,7 @@ def _apply_tags(solution, data, org):
     solution.tags.set(Tags.objects.filter(id__in=ids, org=org, is_active=True))
 
 
-class SolutionListView(APIView, LimitOffsetPagination):
+class SolutionListView(APIView, CappedLimitOffsetPagination):
     """
     List and create solutions (Knowledge Base)
     """
@@ -112,8 +113,19 @@ class SolutionListView(APIView, LimitOffsetPagination):
                 name="SolutionListResponse",
                 fields={
                     "count": serializers.IntegerField(),
+                    "next": serializers.URLField(allow_null=True),
+                    "previous": serializers.URLField(allow_null=True),
                     "results": SolutionSerializer(many=True),
-                    "totals": serializers.DictField(),
+                    "totals": inline_serializer(
+                        name="SolutionTotals",
+                        fields={
+                            "count": serializers.IntegerField(),
+                            "published": serializers.IntegerField(),
+                            "draft": serializers.IntegerField(),
+                            "reviewed": serializers.IntegerField(),
+                            "approved_unpublished": serializers.IntegerField(),
+                        },
+                    ),
                 },
             )
         },
@@ -184,7 +196,7 @@ class SolutionListView(APIView, LimitOffsetPagination):
     @extend_schema(
         tags=["Solutions (Knowledge Base)"],
         description="Create a new solution",
-        request=SolutionCreateUpdateSerializer,
+        request=SolutionWriteSerializer,
         responses={201: SolutionSerializer},
     )
     def post(self, request):
@@ -233,7 +245,7 @@ class SolutionDetailView(APIView):
     @extend_schema(
         tags=["Solutions (Knowledge Base)"],
         description="Update solution",
-        request=SolutionCreateUpdateSerializer,
+        request=SolutionWriteSerializer,
         responses={200: SolutionSerializer},
     )
     def put(self, request, pk):
@@ -243,7 +255,7 @@ class SolutionDetailView(APIView):
     @extend_schema(
         tags=["Solutions (Knowledge Base)"],
         description="Partially update solution",
-        request=SolutionCreateUpdateSerializer,
+        request=SolutionWriteSerializer,
         responses={200: SolutionSerializer},
     )
     def patch(self, request, pk):

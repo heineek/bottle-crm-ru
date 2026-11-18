@@ -23,7 +23,6 @@ from common.utils import (
     GOAL_TYPES,
     OPPORTUNITY_TYPES,
     PERIOD_TYPES,
-    SOURCES,
 )
 from contacts.models import Contact
 from opportunity.workflow import (
@@ -228,8 +227,16 @@ class Opportunity(AssignableMixin, BaseModel):
     closed_on = models.DateField(_("Expected Close Date"), blank=True, null=True)
 
     # Source & Context
+    # A key from the org's LeadSource list (leads.sources), as on the lead, with
+    # the lead's sub-source and reference copied at conversion.
     lead_source = models.CharField(
-        _("Lead Source"), max_length=255, choices=SOURCES, blank=True, null=True
+        _("Lead Source"), max_length=255, blank=True, null=True
+    )
+    source_detail = models.CharField(
+        _("Sub-source"), max_length=100, blank=True, default=""
+    )
+    source_ref = models.CharField(
+        _("Reference"), max_length=255, blank=True, default=""
     )
 
     # Relationships
@@ -293,6 +300,9 @@ class Opportunity(AssignableMixin, BaseModel):
         indexes = [
             models.Index(fields=["stage"]),
             models.Index(fields=["org", "-created_at"]),
+            models.Index(
+                fields=["org", "updated_at", "id"], name="opportunity_org_upd_idx"
+            ),
             models.Index(fields=["stage", "kanban_order"], name="opp_stage_kanban_idx"),
         ]
         constraints = [

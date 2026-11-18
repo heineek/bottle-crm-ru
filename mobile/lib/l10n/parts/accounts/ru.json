@@ -67,5 +67,6 @@
   "accountsStatementCancelled": "Отменено",
   "accountsStatementInCredit": "Переплата",
   "accountsStatementBalanceDue": "К оплате",
-  "accountsStatementEntryBalance": "Баланс {amount}"
+  "accountsStatementEntryBalance": "Баланс {amount}",
+  "accountsDetailCustomFields": "Дополнительные поля"
 }

@@ -9,11 +9,11 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import (
+    PolymorphicProxySerializer,
     extend_schema,
     inline_serializer,
 )
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,12 +41,14 @@ from cases.serializer import (
     CaseSerializer,
     EmailMessageSerializer,
     ReopenPolicySerializer,
+    ReopenPolicyWithStatsSerializer,
     parent_access_context,
 )
 from cases.signals import route_after_relations
 from cases.solution_serializers import SolutionSerializer
 from cases.tasks import send_email_to_assigned_user
 from cases.updates import notify_newly_assigned, update_case
+from common.custom_fields import custom_field_filter
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.lookups import get_on_visible_record_or_404
 from common.models import (
@@ -60,7 +62,8 @@ from common.models import (
 )
 from common.module_deletes import delete_refusal
 from common.modules import only_available
-from common.permissions import HasOrgContext
+from common.pagination import CappedLimitOffsetPagination
+from common.permissions import HasOrgContext, may_configure
 from common.serializer import (
     ActivitySerializer,
     AttachmentsSerializer,
@@ -97,13 +100,14 @@ _ALLOWED_CASE_ORDERINGS = frozenset(
 )
 
 
-def apply_case_list_filters(queryset, params):
+def apply_case_list_filters(queryset, params, org):
     """Apply the case-list query-param filters to ``queryset``.
 
     Shared between CaseListView and WatchingListView so both endpoints accept
     the same filter chips from the mobile client. Caller is responsible for
     the base scope (org membership, watcher allowance, etc.). This only
-    layers in user-supplied filters.
+    layers in user-supplied filters; ``org``'s custom fields type the
+    ``cf_<key>`` ones.
     """
     if not params:
         return queryset
@@ -166,12 +170,7 @@ def apply_case_list_filters(queryset, params):
                 "* INTERVAL '1 hour' < NOW())"
             ]
         )
-    # Custom-field filters: ?cf_<key>=<value> -> custom_fields contains pair.
-    for raw_key, raw_value in params.items():
-        if raw_key.startswith("cf_") and raw_value:
-            cf_key = raw_key[3:]
-            if cf_key:
-                queryset = queryset.filter(custom_fields__contains={cf_key: raw_value})
+    queryset = queryset.filter(custom_field_filter("Case", org, params))
     # Ordering: whitelisted so callers can't sort on arbitrary cols.
     ordering = params.get("ordering")
     if ordering in _ALLOWED_CASE_ORDERINGS:
@@ -210,10 +209,35 @@ def case_list_queryset(profile, params):
         # used to drop the watcher clause, which meant this list handed
         # somebody a ticket that answered 403 when they clicked it.
         queryset = queryset.filter(pk__in=visible_cases_qs(profile).values("pk"))
-    return apply_case_list_filters(queryset, params)
+    return apply_case_list_filters(queryset, params, profile.org)
 
 
-class CaseListView(APIView, LimitOffsetPagination):
+def _choice_pairs():
+    """Schema only: a `(value, label)` choices tuple as JSON renders it."""
+    return serializers.ListField(
+        child=serializers.ListField(child=serializers.CharField())
+    )
+
+
+class CaseUserOptionSerializer(serializers.Serializer):
+    """Schema only: a row of `CaseListView`'s `users`."""
+
+    id = serializers.UUIDField()
+    user__email = serializers.EmailField()
+
+
+class CaseMergedSourceSerializer(serializers.Serializer):
+    """Schema only: a row of the detail's `merged_from_cases`. A source the
+    viewer may not open has a null name."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField(allow_null=True)
+    merged_at = serializers.DateTimeField(allow_null=True)
+    restricted = serializers.BooleanField()
+    can_unmerge = serializers.BooleanField()
+
+
+class CaseListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
     model = Case
 
@@ -298,14 +322,19 @@ class CaseListView(APIView, LimitOffsetPagination):
             200: inline_serializer(
                 name="CaseListResponse",
                 fields={
+                    "open_count": serializers.IntegerField(),
+                    "urgent_count": serializers.IntegerField(),
+                    "awaiting_first_reply": serializers.IntegerField(),
                     "cases_count": serializers.IntegerField(),
                     "offset": serializers.IntegerField(allow_null=True),
                     "cases": CaseSerializer(many=True),
-                    "status": serializers.ListField(),
-                    "priority": serializers.ListField(),
-                    "type_of_case": serializers.ListField(),
-                    "accounts_list": AccountPickerSerializer(many=True),
-                    "contacts_list": ContactPickerSerializer(many=True),
+                    "status": _choice_pairs(),
+                    "priority": _choice_pairs(),
+                    "type_of_case": _choice_pairs(),
+                    # Left out under `?slim=true`.
+                    "accounts_list": AccountPickerSerializer(many=True, required=False),
+                    "contacts_list": ContactPickerSerializer(many=True, required=False),
+                    "users": CaseUserOptionSerializer(many=True),
                 },
             )
         },
@@ -567,16 +596,56 @@ class CaseDetailView(APIView):
         tags=["Cases"],
         parameters=swagger_params.organization_params,
         responses={
-            200: inline_serializer(
-                name="CaseDetailResponse",
-                fields={
-                    "cases_obj": CaseSerializer(),
-                    "attachments": AttachmentsSerializer(many=True),
-                    "comments": CommentSerializer(many=True),
-                    "comment_permission": serializers.BooleanField(),
-                    "approval_rule": serializers.DictField(allow_null=True),
-                    "users_mention": serializers.ListField(),
-                },
+            # A merged duplicate answers 200 with only where to go instead.
+            200: PolymorphicProxySerializer(
+                component_name="CaseRetrieveResponse",
+                resource_type_field_name=None,
+                serializers=[
+                    inline_serializer(
+                        name="CaseDetailResponse",
+                        fields={
+                            "cases_obj": CaseSerializer(),
+                            "attachments": AttachmentsSerializer(many=True),
+                            "comments": CommentSerializer(many=True),
+                            "internal_notes": CommentSerializer(many=True),
+                            "contacts": ContactLinkSerializer(many=True),
+                            "solutions": SolutionSerializer(many=True),
+                            "activities": ActivitySerializer(many=True),
+                            "email_messages": EmailMessageSerializer(many=True),
+                            "merged_from_cases": CaseMergedSourceSerializer(many=True),
+                            "custom_field_definitions": CustomFieldDefinitionSerializer(
+                                many=True
+                            ),
+                            "status": _choice_pairs(),
+                            "priority": _choice_pairs(),
+                            "type_of_case": _choice_pairs(),
+                            "comment_permission": serializers.BooleanField(),
+                            "can_merge": serializers.BooleanField(),
+                            "approval_rule": inline_serializer(
+                                name="CaseApprovalRuleRef",
+                                fields={
+                                    "id": serializers.CharField(),
+                                    "name": serializers.CharField(),
+                                },
+                                allow_null=True,
+                            ),
+                            "users_mention": inline_serializer(
+                                name="CaseMentionUser",
+                                fields={"user__email": serializers.EmailField()},
+                                many=True,
+                            ),
+                        },
+                    ),
+                    inline_serializer(
+                        name="CaseMergedRedirectResponse",
+                        fields={
+                            "redirect_to": serializers.CharField(),
+                            "merged_into": serializers.CharField(),
+                            "source_case_id": serializers.CharField(),
+                            "source_case_name": serializers.CharField(),
+                        },
+                    ),
+                ],
             )
         },
     )
@@ -766,6 +835,7 @@ class CaseDetailView(APIView):
                     "cases_obj": CaseSerializer(),
                     "attachments": AttachmentsSerializer(many=True),
                     "comments": CommentSerializer(many=True),
+                    "internal_notes": CommentSerializer(many=True),
                 },
             )
         },
@@ -1063,17 +1133,23 @@ class CaseAttachmentView(APIView):
         )
 
 
+class CaseSolutionLinkResponseSerializer(serializers.Serializer):
+    error = serializers.BooleanField()
+    solution = SolutionSerializer()
+
+
+def _org_solution(pk, org):
+    try:
+        return Solution.objects.filter(pk=pk, org=org).first()
+    except (DjangoValidationError, ValueError):
+        # A malformed UUID is a solution that does not exist, not a 500.
+        return None
+
+
 class CaseSolutionLinkView(APIView):
-    """Link or unlink Solutions (Knowledge Base articles) to a Case."""
+    """Link a Solution (Knowledge Base article) to a Case."""
 
     permission_classes = (IsAuthenticated, HasOrgContext)
-
-    def _get_solution(self, pk, org):
-        try:
-            return Solution.objects.filter(pk=pk, org=org).first()
-        except (DjangoValidationError, ValueError):
-            # A malformed UUID is a solution that does not exist, not a 500.
-            return None
 
     @extend_schema(
         tags=["Cases"],
@@ -1081,17 +1157,13 @@ class CaseSolutionLinkView(APIView):
             name="CaseSolutionLinkRequest",
             fields={"solution_id": serializers.CharField()},
         ),
+        # 200 when it was already linked, 201 when this call linked it.
+        responses={
+            200: CaseSolutionLinkResponseSerializer,
+            201: CaseSolutionLinkResponseSerializer,
+        },
     )
-    def post(self, request, pk, solution_pk=None):
-        # This class is routed twice: `<pk>/solutions/` for POST and
-        # `<pk>/solutions/<solution_pk>/` for DELETE. Django hands every route's
-        # captured kwargs to whichever method it dispatches, so POST to the
-        # second route arrived with an argument it had no parameter for and
-        # DELETE to the first arrived missing one. Both were an uncaught
-        # TypeError, which is a 500 on a route the client is simply using the
-        # wrong verb on. 405 is the answer to a wrong verb.
-        if solution_pk is not None:
-            self.http_method_not_allowed(request)
+    def post(self, request, pk):
         case = get_case_or_404(request.profile, pk)
         # Attaching an article to a ticket changes the ticket, so it takes the
         # same permission as any other change to it. Org alone was the whole
@@ -1109,7 +1181,7 @@ class CaseSolutionLinkView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        sol = self._get_solution(solution_id, request.profile.org)
+        sol = _org_solution(solution_id, request.profile.org)
         if not sol:
             return Response(
                 {"error": True, "errors": _("Solution not found")},
@@ -1124,15 +1196,18 @@ class CaseSolutionLinkView(APIView):
             status=(status.HTTP_200_OK if already_linked else status.HTTP_201_CREATED),
         )
 
-    @extend_schema(tags=["Cases"])
-    def delete(self, request, pk, solution_pk=None):
-        # See `post` above: reached without a solution id, this is the
-        # collection route being deleted, which is a wrong verb, not a crash.
-        if solution_pk is None:
-            self.http_method_not_allowed(request)
+
+class CaseSolutionUnlinkView(APIView):
+    """Unlink a Solution from a Case. A view of its own so each route answers
+    only its own verb, and the schema lists only the operations that exist."""
+
+    permission_classes = (IsAuthenticated, HasOrgContext)
+
+    @extend_schema(tags=["Cases"], responses={204: None})
+    def delete(self, request, pk, solution_pk):
         case = get_case_or_404(request.profile, pk)
         assert_case_write_access(request.profile, case)
-        sol = self._get_solution(solution_pk, request.profile.org)
+        sol = _org_solution(solution_pk, request.profile.org)
         if not sol:
             return Response(
                 {"error": True, "errors": _("Solution not found")},
@@ -1142,7 +1217,7 @@ class CaseSolutionLinkView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CaseActivityListView(APIView, LimitOffsetPagination):
+class CaseActivityListView(APIView, CappedLimitOffsetPagination):
     """Paginated audit-log feed for a single Case (newest-first)."""
 
     permission_classes = (IsAuthenticated, HasOrgContext)
@@ -1283,7 +1358,7 @@ class ReopenPolicyView(APIView):
     @extend_schema(
         tags=["Cases"],
         parameters=swagger_params.organization_params,
-        responses={200: ReopenPolicySerializer},
+        responses={200: ReopenPolicyWithStatsSerializer},
     )
     def get(self, request, format=None):
         if not is_org_admin(request.profile):
@@ -1299,11 +1374,11 @@ class ReopenPolicyView(APIView):
     @extend_schema(
         tags=["Cases"],
         parameters=swagger_params.organization_params,
-        request=ReopenPolicySerializer,
+        request=ReopenPolicySerializer(partial=True),
         responses={200: ReopenPolicySerializer},
     )
     def put(self, request, format=None):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return Response(
                 {"error": True, "errors": _("Admin access required")},
                 status=status.HTTP_403_FORBIDDEN,

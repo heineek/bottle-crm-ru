@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../data/api/schema.g.dart' as api;
+import '../../data/models/interaction.dart';
 import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/deal_pipelines_provider.dart';
 import '../../providers/deals_provider.dart';
+import '../../providers/interactions_provider.dart';
+import '../../providers/lead_sources_provider.dart';
 import '../../providers/invoices_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
@@ -16,6 +20,8 @@ import '../../services/app_language.dart';
 import '../../services/attachment_upload.dart';
 import '../../widgets/cards/deal_aging_badge.dart';
 import '../../widgets/common/common.dart';
+import '../../widgets/interactions/after_tap_logging.dart';
+import '../../widgets/interactions/record_timeline.dart';
 import '../../widgets/misc/stage_stepper.dart';
 import '../../widgets/objects/related_objects_section.dart';
 
@@ -77,6 +83,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       _error = null;
     });
 
+    ref.invalidate(recordInteractionsProvider(_target));
     var notFound = false;
     final detail = await ref
         .read(dealsProvider.notifier)
@@ -98,6 +105,9 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       });
     }
   }
+
+  InteractionTarget get _target =>
+      (home: InteractionHome.opportunity, id: widget.dealId);
 
   /// The deal's pipeline, once both have loaded. Null while loading, or
   /// when the list does not hold the deal's pipeline: then no stage control
@@ -416,7 +426,6 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     final hasNotes = deal.notes != null && deal.notes!.trim().isNotEmpty;
     final hasProducts = deal.products.isNotEmpty;
     final hasContacts = deal.contactsList.isNotEmpty;
-    final hasCustomFields = _hasRenderableCustomFields(deal);
     final hasTeams = deal.teamNames.isNotEmpty;
     final hasTags = deal.labels.isNotEmpty;
 
@@ -502,12 +511,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
             const SizedBox(height: 16),
           ],
 
-          // Custom fields, org schema; only shown when the deal has at
-          // least one value populated.
-          if (hasCustomFields) ...[
+          if (CustomFieldsDisplay.shows(_customFieldDefinitions)) ...[
             _buildCard(
               title: context.l10n.dealsDetailCustomFields,
-              child: _buildCustomFieldsContent(deal),
+              child: CustomFieldsDisplay(
+                definitions: _customFieldDefinitions,
+                values: deal.customFieldValues,
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -621,7 +631,12 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       _InfoRow(
         icon: LucideIcons.compass,
         label: context.l10n.dealsDetailSourceLabel,
-        value: deal.leadSource.label,
+        value: deal.leadSource.isEmpty
+            ? context.l10n.dealsDetailNone
+            : shownLeadSources(
+                    ref.watch(leadSourcesProvider),
+                  )?.dealLabelFor(deal.leadSource) ??
+                  leadSourceLabel(deal.leadSource),
       ),
       _InfoRow(
         icon: LucideIcons.coins,
@@ -755,69 +770,6 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     );
   }
 
-  bool _hasRenderableCustomFields(Deal deal) {
-    if (_customFieldDefinitions.isEmpty) return false;
-    for (final def in _customFieldDefinitions) {
-      final v = deal.customFieldValues[def.key];
-      if (v == null) continue;
-      if (v is String && v.trim().isEmpty) continue;
-      return true;
-    }
-    return false;
-  }
-
-  Widget _buildCustomFieldsContent(Deal deal) {
-    final rows = <Widget>[];
-    for (final def in _customFieldDefinitions) {
-      final raw = deal.customFieldValues[def.key];
-      if (raw == null) continue;
-      final display = _formatCustomFieldValue(def, raw);
-      if (display.isEmpty) continue;
-      if (rows.isNotEmpty) rows.add(const Divider(height: 24));
-      rows.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              def.label.toUpperCase(),
-              style: AppTypography.overline.copyWith(
-                color: AppColors.textTertiary,
-                fontSize: 10,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(display, style: AppTypography.body),
-          ],
-        ),
-      );
-    }
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
-  }
-
-  String _formatCustomFieldValue(CustomFieldDefinition def, Object? raw) {
-    if (raw == null) return '';
-    switch (def.fieldType) {
-      case CustomFieldType.checkbox:
-        return raw == true ? appL10n.commonYes : appL10n.commonNo;
-      case CustomFieldType.dropdown:
-        final value = raw.toString();
-        final match = def.options
-            .firstWhere(
-              (o) => o.value == value,
-              orElse: () => CustomFieldOption(value: value, label: value),
-            )
-            .label;
-        return match;
-      case CustomFieldType.date:
-        final parsed = DateTime.tryParse(raw.toString());
-        return parsed != null ? _formatDate(parsed) : raw.toString();
-      case CustomFieldType.number:
-      case CustomFieldType.text:
-      case CustomFieldType.textarea:
-        return raw.toString().trim();
-    }
-  }
-
   Widget _buildAssigneesContent(Deal deal) {
     if (deal.assignedToRaw.isEmpty) {
       return Row(
@@ -834,7 +786,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     return Column(
       children: [
         for (var i = 0; i < deal.assignedToRaw.length; i++) ...[
-          _AssigneeRow(profile: deal.assignedToRaw[i]),
+          AssigneeRow(profile: deal.assignedToRaw[i]),
           if (i < deal.assignedToRaw.length - 1) const SizedBox(height: 12),
         ],
       ],
@@ -887,73 +839,55 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
   // ===========================================================================
 
   Widget _buildActivityTab() {
-    final events = _buildTimelineEvents();
-    if (events.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _fetchDeal,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(LucideIcons.clock, size: 48, color: AppColors.gray400),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.dealsDetailNoActivity,
-                    style: AppTypography.h3,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.l10n.dealsDetailNoActivityBody,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    final interactions = ref.watch(recordInteractionsProvider(_target)).value;
+    final events = _buildTimelineEvents(interactions);
     return RefreshIndicator(
       onRefresh: _fetchDeal,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        itemCount: events.length,
+        itemCount: events.length + 1,
         itemBuilder: (context, index) {
-          final e = events[index];
-          final isLast = index == events.length - 1;
-          return _TimelineRow(event: e, isLast: isLast);
+          if (index == 0) {
+            return InteractionsBar(
+              answer: interactions,
+              onLog: () => logActivity(context, ref, _target),
+            );
+          }
+          return TimelineEventRow(
+            event: events[index - 1],
+            isLast: index == events.length,
+          );
         },
       ),
     );
   }
 
-  List<_TimelineEvent> _buildTimelineEvents() {
+  List<TimelineEvent> _buildTimelineEvents(RecordInteractions? interactions) {
     final deal = _deal!;
-    final events = <_TimelineEvent>[
+    final events = <TimelineEvent>[
       for (final c in deal.comments)
-        _TimelineEvent(
-          kind: _TimelineKind.comment,
+        TimelineEvent(
+          icon: LucideIcons.messageSquare,
+          tint: AppColors.primary600,
           ts: c.commentedOn,
           actor: c.authorName,
           summary: context.l10n.dealsDetailTimelineCommented,
           body: c.comment,
         ),
       for (final a in deal.attachments)
-        _TimelineEvent(
-          kind: _TimelineKind.attachment,
+        TimelineEvent(
+          icon: LucideIcons.paperclip,
+          tint: AppColors.warning600,
           ts: a.createdAt ?? deal.createdAt,
           actor: a.createdBy ?? context.l10n.dealsDetailTimelineSomeone,
           summary: context.l10n.dealsDetailTimelineUploaded(a.fileName),
         ),
-      _TimelineEvent(
-        kind: _TimelineKind.created,
+      for (final i in interactions?.items ?? const <Interaction>[])
+        TimelineEvent.interaction(i),
+      TimelineEvent(
+        icon: LucideIcons.sparkles,
+        tint: AppColors.success600,
         ts: deal.createdAt,
         actor: deal.createdByName ?? deal.createdByEmail ?? '',
         summary: deal.createdByName != null || deal.createdByEmail != null
@@ -996,7 +930,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                         currentEmail != null &&
                         comment.commentedByEmail?.toLowerCase() == currentEmail;
                     final canModify = isAuthor || isAdmin;
-                    return _NoteCard(
+                    return NoteCard(
                       text: comment.comment,
                       author: comment.authorName,
                       timestamp: comment.commentedOn,
@@ -1100,7 +1034,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
   Future<void> _editComment(String commentId, String currentText) async {
     final newText = await showDialog<String>(
       context: context,
-      builder: (context) => _EditNoteDialog(initialText: currentText),
+      builder: (context) => EditNoteDialog(initialText: currentText),
     );
     if (newText == null || newText.isEmpty || newText == currentText.trim()) {
       return;
@@ -1226,14 +1160,16 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       return;
     }
 
-    final attachmentsData = result.data?['attachments'];
-    if (attachmentsData is List && _deal != null) {
+    final body = result.data;
+    final attachments = body == null
+        ? null
+        : api.OpportunityCommentAttachmentResponse.fromJson(body).attachments;
+    if (attachments != null && _deal != null) {
       setState(() {
         _deal = _deal!.copyWith(
-          attachments: attachmentsData
-              .whereType<Map<String, dynamic>>()
-              .map(Attachment.fromJson)
-              .toList(),
+          attachments: [
+            for (final a in attachments) Attachment.fromJson(a.json),
+          ],
         );
       });
     } else {
@@ -1325,6 +1261,18 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                     onPressed: _isInvoicing ? null : _createInvoice,
                   ),
                 ],
+                if (isWon && ref.watch(moduleOnProvider('projects'))) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      onPressed: _startProject,
+                      icon: const Icon(LucideIcons.folderKanban, size: 18),
+                      label: Text(context.l10n.dealsDetailStartProject),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1393,6 +1341,11 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
       context.push('${AppRoutes.invoices}/$id');
     }
   }
+
+  /// Opens the new-project form filled from this deal. Nothing is created
+  /// until the form is saved.
+  void _startProject() =>
+      context.push(AppRoutes.projectFromDeal(widget.dealId));
 
   /// Opens the estimate form prefilled from this deal, at any stage.
   void _createEstimate() {
@@ -1493,6 +1446,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
     // unconditional and Delete does not.
     final canDelete = _canDelete;
     final invoicesOn = ref.read(moduleOnProvider('invoices'));
+    final projectsOn = ref.read(moduleOnProvider('projects'));
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -1539,6 +1493,18 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen>
                 onTap: () {
                   Navigator.pop(context);
                   _createInvoice();
+                },
+              ),
+            if (projectsOn && (_deal?.isWon ?? false))
+              ListTile(
+                leading: Icon(
+                  LucideIcons.folderKanban,
+                  color: AppColors.primary600,
+                ),
+                title: Text(context.l10n.dealsDetailStartProject),
+                onTap: () {
+                  Navigator.pop(context);
+                  _startProject();
                 },
               ),
             if (canDelete)
@@ -1782,405 +1748,5 @@ class _InfoRow extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _AssigneeRow extends StatelessWidget {
-  final Map<String, dynamic> profile;
-  const _AssigneeRow({required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    final details = profile['user_details'];
-    String name = context.l10n.dealsDetailUnknown;
-    String? email;
-    String? pic;
-    if (details is Map<String, dynamic>) {
-      final n = (details['name'] as String?)?.trim();
-      email = (details['email'] as String?)?.trim();
-      pic = (details['profile_pic'] as String?)?.trim();
-      if (n != null && n.isNotEmpty) {
-        name = n;
-      } else if (email != null && email.isNotEmpty) {
-        name = email.split('@').first;
-      }
-    }
-    return Row(
-      children: [
-        UserAvatar(name: name, imageUrl: pic, size: AvatarSize.md),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: AppTypography.label,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (email != null && email.isNotEmpty && email != name)
-                Text(
-                  email,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EditNoteDialog extends StatefulWidget {
-  final String initialText;
-  const _EditNoteDialog({required this.initialText});
-
-  @override
-  State<_EditNoteDialog> createState() => _EditNoteDialogState();
-}
-
-class _EditNoteDialogState extends State<_EditNoteDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialText);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(context.l10n.dealsDetailEditNote),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        maxLines: null,
-        minLines: 3,
-        decoration: InputDecoration(
-          hintText: context.l10n.dealsDetailUpdateNoteHint,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.l10n.commonCancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, _controller.text.trim()),
-          child: Text(context.l10n.commonSave),
-        ),
-      ],
-    );
-  }
-}
-
-class _NoteCard extends StatelessWidget {
-  final String text;
-  final String author;
-  final DateTime timestamp;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
-  const _NoteCard({
-    required this.text,
-    required this.author,
-    required this.timestamp,
-    this.onEdit,
-    this.onDelete,
-  });
-
-  void _showOptions(BuildContext context) {
-    if (onEdit == null && onDelete == null) return;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            if (onEdit != null)
-              ListTile(
-                leading: Icon(LucideIcons.pencil, color: AppColors.primary600),
-                title: Text(context.l10n.dealsDetailEditNote),
-                onTap: () {
-                  Navigator.pop(context);
-                  onEdit!();
-                },
-              ),
-            if (onDelete != null)
-              ListTile(
-                leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
-                title: Text(
-                  context.l10n.dealsDetailDeleteNote,
-                  style: TextStyle(color: AppColors.danger600),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmDelete(context);
-                },
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.dealsDetailDeleteNoteTitle),
-        content: Text(context.l10n.dealsDetailCannotUndo),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              context.l10n.commonDelete,
-              style: TextStyle(color: AppColors.danger600),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) onDelete?.call();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasActions = onEdit != null || onDelete != null;
-    return GestureDetector(
-      onLongPress: hasActions ? () => _showOptions(context) : null,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.gray50,
-          borderRadius: AppLayout.borderRadiusLg,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    text,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textPrimary,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-                if (hasActions)
-                  SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      icon: Icon(
-                        LucideIcons.moreVertical,
-                        color: AppColors.textTertiary,
-                      ),
-                      tooltip: context.l10n.dealsDetailNoteOptions,
-                      onPressed: () => _showOptions(context),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                UserAvatar(name: author, size: AvatarSize.xs),
-                const SizedBox(width: 8),
-                Text(
-                  author,
-                  style: AppTypography.caption.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _relTime(timestamp),
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _relTime(DateTime dt) {
-    final d = DateTime.now().difference(dt);
-    final l10n = appL10n;
-    if (d.inDays > 30) return l10n.dealsAgoMonths((d.inDays / 30).floor());
-    if (d.inDays > 0) return l10n.dealsAgoDays(d.inDays);
-    if (d.inHours > 0) return l10n.dealsAgoHours(d.inHours);
-    if (d.inMinutes > 0) return l10n.dealsAgoMinutes(d.inMinutes);
-    return l10n.dealsAgoJustNow;
-  }
-}
-
-enum _TimelineKind { created, comment, attachment }
-
-class _TimelineEvent {
-  final _TimelineKind kind;
-  final DateTime ts;
-  final String actor;
-  final String summary;
-  final String? body;
-
-  const _TimelineEvent({
-    required this.kind,
-    required this.ts,
-    required this.actor,
-    required this.summary,
-    this.body,
-  });
-}
-
-class _TimelineRow extends StatelessWidget {
-  final _TimelineEvent event;
-  final bool isLast;
-  const _TimelineRow({required this.event, required this.isLast});
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, tint) = switch (event.kind) {
-      _TimelineKind.created => (LucideIcons.sparkles, AppColors.success600),
-      _TimelineKind.comment => (
-        LucideIcons.messageSquare,
-        AppColors.primary600,
-      ),
-      _TimelineKind.attachment => (LucideIcons.paperclip, AppColors.warning600),
-    };
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 14, color: tint),
-              ),
-              if (!isLast)
-                Expanded(child: Container(width: 2, color: AppColors.border)),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text.rich(
-                          TextSpan(
-                            style: AppTypography.body,
-                            children: [
-                              if (event.actor.isNotEmpty) ...[
-                                TextSpan(
-                                  text: event.actor,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: context
-                                      .l10n
-                                      .dealsDetailTimelineActorSeparator,
-                                ),
-                              ],
-                              TextSpan(text: event.summary),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _relTime(event.ts),
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (event.body != null && event.body!.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray50,
-                        borderRadius: AppLayout.borderRadiusMd,
-                      ),
-                      child: Text(
-                        event.body!,
-                        style: AppTypography.body.copyWith(
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _relTime(DateTime dt) {
-    final d = DateTime.now().difference(dt);
-    final l10n = appL10n;
-    if (d.inDays > 30) return l10n.dealsShortMonths((d.inDays / 30).floor());
-    if (d.inDays > 0) return l10n.dealsShortDays(d.inDays);
-    if (d.inHours > 0) return l10n.dealsShortHours(d.inHours);
-    if (d.inMinutes > 0) return l10n.dealsShortMinutes(d.inMinutes);
-    return l10n.dealsShortNow;
   }
 }

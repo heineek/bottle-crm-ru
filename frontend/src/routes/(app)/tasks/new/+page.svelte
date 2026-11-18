@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * A new task.
@@ -8,6 +8,7 @@
    * pickers would let somebody fill two and learn about the rule from a 400.
    * Pick the kind, then pick the record.
    */
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
@@ -21,14 +22,15 @@
     TASK_PRIORITY_CODES,
     TASK_STATUS_CODES
   } from '../labels.js';
+  import type { TaskValues } from '#lib/server/v2/tasks.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let kinds = $derived(parentKinds().filter((k) => !k.module || isOn(data.modules, k.module)));
 
-  let values = $derived(form?.values ?? {});
-  let kind = $state(untrack(() => form?.values?.parent_kind ?? ''));
+  let values: Partial<TaskValues> = $derived(form?.values ?? data.prefill ?? {});
+  let kind = $state(untrack(() => form?.values?.parent_kind ?? data.prefill?.parent_kind ?? ''));
   let options = $derived(kind ? (data.parents[kind] ?? []) : []);
 </script>
 
@@ -140,6 +142,13 @@
         placeholder={m.tasks_form_note_placeholder()}>{values.description ?? ''}</textarea
       >
     </label>
+
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={form?.values?.custom_fields}
+      errors={form?.fieldErrors}
+      heading={m.common_details()}
+    />
 
     <div style="display:flex;gap:9px;margin-top:6px">
       <button class="v2-btn v2-btn-primary" type="submit">{m.tasks_form_create()}</button>

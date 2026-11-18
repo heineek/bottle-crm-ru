@@ -13,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/duplicates_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
+import '../../widgets/common/custom_fields_display.dart';
 import '../../widgets/duplicates/duplicates_panel.dart';
 import '../../widgets/objects/related_objects_section.dart';
 import '../../l10n/l10n.dart';
@@ -196,6 +197,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
           ),
           _rollups(account),
           _details(account),
+          _customFields(account),
           _relationSection(
             context.l10n.accountsDetailContacts,
             LucideIcons.users,
@@ -363,6 +365,39 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _customFields(Account account) {
+    final definitions = account.customFieldDefinitions;
+    if (!CustomFieldsDisplay.shows(definitions)) return const SizedBox.shrink();
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                LucideIcons.listChecks,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                context.l10n.accountsDetailCustomFields,
+                style: AppTypography.label.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          CustomFieldsDisplay(
+            definitions: definitions,
+            values: account.customFields,
+          ),
         ],
       ),
     );

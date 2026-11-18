@@ -1,3 +1,15 @@
+import 'dart:convert';
+
+import 'package:bottle_crm/config/api_config.dart';
+import 'package:bottle_crm/data/models/interaction.dart';
+import 'package:bottle_crm/screens/contacts/contact_detail_screen.dart';
+import 'package:bottle_crm/screens/leads/leads_list_screen.dart';
+import 'package:bottle_crm/services/after_tap.dart';
+import 'package:bottle_crm/services/api_service.dart';
+import 'package:bottle_crm/widgets/common/round_action_button.dart';
+import 'package:bottle_crm/widgets/interactions/log_interaction_sheet.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:bottle_crm/data/models/access_token.dart';
 import 'package:bottle_crm/data/models/auth_response.dart';
 import 'package:bottle_crm/data/models/dashboard_data.dart';
@@ -12,6 +24,12 @@ import 'package:bottle_crm/data/models/escalation_policy.dart';
 import 'package:bottle_crm/data/models/macro.dart';
 import 'package:bottle_crm/data/models/mailbox.dart';
 import 'package:bottle_crm/data/models/org_settings.dart';
+import 'package:bottle_crm/data/models/profile.dart';
+import 'package:bottle_crm/providers/profile_provider.dart';
+import 'package:bottle_crm/screens/settings/profile_screen.dart';
+import 'package:bottle_crm/services/push_messaging.dart';
+import 'package:bottle_crm/widgets/common/push_host.dart';
+import 'package:bottle_crm/widgets/common/push_prompt.dart';
 import 'package:bottle_crm/data/models/reopen_policy.dart';
 import 'package:bottle_crm/data/models/invoice.dart';
 import 'package:bottle_crm/data/models/time_entry.dart';
@@ -25,6 +43,7 @@ import 'package:bottle_crm/data/models/tag.dart';
 import 'package:bottle_crm/providers/invoice_extras_provider.dart';
 import 'package:bottle_crm/providers/invoices_provider.dart';
 import 'package:bottle_crm/providers/auth_provider.dart';
+import 'package:bottle_crm/providers/billing_provider.dart';
 import 'package:bottle_crm/providers/lookup_provider.dart';
 import 'package:bottle_crm/providers/notifications_provider.dart';
 import 'package:bottle_crm/providers/support_provider.dart';
@@ -52,10 +71,18 @@ import 'package:bottle_crm/screens/settings/custom_fields_screen.dart';
 import 'package:bottle_crm/screens/settings/escalation_policy_form_sheet.dart';
 import 'package:bottle_crm/screens/settings/escalation_screen.dart';
 import 'package:bottle_crm/screens/settings/inbound_email_screen.dart';
+import 'package:bottle_crm/data/models/lead_intake.dart';
+import 'package:bottle_crm/data/models/lead_source.dart';
+import 'package:bottle_crm/providers/lead_intakes_provider.dart';
+import 'package:bottle_crm/providers/lead_sources_provider.dart';
+import 'package:bottle_crm/screens/settings/lead_capture_screen.dart';
+import 'package:bottle_crm/screens/settings/lead_intake_detail_screen.dart';
+import 'package:bottle_crm/screens/settings/lead_sources_screen.dart';
 import 'package:bottle_crm/screens/settings/macros_screen.dart';
 import 'package:bottle_crm/screens/settings/mailbox_form_sheet.dart';
 import 'package:bottle_crm/screens/settings/organization_edit_screen.dart';
 import 'package:bottle_crm/screens/settings/organization_screen.dart';
+import 'package:bottle_crm/screens/auth/org_create_screen.dart';
 import 'package:bottle_crm/screens/tickets/close_with_children_dialog.dart';
 import 'package:bottle_crm/screens/tickets/macro_picker_sheet.dart';
 import 'package:bottle_crm/screens/settings/settings_hub_screen.dart';
@@ -72,12 +99,17 @@ import 'package:bottle_crm/screens/goals/goal_form_screen.dart';
 import 'package:bottle_crm/screens/goals/goal_history_screen.dart';
 import 'package:bottle_crm/screens/goals/goals_screen.dart';
 import 'package:bottle_crm/screens/timesheet/timesheet_screen.dart';
+import 'package:bottle_crm/screens/projects/project_detail_screen.dart';
+import 'package:bottle_crm/screens/projects/project_form_screen.dart';
+import 'package:bottle_crm/screens/projects/projects_list_screen.dart';
 import 'package:bottle_crm/data/models/custom_object.dart';
 import 'package:bottle_crm/data/models/models.dart' show Lead;
 import 'package:bottle_crm/providers/custom_objects_provider.dart';
 import 'package:bottle_crm/providers/duplicates_provider.dart';
 import 'package:bottle_crm/providers/leads_provider.dart';
 import 'package:bottle_crm/screens/leads/lead_detail_screen.dart';
+import 'package:bottle_crm/screens/deals/deal_detail_screen.dart';
+import 'package:bottle_crm/screens/tasks/task_detail_screen.dart';
 import 'package:bottle_crm/screens/objects/object_record_detail_screen.dart';
 import 'package:bottle_crm/screens/objects/object_record_form_screen.dart';
 import 'package:bottle_crm/screens/objects/object_records_screen.dart';
@@ -85,7 +117,15 @@ import 'package:bottle_crm/screens/settings/object_field_sheet.dart';
 import 'package:bottle_crm/data/models/account.dart';
 import 'package:bottle_crm/providers/accounts_provider.dart';
 import 'package:bottle_crm/screens/accounts/account_detail_screen.dart';
-import 'package:bottle_crm/screens/settings/modules_screen.dart';
+import 'package:bottle_crm/screens/settings/apps_screen.dart';
+import 'package:bottle_crm/screens/accounts/account_form_screen.dart';
+import 'package:bottle_crm/screens/contacts/contact_form_screen.dart';
+import 'package:bottle_crm/screens/invoices/invoice_detail_screen.dart';
+import 'package:bottle_crm/screens/invoices/new_estimate_screen.dart';
+import 'package:bottle_crm/screens/tickets/ticket_detail_screen.dart';
+import 'package:bottle_crm/widgets/common/custom_fields_display.dart';
+import 'package:bottle_crm/widgets/forms/custom_fields_form.dart';
+import '../support/apps_fixtures.dart';
 import 'package:bottle_crm/screens/settings/object_settings_screen.dart';
 import 'package:bottle_crm/screens/settings/objects_settings_screen.dart';
 import 'package:bottle_crm/core/theme/theme.dart';
@@ -104,6 +144,7 @@ import 'package:bottle_crm/screens/settings/automation/try_rule_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
@@ -112,6 +153,7 @@ import 'package:bottle_crm/l10n/app_localizations.dart';
 import 'package:bottle_crm/providers/language_provider.dart';
 import 'package:bottle_crm/screens/settings/language_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../support/fake_push.dart';
 
 /// The newest screens, rendered at a real phone.
 ///
@@ -140,7 +182,8 @@ void main() {
 
   /// The screen under a router that can answer a ticket push, so tapping a
   /// row lands somewhere assertable instead of throwing.
-  Widget routed(Widget screen) => MaterialApp.router(
+  Widget routed(Widget screen, {ThemeData? theme}) => MaterialApp.router(
+    theme: theme,
     routerConfig: GoRouter(
       initialLocation: '/here',
       routes: [
@@ -451,17 +494,8 @@ void main() {
           orgSettingsProvider.overrideWith(
             cascadeOn ? _FakeOrgCascadeOn.new : _FakeOrg.new,
           ),
-          orgPacksProvider.overrideWith(
-            (ref) async => [
-              VerticalPack.fromJson(const {
-                'id': 'real-estate',
-                'name': 'Real estate',
-                'description': 'Listings, viewings and offers',
-                'version': '1',
-              }),
-            ],
-          ),
           isOrgAdminProvider.overrideWithValue(isAdmin),
+          orgPlanNameProvider.overrideWith((ref) async => 'Plan A'),
         ],
         child: const MaterialApp(home: OrganizationScreen()),
       );
@@ -699,6 +733,21 @@ void main() {
             _FakeObjectsApi(_objRecordJson(canEdit, canDelete)),
           ),
           attachmentBytesProvider.overrideWith((ref, id) async => null),
+          relatedProvider((to: 'obj:$_objKey', id: _objId)).overrideWith(
+            (ref) async => RelatedAnswer(
+              groups: [
+                RelatedGroup(
+                  objectKey: 'enquiry',
+                  objectLabel: _objLong60,
+                  fieldKey: 'property',
+                  fieldLabel: _objLong64,
+                  records: const [
+                    RelatedRecordRef(id: _objLeadId, name: _objAddress),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
         child: routed(
           const ObjectRecordDetailScreen(objectKey: _objKey, recordId: _objId),
@@ -747,6 +796,7 @@ void main() {
     required bool admin,
     required bool writes,
     bool archived = false,
+    bool? customizable,
   }) => ProviderScope(
     overrides: [
       isOrgAdminProvider.overrideWithValue(admin),
@@ -755,7 +805,19 @@ void main() {
       ),
       objectSettingsProvider(_objKey).overrideWith(
         (ref) async => ObjectSettingsData(
-          summary: archived ? _objSummaryArchived : _objSummary,
+          summary: archived
+              ? _objSummaryArchived
+              : customizable == null
+              ? _objSummary
+              : ObjectSummary(
+                  key: _objKey,
+                  label: _objLong60,
+                  labelPlural: _objLong60,
+                  nameLabel: 'Address',
+                  description: _objSummary.description,
+                  writable: true,
+                  customizable: customizable,
+                ),
           fields: _objFields,
         ),
       ),
@@ -2826,6 +2888,60 @@ void main() {
     });
   });
 
+  group('lead sources and lead capture at 390px', () {
+    Widget leadApp(Widget screen) => ProviderScope(
+      overrides: [
+        isOrgAdminProvider.overrideWithValue(true),
+        leadSourcesProvider.overrideWith(_FakeLeadSources.new),
+        leadIntakesProvider.overrideWith(_FakeLeadIntakes.new),
+        leadIntakeDeliveriesProvider.overrideWith(
+          (ref, id) async => [
+            IntakeDelivery.fromJson(const {
+              'id': 'e1',
+              'received_at': '2026-10-20T09:00:00Z',
+              'result': 'rejected',
+              'error': 'The post carried neither an email nor a phone number.',
+            }),
+          ],
+        ),
+        mailboxesProvider.overrideWith(_FakeLeadMailboxes.new),
+      ],
+      child: MaterialApp(home: screen),
+    );
+
+    for (final scale in [1.0, 1.5]) {
+      testWidgets('lead sources at ${scale}x text', (tester) async {
+        await pump(
+          tester,
+          leadApp(const LeadSourcesScreen()),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Directory or marketplace'), findsOneWidget);
+      });
+
+      testWidgets('lead capture at ${scale}x text', (tester) async {
+        await pump(
+          tester,
+          leadApp(const LeadCaptureScreen()),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Waiting'), findsOneWidget);
+      });
+
+      testWidgets('one lead webhook at ${scale}x text', (tester) async {
+        await pump(
+          tester,
+          leadApp(const LeadIntakeDetailScreen(intakeId: 'i1')),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Replace key'), findsOneWidget);
+      });
+    }
+  });
+
   group('inbound email at 390px', () {
     testWidgets('renders without overflowing', (tester) async {
       await pump(tester, mailboxesApp(isAdmin: true));
@@ -2854,7 +2970,7 @@ void main() {
       await pump(tester, mailboxesApp(isAdmin: true));
 
       expect(find.text('Provider not wired up'), findsOneWidget);
-      expect(find.textContaining('Mailgun deliveries'), findsOneWidget);
+      expect(find.textContaining('IMAP deliveries'), findsOneWidget);
 
       // The third row sits below the fold at 390px.
       await tester.scrollUntilVisible(find.text('Not connected yet'), 200);
@@ -2879,6 +2995,32 @@ void main() {
 
       expect(find.textContaining('switched on and create'), findsNothing);
       expect(find.text('Creating tickets'), findsWidgets);
+    });
+
+    testWidgets('says what an address dropped and that it hit its limit', (
+      tester,
+    ) async {
+      await pump(tester, mailboxesApp(isAdmin: false));
+
+      expect(
+        find.text(
+          '1,250 dropped in 30 days: 900 spam, 2 with a virus, 300 failed the '
+          'sender check, 40 automatic replies, 8 other',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Took its limit of 300 emails today. More mail is refused until '
+          'the count falls.',
+        ),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.textContaining('Spam, viruses and mail'),
+        200,
+      );
+      expect(find.textContaining('up to 300 emails a day'), findsOneWidget);
     });
 
     testWidgets('never claims a shared secret proves a delivery', (
@@ -2907,7 +3049,7 @@ void main() {
       expect(find.textContaining('secret'), findsNothing);
     });
 
-    testWidgets('the provider picker marks the three that do nothing', (
+    testWidgets('the provider picker marks the one that does nothing', (
       tester,
     ) async {
       await pump(tester, mailboxFormApp());
@@ -2917,7 +3059,8 @@ void main() {
       await tester.tap(find.byType(DropdownButtonFormField<String>).first);
       await tester.pumpAndSettle();
 
-      expect(find.text('Mailgun (not wired up yet)'), findsWidgets);
+      expect(find.text('IMAP (not wired up yet)'), findsWidgets);
+      expect(find.text('Mailgun'), findsWidgets);
       expect(find.text('AWS SES'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
@@ -3053,6 +3196,58 @@ void main() {
     });
   });
 
+  group('new organization at 390px', () {
+    // Every pack listed, the longest description included, so the radio rows
+    // are at their tallest.
+    Widget orgCreateApp() => ProviderScope(
+      overrides: [
+        orgPacksProvider.overrideWith(
+          (ref) async => const [
+            VerticalPack(
+              id: 'professional-services',
+              name: 'Professional services',
+              description:
+                  'Agencies, consultancies and accounting firms selling '
+                  'billable work.',
+            ),
+            VerticalPack(
+              id: 'education-admissions',
+              name: 'Education admissions',
+              description:
+                  'Coaching centres, training institutes and colleges '
+                  'managing admissions.',
+            ),
+            VerticalPack(
+              id: 'events-weddings',
+              name: 'Events & weddings',
+              description:
+                  'Wedding planners, event agencies and venues taking '
+                  'enquiries through to a delivered event.',
+            ),
+            VerticalPack(
+              id: 'real-estate',
+              name: 'Real estate',
+              description:
+                  'Brokers, agencies and developers selling residential and '
+                  'commercial property.',
+            ),
+          ],
+        ),
+      ],
+      child: const MaterialApp(home: OrgCreateScreen()),
+    );
+
+    for (final scale in [1.0, 1.5]) {
+      testWidgets('the industry choice fits at text scale $scale', (
+        tester,
+      ) async {
+        await pump(tester, orgCreateApp(), textScale: scale);
+        expect(find.text('What kind of business is this?'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
   group('organization at 390px', () {
     testWidgets('renders without overflowing', (tester) async {
       await pump(tester, organizationApp(isAdmin: true));
@@ -3072,13 +3267,12 @@ void main() {
       // Twice: the header, and again as the trading name.
       expect(find.text('MicroPyramid'), findsNWidgets(2));
       expect(find.byTooltip('Edit details'), findsNothing);
-      expect(find.text('Clear sample data'), findsNothing);
       await tester.scrollUntilVisible(
-        find.textContaining('limited to administrators'),
+        find.textContaining('The organization API key is not here'),
         300,
       );
-      expect(find.textContaining('limited to administrators'), findsOneWidget);
-      // Still nothing to press once the pack section is on screen.
+      // Industry apps and sample data moved to the Apps screen.
+      expect(find.text('VERTICAL PACK'), findsNothing);
       expect(find.text('Apply'), findsNothing);
       expect(find.text('Clear sample data'), findsNothing);
     });
@@ -3247,6 +3441,119 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
+  });
+
+  group('lead alerts at 390px', () {
+    Widget profileApp() => ProviderScope(
+      overrides: [
+        profileProvider.overrideWith(_FakeAlertProfile.new),
+        myAccessTokensProvider.overrideWith(_FakeNoMyTokens.new),
+      ],
+      child: const MaterialApp(home: ProfileScreen()),
+    );
+
+    Widget leadFeedApp() => ProviderScope(
+      overrides: [
+        notificationsProvider.overrideWith(_FakeLeadAlertNotifications.new),
+      ],
+      child: routed(const NotificationsScreen()),
+    );
+
+    Widget bannerApp() => ProviderScope(
+      overrides: [
+        authProvider.overrideWith(_FakeSignedIn.new),
+        notificationsProvider.overrideWith(_FakeLeadAlertNotifications.new),
+      ],
+      child: MaterialApp(
+        builder: (context, child) => PushHost(child: child!),
+        home: const Scaffold(body: Text('home')),
+      ),
+    );
+
+    Widget promptApp() => MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => offerPushPrompt(context),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    for (final scale in [1.0, 1.5]) {
+      testWidgets('profile switches fit, text scale $scale', (tester) async {
+        await pump(tester, profileApp(), textScale: scale);
+        await tester.ensureVisible(find.text('Lead alerts on the phone'));
+        await tester.pumpAndSettle();
+        expect(find.text('Lead alerts by email'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('organization edit reminder fits, text scale $scale', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          organizationEditApp(isAdmin: true),
+          textScale: scale,
+        );
+        await scrollForm(
+          tester,
+          find.text('Remind the assignee when a lead waits more than'),
+        );
+        expect(
+          find.text('Remind the assignee when a lead waits more than'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the four lead verbs fit, text scale $scale', (tester) async {
+        await pump(tester, leadFeedApp(), textScale: scale);
+        expect(find.text('New lead: Maria Lopez (Google ads)'), findsOneWidget);
+        expect(find.text('Maria Lopez is waiting for a reply'), findsOneWidget);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the foreground banner fits, text scale $scale', (
+        tester,
+      ) async {
+        final push = FakePush();
+        PushMessaging.instance = push;
+        addTearDown(() => PushMessaging.instance = const NoPushMessaging());
+        await pump(tester, bannerApp(), textScale: scale);
+        push.foreground.add(
+          const PushMessage(
+            body:
+                'New lead assigned: Maria Lopez-Fernandez de la Cruz '
+                '(Google ads, summer campaign)',
+            link: '/leads/3f2b8c1e-5a4d-4e8b-9c3a-1d2e3f4a5b6c',
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.textContaining('Maria Lopez-Fernandez'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pump(const Duration(seconds: 9));
+      });
+
+      testWidgets('the permission prompt fits, text scale $scale', (
+        tester,
+      ) async {
+        PushMessaging.instance = FakePush();
+        addTearDown(() => PushMessaging.instance = const NoPushMessaging());
+        SharedPreferences.setMockInitialValues({});
+        await pump(tester, promptApp(), textScale: scale);
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        expect(find.text('Get lead alerts'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   group('organization edit at 390px', () {
@@ -3706,6 +4013,13 @@ void main() {
         expect(tester.takeException(), isNull);
         await scrollToEnd(tester);
         expect(tester.takeException(), isNull);
+        await tester.scrollUntilVisible(
+          find.text('Related'),
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Related'), findsOneWidget);
       });
 
       testWidgets('the record detail, read only, $at', (tester) async {
@@ -3794,6 +4108,25 @@ void main() {
         expect(tester.takeException(), isNull);
         await scrollToEnd(tester);
         expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('one app object settings on a plan that locks shape, $at', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          objSettingsApp(admin: true, writes: false, customizable: false),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(objectShapeLockedNotice), findsOneWidget);
+        expect(find.text('Add field'), findsNothing);
+        expect(find.text('Edit object'), findsNothing);
+        expect(find.text('Edit'), findsNothing);
+        expect(find.text('Who sees records'), findsOneWidget);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+        expect(find.text('Turn off'), findsWidgets);
       });
 
       testWidgets('one archived object settings, $at', (tester) async {
@@ -4083,7 +4416,7 @@ void main() {
               : const [],
         ),
       ),
-      child: MaterialApp(theme: AppTheme.light, home: const ModulesScreen()),
+      child: MaterialApp(theme: AppTheme.light, home: const AppsScreen()),
     );
 
     for (final scale in [1.0, 1.3, 1.5]) {
@@ -4329,6 +4662,825 @@ void main() {
           expect(tester.takeException(), isNull);
         });
       }
+    }
+  });
+
+  group('custom fields and apps at 390px', () {
+    late Map<String, http.Response Function(http.Request)> routes;
+    String path(String url) => Uri.parse(url).path;
+
+    // Long labels and a long option, so the rows are at their widest.
+    List<Map<String, dynamic>> defs(String target) => [
+      {
+        'id': 'f1',
+        'target_model': target,
+        'key': 'possession',
+        'label': 'Preferred possession date for the whole family',
+        'field_type': 'date',
+        'is_required': true,
+      },
+      {
+        'id': 'f2',
+        'target_model': target,
+        'key': 'tier',
+        'label': 'Relationship tier',
+        'field_type': 'dropdown',
+        'options': [
+          {
+            'value': 'gold',
+            'label': 'Gold, with quarterly reviews and a named manager',
+          },
+        ],
+      },
+      {
+        'id': 'f3',
+        'target_model': target,
+        'key': 'budget',
+        'label': 'Budget ceiling',
+        'field_type': 'number',
+      },
+      {
+        'id': 'f4',
+        'target_model': target,
+        'key': 'agreed',
+        'label': 'Agreed to be contacted on weekends and public holidays',
+        'field_type': 'checkbox',
+      },
+    ];
+    const values = {'tier': 'gold', 'budget': 125000000.0, 'agreed': true};
+
+    setUp(() {
+      routes = {
+        'GET ${path('${ApiConfig.contacts}c1/')}': (_) => http.Response(
+          jsonEncode({
+            'contact_obj': {
+              'id': 'c1',
+              'first_name': 'Maximiliana',
+              'last_name': 'Montgomery-Okonkwo',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Contact'),
+          }),
+          200,
+        ),
+        'GET ${path('${ApiConfig.accounts}a1/')}': (_) => http.Response(
+          jsonEncode({
+            'account_obj': {
+              'id': 'a1',
+              'name': 'Northwind Traders International Holdings',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Account'),
+          }),
+          200,
+        ),
+        'GET ${path(ApiConfig.invoice('i1'))}': (_) => http.Response(
+          jsonEncode({
+            'invoice': {
+              'id': 'i1',
+              'invoice_number': 'INV-2026-0001',
+              'invoice_title': 'Quarterly retainer for the harbour project',
+              'status': 'Sent',
+              'currency': 'USD',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Invoice'),
+          }),
+          200,
+        ),
+        'GET ${path(ApiConfig.ticketDetail('k1'))}': (_) => http.Response(
+          jsonEncode({
+            'cases_obj': {
+              'id': 'k1',
+              'name': 'Printer on the third floor is on fire again',
+              'status': 'New',
+              'priority': 'Normal',
+              'created_at': '2026-10-01T09:00:00Z',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Case'),
+          }),
+          200,
+        ),
+        'GET ${path('${ApiConfig.leads}l1/')}': (_) => http.Response(
+          jsonEncode({
+            'lead_obj': {
+              'id': 'l1',
+              'first_name': 'Maximiliana',
+              'last_name': 'Montgomery-Okonkwo',
+              'title': 'Website enquiry about the two-bedroom flat',
+              'status': 'assigned',
+              'created_at': '2026-10-01T09:00:00Z',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Lead'),
+          }),
+          200,
+        ),
+        'GET ${path('${ApiConfig.opportunities}d1/')}': (_) => http.Response(
+          jsonEncode({
+            'opportunity_obj': {
+              'id': 'd1',
+              'name': 'Harbour Road flat with parking and a sea view',
+              'stage': 'QUALIFICATION',
+              'created_at': '2026-10-01T09:00:00Z',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Opportunity'),
+          }),
+          200,
+        ),
+        'GET ${path('${ApiConfig.tasks}t1/')}': (_) => http.Response(
+          jsonEncode({
+            'task_obj': {
+              'id': 't1',
+              'title': 'Call back about the second viewing and the floor plan',
+              'status': 'New',
+              'priority': 'Medium',
+              'created_at': '2026-10-01T09:00:00Z',
+              'custom_fields': values,
+            },
+            'custom_field_definitions': defs('Task'),
+          }),
+          200,
+        ),
+        'GET ${path(ApiConfig.customFieldDefinitions)}': (r) => http.Response(
+          jsonEncode({
+            'definitions': defs(r.url.queryParameters['target_model'] ?? ''),
+          }),
+          200,
+        ),
+      };
+      ApiService().setClientForTesting(
+        MockClient(
+          (r) async =>
+              routes['${r.method} ${r.url.path}']?.call(r) ??
+              http.Response('{}', 404),
+        ),
+      );
+    });
+
+    tearDown(() => ApiService().setClientForTesting(http.Client()));
+
+    Widget plain(Widget screen) => ProviderScope(
+      key: UniqueKey(),
+      child: MaterialApp(theme: AppTheme.light, home: screen),
+    );
+
+    /// The three New forms read their fields from the definitions call. Under
+    /// [routed], as their own cases above are.
+    Widget invoiceForm(Widget screen) => ProviderScope(
+      key: UniqueKey(),
+      overrides: [productsProvider.overrideWith(_FakeProducts.new)],
+      child: routed(screen, theme: AppTheme.light),
+    );
+
+    Widget appsApp({bool refuse = false}) => ProviderScope(
+      key: UniqueKey(),
+      overrides: modulesOverrides(
+        FakeOrgModules(
+          () async =>
+              modulesAnswer(off: ['invoices'], labels: {'deals': _orgTerm40}),
+        ),
+        apps: FakeOrgApps(() async => appsAnswer()),
+      ),
+      child: MaterialApp(theme: AppTheme.light, home: const AppsScreen()),
+    );
+
+    for (final scale in [1.0, 1.5]) {
+      final at = 'text $scale';
+
+      for (final (name, screen) in [
+        ('lead detail', const LeadDetailScreen(leadId: 'l1')),
+        ('deal detail', const DealDetailScreen(dealId: 'd1')),
+        ('task detail', const TaskDetailScreen(taskId: 't1')),
+        ('contact detail', const ContactDetailScreen(contactId: 'c1')),
+        ('account detail', const AccountDetailScreen(accountId: 'a1')),
+        ('invoice detail', const InvoiceDetailScreen(invoiceId: 'i1')),
+        ('ticket detail', const TicketDetailScreen(ticketId: 'k1')),
+      ]) {
+        testWidgets('$name with long custom fields, $at', (tester) async {
+          await pump(tester, plain(screen), textScale: scale);
+          expect(tester.takeException(), isNull);
+          await scrollToEnd(tester);
+          expect(tester.takeException(), isNull);
+          expect(find.byType(CustomFieldsDisplay), findsOneWidget);
+        });
+      }
+
+      testWidgets('the invoice field sheet, $at', (tester) async {
+        await pump(
+          tester,
+          plain(const InvoiceDetailScreen(invoiceId: 'i1')),
+          textScale: scale,
+        );
+        await tester.ensureVisible(find.text('Edit fields'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit fields'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Save'), findsOneWidget);
+        _expectTappablesThumbSized(tester);
+      });
+
+      for (final (name, screen, names) in [
+        ('new contact', const ContactFormScreen(), 2),
+        ('new account', const AccountFormScreen(), 1),
+      ]) {
+        testWidgets('$name with a required field refused, $at', (tester) async {
+          await pump(tester, plain(screen), textScale: scale);
+          for (var i = 0; i < names; i++) {
+            await tester.enterText(find.byType(TextField).at(i), 'Ana$i');
+          }
+          final submit = find.byType(FilledButton);
+          while (tester.getCenter(submit).dy > 780) {
+            await tester.drag(
+              find.byType(Scrollable).first,
+              const Offset(0, -300),
+            );
+            await tester.pumpAndSettle();
+          }
+          await tester.tap(submit);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(
+            find.text(
+              'Preferred possession date for the whole family is required',
+            ),
+            findsWidgets,
+          );
+          expect(find.byType(CustomFieldsForm), findsOneWidget);
+        });
+      }
+
+      for (final (name, screen) in [
+        ('new invoice', const NewInvoiceScreen()),
+        ('new estimate', const NewEstimateScreen()),
+        ('new schedule', const NewRecurringScreen()),
+      ]) {
+        testWidgets('$name with custom fields, $at', (tester) async {
+          await pump(tester, invoiceForm(screen), textScale: scale);
+          await scrollForm(tester, find.byType(CustomFieldsForm));
+          expect(find.byType(CustomFieldsForm), findsOneWidget);
+          await scrollForm(tester, find.text('Budget ceiling'));
+          expect(tester.takeException(), isNull);
+        });
+      }
+
+      testWidgets('apps, with a long module name, $at', (tester) async {
+        await pump(tester, appsApp(), textScale: scale);
+        expect(tester.takeException(), isNull);
+        _expectTappablesThumbSized(tester);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+      });
+
+      for (final (label, title) in [
+        ('Install', 'Install Professional Services?'),
+        ('Update', 'Update Real Estate?'),
+        ('Remove', 'Remove Real Estate?'),
+      ]) {
+        testWidgets('the $label preview sheet, $at', (tester) async {
+          await pump(tester, appsApp(), textScale: scale);
+          for (var i = 0; i < 10 && find.text(label).evaluate().isEmpty; i++) {
+            await tester.drag(
+              find.byType(Scrollable).first,
+              const Offset(0, -200),
+            );
+            await tester.pumpAndSettle();
+          }
+          await tester.ensureVisible(find.text(label).first);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(label).first);
+          await tester.pumpAndSettle();
+          expect(find.text(title), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          _expectTappablesThumbSized(tester);
+          await tester.drag(
+            find.byType(Scrollable).last,
+            const Offset(0, -600),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  });
+
+  group('logging calls and the unanswered list at 390px', () {
+    late Map<String, http.Response Function(http.Request)> routes;
+    final interactionsPath = Uri.parse(ApiConfig.interactions).path;
+    final waitingSince = DateTime.now()
+        .toUtc()
+        .subtract(const Duration(hours: 26, minutes: 40))
+        .toIso8601String();
+    final person = {
+      'first_name': 'Maximiliana',
+      'last_name': 'Montgomery-Okonkwo',
+      'email': 'maximiliana.montgomery-okonkwo@harbour-homes.example.com',
+      'phone': '+44 7700 900123',
+      'phone_e164': '+447700900123',
+      'created_at': '2026-10-01T09:00:00Z',
+    };
+    final activity = {
+      'interactions': [
+        {
+          'id': 'i1',
+          'kind': 'call',
+          'direction': 'outbound',
+          'occurred_at': '2026-10-23T09:15:00Z',
+          'duration_seconds': 3900,
+          'duration_estimated': true,
+          'outcome': 'wrong_number',
+          'subject': 'Second viewing at the Harbour Road flat, with parking',
+          'body': 'Asked for the floor plan and the service charge.',
+          'logged_by_details': {
+            'id': 'p1',
+            'name': 'Alexandra Featherstonehaugh',
+            'email': 'a@x.io',
+          },
+          'origin': 'phone_tap',
+        },
+        {
+          'id': 'i2',
+          'kind': 'enquiry',
+          'direction': 'inbound',
+          'occurred_at': '2026-10-22T08:00:00Z',
+          'body': 'Is the flat still free?',
+          'origin': 'webform',
+        },
+      ],
+      'count': 120,
+    };
+
+    setUp(() {
+      routes = {
+        'GET $interactionsPath': (_) =>
+            http.Response(jsonEncode(activity), 200),
+        'GET ${Uri.parse('${ApiConfig.leads}l1/').path}': (_) => http.Response(
+          jsonEncode({
+            'lead_obj': {
+              'id': 'l1',
+              ...person,
+              'title': 'Website enquiry about the two-bedroom flat',
+              'company_name': 'Harbour Homes International Lettings',
+              'status': 'in process',
+            },
+            'pipeline_stage': {
+              'name': 'Viewing booked',
+              'color': 'blue',
+              'pipeline': {'name': 'Residential lettings'},
+            },
+          }),
+          200,
+        ),
+        'GET ${Uri.parse('${ApiConfig.contacts}c1/').path}': (_) =>
+            http.Response(
+              jsonEncode({
+                'contact_obj': {'id': 'c1', ...person, 'do_not_call': true},
+              }),
+              200,
+            ),
+        'GET ${Uri.parse(ApiConfig.leads).path}': (_) => http.Response(
+          jsonEncode({
+            'open_leads': {
+              'open_leads': [
+                for (final id in ['l1', 'l2', 'l3'])
+                  {
+                    'id': id,
+                    ...person,
+                    'company_name': 'Harbour Homes International Lettings',
+                    'status': 'assigned',
+                    'rating': 'HOT',
+                    'opportunity_amount': '250000',
+                    'is_unanswered': true,
+                    'waiting_since': waitingSince,
+                  },
+              ],
+              'leads_count': 3,
+            },
+            'close_leads': {'close_leads': [], 'leads_count': 0},
+          }),
+          200,
+        ),
+      };
+      ApiService().setClientForTesting(
+        MockClient(
+          (r) async =>
+              routes['${r.method} ${r.url.path}']?.call(r) ??
+              http.Response('{}', 404),
+        ),
+      );
+    });
+
+    tearDown(() => ApiService().setClientForTesting(http.Client()));
+
+    Widget sheetApp({PendingTap? tap}) => ProviderScope(
+      key: UniqueKey(),
+      child: MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => showLogInteractionSheet(
+                  context,
+                  target: (home: InteractionHome.lead, id: 'l1'),
+                  save: (_) async => 'Could not log this. Try again.',
+                  clock: () => DateTime(2026, 10, 24, 10),
+                  tap: tap,
+                  away: const Duration(minutes: 64),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final callTap = PendingTap(
+      kind: InteractionKind.call,
+      target: (home: InteractionHome.lead, id: 'l1'),
+      personName: 'Maximiliana',
+      tappedAt: DateTime(2026, 10, 24, 8, 56),
+    );
+
+    for (final scale in [1.0, 1.3, 1.5]) {
+      final at = 'text $scale';
+
+      testWidgets('the after-tap sheet for a call, and its retry, $at', (
+        tester,
+      ) async {
+        await pump(tester, sheetApp(tap: callTap), textScale: scale);
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Log this call to Maximiliana?'), findsOneWidget);
+        await tester.tap(find.text('Wrong number'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Log'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final retry = find.widgetWithText(FilledButton, 'Retry');
+        expect(retry, findsOneWidget);
+        expect(tester.getSize(retry).height, greaterThanOrEqualTo(44));
+        expect(
+          tester.getSize(find.widgetWithText(TextButton, 'Skip')).height,
+          greaterThanOrEqualTo(44),
+        );
+      });
+
+      testWidgets('Log activity with every kind offered, $at', (tester) async {
+        await pump(tester, sheetApp(), textScale: scale);
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text('Meeting'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a lead with every way to reach them, above its tabs, $at', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          ProviderScope(
+            key: UniqueKey(),
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: const LeadDetailScreen(leadId: 'l1'),
+            ),
+          ),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        final tabsTop = tester.getTopLeft(find.byType(TabBar)).dy;
+        final buttons = find.byType(RoundActionButton);
+        expect(buttons, findsNWidgets(4));
+        for (final button in buttons.evaluate()) {
+          final rect = tester.getRect(find.byWidget(button.widget));
+          expect(rect.bottom, lessThanOrEqualTo(tabsTop));
+        }
+        await tester.tap(find.text('Timeline'));
+        await tester.pumpAndSettle();
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a contact who asked not to be called, with activity, $at', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          ProviderScope(
+            key: UniqueKey(),
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: const ContactDetailScreen(contactId: 'c1'),
+            ),
+          ),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Do not call'), findsOneWidget);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+        expect(
+          find.text('Showing the newest 2 of 120 activities.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('the unanswered leads with their waits, $at', (tester) async {
+        await pump(
+          tester,
+          ProviderScope(
+            key: UniqueKey(),
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: const LeadsListScreen(initialView: 'unanswered'),
+            ),
+          ),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('waiting 1 d 2 h'), findsWidgets);
+      });
+    }
+  });
+
+  group('projects at 390px', () {
+    const pid = '11111111-1111-4111-8111-111111111111';
+    String path(String url) => Uri.parse(url).path;
+    const longName =
+        'Harbour Road flat rebuild, with the sea-view terrace, the parking '
+        'garage and the second-floor extension';
+    const longAccount = 'Northwind Traders International Holdings Limited';
+    final project = <String, dynamic>{
+      'id': pid,
+      'name': longName,
+      'account': {'id': 'a1', 'name': longAccount},
+      'deal': {'id': 'd1', 'name': 'Harbour Road flat with parking'},
+      'status': 'on_hold',
+      'billing_type': 'fixed_fee',
+      'currency': 'EUR',
+      'budget_hours': '1250.50',
+      'budget_amount': '1250000.00',
+      'hourly_rate': '185.00',
+      'start_date': '2026-10-01',
+      'due_date': '2027-03-31',
+      'assigned_to': [
+        {
+          'id': 'pr1',
+          'user_details': {
+            'name': 'Alexandra Featherstonehaugh-Montgomery',
+            'email': 'alexandra.featherstonehaugh@harbour-homes.example.com',
+          },
+        },
+      ],
+      'tags': [
+        {'id': 't1', 'name': 'Priority client with a very long tag name'},
+      ],
+      'burn': {
+        'logged_hours': '1312.75',
+        'billable_hours': '1200.00',
+        'billable_value': '1198765.43',
+        'unbilled_value': '998765.43',
+        'invoiced_amount': '200000.00',
+        'hours_percent': 105,
+        'amount_percent': 96,
+      },
+      'created_at': '2026-10-01T09:00:00Z',
+      'updated_at': '2026-10-01T09:00:00Z',
+      'description': 'A long description of the whole engagement. ' * 4,
+      'custom_fields': {},
+      'rates': [
+        {
+          'profile': {
+            'id': 'pr1',
+            'user_details': {'name': 'Alexandra Featherstonehaugh-Montgomery'},
+          },
+          'hourly_rate': '210.00',
+        },
+      ],
+      'comments': [
+        {
+          'id': 'c1',
+          'comment': 'The client asked for the terrace drawings again. ' * 3,
+          'commented_on': '2026-10-21T09:00:00Z',
+          'commented_by': {
+            'id': 'pr1',
+            'user_details': {
+              'email': 'alexandra.featherstonehaugh@harbour-homes.example.com',
+            },
+          },
+        },
+      ],
+      'attachments': [
+        {
+          'id': 'f1',
+          'file_name':
+              'harbour-road-terrace-and-garage-drawings-revision-14-final.pdf',
+          'file_path': 'files/drawings.pdf',
+          'created_at': '2026-10-21T09:00:00Z',
+        },
+      ],
+      'invoices': [
+        {
+          'id': 'i1',
+          'invoice_number': 'INV-2026-10-0001',
+          'status': 'Partially_Paid',
+          'total_amount': '200000.00',
+          'currency': 'EUR',
+          'issue_date': '2026-10-20',
+        },
+      ],
+      'can_edit': true,
+      'can_delete': true,
+      'can_bill': true,
+    };
+
+    setUp(() {
+      final routes = <String, http.Response Function(http.Request)>{
+        'GET ${path(ApiConfig.projects)}': (_) => http.Response(
+          jsonEncode({
+            'projects': [project, project],
+            'count': 2,
+          }),
+          200,
+        ),
+        'GET ${path(ApiConfig.project(pid))}': (_) =>
+            http.Response(jsonEncode(project), 200),
+        'GET ${path(ApiConfig.projectTimeEntries(pid))}': (_) => http.Response(
+          jsonEncode([
+            {
+              'id': 'e1',
+              'case': null,
+              'project': pid,
+              'project_name': longName,
+              'task': null,
+              'profile': {
+                'id': 'pr1',
+                'user_details': {
+                  'email':
+                      'alexandra.featherstonehaugh@harbour-homes.example.com',
+                },
+              },
+              'started_at': '2026-10-21T09:00:00Z',
+              'ended_at': '2026-10-21T17:45:00Z',
+              'duration_minutes': 525,
+              'billable': true,
+              'description':
+                  'Site visit, measured the terrace and the garage, and '
+                  'redrew the second-floor extension',
+              'invoice': {'id': 'i1', 'invoice_number': 'INV-2026-10-0001'},
+            },
+          ]),
+          200,
+        ),
+        'GET ${path(ApiConfig.tasks)}': (_) =>
+            http.Response(jsonEncode({'tasks': []}), 200),
+      };
+      ApiService().setClientForTesting(
+        MockClient(
+          (r) async =>
+              routes['${r.method} ${r.url.path}']?.call(r) ??
+              http.Response('{}', 404),
+        ),
+      );
+    });
+
+    tearDown(() => ApiService().setClientForTesting(http.Client()));
+
+    Widget app(Widget screen) => ProviderScope(
+      key: UniqueKey(),
+      child: routed(screen, theme: AppTheme.light),
+    );
+
+    for (final scale in [1.0, 1.5]) {
+      final at = 'text $scale';
+
+      testWidgets('the list with long names, $at', (tester) async {
+        await pump(tester, app(const ProjectsListScreen()), textScale: scale);
+        expect(tester.takeException(), isNull);
+        expect(find.text(longName), findsNWidgets(2));
+        _expectTappablesThumbSized(tester);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the detail with long names, every tab, $at', (tester) async {
+        await pump(
+          tester,
+          app(const ProjectDetailScreen(projectId: pid)),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        // Below a long name at a large text size, so scrolled to.
+        for (
+          var i = 0;
+          i < 4 && find.text('Bill time').evaluate().isEmpty;
+          i++
+        ) {
+          await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('Bill time'), findsOneWidget);
+        expect(find.text('Invoice an amount'), findsOneWidget);
+        _expectTappablesThumbSized(tester);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+        for (final tab in [
+          'Tasks',
+          'Time',
+          'Invoices',
+          'Files (1)',
+          'Comments (1)',
+        ]) {
+          final finder = find.widgetWithText(Tab, tab);
+          await tester.ensureVisible(finder);
+          await tester.pumpAndSettle();
+          await tester.tap(finder);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: tab);
+        }
+      });
+
+      testWidgets('a retainer detail and its edit form, $at', (tester) async {
+        final retainer = {
+          ...project,
+          'billing_type': 'retainer',
+          'retainer_fee': '2000.00',
+          'retainer_hours': '10.00',
+          'retainer_rollover': true,
+          'retainer_overage_rate': '150.00',
+          'retainer_carried_hours': '1.50',
+          'retainer_next_month': '2026-10-01',
+          'retainer_last_month': '2026-12-01',
+          'retainer_usage': {
+            'month': '2026-10',
+            'used_hours': '12.50',
+            'available_hours': '11.50',
+            'overage_hours': '1.00',
+            'billable_now': true,
+          },
+        };
+        ApiService().setClientForTesting(
+          MockClient(
+            (r) async => r.url.path == path(ApiConfig.project(pid))
+                ? http.Response(jsonEncode(retainer), 200)
+                : http.Response(jsonEncode({'tasks': []}), 200),
+          ),
+        );
+        await pump(
+          tester,
+          app(const ProjectDetailScreen(projectId: pid)),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        for (
+          var i = 0;
+          i < 4 && find.text('Bill October 2026').evaluate().isEmpty;
+          i++
+        ) {
+          await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('Bill October 2026'), findsOneWidget);
+        _expectTappablesThumbSized(tester);
+        await scrollToEnd(tester);
+        expect(tester.takeException(), isNull);
+
+        await pump(
+          tester,
+          app(const ProjectFormScreen(projectId: pid)),
+          textScale: scale,
+        );
+        for (var i = 0; i < 12; i++) {
+          await tester.drag(find.byType(ListView).first, const Offset(0, -400));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        }
+      });
+
+      testWidgets('the edit form with long names and a rate, $at', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          app(const ProjectFormScreen(projectId: pid)),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(longName), findsOneWidget);
+        for (var i = 0; i < 10; i++) {
+          await tester.drag(find.byType(ListView).first, const Offset(0, -400));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        }
+        expect(find.text('Save project'), findsOneWidget);
+      });
     }
   });
 }
@@ -4740,7 +5892,8 @@ class _FakeNoRoutingRules extends RoutingRulesNotifier {
   Future<RoutingRulesState> build() async => const RoutingRulesState();
 }
 
-/// One estimate still to convert, one already billed.
+/// One estimate still to convert, with the project and deposit invoice its
+/// acceptance made, and one already billed.
 class _FakeEstimates extends EstimatesNotifier {
   @override
   Future<List<Estimate>> build() async => [
@@ -4753,6 +5906,16 @@ class _FakeEstimates extends EstimatesNotifier {
       'total_amount': '52000.00',
       'currency': 'USD',
       'expiry_date': '2026-09-30',
+      'project': {
+        'id': 'p1',
+        'name': 'Warehouse rebuild for Northwind Traders and Logistics',
+      },
+      'deposit_invoice': {
+        'id': 'inv-12',
+        'invoice_number': 'INV-0012',
+        'status': 'Partially_Paid',
+        'total_amount': '15600.00',
+      },
     }),
     Estimate.fromJson({
       'id': 'e2',
@@ -5288,12 +6451,24 @@ Map<String, dynamic> _mailboxJson({
 
 MailboxesState _mailboxState({bool allLive = false}) {
   final rows = [
-    Mailbox.fromJson(_mailboxJson(id: 'm1', address: 'support@acme.com')),
+    // The widest live row: every reason dropped, and over its limit.
+    Mailbox.fromJson({
+      ..._mailboxJson(id: 'm1', address: 'support@acme.com'),
+      'dropped_last_30d': 1250,
+      'drops_last_30d': {
+        'spam': 900,
+        'virus': 2,
+        'spoofed': 300,
+        'automatic': 40,
+        'other': 8,
+      },
+      'limit_reached': true,
+    }),
     Mailbox.fromJson(
       _mailboxJson(
         id: 'm2',
         address: 'billing@acme.com',
-        provider: allLive ? 'ses' : 'mailgun',
+        provider: allLive ? 'ses' : 'imap',
       ),
     ),
     Mailbox.fromJson(
@@ -5308,6 +6483,7 @@ MailboxesState _mailboxState({bool allLive = false}) {
     mailboxes: sortedMailboxes(rows),
     count: rows.length,
     casesLast30d: 9,
+    dailyLimit: 300,
   );
 }
 
@@ -5721,6 +6897,7 @@ final _objSummary = ObjectSummary(
   labelPlural: _objLong60,
   nameLabel: 'Address',
   description: 'Every property we list, sell or manage for an owner.',
+  matches: true,
 );
 
 final _objSummaryArchived = ObjectSummary(
@@ -5981,6 +7158,34 @@ class _FakeObjectsApi extends CustomObjectsApi {
     String key,
     String id,
   ) async => ApiResponse(success: true, data: record, statusCode: 200);
+
+  @override
+  Future<ApiResponse<Map<String, dynamic>>> fetchMatches(
+    String id, {
+    bool dismissed = false,
+  }) async => ApiResponse(
+    success: true,
+    statusCode: 200,
+    data: {
+      'side': 'property',
+      'object': {
+        'key': 'requirement',
+        'label': _objLong60,
+        'label_plural': _objLong60,
+      },
+      'dismissed_count': 2,
+      'matches': [
+        for (final n in ['Asha Raman', _objLong64])
+          {
+            'id': '44444444-4444-4444-4444-44444444444${n.length % 10}',
+            'name': n,
+            'facts': [
+              {'label': _objLong60, 'value': _objLong64},
+            ],
+          },
+      ],
+    },
+  );
 }
 
 class _NoObjectDuplicates extends DuplicatesApi {
@@ -6023,4 +7228,111 @@ class _FakeLanguage extends LanguageNotifier {
     saved.add(language);
     return null;
   }
+}
+
+class _FakeLeadSources extends LeadSourcesNotifier {
+  @override
+  Future<LeadSourcesAnswer> build() async => const LeadSourcesAnswer(
+    sources: [
+      LeadSource(id: 's1', key: 'email', label: 'Email', order: 1),
+      LeadSource(
+        id: 's2',
+        key: 'directory or marketplace',
+        label: 'Directory or marketplace',
+        order: 2,
+      ),
+      LeadSource(
+        id: 's3',
+        key: 'walk-in',
+        label: 'Walk-in',
+        isActive: false,
+        order: 3,
+      ),
+    ],
+  );
+}
+
+class _FakeLeadIntakes extends LeadIntakesNotifier {
+  @override
+  Future<List<LeadIntake>> build() async => [
+    LeadIntake.fromJson(const {
+      'id': 'i1',
+      'name': 'Gravity Forms on the old marketing site, contact page',
+      'preset': 'gravity_forms',
+      'url':
+          'https://api.example.com/api/public/leads/3f2b8c1e-5a4d-4e8b-9c3a-1d2e3f4a5b6c/',
+      'key_hint': 'zz99',
+      'default_source': 'email',
+      'source_detail': 'Contact page',
+      'is_active': true,
+    }),
+  ];
+}
+
+class _FakeLeadMailboxes extends MailboxesNotifier {
+  @override
+  Future<MailboxesState> build() async => MailboxesState(
+    leadsOffered: true,
+    generatedDomain: 'in.example.com',
+    mailboxes: [
+      Mailbox.fromJson(const {
+        'id': 'm1',
+        'address': 'a-rather-long-org-slug-k3j9x2@in.example.com',
+        'creates': 'leads',
+        'lead_source': 'email',
+        'is_active': false,
+        'is_generated': true,
+      }),
+    ],
+  );
+}
+
+class _FakeAlertProfile extends ProfileNotifier {
+  @override
+  Future<Profile> build() async => const Profile(
+    id: 'p1',
+    user: AuthUser(id: 'u1', email: 'user@example.com', name: 'Ada Lovelace'),
+  );
+}
+
+class _FakeLeadAlertNotifications extends NotificationsNotifier {
+  @override
+  Future<void> quietRefresh() async {}
+
+  @override
+  Future<NotificationFeed> build() async {
+    AppNotification lead(
+      String verb,
+      String id, {
+      String name = 'Maria Lopez',
+    }) => AppNotification(
+      id: id,
+      verb: verb,
+      entityName: name,
+      leadSource: 'Google ads',
+      link: '/leads/3f2b8c1e-5a4d-4e8b-9c3a-1d2e3f4a5b6c',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+    );
+    final items = [
+      lead('lead.assigned', 'l1'),
+      lead('lead.created', 'l2'),
+      lead('lead.enquired', 'l3', name: 'Maria Lopez-Fernandez de la Cruz'),
+      AppNotification(
+        id: 'l4',
+        verb: 'lead.waiting',
+        entityName: 'Maria Lopez',
+        link: '/leads/3f2b8c1e-5a4d-4e8b-9c3a-1d2e3f4a5b6c',
+        createdAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      ),
+    ];
+    return NotificationFeed(items: items, unreadCount: 4, total: 4);
+  }
+}
+
+class _FakeSignedIn extends AuthNotifier {
+  @override
+  AuthState build() => const AuthState(
+    isAuthenticated: true,
+    selectedOrganization: Organization(id: 'o1', name: 'Acme'),
+  );
 }

@@ -15,9 +15,12 @@ not a hypothetical. The enterprise suite re-exported this file with
 whole time.
 """
 
+import pytest
+
 from common.testing import (  # noqa: F401
     _make_authenticated_client,
     _restore_rls_context_after_each_request,
+    _schema_contract,
     _use_db,
     admin_client,
     admin_profile,
@@ -36,3 +39,43 @@ from common.testing import (  # noqa: F401
     user_client,
     user_profile,
 )
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--contract-coverage",
+        action="store_true",
+        help="Fail a passing full run if any JSON success reply in the API "
+        "schema was never checked against a test response.",
+    )
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_testnodedown(node, error):
+    # pytest-xdist: each worker checks its own share of the suite, so the
+    # controller merges every worker's checked operations before reporting.
+    from common.schema_contract import CHECKED
+
+    CHECKED.update(getattr(node, "workeroutput", {}).get("contract_checked", ()))
+
+
+def pytest_sessionfinish(session, exitstatus):
+    config = session.config
+    if not config.getoption("--contract-coverage"):
+        return
+    from common.schema_contract import CHECKED, unchecked_operations
+
+    if hasattr(config, "workeroutput"):
+        config.workeroutput["contract_checked"] = sorted(CHECKED)
+        return
+    if exitstatus != 0:
+        return
+    missing = unchecked_operations()
+    if missing:
+        report = session.config.pluginmanager.get_plugin("terminalreporter")
+        report.write_line(
+            "\nCONTRACT-COVERAGE: no test checks the success reply of:", red=True
+        )
+        for key in missing:
+            report.write_line(f"  {key}", red=True)
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED

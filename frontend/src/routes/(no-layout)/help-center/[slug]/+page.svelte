@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * The front page of an org's public help center.
    *
@@ -14,8 +14,9 @@
   import { resolve } from '$app/paths';
   import HelpCenterShell from '#lib/v2/components/HelpCenterShell.svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let title = $derived(
     data.q
@@ -24,8 +25,8 @@
   );
   let description = $derived(m.public_help_description({ name: data.name }));
 
-  /** The query string for page `n`, keeping the search. @param {number} n */
-  function pageQuery(n) {
+  /** The query string for page `n`, keeping the search. */
+  function pageQuery(n: number) {
     const parts = [];
     if (data.q) parts.push(`q=${encodeURIComponent(data.q)}`);
     if (n > 1) parts.push(`page=${n}`);

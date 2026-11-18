@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/attachment.dart';
 import '../data/models/custom_field_definition.dart';
 import '../data/models/lead.dart';
@@ -44,20 +45,15 @@ class AssignableUser {
     this.profilePic,
   });
 
+  /// Reads a `Profile`, as the lead detail's `users` lists them.
   factory AssignableUser.fromJson(Map<String, dynamic> json) {
-    final details = json['user_details'];
-    String label = '';
-    String? pic;
-    if (details is Map<String, dynamic>) {
-      label = (details['name'] as String?)?.trim().isNotEmpty == true
-          ? details['name'] as String
-          : (details['email'] as String? ?? '');
-      pic = details['profile_pic'] as String?;
-    }
+    final w = api.Profile.fromJson(json);
+    final name = w.userDetails?.name?.trim() ?? '';
+    final label = name.isNotEmpty ? name : (w.userDetails?.email ?? '');
     return AssignableUser(
-      id: json['id']?.toString() ?? '',
+      id: w.id ?? '',
       label: label.isEmpty ? appL10n.appUnknownPerson : label,
-      profilePic: pic,
+      profilePic: w.userDetails?.profilePic,
     );
   }
 }
@@ -71,7 +67,8 @@ class LeadFilters {
   // "not converted, not closed". The filter sheet is still single-select and
   // stores its choice as a one-element set.
   final Set<LeadStatus> statuses;
-  final LeadSource? source;
+  // A source key. The org edits its list, so any key is taken as given.
+  final String? source;
   final LeadRating? rating;
   // Assignee profile id. null = anyone (no filter).
   final String? assignedToId;
@@ -83,6 +80,9 @@ class LeadFilters {
   // ISO date (yyyy-MM-dd). Follow-ups due on exactly this day.
   final String? nextFollowUp;
 
+  /// Leads waiting for a first reply, oldest wait first (server-side).
+  final bool unanswered;
+
   const LeadFilters({
     this.search,
     this.statuses = const {},
@@ -93,6 +93,7 @@ class LeadFilters {
     this.tagId,
     this.tagLabel,
     this.nextFollowUp,
+    this.unanswered = false,
   });
 
   /// The single selected status, or null when none or several are selected.
@@ -115,6 +116,9 @@ class LeadFilters {
         '${day.month.toString().padLeft(2, '0')}-'
         '${day.day.toString().padLeft(2, '0')}',
   );
+
+  /// The home screen's "Unanswered" badge.
+  factory LeadFilters.unansweredOnly() => const LeadFilters(unanswered: true);
 
   /// A saved view's filters (`{param: [value, ...]}`) as this list's state:
   /// the parameters [filterQuery] sends, read back. A value this list does not
@@ -139,19 +143,21 @@ class LeadFilters {
 
     final assignee = one('assigned_to');
     final tag = one('tags');
+    final source = one('source');
     return LeadFilters(
       search: one('search'),
       statuses: {
         for (final raw in query['status'] ?? const <String>[])
           ?match(LeadStatus.values, raw, (s) => s.value),
       },
-      source: match(LeadSource.values, one('source'), (s) => s.value),
+      source: source == null || source.isEmpty ? null : source,
       rating: match(LeadRating.values, one('rating'), (r) => r.value),
       assignedToId: assignee,
       assignedToLabel: assignee == null ? null : assignedToLabel,
       tagId: tag,
       tagLabel: tag == null ? null : tagLabel,
       nextFollowUp: one('next_follow_up'),
+      unanswered: one('unanswered') == 'true',
     );
   }
 
@@ -162,7 +168,8 @@ class LeadFilters {
       rating == null &&
       (assignedToId == null || assignedToId!.isEmpty) &&
       tagId == null &&
-      nextFollowUp == null;
+      nextFollowUp == null &&
+      !unanswered;
 
   bool get isActive => !isEmpty;
 
@@ -177,6 +184,7 @@ class LeadFilters {
     bool assignedTo = false,
     bool tag = false,
     bool nextFollowUp = false,
+    bool unanswered = false,
   }) {
     return LeadFilters(
       search: search ? null : this.search,
@@ -188,6 +196,7 @@ class LeadFilters {
       tagId: tag ? null : tagId,
       tagLabel: tag ? null : tagLabel,
       nextFollowUp: nextFollowUp ? null : this.nextFollowUp,
+      unanswered: unanswered ? false : this.unanswered,
     );
   }
 
@@ -201,6 +210,7 @@ class LeadFilters {
     tagId: tagId,
     tagLabel: tagLabel,
     nextFollowUp: nextFollowUp,
+    unanswered: unanswered,
   );
 
   LeadFilters withStatus(LeadStatus? value) =>
@@ -216,9 +226,10 @@ class LeadFilters {
     tagId: tagId,
     tagLabel: tagLabel,
     nextFollowUp: nextFollowUp,
+    unanswered: unanswered,
   );
 
-  LeadFilters withSource(LeadSource? value) => LeadFilters(
+  LeadFilters withSource(String? value) => LeadFilters(
     search: search,
     statuses: statuses,
     source: value,
@@ -228,6 +239,7 @@ class LeadFilters {
     tagId: tagId,
     tagLabel: tagLabel,
     nextFollowUp: nextFollowUp,
+    unanswered: unanswered,
   );
 
   LeadFilters withRating(LeadRating? value) => LeadFilters(
@@ -240,6 +252,7 @@ class LeadFilters {
     tagId: tagId,
     tagLabel: tagLabel,
     nextFollowUp: nextFollowUp,
+    unanswered: unanswered,
   );
 
   LeadFilters withAssignee({String? id, String? label}) => LeadFilters(
@@ -252,6 +265,7 @@ class LeadFilters {
     tagId: tagId,
     tagLabel: tagLabel,
     nextFollowUp: nextFollowUp,
+    unanswered: unanswered,
   );
 
   LeadFilters withTag({String? id, String? label}) => LeadFilters(
@@ -264,6 +278,20 @@ class LeadFilters {
     tagId: id,
     tagLabel: label,
     nextFollowUp: nextFollowUp,
+    unanswered: unanswered,
+  );
+
+  LeadFilters withUnanswered(bool value) => LeadFilters(
+    search: search,
+    statuses: statuses,
+    source: source,
+    rating: rating,
+    assignedToId: assignedToId,
+    assignedToLabel: assignedToLabel,
+    tagId: tagId,
+    tagLabel: tagLabel,
+    nextFollowUp: nextFollowUp,
+    unanswered: value,
   );
 
   LeadFilters withNextFollowUp(String? value) => LeadFilters(
@@ -276,6 +304,7 @@ class LeadFilters {
     tagId: tagId,
     tagLabel: tagLabel,
     nextFollowUp: value,
+    unanswered: unanswered,
   );
 }
 
@@ -292,6 +321,10 @@ class LeadsListData {
     this.hasMore = true,
     this.currentOffset = 0,
   });
+
+  /// The API marks each lead answered or not, so it can list unanswered ones.
+  /// An older API sends no `is_unanswered` and ignores the filter.
+  bool get offersUnanswered => leads.any((l) => l.isUnanswered != null);
 
   LeadsListData copyWith({
     List<Lead>? leads,
@@ -355,13 +388,14 @@ class LeadsNotifier extends AsyncNotifier<LeadsListData> {
       if (f.search != null && f.search!.isNotEmpty) 'search': f.search!,
       if (f.statuses.isNotEmpty)
         'status': f.statuses.map((s) => s.value).toList(),
-      if (f.source != null) 'source': f.source!.value,
+      if (f.source != null) 'source': f.source!,
       if (f.rating != null) 'rating': f.rating!.value,
       if (f.assignedToId != null && f.assignedToId!.isNotEmpty)
         'assigned_to': f.assignedToId!,
       if (f.tagId != null && f.tagId!.isNotEmpty) 'tags': f.tagId!,
       if (f.nextFollowUp != null && f.nextFollowUp!.isNotEmpty)
         'next_follow_up': f.nextFollowUp!,
+      if (f.unanswered) 'unanswered': 'true',
     };
   }
 
@@ -383,24 +417,14 @@ class LeadsNotifier extends AsyncNotifier<LeadsListData> {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadLeads);
     }
 
-    final data = response.data!;
-
-    // Backend returns open_leads + close_leads in two sub-objects.
-    final openLeadsData = data['open_leads'] as Map<String, dynamic>?;
-    final openLeadsList = openLeadsData?['open_leads'] as List<dynamic>? ?? [];
-    final openLeadsCount = openLeadsData?['leads_count'] as int? ?? 0;
-
-    final closeLeadsData = data['close_leads'] as Map<String, dynamic>?;
-    final closeLeadsList =
-        closeLeadsData?['close_leads'] as List<dynamic>? ?? [];
-
-    final allLeadsList = [...openLeadsList, ...closeLeadsList];
-    final newLeads = allLeadsList
-        .map((json) => Lead.fromJson(json as Map<String, dynamic>))
-        .toList();
-
-    final totalCount =
-        openLeadsCount + (closeLeadsData?['leads_count'] as int? ?? 0);
+    final data = api.LeadListResponse.fromJson(response.data!);
+    final open = data.openLeads;
+    final closed = data.closeLeads;
+    final newLeads = [
+      for (final row in [...?open?.openLeads, ...?closed?.closeLeads])
+        Lead.fromJson(row.json),
+    ];
+    final totalCount = (open?.leadsCount ?? 0) + (closed?.leadsCount ?? 0);
 
     return LeadsListData(
       leads: newLeads,
@@ -445,84 +469,41 @@ class LeadsNotifier extends AsyncNotifier<LeadsListData> {
         return null;
       }
 
-      final data = response.data!;
-      final leadData = data['lead_obj'] as Map<String, dynamic>?;
-      if (leadData == null) {
+      final data = api.LeadDetailResponse.fromJson(response.data!);
+      final leadObj = data.leadObj;
+      if (leadObj == null) {
         // ignore: avoid_print
         print('[leads_provider] getLeadDetail($id): missing lead_obj');
         return null;
       }
 
-      // Parse the lead itself. This is the only failure that should sink
-      // the whole detail load. Everything else is a soft-fail.
-      final Lead baseLead = Lead.fromJson(leadData);
-      Lead lead = baseLead;
-
-      // Backend returns comments at the top level. Prefer those over
-      // anything embedded on the lead since they're freshly queried.
-      try {
-        final commentsData = data['comments'] as List<dynamic>?;
-        if (commentsData != null && commentsData.isNotEmpty) {
-          lead = lead.copyWith(
-            comments: commentsData
-                .whereType<Map<String, dynamic>>()
-                .map(Comment.fromJson)
-                .toList(),
-          );
-        }
-      } catch (e, st) {
-        // ignore: avoid_print
-        print('[leads_provider] comments parse failed: $e\n$st');
-      }
-
-      try {
-        final attachmentsData = data['attachments'] as List<dynamic>?;
-        if (attachmentsData != null && attachmentsData.isNotEmpty) {
-          lead = lead.copyWith(
-            attachments: attachmentsData
-                .whereType<Map<String, dynamic>>()
-                .map(Attachment.fromJson)
-                .toList(),
-          );
-        }
-      } catch (e, st) {
-        // ignore: avoid_print
-        print('[leads_provider] attachments parse failed: $e\n$st');
-      }
-
-      List<CustomFieldDefinition> defs = const [];
-      try {
-        final defsData = data['custom_field_definitions'] as List<dynamic>?;
-        defs = (defsData ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(CustomFieldDefinition.fromJson)
-            .toList();
-      } catch (e, st) {
-        // ignore: avoid_print
-        print(
-          '[leads_provider] custom_field_definitions parse failed: $e\n$st',
+      // Comments and attachments come beside the lead, freshly queried.
+      var lead = Lead.fromJson(leadObj.json);
+      final comments = data.comments ?? const <api.LeadComment>[];
+      if (comments.isNotEmpty) {
+        lead = lead.copyWith(
+          comments: [for (final c in comments) Comment.fromJson(c.json)],
         );
       }
-
-      List<AssignableUser> users = const [];
-      try {
-        final usersData = data['users'] as List<dynamic>?;
-        users = (usersData ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(AssignableUser.fromJson)
-            .toList();
-      } catch (e, st) {
-        // ignore: avoid_print
-        print('[leads_provider] users parse failed: $e\n$st');
+      final attachments = data.attachments ?? const <api.Attachments>[];
+      if (attachments.isNotEmpty) {
+        lead = lead.copyWith(
+          attachments: [
+            for (final a in attachments) Attachment.fromJson(a.json),
+          ],
+        );
       }
 
       return LeadDetail(
         lead: lead,
-        customFieldDefinitions: defs,
-        assignableUsers: users,
+        customFieldDefinitions: customFieldDefinitionsIn(response.data!),
+        assignableUsers: [
+          for (final u in data.users ?? const <api.Profile>[])
+            AssignableUser.fromJson(u.json),
+        ],
         // `lead_obj.stage` is only an id; the names travel beside it.
-        stage: LeadStageRef.fromJson(data['pipeline_stage']),
-        canDelete: data['can_delete'] == true,
+        stage: LeadStageRef.fromJson(data.pipelineStage?.json),
+        canDelete: data.canDelete ?? false,
       );
     } catch (e, st) {
       // ignore: avoid_print

@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { tick, untrack } from 'svelte';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import AutomationCrumb from './AutomationCrumb.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
@@ -20,20 +20,37 @@
     switchLabel,
     pausedByModule,
     modulePausedNote,
-    STATUS
+    STATUS,
+    type Catalogue,
+    type EditorForm
   } from '#lib/v2/automation.js';
   import TriggerSection from './TriggerSection.svelte';
   import ConditionRows from './ConditionRows.svelte';
   import ActionRows from './ActionRows.svelte';
+  import type { ModuleRow } from '#lib/v2/modules.js';
+  import type { components } from '#lib/api-schema.js';
 
   /**
    * The rule editor both `settings/automation/new` and `[id]` render. The rule
    * is one `$state` draft, posted whole as the `rule` field; it outlives a
-   * refused save, so nothing the admin typed is lost.
-   *
-   * @type {{ catalogue: any, rule?: any, row?: any, modules?: any, form: any }}
+   * refused save, so nothing the admin typed is lost. `plansHref` is where a
+   * plan limit can be lifted (`billingHref`), or null.
    */
-  let { catalogue, rule = null, row = null, modules = null, form } = $props();
+  let {
+    catalogue,
+    rule = null,
+    row = null,
+    modules = null,
+    form,
+    plansHref = null
+  }: {
+    catalogue: Catalogue;
+    rule?: components['schemas']['Rule'] | null;
+    row?: components['schemas']['RuleRow'] | null;
+    modules?: ModuleRow[] | null;
+    form: EditorForm;
+    plansHref?: string | null;
+  } = $props();
 
   let draft = $state(untrack(() => editorState(rule, catalogue?.objects?.[0]?.key ?? '')));
   let busy = $state(false);
@@ -44,25 +61,19 @@
   let object = $derived(objectOf(catalogue, draft.object_key));
   let switchTo = $derived(switchLabel(ruleStatus(rule, row)));
   let errors = $derived(editorErrors(form?.save, sent, draft));
-  let status = $derived(
-    /** @type {Record<string, { label: string, tone: any }>} */ (STATUS)[
-      ruleStatus(rule, row) ?? ''
-    ] ?? null
-  );
+  let status = $derived(STATUS[ruleStatus(rule, row) ?? ''] ?? null);
   let held = $derived(Boolean(row) && pausedByModule(row, modules));
   let dirty = $derived(rule ? isDirty(draft, rule) : false);
   let ownerName = $derived(rule?.owner ? String(rule.owner.name ?? '').trim() : '');
   let saved = $derived(Boolean(form?.saved) && rule && !isDirty(draft, rule));
 
-  /** @type {import('$app/forms').SubmitFunction} */
-  const turnOff =
+  const turnOff: SubmitFunction =
     () =>
     async ({ update }) => {
       await update({ reset: false });
     };
 
-  /** @type {import('$app/forms').SubmitFunction} */
-  const save = () => {
+  const save: SubmitFunction = () => {
     busy = true;
     const rows = sentRows(draft);
     return async ({ update }) => {
@@ -70,8 +81,10 @@
       await update({ reset: false });
       busy = false;
       await tick();
-      /** @type {HTMLElement | null} */ (
-        document.querySelector('.au-editor [aria-invalid="true"]:not([role="group"])')
+      (
+        document.querySelector(
+          '.au-editor [aria-invalid="true"]:not([role="group"])'
+        ) as HTMLElement | null
       )?.focus();
     };
   };
@@ -112,9 +125,9 @@
             <NextAction
               label={m.app_automation_paused()}
               tone="rust"
-              text={modulePausedNote({ name: rule.name, status_text: row.status_text })}
+              text={modulePausedNote({ name: rule.name, status_text: row?.status_text })}
               action={m.app_automation_open_modules()}
-              href="/settings/modules"
+              href="/settings/apps"
             />
           </div>
         {:else if row?.status_text && row.status_text !== status.label}
@@ -183,7 +196,13 @@
 
       {#if errors.general}
         <div class="au-general">
-          <NextAction label={m.app_automation_not_saved()} text={errors.general} tone="rust" />
+          <NextAction
+            label={m.app_automation_not_saved()}
+            text={errors.general}
+            tone="rust"
+            action={form?.save?.plan && plansHref ? m.app_automation_see_plans() : undefined}
+            href={form?.save?.plan ? plansHref : null}
+          />
         </div>
       {/if}
 

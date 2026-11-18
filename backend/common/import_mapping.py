@@ -15,6 +15,8 @@ from functools import cache
 from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext, gettext_lazy
+from drf_spectacular.utils import inline_serializer
+from rest_framework import serializers
 
 from common.spreadsheet import Table, read_upload
 from common.utils import split_full_name
@@ -254,3 +256,72 @@ def choice_lookup(choices) -> dict:
     for value, _label in choices:
         lookup[str(value).lower()] = value
     return lookup
+
+
+class ImportColumnSerializer(serializers.Serializer):
+    index = serializers.IntegerField()
+    header = serializers.CharField()
+    field = serializers.CharField(allow_null=True)
+    samples = serializers.ListField(child=serializers.CharField())
+
+
+class ImportFieldSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    label = serializers.CharField()
+    required = serializers.BooleanField()
+
+
+class ImportSkippedRowSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    field = serializers.CharField()
+    message = serializers.CharField()
+    cells = serializers.ListField(child=serializers.CharField())
+    kind = serializers.CharField(help_text=f'"{SKIP_DUPLICATE}" or "{SKIP_ROW}"')
+
+
+class ImportDroppedSerializer(serializers.Serializer):
+    field = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class ImportMappedSummarySerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    valid = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+
+
+def mapped_commit_schema(name):
+    """The OpenAPI shape of a commit reply, for `@extend_schema`.
+
+    `skipped` and `dropped` come only from a mapped import, which reports what
+    the preview left out beside what it created.
+    """
+    return inline_serializer(
+        name=name,
+        fields={
+            "error": serializers.BooleanField(),
+            "created": serializers.IntegerField(),
+            "ids": serializers.ListField(child=serializers.CharField()),
+            "skipped": ImportSkippedRowSerializer(many=True, required=False),
+            "dropped": ImportDroppedSerializer(many=True, required=False),
+        },
+    )
+
+
+def mapped_preview_schema(name, valid_row):
+    """The OpenAPI shape of `MappedPreview.to_dict()`, for `@extend_schema`.
+
+    `valid_row` is a serializer instance (`many=True`) for the module's own
+    validated rows, which are all that differs between importers.
+    """
+    return inline_serializer(
+        name=name,
+        fields={
+            "columns": ImportColumnSerializer(many=True),
+            "fields": ImportFieldSerializer(many=True),
+            "valid": valid_row,
+            "skipped": ImportSkippedRowSerializer(many=True),
+            "dropped": ImportDroppedSerializer(many=True),
+            "summary": ImportMappedSummarySerializer(),
+        },
+    )

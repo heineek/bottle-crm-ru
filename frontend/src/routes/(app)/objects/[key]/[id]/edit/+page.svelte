@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -6,9 +6,9 @@
   import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import { TriangleAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   let def = $derived(data.definition);
   let record = $derived(data.record);
@@ -16,15 +16,23 @@
   let recordPath = $derived(`/objects/${def.key}/${record.id}`);
 
   // What was typed comes back after a refusal.
-  let typed = $derived(result?.values ?? {});
+  let typed = $derived(result?.values);
   let fields = $derived(
-    data.fields.map((/** @type {any} */ f) => {
-      const v = typed.custom_fields?.[f.key];
-      if (!typed.custom_fields || !(f.key in typed.custom_fields)) return f;
+    data.fields.map((f) => {
+      const v = typed?.custom_fields?.[f.key];
+      if (!typed?.custom_fields || !(f.key in typed.custom_fields)) return f;
       return { ...f, value: f.field_type === 'checkbox' ? Boolean(v) : v == null ? '' : String(v) };
     })
   );
   let linkFields = $derived(data.linkFields);
+  // The tags typed in a refused save, else the record's own.
+  let selectedTags = $derived(
+    typed?.tags
+      ? typed.tags
+          .map((id) => data.tags?.find((t) => t.id === id) ?? record.tags?.find((t) => t.id === id))
+          .filter((t) => t !== undefined)
+      : (record.tags ?? [])
+  );
 </script>
 
 <PageHeader title={m.app_objects_edit_title({ name: record.name })} center>
@@ -69,7 +77,7 @@
         class="v2-input"
         required
         maxlength="255"
-        value={typed.name ?? record.name}
+        value={typed?.name ?? record.name}
       />
     </div>
 
@@ -78,6 +86,9 @@
       {linkFields}
       people={data.people}
       assignees={record.assigned_to}
+      tags={data.tags}
+      {selectedTags}
+      savedTags={record.tags ?? []}
       edit
     />
 

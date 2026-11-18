@@ -7,6 +7,7 @@ import '../../core/theme/theme.dart';
 import '../../data/models/estimate.dart';
 import '../../l10n/l10n.dart';
 import '../../providers/invoice_extras_provider.dart';
+import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
 import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
@@ -108,6 +109,9 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
   bool _busy = false;
 
   Future<void> _convert() async {
+    final deposit = widget.estimate.liveDepositInvoice;
+    if (deposit != null && !await _confirmDeposit(deposit)) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     final result = await ref
         .read(estimatesProvider.notifier)
@@ -132,6 +136,36 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
     }
   }
 
+  /// The full invoice bills every line: invoice lines cannot be negative, so
+  /// the deposit already billed is the person's edit to make before sending.
+  Future<bool> _confirmDeposit(EstimateDepositInvoice deposit) async {
+    final amount = money(
+      deposit.totalAmount,
+      widget.estimate.currencyInfo.symbol,
+    );
+    final which = context.l10n
+        .invoicesDepositInvoiceNumber(deposit.invoiceNumber)
+        .trim();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.invoicesRaiseFullTitle),
+        content: Text(context.l10n.invoicesRaiseFullBody(which, amount)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.invoicesRaiseInvoice),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
   Future<void> _send() async {
     setState(() => _busy = true);
     final error = await ref
@@ -147,6 +181,9 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
   @override
   Widget build(BuildContext context) {
     final estimate = widget.estimate;
+    final project = estimate.project;
+    final deposit = estimate.depositInvoice;
+    final projectsOn = ref.watch(moduleOnProvider('projects'));
     return Container(
       color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 1),
@@ -230,6 +267,27 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
                 ),
             ],
           ),
+          if (project != null)
+            _RowLink(
+              icon: LucideIcons.folderKanban,
+              label: project.name.isEmpty
+                  ? context.l10n.invoicesEstimateProject
+                  : context.l10n.invoicesEstimateProjectNamed(project.name),
+              onTap: projectsOn
+                  ? () => context.push(AppRoutes.projectFor(project.id))
+                  : null,
+            ),
+          if (deposit != null)
+            _RowLink(
+              icon: LucideIcons.receipt,
+              label: [
+                context.l10n
+                    .invoicesDepositInvoiceNumber(deposit.invoiceNumber)
+                    .trim(),
+                if (deposit.statusLabel.isNotEmpty) deposit.statusLabel,
+              ].join(' · '),
+              onTap: () => context.push('${AppRoutes.invoices}/${deposit.id}'),
+            ),
           if (estimate.canSend || estimate.canConvert) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -272,6 +330,43 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A record the estimate led to, opened with a tap when there is somewhere to
+/// go. At least 44px tall.
+class _RowLink extends StatelessWidget {
+  const _RowLink({required this.icon, required this.label, this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = onTap == null
+        ? AppColors.textSecondary
+        : AppColors.primary600;
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.body.copyWith(color: color),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

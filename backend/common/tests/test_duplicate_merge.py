@@ -68,6 +68,8 @@ def _merge(client, module, keeper, loser_id):
 # without an IntegrityError, and a credential must not be).
 EXPECTED_RELATIONS = {
     Lead: {
+        "interactions.Interaction.lead",
+        "leads.LeadIntakeEvent.lead",
         "tasks.Task.lead",
         "webforms.WebFormSubmission.lead",
     },
@@ -79,6 +81,7 @@ EXPECTED_RELATIONS = {
         "accounts.AccountEmailLog.contact",
         "cases.Case.contacts",
         "cases.CsatSurvey.contact",
+        "interactions.Interaction.contact",
         "leads.Lead.contacts",
         "opportunity.Opportunity.contacts",
         "tasks.BoardTask.contact",
@@ -92,6 +95,7 @@ EXPECTED_RELATIONS = {
         "accounts.AccountEmail.from_account",
         "cases.Case.account",
         "contacts.Contact.account",
+        "interactions.Interaction.account",
         "opportunity.Opportunity.account",
         "tasks.BoardTask.account",
         "tasks.Task.account",
@@ -99,6 +103,7 @@ EXPECTED_RELATIONS = {
         "invoices.Estimate.account",
         "invoices.RecurringInvoice.account",
         "orders.Order.account",
+        "projects.Project.account",
     },
 }
 
@@ -230,6 +235,22 @@ class TestRecordDuplicates:
         body = response.json()
         assert body["can_delete"] is True
         assert [d["id"] for d in body["duplicates"]] == [str(two.id)]
+
+    def test_lists_a_contacts_matches(self, admin_client, org_a):
+        one = _contact(org_a, email="ann@x.com")
+        two = _contact(org_a, first="ann", last="LEE", email="lee@y.com")
+        response = admin_client.get(f"/api/contacts/{one.id}/duplicates/")
+        assert response.status_code == 200
+        assert [d["id"] for d in response.json()["duplicates"]] == [str(two.id)]
+
+    def test_lists_an_accounts_matches(self, admin_client, org_a):
+        one = Account.objects.create(org=org_a, name="Acme", website="https://acme.com")
+        two = Account.objects.create(
+            org=org_a, name="Rocket", website="www.acme.com/about"
+        )
+        response = admin_client.get(f"/api/accounts/{one.id}/duplicates/")
+        assert response.status_code == 200
+        assert [d["id"] for d in response.json()["duplicates"]] == [str(two.id)]
 
     def test_hidden_missing_and_foreign_records_are_the_same_404(
         self, user_client, org_a, org_b, other_user

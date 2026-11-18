@@ -47,5 +47,15 @@
   "contactsDetailTitle": "Должность",
   "contactsDetailLinkedin": "LinkedIn",
   "contactsDetailNoDetails": "Подробности пока не указаны.",
-  "contactsDetailAccounts": "Компании ({count})"
+  "contactsDetailAccounts": "Компании ({count})",
+  "contactsDetailSource": "Источник",
+  "contactsDetailSubSource": "Уточнение источника",
+  "contactsDetailReference": "Метка источника",
+  "contactsDetailCall": "Позвонить",
+  "contactsDetailMessage": "Сообщение",
+  "contactsDetailActivityFailed": "Не удалось загрузить активность.",
+  "contactsDetailActivity": "Активность",
+  "contactsDetailNothingLogged": "Пока ничего не записано.",
+  "contactsDetailCustomFields": "Дополнительные поля",
+  "contactsDetailEmail": "Написать"
 }

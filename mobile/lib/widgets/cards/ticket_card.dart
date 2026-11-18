@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../l10n/l10n.dart';
 import '../../core/theme/theme.dart';
+import '../../data/api/schema.g.dart' as api;
 import '../../data/models/ticket.dart';
 import '../common/avatar.dart';
 
@@ -295,10 +296,8 @@ class TicketCard extends StatelessWidget {
   /// First assignee avatar plus a "+N" overflow circle. Only called when the
   /// ticket has at least one assignee.
   Widget _buildAssignees() {
-    final first = ticketItem.assignedTo.first;
     final email =
-        (first['user_details']?['email'] as String?) ??
-        (first['email'] as String?) ??
+        api.Profile.fromJson(ticketItem.assignedTo.first).userDetails?.email ??
         '';
     final name = email.isNotEmpty
         ? email.split('@').first

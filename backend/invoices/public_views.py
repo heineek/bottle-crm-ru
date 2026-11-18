@@ -13,7 +13,9 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
-from rest_framework import status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -30,8 +32,90 @@ from invoices.pdf import (
     generate_invoice_filename,
     generate_invoice_pdf,
 )
+from invoices.proposals import (
+    estimate_deposit,
+    notify_accepted,
+    notify_declined,
+    start_on_acceptance,
+)
+from invoices.serializer import EstimateDepositSerializer
 
 logger = logging.getLogger(__name__)
+
+
+def _text(*names, **kwargs):
+    return {name: serializers.CharField(**kwargs) for name in names}
+
+
+_LINES = inline_serializer(
+    "PublicDocumentLine",
+    _text("name", "description", "quantity", "unit_price", "amount"),
+    many=True,
+)
+_ORG = inline_serializer("PublicDocumentOrg", _text("name", allow_null=True))
+_STYLE = inline_serializer(
+    "PublicDocumentStyle", _text("primary_color", "secondary_color", "footer_text")
+)
+
+
+def _document(name, fields):
+    """The schema of a public invoice or estimate body. Amounts are strings."""
+    return inline_serializer(
+        name, {**fields, "line_items": _LINES, "org": _ORG, "template": _STYLE}
+    )
+
+
+def _address(name):
+    return inline_serializer(
+        name, _text("line", "city", "state", "postcode", "country")
+    )
+
+
+_AMOUNTS = (
+    "subtotal",
+    "discount_value",
+    "discount_amount",
+    "tax_rate",
+    "tax_amount",
+    "total_amount",
+)
+_PUBLIC_INVOICE = _document(
+    "PublicInvoice",
+    {
+        **_text("id", "invoice_number", "invoice_title", "status"),
+        **_text("client_name", "client_email", "discount_type", "currency"),
+        **_text("notes", "terms", *_AMOUNTS),
+        **_text("shipping_amount", "amount_paid", "amount_due"),
+        "issue_date": serializers.DateField(),
+        "due_date": serializers.DateField(allow_null=True),
+        "billing_address": _address("PublicInvoiceAddress"),
+        "payments": inline_serializer(
+            "PublicInvoicePayment",
+            {
+                "amount": serializers.CharField(),
+                "payment_date": serializers.DateField(),
+                "payment_method": serializers.CharField(),
+            },
+            many=True,
+        ),
+    },
+)
+_PUBLIC_ESTIMATE = _document(
+    "PublicEstimate",
+    {
+        **_text("id", "estimate_number", "title", "status"),
+        **_text("client_name", "client_email", "discount_type", "currency"),
+        **_text("notes", "terms", "introduction", *_AMOUNTS),
+        "issue_date": serializers.DateField(),
+        "expiry_date": serializers.DateField(allow_null=True),
+        "client_address": _address("PublicEstimateAddress"),
+        "deposit": EstimateDepositSerializer(allow_null=True),
+    },
+)
+_PUBLIC_MESSAGE = inline_serializer(
+    "PublicEstimateDecisionResponse",
+    {"error": serializers.BooleanField(), "message": serializers.CharField()},
+)
 
 
 def _resolve_org_context(token, resource_type):
@@ -69,6 +153,7 @@ class PublicInvoiceView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(tags=["Public"], responses=_PUBLIC_INVOICE)
     def get(self, request, token):
         """Get invoice by public token"""
         _resolve_org_context(token, "invoice")
@@ -181,6 +266,9 @@ class PublicInvoicePDFView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        tags=["Public"], responses={(200, "application/pdf"): OpenApiTypes.BINARY}
+    )
     def get(self, request, token):
         """Download invoice PDF by public token"""
         _resolve_org_context(token, "invoice")
@@ -224,6 +312,7 @@ class PublicEstimateView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(tags=["Public"], responses=_PUBLIC_ESTIMATE)
     def get(self, request, token):
         """Get estimate by public token"""
         _resolve_org_context(token, "estimate")
@@ -267,6 +356,8 @@ class PublicEstimateView(APIView):
             "currency": estimate.currency,
             "notes": estimate.notes,
             "terms": estimate.terms,
+            "introduction": estimate.introduction or "",
+            "deposit": estimate_deposit(estimate),
             "client_address": {
                 "line": estimate.client_address_line,
                 "city": estimate.client_city,
@@ -324,6 +415,9 @@ class PublicEstimatePDFView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        tags=["Public"], responses={(200, "application/pdf"): OpenApiTypes.BINARY}
+    )
     def get(self, request, token):
         """Download estimate PDF by public token"""
         _resolve_org_context(token, "estimate")
@@ -367,6 +461,14 @@ class PublicEstimateAcceptView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        tags=["Public"],
+        request=inline_serializer(
+            "PublicEstimateAccept",
+            {"name": serializers.CharField(), "email": serializers.EmailField()},
+        ),
+        responses=_PUBLIC_MESSAGE,
+    )
     @method_decorator(transaction.atomic)
     def post(self, request, token):
         """Accept estimate by public token.
@@ -379,7 +481,9 @@ class PublicEstimateAcceptView(APIView):
 
         The row is locked from the read to the save, so the status and expiry
         checks judge the estimate as it is when accepted, and a staff edit
-        that commits meanwhile is not written back over.
+        that commits meanwhile is not written back over. The project and
+        deposit invoice it starts are made in the same transaction, so a
+        failure answers 500 with nothing accepted or made.
         """
         _resolve_org_context(token, "estimate")
         estimate = (
@@ -447,6 +551,7 @@ class PublicEstimateAcceptView(APIView):
         estimate.accepted_by_email = email[:254]
         estimate.accepted_ip = client_ip(request)
         estimate.accepted_user_agent = user_agent(request)[:1024]
+        start_on_acceptance(estimate)
         estimate.save(
             update_fields=[
                 "status",
@@ -455,9 +560,12 @@ class PublicEstimateAcceptView(APIView):
                 "accepted_by_email",
                 "accepted_ip",
                 "accepted_user_agent",
+                "project",
+                "deposit_invoice",
                 "updated_at",
             ]
         )
+        notify_accepted(estimate)
 
         return Response(
             {"error": False, "message": _("Estimate accepted successfully")}
@@ -473,6 +581,7 @@ class PublicEstimateDeclineView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(tags=["Public"], request=None, responses=_PUBLIC_MESSAGE)
     @method_decorator(transaction.atomic)
     def post(self, request, token):
         """Decline estimate by public token, locked as accept is."""
@@ -501,5 +610,6 @@ class PublicEstimateDeclineView(APIView):
         estimate.status = "Declined"
         estimate.declined_at = timezone.now()
         estimate.save(update_fields=["status", "declined_at", "updated_at"])
+        notify_declined(estimate)
 
         return Response({"error": False, "message": _("Estimate declined")})

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Your own account.
@@ -14,7 +14,7 @@
    * switch org, a real action that re-issues the token rather than editing a
    * field, so it goes through its own action and the copy says so.
    */
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
   import Avatar from '#lib/v2/components/Avatar.svelte';
@@ -25,9 +25,10 @@
   import { asInternalPath } from '#lib/utils/paths.js';
   import { m } from '#lib/paraglide/messages.js';
   import { locales } from '#lib/paraglide/runtime.js';
+  import { DOCS_LEAD_ALERTS } from '#lib/v2/lead-alerts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let p = $derived(data.profile);
 
@@ -53,7 +54,7 @@
     editing = true;
   }
 
-  const onEdit = (/** @type {any} */ { formData }) => {
+  const onEdit: SubmitFunction = ({ formData }) => {
     // Only send the field the person actually changed. The PATCH treats an
     // absent field as "leave it alone", so an untouched phone is not
     // re-validated, which matters because some seeded numbers carry an
@@ -62,7 +63,7 @@
     if ((formData.get('name') ?? '') === name) formData.delete('name');
     if ((formData.get('phone') ?? '') === (p.phone || '')) formData.delete('phone');
 
-    return async (/** @type {any} */ { result, update }) => {
+    return async ({ result, update }) => {
       if (result.type === 'success') {
         editing = false;
         await update(); // reloads the profile with the saved values
@@ -74,9 +75,13 @@
 
   // `form` is shared by both actions; the switch action tags its failures.
   let editError = $derived(
-    form?.scope === 'switch' || form?.scope === 'language' ? '' : (form?.message ?? '')
+    form?.scope === 'switch' || form?.scope === 'language' || form?.scope === 'alerts'
+      ? ''
+      : (form?.message ?? '')
   );
   let languageError = $derived(form?.scope === 'language' ? (form?.message ?? '') : '');
+  let alertsError = $derived(form?.scope === 'alerts' ? (form?.message ?? '') : '');
+  let alertsSaved = $derived(form?.scope === 'alerts' && form?.saved === true);
   let switchError = $derived(form?.scope === 'switch' ? (form?.message ?? '') : '');
 </script>
 
@@ -272,6 +277,48 @@
             </div>
           </div>
         </div>
+
+        {#if isOn(data.modules, 'leads')}
+          <div class="v2-label" style="margin-bottom:10px">{m.profile_alerts_label()}</div>
+          <form
+            class="v2-card"
+            method="POST"
+            action="?/alerts"
+            use:enhance={() =>
+              async ({ update }) =>
+                update({ reset: false })}
+            style="overflow:hidden;margin-bottom:20px"
+          >
+            <label class="v2-setting">
+              <div class="v2-setting-body">
+                <b>{m.profile_alerts_email_title()}</b>
+                <span class="v2-sub" style="font-size:11.5px">
+                  {m.profile_alerts_email_hint()}
+                </span>
+              </div>
+              <input type="checkbox" name="lead_alerts_email" checked={p.lead_alerts_email} />
+            </label>
+            <label class="v2-setting">
+              <div class="v2-setting-body">
+                <b>{m.profile_alerts_push_title()}</b>
+                <span class="v2-sub" style="font-size:11.5px">
+                  {m.profile_alerts_push_hint()}
+                  <a href={DOCS_LEAD_ALERTS} target="_blank" rel="noopener noreferrer"
+                    >{m.profile_alerts_read_more()}</a
+                  >
+                </span>
+              </div>
+              <input type="checkbox" name="lead_alerts_push" checked={p.lead_alerts_push} />
+            </label>
+            <div style="padding:12px 16px;display:flex;gap:10px;align-items:center">
+              <button class="v2-btn v2-btn-primary" type="submit">{m.profile_alerts_save()}</button>
+              {#if alertsSaved}<span class="v2-sub" style="font-size:12px"
+                  >{m.profile_alerts_saved()}</span
+                >{/if}
+              {#if alertsError}<span class="v2-error">{alertsError}</span>{/if}
+            </div>
+          </form>
+        {/if}
 
         {#if workRows.length}
           <div class="v2-label" style="margin-bottom:10px">{m.profile_page_work_title()}</div>

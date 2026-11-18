@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { untrack, tick } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
@@ -7,9 +7,9 @@
   import { TriangleAlert, Upload, Users, Lock } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   /**
    * A document is a file, a title, and an audience. This asks for exactly that.
@@ -26,54 +26,51 @@
    * it saves. An unshared upload is not an error. It is a document only the
    * uploader and admins can open, which the form says plainly.
    */
-  const previous = untrack(() => result?.values) ?? {};
+  const previous = untrack(() => result?.values);
 
-  let title = $state(previous.title ?? '');
+  let title = $state(previous?.title ?? '');
   // A rejected submit cannot re-fill a file input (browsers forbid it), so the
   // file is always chosen fresh. We only track whether one is currently picked.
   let fileName = $state('');
   // SvelteSet is reactive on mutation, so `.add()`/`.delete()` below re-render
   // the checkboxes and the reach line without reassigning the whole set.
-  let sharedTo = new SvelteSet((previous.shared_to ?? []).map(String));
-  let sharedTeams = new SvelteSet((previous.teams ?? []).map(String));
+  let sharedTo = new SvelteSet((previous?.shared_to ?? []).map(String));
+  let sharedTeams = new SvelteSet((previous?.teams ?? []).map(String));
 
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state({} as Record<string, boolean>);
   let submitted = $state(false);
 
   const REQUIRED = ['title', 'file'];
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!title.trim()) e.title = m.documents_new_error_title();
     if (!fileName) e.file = m.documents_error_file();
     return e;
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   let reach = $derived(sharedTo.size + sharedTeams.size);
 
-  function onFile(/** @type {Event} */ ev) {
-    const input = /** @type {HTMLInputElement} */ (ev.currentTarget);
+  function onFile(ev: Event) {
+    const input = ev.currentTarget as HTMLInputElement;
     fileName = input.files?.[0]?.name ?? '';
     touched.file = true;
   }
 
-  function toggle(/** @type {SvelteSet<string>} */ set, /** @type {string} */ id) {
+  function toggle(set: SvelteSet<string>, id: string) {
     if (set.has(id)) set.delete(id);
     else set.add(id);
   }
 
-  /** @type {import('./$types').SubmitFunction} */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
     }
   };

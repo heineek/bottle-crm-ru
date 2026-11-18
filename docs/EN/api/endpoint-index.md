@@ -25,6 +25,11 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/activities/` | GET |
 | `/api/api-settings/` | GET, POST |
 | `/api/api-settings/{id}/` | DELETE, GET, PATCH, PUT |
+| `/api/apps/` | GET |
+| `/api/apps/{app_id}/install/` | POST |
+| `/api/apps/{app_id}/preview/` | GET |
+| `/api/apps/{app_id}/remove/` | POST |
+| `/api/apps/{app_id}/upgrade/` | POST |
 | `/api/attachments/{id}/download/` | GET |
 | `/api/auth/google/` | POST |
 | `/api/auth/google/callback/` | POST |
@@ -77,6 +82,7 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/cases/export/` | GET |
 | `/api/cases/import/commit/` | POST |
 | `/api/cases/import/preview/` | POST |
+| `/api/cases/inbound/email/` | POST |
 | `/api/cases/inbound/{mailbox_id}/` | POST |
 | `/api/cases/kanban/` | GET |
 | `/api/cases/mailboxes/` | GET, POST |
@@ -104,8 +110,8 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/cases/{id}/move/` | PATCH |
 | `/api/cases/{id}/request-approval/` | POST |
 | `/api/cases/{id}/solution-suggestions/` | GET |
-| `/api/cases/{id}/solutions/` | DELETE, POST |
-| `/api/cases/{id}/solutions/{solution_pk}/` | DELETE, POST |
+| `/api/cases/{id}/solutions/` | POST |
+| `/api/cases/{id}/solutions/{solution_pk}/` | DELETE |
 | `/api/cases/{id}/time-entries/` | GET, POST |
 | `/api/cases/{id}/time-entries/start/` | POST |
 | `/api/cases/{id}/time-summary/` | GET |
@@ -127,9 +133,12 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/custom-fields/{id}/` | DELETE, GET, PUT |
 | `/api/dashboard/` | GET |
 | `/api/dashboard/today/` | GET |
+| `/api/devices/` | DELETE, POST |
 | `/api/documents/` | GET, POST |
 | `/api/documents/{id}/` | DELETE, GET, PATCH, PUT |
 | `/api/documents/{id}/download/` | GET |
+| `/api/interactions/` | GET, POST |
+| `/api/interactions/{id}/` | DELETE, PATCH |
 | `/api/invoices/` | GET, POST |
 | `/api/invoices/attachments/{id}/` | DELETE |
 | `/api/invoices/comments/{id}/` | DELETE, PUT |
@@ -174,11 +183,21 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/leads/export/` | GET |
 | `/api/leads/import/commit/` | POST |
 | `/api/leads/import/preview/` | POST |
+| `/api/leads/intakes/` | GET, POST |
+| `/api/leads/intakes/{id}/` | DELETE, GET, PATCH |
+| `/api/leads/intakes/{id}/deliveries/` | GET |
+| `/api/leads/intakes/{id}/key/` | POST |
+| `/api/leads/intakes/{id}/test/` | POST |
 | `/api/leads/kanban/` | GET |
+| `/api/leads/outcomes/` | GET |
 | `/api/leads/pipelines/` | GET, POST |
 | `/api/leads/pipelines/{id}/` | DELETE, GET, PUT |
 | `/api/leads/pipelines/{pipeline_pk}/stages/` | POST |
 | `/api/leads/pipelines/{pipeline_pk}/stages/reorder/` | POST |
+| `/api/leads/response-times/` | GET |
+| `/api/leads/sources/` | GET, POST |
+| `/api/leads/sources/order/` | POST |
+| `/api/leads/sources/{id}/` | PATCH |
 | `/api/leads/stages/{id}/` | DELETE, PUT |
 | `/api/leads/upload/` | POST (deprecated; use `import/preview/` + `import/commit/`) |
 | `/api/leads/{id}/` | DELETE, GET, PATCH, POST, PUT |
@@ -238,6 +257,14 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/profile/calendar-feed/` | DELETE, GET, POST |
 | `/api/profile/tokens/` | GET, POST |
 | `/api/profile/tokens/{id}/` | DELETE |
+| `/api/projects/` | GET, POST |
+| `/api/projects/from-deal/{deal_id}/` | GET |
+| `/api/projects/{id}/` | DELETE, GET, PATCH, POST |
+| `/api/projects/{id}/invoice-amount/` | POST |
+| `/api/projects/{id}/retainer/bill/` | POST |
+| `/api/projects/{id}/time-entries/` | GET, POST |
+| `/api/projects/{id}/time-entries/start/` | POST |
+| `/api/projects/{id}/unbilled/` | GET |
 | `/api/public/calendar/{token}.ics` | GET |
 | `/api/public/csat/{token}/` | GET, POST |
 | `/api/public/estimate/{token}/` | GET |
@@ -251,6 +278,7 @@ Interactive versions of the same schema are served by a running backend at
 | `/api/public/help/{slug}/articles/{id}/` | GET |
 | `/api/public/invoice/{token}/` | GET |
 | `/api/public/invoice/{token}/pdf/` | GET |
+| `/api/public/leads/{intake_id}/` | POST |
 | `/api/saved-views/` | GET, POST |
 | `/api/saved-views/{id}/` | DELETE, GET, PATCH |
 | `/api/search/` | GET |

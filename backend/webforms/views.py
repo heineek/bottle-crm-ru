@@ -22,16 +22,16 @@ import datetime
 from django.db.models import Count
 from django.utils import timezone
 from django.utils.translation import gettext
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.lookups import get_scoped_or_404
 from common.modules import module_is_available, module_off_message
-from common.permissions import HasOrgContext, is_org_admin
+from common.pagination import CappedLimitOffsetPagination
+from common.permissions import HasOrgContext, may_configure
 from webforms.constants import REQUIRED_LEAD_FIELD, REQUIRED_TICKET_FIELD
 from webforms.models import WebForm, WebFormDailyStat, WebFormSubmission
 from webforms.serializers import (
@@ -43,11 +43,30 @@ from webforms.serializers import (
 ANALYTICS_WINDOW_DAYS = 30
 
 
+def _page(name, results, extra=None):
+    """A ``CappedLimitOffsetPagination`` envelope around ``results``."""
+    return inline_serializer(
+        name,
+        {
+            "count": serializers.IntegerField(),
+            "next": serializers.URLField(allow_null=True),
+            "previous": serializers.URLField(allow_null=True),
+            "results": results,
+            **(extra or {}),
+        },
+    )
+
+
+_DONE = inline_serializer("WebFormDoneResponse", {"error": serializers.BooleanField()})
+_COUNTS = ("views", "submissions", "spam")
+_TOTALS = ("count", "published", "submissions_30d", "spam_30d")
+
+
 def _may_write(request):
     """Org admins and Django superusers, as the lead pipeline admin views
     decide it (`leads/views/kanban_views.py`). A superuser still needs an
     active profile in this org, which `HasOrgContext` has already required."""
-    return is_org_admin(request.profile)
+    return may_configure(request.profile)
 
 
 def _admin_required():
@@ -101,7 +120,19 @@ class WebFormListCreateView(WebFormBaseView):
             ).count(),
         }
 
-    @extend_schema(tags=["Web forms"], responses=WebFormListSerializer(many=True))
+    @extend_schema(
+        tags=["Web forms"],
+        responses=_page(
+            "WebFormListResponse",
+            WebFormListSerializer(many=True),
+            {
+                "totals": inline_serializer(
+                    "WebFormTotals",
+                    {name: serializers.IntegerField() for name in _TOTALS},
+                )
+            },
+        ),
+    )
     def get(self, request):
         queryset = (
             WebForm.objects.filter(org=request.profile.org)
@@ -111,7 +142,7 @@ class WebFormListCreateView(WebFormBaseView):
             )
             .order_by("-created_at")
         )
-        paginator = LimitOffsetPagination()
+        paginator = CappedLimitOffsetPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         serializer = WebFormListSerializer(
             page, many=True, context=self.serializer_context(request)
@@ -123,7 +154,7 @@ class WebFormListCreateView(WebFormBaseView):
     @extend_schema(
         tags=["Web forms"],
         request=WebFormDetailSerializer,
-        responses=WebFormDetailSerializer,
+        responses={201: WebFormDetailSerializer},
     )
     def post(self, request):
         if not _may_write(request):
@@ -146,7 +177,7 @@ class WebFormDetailView(WebFormBaseView):
 
     @extend_schema(
         tags=["Web forms"],
-        request=WebFormDetailSerializer,
+        request=WebFormDetailSerializer(partial=True),
         responses=WebFormDetailSerializer,
     )
     def put(self, request, pk):
@@ -163,7 +194,7 @@ class WebFormDetailView(WebFormBaseView):
         serializer.save()
         return Response(serializer.data)
 
-    @extend_schema(tags=["Web forms"])
+    @extend_schema(tags=["Web forms"], responses={204: None})
     def delete(self, request, pk):
         form = self.get_form(request, pk)
         if not _may_write(request):
@@ -180,7 +211,7 @@ class WebFormPublishView(WebFormBaseView):
     form is in a state it is not.
     """
 
-    @extend_schema(tags=["Web forms"])
+    @extend_schema(tags=["Web forms"], request=None, responses=_DONE)
     def post(self, request, pk):
         form = self.get_form(request, pk)
         if not _may_write(request):
@@ -240,7 +271,7 @@ class WebFormPublishView(WebFormBaseView):
 
 
 class WebFormUnpublishView(WebFormBaseView):
-    @extend_schema(tags=["Web forms"])
+    @extend_schema(tags=["Web forms"], request=None, responses=_DONE)
     def post(self, request, pk):
         form = self.get_form(request, pk)
         if not _may_write(request):
@@ -258,7 +289,12 @@ class WebFormUnpublishView(WebFormBaseView):
 
 
 class WebFormSubmissionListView(WebFormBaseView):
-    @extend_schema(tags=["Web forms"], responses=WebFormSubmissionSerializer(many=True))
+    @extend_schema(
+        tags=["Web forms"],
+        responses=_page(
+            "WebFormSubmissionListResponse", WebFormSubmissionSerializer(many=True)
+        ),
+    )
     def get(self, request, pk):
         form = self.get_form(request, pk)
         queryset = (
@@ -266,7 +302,7 @@ class WebFormSubmissionListView(WebFormBaseView):
             .select_related("lead", "case")
             .order_by("-created_at")
         )
-        paginator = LimitOffsetPagination()
+        paginator = CappedLimitOffsetPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         serializer = WebFormSubmissionSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -282,7 +318,32 @@ class WebFormAnalyticsView(WebFormBaseView):
     onto WebFormDailyStat, so each number has exactly one source of truth.
     """
 
-    @extend_schema(tags=["Web forms"])
+    @extend_schema(
+        tags=["Web forms"],
+        responses=inline_serializer(
+            "WebFormAnalyticsResponse",
+            {
+                "window_days": serializers.IntegerField(),
+                "start": serializers.DateField(),
+                "end": serializers.DateField(),
+                "totals": inline_serializer(
+                    "WebFormAnalyticsTotals",
+                    {
+                        **{name: serializers.IntegerField() for name in _COUNTS},
+                        "conversion_rate": serializers.FloatField(),
+                    },
+                ),
+                "series": inline_serializer(
+                    "WebFormAnalyticsDay",
+                    {
+                        "date": serializers.DateField(),
+                        **{name: serializers.IntegerField() for name in _COUNTS},
+                    },
+                    many=True,
+                ),
+            },
+        ),
+    )
     def get(self, request, pk):
         form = self.get_form(request, pk)
         today = timezone.localdate()

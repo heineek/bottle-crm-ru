@@ -261,9 +261,7 @@ class _CsvImportSheetState extends ConsumerState<CsvImportSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      mapping
-                          ? context.l10n.appCsvTitle(_target.name)
-                          : context.l10n.appCsvTitleFromCsv(_target.name),
+                      _target.title(mapping: mapping),
                       style: AppTypography.h3.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -1039,7 +1037,7 @@ class _PreviewSummary extends StatelessWidget {
           ] else if (preview.valid == 0) ...[
             const SizedBox(height: 12),
             Text(
-              context.l10n.appCsvNoneToImport(target.name),
+              target.noneToImport,
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -1225,7 +1223,7 @@ class _ValidSample extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: context.l10n.appCsvRow(
-                            '${row['row'] ?? i + 1}',
+                            '${target.sampleRow(row) ?? i + 1}',
                           ),
                           style: const TextStyle(
                             color: AppColors.textSecondary,

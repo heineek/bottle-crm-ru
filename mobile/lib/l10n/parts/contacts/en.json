@@ -78,5 +78,15 @@
         "type": "int"
       }
     }
-  }
+  },
+  "contactsDetailSource": "Source",
+  "contactsDetailSubSource": "Sub-source",
+  "contactsDetailReference": "Reference",
+  "contactsDetailCall": "Call",
+  "contactsDetailMessage": "Message",
+  "contactsDetailActivityFailed": "Could not load the activity.",
+  "contactsDetailActivity": "Activity",
+  "contactsDetailNothingLogged": "Nothing logged yet.",
+  "contactsDetailCustomFields": "Custom fields",
+  "contactsDetailEmail": "Email"
 }

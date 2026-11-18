@@ -9,6 +9,7 @@ library;
 
 import '../../l10n/l10n.dart';
 import '../../services/app_language.dart';
+import '../api/schema.g.dart' as api;
 
 /// Monday first, matching `windows_by_weekday()` and the web. The key is the
 /// prefix of the model's fourteen flat TimeFields.
@@ -92,12 +93,15 @@ class BusinessHoliday {
   final String date;
   final String name;
 
-  factory BusinessHoliday.fromJson(Map<String, dynamic> json) =>
-      BusinessHoliday(
-        id: json['id']?.toString() ?? '',
-        date: json['date']?.toString() ?? '',
-        name: json['name']?.toString() ?? '',
-      );
+  /// Reads a `BusinessHoliday`, from the calendar's `holidays`.
+  factory BusinessHoliday.fromJson(Map<String, dynamic> json) {
+    final w = api.BusinessHoliday.fromJson(json);
+    return BusinessHoliday(
+      id: w.id ?? '',
+      date: w.date ?? '',
+      name: w.name ?? '',
+    );
+  }
 }
 
 class BusinessCalendar {
@@ -150,27 +154,35 @@ class BusinessCalendar {
     return null;
   }
 
+  /// Reads a `BusinessCalendar`, which the GET and both PUTs answer.
   factory BusinessCalendar.fromJson(Map<String, dynamic> json) {
-    final rawHolidays = json['holidays'];
+    final w = api.BusinessCalendar.fromJson(json);
+    final windows = {
+      'monday': (w.mondayOpen, w.mondayClose),
+      'tuesday': (w.tuesdayOpen, w.tuesdayClose),
+      'wednesday': (w.wednesdayOpen, w.wednesdayClose),
+      'thursday': (w.thursdayOpen, w.thursdayClose),
+      'friday': (w.fridayOpen, w.fridayClose),
+      'saturday': (w.saturdayOpen, w.saturdayClose),
+      'sunday': (w.sundayOpen, w.sundayClose),
+    };
     return BusinessCalendar(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? 'Default',
-      timezone: json['timezone']?.toString() ?? 'UTC',
-      isDefault: json['is_default'] as bool? ?? true,
+      id: w.id ?? '',
+      name: w.name ?? 'Default',
+      timezone: w.timezone ?? 'UTC',
+      isDefault: w.isDefault ?? true,
       days: [
         for (final (_, key) in businessWeekdays)
           BusinessDay(
             key: key,
-            open: trimSeconds(json['${key}_open']?.toString()),
-            close: trimSeconds(json['${key}_close']?.toString()),
+            open: trimSeconds(windows[key]?.$1),
+            close: trimSeconds(windows[key]?.$2),
           ),
       ],
-      holidays: rawHolidays is List
-          ? [
-              for (final h in rawHolidays)
-                if (h is Map<String, dynamic>) BusinessHoliday.fromJson(h),
-            ]
-          : const [],
+      holidays: [
+        for (final h in w.holidays ?? const <api.BusinessHoliday>[])
+          BusinessHoliday.fromJson(h.json),
+      ],
     );
   }
 }

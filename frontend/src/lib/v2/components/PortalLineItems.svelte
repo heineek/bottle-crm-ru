@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * The line-item table and the totals ladder, shared by the invoice and
@@ -25,21 +25,8 @@
    * is to have one authority for the arithmetic.
    */
   import { money } from '#lib/v2/format.js';
+  import type { Figure } from '#lib/v2/line-items.js';
 
-  /**
-   * @type {{
-   *   items: Array<{name: string, description: string, quantity: number, unit_price: number, amount: number}>,
-   *   currency: string,
-   *   subtotal: number,
-   *   discountAmount?: number,
-   *   discountType?: string,
-   *   discountValue?: number,
-   *   taxRate?: number,
-   *   taxAmount?: number,
-   *   shippingAmount?: number,
-   *   total: number
-   * }}
-   */
   let {
     items,
     currency,
@@ -51,6 +38,23 @@
     taxAmount = 0,
     shippingAmount = 0,
     total
+  }: {
+    items: Array<{
+      name: string;
+      description: string;
+      quantity: Figure;
+      unit_price: Figure;
+      amount: Figure;
+    }>;
+    currency: string;
+    subtotal: Figure;
+    discountAmount?: Figure;
+    discountType?: string;
+    discountValue?: Figure;
+    taxRate?: Figure;
+    taxAmount?: Figure;
+    shippingAmount?: Figure;
+    total: Figure;
   } = $props();
 
   /**
@@ -59,7 +63,7 @@
    */
   let discountLabel = $derived(
     discountType === 'PERCENTAGE'
-      ? m.app_portal_line_items_discount_pct({ value: discountValue })
+      ? m.app_portal_line_items_discount_pct({ value: discountValue ?? 0 })
       : m.app_portal_line_items_discount()
   );
 </script>
@@ -101,21 +105,21 @@
       <dd class="v2-num">{money(subtotal, currency)}</dd>
     </div>
 
-    {#if discountAmount}
+    {#if Number(discountAmount)}
       <div>
         <dt>{discountLabel}</dt>
         <dd class="v2-num">−{money(discountAmount, currency)}</dd>
       </div>
     {/if}
 
-    {#if taxAmount}
+    {#if Number(taxAmount)}
       <div>
-        <dt>{m.app_portal_line_items_tax({ rate: taxRate })}</dt>
+        <dt>{m.app_portal_line_items_tax({ rate: taxRate ?? 0 })}</dt>
         <dd class="v2-num">{money(taxAmount, currency)}</dd>
       </div>
     {/if}
 
-    {#if shippingAmount}
+    {#if Number(shippingAmount)}
       <div>
         <dt>{m.app_portal_line_items_shipping()}</dt>
         <dd class="v2-num">{money(shippingAmount, currency)}</dd>

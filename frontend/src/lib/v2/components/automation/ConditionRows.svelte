@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { tick } from 'svelte';
   import { Plus, X } from '@lucide/svelte';
@@ -9,22 +9,18 @@
     valueKind,
     withStored,
     blankCondition,
-    keptValue
+    keptValue,
+    type Catalogue,
+    type CatalogueObject,
+    type Field,
+    type RuleCondition,
+    type RuleValue
   } from '#lib/v2/automation.js';
   import RuleValueInput from './RuleValueInput.svelte';
 
   /**
    * ONLY IF: whether all or any of the conditions must hold, and the rows.
    * `errors.rows[i]` is the server's message for the row now shown at `i`.
-   *
-   * @type {{
-   *   catalogue: any,
-   *   object: any,
-   *   event: string,
-   *   match: string,
-   *   conditions: any[],
-   *   errors?: { match?: string | null, list?: string | null, rows?: (string | null)[] }
-   * }}
    */
   let {
     catalogue,
@@ -33,18 +29,22 @@
     match = $bindable(),
     conditions = $bindable(),
     errors = {}
+  }: {
+    catalogue: Catalogue;
+    object: CatalogueObject | null;
+    event: string;
+    match: string;
+    conditions: RuleCondition[];
+    errors?: { match?: string | null; list?: string | null; rows?: (string | null)[] };
   } = $props();
 
-  /** @type {HTMLButtonElement | undefined} */
-  let addButton = $state();
+  let addButton: HTMLButtonElement | undefined = $state();
 
   let limit = $derived(catalogue?.limits?.conditions ?? Infinity);
-  let fields = $derived(
-    (object?.fields ?? []).map((/** @type {any} */ f) => ({ value: f.key, label: f.label }))
-  );
+  let fields = $derived((object?.fields ?? []).map((f) => ({ value: f.key, label: f.label })));
 
-  /** The operators offered, plus a stored one they no longer include. @param {any} cond @param {any} field */
-  function operators(cond, field) {
+  /** The operators offered, plus a stored one they no longer include. */
+  function operators(cond: RuleCondition, field: Field | null) {
     const offered = operatorsFor(catalogue, field, event).map((op) => ({
       value: op,
       label: operatorLabel(op, field?.type)
@@ -57,15 +57,13 @@
     return [...offered, { value: cond.op, label }];
   }
 
-  /** @param {any} cond @param {string} key */
-  function chooseField(cond, key) {
+  function chooseField(cond: RuleCondition, key: string) {
     cond.field = key;
     cond.op = operatorsFor(catalogue, fieldOf(object, key), event)[0] ?? '';
     cond.value = null;
   }
 
-  /** @param {any} cond @param {string} op */
-  function chooseOp(cond, op) {
+  function chooseOp(cond: RuleCondition, op: string) {
     cond.value = keptValue(fieldOf(object, cond.field), cond.op, op, cond.value);
     cond.op = op;
   }
@@ -76,15 +74,14 @@
     document.getElementById(`cond-${conditions.length - 1}-field`)?.focus();
   }
 
-  /** @param {number} at */
-  async function remove(at) {
+  async function remove(at: number) {
     conditions = conditions.filter((_, i) => i !== at);
     await tick();
     addButton?.focus();
   }
 
-  /** A stored value whose field is gone, as text. @param {any} value */
-  const asText = (value) => (Array.isArray(value) ? value.join(', ') : String(value));
+  /** A stored value whose field is gone, as text. */
+  const asText = (value: RuleValue) => (Array.isArray(value) ? value.join(', ') : String(value));
 </script>
 
 {#if conditions.length}

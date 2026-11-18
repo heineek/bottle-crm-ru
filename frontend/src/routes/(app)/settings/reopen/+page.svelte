@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Whether a customer's reply can bring a closed ticket back.
@@ -20,11 +20,11 @@
   import { count } from '#lib/v2/format.js';
   import { REOPEN_TO_STATUSES, CASE_STATUS_LABEL } from '#lib/v2/enums.js';
   import { RotateCcw, MailX } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let editing = $state(false);
 

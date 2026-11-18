@@ -18,11 +18,14 @@ import 'help_center_provider.dart';
 import 'invoice_extras_provider.dart';
 import 'invoices_provider.dart';
 import 'lead_board_provider.dart';
+import 'lead_intakes_provider.dart';
 import 'lead_pipelines_provider.dart';
+import 'lead_sources_provider.dart';
 import 'leads_provider.dart';
 import 'lookup_provider.dart';
 import 'notifications_provider.dart';
 import 'profile_provider.dart';
+import 'projects_provider.dart';
 import 'settings_provider.dart';
 import 'solutions_provider.dart';
 import 'support_provider.dart';
@@ -325,6 +328,7 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.invalidate(leadsProvider);
     ref.invalidate(leadBoardProvider);
     ref.invalidate(leadPipelinesProvider);
+    ref.invalidate(leadSourcesProvider);
     ref.invalidate(dealsProvider);
     ref.invalidate(dealBoardProvider);
     ref.invalidate(dealPipelinesProvider);
@@ -348,6 +352,7 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.invalidate(goalProvider);
     ref.invalidate(timesheetProvider);
     ref.invalidate(timeReportProvider);
+    ref.invalidate(projectsProvider);
     ref.invalidate(analyticsProvider);
     ref.invalidate(notificationsProvider);
     ref.invalidate(supportTicketsProvider);
@@ -364,6 +369,7 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.invalidate(leadsLookupProvider);
     ref.invalidate(opportunitiesLookupProvider);
     ref.invalidate(ticketsLookupProvider);
+    ref.invalidate(projectsLookupProvider);
     ref.invalidate(customFieldDefinitionsProvider);
     // Org settings.
     ref.invalidate(orgSettingsProvider);
@@ -384,6 +390,7 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.invalidate(webFormDetailProvider);
     ref.invalidate(webhooksProvider);
     ref.invalidate(webhookDeliveriesProvider);
+    ref.invalidate(leadIntakesProvider);
   }
 
   /// Clear any error message

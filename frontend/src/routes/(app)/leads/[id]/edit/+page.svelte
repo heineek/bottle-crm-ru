@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Editing a lead.
@@ -49,25 +49,25 @@
    * enforcement. The serializer runs again on everything that arrives.
    */
   import { tick, untrack } from 'svelte';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import {
     LEAD_STATUSES,
     LEAD_STATUS_LABEL,
     LEAD_STATUS_TONE,
-    LEAD_SOURCES,
-    LEAD_SOURCE_LABEL,
     LEAD_IRREVERSIBLE_STATUSES,
     INDUSTRIES,
     industryLabel
   } from '#lib/v2/enums.js';
   import { money, longDate } from '#lib/v2/format.js';
+  import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { ChevronRight, TriangleAlert, Lock } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   /* Read once, on purpose. `originalStatus` in particular has to be the status
      the record had when this form opened, if it tracked `data` a revalidation
@@ -79,12 +79,7 @@
   }));
 
   let form = $state(untrack(() => ({ ...data.form })));
-  /* Copied per row, not shared: each entry's `value` is bound to an input, so
-     the objects have to be the page's own rather than the load result's. */
-  let customFields = $state(
-    untrack(() => (data.customFields ?? []).map((/** @type {any} */ f) => ({ ...f })))
-  );
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state<Record<string, boolean>>({});
   let submitted = $state(false);
   let saving = $state(false);
 
@@ -106,8 +101,7 @@
   let statusChanged = $derived(form.status !== originalStatus);
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!form.first_name.trim() && !form.last_name.trim()) e.last_name = m.leads_error_name();
 
     const email = form.email.trim().toLowerCase();
@@ -135,40 +129,23 @@
       else if (n < 0) e.opportunity_amount = m.leads_error_amount_negative();
     }
 
-    /* Mirrors the required-field loop at the end of
-       `common.custom_fields.validate_payload`: a required definition errors
-       when neither the payload nor the stored record has a value. A plain
-       `required` attribute would do nothing here. The form is `novalidate`,
-       so the page owns its own checks. Without this the API answers 400 with
-       "is required" and the message has no field to sit beside. A checkbox is
-       exempt: false is a value, so a required one can never be unsatisfied. */
-    for (const f of customFields) {
-      if (!f.is_required || f.field_type === 'checkbox') continue;
-      if (String(f.value ?? '').trim() === '')
-        e[`cf_${f.key}`] = m.leads_edit_field_required({ label: f.label });
-    }
-
     return e;
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
   /**
    * Progressive enhancement over a real POST. Without JavaScript the form
    * still submits and the action still validates; this only spares a full
    * page load and keeps focus on the first field that needs attention.
-   *
-   * @type {import('$app/forms').SubmitFunction}
    */
-  const submit = async ({ cancel }) => {
+  const submit: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       cancel();
       await tick();
-      const first = /** @type {HTMLElement | null} */ (
-        document.querySelector('[aria-invalid="true"]')
-      );
+      const first = document.querySelector('[aria-invalid="true"]') as HTMLElement | null;
       first?.focus();
       return;
     }
@@ -390,12 +367,39 @@
       </div>
       <div class="v2-field">
         <label for="f-source">{m.leads_field_source()}</label>
+        <!-- Offered against the value the lead opened with, so a retired
+             source stays selectable for the record that still carries it. -->
         <select id="f-source" name="source" class="v2-input" bind:value={form.source}>
           <option value="">{m.leads_field_not_specified()}</option>
-          {#each LEAD_SOURCES as s (s)}
-            <option value={s}>{LEAD_SOURCE_LABEL[s]}</option>
+          {#each sourceOptions(data.sources, data.form.source) as s (s.key)}
+            <option value={s.key}>{s.label}</option>
           {/each}
         </select>
+      </div>
+    </div>
+
+    <div class="pair">
+      <div class="v2-field">
+        <label for="f-source-detail">{m.leads_field_source_detail()}</label>
+        <input
+          id="f-source-detail"
+          name="source_detail"
+          class="v2-input"
+          maxlength="100"
+          placeholder={m.leads_field_source_detail_placeholder()}
+          bind:value={form.source_detail}
+        />
+      </div>
+      <div class="v2-field">
+        <label for="f-source-ref">{m.leads_field_source_ref()}</label>
+        <input
+          id="f-source-ref"
+          name="source_ref"
+          class="v2-input"
+          maxlength="255"
+          placeholder={m.leads_field_source_ref_placeholder()}
+          bind:value={form.source_ref}
+        />
       </div>
     </div>
 
@@ -483,69 +487,12 @@
         bind:value={form.description}></textarea>
     </div>
 
-    <!-- Per-org custom fields, in the order the org defined them. The input
-         type follows field_type; every one submits a string (or nothing, for
-         an unchecked box) and `_coerce_value` converts on the way in. -->
-    {#if customFields.length > 0}
-      <div class="v2-label v2-section-label">{m.common_details()}</div>
-      {#each customFields as f (f.key)}
-        <div class="v2-field">
-          {#if f.field_type === 'checkbox'}
-            <label class="cf-check">
-              <input type="checkbox" name="cf_{f.key}" bind:checked={f.value} />
-              <span>{f.label}</span>
-            </label>
-          {:else}
-            <label for="f-cf-{f.key}">
-              {f.label}
-              {#if f.is_required}<span class="req">{m.leads_edit_required()}</span>{/if}
-            </label>
-            {#if f.field_type === 'dropdown'}
-              <select
-                id="f-cf-{f.key}"
-                name="cf_{f.key}"
-                class="v2-input"
-                bind:value={f.value}
-                onblur={() => (touched[`cf_${f.key}`] = true)}
-                aria-invalid={show(`cf_${f.key}`) ? 'true' : undefined}
-              >
-                <option value="">—</option>
-                {#each f.options as o (o.value)}
-                  <option value={o.value}>{o.label}</option>
-                {/each}
-              </select>
-            {:else if f.field_type === 'textarea'}
-              <textarea
-                id="f-cf-{f.key}"
-                name="cf_{f.key}"
-                class="v2-input"
-                rows="3"
-                bind:value={f.value}
-                onblur={() => (touched[`cf_${f.key}`] = true)}
-                aria-invalid={show(`cf_${f.key}`) ? 'true' : undefined}></textarea>
-            {:else}
-              <input
-                id="f-cf-{f.key}"
-                name="cf_{f.key}"
-                class="v2-input"
-                type={f.field_type === 'number'
-                  ? 'number'
-                  : f.field_type === 'date'
-                    ? 'date'
-                    : 'text'}
-                step={f.field_type === 'number' ? 'any' : undefined}
-                bind:value={f.value}
-                onblur={() => (touched[`cf_${f.key}`] = true)}
-                aria-invalid={show(`cf_${f.key}`) ? 'true' : undefined}
-              />
-            {/if}
-            {#if show(`cf_${f.key}`)}
-              <p class="v2-error">{errors[`cf_${f.key}`]}</p>
-            {/if}
-          {/if}
-        </div>
-      {/each}
-    {/if}
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={result?.values?.custom_fields}
+      errors={result?.fieldErrors}
+      heading={m.common_details()}
+    />
 
     <div class="actions">
       <button class="v2-btn v2-btn-primary" type="submit" disabled={saving}>
@@ -567,14 +514,6 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
-  }
-  /* A checkbox labels itself inline, the stacked label/input of the other
-     fields leaves the box floating under its own caption. */
-  .cf-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
   }
   .req,
   .locked {

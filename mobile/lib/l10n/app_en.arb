@@ -117,6 +117,7 @@
       }
     }
   },
+  "accountsDetailCustomFields": "Custom fields",
   "appDealTypeNewBusiness": "New business",
   "appDealTypeExistingBusiness": "Existing business",
   "appDealTypeRenewal": "Renewal",
@@ -165,15 +166,6 @@
   "appOpportunityTypeRenewal": "Renewal",
   "appOpportunityTypeUpsell": "Upsell",
   "appOpportunityTypeCrossSell": "Cross Sell",
-  "appOpportunitySourceNone": "None",
-  "appOpportunitySourceCall": "Call",
-  "appOpportunitySourceEmail": "Email",
-  "appOpportunitySourceExistingCustomer": "Existing Customer",
-  "appOpportunitySourcePartner": "Partner",
-  "appOpportunitySourcePublicRelations": "Public Relations",
-  "appOpportunitySourceCampaign": "Campaign",
-  "appOpportunitySourceWebsite": "Website",
-  "appOpportunitySourceOther": "Other",
   "appUnassigned": "Unassigned",
   "appAssigneeFallback": "Assigned",
   "appDealNoAccount": "No Account",
@@ -267,14 +259,6 @@
   "appLeadStatusConverted": "Converted",
   "appLeadStatusRecycled": "Recycled",
   "appLeadStatusClosed": "Closed",
-  "appLeadSourceNone": "None",
-  "appLeadSourceCall": "Call",
-  "appLeadSourceEmail": "Email",
-  "appLeadSourceExistingCustomer": "Existing Customer",
-  "appLeadSourcePartner": "Partner",
-  "appLeadSourcePublicRelations": "Public Relations",
-  "appLeadSourceCampaign": "Campaign",
-  "appLeadSourceOther": "Other",
   "appLeadRatingCold": "Cold",
   "appLeadRatingWarm": "Warm",
   "appLeadRatingHot": "Hot",
@@ -364,34 +348,6 @@
   "appCascadeDefaultExplanationOn": "Closing a parent ticket here starts with \"also close linked tickets\" ticked. You still confirm, and can untick it.",
   "appCascadeDefaultExplanationOff": "Closing a parent ticket here starts with \"also close linked tickets\" unticked. You still confirm, and can tick it.",
   "appCascadeWebGapNote": "The web app has no close prompt yet, so closing a parent there leaves its children open whatever this is set to.",
-  "appPackReportNothing": "Nothing to add. This org already has all of it.",
-  "appPackReportCreated": "{count, plural, =1{Created 1 item.} other{Created {count} items.}}",
-  "@appPackReportCreated": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "appPackReportSkipped": "{count, plural, =1{Already had everything from this pack, skipped 1 item.} other{Already had everything from this pack, skipped {count} items.}}",
-  "@appPackReportSkipped": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "appPackReportBoth": "{created, plural, =1{Created 1 item, skipped {skipped} you already had.} other{Created {created} items, skipped {skipped} you already had.}}",
-  "@appPackReportBoth": {
-    "placeholders": {
-      "created": {
-        "type": "int"
-      },
-      "skipped": {
-        "type": "int"
-      }
-    }
-  },
   "appSampleDataNone": "No sample data to clear.",
   "appSampleDataDeleted": "{count, plural, =1{Deleted 1 sample record.} other{Deleted {count} sample records.}}",
   "@appSampleDataDeleted": {
@@ -774,7 +730,7 @@
   "appMailboxDeliveryUnconfirmed": "Not connected yet",
   "appMailboxDeliveryLive": "Creating tickets",
   "appMailboxExplainOff": "Mail still arrives here and no ticket is opened. Nothing bounces, so whoever wrote gets silence rather than an error.",
-  "appMailboxExplainUnsupported": "{provider} deliveries are not implemented. The webhook refuses them, so mail to this address becomes nothing whatever else is set here. Only AWS SES is wired up.",
+  "appMailboxExplainUnsupported": "{provider} deliveries are not implemented. The webhook refuses them, so mail to this address becomes nothing whatever else is set here.",
   "@appMailboxExplainUnsupported": {
     "placeholders": {
       "provider": {
@@ -795,7 +751,7 @@
   "appMailboxValidateAddress": "Give the address.",
   "appMailboxDeleteExplanation": "Deleted for good. Mail sent here stops becoming tickets, and the topic pin goes with it, so a delivery already in flight from AWS stops verifying. Tickets already opened from this address are not touched.",
   "appMailboxDeactivateExplanation": "Stops opening tickets. Mail keeps arriving and nothing bounces, so anyone writing here gets no ticket and no error. It stays in the list, off, until it is turned back on.",
-  "appMailboxAuthExplanation": "AWS signs each notification, and the address has to be pinned to the exact SNS topic it was subscribed to. The signature alone proves only that some AWS account sent it, so without the pin anyone who learned an address id could have AWS sign forged mail into this organization. An admin can enter the pin as the address's Topic ARN. Left blank, it is set by the first subscription AWS confirms from an AWS account this server allows; a subscription from any other account is refused. Only admins can see the ARN, because it carries the AWS account id.",
+  "appMailboxAuthExplanation": "AWS signs each notification, and the address has to be pinned to the exact SNS topic it was subscribed to. The signature alone proves only that some AWS account sent it, so without the pin anyone who learned an address id could have AWS sign forged mail into this organization. An admin can enter the pin as the address's Topic ARN. Left blank, it is set by the first subscription AWS confirms from an AWS account this server allows; a subscription from any other account is refused. Only admins can see the ARN, because it carries the AWS account id. A Postmark or Mailgun address is proved by a webhook secret an admin stores on it instead, which is never shown back.",
   "appMacroScopePersonal": "Just you",
   "appMacroScopeOrg": "Everyone",
   "appMacroRefDeactivated": "{name} (deactivated)",
@@ -1804,7 +1760,6 @@
     }
   },
   "appBackToHome": "Back to Home",
-  "appOpenModulesSettings": "Open Modules settings",
   "appSavedViews": "Saved views",
   "appSaveCurrentFilters": "Save current filters",
   "appRenameView": "Rename view",
@@ -2532,6 +2487,474 @@
   },
   "appNotificationsHintTickets": "Notifications arrive for CRM ticket activity, automation rules, and updates from BottleCRM Support.",
   "appNotificationsHint": "Notifications arrive for automation rules and updates from BottleCRM Support.",
+  "appOrgAppGroupWording": "Wording",
+  "appOrgAppGroupObjects": "Objects",
+  "appOrgAppGroupFields": "Fields",
+  "appOrgAppGroupPipelines": "Pipelines",
+  "appOrgAppGroupStages": "Stages",
+  "appOrgAppGroupTags": "Tags",
+  "appOrgAppGroupLeadSources": "Lead sources",
+  "appOrgAppGroupProducts": "Products",
+  "appOrgAppEffectAdd": "New",
+  "appOrgAppEffectKeep": "Kept",
+  "appOrgAppEffectTurnOff": "Turned off",
+  "appOrgAppEffectTurnOn": "Back on",
+  "appOrgAppEffectRestoreWording": "Back to default",
+  "appOrgAppEffectSkippedModule": "Module off",
+  "appOrgAppEffectAddByHand": "Add by hand",
+  "appOrgAppEffectRestore": "Comes back",
+  "appOrgAppEffectConflict": "Not added",
+  "appOrgAppEffectConflictNote": "None of the app's objects is added",
+  "appCustomFieldRequired": "{label} is required",
+  "@appCustomFieldRequired": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appCustomFieldNotNumber": "{label} must be a number",
+  "@appCustomFieldNotNumber": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appLeadSourceFixedCall": "Call",
+  "appLeadSourceFixedEmail": "Email",
+  "appLeadSourceFixedExistingCustomer": "Existing customer",
+  "appLeadSourceFixedPartner": "Partner",
+  "appLeadSourceFixedPublicRelations": "Public relations",
+  "appLeadSourceFixedCampaign": "Campaign",
+  "appLeadSourceFixedWebsite": "Website",
+  "appLeadSourceFixedOther": "Other",
+  "appLeadSourceRetired": "{label} (retired)",
+  "@appLeadSourceRetired": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appObjectShapeLocked": "Your organization's plan does not include custom objects.",
+  "appLeadIntakePresetGeneric": "Any tool that posts JSON or a form",
+  "appLeadIntakePresetGoogleAds": "Google Ads lead form",
+  "appLeadIntakePresetAny": "Any tool",
+  "appLeadIntakeStateOff": "Off",
+  "appLeadIntakeStateWaiting": "Waiting",
+  "appLeadIntakeStateReceiving": "Receiving",
+  "appLeadIntakeResultCreated": "Created",
+  "appLeadIntakeResultMerged": "Merged",
+  "appLeadIntakeResultDuplicate": "Duplicate",
+  "appLeadIntakeResultTest": "Test",
+  "appLeadIntakeResultRejected": "Rejected",
+  "appLeadIntakeResultUnknown": "Unknown",
+  "appRecordMatchesRecords": "records",
+  "appRecordMatchesHeading": "Matching {plural}",
+  "@appRecordMatchesHeading": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appLeadIntakeNotOffered": "Lead webhooks are not available here.",
+  "appLeadIntakeLoadFailed": "Could not load the webhooks.",
+  "appLeadIntakeChangeFailed": "Could not change the webhook.",
+  "appLeadIntakeReplaceKeyFailed": "Could not replace the key.",
+  "appLeadIntakeDeliveriesFailed": "Could not load the deliveries.",
+  "appLeadSourceLoadFailed": "Could not load the lead sources.",
+  "appLeadSourceStillLoading": "The sources are still loading.",
+  "appLeadSourceCannotMove": "That source cannot move further.",
+  "appLeadSourceAdminOnly": "Only an admin can change lead sources.",
+  "appLeadSourceSaveFailed": "Could not save the lead sources.",
+  "appOrgAppLoadFailed": "Could not load apps",
+  "appInteractionsLoadFailed": "Could not load the activity.",
+  "appInteractionsRecordGone": "This record is no longer available to you.",
+  "appInteractionsLogFailed": "Could not log this. Try again.",
+  "appProjectsLoadFailed": "Could not load projects.",
+  "appProjectsDeleteFailed": "Could not delete this project.",
+  "appProjectsAddFailed": "Could not add that.",
+  "appProjectsDealNotFound": "That deal could not be found.",
+  "appProjectsDealReadFailed": "Could not read that deal.",
+  "appProjectsUnbilledFailed": "Could not read the unbilled time.",
+  "appProjectsInvoiceFailed": "Could not invoice.",
+  "appProjectsBillMonthFailed": "Could not bill the month.",
+  "appMailboxExplainOffLeads": "Mail still arrives here and no lead is created. Nothing bounces, so whoever wrote gets silence rather than an error.",
+  "appMailboxExplainWaitingPassword": "Waiting for its basic-auth password. Every post is refused until an admin stores the webhook secret on this address.",
+  "appMailboxExplainWaitingSigningKey": "Waiting for its signing key. Every post is refused until an admin stores the webhook secret on this address.",
+  "appMailboxMakesLeads": "Makes leads",
+  "appMailboxUnassigned": "unassigned",
+  "appMailboxDeliveryLiveLeads": "Creating leads",
+  "appMailboxDropped": "{count} dropped in 30 days",
+  "@appMailboxDropped": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDroppedBreakdown": "{count} dropped in 30 days: {parts}",
+  "@appMailboxDroppedBreakdown": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropSpam": "{n, plural, other{{count} spam}}",
+  "@appMailboxDropSpam": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropVirus": "{n, plural, other{{count} with a virus}}",
+  "@appMailboxDropVirus": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropSpoofed": "{n, plural, other{{count} failed the sender check}}",
+  "@appMailboxDropSpoofed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropAutomatic": "{n, plural, one{{count} automatic reply} other{{count} automatic replies}}",
+  "@appMailboxDropAutomatic": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxDropOther": "{n, plural, other{{count} other}}",
+  "@appMailboxDropOther": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxLimitNotice": "{n, plural, one{Took its limit of {count} email today. More mail is refused until the count falls.} other{Took its limit of {count} emails today. More mail is refused until the count falls.}}",
+  "@appMailboxLimitNotice": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appMailboxLimitNoticeDaily": "Took its daily limit today. More mail is refused until the count falls.",
+  "appMailboxDropPolicy": "{n, plural, one{Spam, viruses and mail that fails its sender's domain check are dropped. Each address takes up to {count} email a day, and a ticket address up to 20 an hour from one sender.} other{Spam, viruses and mail that fails its sender's domain check are dropped. Each address takes up to {count} emails a day, and a ticket address up to 20 an hour from one sender.}}",
+  "@appMailboxDropPolicy": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "appModuleProjects": "Projects",
+  "appWebhookFormatTeams": "Teams message",
+  "appWebhookRemovedUser": "a removed user",
+  "appNotifBudgetAllHours": "{name} has used all of its hours budget",
+  "@appNotifBudgetAllHours": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifBudgetAllAmount": "{name} has used all of its amount budget",
+  "@appNotifBudgetAllAmount": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifBudgetPercentHours": "{name} has used {percent}% of its hours budget",
+  "@appNotifBudgetPercentHours": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "appNotifBudgetPercentAmount": "{name} has used {percent}% of its amount budget",
+  "@appNotifBudgetPercentAmount": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "appNotifEstimateClient": "The client",
+  "appNotifEstimateDeclined": "{who} declined estimate {number}",
+  "@appNotifEstimateDeclined": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifEstimateAccepted": "{who} accepted estimate {number}",
+  "@appNotifEstimateAccepted": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifProjectStarted": "project started",
+  "appNotifDepositDrafted": "deposit invoice drafted",
+  "appNotifRetainerInvoice": "Retainer invoice {number} for {month} drafted for {name}",
+  "@appNotifRetainerInvoice": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadFallback": "a lead",
+  "appNotifLeadAssigned": "New lead assigned: {name}{source}",
+  "@appNotifLeadAssigned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadCreated": "New lead: {name}{source}",
+  "@appNotifLeadCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadEnquired": "{name} enquired again",
+  "@appNotifLeadEnquired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifLeadWaiting": "{name} is waiting for a reply",
+  "@appNotifLeadWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifRecordMatch": "{name} fits an open requirement",
+  "@appNotifRecordMatch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifRecordMatchUnnamed": "A record fits an open requirement",
+  "appNotifSeatOpen": "A seat opened in {name}",
+  "@appNotifSeatOpen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appNotifSeatOpenUnnamed": "A seat opened in a record",
+  "appObjectFormBoardField": "Board field",
+  "appCsvDescriptionObject": "Bring in a spreadsheet of {plural}. You'll check how its columns match, and nothing is written until you choose Import.",
+  "@appCsvDescriptionObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appObjectsBoardLoadFailed": "Could not load the board.",
+  "appObjectsBoardNotLoaded": "The board is not loaded.",
+  "appObjectsBoardMoveFailed": "Could not move that card.",
+  "appObjectsNoteField": "Note",
+  "appObjectsNoBoard": "No board",
+  "appKanbanNothingHere": "Nothing here",
+  "appOpenAppsSettings": "Open Apps settings",
+  "appNotifBudgetFallback": "A project reached a budget level.",
+  "appNotifEstimateAcceptedFallback": "A client accepted an estimate.",
+  "appNotifEstimateDeclinedFallback": "A client declined an estimate.",
+  "appNotifRetainerFallback": "A retainer invoice was drafted.",
+  "appOrgCreateInstallFailed": "Your organization is ready, but the industry setup did not install ({reason}). You can install it from Apps in Organization settings.",
+  "@appOrgCreateInstallFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "appOrgCreateIndustryTitle": "What kind of business is this?",
+  "appOrgCreateIndustryHint": "Sets up a starter pipeline, tags and fields for your industry. You can change everything later.",
+  "appOrgCreateSkip": "Skip for now",
+  "appOrgCreateSkipHint": "Start with a blank workspace.",
+  "appDashboardUnanswered": "Unanswered",
+  "appCsvTitleObject": "Import {plural}",
+  "@appCsvTitleObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvTitleFromCsvObject": "Import {plural} from CSV",
+  "@appCsvTitleFromCsvObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appCsvNoneToImportObject": "No {plural} to import in this file.",
+  "@appCsvNoneToImportObject": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "appInteractionCallIn": "Incoming call",
+  "appInteractionCallOut": "Outgoing call",
+  "appInteractionMeeting": "Meeting",
+  "appInteractionEmailIn": "Email received",
+  "appInteractionEmailOut": "Email sent",
+  "appInteractionWhatsappIn": "WhatsApp received",
+  "appInteractionWhatsappOut": "WhatsApp sent",
+  "appInteractionSmsIn": "Text received",
+  "appInteractionSmsOut": "Text sent",
+  "appInteractionEnquiry": "Enquiry",
+  "appInteractionEnquiryWebform": "Enquiry via web form",
+  "appInteractionEnquiryIntake": "Enquiry via lead webhook",
+  "appInteractionEnquiryEmail": "Enquiry via email",
+  "appInteractionEnquiryVia": "Enquiry via {origin}",
+  "@appInteractionEnquiryVia": {
+    "placeholders": {
+      "origin": {
+        "type": "String"
+      }
+    }
+  },
+  "appInteractionActivity": "Activity",
+  "appInteractionAbout": "about {duration}",
+  "@appInteractionAbout": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "appElapsedUnderMinute": "under a minute",
+  "appElapsedMinutes": "{minutes} min",
+  "@appElapsedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedHours": "{hours} h",
+  "@appElapsedHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedHoursMinutes": "{hours} h {minutes} min",
+  "@appElapsedHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedDays": "{days} d",
+  "@appElapsedDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "appElapsedDaysHours": "{days} d {hours} h",
+  "@appElapsedDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "contactsListTitle": "Contacts",
   "contactsListImportTooltip": "Import from a spreadsheet",
   "contactsListNewTooltip": "New contact",
@@ -2612,6 +3035,16 @@
       }
     }
   },
+  "contactsDetailSource": "Source",
+  "contactsDetailSubSource": "Sub-source",
+  "contactsDetailReference": "Reference",
+  "contactsDetailCall": "Call",
+  "contactsDetailMessage": "Message",
+  "contactsDetailActivityFailed": "Could not load the activity.",
+  "contactsDetailActivity": "Activity",
+  "contactsDetailNothingLogged": "Nothing logged yet.",
+  "contactsDetailCustomFields": "Custom fields",
+  "contactsDetailEmail": "Email",
   "commonSave": "Save",
   "commonCancel": "Cancel",
   "commonDelete": "Delete",
@@ -2665,6 +3098,29 @@
       }
     }
   },
+  "coreAfterTapGreeting": "Hi,",
+  "coreAfterTapGreetingNamed": "Hi {name},",
+  "@coreAfterTapGreetingNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreRecordDetailEditNote": "Edit Note",
+  "coreRecordDetailEditNoteHint": "Update your note...",
+  "coreRecordDetailDeleteNote": "Delete Note",
+  "coreRecordDetailDeleteNoteTitle": "Delete Note?",
+  "coreRecordDetailCannotUndo": "This action cannot be undone.",
+  "coreRecordDetailNoteOptions": "Note options",
+  "coreCustomFieldsDisplayNotSet": "Not set",
+  "corePushBannerDismiss": "Dismiss",
+  "corePushBannerOpen": "Open",
+  "corePushPromptTitle": "Get lead alerts",
+  "corePushPromptBody": "Allow notifications so a lead assigned to you reaches you at once.",
+  "corePushPromptNotNow": "Not now",
+  "corePushPromptAllow": "Allow notifications",
+  "coreCustomFieldsSectionHeading": "Custom fields",
   "dealsMoveFailed": "Failed to move \"{name}\"",
   "@dealsMoveFailed": {
     "placeholders": {
@@ -2877,9 +3333,6 @@
   "dealsDetailWonByLabel": "WON BY",
   "dealsDetailClosedByLabel": "CLOSED BY",
   "dealsDetailClosedOnLabel": "CLOSED ON",
-  "dealsDetailNoActivity": "No activity yet",
-  "dealsDetailNoActivityBody": "Activity will appear here as it happens",
-  "dealsDetailTimelineActorSeparator": " ",
   "dealsDetailTimelineCommented": "commented",
   "dealsDetailTimelineSomeone": "Someone",
   "dealsDetailTimelineUploaded": "uploaded {fileName}",
@@ -2979,78 +3432,6 @@
       }
     }
   },
-  "dealsDetailUnknown": "Unknown",
-  "dealsDetailEditNote": "Edit Note",
-  "dealsDetailUpdateNoteHint": "Update your note...",
-  "dealsDetailDeleteNote": "Delete Note",
-  "dealsDetailDeleteNoteTitle": "Delete Note?",
-  "dealsDetailNoteOptions": "Note options",
-  "dealsAgoMonths": "{count}mo ago",
-  "@dealsAgoMonths": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoDays": "{count}d ago",
-  "@dealsAgoDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoHours": "{count}h ago",
-  "@dealsAgoHours": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoMinutes": "{count}m ago",
-  "@dealsAgoMinutes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoJustNow": "just now",
-  "dealsShortMonths": "{count}mo",
-  "@dealsShortMonths": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortDays": "{count}d",
-  "@dealsShortDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortHours": "{count}h",
-  "@dealsShortHours": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortMinutes": "{count}m",
-  "@dealsShortMinutes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortNow": "now",
   "dealsFormFirstOpenStage": "First open stage",
   "dealsFormLoadFailed": "Failed to load deal",
   "dealsFormFixErrors": "Please fix the errors in the form",
@@ -3143,6 +3524,10 @@
       }
     }
   },
+  "dealsDetailStartProject": "Start a project",
+  "dealsDetailNone": "None",
+  "dealsFormSourceNone": "None",
+  "dealsFormSourcesLoadFailed": "Could not load the lead sources. Try again.",
   "documentsListTitle": "Documents",
   "documentsListHideArchived": "Hide archived",
   "documentsListShowArchived": "Show archived",
@@ -3367,6 +3752,99 @@
   "goalsFormPickDate": "Pick a date",
   "goalsFormGoalTitle": "Goal",
   "goalsFormAdminsOnly": "Only an administrator can add or change a goal. You can see the ones set for you and your teams on the goals list.",
+  "interactionsCouldNotOpen": "Could not open {scheme}",
+  "@interactionsCouldNotOpen": {
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "interactionsLogActivity": "Log activity",
+  "interactionsLogTitle": "{kind, select, call{Log this call?} meeting{Log this meeting?} email{Log this email?} whatsapp{Log this WhatsApp message?} sms{Log this text message?} other{Log this enquiry?}}",
+  "@interactionsLogTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "interactionsLogTitleTo": "{kind, select, call{Log this call to {name}?} meeting{Log this meeting to {name}?} email{Log this email to {name}?} whatsapp{Log this WhatsApp message to {name}?} sms{Log this text message to {name}?} other{Log this enquiry to {name}?}}",
+  "@interactionsLogTitleTo": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "interactionsDurationInvalid": "Duration is a whole number of minutes.",
+  "interactionsOutcome": "Outcome",
+  "interactionsDuration": "Duration",
+  "interactionsMinutesSuffix": "min",
+  "interactionsDurationEstimated": "Estimated from your time away",
+  "interactionsNote": "Note",
+  "interactionsSkip": "Skip",
+  "interactionsLog": "Log",
+  "interactionsKindCall": "Call",
+  "interactionsKindMeeting": "Meeting",
+  "interactionsKindEmail": "Email",
+  "interactionsKindWhatsapp": "WhatsApp",
+  "interactionsKindSms": "Text",
+  "interactionsKindEnquiry": "Enquiry",
+  "interactionsOutcomeConnected": "Connected",
+  "interactionsOutcomeNoAnswer": "No answer",
+  "interactionsOutcomeVoicemail": "Voicemail",
+  "interactionsOutcomeBusy": "Busy",
+  "interactionsOutcomeWrongNumber": "Wrong number",
+  "interactionsTimelineActorSeparator": " ",
+  "interactionsNoteActions": "Note actions",
+  "interactionsAgoMonths": "{count}mo",
+  "@interactionsAgoMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoDays": "{count}d",
+  "@interactionsAgoDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoHours": "{count}h",
+  "@interactionsAgoHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoMinutes": "{count}m",
+  "@interactionsAgoMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "interactionsAgoNow": "now",
+  "interactionsShowingNewest": "{count, plural, one{Showing the newest {shown} of {count} activity.} other{Showing the newest {shown} of {count} activities.}}",
+  "@interactionsShowingNewest": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "shown": {
+        "type": "int"
+      }
+    }
+  },
   "invoicesCompactThousands": "{symbol}{amount}k",
   "@invoicesCompactThousands": {
     "placeholders": {
@@ -3883,6 +4361,52 @@
   "invoicesTemplateNoLogo": "No logo. Invoices print with the org name instead.",
   "invoicesTemplateReplaceLogo": "Replace logo",
   "invoicesTemplateAddLogo": "Add logo",
+  "invoicesCustomFields": "Custom fields",
+  "invoicesCustomFieldsRequired": "Fill in the required custom fields.",
+  "invoicesEditFields": "Edit fields",
+  "invoicesFieldsSaved": "Fields saved",
+  "invoicesDepositTooLow": "A deposit must be more than 0%.",
+  "invoicesDepositTooHigh": "A deposit cannot be more than 100%.",
+  "invoicesDepositLabel": "Deposit on acceptance",
+  "invoicesDepositNone": "None",
+  "invoicesDepositInvoice": "deposit invoice",
+  "invoicesDepositInvoiceWithTax": "deposit invoice, with tax",
+  "invoicesDepositRoundsToZero": "Rounds to 0.00, so no deposit invoice is drafted.",
+  "invoicesDepositInvoiceNumber": "Deposit invoice {number}",
+  "@invoicesDepositInvoiceNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRaiseFullTitle": "Raise the full invoice?",
+  "invoicesRaiseFullBody": "{which} for {amount} is not taken off automatically. Edit the new invoice before you send it.",
+  "@invoicesRaiseFullBody": {
+    "placeholders": {
+      "which": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRaiseInvoice": "Raise invoice",
+  "invoicesEstimateProject": "Project",
+  "invoicesEstimateProjectNamed": "Project: {name}",
+  "@invoicesEstimateProjectNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateWhenAccepted": "When the client accepts",
+  "invoicesEstimateStartProject": "Start a project when accepted",
+  "invoicesEstimateProjectBilling": "Project billing",
+  "invoicesEstimateIntroduction": "Introduction (optional)",
+  "invoicesEstimateIntroductionHelp": "Shown to the client above the lines",
   "leadsListTitle": "Leads",
   "leadsListBoardTooltip": "Pipeline board",
   "leadsListImportTooltip": "Import from a spreadsheet",
@@ -4039,8 +4563,6 @@
   "leadsDetailNoFilesBody": "Attach a document, a business card, or a photo.",
   "leadsDetailAttachmentNoFile": "That attachment has no file.",
   "leadsDetailDownloadFailed": "Could not download that file.",
-  "leadsDetailNoActivity": "No activity yet",
-  "leadsDetailNoActivityBody": "Activity will appear here as it happens",
   "leadsDetailEventCommented": "commented",
   "leadsDetailEventUploaded": "uploaded {file}",
   "@leadsDetailEventUploaded": {
@@ -4159,39 +4681,6 @@
     }
   },
   "leadsTimeJustNow": "Just now",
-  "leadsTimeMonths": "{count}mo",
-  "@leadsTimeMonths": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeDays": "{count}d",
-  "@leadsTimeDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeHours": "{count}h",
-  "@leadsTimeHours": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeMinutes": "{count}m",
-  "@leadsTimeMinutes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "leadsTimeNow": "now",
   "leadsFormLoadFailed": "Failed to load lead",
   "leadsFormFixErrors": "Please fix the errors in the form",
   "leadsFormFieldRequired": "{label} is required",
@@ -4310,6 +4799,24 @@
   "leadsCurrencyReal": "Real",
   "leadsCurrencyPeso": "Peso",
   "leadsCurrencyRand": "Rand",
+  "leadsDetailSubSource": "SUB-SOURCE",
+  "leadsDetailReference": "REFERENCE",
+  "leadsFormSubSource": "Sub-source (Optional)",
+  "leadsFormSubSourceHint": "Spring open day",
+  "leadsFormReference": "Reference (Optional)",
+  "leadsFormReferenceHint": "An ad or listing id",
+  "leadsFormSourcesLoadFailed": "Could not load the lead sources. Try again.",
+  "leadsListWaiting": "waiting {elapsed}",
+  "@leadsListWaiting": {
+    "placeholders": {
+      "elapsed": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsListUnanswered": "Unanswered",
+  "leadsListNobodyWaiting": "Nobody is waiting",
+  "leadsListNobodyWaitingBody": "Every lead in this view has had a reply.",
   "objectsMissingObject": "This object does not exist, or you do not have access to it.",
   "objectsRecordsTitle": "Records",
   "objectsLoadObjectFailed": "Failed to load this object",
@@ -4468,6 +4975,523 @@
   "objectsRemoveBodyUnnamed": "This record will no longer link here.",
   "objectsRelated": "Related",
   "objectsDeletePhotoTooltip": "Delete photo",
+  "objectsBoardLoadFailed": "Failed to load the board",
+  "objectsBoardNoColumns": "This board has no columns",
+  "objectsBoardColumnEmpty": "No {plural}",
+  "@objectsBoardColumnEmpty": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsBoardOtherValuesFootnote": "Values that are no longer options",
+  "objectsMatchesDismissFailed": "Could not dismiss that match",
+  "objectsMatchesUndoFailed": "Could not undo",
+  "objectsMatchesTitle": "Matches",
+  "objectsMatchesNoneDismissed": "None dismissed.",
+  "objectsMatchesNoneYet": "No matches yet.",
+  "objectsMatchesHideDismissed": "Hide dismissed",
+  "objectsMatchesDismissedCount": "{count} dismissed",
+  "@objectsMatchesDismissedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectsMatchesShow": "Show",
+  "objectsMatchesLoadFailed": "Could not load matches",
+  "objectsMatchesUntitled": "Untitled",
+  "objectsMatchesUndo": "Undo",
+  "objectsMatchesDismiss": "Dismiss",
+  "objectsMatchesUndoFor": "Undo {name}",
+  "@objectsMatchesUndoFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsMatchesDismissFor": "Dismiss {name}",
+  "@objectsMatchesDismissFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsFilterTitle": "Filters",
+  "objectsFilterNoMembers": "No members",
+  "objectsFilterNoTags": "No tags",
+  "objectsFilterMember": "Member",
+  "objectsFilterTag": "Tag",
+  "objectsFilterMe": "Me",
+  "objectsFilterOtherMembers": "Other members",
+  "objectsFilterAnyTag": "Any tag",
+  "objectsFilterClearAll": "Clear all",
+  "objectsDetailNoteAddFailed": "Could not add that note.",
+  "objectsDetailNoteUpdateFailed": "Could not update that note.",
+  "objectsDetailNoteDeleteFailed": "Could not delete that note.",
+  "objectsDetailNoteDeleteTitle": "Delete note?",
+  "objectsDetailTimeline": "Timeline",
+  "objectsDetailNoteHint": "Add a note",
+  "objectsDetailNoteAdd": "Add note",
+  "objectsDetailAddedNote": "added a note",
+  "objectsDetailCreatedNoActor": "{label} created",
+  "@objectsDetailCreatedNoActor": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsDetailCreatedThis": "created this {label}",
+  "@objectsDetailCreatedThis": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsFormTagInactive": "{name} (no longer active)",
+  "@objectsFormTagInactive": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsFormRemoveTag": "Remove tag",
+  "objectsFormChooseTags": "Choose tags",
+  "objectsListFiltersOn": "Filters ({count} on)",
+  "@objectsListFiltersOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectsListModeList": "List",
+  "objectsListModeBoard": "Board",
+  "objectsListImport": "Import from a spreadsheet",
+  "projectsHours": "{hours}h",
+  "@projectsHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBurnHours": "Hours",
+  "projectsBurnAmount": "Amount",
+  "projectsBurnOf": "{used} of {total}",
+  "@projectsBurnOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsStatusActive": "Active",
+  "projectsStatusOnHold": "On hold",
+  "projectsStatusCompleted": "Completed",
+  "projectsStatusCancelled": "Cancelled",
+  "projectsBillingTimeAndMaterials": "Time and materials",
+  "projectsBillingFixedFee": "Fixed fee",
+  "projectsBillingRetainer": "Retainer",
+  "projectsBillingNonBillable": "Non-billable",
+  "projectsTitle": "Projects",
+  "projectsNew": "New project",
+  "projectsAccountsLoadFailed": "Could not load the accounts. Try again.",
+  "projectsFilterByAccount": "Filter by account",
+  "projectsLoadFailed": "Could not load projects",
+  "projectsTryAgain": "Try again",
+  "projectsSearchHint": "Search projects",
+  "projectsFilterAll": "All",
+  "projectsAnyAccount": "Any account",
+  "projectsOneAccount": "One account",
+  "projectsEmptyTitle": "No projects yet",
+  "projectsEmptyFilteredTitle": "No matching projects",
+  "projectsEmptyBody": "A project holds the tasks, time and invoices for one piece of client work. Start one here or from a won deal.",
+  "projectsEmptyFilteredBody": "Clear a filter to see more.",
+  "projectsRowDue": "due {date}",
+  "@projectsRowDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRowLogged": "{hours} logged",
+  "@projectsRowLogged": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountEnterNumber": "Enter a number.",
+  "projectsAmountMoreThanZero": "Enter more than 0.",
+  "projectsAmountPercentMax": "A percent is at most 100.",
+  "projectsAmountOfFee": "{part} of the {fee} fee",
+  "@projectsAmountOfFee": {
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountTitle": "Invoice an amount",
+  "projectsAmountDraftsForClient": "Drafts a one-line invoice for the client.",
+  "projectsAmountDraftsFor": "Drafts a one-line invoice for {account}.",
+  "@projectsAmountDraftsFor": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountFee": "Fee {fee}.",
+  "@projectsAmountFee": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountFeeInvoiced": "Fee {fee}, invoiced so far {invoiced}.",
+  "@projectsAmountFeeInvoiced": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      },
+      "invoiced": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountAmount": "Amount",
+  "projectsAmountPercentOfFee": "Percent of fee",
+  "projectsAmountPercent": "Percent",
+  "projectsAmountLineDescription": "Line description (optional)",
+  "projectsAmountLineHint": "{name}, fixed fee",
+  "@projectsAmountLineHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsNotFoundBody": "It may have been deleted, or you may not have access to it.",
+  "projectsCheckConnection": "Check your connection and try again.",
+  "projectsFormEnterZeroOrMore": "Enter 0 or more.",
+  "projectsFormNameRequired": "A project needs a name.",
+  "projectsFormAccountRequired": "Pick the client account.",
+  "projectsFormDueBeforeStart": "The due date cannot be before the start date.",
+  "projectsFormFeeMin": "Enter at least 0.01.",
+  "projectsFormFeeRequired": "Set the monthly fee.",
+  "projectsFormOverageRequired": "Set the rate for hours over the allowance.",
+  "projectsFormRateRequired": "Enter a rate.",
+  "projectsFormCheckFields": "Check the marked fields.",
+  "projectsFormSaved": "Project saved",
+  "projectsFormCreated": "Project created",
+  "projectsFormEditTitle": "Edit project",
+  "projectsFormLoadFailed": "Could not load this project",
+  "projectsFormDraftFailed": "Could not fill the form from that deal",
+  "projectsFormCustomFields": "Custom fields",
+  "projectsFormProjectCard": "Project",
+  "projectsFormName": "Name",
+  "projectsFormAccount": "Account",
+  "projectsFormCurrentAccount": "Current account",
+  "projectsFormDeal": "Deal (optional)",
+  "projectsFormNone": "None",
+  "projectsFormCurrentDeal": "Current deal",
+  "projectsNotSet": "Not set",
+  "projectsBillingAndBudget": "Billing and budget",
+  "projectsFormAdminOnly": "Only an admin can change these.",
+  "projectsBillingType": "Billing type",
+  "projectsMonthlyFee": "Monthly fee",
+  "projectsHoursIncluded": "Hours included each month",
+  "projectsRollover": "Roll unused hours over",
+  "projectsOverageRate": "Rate for hours over the allowance",
+  "projectsCurrency": "Currency",
+  "projectsBudgetHours": "Budget hours",
+  "projectsBudgetAmount": "Budget amount",
+  "projectsDefaultRate": "Default hourly rate",
+  "projectsRateForSomeone": "Rate for someone",
+  "projectsRateFor": "Rate for {name}",
+  "@projectsRateFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsHoursSuffix": "h",
+  "projectsFeeBudgetAmount": "Fee (budget amount)",
+  "projectsDefaultRateHelp": "Time logged here takes the person's own rate below, else this one.",
+  "projectsHoursIncludedHelp": "Leave blank to bill the fee alone, with no hours over.",
+  "projectsCarriedHours": "Carried hours",
+  "projectsCarriedHoursHelp": "Unused hours carried into the next invoice.",
+  "projectsDates": "Dates",
+  "projectsStartDate": "Start date",
+  "projectsDueDate": "Due date",
+  "projectsClearField": "Clear {field}",
+  "@projectsClearField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsSomeone": "Someone",
+  "projectsPeople": "People",
+  "projectsNobodyAssigned": "Nobody assigned",
+  "projectsAssignPeople": "Assign people",
+  "projectsNoMembers": "No active members",
+  "projectsRatesPerPerson": "Rates per person",
+  "projectsRatesPerPersonHelp": "A person's own hourly rate on this project. Leave someone out to use the default rate.",
+  "projectsPerson": "Person",
+  "projectsRate": "Rate",
+  "projectsRemoveRate": "Remove rate",
+  "projectsAddRate": "Add a rate",
+  "projectsTag": "Tag",
+  "projectsDetails": "Details",
+  "projectsNoTags": "No tags",
+  "projectsFormSave": "Save project",
+  "projectsFormCreate": "Create project",
+  "projectsNotFound": "Project not found",
+  "projectsTabOverview": "Overview",
+  "projectsTabTasks": "Tasks",
+  "projectsTabTime": "Time",
+  "projectsTabInvoices": "Invoices",
+  "projectsTabFiles": "Files",
+  "projectsTabFilesCount": "Files ({count})",
+  "@projectsTabFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsTabComments": "Comments",
+  "projectsTabCommentsCount": "Comments ({count})",
+  "@projectsTabCommentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsDelete": "Delete project",
+  "projectsFactAccount": "ACCOUNT",
+  "projectsDeal": "Deal",
+  "projectsFactFromDeal": "FROM THE DEAL",
+  "projectsFactFromEstimate": "FROM ESTIMATE",
+  "projectsBudget": "Budget",
+  "projectsFactStart": "START",
+  "projectsFactDue": "DUE",
+  "projectsRates": "Rates",
+  "projectsBillMonth": "Bill {month}",
+  "@projectsBillMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBillThisMonth": "Bill this month",
+  "projectsHoursCount": "{count, plural, one{{hours} hour} other{{hours} hours}}",
+  "@projectsHoursCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerNoFee": "No monthly fee set",
+  "projectsRetainerFee": "{amount} a month",
+  "@projectsRetainerFee": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerUsed": "{hours} in {month}",
+  "@projectsRetainerUsed": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerUsedOf": "{used} of {available} hours used in {month}",
+  "@projectsRetainerUsedOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerOverage": "{hours} over the allowance so far",
+  "@projectsRetainerOverage": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerOverageValue": "{hours} over the allowance so far, {amount}",
+  "@projectsRetainerOverageValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerCarried": "{hours} carried in from earlier months",
+  "@projectsRetainerCarried": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerEnded": "Ended after {month}",
+  "@projectsRetainerEnded": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetLogged": "{logged} logged, {billable} billable",
+  "@projectsBudgetLogged": {
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "billable": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetUnbilled": "Not yet billed: {amount}",
+  "@projectsBudgetUnbilled": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetInvoicedOfFee": "Invoiced {invoiced} of the {fee} fee",
+  "@projectsBudgetInvoicedOfFee": {
+    "placeholders": {
+      "invoiced": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetInvoiced": "Invoiced: {amount}",
+  "@projectsBudgetInvoiced": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetNone": "No budget set.",
+  "projectsRatesNoDefault": "No default rate",
+  "projectsRatesDefault": "Default: {amount} an hour",
+  "@projectsRatesDefault": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRateLineNone": "{name}: no rate",
+  "@projectsRateLineNone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRateLine": "{name}: {amount} an hour",
+  "@projectsRateLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsNewTask": "New task",
+  "projectsNoTasks": "No tasks on this project yet.",
+  "projectsTaskUpdateFailed": "Could not update that task",
+  "projectsLogged": "Logged",
+  "projectsStartTimer": "Start timer",
+  "projectsLogTime": "Log time",
+  "projectsNoTime": "No time logged here yet.",
+  "projectsTimerOn": "Start the timer on",
+  "projectsTimerOnProject": "The project",
+  "projectsTimerAlreadyRunning": "You already have a timer running.",
+  "projectsTimerStartFailed": "Could not start the timer.",
+  "projectsView": "View",
+  "projectsTimerStopFailed": "Could not stop the timer.",
+  "projectsLogTimeFailed": "Could not log that time.",
+  "projectsBillThisMonthQuestion": "Bill this month?",
+  "projectsBillMonthQuestion": "Bill {month}?",
+  "@projectsBillMonthQuestion": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBillMonthBody": "This drafts an invoice for the monthly fee, plus any hours over the allowance, and marks the month's time as billed.",
+  "projectsBillMonthFailed": "Could not bill the month.",
+  "projectsNoInvoices": "No invoices for this project yet.",
+  "projectsInvoice": "Invoice",
+  "projectsNoFiles": "No files yet. Attach a brief, a contract or a deliverable.",
+  "projectsAttachmentNoFile": "That attachment has no file.",
+  "projectsDownloadFailed": "Could not download that file.",
+  "projectsNoComments": "No comments yet",
+  "projectsNoCommentsBody": "Add a comment to keep the team in the loop",
+  "projectsAddCommentHint": "Add a comment...",
+  "projectsAddComment": "Add comment",
+  "projectsDeleteTitle": "Delete this project?",
+  "projectsDeleteBody": "Its tasks, time entries and invoices are kept, without the link to this project. This cannot be undone.",
+  "projectsDeleted": "Project deleted",
   "settingsAutomationAdminOnly": "Only an organization admin can see automation rules.",
   "settingsAutomationTryAgain": "Try again",
   "settingsAutomationTryTitle": "Try it on a record",
@@ -4731,7 +5755,7 @@
   "settingsWebFormCustomField": "Custom field",
   "settingsWebFormsTitle": "Web forms",
   "settingsWebFormsNew": "New web form",
-  "settingsWebFormsNothingToCreate": "Web forms create leads or tickets, and both are switched off. An admin can switch one on in Modules settings.",
+  "settingsWebFormsNothingToCreate": "Web forms create leads or tickets, and both are switched off. An admin can switch one on in Apps settings.",
   "settingsWebFormsEachSubmissionCreates": "Each submission creates",
   "settingsWebFormsTargetLead": "A lead",
   "settingsWebFormsTargetTicket": "A ticket",
@@ -6082,7 +7106,7 @@
   "settingsMailboxFormAddress": "Address",
   "settingsMailboxFormAddressHint": "Mail to the old address stops becoming tickets.",
   "settingsMailboxFormProvider": "Provider",
-  "settingsMailboxFormProviderHint": "Only AWS SES is implemented. Mail to an address using one of the others becomes nothing until that integration exists.",
+  "settingsMailboxFormProviderHint": "AWS SES, Postmark and Mailgun deliver. Mail to an IMAP address becomes nothing until that integration exists.",
   "settingsMailboxFormTopicHint": "Mail is accepted only from this exact topic. Left blank, it is set by the first subscription AWS confirms from an AWS account this server allows. Clearing it stops mail until it is set again.",
   "settingsMailboxFormSectionOpensAs": "What a ticket opens as",
   "settingsMailboxFormType": "Type",
@@ -6379,7 +7403,6 @@
   "settingsOrgCascade": "Close child tickets with the parent",
   "settingsOrgCascadeTicked": "Starts ticked",
   "settingsOrgCascadeUnticked": "Starts unticked",
-  "settingsOrgSectionPack": "Vertical pack",
   "settingsOrgUnnamed": "Unnamed organization",
   "settingsOrgMemberCount": "{count, plural, =1{1 member} other{{count} members}}",
   "@settingsOrgMemberCount": {
@@ -6392,30 +7415,6 @@
   "settingsOrgNotRecorded": "Not recorded",
   "settingsOrgPrintedNote": "These fields are printed on every invoice and estimate. Changing one changes documents from that moment on; PDFs already sent keep what they were sent with.",
   "settingsOrgApiKeyNote": "The organization API key is not here. It authenticates as the whole organization, so it is never shown on a page you can reach by browsing. For per-person programmatic access, use API tokens, which can be revoked one at a time.",
-  "settingsOrgApplyTitle": "Apply \"{name}\"?",
-  "@settingsOrgApplyTitle": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "settingsOrgApplyBody": "This adds starter pipelines, tags, custom fields and a set of sample records. Anything already set up is left exactly as it is.",
-  "settingsOrgApplyBodyProducts": "This adds starter pipelines, tags, custom fields, products and a set of sample records. Anything already set up is left exactly as it is.",
-  "settingsOrgApply": "Apply",
-  "settingsOrgClearTitle": "Clear sample data?",
-  "settingsOrgClearBody": "Permanently deletes every sample record a pack created for this organization. Your real records are never touched, and any sample record you have since attached real work to is kept. This cannot be undone.",
-  "settingsOrgClear": "Clear",
-  "settingsOrgFirstPack": "First pack applied",
-  "settingsOrgNoneYet": "None yet",
-  "settingsOrgPackBody": "A pack adds starter pipelines, tags, custom fields and sample records for one kind of business. Applying one only fills in what this organization is missing.",
-  "settingsOrgPackBodyProducts": "A pack adds starter pipelines, tags, custom fields, products and sample records for one kind of business. Applying one only fills in what this organization is missing.",
-  "settingsOrgAdminsOnly": "Applying a pack or clearing sample data is limited to administrators.",
-  "settingsOrgNoPacks": "No packs available right now.",
-  "settingsOrgClearButton": "Clear sample data",
-  "settingsOrgClearHint": "Removes only the records a pack created as samples. Your real records are never touched.",
-  "settingsOrgApplied": "Applied",
-  "settingsOrgApplyAgain": "Apply again",
   "settingsOrgLoadFailed": "Could not load the organization",
   "settingsOrgTryAgain": "Try again",
   "settingsOrgEditTitle": "Edit organization",
@@ -6891,6 +7890,375 @@
   "settingsTagsEmptyAdmin": "Tags are shared across every record type, so the first one is worth naming carefully.",
   "settingsTagsEmptyMember": "An administrator adds these.",
   "settingsTagsLoadError": "Could not load the tags",
+  "settingsAppsPreviewFailed": "Could not load what this would change.",
+  "settingsAppsInstalled": "{name} installed.",
+  "@settingsAppsInstalled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsUpdated": "{name} updated.",
+  "@settingsAppsUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsRemoved": "{name} removed. Every record stays.",
+  "@settingsAppsRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsClearTitle": "Clear sample data?",
+  "settingsAppsClearBody": "Permanently deletes every sample record an app created for this organization. Your real records are never touched, and any sample record you have since attached real work to is kept. This cannot be undone.",
+  "settingsAppsClear": "Clear",
+  "settingsAppsModulesTitle": "Modules",
+  "settingsAppsTitle": "Apps",
+  "settingsAppsPartsWithProducts": "fields, pipelines, tags, lead sources and products",
+  "settingsAppsParts": "fields, pipelines, tags and lead sources",
+  "settingsAppsIndustryApps": "Industry apps",
+  "settingsAppsIntro": "Each sets BottleCRM up for one kind of business: its wording, {parts}. You see what changes before anything does, and removing an app keeps every record.",
+  "@settingsAppsIntro": {
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsStatusRemoved": "Removed. Its records stay, and installing again turns its parts back on.",
+  "settingsAppsVersionInstalled": "Version {version} installed",
+  "@settingsAppsVersionInstalled": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsInstalledBy": " by {name}",
+  "@settingsAppsInstalledBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsInstalledOn": " on {date}",
+  "@settingsAppsInstalledOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsUpdateSkipped": " An update adds the parts skipped while a module was off.",
+  "settingsAppsVersionAvailable": " Version {version} is available.",
+  "@settingsAppsVersionAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsSwitchOn": "{count, plural, =1{ Switch it on below, then update to add them.} other{ Switch them on below, then update to add them.}}",
+  "@settingsAppsSwitchOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppsUpdateAddsNow": " Update adds them now.",
+  "settingsAppsSkipped": "{count, plural, =1{Parts for {names} were skipped because that module was off.} other{Parts for {names} were skipped because those modules were off.}}",
+  "@settingsAppsSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppsBadgeInstalled": "Installed",
+  "settingsAppsBadgeRemoved": "Removed",
+  "settingsAppsInstall": "Install",
+  "settingsAppsUpdate": "Update",
+  "settingsAppsRemove": "Remove",
+  "settingsAppsClearButton": "Clear sample data",
+  "settingsAppsClearHint": "Removes only the records an app added as samples. Your real records are never touched.",
+  "settingsAppsLoadFailed": "Could not load the apps.",
+  "settingsAppsMemberNotice": "Only an organization admin can manage apps and modules.",
+  "settingsAppPreviewInstallTitle": "Install {name}?",
+  "@settingsAppPreviewInstallTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewUpdateTitle": "Update {name}?",
+  "@settingsAppPreviewUpdateTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewRemoveTitle": "Remove {name}?",
+  "@settingsAppPreviewRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppPreviewInstallLead": "This is what it adds. Anything this organization already has is kept as it is, and no record changes.",
+  "settingsAppPreviewUpdateLead": "This adds what is listed. Nothing you already have changes, and anything you deleted stays deleted.",
+  "settingsAppPreviewRemoveLead": "This turns off what is listed. Every record stays, pipelines and tags included, and installing again brings it all back.",
+  "settingsAppPreviewInstallEmpty": "This organization already has everything this app sets up.",
+  "settingsAppPreviewUpdateEmpty": "There is nothing new to add.",
+  "settingsAppPreviewRemoveEmpty": "There is nothing to turn off.",
+  "settingsAppPreviewHandWork": "Stages marked Add by hand are new in this version, but their pipeline is already here, so the update leaves them out. Add them to that pipeline yourself if you want them.",
+  "settingsAppPreviewSampleTitle": "Add sample records",
+  "settingsAppPreviewSampleCount": "{count} example records to try it with. Clear sample data removes them.",
+  "@settingsAppPreviewSampleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAppPreviewSample": "Example records to try it with. Clear sample data removes them.",
+  "settingsLeadCaptureTitle": "Lead capture",
+  "settingsLeadCaptureWebForms": "Web forms",
+  "settingsLeadCaptureWebFormsHint": "Forms you embed on your own site",
+  "settingsLeadCaptureWebhooksFailed": "Could not load the webhooks.",
+  "settingsLeadCaptureNoWebhooks": "No webhooks yet. Create one on the web, where its fields are mapped. Here you can copy its URL, replace its key, switch it off and read its deliveries.",
+  "settingsLeadCaptureWebhooks": "Webhooks",
+  "settingsLeadCaptureUntitledWebhook": "Untitled webhook",
+  "settingsLeadCaptureNothingYet": "{preset} · nothing received yet",
+  "@settingsLeadCaptureNothingYet": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadCaptureLastPost": "{preset} · last post {when}",
+  "@settingsLeadCaptureLastPost": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadCaptureAddressAdded": "Address added",
+  "settingsLeadCaptureAddressSaved": "Address saved",
+  "settingsLeadCaptureAddressOff": "Address turned off",
+  "settingsLeadCaptureAddressOn": "Address turned on",
+  "settingsLeadCaptureAddresses": "Lead addresses",
+  "settingsLeadCaptureAddressesFailed": "Could not load the lead addresses.",
+  "settingsLeadCaptureNoAddresses": "No lead address yet. Forward an enquiry to one, or point a portal's notification emails at it, and each email becomes a lead.",
+  "settingsLeadCaptureAddAddress": "Add a lead address",
+  "settingsLeadCaptureTurnOff": "Turn off",
+  "settingsLeadCaptureTurnOn": "Turn on",
+  "settingsLeadCaptureKeyTitle": "Copy the new key now",
+  "settingsLeadCaptureKeyBody": "This is the only time the key is shown. Paste it into the tool that posts to this webhook; replace it again if it is lost.",
+  "settingsLeadCaptureKeyCopied": "Key copied",
+  "settingsLeadCaptureCopy": "Copy",
+  "settingsLeadIntakeUrlCopied": "URL copied",
+  "settingsLeadIntakeReplaceTitle": "Replace the key?",
+  "settingsLeadIntakeReplaceBody": "The current key keeps working for 7 days, so there is time to update whatever posts here. The URL stays the same.",
+  "settingsLeadIntakeReplaceKey": "Replace key",
+  "settingsLeadIntakeTurnedOff": "Turned off",
+  "settingsLeadIntakeTurnedOn": "Turned on",
+  "settingsLeadIntakeTitle": "Webhook",
+  "settingsLeadIntakeNotOffered": "This server has no lead webhooks.",
+  "settingsLeadIntakeLoadFailed": "Could not load the webhook.",
+  "settingsLeadIntakeMissing": "That webhook does not exist.",
+  "settingsLeadIntakeCopyUrl": "Copy URL",
+  "settingsLeadIntakeFieldMapping": "Field mapping",
+  "settingsLeadIntakeMappingOnWeb": "The mapping is edited on the web.",
+  "settingsLeadIntakeDeliveries": "Deliveries",
+  "settingsLeadIntakeKeyHidden": "Key hidden",
+  "settingsLeadIntakeKeyEnding": "Key ending {hint}",
+  "@settingsLeadIntakeKeyEnding": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeArriveAs": "Leads arrive as {source}",
+  "@settingsLeadIntakeArriveAs": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeArriveAsDetail": "Leads arrive as {source}, {detail}",
+  "@settingsLeadIntakeArriveAsDetail": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeNothingYet": "Nothing received yet",
+  "settingsLeadIntakeLastPost": "Last post {when}",
+  "@settingsLeadIntakeLastPost": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeAuthHint": "Send the key in an Authorization: Bearer header. Tools that only take a URL can add ?key= to it, but servers log URLs, so the header is safer.",
+  "settingsLeadIntakeDeliveriesFailed": "Could not load the deliveries. Pull to refresh.",
+  "settingsLeadIntakeNothingYetDot": "Nothing received yet.",
+  "settingsLeadIntakeExternalId": "id {id}",
+  "@settingsLeadIntakeExternalId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadIntakeAdminsOnly": "Administrators only",
+  "settingsLeadIntakeAdminsOnlyBody": "A webhook's URL and key let anything that holds them create leads in this organization, so only administrators can see or change them.",
+  "settingsLeadSourcesNew": "New source",
+  "settingsLeadSourcesAdded": "Source added",
+  "settingsLeadSourcesRenameTitle": "Rename {label}",
+  "@settingsLeadSourcesRenameTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesRenamed": "Source renamed",
+  "settingsLeadSourcesRetiredMsg": "Source retired",
+  "settingsLeadSourcesRestoredMsg": "Source restored",
+  "settingsLeadSourcesTitle": "Lead sources",
+  "settingsLeadSourcesRetiredNote": "A retired source stays on the leads, contacts and deals that have it, and cannot be picked for new ones. Sources are never deleted.",
+  "settingsLeadSourcesLabel": "Label",
+  "settingsLeadSourcesLabelHint": "Spring open day",
+  "settingsLeadSourcesRetiredBadge": "Retired",
+  "settingsLeadSourcesMoveUp": "Move {label} up",
+  "@settingsLeadSourcesMoveUp": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesMoveDown": "Move {label} down",
+  "@settingsLeadSourcesMoveDown": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeadSourcesRename": "Rename",
+  "settingsLeadSourcesRetire": "Retire",
+  "settingsLeadSourcesRestore": "Restore",
+  "settingsLeadSourcesNotOffered": "This server has a fixed list of lead sources, so they cannot be changed here. A newer server lets an admin edit them.",
+  "settingsLeadSourcesLoadFailed": "Could not load the lead sources",
+  "settingsHubApps": "Apps",
+  "settingsHubAppsBody": "Industry apps, and the parts of BottleCRM this organization uses",
+  "settingsProfileSectionAlerts": "Alerts",
+  "settingsProfileLeadAlertsEmail": "Lead alerts by email",
+  "settingsProfileLeadAlertsEmailBody": "An email when a lead is assigned to you or enquires again",
+  "settingsProfileLeadAlertsPush": "Lead alerts on the phone",
+  "settingsProfileLeadAlertsPushBody": "A notification on this and your other phones",
+  "settingsOrgPlan": "Plan",
+  "settingsOrgEditSectionLeads": "Leads",
+  "settingsOrgEditLeadReminder": "Remind the assignee when a lead waits more than",
+  "settingsOrgEditLeadReminderHint": "Sent once per enquiry, to the assignee, or to the admins when nobody has the lead.",
+  "settingsOrgEditLeadReminderOff": "Off",
+  "settingsOrgEditLeadReminderMinutes": "{count, plural, one{{count} minute} other{{count} minutes}}",
+  "@settingsOrgEditLeadReminderMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMailboxFormCreates": "Mail here creates",
+  "settingsMailboxFormCreatesTickets": "Tickets",
+  "settingsMailboxFormCreatesLeads": "Leads",
+  "settingsMailboxFormGenerate": "Generate an address",
+  "settingsMailboxFormGenerateHint": "A new address at {domain}, ready to use. Nothing to set up with a mail provider.",
+  "@settingsMailboxFormGenerateHint": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormAddressHintLeads": "Mail to the old address stops becoming leads.",
+  "settingsMailboxFormSectionLeadArrives": "What a lead arrives with",
+  "settingsMailboxFormSubSource": "Sub-source (optional)",
+  "settingsMailboxFormAssigneeHintLeads": "Owns every lead this address makes.",
+  "settingsMailboxFormUnassignedLeads": "Unassigned",
+  "settingsMailboxFormDeactivatedHintLeads": "Deactivated users are not assigned. New leads from this address stay unassigned until you choose someone else.",
+  "settingsMailboxFormSecretPassword": "Basic-auth password",
+  "settingsMailboxFormSecretSigningKey": "Webhook signing key",
+  "settingsMailboxFormSecretStored": "A secret is stored. It is never shown; leave blank to keep it.",
+  "settingsMailboxFormSecretMissing": "No secret is stored, so every post to this address is refused.",
+  "settingsMailboxFormSecretPostmark": "Postmark sends it as the basic-auth password in the webhook URL.",
+  "settingsMailboxFormSecretMailgun": "This is your Mailgun account's HTTP webhook signing key.",
+  "settingsMailboxFormWebhookUrl": "Inbound webhook URL: {url}",
+  "@settingsMailboxFormWebhookUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormRouteAction": "Route action: {url}",
+  "@settingsMailboxFormRouteAction": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMailboxFormSetupUrlLater": "The setup URL appears here once the address is saved.",
+  "settingsMailboxFormLeadSource": "Lead source",
+  "settingsMailboxFormSourcesFailed": "Could not load the sources. Close this and try again.",
+  "settingsMailboxFormSourcesLoading": "Loading the sources.",
+  "settingsProfileAlertsFailed": "Could not change that setting",
+  "settingsInboundEmailStatLeads": "creating leads",
+  "settingsHubLeadSources": "Lead sources",
+  "settingsHubLeadSourcesBody": "Where leads come from, as the pickers list it",
+  "settingsHubLeadCapture": "Lead capture",
+  "settingsHubLeadCaptureBody": "Web forms, webhooks and email addresses that bring leads in",
+  "settingsMoreProjects": "Projects",
+  "settingsMoreProjectsBody": "Client work, its time, budget and invoices",
+  "settingsWebhookFormFormatTeams": "Teams message",
+  "settingsObjectSettingsSaved": "Saved",
+  "settingsObjectSettingsAccessFailed": "Could not save who sees records.",
+  "settingsObjectSettingsGroupBoardBy": "Group the board by",
+  "settingsObjectSettingsBoardNeedsDropdown": "Add a dropdown field to group records on a board.",
+  "settingsObjectSettingsBoardOff": "Board turned off",
+  "settingsObjectSettingsBoardSaved": "Board field saved",
+  "settingsObjectSettingsBoardFailed": "Could not save the board field.",
+  "settingsObjectSettingsWhoSees": "Who sees records",
   "solutionsListTitle": "Solutions",
   "solutionsListSearchHint": "Search the knowledge base…",
   "solutionsListFilterAll": "All",
@@ -7319,6 +8687,8 @@
   "tasksBoardAddCardFailed": "Could not add that card.",
   "tasksBoardAddCard": "Add card",
   "tasksBoardTryAgain": "Try again",
+  "tasksRelatedKindProject": "Project",
+  "tasksDetailSelectedProject": "Selected project",
   "ticketsBoardRefresh": "Refresh",
   "ticketsBoardLoadError": "Could not load the board",
   "ticketsBoardTryAgain": "Try again",
@@ -7915,22 +9285,6 @@
       }
     }
   },
-  "ticketsPanelTimeRunning": "Running",
-  "ticketsPanelTimeStop": "Stop",
-  "ticketsPanelTimeEntry": "Time entry",
-  "ticketsPanelTimeSheetTitle": "Add time entry",
-  "ticketsPanelTimeDuration": "Duration",
-  "ticketsPanelTimeDescriptionHint": "What did you work on?",
-  "ticketsPanelTimeAddEntry": "Add entry",
-  "ticketsPanelTimeZero": "0m",
-  "ticketsPanelTimeHours": "{hours}h",
-  "@ticketsPanelTimeHours": {
-    "placeholders": {
-      "hours": {
-        "type": "int"
-      }
-    }
-  },
   "ticketsPanelApprovalRequestTitle": "Request approval",
   "ticketsPanelApprovalRequestHint": "Optional note for the approver",
   "ticketsPanelApprovalSendRequest": "Send request",
@@ -8200,6 +9554,18 @@
   "ticketsListAllAccounts": "All Accounts",
   "ticketsListFilterByAssignee": "Filter by Assignee",
   "ticketsListFilterByTag": "Filter by Tag",
+  "ticketsPanelTimeProjectRunning": "You already have a running timer on a project.",
+  "ticketsPanelTimeInvoiceCreated": "Draft invoice created",
+  "ticketsPanelTimeLinkAccount": "Link this ticket to an account to bill its time.",
+  "ticketsPanelTimeBill": "{count, plural, one{Bill time ({count} entry)} other{Bill time ({count} entries)}}",
+  "@ticketsPanelTimeBill": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailCustomFields": "Custom fields",
   "timesheetDurationHm": "{hours}h {minutes}m",
   "@timesheetDurationHm": {
     "placeholders": {
@@ -8256,7 +9622,6 @@
   "timesheetAtSavedRates": "at the saved rates",
   "timesheetNotInvoiced": "not invoiced",
   "timesheetTimerRunning": "Timer running",
-  "timesheetATicket": "a ticket",
   "timesheetStopTimer": "Stop timer",
   "timesheetNothingLogged": "Nothing logged",
   "timesheetTagRunning": "running",
@@ -8303,5 +9668,112 @@
     }
   },
   "timesheetBillable": "billable",
-  "timesheetWorth": "worth"
+  "timesheetWorth": "worth",
+  "timeEntryZero": "0m",
+  "timeEntryHours": "{hours}h",
+  "@timeEntryHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "timeEntryRunning": "Running",
+  "timeEntryStop": "Stop",
+  "timeEntryFallback": "Time entry",
+  "timeEntrySheetTitle": "Add time entry",
+  "timeEntryDuration": "Duration",
+  "timeEntryDescriptionHint": "What did you work on?",
+  "timeEntryTaskOptional": "Task (optional)",
+  "timeEntryNoTask": "No task",
+  "timeEntryBillable": "Billable",
+  "timeEntryAdd": "Add entry",
+  "billTimeCouldNotDraft": "Could not draft the invoice.",
+  "billTimeTitle": "Bill time",
+  "billTimeIntro": "Turns unbilled billable time into a draft invoice and marks the entries billed. Cancelling the invoice frees them again.",
+  "billTimeUpTo": "Bill up to {date}",
+  "@billTimeUpTo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeGroupLines": "Group lines",
+  "billTimeGroupSingle": "One line for everything",
+  "billTimeGroupPerson": "One line per person",
+  "billTimeGroupTask": "One line per task",
+  "billTimeGroupEntry": "One line per entry",
+  "billTimeCreateDraft": "Create draft invoice",
+  "billTimeUnrated": "{count, plural, one{{count} entry has no rate and will be billed at 0.} other{{count} of these entries have no rate and will be billed at 0.}}",
+  "@billTimeUnrated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billTimeCounting": "Counting unbilled time...",
+  "billTimePreviewFailed": "The preview could not be loaded. The invoice still takes every billable entry not yet billed up to this date.",
+  "billTimeNothingUpTo": "Nothing unbilled up to this date.",
+  "billTimeSummary": "{entries}, {hours}h, worth {amount}",
+  "@billTimeSummary": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeNothing": "Nothing unbilled.",
+  "billTimeMixed": "{entries} in {currencies}. One invoice takes one currency, so these cannot be billed together.",
+  "@billTimeMixed": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "currencies": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeAnd": " and ",
+  "billTimeSummaryAbout": "{entries}, {hours}h, worth about {amount}",
+  "@billTimeSummaryAbout": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeEntries": "{count, plural, one{{count} entry} other{{count} entries}}",
+  "@billTimeEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billTimeLines": "{count, plural, one{{count} line} other{{count} lines}}",
+  "@billTimeLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetGroupProject": "Project",
+  "timesheetBillableShareLabel": "billable share",
+  "timesheetNoSource": "No ticket or project"
 }

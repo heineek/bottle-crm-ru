@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-crm\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 12:06+0000\n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
 "PO-Revision-Date: 2026-11-10 12:00+0000\n"
 "Last-Translator: BottleCRM\n"
 "Language-Team: Russian\n"
@@ -13,8 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "Login Success"
 msgstr "Успешный вход"
@@ -88,6 +87,15 @@ msgstr "Изменён доступ к функции"
 msgid "Modules Changed"
 msgstr "Изменены модули"
 
+msgid "App Installed"
+msgstr "Приложение установлено"
+
+msgid "App Updated"
+msgstr "Приложение обновлено"
+
+msgid "App Removed"
+msgstr "Приложение удалено"
+
 msgid "BottleCRM tasks"
 msgstr "Задачи BottleCRM"
 
@@ -112,6 +120,9 @@ msgstr "В элементе %(index)d нет непустой строки label
 #, python-format
 msgid "Duplicate dropdown value: %(value)s"
 msgstr "Значение списка повторяется: %(value)s"
+
+msgid "must not contain null characters"
+msgstr "не должно содержать нулевых символов"
 
 msgid "must be a number"
 msgstr "должно быть числом"
@@ -159,6 +170,9 @@ msgstr "В сопоставлении есть поле, которое нель
 msgid "Two columns are set to %(field)s; choose one."
 msgstr "Поле %(field)s выбрано для двух столбцов, оставьте один."
 
+msgid "Too many requests. Try again later."
+msgstr "Слишком много запросов. Повторите попытку позже."
+
 msgid "Organization context is required. Please login again."
 msgstr "Не выбрана организация. Войдите снова."
 
@@ -186,6 +200,18 @@ msgstr "Регион"
 msgid "Post/Zip-code"
 msgstr "Почтовый индекс"
 
+msgid "5 minutes"
+msgstr "5 минут"
+
+msgid "15 minutes"
+msgstr "15 минут"
+
+msgid "30 minutes"
+msgstr "30 минут"
+
+msgid "60 minutes"
+msgstr "60 минут"
+
 #, python-format
 msgid "A tag name can be at most %(max)d characters."
 msgstr "Название тега может содержать не больше %(max)d символов."
@@ -195,8 +221,8 @@ msgstr "В названии тега должна быть хотя бы одн�
 
 #, python-format
 msgid ""
-"A tag name is too long once normalised: it becomes %(length)d characters and "
-"the limit is %(max)d."
+"A tag name is too long once normalised: it becomes %(length)d characters and"
+" the limit is %(max)d."
 msgstr ""
 "Название тега слишком длинное после нормализации: получается %(length)d "
 "символов, а допустимо не больше %(max)d."
@@ -335,6 +361,14 @@ msgstr "Учтено время"
 msgid "%(time)s ago"
 msgstr "%(time)s назад"
 
+msgctxt "app status"
+msgid "Installed"
+msgstr "Установлено"
+
+msgctxt "app status"
+msgid "Removed"
+msgstr "Удалено"
+
 #, python-format
 msgid "%(count)d ticket"
 msgid_plural "%(count)d tickets"
@@ -369,6 +403,13 @@ msgid_plural "%(count)d recurring invoices"
 msgstr[0] "%(count)d регулярный счёт"
 msgstr[1] "%(count)d регулярных счёта"
 msgstr[2] "%(count)d регулярных счетов"
+
+#, python-format
+msgid "%(count)d project"
+msgid_plural "%(count)d projects"
+msgstr[0] "%(count)d проект"
+msgstr[1] "%(count)d проекта"
+msgstr[2] "%(count)d проектов"
 
 #, python-format
 msgid "%(count)d time entry"
@@ -411,6 +452,13 @@ msgid_plural "%(count)d board memberships"
 msgstr[0] "%(count)d участие в доске"
 msgstr[1] "%(count)d участия в досках"
 msgstr[2] "%(count)d участий в досках"
+
+#, python-format
+msgid "%(count)d project rate"
+msgid_plural "%(count)d project rates"
+msgstr[0] "%(count)d ставка в проекте"
+msgstr[1] "%(count)d ставки в проектах"
+msgstr[2] "%(count)d ставок в проектах"
 
 #, python-format
 msgid ""
@@ -474,8 +522,8 @@ msgstr ""
 
 #, python-format
 msgid ""
-"%(label)s still receives email at %(count)d mailboxes: %(addresses)s. Switch "
-"them off first, so no email is lost."
+"%(label)s still receives email at %(count)d mailboxes: %(addresses)s. Switch"
+" them off first, so no email is lost."
 msgstr ""
 "Модуль «%(label)s» ещё получает письма на почтовые ящики (%(count)d): "
 "%(addresses)s. Сначала отключите их, чтобы не потерять письма."
@@ -500,7 +548,10 @@ msgid ""
 "Everything in {label} leaves every menu, search and Today, and stale-deal "
 "emails stop. Converting a lead no longer creates a deal, and Goals switches "
 "off too."
-msgstr "Всё из раздела «{label}» пропадает из меню, поиска и раздела «Сегодня», а письма о застрявших сделках больше не приходят. При конвертации лида сделка не создаётся, а модуль «Цели» тоже отключается."
+msgstr ""
+"Всё из раздела «{label}» пропадает из меню, поиска и раздела «Сегодня», а "
+"письма о застрявших сделках больше не приходят. При конвертации лида сделка "
+"не создаётся, а модуль «Цели» тоже отключается."
 
 msgid "Leads"
 msgstr "Лиды"
@@ -521,8 +572,8 @@ msgstr "Цели продаж, рейтинг и история целей."
 #, python-brace-format
 msgid "{label} leave every menu, and goal milestone emails stop."
 msgstr ""
-"Раздел «{label}» пропадает из меню, а письма о достижении этапов цели больше "
-"не приходят."
+"Раздел «{label}» пропадает из меню, а письма о достижении этапов цели больше"
+" не приходят."
 
 msgid "Tasks"
 msgstr "Задачи"
@@ -554,13 +605,11 @@ msgstr ""
 #, python-brace-format
 msgid ""
 "{label} leave every menu and Today, SLA escalation stops, CSAT survey links "
-"stop opening, and customers stop seeing their tickets in the portal. "
-"Timesheet switches off too."
+"stop opening, and customers stop seeing their tickets in the portal."
 msgstr ""
 "Раздел «{label}» пропадает из меню и раздела «Сегодня», эскалация по SLA "
 "останавливается, ссылки на опросы CSAT перестают открываться, а клиенты "
-"больше не видят свои обращения в портале. Модуль «Учёт времени» тоже "
-"отключается."
+"больше не видят свои обращения в портале."
 
 msgid "Knowledge base"
 msgstr "База знаний"
@@ -587,23 +636,41 @@ msgstr ""
 "Раздел «{label}» пропадает из меню, а ссылки на скачивание перестают "
 "открываться."
 
+msgid "Projects"
+msgstr "Проекты"
+
+msgid ""
+"Projects, their people, rates and budgets, tasks and time on them, and "
+"billing a project's time."
+msgstr ""
+"Проекты, их участники, ставки и бюджеты, задачи и время по ним, а также "
+"выставление счетов за время по проекту."
+
+#, python-brace-format
+msgid ""
+"{label} leave every menu, time can no longer be logged on them, and budget "
+"notifications stop."
+msgstr ""
+"Раздел «{label}» пропадает из меню, учитывать по проектам время больше "
+"нельзя, а уведомления о бюджете перестают приходить."
+
 msgid "Invoices"
 msgstr "Счета"
 
 msgid ""
-"Invoices, estimates, recurring invoices, invoice templates, invoice reports, "
-"account statements, and public invoice and estimate links."
+"Invoices, estimates, recurring invoices, invoice templates, invoice reports,"
+" account statements, and public invoice and estimate links."
 msgstr ""
-"Счета, коммерческие предложения, регулярные счета, шаблоны счетов, отчёты по "
-"счетам, выписки по компаниям и публичные ссылки на счета и коммерческие "
+"Счета, коммерческие предложения, регулярные счета, шаблоны счетов, отчёты по"
+" счетам, выписки по компаниям и публичные ссылки на счета и коммерческие "
 "предложения."
 
 #, python-brace-format
 msgid ""
 "Recurring invoices stop being sent, and links you have already sent to "
 "customers stop opening. Recurring invoices that fall due while {label} is "
-"off are not sent later. Payment reminders that fall due while {label} is off "
-"are not sent later."
+"off are not sent later. Payment reminders that fall due while {label} is off"
+" are not sent later."
 msgstr ""
 "Регулярные счета больше не отправляются, а ссылки, которые вы уже отправили "
 "клиентам, перестают открываться. Регулярные счета, срок которых наступит, "
@@ -618,15 +685,64 @@ msgid "Time entries, the timesheet and the time report."
 msgstr "Записи времени, табель и отчёт по времени."
 
 msgid ""
-"Time entries leave every menu and ticket, and running timers are no longer "
-"stopped automatically."
+"Time entries leave every menu, ticket and project, and running timers are no"
+" longer stopped automatically."
 msgstr ""
-"Записи времени пропадают из меню и обращений, а запущенные таймеры больше не "
-"останавливаются автоматически."
+"Записи времени пропадают из меню, обращений и проектов, а запущенные таймеры"
+" больше не останавливаются автоматически."
 
 #, python-format
 msgid "%(label)s is switched off for this organization."
 msgstr "Модуль «%(label)s» отключён в этой организации."
+
+#, python-format
+msgid "Lead called %(value)s"
+msgstr "Лид «%(value)s»"
+
+#, python-format
+msgid "Leads called %(value)s"
+msgstr "Лиды «%(value)s»"
+
+#, python-format
+msgid "Deal called %(value)s"
+msgstr "Сделка «%(value)s»"
+
+#, python-format
+msgid "Deals called %(value)s"
+msgstr "Сделки «%(value)s»"
+
+#, python-format
+msgid "Contact called %(value)s"
+msgstr "Контакт «%(value)s»"
+
+#, python-format
+msgid "Contacts called %(value)s"
+msgstr "Контакты «%(value)s»"
+
+#, python-format
+msgid "Account called %(value)s"
+msgstr "Компания «%(value)s»"
+
+#, python-format
+msgid "Accounts called %(value)s"
+msgstr "Компании «%(value)s»"
+
+#, python-format
+msgid "Invoice called %(value)s"
+msgstr "Счёт «%(value)s»"
+
+#, python-format
+msgid "Invoices called %(value)s"
+msgstr "Счета «%(value)s»"
+
+msgid "This app is already installed."
+msgstr "Это приложение уже установлено."
+
+msgid "This app is not installed."
+msgstr "Это приложение не установлено."
+
+msgid "This app has no update."
+msgstr "Для этого приложения нет обновления."
 
 #, python-format
 msgid "%(where)s: maps_to_status 'Duplicate' is not allowed. %(why)s"
@@ -715,7 +831,9 @@ msgstr ""
 msgid ""
 "API tokens and organization API keys cannot read or manage other "
 "credentials. Sign in to manage them."
-msgstr "API-токены и API-ключи организации не могут просматривать другие учётные данные и управлять ими. Для этого войдите в систему."
+msgstr ""
+"API-токены и API-ключи организации не могут просматривать другие учётные "
+"данные и управлять ими. Для этого войдите в систему."
 
 #, python-format
 msgid "This token is not scoped for %(action)s access to this endpoint."
@@ -723,16 +841,27 @@ msgstr "У этого токена нет области доступа %(action
 
 #, python-format
 msgid ""
-"This token is not scoped for %(action)s access to %(resource)s. It needs the "
-"%(scope)s scope."
+"This token is not scoped for %(action)s access to %(resource)s. It needs the"
+" %(scope)s scope."
 msgstr ""
 "У этого токена нет доступа %(action)s к %(resource)s. Нужна область доступа "
 "%(scope)s."
 
+msgid "Untitled lead"
+msgstr "Лид без названия"
+
+msgid "Unnamed contact"
+msgstr "Контакт без имени"
+
+msgid "Invoice"
+msgstr "Счёт"
+
 msgid ""
 "A starting number only applies to numbers without a date. A dated number's "
 "counter restarts at 1 each period."
-msgstr "Начальный номер применяется только к номерам без даты. У номера с датой счётчик в каждом периоде начинается с 1."
+msgstr ""
+"Начальный номер применяется только к номерам без даты. У номера с датой "
+"счётчик в каждом периоде начинается с 1."
 
 msgid "That address is already taken. Choose another."
 msgstr "Этот адрес уже занят. Выберите другой."
@@ -769,6 +898,9 @@ msgstr "Организация с таким названием уже суще�
 msgid "Email cannot be changed here."
 msgstr "Здесь нельзя изменить адрес электронной почты."
 
+msgid "This address cannot be invited."
+msgstr "Этот адрес нельзя пригласить."
+
 msgid "Given Email id already exists"
 msgstr "Этот адрес электронной почты уже используется"
 
@@ -785,8 +917,8 @@ msgid "Please provide valid schema"
 msgstr "Укажите корректную схему адреса"
 
 msgid ""
-"Please provide a valid URL with schema and without trailing slash - Example: "
-"http://google.com"
+"Please provide a valid URL with schema and without trailing slash - Example:"
+" http://google.com"
 msgstr ""
 "Укажите корректный адрес со схемой и без косой черты в конце, например: "
 "http://google.com"
@@ -815,8 +947,8 @@ msgstr "expires_at должно быть в будущем."
 msgid ""
 "That .xlsx file could not be opened. Save it again, or export it as .csv."
 msgstr ""
-"Не удалось открыть этот файл .xlsx. Сохраните его заново или экспортируйте "
-"в .csv."
+"Не удалось открыть этот файл .xlsx. Сохраните его заново или экспортируйте в"
+" .csv."
 
 msgid "That .xlsx file is too large to read."
 msgstr "Этот файл .xlsx слишком большой."
@@ -1035,8 +1167,8 @@ msgid ""
 "Your account has been activated by %(status_changed_user)s. You can now log "
 "in and access all BottleCRM features."
 msgstr ""
-"Вашу учётную запись активировал пользователь %(status_changed_user)s. Теперь "
-"вы можете войти и пользоваться всеми возможностями BottleCRM."
+"Вашу учётную запись активировал пользователь %(status_changed_user)s. Теперь"
+" вы можете войти и пользоваться всеми возможностями BottleCRM."
 
 msgid "Log In"
 msgstr "Войти"
@@ -1049,11 +1181,11 @@ msgstr "Учётная запись деактивирована"
 
 #, python-format
 msgid ""
-"Your account has been deactivated by %(status_changed_user)s. You'll receive "
-"an email if your account is reactivated."
+"Your account has been deactivated by %(status_changed_user)s. You'll receive"
+" an email if your account is reactivated."
 msgstr ""
-"Вашу учётную запись деактивировал пользователь %(status_changed_user)s. Если "
-"её снова активируют, вы получите письмо."
+"Вашу учётную запись деактивировал пользователь %(status_changed_user)s. Если"
+" её снова активируют, вы получите письмо."
 
 msgid "Please contact your admin if you have any questions."
 msgstr "Если у вас есть вопросы, обратитесь к администратору."
@@ -1084,8 +1216,8 @@ msgid ""
 "Your account has been created. You can now set up your organization and "
 "start managing your contacts, deals, and more."
 msgstr ""
-"Ваша учётная запись создана. Теперь вы можете настроить организацию и начать "
-"работать с контактами, сделками и не только."
+"Ваша учётная запись создана. Теперь вы можете настроить организацию и начать"
+" работать с контактами, сделками и не только."
 
 msgid "Get Started"
 msgstr "Начать работу"
@@ -1346,41 +1478,17 @@ msgctxt "deal type"
 msgid "Cross-sell"
 msgstr "Кросс-продажа"
 
-msgctxt "deal source"
-msgid "NONE"
-msgstr "НЕТ"
+msgctxt "lead source"
+msgid "Existing customer"
+msgstr "Действующий клиент"
 
-msgctxt "deal source"
-msgid "CALL"
-msgstr "ЗВОНОК"
+msgctxt "lead source"
+msgid "Public relations"
+msgstr "Связи с общественностью"
 
-msgctxt "deal source"
-msgid " EMAIL"
-msgstr " ЭЛЕКТРОННАЯ ПОЧТА"
-
-msgctxt "deal source"
-msgid "EXISTING CUSTOMER"
-msgstr "ДЕЙСТВУЮЩИЙ КЛИЕНТ"
-
-msgctxt "deal source"
-msgid "PARTNER"
-msgstr "ПАРТНЁР"
-
-msgctxt "deal source"
-msgid "PUBLIC RELATIONS"
-msgstr "СВЯЗИ С ОБЩЕСТВЕННОСТЬЮ"
-
-msgctxt "deal source"
-msgid "CAMPAIGN"
-msgstr "КАМПАНИЯ"
-
-msgctxt "deal source"
-msgid "WEBSITE"
-msgstr "САЙТ"
-
-msgctxt "deal source"
-msgid "OTHER"
-msgstr "ДРУГОЕ"
+msgctxt "lead source"
+msgid "Web form"
+msgstr "Веб-форма"
 
 msgctxt "event status"
 msgid "Planned"
@@ -2274,6 +2382,15 @@ msgstr "Адрес «%(value)s» зарезервирован. Выберите 
 msgid "Use letters, numbers, hyphens and underscores only."
 msgstr "Используйте только латинские буквы, цифры, дефисы и подчёркивания."
 
+msgid "Only an organization admin can do this."
+msgstr "Это может сделать только администратор организации."
+
+msgid "Unknown app."
+msgstr "Неизвестное приложение."
+
+msgid "Send action=install, upgrade or remove."
+msgstr "Передайте action=install, upgrade или remove."
+
 msgid "That attachment has no file."
 msgstr "У этого вложения нет файла."
 
@@ -2451,6 +2568,9 @@ msgstr "%(name)s: ожидается закрытие"
 msgid "%(title)s due"
 msgstr "%(title)s: срок оплаты"
 
+msgid "This is not a push token."
+msgstr "Это не push-токен."
+
 msgid "Document Created Successfully"
 msgstr "Документ создан"
 
@@ -2494,6 +2614,9 @@ msgstr "Нет доступа к другой организации"
 msgid "Cannot update a different organization"
 msgstr "Нельзя изменить другую организацию"
 
+msgid "An app member cannot create an org."
+msgstr "Участник-приложение не может создать организацию."
+
 msgid "New Org is Created."
 msgstr "Организация создана."
 
@@ -2515,9 +2638,6 @@ msgstr "API-ключ заменён. Прежний ключ больше не �
 msgid "Profile updated successfully"
 msgstr "Профиль обновлён"
 
-msgid "Only an organization admin can do this."
-msgstr "Это может сделать только администратор организации."
-
 msgid "Unknown pack."
 msgstr "Неизвестный набор."
 
@@ -2534,8 +2654,12 @@ msgstr "Выберите одно из значений: %(lists)s."
 msgid "No such saved view."
 msgstr "Такого сохранённого представления нет."
 
+msgid "tags must be a list of tag names."
+msgstr "tags должно быть списком названий тегов."
+
 msgid "Each assignee must be an active member of this organization."
-msgstr "Каждый ответственный должен быть активным участником этой организации."
+msgstr ""
+"Каждый ответственный должен быть активным участником этой организации."
 
 msgid "API key added sucessfully"
 msgstr "API-ключ добавлен"
@@ -2549,6 +2673,21 @@ msgstr "Настройки API обновлены"
 msgid "API setting deleted sucessfully"
 msgstr "Настройки API удалены"
 
+msgid "API keys"
+msgstr "API-ключи"
+
+msgid "Articles"
+msgstr "Статьи"
+
+msgid "Web forms"
+msgstr "Веб-формы"
+
+msgid "Lead webhooks"
+msgstr "Вебхуки для лидов"
+
+msgid "Macros"
+msgstr "Шаблоны ответов"
+
 #, python-format
 msgid "%(field)s must be text."
 msgstr "%(field)s должно быть текстом."
@@ -2558,6 +2697,9 @@ msgstr "Создавать теги могут только администра
 
 msgid "Tag reactivated successfully"
 msgstr "Тег снова активен"
+
+msgid "A tag with this name already exists."
+msgstr "Тег с таким названием уже существует."
 
 msgid "Tag Created Successfully"
 msgstr "Тег создан"
@@ -2586,6 +2728,9 @@ msgstr "Тег восстановлен"
 msgid "Only admins can merge tags"
 msgstr "Объединять теги могут только администраторы"
 
+msgid "A tag cannot merge into itself."
+msgstr "Тег нельзя объединить с самим собой."
+
 msgid "Restore that tag before merging records onto it."
 msgstr "Сначала восстановите этот тег, а затем переносите на него записи."
 
@@ -2598,6 +2743,15 @@ msgstr[1] ""
 "Тег %(source)s объединён с тегом %(target)s. Перенесено %(moved)d записи."
 msgstr[2] ""
 "Тег %(source)s объединён с тегом %(target)s. Перенесено %(moved)d записей."
+
+msgid "Send member ids, or an empty list to remove every member."
+msgstr ""
+"Передайте идентификаторы участников или пустой список, чтобы удалить всех "
+"участников."
+
+#, python-format
+msgid "'%(id)s' is not a member of this organization."
+msgstr "«%(id)s» не является участником этой организации."
 
 msgid "You don't have permission to perform this action."
 msgstr "У вас нет прав на это действие."

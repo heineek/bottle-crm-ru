@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-crm\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 09:42+0000\n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
 "PO-Revision-Date: 2026-11-10 12:00+0000\n"
 "Last-Translator: BottleCRM\n"
 "Language-Team: Russian\n"
@@ -69,6 +69,15 @@ msgstr "Страна"
 
 msgid "Notes"
 msgstr "Заметки"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Sub-source"
+msgstr "Подысточник"
+
+msgid "Reference"
+msgstr "Основание"
 
 msgid "No such account."
 msgstr "Такой компании нет."

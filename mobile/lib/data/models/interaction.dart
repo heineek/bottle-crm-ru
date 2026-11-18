@@ -1,0 +1,244 @@
+import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
+
+/// A call, meeting, email, WhatsApp, SMS or enquiry logged on a record, from
+/// `/api/interactions/`.
+enum InteractionKind {
+  call('call', 'Call', 'call'),
+  meeting('meeting', 'Meeting', 'meeting'),
+  email('email', 'Email', 'email'),
+  whatsapp('whatsapp', 'WhatsApp', 'WhatsApp message'),
+  sms('sms', 'Text', 'text message'),
+  enquiry('enquiry', 'Enquiry', 'enquiry');
+
+  const InteractionKind(this.value, this.label, this.noun);
+
+  final String value;
+  final String label;
+
+  /// How a sentence names one: "Log this WhatsApp message to Maria?".
+  final String noun;
+
+  /// Every kind a person may log. An enquiry is written by the server only.
+  static const loggable = [call, meeting, email, whatsapp, sms];
+
+  static InteractionKind? parse(String? value) {
+    for (final kind in values) {
+      if (kind.value == value) return kind;
+    }
+    return null;
+  }
+}
+
+enum CallOutcome {
+  connected('connected', 'Connected'),
+  noAnswer('no_answer', 'No answer'),
+  voicemail('voicemail', 'Voicemail'),
+  busy('busy', 'Busy'),
+  wrongNumber('wrong_number', 'Wrong number');
+
+  const CallOutcome(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  static CallOutcome? parse(String? value) {
+    for (final outcome in values) {
+      if (outcome.value == value) return outcome;
+    }
+    return null;
+  }
+}
+
+/// The record kinds an interaction can belong to, named as the API's filter
+/// and create parameters name them.
+enum InteractionHome {
+  lead('lead'),
+  contact('contact'),
+  account('account'),
+  opportunity('opportunity'),
+  ticket('case');
+
+  const InteractionHome(this.param);
+
+  final String param;
+}
+
+/// One record whose interactions are listed, or that a new one is logged on.
+typedef InteractionTarget = ({InteractionHome home, String id});
+
+class Interaction {
+  const Interaction({
+    required this.id,
+    required this.kindValue,
+    required this.inbound,
+    required this.occurredAt,
+    this.durationSeconds,
+    this.durationEstimated = false,
+    this.outcome = '',
+    this.subject = '',
+    this.body = '',
+    this.loggedById,
+    this.loggedByName,
+    this.origin = '',
+    this.canEdit = false,
+  });
+
+  final String id;
+
+  /// As the server sent it, so a kind added later still shows.
+  final String kindValue;
+  final bool inbound;
+  final DateTime occurredAt;
+  final int? durationSeconds;
+  final bool durationEstimated;
+  final String outcome;
+  final String subject;
+  final String body;
+  final String? loggedById;
+  final String? loggedByName;
+  final String origin;
+  final bool canEdit;
+
+  InteractionKind? get kind => InteractionKind.parse(kindValue);
+
+  /// "Outgoing call", "Email received", "Enquiry via web form": the web's
+  /// wording for a timeline row.
+  String get title => switch (kind) {
+    InteractionKind.call =>
+      inbound ? appL10n.appInteractionCallIn : appL10n.appInteractionCallOut,
+    InteractionKind.meeting => appL10n.appInteractionMeeting,
+    InteractionKind.email =>
+      inbound ? appL10n.appInteractionEmailIn : appL10n.appInteractionEmailOut,
+    InteractionKind.whatsapp =>
+      inbound
+          ? appL10n.appInteractionWhatsappIn
+          : appL10n.appInteractionWhatsappOut,
+    InteractionKind.sms =>
+      inbound ? appL10n.appInteractionSmsIn : appL10n.appInteractionSmsOut,
+    InteractionKind.enquiry => switch (origin) {
+      '' || 'manual' => appL10n.appInteractionEnquiry,
+      'webform' => appL10n.appInteractionEnquiryWebform,
+      'intake' => appL10n.appInteractionEnquiryIntake,
+      'email' => appL10n.appInteractionEnquiryEmail,
+      _ => appL10n.appInteractionEnquiryVia(origin),
+    },
+    null => appL10n.appInteractionActivity,
+  };
+
+  /// "about 4 min" when the phone estimated it, else "4 min"; null if unknown.
+  String? get durationText {
+    final seconds = durationSeconds;
+    if (seconds == null) return null;
+    final text = shortElapsed(Duration(seconds: seconds));
+    return durationEstimated ? appL10n.appInteractionAbout(text) : text;
+  }
+
+  /// Reads an `Interaction`.
+  factory Interaction.fromJson(Map<String, dynamic> json) {
+    final w = api.Interaction.fromJson(json);
+    final logger = w.loggedByDetails;
+    String? loggerName;
+    if (logger != null) {
+      final name = logger.name?.trim() ?? '';
+      final email = logger.email?.trim() ?? '';
+      loggerName = name.isNotEmpty
+          ? name
+          : (email.isNotEmpty ? email.split('@').first : null);
+    }
+    return Interaction(
+      id: w.id ?? '',
+      kindValue: w.kind ?? '',
+      inbound: w.direction == 'inbound',
+      occurredAt:
+          DateTime.tryParse(w.occurredAt ?? '') ??
+          DateTime.tryParse(w.createdAt ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      durationSeconds: w.durationSeconds,
+      durationEstimated: w.durationEstimated == true,
+      outcome: w.outcome ?? '',
+      subject: w.subject ?? '',
+      body: w.body ?? '',
+      loggedById: w.loggedBy,
+      loggedByName: loggerName,
+      origin: w.origin ?? '',
+      canEdit: w.canEdit == true,
+    );
+  }
+}
+
+/// One record's interactions, newest first. [offered] is false when the API
+/// answered 404, which an API older than interactions does.
+class RecordInteractions {
+  const RecordInteractions({required this.items, required this.count})
+    : offered = true;
+
+  const RecordInteractions.notOffered()
+    : items = const [],
+      count = 0,
+      offered = false;
+
+  final List<Interaction> items;
+
+  /// Every interaction the record has, which can be more than [items] holds.
+  final int count;
+  final bool offered;
+}
+
+/// What a person logs. Outbound always: the phone logs what its user did.
+class InteractionDraft {
+  const InteractionDraft({
+    required this.target,
+    required this.kind,
+    required this.occurredAt,
+    required this.origin,
+    this.durationSeconds,
+    this.durationEstimated = false,
+    this.outcome,
+    this.body = '',
+  });
+
+  final InteractionTarget target;
+  final InteractionKind kind;
+  final DateTime occurredAt;
+
+  /// `phone_tap` after a tap on Call, WhatsApp, SMS or Email, else `manual`.
+  final String origin;
+  final int? durationSeconds;
+  final bool durationEstimated;
+  final CallOutcome? outcome;
+  final String body;
+
+  Map<String, dynamic> toJson() => {
+    'kind': kind.value,
+    'direction': 'outbound',
+    'occurred_at': occurredAt.toUtc().toIso8601String(),
+    if (durationSeconds != null) ...{
+      'duration_seconds': durationSeconds,
+      'duration_estimated': durationEstimated,
+    },
+    if (kind == InteractionKind.call && outcome != null)
+      'outcome': outcome!.value,
+    if (body.trim().isNotEmpty) 'body': body.trim(),
+    'origin': origin,
+    target.home.param: target.id,
+  };
+}
+
+/// "under a minute", "14 min", "2 h 14 min", "3 d 4 h": a call's length or a
+/// lead's wait, as the web writes it.
+String shortElapsed(Duration d) {
+  final l10n = appL10n;
+  if (d.inMinutes < 1) return l10n.appElapsedUnderMinute;
+  if (d.inMinutes < 60) return l10n.appElapsedMinutes(d.inMinutes);
+  if (d.inHours < 24) {
+    final minutes = d.inMinutes % 60;
+    return minutes == 0
+        ? l10n.appElapsedHours(d.inHours)
+        : l10n.appElapsedHoursMinutes(d.inHours, minutes);
+  }
+  final hours = d.inHours % 24;
+  return hours == 0
+      ? l10n.appElapsedDays(d.inDays)
+      : l10n.appElapsedDaysHours(d.inDays, hours);
+}

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { SvelteURLSearchParams } from 'svelte/reactivity';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -15,17 +15,21 @@
   import { isOn } from '#lib/v2/modules.js';
   import { AGING_TONE, AGING_LABEL } from '#lib/v2/enums.js';
   import { activeChips, activePresetKey, withoutParam } from '#lib/v2/filters.js';
+  import { sourceFilterOptions } from '#lib/v2/lead-sources.js';
   import { CalendarClock, Columns3, Download, List, Plus, TriangleAlert } from '@lucide/svelte';
   import { flip } from 'svelte/animate';
-  import { dndzone } from 'svelte-dnd-action';
+  import { dndzone, type DndEvent } from 'svelte-dnd-action';
   import { refreshAll } from '$app/navigation';
   import { deserialize } from '$app/forms';
   import { holdLockedCard } from '#lib/v2/board-drag.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageData, PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  type Lane = PageData['lanes'][number];
+  type CardEvent = CustomEvent<DndEvent<Lane['rows'][number]>>;
+
+  let { data }: PageProps = $props();
 
   const FLIP_MS = 160;
 
@@ -45,12 +49,7 @@
   /* Each deal's meter steps through its OWN pipeline's open stages; the list
      can hold deals from several pipelines at once. */
   let openSteps = $derived(
-    Object.fromEntries(
-      data.pipelines.map((/** @type {any} */ p) => [
-        p.id,
-        p.stages.filter((/** @type {any} */ s) => s.kind === 'open')
-      ])
-    )
+    Object.fromEntries(data.pipelines.map((p) => [p.id, p.stages.filter((s) => s.kind === 'open')]))
   );
 
   /* The Stage filter offers the chosen pipeline's stages, or every code in
@@ -58,10 +57,9 @@
      pipeline created from the defaults repeats them). */
   let stageOptions = $derived.by(() => {
     const pool = data.pipelineId
-      ? data.pipelines.filter((/** @type {any} */ p) => p.id === data.pipelineId)
+      ? data.pipelines.filter((p) => p.id === data.pipelineId)
       : data.pipelines;
-    /** @type {Record<string, string>} */
-    const byCode = {};
+    const byCode: Record<string, string> = {};
     for (const p of pool) {
       for (const s of p.stages) byCode[s.code] ??= s.label;
     }
@@ -72,9 +70,9 @@
      local copy. Rebuilt whenever the server sends new lanes, which is what
      makes a rejected move snap back: the action calls `refreshAll()` and
      this effect overwrites the optimistic arrangement with the stored one. */
-  let boardLanes = $state(/** @type {any[]} */ ([]));
+  let boardLanes: Lane[] = $state([]);
   $effect(() => {
-    boardLanes = lanes.map((/** @type {any} */ lane) => ({ ...lane, rows: [...lane.rows] }));
+    boardLanes = lanes.map((lane) => ({ ...lane, rows: [...lane.rows] }));
   });
 
   let moveError = $state('');
@@ -82,26 +80,26 @@
   /* The header has to describe the cards under it after an optimistic move,
      not the count the server sent before it. A capped lane keeps the server's
      total, since its own rows are not the whole story either way. */
-  function laneCount(/** @type {any} */ lane) {
+  function laneCount(lane: Lane) {
     return lane.truncated ? lane.count : lane.rows.length;
   }
   /* Money per currency, never added across: there are no exchange rates.
      Nothing priced reads as zero in the org's own currency. */
-  function laneMoney(/** @type {any} */ lane) {
+  function laneMoney(lane: Lane) {
     return perCurrency(sumByCurrency(lane.rows));
   }
-  function perCurrency(/** @type {{ currency: string, amount: number }[]} */ list) {
+  function perCurrency(list: { currency: string; amount: number }[]) {
     return moneyEach(list) || money(0, data.org.currency);
   }
 
-  function onConsider(/** @type {any} */ lane, /** @type {any} */ e) {
+  function onConsider(lane: Lane, e: CardEvent) {
     lane.rows = e.detail.items;
   }
 
-  async function onFinalize(/** @type {any} */ lane, /** @type {any} */ e) {
+  async function onFinalize(lane: Lane, e: CardEvent) {
     lane.rows = e.detail.items;
     const movedId = e.detail.info?.id;
-    const index = e.detail.items.findIndex((/** @type {any} */ r) => r.id === movedId);
+    const index = e.detail.items.findIndex((r) => r.id === movedId);
     // Finalize fires on both lanes of a cross-lane move. Only the lane now
     // holding the card knows where it landed, so only that one persists.
     if (index === -1) return;
@@ -120,10 +118,10 @@
    * rather than to a position computed from a card that has moved on.
    */
   async function persistMove(
-    /** @type {string} */ id,
-    /** @type {string} */ columnId,
-    /** @type {string | undefined} */ aboveId,
-    /** @type {string | undefined} */ belowId
+    id: string,
+    columnId: string,
+    aboveId: string | undefined,
+    belowId: string | undefined
   ) {
     const body = new FormData();
     body.set('id', id);
@@ -137,9 +135,8 @@
         moveError = '';
         return;
       }
-      moveError =
-        (result.type === 'failure' && /** @type {any} */ (result.data)?.error) ||
-        m.pipeline_move_failed_reverted();
+      const refusal = result.type === 'failure' ? result.data?.error : undefined;
+      moveError = (typeof refusal === 'string' && refusal) || m.pipeline_move_failed_reverted();
     } catch {
       moveError = m.pipeline_move_failed_reverted_network();
     }
@@ -168,7 +165,7 @@
    * can run everything the board could and more. List to Board keeps
    * `view=board` plus only the params the board offers
    * (`data.boardFields`, always returned by `load` regardless of the current
-   * view, see the note in `+page.server.js`); the rest are deliberately
+   * view, see the note in `+page.server.ts`); the rest are deliberately
    * dropped, and it is visible rather than silent, since the chips for them
    * disappear along with the params.
    */
@@ -176,7 +173,7 @@
   let boardHref = $derived.by(() => {
     const next = new SvelteURLSearchParams();
     next.set('view', 'board');
-    // `search` mirrors what `+page.server.js` forwards to the board itself
+    // `search` mirrors what `+page.server.ts` forwards to the board itself
     // (the kanban endpoint runs the deal list's filters, `search` among
     // them); it is not one of `boardFields`
     // because it is not a descriptor field, just like on the list view.
@@ -251,6 +248,7 @@
   people={data.people}
   tags={data.tags}
   stages={stageOptions}
+  sources={sourceFilterOptions(data.sources)}
   meId={data.meId}
   saved={data.savedViews}
   onlyFields={data.onlyFields}
@@ -291,8 +289,8 @@
         <div
           class="v2-lane-body"
           use:dndzone={{ items: lane.rows, flipDurationMs: FLIP_MS }}
-          onconsider={(e) => onConsider(lane, e)}
-          onfinalize={(e) => onFinalize(lane, e)}
+          onconsider={(e: CardEvent) => onConsider(lane, e)}
+          onfinalize={(e: CardEvent) => onFinalize(lane, e)}
           onmousedowncapture={holdLockedCard}
           ontouchstartcapture={holdLockedCard}
           onkeydowncapture={holdLockedCard}

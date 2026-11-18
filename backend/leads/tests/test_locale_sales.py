@@ -125,8 +125,8 @@ class TestStaleDealsAlert:
         admin_user.language = "ru"
         admin_user.save(update_fields=["language"])
         message = self._send(org_a, admin_profile, admin_user)
-        assert message.subject == ("[BottleCRM] 1 застрявшая сделка требует внимания")
-        assert "застрявшая сделка, которая требует внимания" in message.body
+        assert message.subject == "[BottleCRM] 1 сделка застряла"
+        assert "только что застряла" in message.body
         # Stage names are tenant data and stay as written.
         assert "Prospecting" in message.body
         assert translation.get_language() != "ru"
@@ -135,8 +135,8 @@ class TestStaleDealsAlert:
         self, org_a, admin_user, admin_profile
     ):
         message = self._send(org_a, admin_profile, admin_user)
-        assert message.subject == "[BottleCRM] 1 stale deal need attention"
-        assert "stale deal that needs attention" in message.body
+        assert message.subject == "[BottleCRM] 1 deal went stale"
+        assert "just went stale" in message.body
 
     def test_org_default_applies_when_the_member_chose_none(
         self, org_a, admin_user, admin_profile
@@ -144,4 +144,4 @@ class TestStaleDealsAlert:
         org_a.default_language = "ru"
         org_a.save(update_fields=["default_language"])
         message = self._send(org_a, admin_profile, admin_user)
-        assert message.subject.startswith("[BottleCRM] 1 застрявшая сделка")
+        assert message.subject == "[BottleCRM] 1 сделка застряла"

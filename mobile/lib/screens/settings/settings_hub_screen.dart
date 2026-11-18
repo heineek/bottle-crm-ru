@@ -8,6 +8,7 @@ import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/automation_provider.dart';
 import '../../providers/custom_objects_provider.dart';
+import '../../providers/org_apps_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/common.dart';
@@ -85,6 +86,13 @@ class SettingsHubScreen extends StatelessWidget {
                 description: context.l10n.settingsHubLeadPipelinesBody,
                 onTap: () => context.push(AppRoutes.settingsLeadPipelines),
               ),
+            ),
+            // Not gated on Leads: deals pick from the same list.
+            MenuRow(
+              icon: LucideIcons.compass,
+              label: context.l10n.settingsHubLeadSources,
+              description: context.l10n.settingsHubLeadSourcesBody,
+              onTap: () => context.push(AppRoutes.settingsLeadSources),
             ),
             _ModuleGate(
               module: 'deals',
@@ -164,17 +172,28 @@ class SettingsHubScreen extends StatelessWidget {
               description: context.l10n.settingsHubOrganizationBody,
               onTap: () => context.push(AppRoutes.settingsOrganization),
             ),
+            // Named for what the server offers: an API without industry apps
+            // (a 404) still has the modules page under its old name.
             Consumer(
-              builder: (context, ref, _) =>
-                  ref.watch(isOrgAdminProvider) &&
-                      ref.watch(shownModulesProvider) != null
-                  ? MenuRow(
-                      icon: LucideIcons.layoutGrid,
-                      label: context.l10n.settingsHubModules,
-                      description: context.l10n.settingsHubModulesBody,
-                      onTap: () => context.push(AppRoutes.settingsModules),
-                    )
-                  : const SizedBox.shrink(),
+              builder: (context, ref, _) {
+                if (!ref.watch(isOrgAdminProvider)) {
+                  return const SizedBox.shrink();
+                }
+                final apps = ref.watch(shownAppsProvider) != null;
+                if (!apps && ref.watch(shownModulesProvider) == null) {
+                  return const SizedBox.shrink();
+                }
+                return MenuRow(
+                  icon: LucideIcons.layoutGrid,
+                  label: apps
+                      ? context.l10n.settingsHubApps
+                      : context.l10n.settingsHubModules,
+                  description: apps
+                      ? context.l10n.settingsHubAppsBody
+                      : context.l10n.settingsHubModulesBody,
+                  onTap: () => context.push(AppRoutes.settingsApps),
+                );
+              },
             ),
             MenuRow(
               icon: LucideIcons.keyRound,
@@ -220,6 +239,17 @@ class SettingsHubScreen extends StatelessWidget {
                       onTap: () => context.push(AppRoutes.settingsAuditLog),
                     )
                   : const SizedBox.shrink(),
+            ),
+            // Beside web forms, which it also lists: each is a way in for
+            // someone with no account.
+            _ModuleGate(
+              module: 'leads',
+              child: MenuRow(
+                icon: LucideIcons.inbox,
+                label: context.l10n.settingsHubLeadCapture,
+                description: context.l10n.settingsHubLeadCaptureBody,
+                onTap: () => context.push(AppRoutes.settingsLeadCapture),
+              ),
             ),
             // Filed with the organization cluster rather than with records,
             // beside API tokens. What a published form grants is the ability

@@ -1,4 +1,7 @@
-/// Time-tracking entry on a ticket. Ended-null = currently running.
+import '../api/schema.g.dart' as api;
+
+/// Time-tracking entry on a ticket or a project. Ended-null = currently
+/// running.
 ///
 /// Mirrors `cases.serializer.TimeEntrySerializer`, which two endpoints emit in
 /// two shapes. On a ticket's own list `case` and `invoice` are bare ids; on
@@ -7,12 +10,24 @@
 /// reads either, so `caseId` is an id in both and never the string
 /// `"{id: ..., name: ...}"`, which is what `.toString()` on the object form
 /// used to produce.
+///
+/// At most one of `case` and `project` is set. Both are null on an entry
+/// whose project was deleted: it keeps existing with no parent, and every
+/// screen shows it without a link.
 class TimeEntry {
   final String id;
+
+  /// Empty when the entry is not on a ticket.
   final String caseId;
 
   /// Present only where the server expands the ticket (the timesheet).
   final String? caseName;
+
+  final String? projectId;
+  final String? projectName;
+
+  /// A task on the entry's project, or null.
+  final String? taskId;
   final String profileId;
   final String? profileName;
   final DateTime startedAt;
@@ -46,6 +61,9 @@ class TimeEntry {
     required this.id,
     required this.caseId,
     this.caseName,
+    this.projectId,
+    this.projectName,
+    this.taskId,
     required this.profileId,
     this.profileName,
     required this.startedAt,
@@ -65,6 +83,24 @@ class TimeEntry {
 
   bool get isBilled => invoiced || invoiceId != null;
 
+  bool get isOnTicket => caseId.isNotEmpty;
+
+  bool get isOnProject => (projectId ?? '').isNotEmpty;
+
+  /// What the entry was logged against, or null for an entry with neither.
+  String? get sourceName {
+    if (isOnProject) return projectName ?? 'a project';
+    if (isOnTicket) return caseName ?? 'a ticket';
+    return null;
+  }
+
+  /// Where the entry's parent opens, or null for an entry with neither.
+  String? get sourcePath {
+    if (isOnProject) return '/projects/$projectId';
+    if (isOnTicket) return '/tickets/$caseId';
+    return null;
+  }
+
   /// Live duration, including currently-running timers.
   Duration get liveDuration {
     final end = endedAt ?? DateTime.now();
@@ -80,49 +116,32 @@ class TimeEntry {
     return base + elapsed;
   }
 
+  /// Reads a `TimesheetEntry` (the timesheet) or a `TimeEntry` (a ticket's or
+  /// a project's list), the two shapes described above.
   factory TimeEntry.fromJson(Map<String, dynamic> json) {
-    String? profileName;
-    final profile = json['profile'];
-    if (profile is Map<String, dynamic>) {
-      final user = profile['user_details'] ?? profile['user'];
-      if (user is Map<String, dynamic>) {
-        profileName = user['email'] as String?;
-      }
-      profileName ??= profile['email'] as String?;
-    }
-    final caseValue = json['case'];
-    final invoice = json['invoice'];
+    final w = api.TimesheetEntry.fromJson(json);
+    final flat = api.TimeEntry.fromJson(json);
+    String? nonEmpty(String? v) => v == null || v.isEmpty ? null : v;
     return TimeEntry(
-      id: json['id']?.toString() ?? '',
-      caseId: caseValue is Map<String, dynamic>
-          ? caseValue['id']?.toString() ?? ''
-          : caseValue?.toString() ?? '',
-      caseName: caseValue is Map<String, dynamic>
-          ? caseValue['name'] as String?
-          : null,
-      profileId: profile is Map<String, dynamic>
-          ? profile['id']?.toString() ?? ''
-          : json['profile']?.toString() ?? '',
-      profileName: profileName,
-      startedAt:
-          DateTime.tryParse(json['started_at']?.toString() ?? '') ??
-          DateTime.now(),
-      endedAt: json['ended_at'] != null
-          ? DateTime.tryParse(json['ended_at'].toString())
-          : null,
-      durationMinutes: json['duration_minutes'] as int?,
-      billable: json['billable'] as bool? ?? false,
-      description: json['description'] as String?,
-      invoiceId: invoice is Map<String, dynamic>
-          ? invoice['id']?.toString()
-          : invoice?.toString(),
-      invoiceNumber: invoice is Map<String, dynamic>
-          ? invoice['invoice_number'] as String?
-          : null,
-      invoiced: json['invoiced'] == true,
-      hourlyRate: double.tryParse(json['hourly_rate']?.toString() ?? ''),
-      currency: json['currency'] as String?,
-      liveDurationMinutes: json['live_duration_minutes'] as int?,
+      id: w.id ?? '',
+      caseId: w.case_?.id ?? flat.case_ ?? '',
+      caseName: w.case_?.name,
+      projectId: nonEmpty(w.project),
+      projectName: w.projectName,
+      taskId: nonEmpty(w.task),
+      profileId: w.profile?.id ?? '',
+      profileName: w.profile?.userDetails?.email,
+      startedAt: DateTime.tryParse(w.startedAt ?? '') ?? DateTime.now(),
+      endedAt: DateTime.tryParse(w.endedAt ?? ''),
+      durationMinutes: w.durationMinutes,
+      billable: w.billable ?? false,
+      description: w.description,
+      invoiceId: w.invoice?.id ?? flat.invoice,
+      invoiceNumber: w.invoice?.invoiceNumber,
+      invoiced: w.invoiced ?? false,
+      hourlyRate: double.tryParse(w.hourlyRate ?? ''),
+      currency: w.currency,
+      liveDurationMinutes: w.liveDurationMinutes,
     );
   }
 }
@@ -141,17 +160,17 @@ class TimeSummary {
     this.byProfile = const [],
   });
 
+  /// Reads a ticket's `CaseTimeSummary`.
   factory TimeSummary.fromJson(Map<String, dynamic> json) {
+    final w = api.CaseTimeSummary.fromJson(json);
     return TimeSummary(
-      totalMinutes: json['total_minutes'] as int? ?? 0,
-      billableMinutes: json['billable_minutes'] as int? ?? 0,
-      lastEntryAt: json['last_entry_at'] != null
-          ? DateTime.tryParse(json['last_entry_at'].toString())
-          : null,
-      byProfile: ((json['by_profile'] as List<dynamic>?) ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(TimeSummaryByProfile.fromJson)
-          .toList(),
+      totalMinutes: w.totalMinutes ?? 0,
+      billableMinutes: w.billableMinutes ?? 0,
+      lastEntryAt: DateTime.tryParse(w.lastEntryAt ?? ''),
+      byProfile: [
+        for (final p in w.byProfile ?? const <api.CaseTimeByProfile>[])
+          TimeSummaryByProfile.fromJson(p.json),
+      ],
     );
   }
 }
@@ -165,11 +184,14 @@ class TimeSummaryByProfile {
     required this.name,
     required this.minutes,
   });
+
+  /// Reads a `CaseTimeByProfile` row.
   factory TimeSummaryByProfile.fromJson(Map<String, dynamic> json) {
+    final w = api.CaseTimeByProfile.fromJson(json);
     return TimeSummaryByProfile(
-      profileId: json['profile_id']?.toString() ?? '',
-      name: json['name'] as String? ?? '',
-      minutes: json['minutes'] as int? ?? 0,
+      profileId: w.profileId ?? '',
+      name: w.name ?? '',
+      minutes: w.minutes ?? 0,
     );
   }
 }

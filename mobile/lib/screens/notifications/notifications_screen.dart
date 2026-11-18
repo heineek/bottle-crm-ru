@@ -158,8 +158,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   Widget _row(AppNotification n) {
     final destination = n.destinationPath;
+    // Rows the system raised: a sentence and an icon instead of a person.
     final automation = n.verb.startsWith('automation.')
         ? n.automationText() ?? appL10n.appAutomationSentNotification
+        : n.verb == 'project.budget'
+        ? n.budgetText ?? appL10n.appNotifBudgetFallback
+        : n.verb == 'estimate.accepted'
+        ? n.estimateText ?? appL10n.appNotifEstimateAcceptedFallback
+        : n.verb == 'estimate.declined'
+        ? n.estimateText ?? appL10n.appNotifEstimateDeclinedFallback
+        : n.verb == 'project.retainer_invoice'
+        ? n.retainerText ?? appL10n.appNotifRetainerFallback
+        : n.verb.startsWith('lead.')
+        ? n.leadText
+        : n.verb == 'real_estate.match' || n.verb == 'education.seat_open'
+        ? n.recordAlertText
         : null;
     return InkWell(
       // Tapping opens the ticket and marks it read. With no resolvable ticket
@@ -295,11 +308,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   ) {
     final source = n.automationSource;
     return [
-      Text(
-        n.displayActorName,
-        style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 2),
+      // A budget, estimate or lead sentence names its subject, and nobody
+      // sent it.
+      if (!const {
+            'project.budget',
+            'project.retainer_invoice',
+          }.contains(n.verb) &&
+          !n.verb.startsWith('estimate.') &&
+          !n.verb.startsWith('lead.')) ...[
+        Text(
+          n.displayActorName,
+          style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 2),
+      ],
       Text(
         text,
         style: AppTypography.body.copyWith(
@@ -397,6 +419,16 @@ class _AutomationIcon extends StatelessWidget {
         'automation.paused' => LucideIcons.circlePause,
         'automation.message' => LucideIcons.zap,
         'automation.failed' || 'automation.limit' => LucideIcons.triangleAlert,
+        'project.budget' => LucideIcons.gauge,
+        'estimate.accepted' => LucideIcons.fileCheck,
+        'estimate.declined' => LucideIcons.fileX,
+        'project.retainer_invoice' => LucideIcons.receipt,
+        'lead.assigned' => LucideIcons.userPlus,
+        'lead.created' => LucideIcons.userPlus,
+        'lead.enquired' => LucideIcons.messageCircle,
+        'lead.waiting' => LucideIcons.clock,
+        'real_estate.match' => LucideIcons.house,
+        'education.seat_open' => LucideIcons.armchair,
         _ => LucideIcons.bell,
       },
       size: 16,

@@ -1,4 +1,5 @@
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 
 /// A tag, from `TagsSerializer`, carrying the usage block the settings list
 /// attaches to every row.
@@ -15,6 +16,7 @@ class Tag {
     this.description = '',
     this.isActive = true,
     this.usage = const {},
+    this.usageLabels,
   });
 
   final String id;
@@ -41,6 +43,17 @@ class Tag {
   /// own schedule.
   final Map<String, int> usage;
 
+  /// The server's label for each usage key (`usage_labels` on the list), or
+  /// null when the server sends none, which is an older one.
+  final Map<String, String>? usageLabels;
+
+  /// The plural noun for a usage key: the server's, else the key itself. An
+  /// older server sends no labels, and the phone's own words stand in.
+  String labelFor(String key) {
+    final labels = usageLabels;
+    return labels == null ? tagUsageLabel(key) : labels[key] ?? key;
+  }
+
   /// Records carrying this tag, across every model the server counted.
   int get used => usage.values.fold(0, (sum, n) => sum + n);
 
@@ -51,29 +64,27 @@ class Tag {
         final byCount = b.value.compareTo(a.value);
         return byCount != 0
             ? byCount
-            : tagUsageLabel(
+            : labelFor(
                 a.key,
-              ).toLowerCase().compareTo(tagUsageLabel(b.key).toLowerCase());
+              ).toLowerCase().compareTo(labelFor(b.key).toLowerCase());
       });
     return entries;
   }
 
-  factory Tag.fromJson(Map<String, dynamic> json) {
-    final rawUsage = json['usage'];
+  factory Tag.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, String>? usageLabels,
+  }) {
+    final row = api.TagsListRow.fromJson(json);
     return Tag(
-      id: json['id']?.toString() ?? '',
-      name: json['name'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
-      color: json['color'] as String? ?? 'gray',
-      description: json['description'] as String? ?? '',
-      isActive: json['is_active'] as bool? ?? true,
-      usage: rawUsage is Map
-          ? {
-              for (final entry in rawUsage.entries)
-                if (entry.value is int)
-                  entry.key.toString(): entry.value as int,
-            }
-          : const {},
+      id: row.id ?? '',
+      name: row.name ?? '',
+      slug: row.slug ?? '',
+      color: row.color ?? 'gray',
+      description: row.description ?? '',
+      isActive: row.isActive ?? true,
+      usage: row.usage ?? const {},
+      usageLabels: usageLabels,
     );
   }
 }
@@ -123,15 +134,24 @@ String tagUsageSummary(Tag tag) {
   final parts = [
     for (final entry in tag.usageBreakdown)
       _tagUsageCount(entry.key, entry.value) ??
-          '${entry.value} ${_singularise(tagUsageLabel(entry.key), entry.value)}',
+          '${entry.value} ${_singularise(_lower(tag.labelFor(entry.key)), entry.value)}',
   ];
   return parts.join(', ');
 }
 
-/// The usage labels are plural nouns, and every one of them singularises by
-/// dropping the final "s" ("API keys" included).
+/// The server's labels start with a capital ("Deals"); inside a sentence they
+/// do not, unless the second letter is one too ("API keys").
+String _lower(String label) {
+  if (label.length < 2 || label[1] == label[1].toUpperCase()) return label;
+  return label[0].toLowerCase() + label.substring(1);
+}
+
+/// The usage labels are plural nouns: "keys" loses its "s" and "Properties"
+/// becomes "Property". A label that is not plural ("Knowledge base") stays.
 String _singularise(String label, int count) {
-  if (count != 1 || !label.endsWith('s')) return label;
+  if (count != 1) return label;
+  if (label.endsWith('ies')) return '${label.substring(0, label.length - 3)}y';
+  if (!label.endsWith('s') || label.endsWith('ss')) return label;
   return label.substring(0, label.length - 1);
 }
 

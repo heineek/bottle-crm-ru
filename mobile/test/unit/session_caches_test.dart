@@ -10,6 +10,7 @@ import 'package:bottle_crm/providers/board_provider.dart';
 import 'package:bottle_crm/providers/calendar_feed_provider.dart';
 import 'package:bottle_crm/providers/contacts_provider.dart';
 import 'package:bottle_crm/providers/custom_objects_provider.dart';
+import 'package:bottle_crm/providers/org_apps_provider.dart';
 import 'package:bottle_crm/providers/org_modules_provider.dart';
 import 'package:bottle_crm/providers/dashboard_provider.dart';
 import 'package:bottle_crm/providers/deal_pipelines_provider.dart';
@@ -20,11 +21,14 @@ import 'package:bottle_crm/providers/help_center_provider.dart';
 import 'package:bottle_crm/providers/invoice_extras_provider.dart';
 import 'package:bottle_crm/providers/invoices_provider.dart';
 import 'package:bottle_crm/providers/lead_board_provider.dart';
+import 'package:bottle_crm/providers/lead_intakes_provider.dart';
 import 'package:bottle_crm/providers/lead_pipelines_provider.dart';
+import 'package:bottle_crm/providers/lead_sources_provider.dart';
 import 'package:bottle_crm/providers/leads_provider.dart';
 import 'package:bottle_crm/providers/lookup_provider.dart';
 import 'package:bottle_crm/providers/notifications_provider.dart';
 import 'package:bottle_crm/providers/profile_provider.dart';
+import 'package:bottle_crm/providers/projects_provider.dart';
 import 'package:bottle_crm/providers/settings_provider.dart';
 import 'package:bottle_crm/providers/solutions_provider.dart';
 import 'package:bottle_crm/providers/support_provider.dart';
@@ -82,6 +86,8 @@ final Map<String, ProviderListenable<Object?>> _sessionScoped = {
   'invoicesProvider': invoicesProvider,
   'leadBoardProvider': leadBoardProvider,
   'leadPipelinesProvider': leadPipelinesProvider,
+  'leadSourcesProvider': leadSourcesProvider,
+  'leadIntakesProvider': leadIntakesProvider,
   'leadsProvider': leadsProvider,
   'accountsLookupProvider': accountsLookupProvider,
   'contactsLookupProvider': contactsLookupProvider,
@@ -91,9 +97,11 @@ final Map<String, ProviderListenable<Object?>> _sessionScoped = {
   'leadsLookupProvider': leadsLookupProvider,
   'opportunitiesLookupProvider': opportunitiesLookupProvider,
   'ticketsLookupProvider': ticketsLookupProvider,
+  'projectsLookupProvider': projectsLookupProvider,
   'customFieldDefinitionsProvider': customFieldDefinitionsProvider('Lead'),
   'notificationsProvider': notificationsProvider,
   'profileProvider': profileProvider,
+  'projectsProvider': projectsProvider,
   'customFieldsProvider': customFieldsProvider,
   'macrosProvider': macrosProvider,
   'activeMacrosProvider': activeMacrosProvider,
@@ -142,6 +150,9 @@ const Map<String, String> _notSessionScoped = {
       'derived from the selected org id, which sign-out and every org switch '
       'change, so it rebuilds with them (pinned by its own test below)',
   'orgModulesProvider':
+      'derived from the selected org id, so it rebuilds on sign-out and every '
+      'org switch (pinned by its own test below)',
+  'orgAppsProvider':
       'derived from the selected org id, so it rebuilds on sign-out and every '
       'org switch (pinned by its own test below)',
   'automationRulesProvider':
@@ -262,6 +273,32 @@ void main() {
         .read(org.notifier)
         .set(Organization.fromJson({'id': 'a', 'name': 'A'}));
     scoped.listen(orgModulesProvider, (_, _) {});
+    await _settle();
+    expect(asked(), 1);
+
+    scoped
+        .read(org.notifier)
+        .set(Organization.fromJson({'id': 'b', 'name': 'B'}));
+    await _settle();
+    expect(asked(), 2, reason: 'an org switch kept the old org answer');
+
+    scoped.read(org.notifier).set(null);
+    await _settle();
+    expect(asked(), 3, reason: 'sign-out kept the ended session answer');
+  });
+
+  test('orgAppsProvider asks again after an org switch', () async {
+    final org = NotifierProvider<_OrgSwitch, Organization?>(_OrgSwitch.new);
+    final scoped = ProviderContainer(
+      overrides: [selectedOrgProvider.overrideWith((ref) => ref.watch(org))],
+    );
+    addTearDown(scoped.dispose);
+    int asked() => client.reads.where((r) => r.url.path == '/api/apps/').length;
+
+    scoped
+        .read(org.notifier)
+        .set(Organization.fromJson({'id': 'a', 'name': 'A'}));
+    scoped.listen(orgAppsProvider, (_, _) {});
     await _settle();
     expect(asked(), 1);
 

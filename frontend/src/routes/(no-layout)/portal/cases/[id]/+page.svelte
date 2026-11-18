@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * A conversation, not a record view. The customer wants to know what was said
    * and to say something back, so the thread is the page and the case fields are
@@ -11,16 +11,18 @@
   import { getLocale } from '#lib/paraglide/runtime.js';
   import { intlLocale } from '#lib/i18n/locale.js';
   import { CASE_STATUS_LABEL } from '#lib/v2/enums.js';
+  import type { PageProps } from './$types';
 
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   const OPEN_STATUSES = new Set(['New', 'Assigned', 'Pending']);
 
-  /** @param {string} status */
-  const statusLabel = (status) =>
-    Object.hasOwn(CASE_STATUS_LABEL, status) ? CASE_STATUS_LABEL[status] : status;
+  const statusLabel = (status: string) =>
+    Object.hasOwn(CASE_STATUS_LABEL, status)
+      ? CASE_STATUS_LABEL[status as keyof typeof CASE_STATUS_LABEL]
+      : status;
 
-  function formatWhen(value) {
+  function formatWhen(value: string | null | undefined) {
     if (!value) return '';
     return new Date(value).toLocaleString(intlLocale(getLocale(), 'number'), {
       day: 'numeric',

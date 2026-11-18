@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
-import '../data/api_envelope.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/lookup_models.dart';
 import '../data/models/custom_field_definition.dart';
 import '../services/api_service.dart';
@@ -52,16 +52,14 @@ class AccountsLookupNotifier extends AsyncNotifier<List<AccountLookup>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadAccounts);
     }
-    // `/api/accounts/` nests its rows under `active_accounts.open_accounts`
-    // and publishes neither `accounts` nor `results`, which is why this picker
-    // was permanently empty: both old guesses missed, and a miss reads as "no
-    // accounts" rather than as an error. Inactive accounts sit under
-    // `closed_accounts.close_accounts` and are deliberately not offered.
-    return listFromEnvelope(response.data!, const [
-      'active_accounts.open_accounts',
-      'accounts',
-      'results',
-    ]).map(AccountLookup.fromJson).toList();
+    // Inactive accounts sit under `closed_accounts.close_accounts` and are
+    // deliberately not offered.
+    final data = api.AccountListResponse.fromJson(response.data!);
+    return [
+      for (final row
+          in data.activeAccounts?.openAccounts ?? const <api.Account>[])
+        AccountLookup.fromJson(row.json),
+    ];
   }
 }
 
@@ -85,10 +83,11 @@ class ContactsLookupNotifier extends AsyncNotifier<List<ContactLookup>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadContacts);
     }
-    return listFromEnvelope(response.data!, const [
-      'results',
-      'contacts',
-    ]).map(ContactLookup.fromJson).toList();
+    final data = api.ContactListResponse.fromJson(response.data!);
+    return [
+      for (final row in data.results ?? const <api.Contact>[])
+        ContactLookup.fromJson(row.json),
+    ];
   }
 }
 
@@ -112,9 +111,11 @@ class UsersLookupNotifier extends AsyncNotifier<List<UserLookup>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadUsers);
     }
-    return listFromEnvelope(response.data!, const [
-      'profiles',
-    ]).map(UserLookup.fromJson).where((u) => u.isActive).toList();
+    final data = api.TeamsAndUsersResponse.fromJson(response.data!);
+    return [
+      for (final row in data.profiles ?? const <api.Profile>[])
+        UserLookup.fromJson(row.json),
+    ].where((u) => u.isActive).toList();
   }
 }
 
@@ -141,10 +142,11 @@ class TeamsLookupNotifier extends AsyncNotifier<List<TeamLookup>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadTeams);
     }
-    return listFromEnvelope(response.data!, const ['teams'])
-        .map(TeamLookup.fromJson)
-        .where((t) => t.id.isNotEmpty && t.name.isNotEmpty)
-        .toList();
+    final data = api.TeamsAndUsersResponse.fromJson(response.data!);
+    return [
+      for (final row in data.teams ?? const <api.Teams>[])
+        TeamLookup.fromJson(row.json),
+    ].where((t) => t.id.isNotEmpty && t.name.isNotEmpty).toList();
   }
 }
 
@@ -168,10 +170,11 @@ class TagsLookupNotifier extends AsyncNotifier<List<TagLookup>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadTags);
     }
-    return listFromEnvelope(response.data!, const [
-      'tags',
-      'results',
-    ]).map(TagLookup.fromJson).toList();
+    final data = api.TagsListResponse.fromJson(response.data!);
+    return [
+      for (final row in data.tags ?? const <api.TagsListRow>[])
+        TagLookup.fromJson(row.json),
+    ];
   }
 }
 
@@ -191,14 +194,14 @@ final tagsLookupProvider =
 class _EntityLookupNotifier extends AsyncNotifier<List<EntityLookup>> {
   _EntityLookupNotifier({
     required this.url,
-    required this.paths,
     required this.parse,
     required this.what,
   });
 
   final String url;
-  final List<String> paths;
-  final EntityLookup Function(Map<String, dynamic>) parse;
+
+  /// The options in a list response, read through its own component.
+  final List<EntityLookup> Function(Map<String, dynamic> body) parse;
   final String what;
 
   @override
@@ -214,21 +217,25 @@ class _EntityLookupNotifier extends AsyncNotifier<List<EntityLookup>> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? 'Failed to load $what');
     }
-    return listFromEnvelope(response.data!, paths).map(parse).toList();
+    return parse(response.data!);
   }
 }
 
-/// Leads. Rows are nested under `open_leads.open_leads`, the same shape trap the
-/// accounts lookup hit. Closed leads sit under `close_leads` and are not offered.
+/// Leads, open ones only: closed leads sit under `close_leads` and are not
+/// offered.
 final leadsLookupProvider =
     AsyncNotifierProvider<_EntityLookupNotifier, List<EntityLookup>>(
       () => _EntityLookupNotifier(
         url: ApiConfig.leads,
-        paths: const ['open_leads.open_leads'],
-        parse: (json) => EntityLookup.person(
-          json,
-          fallbackKeys: const ['email', 'company_name'],
-        ),
+        parse: (body) => [
+          for (final row
+              in api.LeadListResponse.fromJson(body).openLeads?.openLeads ??
+                  const <api.Lead>[])
+            EntityLookup.person(
+              row.json,
+              fallbackKeys: const ['email', 'company_name'],
+            ),
+        ],
         what: 'leads',
       ),
     );
@@ -237,8 +244,12 @@ final opportunitiesLookupProvider =
     AsyncNotifierProvider<_EntityLookupNotifier, List<EntityLookup>>(
       () => _EntityLookupNotifier(
         url: ApiConfig.opportunities,
-        paths: const ['opportunities'],
-        parse: (json) => EntityLookup.fromJson(json, labelKeys: const ['name']),
+        parse: (body) => [
+          for (final row
+              in api.OpportunityListResponse.fromJson(body).opportunities ??
+                  const <api.OpportunityList>[])
+            EntityLookup.fromJson(row.json, labelKeys: const ['name']),
+        ],
         what: 'deals',
       ),
     );
@@ -247,9 +258,27 @@ final ticketsLookupProvider =
     AsyncNotifierProvider<_EntityLookupNotifier, List<EntityLookup>>(
       () => _EntityLookupNotifier(
         url: ApiConfig.tickets,
-        paths: const ['cases'],
-        parse: (json) => EntityLookup.fromJson(json, labelKeys: const ['name']),
+        parse: (body) => [
+          for (final row
+              in api.CaseListResponse.fromJson(body).cases ??
+                  const <api.Case>[])
+            EntityLookup.fromJson(row.json, labelKeys: const ['name']),
+        ],
         what: 'tickets',
+      ),
+    );
+
+final projectsLookupProvider =
+    AsyncNotifierProvider<_EntityLookupNotifier, List<EntityLookup>>(
+      () => _EntityLookupNotifier(
+        url: ApiConfig.projects,
+        parse: (body) => [
+          for (final row
+              in api.ProjectListResponse.fromJson(body).projects ??
+                  const <api.ProjectList>[])
+            EntityLookup.fromJson(row.json, labelKeys: const ['name']),
+        ],
+        what: 'projects',
       ),
     );
 
@@ -278,7 +307,7 @@ final teamsProvider = Provider<List<TeamLookup>>((ref) {
   return ref.watch(teamsLookupProvider).value ?? const [];
 });
 
-/// The four kinds a task can be attached to, in one shape.
+/// The five kinds a task can be attached to, in one shape.
 ///
 /// These keep the `AsyncValue` rather than flattening to a list like the
 /// wrappers above, because the picker that reads them has to tell "still
@@ -308,6 +337,10 @@ final opportunityEntityOptionsProvider =
 
 final ticketEntityOptionsProvider = Provider<AsyncValue<List<EntityLookup>>>(
   (ref) => ref.watch(ticketsLookupProvider),
+);
+
+final projectEntityOptionsProvider = Provider<AsyncValue<List<EntityLookup>>>(
+  (ref) => ref.watch(projectsLookupProvider),
 );
 
 /// Custom field definitions, keyed by target_model (Case, Lead, ...).
@@ -342,9 +375,14 @@ final customFieldDefinitionsProvider =
           response.message ?? appL10n.appMsgFailedToLoadCustomFields,
         );
       }
-      final parsed = listFromEnvelope(response.data!, const [
-        'definitions',
-      ]).map(CustomFieldDefinition.fromJson).toList();
+      final data = api.CustomFieldDefinitionListResponse.fromJson(
+        response.data!,
+      );
+      final parsed = [
+        for (final row
+            in data.definitions ?? const <api.CustomFieldDefinitionRow>[])
+          CustomFieldDefinition.fromJson(row.json),
+      ];
       parsed.sort((a, b) {
         final byOrder = a.displayOrder.compareTo(b.displayOrder);
         return byOrder != 0 ? byOrder : a.label.compareTo(b.label);

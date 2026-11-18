@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * The article body is rendered as text, not as HTML.
    *
@@ -13,10 +13,11 @@
   import { m } from '#lib/paraglide/messages.js';
   import { getLocale } from '#lib/paraglide/runtime.js';
   import { intlLocale } from '#lib/i18n/locale.js';
+  import type { PageProps } from './$types';
 
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
-  function formatDate(value) {
+  function formatDate(value: string | null | undefined) {
     if (!value) return '';
     return new Date(value).toLocaleDateString(intlLocale(getLocale(), 'number'), {
       day: 'numeric',

@@ -1,15 +1,15 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import '../../../app.css';
   import '#lib/v2/styles/v2.css';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
 
   import imgGoogle from '#lib/assets/images/google.svg';
   import imgLogo from '#lib/assets/images/logo.png';
   import { Mail, Check } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
 
-  let { data = {} } = $props();
+  let { data = {} }: { data?: { google_url?: string | null } } = $props();
 
   let isLoading = $state(false);
   let email = $state('');
@@ -21,7 +21,7 @@
     isLoading = true;
   }
 
-  function handleMagicLink() {
+  const handleMagicLink: SubmitFunction<Record<string, unknown>, { error?: string }> = () => {
     isSendingLink = true;
     magicLinkError = '';
     return async ({ result }) => {
@@ -34,7 +34,7 @@
         magicLinkError = m.public_login_generic_error();
       }
     };
-  }
+  };
 </script>
 
 <svelte:head>

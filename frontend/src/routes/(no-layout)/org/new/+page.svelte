@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import '../../../../app.css';
   import '#lib/v2/styles/v2.css';
@@ -7,8 +7,9 @@
   import { m } from '#lib/paraglide/messages.js';
   import imgLogo from '#lib/assets/images/logo.png';
   import { ArrowLeft, Check, AlertCircle } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let packs = $derived(data?.packs ?? []);
   let timezones = $derived(data?.timezones ?? [{ name: 'UTC', label: 'UTC' }]);

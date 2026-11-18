@@ -27,7 +27,9 @@
       "./messages/contacts/{locale}.json",
       "./messages/accounts/{locale}.json",
       "./messages/pipeline/{locale}.json",
-      "./messages/goals/{locale}.json"
+      "./messages/goals/{locale}.json",
+      "./messages/projects/{locale}.json",
+      "./messages/objects/{locale}.json"
     ]
   }
 }

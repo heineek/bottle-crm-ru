@@ -9,12 +9,12 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cases.access import visible_cases_qs
+from common.custom_fields import custom_field_filter
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.lookups import get_on_visible_record_or_404
 from common.models import (
@@ -27,6 +27,7 @@ from common.models import (
 )
 from common.modules import only_available
 from common.money import currency_block, deal_currency, group_by_currency
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext, is_org_admin
 from common.serializer import (
     AttachmentsSerializer,
@@ -41,6 +42,7 @@ from contacts.serializer import (
     ContactCommentEditSwaggerSerializer,
     ContactDetailEditSwaggerSerializer,
     ContactSerializer,
+    ContactWriteSerializer,
     CreateContactSerializer,
 )
 from contacts.services.account_link import link_primary_account
@@ -109,12 +111,7 @@ def contact_list_queryset(profile, params):
     created_at_lte = date_param(params, "created_at__lte")
     if created_at_lte:
         queryset = queryset.filter(created_at__date__lte=created_at_lte)
-    # Custom-field filters: ?cf_<key>=<value> -> custom_fields contains pair.
-    for raw_key, raw_value in params.items():
-        if raw_key.startswith("cf_") and raw_value:
-            cf_key = raw_key[3:]
-            if cf_key:
-                queryset = queryset.filter(custom_fields__contains={cf_key: raw_value})
+    queryset = queryset.filter(custom_field_filter("Contact", profile.org, params))
     matching = queryset.distinct()
     rows = matching
     if params.get("is_active") in ("true", "false"):
@@ -122,7 +119,14 @@ def contact_list_queryset(profile, params):
     return matching, rows
 
 
-class ContactsListView(APIView, LimitOffsetPagination):
+def _choice_pairs():
+    """A choices list such as COUNTRIES, sent as `[value, label]` pairs."""
+    return serializers.ListField(
+        child=serializers.ListField(child=serializers.CharField())
+    )
+
+
+class ContactsListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
     model = Contact
 
@@ -186,6 +190,17 @@ class ContactsListView(APIView, LimitOffsetPagination):
                     "contacts_count": serializers.IntegerField(),
                     "offset": serializers.IntegerField(allow_null=True),
                     "contact_obj_list": ContactSerializer(many=True),
+                    "active_count": serializers.IntegerField(),
+                    "inactive_count": serializers.IntegerField(),
+                    "countries": _choice_pairs(),
+                    "users": inline_serializer(
+                        name="ContactListUser",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "user__email": serializers.EmailField(),
+                        },
+                        many=True,
+                    ),
                 },
             )
         },
@@ -198,13 +213,14 @@ class ContactsListView(APIView, LimitOffsetPagination):
         operation_id="contacts_create",
         tags=["contacts"],
         parameters=swagger_params.organization_params,
-        request=CreateContactSerializer,
+        request=ContactWriteSerializer,
         responses={
             200: inline_serializer(
                 name="ContactCreateResponse",
                 fields={
                     "error": serializers.BooleanField(),
                     "message": serializers.CharField(),
+                    "id": serializers.UUIDField(),
                 },
             )
         },
@@ -415,7 +431,7 @@ class ContactDetailView(APIView):
         operation_id="contacts_update",
         tags=["contacts"],
         parameters=swagger_params.contact_create_post_params,
-        request=CreateContactSerializer,
+        request=ContactWriteSerializer,
         responses={
             200: inline_serializer(
                 name="ContactUpdateResponse",
@@ -512,12 +528,93 @@ class ContactDetailView(APIView):
                 name="ContactDetailResponse",
                 fields={
                     "contact_obj": ContactSerializer(),
-                    "address_obj": serializers.DictField(),
+                    "address_obj": inline_serializer(
+                        name="ContactAddress",
+                        fields={
+                            name: serializers.CharField(allow_null=True)
+                            for name in (
+                                "address_line",
+                                "city",
+                                "state",
+                                "postcode",
+                                "country",
+                            )
+                        },
+                    ),
+                    "countries": _choice_pairs(),
                     "comments": CommentSerializer(many=True),
                     "attachments": AttachmentsSerializer(many=True),
-                    "assigned_data": serializers.ListField(),
+                    "assigned_data": inline_serializer(
+                        name="ContactAssignee",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "name": serializers.EmailField(),
+                        },
+                        many=True,
+                    ),
                     "tasks": TaskSerializer(many=True),
-                    "users_mention": serializers.ListField(),
+                    "users_mention": inline_serializer(
+                        name="ContactMentionUser",
+                        fields={"user__email": serializers.EmailField()},
+                        many=True,
+                    ),
+                    "opportunities": inline_serializer(
+                        name="ContactDeal",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "name": serializers.CharField(),
+                            "stage": serializers.CharField(),
+                            "stage_label": serializers.CharField(),
+                            "stage_kind": serializers.CharField(allow_null=True),
+                            # A Decimal through the JSON encoder: a number.
+                            "amount": serializers.FloatField(allow_null=True),
+                            "currency": serializers.CharField(),
+                            "closed_on": serializers.DateField(allow_null=True),
+                        },
+                        many=True,
+                    ),
+                    "open_deals": inline_serializer(
+                        name="ContactOpenDeals",
+                        fields={
+                            "amount": serializers.CharField(allow_null=True),
+                            "count": serializers.IntegerField(),
+                            "by_currency": inline_serializer(
+                                name="ContactOpenDealsCurrency",
+                                fields={
+                                    "currency": serializers.CharField(),
+                                    "count": serializers.IntegerField(),
+                                    "amount": serializers.CharField(),
+                                },
+                                many=True,
+                            ),
+                        },
+                    ),
+                    "opportunity_count": serializers.IntegerField(),
+                    "cases": inline_serializer(
+                        name="ContactCase",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "name": serializers.CharField(),
+                            "status": serializers.CharField(),
+                            "priority": serializers.CharField(),
+                            "created_at": serializers.DateTimeField(),
+                        },
+                        many=True,
+                    ),
+                    "colleagues": inline_serializer(
+                        name="ContactColleague",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "first_name": serializers.CharField(),
+                            "last_name": serializers.CharField(),
+                            "title": serializers.CharField(),
+                        },
+                        many=True,
+                    ),
+                    "custom_field_definitions": CustomFieldDefinitionSerializer(
+                        many=True
+                    ),
+                    "can_delete": serializers.BooleanField(),
                 },
             )
         },
@@ -749,7 +846,7 @@ class ContactDetailView(APIView):
     @extend_schema(
         tags=["contacts"],
         parameters=swagger_params.organization_params,
-        request=CreateContactSerializer,
+        request=ContactWriteSerializer,
         description="Partial Contact Update",
         responses={
             200: inline_serializer(

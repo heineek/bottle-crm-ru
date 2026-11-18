@@ -18,12 +18,14 @@ const _timesheet = ModuleNeed(['timesheet']);
 const _invoices = ModuleNeed(['invoices']);
 const _products = ModuleNeed(['invoices', 'deals'], any: true);
 const _documents = ModuleNeed(['documents']);
+const _projects = ModuleNeed(['projects']);
 
 /// Route prefixes by module. A route not under any of them is core. A `:param`
 /// segment matches any one segment; the longest matching prefix wins.
 const _needs = <String, ModuleNeed>{
   '/leads': _leads,
   '/more/settings/lead-pipelines': _leads,
+  '/more/settings/lead-capture': _leads,
   '/deals': _deals,
   '/more/settings/deal-pipelines': _deals,
   '/goals': _goals,
@@ -44,6 +46,7 @@ const _needs = <String, ModuleNeed>{
   '/accounts/:id/statement': _invoices,
   '/invoices/products': _products,
   '/documents': _documents,
+  '/projects': _projects,
 };
 
 List<String> _segments(String path) => [

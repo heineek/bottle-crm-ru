@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Help.
    *
@@ -33,14 +33,15 @@
   import { relativeTime } from '#lib/v2/format.js';
   import { BookOpen, LifeBuoy, Plus, Bug, Mail, ArrowUpRight, ClipboardList } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { Tone } from '#lib/v2/enums.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
-  const STATUS_TONE = {
+  const STATUS_TONE: Record<string, Tone> = {
     open: 'rust',
     in_progress: 'clay',
-    waiting_on_customer: 'sky',
+    waiting_on_customer: 'slate',
     resolved: 'moss',
     closed: 'slate'
   };

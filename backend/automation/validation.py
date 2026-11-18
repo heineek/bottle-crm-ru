@@ -529,7 +529,7 @@ class _Check:
     def webhook(self, path, action):
         pk = _uuid(action.get("endpoint"))
         endpoints = WebhookEndpoint.objects.filter(
-            org=self.org, is_active=True, format=JSON
+            org=self.org, is_active=True, format=JSON, app__isnull=True
         )
         if pk is None or not endpoints.filter(pk=pk).exists():
             self.add(

@@ -211,9 +211,6 @@
   "dealsDetailWonByLabel": "WON BY",
   "dealsDetailClosedByLabel": "CLOSED BY",
   "dealsDetailClosedOnLabel": "CLOSED ON",
-  "dealsDetailNoActivity": "No activity yet",
-  "dealsDetailNoActivityBody": "Activity will appear here as it happens",
-  "dealsDetailTimelineActorSeparator": " ",
   "dealsDetailTimelineCommented": "commented",
   "dealsDetailTimelineSomeone": "Someone",
   "dealsDetailTimelineUploaded": "uploaded {fileName}",
@@ -313,78 +310,6 @@
       }
     }
   },
-  "dealsDetailUnknown": "Unknown",
-  "dealsDetailEditNote": "Edit Note",
-  "dealsDetailUpdateNoteHint": "Update your note...",
-  "dealsDetailDeleteNote": "Delete Note",
-  "dealsDetailDeleteNoteTitle": "Delete Note?",
-  "dealsDetailNoteOptions": "Note options",
-  "dealsAgoMonths": "{count}mo ago",
-  "@dealsAgoMonths": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoDays": "{count}d ago",
-  "@dealsAgoDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoHours": "{count}h ago",
-  "@dealsAgoHours": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoMinutes": "{count}m ago",
-  "@dealsAgoMinutes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsAgoJustNow": "just now",
-  "dealsShortMonths": "{count}mo",
-  "@dealsShortMonths": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortDays": "{count}d",
-  "@dealsShortDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortHours": "{count}h",
-  "@dealsShortHours": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortMinutes": "{count}m",
-  "@dealsShortMinutes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "dealsShortNow": "now",
   "dealsFormFirstOpenStage": "First open stage",
   "dealsFormLoadFailed": "Failed to load deal",
   "dealsFormFixErrors": "Please fix the errors in the form",
@@ -476,5 +401,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "dealsDetailStartProject": "Start a project",
+  "dealsDetailNone": "None",
+  "dealsFormSourceNone": "None",
+  "dealsFormSourcesLoadFailed": "Could not load the lead sources. Try again."
 }

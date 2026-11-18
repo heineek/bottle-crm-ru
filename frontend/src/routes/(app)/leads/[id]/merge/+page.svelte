@@ -1,9 +1,9 @@
-<script>
+<script lang="ts">
   import MergeCompare from '#lib/v2/components/MergeCompare.svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 </script>
 
 <svelte:head>

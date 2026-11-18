@@ -21,8 +21,8 @@ staff JWT sent along with the request changes nothing about the answer.
 """
 
 from django.utils.translation import gettext_lazy as _
-from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
@@ -36,6 +36,7 @@ from cases.portal_serializers import (
 from cases.portal_views import published_articles, related_articles
 from common.models import Org
 from common.modules import module_is_available
+from common.pagination import CappedLimitOffsetPagination
 from common.request_meta import client_ip
 from common.tasks import set_rls_context
 from common.throttles import FirstRefusalThrottleMixin
@@ -49,6 +50,18 @@ SEARCH_MAX = 200
 # Telling any two of those apart would let a stranger probe which orgs use the
 # product and which article ids exist behind the published set.
 NOT_FOUND = {"error": _("Not found")}
+
+
+class PublicHelpArticleRowSerializer(PortalSolutionSerializer):
+    """Response-only: one row of the public article list."""
+
+    snippet = serializers.CharField(read_only=True)
+
+    class Meta(PortalSolutionSerializer.Meta):
+        fields = (*PortalSolutionSerializer.Meta.fields, "snippet")
+
+
+_HEADER = inline_serializer("PublicHelpCenterHeader", {"name": serializers.CharField()})
 
 
 class HelpCenterIPThrottle(SimpleRateThrottle):
@@ -88,7 +101,7 @@ class HelpCenterGlobalThrottle(SimpleRateThrottle):
         }
 
 
-class HelpCenterPagination(LimitOffsetPagination):
+class HelpCenterPagination(CappedLimitOffsetPagination):
     default_limit = 20
     # Capped because the caller is anonymous. The sitemap walks pages of this
     # size rather than asking for everything at once.
@@ -123,6 +136,17 @@ class PublicHelpCenterView(FirstRefusalThrottleMixin, APIView):
 
 
 class PublicHelpCenterListView(PublicHelpCenterView):
+    @extend_schema(
+        tags=["Public"],
+        responses=inline_serializer(
+            "PublicHelpCenterListResponse",
+            {
+                "help_center": _HEADER,
+                "articles": PublicHelpArticleRowSerializer(many=True),
+                "articles_count": serializers.IntegerField(),
+            },
+        ),
+    )
     def get(self, request, slug):
         org = self._org(slug)
         if org is None:
@@ -152,6 +176,21 @@ class PublicHelpCenterListView(PublicHelpCenterView):
 
 
 class PublicHelpCenterArticleView(PublicHelpCenterView):
+    @extend_schema(
+        tags=["Public"],
+        responses=inline_serializer(
+            "PublicHelpCenterArticleResponse",
+            {
+                "help_center": _HEADER,
+                "article": PortalSolutionDetailSerializer(),
+                "related": inline_serializer(
+                    "PublicHelpRelatedArticle",
+                    {"id": serializers.CharField(), "title": serializers.CharField()},
+                    many=True,
+                ),
+            },
+        ),
+    )
     def get(self, request, slug, pk):
         org = self._org(slug)
         if org is None:

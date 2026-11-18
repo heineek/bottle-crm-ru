@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { untrack } from 'svelte';
   import { refreshAll } from '$app/navigation';
   import { Upload } from '@lucide/svelte';
@@ -6,16 +6,27 @@
   import * as Dialog from '#lib/components/ui/dialog/index.js';
   import ImportFlow from '#lib/components/import/ImportFlow.svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { ImportConfig } from '#lib/import/entities.js';
 
   /**
    * The leads list's import dialog: `ImportFlow` in a dialog, refreshing the
    * list after an import. `singular` and `plural` are the org's own words for
    * a lead, so a pack that renames the module is not contradicted by this
-   * dialog.
-   *
-   * @type {{ open: boolean, onOpenChange?: (v: boolean) => void, singular?: string, plural?: string }}
+   * dialog. `config` points the same dialog at a custom object's importer.
    */
-  let { open = $bindable(false), onOpenChange, singular, plural } = $props();
+  let {
+    open = $bindable(false),
+    onOpenChange,
+    singular,
+    plural,
+    config
+  }: {
+    open: boolean;
+    onOpenChange?: (v: boolean) => void;
+    singular?: string;
+    plural?: string;
+    config?: ImportConfig;
+  } = $props();
   let pluralWord = $derived(plural ?? m.app_import_noun_leads());
 
   let done = $state(false);
@@ -46,7 +57,8 @@
 
     {#key session}
       <ImportFlow
-        entity="leads"
+        entity={config ? undefined : 'leads'}
+        {config}
         {singular}
         {plural}
         onDone={async () => {

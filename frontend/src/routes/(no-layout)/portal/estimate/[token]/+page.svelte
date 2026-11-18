@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * An estimate, and the one irreversible thing a customer can do in this
    * product: accept it.
@@ -29,18 +29,20 @@
   import { ESTIMATE_STATUS_LABEL } from '#lib/v2/enums.js';
   import PortalLineItems from '#lib/v2/components/PortalLineItems.svelte';
   import { money, longDate } from '#lib/v2/format.js';
+  import { depositOffer } from '#lib/v2/estimates.js';
   import { Download, CheckCircle2, XCircle, AlertTriangle } from '@lucide/svelte';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: { estimate: any, token: string }, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let est = $derived(data.estimate);
   let token = $derived(data.token);
+  let offer = $derived(depositOffer(est.deposit));
 
   /** null when there is no expiry date; negative once it has passed. */
   let daysToExpiry = $derived.by(() => {
     if (!est.expiry_date) return null;
-    const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     return Math.round((startOfDay(new Date(est.expiry_date)) - startOfDay(new Date())) / 86400000);
   });
 
@@ -68,20 +70,27 @@
     [addr.line, addr.city, addr.state, addr.postcode, addr.country].filter(Boolean)
   );
 
-  /** Shared enhance handler: reload on completion, close the confirm step only
-      when the server accepted the submission. */
-  function respond() {
+  /**
+   * Shared enhance handler: reload on completion, close the confirm step only
+   * when the server accepted the submission.
+   */
+  const respond: SubmitFunction = () => {
     submitting = true;
     return async ({ result, update }) => {
       await update();
       submitting = false;
       if (result.type === 'success') confirming = false;
     };
-  }
+  };
 </script>
 
 <svelte:head>
-  <title>{m.public_portal_invoice_title({ number: est.estimate_number, org: est.org.name })}</title>
+  <title
+    >{m.public_portal_invoice_title({
+      number: est.estimate_number,
+      org: est.org.name ?? ''
+    })}</title
+  >
 </svelte:head>
 
 <PortalShell>
@@ -145,14 +154,14 @@
           {#if est.status === 'Accepted'}
             <p>
               {m.public_portal_estimate_accepted_body({
-                org: est.org.name,
-                total: money(est.total_amount, est.currency),
-                email: est.client_email
+                org: est.org.name ?? '',
+                total: money(est.total_amount, est.currency)
               })}
+              {#if est.deposit}{m.public_portal_estimate_deposit_follows()}{/if}
             </p>
           {:else}
             <p>
-              {m.public_portal_estimate_declined_body({ org: est.org.name })}
+              {m.public_portal_estimate_declined_body({ org: est.org.name ?? '' })}
             </p>
           {/if}
         </div>
@@ -167,7 +176,7 @@
           <p>
             {m.public_portal_estimate_expired_body({
               date: longDate(est.expiry_date),
-              org: est.org.name
+              org: est.org.name ?? ''
             })}
           </p>
         </div>
@@ -177,7 +186,8 @@
         {#if !confirming}
           <div class="decide-copy">
             <b>{m.public_portal_estimate_ready()}</b>
-            <p>{m.public_portal_estimate_ready_body({ org: est.org.name })}</p>
+            <p>{m.public_portal_estimate_ready_body({ org: est.org.name ?? '' })}</p>
+            {#if offer}<p>{offer}</p>{/if}
           </div>
           <div class="decide-actions">
             <button class="v2-btn v2-btn-primary" onclick={() => (confirming = true)}>
@@ -199,8 +209,9 @@
               })}</b
             >
             <p>
-              {m.public_portal_estimate_confirm_body({ org: est.org.name })}
+              {m.public_portal_estimate_confirm_body({ org: est.org.name ?? '' })}
             </p>
+            {#if offer}<p>{offer}</p>{/if}
             <label class="field">
               <span>{m.public_portal_estimate_your_name()}</span>
               <input
@@ -223,7 +234,7 @@
               />
             </label>
             <p class="field-note">
-              {m.public_portal_estimate_record_note({ org: est.org.name })}
+              {m.public_portal_estimate_record_note({ org: est.org.name ?? '' })}
             </p>
             <div class="decide-actions">
               <button class="v2-btn v2-btn-primary" type="submit" disabled={submitting}>
@@ -247,6 +258,13 @@
         {/each}
       </div>
     </section>
+
+    {#if est.introduction}
+      <!-- The author's own words: text with its line breaks, never markup. -->
+      <section class="block">
+        <p class="note">{est.introduction}</p>
+      </section>
+    {/if}
 
     <section class="block">
       <div class="v2-label">{m.public_portal_estimate_included()}</div>
@@ -494,6 +512,7 @@
     font-size: 13px;
     line-height: 1.55;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .doc-foot {

@@ -1,11 +1,30 @@
 """DRF serializers for the macros REST API."""
 
 from django.utils.translation import gettext as _
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from common.models import Profile, Tags
 from macros.models import Macro
 from macros.render import find_unknown_placeholders
+
+
+class MacroAssigneeDetailSerializer(serializers.Serializer):
+    """Response-only: one `MacroSerializer.set_assignees_details` row."""
+
+    id = serializers.CharField()
+    email = serializers.CharField()
+    name = serializers.CharField()
+    is_active = serializers.BooleanField()
+
+
+class MacroTagDetailSerializer(serializers.Serializer):
+    """Response-only: one `MacroSerializer.add_tags_details` row."""
+
+    id = serializers.CharField()
+    name = serializers.CharField()
+    color = serializers.CharField()
+    is_active = serializers.BooleanField()
 
 
 class MacroSerializer(serializers.ModelSerializer):
@@ -134,7 +153,7 @@ class MacroSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-    def get_owner_name(self, obj):
+    def get_owner_name(self, obj) -> str | None:
         # `User` only stores `email`, no first_name/last_name on this model
         # , so we surface the email directly. Frontend can display whatever
         # form it wants from there.
@@ -142,12 +161,13 @@ class MacroSerializer(serializers.ModelSerializer):
             return None
         return obj.owner.user.email or None
 
-    def get_unknown_placeholders(self, obj):
+    def get_unknown_placeholders(self, obj) -> list[str]:
         # Soft signal, not a save-blocker: unknown tokens render literally
         # on the ticket (see render_macro). Surfacing them here gives mobile
         # and API consumers the same warning the web UI computes client-side.
         return find_unknown_placeholders(obj.body)
 
+    @extend_schema_field(MacroAssigneeDetailSerializer(many=True))
     def get_set_assignees_details(self, obj):
         return [
             {
@@ -159,6 +179,7 @@ class MacroSerializer(serializers.ModelSerializer):
             for profile in obj.set_assignees.all()
         ]
 
+    @extend_schema_field(MacroTagDetailSerializer(many=True))
     def get_add_tags_details(self, obj):
         return [
             {

@@ -1,7 +1,22 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
+  import { X, Plus, ChevronDown } from '@lucide/svelte';
+  import {
+    descriptorFor,
+    activeChips,
+    activePresetKey,
+    withParams,
+    type Descriptor,
+    type Field,
+    type Preset
+  } from '#lib/v2/filters.js';
+  import { invoiceStatusLabel } from '#lib/v2/enums.js';
+  import SavedViews from '#lib/v2/components/SavedViews.svelte';
+  import type { ComponentProps } from 'svelte';
+  import type { ReadonlyURL } from '$app/state';
+
   /**
    * One filter system, for every v2 list page.
    *
@@ -18,33 +33,17 @@
    * when its param is actually set. The previous version took a `filters` array
    * that pages built by hand, and several passed chips describing an implicit
    * default, so the X had nothing to remove and did nothing.
-   *
-   * @type {{
-   *   page: string,
-   *   url: URL,
-   *   people?: {id: string, name: string}[],
-   *   tags?: {id: string, name: string}[],
-   *   accounts?: {id: string, name: string}[],
-   *   stages?: {id: string, name: string}[],
-   *   meId?: string | null,
-   *   meta?: string | null,
-   *   onlyFields?: string[],
-   *   onlyPresets?: string[],
-   *   saved?: any
-   * }}
    */
-  import { X, Plus, ChevronDown } from '@lucide/svelte';
-  import { FILTERS, activeChips, activePresetKey, withParams } from '#lib/v2/filters.js';
-  import { invoiceStatusLabel } from '#lib/v2/enums.js';
-  import SavedViews from '#lib/v2/components/SavedViews.svelte';
 
   let {
     page,
+    descriptor: given = undefined,
     url,
     people = [],
     tags = [],
     accounts = [],
     stages = [],
+    sources = [],
     meId = null,
     meta = null,
     onlyFields = undefined,
@@ -52,9 +51,24 @@
     // The page's saved views (`loadSavedViews`), on the six lists that take
     // them. Absent everywhere else, and then no menu is drawn.
     saved = null
+  }: {
+    page: string;
+    /** A descriptor built at run time (a custom object's fields); `page` then only names it. */
+    descriptor?: Descriptor;
+    url: ReadonlyURL;
+    people?: { id: string; name: string }[];
+    tags?: { id: string; name: string }[];
+    accounts?: { id: string; name: string }[];
+    stages?: { id: string; name: string }[];
+    sources?: { id: string; name: string }[];
+    meId?: string | null;
+    meta?: string | null;
+    onlyFields?: string[];
+    onlyPresets?: string[];
+    saved?: ComponentProps<typeof SavedViews>['saved'] | null;
   } = $props();
 
-  let descriptor = $derived(FILTERS[page] ?? { presets: [], fields: [] });
+  let descriptor = $derived(given ?? descriptorFor(page) ?? { presets: [], fields: [] });
 
   /**
    * Some pages run a second query engine alongside the main one, with a
@@ -67,24 +81,28 @@
    * did not filter, while a header total computed with the full param set
    * would disagree with what the rows show.
    */
+  // A source field with no list to offer (an API without lead sources) is
+  // left out rather than drawn as a select holding only "Any".
   let visibleFields = $derived(
-    onlyFields ? descriptor.fields.filter((f) => onlyFields.includes(f.key)) : descriptor.fields
+    (onlyFields
+      ? descriptor.fields.filter((f) => onlyFields.includes(f.key))
+      : descriptor.fields
+    ).filter((f) => f.type !== 'source' || sources.length > 0)
   );
   let visiblePresets = $derived(
     onlyPresets ? descriptor.presets.filter((p) => onlyPresets.includes(p.key)) : descriptor.presets
   );
 
   let chips = $derived(
-    activeChips(page, url, { people, tags, accounts, stages }).filter(
+    activeChips(descriptor, url, { people, tags, accounts, stages, sources }).filter(
       (chip) => !onlyFields || onlyFields.includes(chip.key)
     )
   );
   // meId is passed so a "@me" preset matches only the viewer's own id. Without
   // it, filtering by a colleague would light up "Mine".
-  let activeKey = $derived(activePresetKey(page, url, meId));
+  let activeKey = $derived(activePresetKey(descriptor, url, meId));
   let activeLabel = $derived(
-    descriptor.presets.find((/** @type {any} */ p) => p.key === activeKey)?.label ??
-      m.app_filter_all()
+    descriptor.presets.find((p) => p.key === activeKey)?.label ?? m.app_filter_all()
   );
 
   /**
@@ -96,33 +114,32 @@
    * not be resolved: a "Mine" link that filters to nobody looks like the viewer
    * owns nothing.
    */
-  const presetHref = (/** @type {any} */ preset) => {
-    /** @type {Record<string, string|null>} */
-    const params = {};
+  const presetHref = (preset: Preset) => {
+    const params: Record<string, string | null> = {};
     for (const field of descriptor.fields) {
       if (field.type === 'date-range' || field.type === 'number-range') {
-        params[field.gteKey] = null;
-        params[field.lteKey] = null;
+        if (field.gteKey) params[field.gteKey] = null;
+        if (field.lteKey) params[field.lteKey] = null;
       } else params[field.key] = null;
     }
     for (const other of descriptor.presets) {
       for (const key of Object.keys(other.params)) params[key] = null;
     }
     for (const [key, value] of Object.entries(preset.params)) {
-      params[key] = value === '@me' ? meId : /** @type {string} */ (value);
+      params[key] = value === '@me' ? meId : value;
     }
     return withParams(url, params);
   };
 
-  const usable = (/** @type {any} */ preset) =>
-    !Object.values(preset.params).includes('@me') || Boolean(meId);
+  const usable = (preset: Preset) => !Object.values(preset.params).includes('@me') || Boolean(meId);
 
-  const optionsFor = (/** @type {any} */ field) => {
+  const optionsFor = (field: Field) => {
     if (field.type === 'person') return people;
     if (field.type === 'tag') return tags;
     if (field.type === 'account') return accounts;
     if (field.type === 'stage') return stages;
-    return (field.options ?? []).map((/** @type {string} */ v) => ({
+    if (field.type === 'source') return sources;
+    return (field.options ?? []).map((v) => ({
       id: v,
       name: field.labelFor ? field.labelFor(v) : invoiceStatusLabel(v)
     }));
@@ -181,7 +198,7 @@
              the kind of param this view cannot honour, so submitting Apply
              here drops it rather than carrying it along as a hidden input. -->
         {#each [...url.searchParams] as [key, value] (key)}
-          {#if !descriptor.fields.some((/** @type {any} */ f) => f.key === key || f.gteKey === key || f.lteKey === key)}
+          {#if !descriptor.fields.some((f) => f.key === key || f.gteKey === key || f.lteKey === key)}
             <input type="hidden" name={key} {value} />
           {/if}
         {/each}
@@ -195,13 +212,13 @@
                   class="v2-input"
                   type="date"
                   name={field.gteKey}
-                  value={url.searchParams.get(field.gteKey) ?? ''}
+                  value={url.searchParams.get(field.gteKey ?? '') ?? ''}
                 />
                 <input
                   class="v2-input"
                   type="date"
                   name={field.lteKey}
-                  value={url.searchParams.get(field.lteKey) ?? ''}
+                  value={url.searchParams.get(field.lteKey ?? '') ?? ''}
                 />
               </span>
             {:else if field.type === 'number-range'}
@@ -211,7 +228,7 @@
                   type="number"
                   min="0"
                   name={field.gteKey}
-                  value={url.searchParams.get(field.gteKey) ?? ''}
+                  value={url.searchParams.get(field.gteKey ?? '') ?? ''}
                   placeholder={m.app_filter_min()}
                 />
                 <input
@@ -219,7 +236,7 @@
                   type="number"
                   min="0"
                   name={field.lteKey}
-                  value={url.searchParams.get(field.lteKey) ?? ''}
+                  value={url.searchParams.get(field.lteKey ?? '') ?? ''}
                   placeholder={m.app_filter_max()}
                 />
               </span>

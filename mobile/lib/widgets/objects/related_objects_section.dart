@@ -35,7 +35,7 @@ class RelatedObjectsSection extends ConsumerWidget {
   Future<void> _add(
     BuildContext context,
     WidgetRef ref,
-    RelatedAnswer answer,
+    List<RelatedLinkField> linkFields,
   ) async {
     final field = await showModalBottomSheet<RelatedLinkField>(
       context: context,
@@ -52,7 +52,7 @@ class RelatedObjectsSection extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Text(sheet.l10n.objectsAddTo, style: AppTypography.h3),
             ),
-            for (final f in answer.linkFields)
+            for (final f in linkFields)
               ListTile(
                 minTileHeight: 48,
                 title: Text('${f.objectLabel}: ${f.fieldLabel}'),
@@ -128,6 +128,15 @@ class RelatedObjectsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final answer = ref.watch(relatedProvider((to: to, id: recordId))).value;
     if (answer == null || answer.showsNothing) return const SizedBox.shrink();
+    final objects =
+        shownCustomObjects(ref.watch(customObjectsProvider))?.objects ??
+        const <ObjectSummary>[];
+    bool writable(String key) =>
+        objects.where((o) => o.key == key).every((o) => o.writable != false);
+    final linkFields = [
+      for (final f in answer.linkFields)
+        if (writable(f.objectKey)) f,
+    ];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -150,9 +159,16 @@ class RelatedObjectsSection extends ConsumerWidget {
               ),
             ),
             for (final record in group.records)
-              _row(context, ref, answer, group, record),
+              _row(
+                context,
+                ref,
+                answer,
+                group,
+                record,
+                writable(group.objectKey),
+              ),
           ],
-          if (answer.linkFields.isNotEmpty)
+          if (linkFields.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: TextButton.icon(
@@ -160,7 +176,7 @@ class RelatedObjectsSection extends ConsumerWidget {
                   minimumSize: const Size(44, 44),
                   alignment: Alignment.centerLeft,
                 ),
-                onPressed: () => _add(context, ref, answer),
+                onPressed: () => _add(context, ref, linkFields),
                 icon: const Icon(LucideIcons.plus, size: 16),
                 label: Text(context.l10n.objectsAddTo),
               ),
@@ -176,6 +192,7 @@ class RelatedObjectsSection extends ConsumerWidget {
     RelatedAnswer answer,
     RelatedGroup group,
     RelatedRecordRef record,
+    bool writable,
   ) {
     final name = record.name.isEmpty
         ? context.l10n.objectsUntitled
@@ -201,7 +218,7 @@ class RelatedObjectsSection extends ConsumerWidget {
             ),
           ),
         ),
-        if (answer.removable(group))
+        if (writable && answer.removable(group))
           IconButton(
             tooltip: context.l10n.objectsRemoveNamed(record.name),
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),

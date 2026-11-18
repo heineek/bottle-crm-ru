@@ -230,11 +230,12 @@ void main() {
       const filters = LeadFilters(
         search: 'ada',
         statuses: {LeadStatus.assigned, LeadStatus.inProcess},
-        source: LeadSource.email,
+        source: 'google ads',
         rating: LeadRating.hot,
         assignedToId: 'u1',
         tagId: 't1',
         nextFollowUp: '2026-09-26',
+        unanswered: true,
       );
       await notifier.setFilters(filters);
       final back = LeadFilters.fromQuery(
@@ -248,6 +249,7 @@ void main() {
             'assigned_to',
             'tags',
             'next_follow_up',
+            'unanswered',
           },
           multi: {'status'},
         ),
@@ -256,13 +258,14 @@ void main() {
       );
       expect(back.search, 'ada');
       expect(back.statuses, filters.statuses);
-      expect(back.source, LeadSource.email);
+      expect(back.source, 'google ads');
       expect(back.rating, LeadRating.hot);
       expect(back.assignedToId, 'u1');
       expect(back.assignedToLabel, 'Me');
       expect(back.tagId, 't1');
       expect(back.tagLabel, 'vip');
       expect(back.nextFollowUp, '2026-09-26');
+      expect(back.unanswered, isTrue);
     });
 
     test('leads drop a value the list does not offer', () {

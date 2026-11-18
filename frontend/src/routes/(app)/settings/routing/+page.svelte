@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Who a new ticket lands on.
    *
@@ -33,16 +33,17 @@
   import { missingOptions, inactiveOptionLabel } from '#lib/v2/pickers.js';
   import { nextInRotation } from './rotation.js';
   import { Plus, GripVertical, TriangleAlert, UserX } from '@lucide/svelte';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
+  import type { RoutingRuleRow } from '#lib/server/v2/routing.js';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   // `null` when the panel is closed, `'new'` when adding, or the rule object
   // when editing that row. One panel, two modes, so two rows can never be
   // open for edit at once.
-  let editing = $state(/** @type {any} */ (null));
+  let editing = $state<'new' | RoutingRuleRow | null>(null);
 
   // The strategy currently selected in the form, so the target picker below
   // it (team vs. people) can switch without a round trip. Seeded from the
@@ -52,7 +53,7 @@
   // The repeating condition rows being edited, as `{ field, op, value }`.
   // Held here, rather than read off `editing`, so a row can be added or
   // removed before submitting.
-  let conditionRows = $state(/** @type {{ field: string, op: string, value: string }[]} */ ([]));
+  let conditionRows = $state<{ field: string; op: string; value: string }[]>([]);
 
   function openCreate() {
     editing = 'new';
@@ -60,7 +61,7 @@
     conditionRows = [];
   }
 
-  function openEdit(r) {
+  function openEdit(r: RoutingRuleRow) {
     editing = r;
     strategy = r.strategy;
     // Joining an array value into a comma-separated string is the right
@@ -72,9 +73,10 @@
     // limitation: a value that itself contains a literal comma cannot be
     // expressed here, since splitting can't tell that comma apart from a
     // separator.
+    // A stored condition may have no `op`; the engine reads that as `eq`.
     conditionRows = r.conditions.map((c) => ({
       field: c.field,
-      op: c.op,
+      op: c.op ?? 'eq',
       value: Array.isArray(c.value) ? c.value.join(', ') : String(c.value ?? '')
     }));
   }
@@ -100,7 +102,7 @@
    * the select would have no matching option, would submit nothing, and the
    * row would be dropped or, worse, shift its neighbours.
    */
-  function unlistedField(field) {
+  function unlistedField(field: string) {
     if (!field || field in CONDITION_FIELD_LABEL) return null;
     return field.startsWith('custom_fields.')
       ? m.settings_routing_custom_field({ key: field.slice('custom_fields.'.length) })
@@ -125,27 +127,30 @@
   });
 
   /** The conditions as one clause. No conditions means every ticket. */
-  function when(r) {
+  function when(r: RoutingRuleRow) {
     if (!r.conditions.length) return m.settings_routing_any_ticket();
     return r.conditions
       .map((c) => {
         const field = CONDITION_FIELD_LABEL[c.field] ?? c.field.replace('custom_fields.', '');
-        const labels =
+        const labels: Record<string, string> | null =
           c.field === 'priority'
             ? CASE_PRIORITY_LABEL
             : c.field === 'case_type'
               ? CASE_TYPE_LABEL
               : null;
-        /** @param {any} v */
-        const show = (v) => (labels ? (labels[v] ?? v) : v);
+        const show = (v: unknown) => (labels ? (labels[String(v)] ?? v) : v);
         const value = Array.isArray(c.value) ? c.value.map(show).join(', ') : show(c.value);
-        return m.settings_routing_condition({ field, op: CONDITION_OP_LABEL[c.op], value });
+        return m.settings_routing_condition({
+          field,
+          op: CONDITION_OP_LABEL[c.op ?? 'eq'],
+          value: String(value)
+        });
       })
       .join(m.settings_routing_and_separator());
   }
 
   /** The action as one clause: one whole sentence per strategy, with its object. */
-  function then(r) {
+  function then(r: RoutingRuleRow) {
     if (r.strategy === 'by_team') {
       return m.settings_routing_then_by_team({ team: r.target_team?.name ?? '—' });
     }
@@ -193,21 +198,22 @@
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-bottom:32px">
     {#if editing}
+      {@const current = editing}
       <SettingsFormPanel
-        title={editing === 'new'
+        title={current === 'new'
           ? m.settings_routing_new_rule()
-          : m.settings_routing_edit_title({ name: editing.name })}
-        action={editing === 'new' ? '?/create' : '?/update'}
-        error={editing === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={editing === 'new'
+          : m.settings_routing_edit_title({ name: current.name })}
+        action={current === 'new' ? '?/create' : '?/update'}
+        error={current === 'new' ? form?.create?.error : form?.update?.error}
+        submitLabel={current === 'new'
           ? m.settings_routing_add_rule()
           : m.settings_routing_save_rule()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
         {#snippet fields()}
-          {#if editing !== 'new'}
-            <input type="hidden" name="id" value={editing.id} />
+          {#if current !== 'new'}
+            <input type="hidden" name="id" value={current.id} />
           {/if}
 
           <div class="v2-field">
@@ -218,7 +224,7 @@
               name="name"
               maxlength="128"
               required
-              value={editing === 'new' ? '' : editing.name}
+              value={current === 'new' ? '' : current.name}
             />
           </div>
 
@@ -230,7 +236,7 @@
               type="number"
               name="priority_order"
               min="0"
-              value={editing === 'new' ? 0 : editing.priority_order}
+              value={current === 'new' ? 0 : current.priority_order}
             />
             <p class="v2-hint">{m.settings_routing_priority_hint()}</p>
           </div>
@@ -248,13 +254,13 @@
             <div class="v2-field">
               <label for="r-team">{m.settings_routing_team_label()}</label>
               <select id="r-team" class="v2-input" name="target_team_id" required>
-                <option value="" disabled selected={editing === 'new' || !editing.target_team}>
+                <option value="" disabled selected={current === 'new' || !current.target_team}>
                   {m.settings_routing_choose_team()}
                 </option>
                 {#each data.teams as t (t.id)}
                   <option
                     value={t.id}
-                    selected={editing !== 'new' && editing.target_team?.id === t.id}
+                    selected={current !== 'new' && current.target_team?.id === t.id}
                   >
                     {t.name}
                   </option>
@@ -284,8 +290,8 @@
                 {#each data.people as p (p.id)}
                   <option
                     value={p.id}
-                    selected={editing !== 'new' &&
-                      editing.target_assignees.some((a) => a.id === p.id)}
+                    selected={current !== 'new' &&
+                      current.target_assignees.some((a) => a.id === p.id)}
                   >
                     {p.name}
                   </option>
@@ -317,13 +323,13 @@
                 type="checkbox"
                 name="stop_processing"
                 value="true"
-                checked={editing !== 'new' && editing.stop_processing}
+                checked={current !== 'new' && current.stop_processing}
               />
               {m.settings_routing_stop_hint()}
             </label>
           </div>
 
-          {#if editing === 'new'}
+          {#if current === 'new'}
             <div class="v2-field">
               <label for="r-active">{m.settings_routing_active_label()}</label>
               <label style="display:flex;gap:8px;align-items:center;font-weight:400">
@@ -454,7 +460,7 @@
 
             {#if next}
               <div class="v2-sub" style="font-size:11.5px;margin-top:5px">
-                {m.settings_routing_next_in_rotation({ name: next.name })}
+                {m.settings_routing_next_in_rotation({ name: next.name ?? '' })}
               </div>
             {/if}
 

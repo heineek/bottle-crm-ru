@@ -176,6 +176,7 @@ class Case(AssignableMixin, BaseModel):
             models.Index(fields=["status"]),
             models.Index(fields=["priority"]),
             models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "updated_at", "id"], name="case_org_upd_idx"),
             models.Index(fields=["stage", "kanban_order"]),
             models.Index(fields=["status", "kanban_order"]),
             # Analytics resolution-window scans (MTTR by_priority, SLA breach).
@@ -765,11 +766,11 @@ class EscalationPolicy(BaseModel):
 
 
 class InboundMailbox(BaseModel):
-    """Per-org inbound email address configuration. See docs/cases/tier1/email-to-ticket.md.
+    """Per-org inbound email address configuration. See
+    docs/integrations/inbound-email.md.
 
-    Tier 1 ships only the SES (SNS direct delivery) provider; the model carries
-    the IMAP fields nullable so a follow-up can wire in IMAP without a schema
-    migration.
+    SES, Postmark and Mailgun deliver to the mailbox's webhook. The IMAP fields
+    are nullable so IMAP can be wired in later without a schema migration.
     """
 
     PROVIDER_CHOICES = [
@@ -788,11 +789,11 @@ class InboundMailbox(BaseModel):
         max_length=128,
         blank=True,
         default="",
-        help_text="Reserved for providers that sign deliveries with a shared "
-        "secret, none of which are implemented yet. Nothing compares this "
-        "value today: the SES webhook is authenticated by the SNS signature "
-        "and the topic_arn pin below. Admin-writable so a provider-issued key "
-        "can be stored, and write-only, so it is never returned by the API.",
+        help_text="Postmark's basic-auth password or Mailgun's HTTP webhook "
+        "signing key, which the webhook checks on every delivery; a Postmark "
+        "or Mailgun mailbox without one accepts nothing. Unused for SES, which "
+        "is proven by the SNS signature and the topic_arn pin below. "
+        "Write-only: the API never returns it.",
     )
     topic_arn = models.CharField(
         max_length=256,
@@ -835,6 +836,21 @@ class InboundMailbox(BaseModel):
     )
     is_active = models.BooleanField(default=True)
 
+    CREATES_TICKETS = "tickets"
+    CREATES_LEADS = "leads"
+    CREATES_CHOICES = [
+        (CREATES_TICKETS, pgettext_lazy("inbound mailbox creates", "Tickets")),
+        (CREATES_LEADS, pgettext_lazy("inbound mailbox creates", "Leads")),
+    ]
+    creates = models.CharField(
+        max_length=16, choices=CREATES_CHOICES, default=CREATES_TICKETS
+    )
+    # A leads mailbox's source key and sub-source for the leads it makes.
+    lead_source = models.CharField(max_length=64, blank=True, default="email")
+    lead_source_detail = models.CharField(max_length=100, blank=True, default="")
+    # Made from INBOUND_EMAIL_DOMAIN rather than typed by an admin.
+    is_generated = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = "Inbound Mailbox"
         verbose_name_plural = "Inbound Mailboxes"
@@ -844,6 +860,14 @@ class InboundMailbox(BaseModel):
             models.UniqueConstraint(
                 fields=["org", "address"],
                 name="uniq_inbound_mailbox_per_org_address",
+            ),
+            # A generated address routes mail across orgs, so it names one
+            # mailbox in the whole database. RLS hides other orgs' rows from a
+            # lookup; a unique index still sees them.
+            models.UniqueConstraint(
+                fields=["address"],
+                condition=models.Q(is_generated=True),
+                name="uniq_generated_inbound_address",
             ),
         ]
         indexes = [
@@ -932,6 +956,8 @@ class EmailMessage(BaseModel):
             models.Index(fields=["org", "-received_at"]),
             models.Index(fields=["case", "-received_at"]),
             models.Index(fields=["in_reply_to"]),
+            # The per-address limits count by arrival time on every email.
+            models.Index(fields=["mailbox", "created_at"]),
         ]
 
     def __str__(self):
@@ -1031,7 +1057,11 @@ class RoutingRuleState(BaseModel):
 
 
 class TimeEntry(BaseModel):
-    """One agent's logged time on a case (Tier 3 time-tracking).
+    """One agent's logged time on a ticket or a project (Tier 3 time-tracking).
+
+    Every write sets exactly one of ``case`` and ``project``; the database
+    refuses both. Deleting a project keeps its entries with ``project``
+    cleared, so an entry may end up with neither (see docs/features/projects.md).
 
     Per `docs/cases/COORDINATION_DECISIONS.md` D2 we inherit BaseModel and
     declare our own org FK; RLS is enforced via the migration policy. The
@@ -1043,7 +1073,25 @@ class TimeEntry(BaseModel):
 
     org = models.ForeignKey(Org, on_delete=models.CASCADE, related_name="time_entries")
     case = models.ForeignKey(
-        Case, on_delete=models.CASCADE, related_name="time_entries"
+        Case,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="time_entries",
+    )
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="time_entries",
+    )
+    task = models.ForeignKey(
+        "tasks.Task",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="time_entries",
     )
     profile = models.ForeignKey(
         Profile, on_delete=models.PROTECT, related_name="time_entries"
@@ -1081,6 +1129,7 @@ class TimeEntry(BaseModel):
         default=False,
         help_text="Set by the auto-stop Celery task when a forgotten timer is killed.",
     )
+    is_sample = models.BooleanField(default=False, help_text=SAMPLE_DATA_HELP_TEXT)
 
     class Meta:
         verbose_name = "Time Entry"
@@ -1090,9 +1139,14 @@ class TimeEntry(BaseModel):
         indexes = [
             models.Index(fields=["org", "profile", "started_at"]),
             models.Index(fields=["case", "started_at"]),
+            models.Index(fields=["project", "started_at"]),
             models.Index(fields=["billable", "invoice"]),
         ]
         constraints = [
+            models.CheckConstraint(
+                condition=models.Q(case__isnull=True) | models.Q(project__isnull=True),
+                name="time_entry_one_parent",
+            ),
             models.CheckConstraint(
                 condition=(
                     models.Q(ended_at__isnull=True)
@@ -1109,8 +1163,8 @@ class TimeEntry(BaseModel):
 
     def __str__(self):
         return (
-            f"TimeEntry(case={self.case_id}, profile={self.profile_id}, "
-            f"{self.duration_minutes}m)"
+            f"TimeEntry(case={self.case_id}, project={self.project_id}, "
+            f"profile={self.profile_id}, {self.duration_minutes}m)"
         )
 
     @property
@@ -1130,6 +1184,8 @@ class TimeEntry(BaseModel):
             self.duration_minutes = 0
         if not self.org_id and self.case_id:
             self.org_id = self.case.org_id
+        if not self.org_id and self.project_id:
+            self.org_id = self.project.org_id
         super().save(*args, **kwargs)
 
 

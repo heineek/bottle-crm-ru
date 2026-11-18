@@ -7,13 +7,13 @@ from django.db.models.functions import Round
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import Account
 from accounts.serializer import AccountPickerSerializer, TagsSerializer
+from common.custom_fields import custom_field_filter
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.models import (
     Attachments,
@@ -24,6 +24,7 @@ from common.models import (
     Teams,
 )
 from common.money import currency_block, deal_currency, group_by_currency
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext, is_org_admin
 from common.serializer import (
     AttachmentsSerializer,
@@ -94,7 +95,7 @@ def deal_list_queryset(profile, params):
     if params.get("stage"):
         queryset = queryset.filter(stage__contains=params.get("stage"))
     if params.get("lead_source"):
-        queryset = queryset.filter(lead_source__contains=params.get("lead_source"))
+        queryset = queryset.filter(lead_source=params.get("lead_source"))
     tags = uuid_list_param(params, "tags")
     if tags:
         queryset = queryset.filter(tags__id__in=tags).distinct()
@@ -121,12 +122,7 @@ def deal_list_queryset(profile, params):
     amount_lte = decimal_param(params, "amount__lte")
     if amount_lte:
         queryset = queryset.filter(amount__lte=amount_lte)
-    # Custom-field filters: ?cf_<key>=<value> -> custom_fields contains pair.
-    for raw_key, raw_value in params.items():
-        if raw_key.startswith("cf_") and raw_value:
-            cf_key = raw_key[3:]
-            if cf_key:
-                queryset = queryset.filter(custom_fields__contains={cf_key: raw_value})
+    queryset = queryset.filter(custom_field_filter("Opportunity", profile.org, params))
 
     # `?open=true`: everything not in a won or lost stage. The
     # existing `stage` filter is a `contains` match, so it cannot
@@ -142,7 +138,14 @@ def deal_list_queryset(profile, params):
     return queryset.distinct()
 
 
-class OpportunityListView(APIView, LimitOffsetPagination):
+def _choice_pairs():
+    """Schema only: a `(value, label)` choices tuple as JSON renders it."""
+    return serializers.ListField(
+        child=serializers.ListField(child=serializers.CharField())
+    )
+
+
+class OpportunityListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
     model = Opportunity
 
@@ -257,14 +260,18 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                         name="OpportunityListTotals",
                         fields={
                             "count": serializers.IntegerField(),
-                            "amount_sum": serializers.DecimalField(
-                                max_digits=14, decimal_places=2, allow_null=True
-                            ),
-                            "weighted_sum": serializers.DecimalField(
-                                max_digits=14, decimal_places=2, allow_null=True
-                            ),
-                            "by_currency": serializers.ListField(
-                                child=serializers.DictField()
+                            # Decimal strings from `currency_block`, which keeps
+                            # whatever places the database's rounding returns.
+                            "amount_sum": serializers.CharField(allow_null=True),
+                            "weighted_sum": serializers.CharField(allow_null=True),
+                            "by_currency": inline_serializer(
+                                name="OpportunityListCurrencyTotals",
+                                fields={
+                                    "currency": serializers.CharField(),
+                                    "amount_sum": serializers.CharField(),
+                                    "weighted_sum": serializers.CharField(),
+                                },
+                                many=True,
                             ),
                             "stalled_count": serializers.IntegerField(),
                         },
@@ -276,9 +283,9 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                     "accounts_list": AccountPickerSerializer(many=True),
                     "contacts_list": ContactPickerSerializer(many=True),
                     "tags": TagsSerializer(many=True),
-                    "stage": serializers.ListField(),
-                    "lead_source": serializers.ListField(),
-                    "currency": serializers.ListField(),
+                    "stage": _choice_pairs(),
+                    "lead_source": _choice_pairs(),
+                    "currency": _choice_pairs(),
                 },
             )
         },
@@ -574,11 +581,19 @@ class OpportunityDetailView(APIView):
                     "attachments": AttachmentsSerializer(many=True),
                     "contacts": DealContactSerializer(many=True),
                     "users": ProfileSerializer(many=True),
-                    "stage": serializers.ListField(),
-                    "lead_source": serializers.ListField(),
-                    "currency": serializers.ListField(),
+                    "stage": _choice_pairs(),
+                    "lead_source": _choice_pairs(),
+                    "currency": _choice_pairs(),
                     "comment_permission": serializers.BooleanField(),
-                    "users_mention": serializers.ListField(),
+                    "users_mention": inline_serializer(
+                        name="OpportunityMentionUser",
+                        fields={"user__email": serializers.EmailField()},
+                        many=True,
+                    ),
+                    "custom_field_definitions": CustomFieldDefinitionSerializer(
+                        many=True
+                    ),
+                    "can_delete": serializers.BooleanField(),
                 },
             )
         },

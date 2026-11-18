@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -21,13 +21,24 @@
    * a contact is recording that you spoke to them. Nothing is faked. Every
    * event kind is backed by a row that exists.
    */
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
   import Avatar from '#lib/v2/components/Avatar.svelte';
   import DuplicatesPanel from '#lib/v2/components/DuplicatesPanel.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
-  import { money, moneyEach, shortDate, relativeDays, daysSince } from '#lib/v2/format.js';
+  import LogActivity from '#lib/v2/components/LogActivity.svelte';
+  import InteractionIcon from '#lib/v2/components/InteractionIcon.svelte';
+  import {
+    money,
+    moneyEach,
+    shortDate,
+    relativeDays,
+    relativeTime,
+    daysSince
+  } from '#lib/v2/format.js';
+  import { whatsappHref } from '#lib/v2/interactions.js';
   import {
     CASE_PRIORITY_LABEL,
     CASE_STATUS_LABEL,
@@ -37,10 +48,12 @@
     TASK_PRIORITY_LABEL,
     TASK_PRIORITY_TONE
   } from '#lib/v2/enums.js';
+  import { sourceLabel } from '#lib/v2/lead-sources.js';
   import { enhance } from '$app/forms';
   import {
     ChevronRight,
     Mail,
+    MessageCircle,
     Phone,
     PhoneOff,
     Pencil,
@@ -53,9 +66,9 @@
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
   let related = $derived(relatedView(data.related));
   let dealsOn = $derived(isOn(data.modules, 'deals'));
   let tasksOn = $derived(isOn(data.modules, 'tasks'));
@@ -70,23 +83,16 @@
   let openPipeline = $derived(moneyEach(data.openDeals.by_currency) || money(0, data.org.currency));
   // Named only when it is the single open deal and it is among the rows held.
   let onlyOpenDeal = $derived(
-    openCount === 1
-      ? deals.find((/** @type {any} */ d) => !CLOSED_KINDS.includes(d.stage_kind))
-      : null
+    openCount === 1 ? deals.find((d) => !CLOSED_KINDS.includes(d.stage_kind ?? '')) : null
   );
   let overdueTasks = $derived(
-    tasks.filter(
-      (/** @type {any} */ t) =>
-        t.status !== 'Completed' && t.due_date && (daysSince(t.due_date) ?? 0) > 0
-    )
+    tasks.filter((t) => t.status !== 'Completed' && t.due_date && (daysSince(t.due_date) ?? 0) > 0)
   );
   // Open = not in a terminal state. The Case statuses are New / Assigned /
   // Pending / Closed / Rejected / Duplicate (see CASE_STATUS_TONE); the last
   // three are done, so anything else is still live.
   let openTickets = $derived(
-    tickets.filter(
-      (/** @type {any} */ t) => !['Closed', 'Rejected', 'Duplicate'].includes(t.status)
-    )
+    tickets.filter((t) => !['Closed', 'Rejected', 'Duplicate'].includes(t.status))
   );
 
   // ── note composer ────────────────────────────────────────────────────────
@@ -97,12 +103,10 @@
   // and clear it. `fileInput` is the element itself. A file input's value can
   // only be cleared through the DOM, not by rebinding.
   let fileName = $state('');
-  /** @type {HTMLInputElement | undefined} */
-  let fileInput;
+  let fileInput: HTMLInputElement | undefined = $state();
 
-  /** @param {Event} e */
-  function pickFile(e) {
-    fileName = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0]?.name ?? '';
+  function pickFile(e: Event) {
+    fileName = (e.currentTarget as HTMLInputElement).files?.[0]?.name ?? '';
   }
   function clearFile() {
     if (fileInput) fileInput.value = '';
@@ -114,35 +118,63 @@
   // either a note or a file, and the button says which it will do.
   let canSubmit = $derived(Boolean(note.trim() || fileName));
 
+  // Notes stay comments; calls and messages are interactions, logged through
+  // their own form when the API has them.
+  let logLive = $derived(data.interactions.live);
+  let composer = $state<'note' | 'log'>('note');
+  let logKind = $state('call');
+  let composerEl: HTMLElement | undefined = $state();
+  let whatsapp = $derived(whatsappHref(contact.phone_e164));
+
+  /** Opens the form set to `kind`; the link itself still dials or opens WhatsApp. */
+  function startLog(kind: string) {
+    if (!logLive) return;
+    logKind = kind;
+    composer = 'log';
+    composerEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
   // ── activity feed ────────────────────────────────────────────────────────
-  // Three real kinds (note / file / created). The filter only appears once there
-  // is a file to filter. With nothing but notes it would sort one pile.
-  let hasFiles = $derived(activity.some((/** @type {any} */ e) => e.type === 'file'));
-  let filter = $state(/** @type {'all'|'notes'|'files'} */ ('all'));
-  let shown = $derived(
-    filter === 'files'
-      ? activity.filter((/** @type {any} */ e) => e.type === 'file')
-      : filter === 'notes'
-        ? activity.filter((/** @type {any} */ e) => e.type !== 'file')
-        : activity
+  // Notes, logged calls and messages, files, and the creation. The filter
+  // appears once there are two of the first three to choose between.
+  let filter = $state<'all' | 'note' | 'interaction' | 'file'>('all');
+  let kinds = $derived(
+    ['note', 'interaction', 'file'].filter((k) => activity.some((e) => e.type === k))
   );
+  let shown = $derived(filter === 'all' ? activity : activity.filter((e) => e.type === filter));
   let newestId = $derived(shown[0]?.id ?? null);
+
+  /**
+   * One feed row: the contact's notes, files and creation, or a logged
+   * interaction, which alone carries the interaction fields.
+   */
+  type FeedEvent = {
+    id: string;
+    type: string;
+    at: string | null;
+    by: string | null;
+    body: string;
+    href?: string | null;
+    kind?: string;
+    direction?: string;
+    detail?: string;
+    interaction?: string;
+    canDelete?: boolean;
+  };
 
   /**
    * The line under an event: "Attached" for a file, the author where known, then
    * how long ago, joined so no separator dangles when a part is missing.
-   * @param {{type:string,by:string|null,at:string}} e
    */
-  function metaFor(e) {
+  function metaFor(e: FeedEvent) {
     const parts = [];
     if (e.type === 'file') parts.push(m.contacts_detail_attached());
     if (e.by) parts.push(e.by);
-    parts.push(relativeDays(e.at));
+    parts.push(relativeTime(e.at));
     return parts.join(' · ');
   }
 
-  /** @param {string} iso */
-  function dayGroup(iso) {
+  function dayGroup(iso: string | null) {
     const n = daysSince(iso);
     if (n === 0) return m.contacts_detail_today();
     if (n === 1) return m.contacts_detail_yesterday();
@@ -151,8 +183,9 @@
 
   // Interleave day headers so each date is announced once, in order.
   let feed = $derived.by(() => {
-    /** @type {Array<{kind:'day',id:string,label:string}|{kind:'event',id:string,event:any}>} */
-    const out = [];
+    const out: Array<
+      { kind: 'day'; id: string; label: string } | { kind: 'event'; id: string; event: FeedEvent }
+    > = [];
     let last = null;
     for (const e of shown) {
       const g = dayGroup(e.at);
@@ -238,7 +271,18 @@
         <PhoneOff />{m.contacts_do_not_call()}
       </button>
     {:else if contact.phone}
-      <a class="v2-btn" href="tel:{contact.phone}"><Phone />{m.contacts_detail_call()}</a>
+      <a class="v2-btn" href="tel:{contact.phone}" onclick={() => startLog('call')}
+        ><Phone />{m.contacts_detail_call()}</a
+      >
+    {/if}
+    {#if whatsapp}
+      <a
+        class="v2-btn"
+        href={whatsapp}
+        target="_blank"
+        rel="external noreferrer noopener"
+        onclick={() => startLog('whatsapp')}><MessageCircle />WhatsApp</a
+      >
     {/if}
     <a class="v2-btn v2-btn-primary" href={resolve(`contacts/${contact.id}/edit`)}
       ><Pencil />{m.common_edit()}</a
@@ -305,7 +349,7 @@
                      as still running. -->
                   <div class="v2-sub" style="font-size:11.5px">
                     {d.stage_label}{d.closed_on
-                      ? CLOSED_KINDS.includes(d.stage_kind)
+                      ? CLOSED_KINDS.includes(d.stage_kind ?? '')
                         ? ` · ${m.contacts_detail_deal_closed({ date: shortDate(d.closed_on) })}`
                         : ` · ${m.contacts_detail_deal_due({ date: shortDate(d.closed_on) })}`
                       : ''}
@@ -409,89 +453,138 @@
           <div class="v2-card about">{contact.description}</div>
         {/if}
 
+        <CustomFieldsCard fields={data.customFields ?? []} flush />
+
         <RelatedRecords {related} error={form?.related?.error} />
 
         <div class="act-head">
           <div class="v2-label">{m.contacts_detail_activity()}</div>
-          {#if hasFiles}
-            <!-- Only real kinds. There is no calls/emails/meetings split because
-                 there are no such records to split on. -->
-            <div class="seg" role="tablist" aria-label={m.contacts_detail_activity_filter()}>
-              <button class:on={filter === 'all'} onclick={() => (filter = 'all')}
+          {#if kinds.length > 1}
+            <div class="seg" role="group" aria-label={m.contacts_detail_activity_filter()}>
+              <button aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}
                 >{m.contacts_detail_filter_all()}</button
               >
-              <button class:on={filter === 'notes'} onclick={() => (filter = 'notes')}
-                >{m.common_notes()}</button
-              >
-              <button class:on={filter === 'files'} onclick={() => (filter = 'files')}
-                >{m.contacts_detail_filter_files()}</button
-              >
+              {#if kinds.includes('interaction')}
+                <button
+                  aria-pressed={filter === 'interaction'}
+                  onclick={() => (filter = 'interaction')}
+                  >{m.contacts_detail_filter_conversations()}</button
+                >
+              {/if}
+              {#if kinds.includes('note')}
+                <button aria-pressed={filter === 'note'} onclick={() => (filter = 'note')}
+                  >{m.common_notes()}</button
+                >
+              {/if}
+              {#if kinds.includes('file')}
+                <button aria-pressed={filter === 'file'} onclick={() => (filter = 'file')}
+                  >{m.contacts_detail_filter_files()}</button
+                >
+              {/if}
             </div>
           {/if}
         </div>
 
-        <!-- The composer. `reset: false` plus clearing state by hand on success
-             keeps the box and the binding in step; a failed save keeps the words
-             and the picked file. A contact takes a note, a file, or both. -->
-        <form
-          method="POST"
-          action="?/note"
-          enctype="multipart/form-data"
-          class="note-form"
-          use:enhance={() => {
-            saving = true;
-            return async ({ result, update }) => {
-              saving = false;
-              if (result.type === 'success') {
-                note = '';
-                clearFile();
-              }
-              await update({ reset: false });
-            };
-          }}
-        >
-          <textarea
-            name="comment"
-            rows="2"
-            bind:value={note}
-            class="note-input"
-            placeholder={m.contacts_detail_note_placeholder()}></textarea>
-          <div class="note-actions">
-            <button class="v2-btn v2-btn-primary" type="submit" disabled={saving || !canSubmit}>
-              {saving
-                ? m.contacts_detail_saving()
-                : note.trim()
-                  ? m.contacts_detail_add_note()
-                  : fileName
-                    ? m.contacts_detail_attach_file()
-                    : m.contacts_detail_add_note()}
-            </button>
-            <label class="v2-btn" class:has-file={fileName}>
-              <Paperclip size={14} />
-              <span class="attach-label">{fileName || m.contacts_detail_attach_file()}</span>
-              <input
-                bind:this={fileInput}
-                type="file"
-                name="attachment"
-                onchange={pickFile}
-                hidden
-              />
-            </label>
-            {#if fileName}
-              <button
-                type="button"
-                class="v2-btn-quiet clear-file"
-                onclick={clearFile}
-                title={m.contacts_detail_remove_file()}
+        <div class="composer" bind:this={composerEl}>
+          {#if logLive}
+            <div
+              class="seg composer-switch"
+              role="group"
+              aria-label={m.contacts_detail_composer_label()}
+            >
+              <button aria-pressed={composer === 'note'} onclick={() => (composer = 'note')}
+                >{m.contacts_detail_composer_note()}</button
               >
-                <X size={13} />
-              </button>
-            {/if}
-            {#if form?.message}
-              <span class="note-err">{form.message}</span>
-            {/if}
-          </div>
-        </form>
+              <button aria-pressed={composer === 'log'} onclick={() => (composer = 'log')}
+                >{m.contacts_detail_composer_log()}</button
+              >
+            </div>
+          {/if}
+          {#if composer === 'log' && logLive}
+            <LogActivity
+              bind:kind={logKind}
+              result={form?.activity}
+              timeZone={data.org?.timezone}
+              oncancel={() => (composer = 'note')}
+              onlogged={() => (composer = 'note')}
+            />
+          {:else}
+            <!-- The note composer. `reset: false` plus clearing state by hand on
+                 success keeps the box and the binding in step; a failed save
+                 keeps the words and the picked file. A contact takes a note, a
+                 file, or both. -->
+            <form
+              method="POST"
+              action="?/note"
+              enctype="multipart/form-data"
+              class="note-form"
+              use:enhance={() => {
+                saving = true;
+                return async ({ result, update }) => {
+                  saving = false;
+                  if (result.type === 'success') {
+                    note = '';
+                    clearFile();
+                  }
+                  await update({ reset: false });
+                };
+              }}
+            >
+              <textarea
+                name="comment"
+                rows="2"
+                bind:value={note}
+                class="note-input"
+                placeholder={logLive
+                  ? m.contacts_detail_note_placeholder_short()
+                  : m.contacts_detail_note_placeholder()}></textarea>
+              <div class="note-actions">
+                <button class="v2-btn v2-btn-primary" type="submit" disabled={saving || !canSubmit}>
+                  {saving
+                    ? m.contacts_detail_saving()
+                    : note.trim()
+                      ? m.contacts_detail_add_note()
+                      : fileName
+                        ? m.contacts_detail_attach_file()
+                        : m.contacts_detail_add_note()}
+                </button>
+                <label class="v2-btn" class:has-file={fileName}>
+                  <Paperclip size={14} />
+                  <span class="attach-label">{fileName || m.contacts_detail_attach_file()}</span>
+                  <input
+                    bind:this={fileInput}
+                    type="file"
+                    name="attachment"
+                    onchange={pickFile}
+                    hidden
+                  />
+                </label>
+                {#if fileName}
+                  <button
+                    type="button"
+                    class="v2-btn-quiet clear-file"
+                    onclick={clearFile}
+                    title={m.contacts_detail_remove_file()}
+                  >
+                    <X size={13} />
+                  </button>
+                {/if}
+                {#if form?.message}
+                  <span class="note-err">{form.message}</span>
+                {/if}
+              </div>
+            </form>
+          {/if}
+        </div>
+
+        {#if data.interactions.failed}
+          <p class="note-err" style="margin:0 0 12px">
+            {m.contacts_detail_interactions_failed()}
+          </p>
+        {/if}
+        {#if form?.activity?.deleteError}
+          <p class="note-err" role="alert" style="margin:0 0 12px">{form.activity.deleteError}</p>
+        {/if}
 
         <div class="tl">
           {#each feed as row (row.id)}
@@ -503,10 +596,17 @@
                 <span class="tl-ico" data-kind={e.type}>
                   {#if e.type === 'file'}<Paperclip size={13} />
                   {:else if e.type === 'status'}<Sparkles size={13} />
+                  {:else if e.type === 'interaction'}<InteractionIcon
+                      kind={e.kind ?? ''}
+                      direction={e.direction}
+                    />
                   {:else}<MessageSquare size={13} />{/if}
                 </span>
                 <div class="tl-body">
-                  {#if e.type === 'file' && e.href}
+                  {#if e.type === 'interaction'}
+                    <div class="tl-text">{e.body}</div>
+                    {#if e.detail}<div class="tl-detail">{e.detail}</div>{/if}
+                  {:else if e.type === 'file' && e.href}
                     <a
                       class="tl-file"
                       href={resolve(asInternalPath(e.href))}
@@ -519,6 +619,17 @@
                     <div class="tl-text" class:note={e.type === 'note'}>{e.body}</div>
                   {/if}
                   <div class="tl-meta">{metaFor(e)}</div>
+                  {#if e.canDelete}
+                    <div class="tl-act">
+                      <ConfirmAction
+                        action="?/deleteActivity"
+                        hidden={{ interaction: e.interaction ?? '' }}
+                        label={m.common_delete()}
+                        confirmLabel={m.contacts_detail_delete_confirm()}
+                        explain={m.contacts_detail_interaction_delete_explain()}
+                      />
+                    </div>
+                  {/if}
                 </div>
               </div>
             {/if}
@@ -527,6 +638,11 @@
               {m.contacts_detail_activity_empty()}
             </p>
           {/each}
+          {#if data.interactions.more}
+            <p class="v2-sub" style="font-size:12px">
+              {m.contacts_detail_interactions_more({ count: data.interactions.more })}
+            </p>
+          {/if}
         </div>
       </div>
     </div>
@@ -600,7 +716,20 @@
           {/if}
         </span>
       </dd>
+      {#if contact.source}
+        <dt>{m.contacts_detail_rail_source()}</dt>
+        <dd>{sourceLabel(data.sources, contact.source)}</dd>
+      {/if}
+      {#if contact.source_detail}
+        <dt>{m.contacts_detail_rail_sub_source()}</dt>
+        <dd>{contact.source_detail}</dd>
+      {/if}
+      {#if contact.source_ref}
+        <dt>{m.contacts_detail_rail_reference()}</dt>
+        <dd class="v2-num" style="font-size:12px;overflow-wrap:anywhere">{contact.source_ref}</dd>
+      {/if}
       <dt>{m.contacts_detail_rail_added()}</dt>
+
       <dd>{shortDate(contact.created_at)}</dd>
       <dt>{m.common_updated()}</dt>
       <dd>{contact.updated_at ? relativeDays(contact.updated_at) : '—'}</dd>
@@ -715,10 +844,40 @@
   .seg button + button {
     border-left: 1px solid var(--v2-line);
   }
-  .seg button.on {
+  .seg button[aria-pressed='true'] {
     color: var(--v2-ink);
     background: var(--v2-hover);
     font-weight: 600;
+  }
+  .act-head {
+    flex-wrap: wrap;
+  }
+  .composer {
+    margin-bottom: 22px;
+  }
+  .composer .note-form {
+    margin-bottom: 0;
+  }
+  .composer-switch {
+    display: inline-flex;
+    margin-bottom: 8px;
+  }
+  .tl-detail {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--v2-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin-top: 2px;
+  }
+  .tl-act {
+    margin-top: 4px;
+  }
+  @media (max-width: 767px) {
+    .seg button {
+      min-height: 40px;
+      padding: 6px 12px;
+    }
   }
 
   .tl-day {

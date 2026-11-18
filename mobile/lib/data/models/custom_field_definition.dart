@@ -1,4 +1,5 @@
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 
 /// Per-org schema row describing a single custom field on an entity.
 ///
@@ -45,8 +46,13 @@ class CustomFieldDefinition {
     this.recordsMissingValue = 0,
   });
 
+  /// Reads a `CustomFieldDefinitionRow`, the `/api/custom-fields/` row.
+  /// Detail responses send the plain `CustomFieldDefinition`, which is the
+  /// same without `records_missing_value`.
   factory CustomFieldDefinition.fromJson(Map<String, dynamic> json) {
-    final rawOptions = json['options'];
+    final w = api.CustomFieldDefinitionRow.fromJson(json);
+    // A list of `{value, label}`, or `{}` for a field that has none.
+    final rawOptions = w.options;
     final List<CustomFieldOption> parsedOptions = [];
     if (rawOptions is List) {
       for (final o in rawOptions) {
@@ -63,17 +69,17 @@ class CustomFieldDefinition {
       }
     }
     return CustomFieldDefinition(
-      id: json['id']?.toString() ?? '',
-      targetModel: json['target_model'] as String? ?? '',
-      key: json['key'] as String? ?? '',
-      label: json['label'] as String? ?? '',
-      fieldType: CustomFieldType.fromString(json['field_type'] as String?),
+      id: w.id ?? '',
+      targetModel: w.targetModel ?? '',
+      key: w.key ?? '',
+      label: w.label ?? '',
+      fieldType: CustomFieldType.fromString(w.fieldType),
       options: parsedOptions,
-      isRequired: json['is_required'] as bool? ?? false,
-      isFilterable: json['is_filterable'] as bool? ?? false,
-      displayOrder: json['display_order'] as int? ?? 0,
-      isActive: json['is_active'] as bool? ?? true,
-      recordsMissingValue: json['records_missing_value'] as int? ?? 0,
+      isRequired: w.isRequired ?? false,
+      isFilterable: w.isFilterable ?? false,
+      displayOrder: w.displayOrder ?? 0,
+      isActive: w.isActive ?? true,
+      recordsMissingValue: w.recordsMissingValue ?? 0,
     );
   }
 }
@@ -96,7 +102,7 @@ enum CustomFieldType {
 
   const CustomFieldType(this.value);
 
-  /// Matches `FIELD_TYPE_LABEL` in `frontend/src/lib/v2/enums.js`, so the two
+  /// Matches `FIELD_TYPE_LABEL` in `frontend/src/lib/v2/enums.ts`, so the two
   /// clients name the same type the same way.
   String get label => switch (this) {
     text => appL10n.appCustomFieldTypeText,
@@ -120,7 +126,7 @@ enum CustomFieldType {
 /// is a deal).
 ///
 /// Mirrors the custom-field targets in `backend/common/object_registry.py` and
-/// `TARGET_MODEL_LABEL` in `frontend/src/lib/v2/enums.js`.
+/// `TARGET_MODEL_LABEL` in `frontend/src/lib/v2/enums.ts`.
 /// `CustomFieldDefinitionSerializer` rejects anything outside this set, so
 /// offering a wider list would only produce a 400.
 Map<String, String> get customFieldTargets {
@@ -139,7 +145,7 @@ Map<String, String> get customFieldTargets {
 }
 
 /// The module that serves each target; Account and Contact are always on.
-/// Twin of `TARGET_MODULES` in `frontend/src/lib/v2/modules.js`.
+/// Twin of `TARGET_MODULES` in `frontend/src/lib/v2/modules.ts`.
 const Map<String, String> customFieldTargetModules = {
   'Lead': 'leads',
   'Opportunity': 'deals',
@@ -152,6 +158,85 @@ const Map<String, String> customFieldTargetModules = {
 
 String customFieldTargetLabel(String targetModel) =>
     customFieldTargets[targetModel] ?? targetModel;
+
+/// The `custom_field_definitions` a detail response carries beside its record:
+/// the active fields for that record type, in display order. Empty when the
+/// key is absent or malformed.
+///
+/// Nine detail components publish the key with the same type, so the body is
+/// read as `EstimateDetail`, the one that carries little else.
+List<CustomFieldDefinition> customFieldDefinitionsIn(
+  Map<String, dynamic>? body,
+) {
+  if (body == null) return const [];
+  final rows = api.EstimateDetail.fromJson(body).customFieldDefinitions;
+  if (rows == null) return const [];
+  return rows
+      .map((row) => CustomFieldDefinition.fromJson(row.json))
+      .toList(growable: false);
+}
+
+/// The required fields in [definitions] that [values] leaves empty, keyed by
+/// field key, each with the sentence shown beside it.
+///
+/// `common.custom_fields.validate_payload` refuses the same saves; this only
+/// saves the round trip. A checkbox the user never touched counts as `false`,
+/// which is set; [sendableCustomFields] puts that `false` on the wire, as the
+/// web does.
+Map<String, String> missingRequiredCustomFields(
+  List<CustomFieldDefinition> definitions,
+  Map<String, dynamic> values,
+) {
+  return {
+    for (final def in definitions)
+      if (def.isRequired &&
+          def.fieldType != CustomFieldType.checkbox &&
+          _isBlank(values[def.key]))
+        def.key: appL10n.appCustomFieldRequired(def.label),
+  };
+}
+
+/// The sentence for a number field holding text that is not a number, such
+/// as `1.2.3`, or null. The input keeps what was typed, so this is the only
+/// place the mistake shows before the server refuses it.
+String? customFieldNumberError(CustomFieldDefinition def, Object? value) {
+  if (def.fieldType != CustomFieldType.number) return null;
+  if (value is! String || value.trim().isEmpty) return null;
+  return num.tryParse(value.trim()) == null
+      ? appL10n.appCustomFieldNotNumber(def.label)
+      : null;
+}
+
+/// Everything to flag beside a field before saving: unparseable numbers and
+/// missing required fields.
+Map<String, String> customFieldProblems(
+  List<CustomFieldDefinition> definitions,
+  Map<String, dynamic> values,
+) {
+  return {
+    for (final def in definitions)
+      def.key: ?customFieldNumberError(def, values[def.key]),
+    ...missingRequiredCustomFields(definitions, values),
+  };
+}
+
+/// [values] with an explicit `false` for each checkbox they leave unset. An
+/// unticked box sends nothing otherwise, and the server reads a required
+/// checkbox with no value as missing.
+Map<String, dynamic> sendableCustomFields(
+  List<CustomFieldDefinition> definitions,
+  Map<String, dynamic> values,
+) {
+  return {
+    ...values,
+    for (final def in definitions)
+      if (def.fieldType == CustomFieldType.checkbox && values[def.key] == null)
+        def.key: false,
+  };
+}
+
+bool _isBlank(Object? value) =>
+    value == null || (value is String && value.trim().isEmpty);
 
 /// Whether [key] is a key the server will accept.
 ///
@@ -184,7 +269,7 @@ String suggestCustomFieldKey(String label) {
 ///
 /// An existing option's value is stored on every record that uses it, so a
 /// relabel must leave the value untouched. This mirrors `slugifyOptionValue`
-/// in `frontend/src/lib/server/v2/custom-fields.js`, hyphens included: option
+/// in `frontend/src/lib/server/v2/custom-fields.ts`, hyphens included: option
 /// values are free-form on the server and only the field `key` is slug-checked.
 String slugifyOptionValue(String label) => label
     .toLowerCase()

@@ -29,6 +29,13 @@ which is exactly why they're written down here with the file and line that makes
   `Product`, `Payment`, and `InvoiceTemplate` in the same app. This app also owns the anonymous
   client-portal views (see [Multi-tenancy and RLS](multi-tenancy-and-rls.md#portal-tokens)).
 - **Order** (`backend/orders/models.py`), `Order`/`OrderLineItem`.
+- **Interaction** (`backend/interactions/models.py`): a call, meeting, email, WhatsApp message or
+  SMS logged on a record, or an enquiry a lead made. It links to any of a lead, contact, account,
+  deal and ticket, and `home` names the one it was logged on, whose visibility alone decides who
+  sees it. Deleting the home record deletes the interaction; deleting any other linked record only
+  unlinks it. A merge moves it to the surviving record. The lead's `first_response_at`,
+  `first_response_by` and `last_outbound_at` are derived from its outbound interactions, and
+  `Org.lead_response_since` marks when the org started measuring responses.
 
 ## Relationships
 
@@ -127,3 +134,20 @@ directly in the serializer instead of relying on `full_clean()`, `opportunity/se
 own comment. If you add a `clean()` method to a model, verify whether that model's `save()` calls
 `full_clean()` before assuming the rule is enforced anywhere outside a unit test that calls
 `full_clean()` directly.
+
+## Where an org came from
+
+`Org.signup_source` records, once, how the org's creator arrived, for growth analytics. It is never
+read by a permission check or a queryset filter.
+
+- The web app's sign-in page stores the first visit's `utm_source`, `utm_medium` and
+  `utm_campaign` tags and the referring site's host name in an httpOnly `signup_source` cookie
+  (30 days). An existing cookie is kept, so the first visit wins. Google's redirect back to the
+  sign-in page and the app's own pages are never taken as a source.
+- Creating an org sends that value with `POST /api/org/` as `signup_source`, and the cookie is
+  then deleted.
+- The API keeps only those four keys, as short printable text and a bare host name (never a full
+  URL, whose path or query can carry tokens), and adds `client`: `phone` for the mobile app,
+  `web` otherwise. A malformed value is dropped and never blocks the create.
+
+Nothing personal is stored: no address, no email and no full referring URL.

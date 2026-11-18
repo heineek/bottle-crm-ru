@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   import '../../app.css';
@@ -8,6 +8,7 @@
   import Sidebar from '#lib/v2/components/Sidebar.svelte';
   import { isOrgAdmin } from '#lib/admin.js';
   import { objectNavItems } from '#lib/v2/custom-objects.js';
+  import { BILLING_HREF, shellNotice } from '#lib/v2/billing.js';
   import CommandPalette from '#lib/v2/components/CommandPalette.svelte';
   import {
     Search,
@@ -22,9 +23,9 @@
   } from '@lucide/svelte';
   import { tabBar, fabAction } from '#lib/v2/nav.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { LayoutProps } from './$types';
 
-  /** @type {{ data: { counts: Record<string, number>, org: { name: string, terminology?: Record<string, string> | null }, is_organization_admin: boolean, modules: import('#lib/v2/modules.js').ModuleRow[] | null, customObjects: any }, children: import('svelte').Snippet }} */
-  let { data, children } = $props();
+  let { data, children }: LayoutProps = $props();
 
   let paletteOpen = $state(false);
 
@@ -36,22 +37,31 @@
   afterNavigate(() => (menuOpen = false));
 
   /** Focus the panel on open so Escape reaches it and keyboard users land inside. */
-  function autofocus(/** @type {HTMLElement} */ node) {
+  function autofocus(node: HTMLElement) {
     node.focus();
   }
 
-  const ICONS = { Sun, Columns3, LifeBuoy, Receipt, Target, CircleCheck, Plus };
+  const ICONS: Record<string, typeof Sun> = {
+    Sun,
+    Columns3,
+    LifeBuoy,
+    Receipt,
+    Target,
+    CircleCheck,
+    Plus
+  };
 
   /** The tab bar and the button follow the org's switched-on modules. */
   let tabs = $derived(
     tabBar(data.modules, data.org.terminology).map((tab) => ({ ...tab, icon: ICONS[tab.icon] }))
   );
   let fab = $derived(fabAction(data.modules));
+  let billingNotice = $derived(shellNotice(data, page.url.pathname));
 
-  const isActive = (href, exact) =>
+  const isActive = (href: string, exact: boolean | undefined) =>
     exact ? page.url.pathname === href : page.url.pathname.startsWith(href);
 
-  function onkeydown(e) {
+  function onkeydown(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       paletteOpen = !paletteOpen;
@@ -103,6 +113,13 @@
         <Search />
       </button>
     </div>
+
+    {#if billingNotice}
+      <div class="billing-notice" role="status">
+        <span>{billingNotice}</span>
+        <a href={resolve(asInternalPath(BILLING_HREF))}>{m.app_layout_open_billing()}</a>
+      </div>
+    {/if}
 
     {@render children()}
 
@@ -170,3 +187,28 @@
 
   <CommandPalette open={paletteOpen} modules={data.modules} onclose={() => (paletteOpen = false)} />
 </div>
+
+<style>
+  .billing-notice {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 9px var(--v2-pad);
+    border-bottom: 1px solid color-mix(in srgb, var(--v2-rust) 28%, transparent);
+    background: color-mix(in srgb, var(--v2-rust) 9%, transparent);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .billing-notice a {
+    color: var(--v2-rust);
+  }
+  @media (max-width: 768px) {
+    .billing-notice a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+  }
+</style>

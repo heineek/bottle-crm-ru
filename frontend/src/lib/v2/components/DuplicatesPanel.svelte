@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * "Possible duplicates" on a lead, contact or account page, shown only when
@@ -13,26 +13,29 @@
    */
   import { resolve } from '$app/paths';
 
-  /** @type {{
-   *   module: 'leads' | 'contacts' | 'accounts',
-   *   id: string,
-   *   canDelete: boolean,
-   *   duplicates: Array<{ id: string, name: string, matched_on: string, can_delete: boolean }>
-   * }} */
-  let { module, id, canDelete, duplicates } = $props();
+  let {
+    module,
+    id,
+    canDelete,
+    duplicates
+  }: {
+    module: 'leads' | 'contacts' | 'accounts';
+    id: string;
+    canDelete: boolean;
+    duplicates: Array<{ id: string; name: string; matched_on: string; can_delete: boolean }>;
+  } = $props();
 
   // Said once under the list, and only when no row can be merged: repeated
   // beside every row it reads as a wall of refusals. The phone does the same.
-  /** @type {Record<string, () => string>} */
-  const FIELD = {
+  const FIELD: Record<string, () => string> = {
     email: m.app_dup_field_email,
     phone: m.app_dup_field_phone,
     name: m.app_dup_field_name,
     company: m.app_dup_field_company,
     website: m.app_dup_field_website
   };
-  /** The API's `matched_on` reasons as words. @param {string | string[]} reasons */
-  const same = (reasons) =>
+  /** The API's `matched_on` reasons as words. */
+  const same = (reasons: string | string[]) =>
     m.app_dup_same({
       fields: (Array.isArray(reasons) ? reasons : [reasons])
         .map((r) => FIELD[r]?.() ?? r)

@@ -3,6 +3,8 @@ import '../../l10n/l10n.dart';
 import '../../routes/app_routes.dart';
 import '../../routes/record_routes.dart';
 import '../../services/run_time.dart';
+import '../api/schema.g.dart' as api;
+import 'project.dart' show monthLabel;
 
 /// An in-app notification, as `/api/notifications/` returns it.
 ///
@@ -24,6 +26,16 @@ class AppNotification {
     this.reason,
     this.ruleNames,
     this.windowStart,
+    this.budgetKind,
+    this.budgetPercent,
+    this.projectName,
+    this.estimateNumber,
+    this.clientName,
+    this.startedProjectId,
+    this.depositInvoiceId,
+    this.retainerMonth,
+    this.invoiceNumber,
+    this.leadSource,
   });
 
   final String id;
@@ -51,6 +63,28 @@ class AppNotification {
   final String? reason;
   final List<String>? ruleNames;
   final DateTime? windowStart;
+
+  /// From `data`, for `project.budget`: `hours` or `amount`, 80 or 100, and
+  /// the project's name.
+  final String? budgetKind;
+  final int? budgetPercent;
+  final String? projectName;
+
+  /// From `data`, for `estimate.accepted` and `estimate.declined`: the
+  /// estimate, the name the client typed (or the estimate's client), and on
+  /// acceptance what the server made from it.
+  final String? estimateNumber;
+  final String? clientName;
+  final String? startedProjectId;
+  final String? depositInvoiceId;
+
+  /// From `data`, for `project.retainer_invoice`: the month (`YYYY-MM`) and
+  /// the invoice's number. The project's name is [projectName].
+  final String? retainerMonth;
+  final String? invoiceNumber;
+
+  /// From `data`, for the `lead.*` verbs: the lead's source label.
+  final String? leadSource;
 
   bool get isUnread => readAt == null;
   String get displayActorName => verb.startsWith('support.')
@@ -81,18 +115,32 @@ class AppNotification {
   /// Product support resolves to `/help/<id>`. The `/support/<id>` spelling is
   /// accepted too, because that is what the producer wrote before the page was
   /// renamed, for the same reason `/cases/` is still accepted above. The
-  /// automation verbs' web paths (a record, or the rules) map to their screens
-  /// only with a UUID id and a valid object key.
-  String? get destinationPath {
-    final ticket = ticketId;
-    if (ticket != null) return '/tickets/$ticket';
-    final value = link;
+  /// automation verbs' web paths (a record, or the rules) and an estimate
+  /// answer's (a project, an invoice or the estimates list) map to their
+  /// screens only with a UUID id and a valid object key.
+  String? get destinationPath => destinationFor(link);
+
+  /// [destinationPath] for a bare link, which is also what a push carries.
+  static String? destinationFor(String? value) {
     if (value == null) return null;
+    final ticket = RegExp(
+      r'^/(?:cases|tickets)/([^/?#]+)/?$',
+    ).firstMatch(value)?.group(1);
+    if (ticket != null) return '/tickets/$ticket';
     final help = RegExp(r'^/(?:support|help)/([^/?#]+)/?$').firstMatch(value);
     if (help != null) return '/help/${help.group(1)}';
     // Exactly the paths the engine writes, as the web's `resolvedLink` reads
     // them: no trailing slash, no case folding.
     if (value == '/settings/automation') return AppRoutes.settingsAutomation;
+    if (value == '/invoices/estimates') return AppRoutes.estimates;
+    final invoice = RegExp(
+      r'^/invoices/([^/?#]+)$',
+    ).firstMatch(value)?.group(1);
+    if (invoice != null) {
+      return ApiConfig.isUuid(invoice)
+          ? '${AppRoutes.invoices}/$invoice'
+          : null;
+    }
     final rule = RegExp(
       r'^/settings/automation/([^/?#]+)$',
     ).firstMatch(value)?.group(1);
@@ -106,20 +154,17 @@ class AppNotification {
       return _record('obj:${custom.group(1)}', custom.group(2)!);
     }
     final record = RegExp(
-      r'^/(leads|contacts|accounts|pipeline|tasks)/([^/?#]+)$',
+      r'^/(leads|contacts|accounts|pipeline|tasks|projects)/([^/?#]+)$',
     ).firstMatch(value);
     if (record == null) return null;
     return _record(_recordKinds[record.group(1)]!, record.group(2)!);
   }
 
-  /// The feed's actor is `CommentUserSerializer`: `{id, user_details: {email,
-  /// profile_pic}}`, with no name. A name is read first in case one is added.
-  static String _actorName(Map actor) {
-    String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
-    final details = actor['user_details'];
-    return text(actor['name']) ??
-        (details is Map ? text(details['email']) : null) ??
-        appL10n.appNotificationSomeone;
+  /// The feed's actor is a `CommentUser`: `{id, user_details: {email,
+  /// profile_pic}}`, with no name.
+  static String _actorName(api.CommentUser actor) {
+    final email = actor.userDetails?.email ?? '';
+    return email.isNotEmpty ? email : appL10n.appNotificationSomeone;
   }
 
   static String? _record(String kind, String id) =>
@@ -131,6 +176,7 @@ class AppNotification {
     'accounts': 'account',
     'pipeline': 'deal',
     'tasks': 'task',
+    'projects': 'project',
   };
 
   /// The automation verbs' sentence, the web's `notificationText`, or null
@@ -164,11 +210,95 @@ class AppNotification {
     return null;
   }
 
+  /// The `project.budget` sentence, as the web's `notificationText` writes
+  /// it, or null for any other verb or for `data` of the wrong type.
+  String? get budgetText {
+    if (verb != 'project.budget') return null;
+    final name = projectName, kind = budgetKind, percent = budgetPercent;
+    if (name == null || name.trim().isEmpty) return null;
+    if (percent == null || percent <= 0) return null;
+    if (kind != 'hours' && kind != 'amount') return null;
+    final l10n = appL10n;
+    final hours = kind == 'hours';
+    if (percent >= 100) {
+      return hours
+          ? l10n.appNotifBudgetAllHours(name)
+          : l10n.appNotifBudgetAllAmount(name);
+    }
+    return hours
+        ? l10n.appNotifBudgetPercentHours(name, percent)
+        : l10n.appNotifBudgetPercentAmount(name, percent);
+  }
+
+  /// The sentence for a client's answer to an estimate, as the web's
+  /// `estimateNotificationText` writes it, or null for any other verb or without the
+  /// estimate's number.
+  String? get estimateText {
+    final accepted = verb == 'estimate.accepted';
+    if (!accepted && verb != 'estimate.declined') return null;
+    final number = estimateNumber?.trim() ?? '';
+    if (number.isEmpty) return null;
+    final client = clientName?.trim() ?? '';
+    final l10n = appL10n;
+    final who = client.isEmpty ? l10n.appNotifEstimateClient : client;
+    if (!accepted) return l10n.appNotifEstimateDeclined(who, number);
+    return [
+      l10n.appNotifEstimateAccepted(who, number),
+      if ((startedProjectId ?? '').isNotEmpty) l10n.appNotifProjectStarted,
+      if ((depositInvoiceId ?? '').isNotEmpty) l10n.appNotifDepositDrafted,
+    ].join(', ');
+  }
+
+  /// The `project.retainer_invoice` sentence, as the web writes it, or null
+  /// for any other verb or for `data` of the wrong type.
+  String? get retainerText {
+    if (verb != 'project.retainer_invoice') return null;
+    final number = invoiceNumber?.trim() ?? '';
+    final name = projectName?.trim() ?? '';
+    final month = monthLabel(retainerMonth);
+    if (number.isEmpty || name.isEmpty || month == null) return null;
+    return appL10n.appNotifRetainerInvoice(number, month, name);
+  }
+
   /// The line under a message naming the rule that sent it.
   String? get automationSource =>
       verb == 'automation.message' && automationText() != null
       ? appL10n.appAutomationFromRule(ruleName ?? '')
       : null;
+
+  /// The sentence a lead alert reads as, or null for any other verb. The
+  /// name is the row's own; the source label is `data.source`, absent when
+  /// the lead came from nowhere in particular.
+  String? get leadText {
+    final l10n = appL10n;
+    final name = entityName ?? l10n.appNotifLeadFallback;
+    final from = (leadSource ?? '').isEmpty ? '' : ' ($leadSource)';
+    return switch (verb) {
+      'lead.assigned' => l10n.appNotifLeadAssigned(name, from),
+      'lead.created' => l10n.appNotifLeadCreated(name, from),
+      'lead.enquired' => '${l10n.appNotifLeadEnquired(name)}$from',
+      'lead.waiting' => l10n.appNotifLeadWaiting(name),
+      _ => null,
+    };
+  }
+
+  /// The sentence a custom-record alert reads as (a match, an open seat), or
+  /// null for any other verb. The link is `/objects/<key>/<id>`.
+  String? get recordAlertText {
+    final l10n = appL10n;
+    final name = entityName ?? '';
+    return switch (verb) {
+      'real_estate.match' =>
+        name.isNotEmpty
+            ? l10n.appNotifRecordMatch(name)
+            : l10n.appNotifRecordMatchUnnamed,
+      'education.seat_open' =>
+        name.isNotEmpty
+            ? l10n.appNotifSeatOpen(name)
+            : l10n.appNotifSeatOpenUnnamed,
+      _ => null,
+    };
+  }
 
   /// "mentioned you on" / "commented on" for the verbs that exist, and a
   /// readable fallback for the ones that do not: `case.sla_breached` reads as
@@ -184,28 +314,26 @@ class AppNotification {
     return verb.replaceFirst(RegExp(r'^[^.]+\.'), '').replaceAll('_', ' ');
   }
 
+  /// Reads a `Notification`. Its `data` is free-form, so each key is checked
+  /// for the type the producer writes.
   factory AppNotification.fromJson(Map<String, dynamic> json) {
-    final actor = json['actor'];
-    final data = json['data'];
+    final w = api.Notification.fromJson(json);
+    final actor = w.actor;
+    final data = w.data;
     String? text(String key) =>
-        data is Map && data[key] is String ? data[key] as String : null;
-    final rules = data is Map ? data['rules'] : null;
+        data != null && data[key] is String ? data[key] as String : null;
+    final rules = data?['rules'];
     final windowStart = text('window_start');
+    final percent = data?['percent'];
     return AppNotification(
-      id: json['id']?.toString() ?? '',
-      verb: json['verb']?.toString() ?? '',
-      actorName: actor is Map ? _actorName(actor) : null,
-      entityName: json['entity_name'] as String?,
-      commentExcerpt: data is Map<String, dynamic>
-          ? data['comment_excerpt'] as String?
-          : null,
-      link: json['link'] as String?,
-      readAt: json['read_at'] != null
-          ? DateTime.tryParse(json['read_at'].toString())
-          : null,
-      createdAt:
-          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
-          DateTime.now(),
+      id: w.id ?? '',
+      verb: w.verb ?? '',
+      actorName: actor == null ? null : _actorName(actor),
+      entityName: w.entityName,
+      commentExcerpt: text('comment_excerpt'),
+      link: w.link,
+      readAt: DateTime.tryParse(w.readAt ?? ''),
+      createdAt: DateTime.tryParse(w.createdAt ?? '') ?? DateTime.now(),
       message: text('message'),
       ruleName: text('rule'),
       reason: text('reason'),
@@ -213,6 +341,18 @@ class AppNotification {
           ? List<String>.unmodifiable(rules)
           : null,
       windowStart: windowStart == null ? null : DateTime.tryParse(windowStart),
+      budgetKind: text('kind'),
+      budgetPercent: percent is num && percent.isFinite
+          ? percent.round()
+          : null,
+      projectName: text('project'),
+      estimateNumber: text('estimate_number'),
+      clientName: text('client_name'),
+      startedProjectId: text('project_id'),
+      depositInvoiceId: text('deposit_invoice_id'),
+      retainerMonth: text('month'),
+      invoiceNumber: text('invoice_number'),
+      leadSource: text('source'),
     );
   }
 
@@ -230,12 +370,23 @@ class AppNotification {
     reason: reason,
     ruleNames: ruleNames,
     windowStart: windowStart,
+    budgetKind: budgetKind,
+    budgetPercent: budgetPercent,
+    projectName: projectName,
+    estimateNumber: estimateNumber,
+    clientName: clientName,
+    startedProjectId: startedProjectId,
+    depositInvoiceId: depositInvoiceId,
+    retainerMonth: retainerMonth,
+    invoiceNumber: invoiceNumber,
+    leadSource: leadSource,
   );
 }
 
-/// Verbs the backend dispatches. CRM tickets, platform support and
-/// automation rules are the current producers. Anything else is rendered
-/// plainly rather than given copy for a feature that does not exist.
+/// Verbs the backend dispatches. CRM tickets, platform support, automation
+/// rules, project budgets, clients answering estimates and lead alerts are the
+/// current producers. Anything else is rendered plainly rather than given copy for a
+/// feature that does not exist.
 const List<String> producedVerbs = [
   'case.mentioned',
   'case.commented',
@@ -245,4 +396,14 @@ const List<String> producedVerbs = [
   'automation.failed',
   'automation.paused',
   'automation.limit',
+  'project.budget',
+  'estimate.accepted',
+  'estimate.declined',
+  'project.retainer_invoice',
+  'lead.assigned',
+  'lead.created',
+  'lead.enquired',
+  'lead.waiting',
+  'real_estate.match',
+  'education.seat_open',
 ];

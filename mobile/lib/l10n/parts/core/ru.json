@@ -40,5 +40,21 @@
   "profileLanguageRow": "Язык",
   "orgDefaultLanguageLabel": "Язык по умолчанию",
   "orgDefaultLanguageHint": "Для участников, которые не выбрали свой язык, и для всех писем и PDF, которые получают ваши клиенты.",
-  "commonItemsCount": "{count, plural, one{{count} элемент} few{{count} элемента} many{{count} элементов} other{{count} элемента}}"
+  "commonItemsCount": "{count, plural, one{{count} элемент} few{{count} элемента} many{{count} элементов} other{{count} элемента}}",
+  "coreAfterTapGreeting": "Здравствуйте!",
+  "coreAfterTapGreetingNamed": "Здравствуйте, {name}!",
+  "coreRecordDetailEditNote": "Изменить заметку",
+  "coreRecordDetailEditNoteHint": "Измените заметку...",
+  "coreRecordDetailDeleteNote": "Удалить заметку",
+  "coreRecordDetailDeleteNoteTitle": "Удалить заметку?",
+  "coreRecordDetailCannotUndo": "Это действие нельзя отменить.",
+  "coreRecordDetailNoteOptions": "Действия с заметкой",
+  "coreCustomFieldsDisplayNotSet": "Не указано",
+  "corePushBannerDismiss": "Скрыть",
+  "corePushBannerOpen": "Открыть",
+  "corePushPromptTitle": "Получать оповещения о лидах",
+  "corePushPromptBody": "Разрешите уведомления, чтобы сразу узнавать о лидах, назначенных на вас.",
+  "corePushPromptNotNow": "Не сейчас",
+  "corePushPromptAllow": "Разрешить уведомления",
+  "coreCustomFieldsSectionHeading": "Дополнительные поля"
 }

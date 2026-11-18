@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * One rule's runs from the last 30 days, newest first. Each opens to what
    * its steps did. Read only. Every text here is rendered as text.
@@ -13,29 +13,26 @@
   import { runTime } from '#lib/v2/format.js';
   import { ChevronLeft, ChevronDown } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
-  let RUN = $derived(
-    /** @type {Record<string, {label: string, tone: 'moss'|'rust'|'slate'}>} */ ({
-      done: { label: m.settings_automation_run_done(), tone: 'moss' },
-      failed: { label: m.settings_automation_run_failed(), tone: 'rust' },
-      skipped: { label: m.settings_automation_run_skipped(), tone: 'slate' }
-    })
-  );
-  let STEP = $derived(
-    /** @type {Record<string, string>} */ ({
-      done: m.settings_automation_run_done(),
-      undone: m.settings_automation_step_undone(),
-      failed: m.settings_automation_run_failed(),
-      skipped: m.settings_automation_run_skipped()
-    })
-  );
+  const RUN = {
+    done: { label: m.settings_automation_run_done(), tone: 'moss' },
+    failed: { label: m.settings_automation_run_failed(), tone: 'rust' },
+    skipped: { label: m.settings_automation_run_skipped(), tone: 'slate' }
+  } as Record<string, { label: string; tone: 'moss' | 'rust' | 'slate' }>;
+  const STEP = {
+    done: m.settings_automation_run_done(),
+    undone: m.settings_automation_step_undone(),
+    failed: m.settings_automation_run_failed(),
+    skipped: m.settings_automation_run_skipped()
+  } as Record<string, string>;
 
   let runs = $derived(data.runs ?? []);
-  let hasNewer = $derived(data.offset > 0);
-  let hasOlder = $derived(data.offset + data.pageSize < data.count);
+  // A member's page has no runs, and shows none of this.
+  let hasNewer = $derived((data.offset ?? 0) > 0);
+  let hasOlder = $derived((data.offset ?? 0) + (data.pageSize ?? 0) < (data.count ?? 0));
   let rulePath = $derived(
     data.rule ? `/settings/automation/${data.rule.id}` : '/settings/automation'
   );

@@ -1,5 +1,12 @@
 from django.urls import path
 
+from common.views.app_views import (
+    AppInstallView,
+    AppListView,
+    AppPreviewView,
+    AppRemoveView,
+    AppUpgradeView,
+)
 from common.views.attachment_views import AttachmentDownloadView
 from common.views.audit_log_views import SecurityAuditLogListView
 from common.views.auth_views import (
@@ -22,6 +29,7 @@ from common.views.custom_field_views import (
     CustomFieldDefinitionListCreateView,
 )
 from common.views.dashboard_views import ActivityListView, ApiHomeView, ApiTodayView
+from common.views.device_views import DeviceTokenView
 from common.views.document_views import (
     DocumentDetailView,
     DocumentDownloadView,
@@ -135,6 +143,9 @@ urlpatterns = [
     ),
     path("org/<uid:pk>/", OrgUpdateView.as_view()),
     path("profile/", ProfileView.as_view()),
+    # The phone app's push token for the signed-in member. Session-only: on
+    # the credential deny-list in common/scopes.py.
+    path("devices/", DeviceTokenView.as_view(), name="devices"),
     # Personal Access Tokens (REST API), a user manages ONLY their own
     path(
         "profile/tokens/",
@@ -222,4 +233,11 @@ urlpatterns = [
     path("packs/", PackListView.as_view(), name="pack_list"),
     path("packs/sample-data/", PackSampleDataView.as_view(), name="pack_sample_data"),
     path("packs/<str:pack_id>/apply/", PackApplyView.as_view(), name="pack_apply"),
+    # Industry apps: any member lists; preview and the three actions are
+    # admin-only (common/views/app_views.py).
+    path("apps/", AppListView.as_view(), name="app_list"),
+    path("apps/<str:app_id>/preview/", AppPreviewView.as_view(), name="app_preview"),
+    path("apps/<str:app_id>/install/", AppInstallView.as_view(), name="app_install"),
+    path("apps/<str:app_id>/upgrade/", AppUpgradeView.as_view(), name="app_upgrade"),
+    path("apps/<str:app_id>/remove/", AppRemoveView.as_view(), name="app_remove"),
 ]

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   /**
@@ -23,9 +23,24 @@
   import { mergeSideLabel } from '#lib/v2/merge-label.js';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
 
-  /** @typedef {{ id: string, name: string, can_delete: boolean, fields: Array<{ label: string, value: string }> }} Side */
-  /** @type {{ data: { module: 'leads' | 'contacts' | 'accounts', singular: string, current: Side, other: Side }, form: any }} */
-  let { data, form } = $props();
+  type Side = {
+    id: string;
+    name: string;
+    can_delete: boolean;
+    fields: Array<{ label: string; value: string }>;
+  };
+  let {
+    data,
+    form
+  }: {
+    data: {
+      module: 'leads' | 'contacts' | 'accounts';
+      singular: string;
+      current: Side;
+      other: Side;
+    };
+    form: { error?: string } | null | undefined;
+  } = $props();
 
   let { module, current, other } = $derived(data);
 
@@ -39,13 +54,14 @@
 
   let kept = $derived(keep === current.id ? current : other);
   let dropped = $derived(keep === current.id ? other : current);
-  /** @param {Side} side */
-  const keepable = (side) => (side.id === current.id ? other : current).can_delete;
+  const keepable = (side: Side) => (side.id === current.id ? other : current).can_delete;
   let possible = $derived(keepable(current) || keepable(other));
-  /** How the copy names a record; see `mergeSideLabel`. @param {Side} side */
-  const label = (side) => mergeSideLabel(side, current, other);
-  /** @type {Record<string, { title: () => string, crumb: () => string, which: () => string, impossible: () => string }>} */
-  const TEXT = {
+  /** How the copy names a record; see `mergeSideLabel`. */
+  const label = (side: Side) => mergeSideLabel(side, current, other);
+  const TEXT: Record<
+    string,
+    { title: () => string; crumb: () => string; which: () => string; impossible: () => string }
+  > = {
     leads: {
       title: m.app_merge_title_leads,
       crumb: m.app_merge_crumb_leads,

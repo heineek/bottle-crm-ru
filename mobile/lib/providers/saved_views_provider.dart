@@ -2,24 +2,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../services/api_service.dart';
 
-/// The six lists a saved view can belong to, by the name the API uses.
+/// A list a saved view can belong to, by the `module` the API files it under:
+/// the six built-in lists, or `obj:<key>` for a custom object's records.
 ///
 /// Mirrors `LISTS` in `backend/common/saved_views.py` and `SAVED_VIEW_KEYS` in
-/// `frontend/src/lib/server/v2/saved-views.js`.
-enum SavedViewList {
-  leads('leads'),
-  contacts('contacts'),
-  accounts('accounts'),
-  deals('opportunities'),
-  tickets('cases'),
-  invoices('invoices');
-
+/// `frontend/src/lib/server/v2/saved-views.ts`.
+class SavedViewList {
   const SavedViewList(this.module);
+
+  /// The list of one custom object's records.
+  factory SavedViewList.object(String key) => SavedViewList('obj:$key');
+
+  static const leads = SavedViewList('leads');
+  static const contacts = SavedViewList('contacts');
+  static const accounts = SavedViewList('accounts');
+  static const deals = SavedViewList('opportunities');
+  static const tickets = SavedViewList('cases');
+  static const invoices = SavedViewList('invoices');
 
   /// The `module` the API files a view under.
   final String module;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SavedViewList && other.module == module;
+
+  @override
+  int get hashCode => module.hashCode;
 }
 
 /// One saved view: a name and the list query parameters it puts back.
@@ -33,21 +45,17 @@ class SavedView {
     required this.filters,
   });
 
+  /// Reads a `SavedView`. The API stores every filter as a list of text, a
+  /// single value included.
   factory SavedView.fromJson(Map<String, dynamic> json) {
-    final raw = json['filters'];
-    final filters = <String, List<String>>{};
-    if (raw is Map) {
-      raw.forEach((key, value) {
-        final values = value is List
-            ? value.map((v) => '$v').toList(growable: false)
-            : ['$value'];
-        if (values.isNotEmpty) filters['$key'] = values;
-      });
-    }
+    final w = api.SavedView.fromJson(json);
     return SavedView(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      filters: filters,
+      id: w.id ?? '',
+      name: w.name ?? '',
+      filters: {
+        for (final MapEntry(:key, :value) in (w.filters ?? const {}).entries)
+          if (value.isNotEmpty) key: value,
+      },
     );
   }
 
@@ -61,7 +69,7 @@ class SavedView {
   /// shows the parameters in [keys] and takes more than one value only for
   /// those in [multi]. Counted in values, not keys: three statuses on a
   /// screen that reads one is two it leaves out. The web counts the same way
-  /// (`droppedValues` in `frontend/src/lib/v2/saved-views.js`).
+  /// (`droppedValues` in `frontend/src/lib/v2/saved-views.ts`).
   int dropped(Set<String> keys, Set<String> multi) {
     var count = 0;
     filters.forEach((key, values) {
@@ -128,16 +136,13 @@ class SavedViewsNotifier extends AsyncNotifier<SavedViewsState> {
     if (!response.success || response.data == null) {
       throw Exception(response.message ?? appL10n.appMsgCouldNotLoadSavedViews);
     }
-    final body = response.data!;
-    final rows = body['saved_views'];
+    final body = api.SavedViewListResponse.fromJson(response.data!);
     return SavedViewsState(
-      views: rows is List
-          ? rows
-                .whereType<Map<String, dynamic>>()
-                .map(SavedView.fromJson)
-                .toList(growable: false)
-          : const [],
-      limit: (body['limit'] as num?)?.toInt(),
+      views: [
+        for (final row in body.savedViews ?? const <api.SavedView>[])
+          SavedView.fromJson(row.json),
+      ],
+      limit: body.limit,
     );
   }
 

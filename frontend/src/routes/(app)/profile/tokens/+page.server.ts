@@ -1,0 +1,75 @@
+import { fail } from '@sveltejs/kit';
+import { listMyTokens, createToken, revokeMyToken } from '#lib/server/v2/tokens.js';
+import { readableError } from '#lib/server/v2/form-errors.js';
+import { expiryFromChoice, scopesFromChoice } from '#lib/v2/token-rules.js';
+import { m } from '#lib/paraglide/messages.js';
+import { apiStatus } from '#lib/api-errors.js';
+import type { Actions, PageServerLoad } from './$types';
+
+/**
+ * Your own API tokens: issue one, see what you have, revoke one.
+ *
+ * Deliberately NOT the admin oversight page under /settings/api-tokens. That
+ * one reads `/api/org/tokens/` and 403s a member, which is why a member had no
+ * way to issue themselves a token in either client even though
+ * `/api/profile/tokens/` has always been open to them. This page reads and
+ * writes only the self-scoped endpoints, which filter on
+ * `profile=request.profile` server-side.
+ *
+ * No role check here, and none is wanted: every member may hold their own
+ * token, and the backend already answers only their rows. Adding a gate would
+ * invent a rule the API does not have.
+ */
+export const load: PageServerLoad = async ({ cookies }) => {
+  return await listMyTokens({ cookies });
+};
+
+export const actions: Actions = {
+  /**
+   * Issue one for yourself. The server sets the owner from the JWT, so there
+   * is no "create on behalf of" to guard against. The raw value comes back
+   * once, is rendered once, and is never logged or stored.
+   */
+  create: async ({ cookies, request }) => {
+    const form = await request.formData();
+    const name = form.get('name')?.toString().trim();
+    const expires_at = expiryFromChoice(form.get('expiry')?.toString());
+    const scopes = scopesFromChoice(form.get('access')?.toString());
+    if (!name) return fail(400, { create: { error: m.profile_tokens_err_name() } });
+
+    try {
+      const res = await createToken({ cookies }, { name, expires_at, scopes });
+      return {
+        created: {
+          name: res.name ?? name,
+          token_prefix: res.token_prefix,
+          token: res.token,
+          expires_at: res.expires_at ?? null
+        }
+      };
+    } catch (err) {
+      return fail(400, {
+        create: { error: readableError(err, m.profile_tokens_err_create()) }
+      });
+    }
+  },
+
+  /**
+   * Revoke one of your own. A 404 means the id is not yours, which the
+   * self-scoped endpoint answers rather than revealing that it exists.
+   */
+  revoke: async ({ cookies, request }) => {
+    const form = await request.formData();
+    const id = form.get('id')?.toString();
+    if (!id) return fail(400, { error: m.profile_tokens_err_which() });
+    try {
+      await revokeMyToken({ cookies }, id);
+    } catch (err) {
+      if (apiStatus(err) === 404) {
+        return fail(404, { error: m.profile_tokens_err_not_yours() });
+      }
+      return fail(400, { error: readableError(err, m.profile_tokens_err_revoke()) });
+    }
+    return { revoked: id };
+  }
+};

@@ -153,5 +153,7 @@
   "tasksBoardCardAdded": "Карточка добавлена в «{lane}».",
   "tasksBoardAddCardFailed": "Не удалось добавить карточку.",
   "tasksBoardAddCard": "Добавить карточку",
-  "tasksBoardTryAgain": "Повторить"
+  "tasksBoardTryAgain": "Повторить",
+  "tasksRelatedKindProject": "Проект",
+  "tasksDetailSelectedProject": "Выбранный проект"
 }

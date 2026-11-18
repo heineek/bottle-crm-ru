@@ -51,7 +51,8 @@ const corePaths = {
   '/more/settings/api-tokens',
   '/more/settings/organization',
   '/more/settings/organization/edit',
-  '/more/settings/modules',
+  '/more/settings/apps',
+  '/more/settings/lead-sources',
   '/more/objects/:key',
   '/more/objects/:key/new',
   '/more/objects/:key/:id',
@@ -110,11 +111,15 @@ void main() {
     expect(keys('/accounts/:id/statement'), ['invoices']);
     expect(keys('/accounts/42/statement'), ['invoices']);
     expect(keys('/documents/new'), ['documents']);
+    expect(keys('/projects'), ['projects']);
+    expect(keys('/projects/new'), ['projects']);
+    expect(keys('/projects/:id/edit'), ['projects']);
     expect(needFor('/accounts/:id'), isNull);
     expect(needFor('/accounts'), isNull);
     expect(needFor('/accounts/:id/edit'), isNull);
     expect(needFor('/more/settings/web-forms'), isNull);
-    expect(needFor('/more/settings/modules'), isNull);
+    expect(needFor('/more/settings/apps'), isNull);
+    expect(needFor('/more/settings/lead-sources'), isNull);
     expect(needFor('/dashboard'), isNull);
     expect(needFor('/leadsx'), isNull);
     expect(needFor('/invoices/products')!.any, isTrue);

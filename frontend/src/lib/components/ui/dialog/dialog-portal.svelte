@@ -1,7 +1,7 @@
-<script>
-  import { Dialog as DialogPrimitive } from 'bits-ui';
+<script lang="ts">
+  import { Dialog as DialogPrimitive, type DialogPortalProps } from 'bits-ui';
 
-  let { ...restProps } = $props();
+  let { ...restProps }: DialogPortalProps = $props();
 </script>
 
 <DialogPrimitive.Portal {...restProps} />

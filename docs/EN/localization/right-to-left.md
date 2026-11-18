@@ -6,8 +6,8 @@ sides. This page lists what is already in place and what a right-to-left languag
 
 ## What is in place {#what-is-in-place}
 
-- **Web.** `hooks.server.js` sets `dir` on `<html>` from `textDirection(locale)` in
-  `src/lib/i18n/locale.js`, which knows the right-to-left languages (`ar`, `fa`, `he`, `ur` and a
+- **Web.** `hooks.server.ts` sets `dir` on `<html>` from `textDirection(locale)` in
+  `src/lib/i18n/locale.ts`, which knows the right-to-left languages (`ar`, `fa`, `he`, `ur` and a
   few more). The browser then mirrors text alignment, inline flow, flex rows, grid columns and
   scrollbars by itself.
 - **Mobile.** `flutter_localizations` sets `Directionality` from the app locale, so `Row`,

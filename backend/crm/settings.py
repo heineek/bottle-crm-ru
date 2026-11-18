@@ -83,6 +83,8 @@ INSTALLED_APPS = [
     "webforms",
     "webhooks",
     "automation",
+    "interactions",
+    "projects",
     # "teams",  # Merged into common app
 ]
 
@@ -431,9 +433,9 @@ REST_FRAMEWORK = {
     "NUM_PROXIES": int(os.environ["NUM_PROXIES"])
     if os.environ.get("NUM_PROXIES")
     else None,
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "DEFAULT_PAGINATION_CLASS": "common.pagination.CappedLimitOffsetPagination",
     "PAGE_SIZE": 10,
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "common.custom_openapi.AutoSchema",
     # Anonymous endpoints only (issue #634 started it). There is deliberately
     # no DEFAULT_THROTTLE_CLASSES entry: setting one would rate-limit every
     # authenticated endpoint in the app, which nobody asked for and which would
@@ -474,6 +476,10 @@ REST_FRAMEWORK = {
         "portal_login_org": os.environ.get("PORTAL_LOGIN_THROTTLE_ORG", "100/hour"),
         # Contact and lead spreadsheet import (preview and commit), per user.
         "csv_import": os.getenv("IMPORT_THROTTLE", "30/minute"),
+        # Lead webhook posts, per webhook across every caller
+        # (`leads.views.intake_public_views`).
+        "lead_intake_minute": os.environ.get("LEAD_INTAKE_THROTTLE_MINUTE", "120/min"),
+        "lead_intake_day": os.environ.get("LEAD_INTAKE_THROTTLE_DAY", "5000/day"),
     },
 }
 
@@ -549,6 +555,20 @@ if _bad_account_ids:
         "commas, for example 123456789012,210987654321, or leave it unset."
     )
 
+# Generated lead and ticket addresses (`cases.inbound.generated`). With a domain
+# set, admins can have an address made under it, and every generated address
+# is received through one SES receipt rule whose SNS topic posts to the
+# catch-all webhook, which accepts only this topic. Both empty: admins type
+# their own addresses, and the catch-all answers 404.
+INBOUND_EMAIL_DOMAIN = os.environ.get("INBOUND_EMAIL_DOMAIN", "").strip().lower()
+INBOUND_EMAIL_TOPIC_ARN = os.environ.get("INBOUND_EMAIL_TOPIC_ARN", "").strip()
+# Where that rule's S3 action stores emails too large for SNS (over 150 KB).
+# The catch-all reads stored emails from this bucket only; empty: none.
+INBOUND_EMAIL_S3_BUCKET = os.environ.get("INBOUND_EMAIL_S3_BUCKET", "").strip()
+# Emails one inbound address accepts in 24 hours; past it, mail is refused and
+# not recorded (`cases.inbound.limits`).
+INBOUND_EMAIL_DAILY_LIMIT = int(os.environ.get("INBOUND_EMAIL_DAILY_LIMIT", "300"))
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "BottleCRM API",
     "DESCRIPTION": "CRM for AI and People",
@@ -569,7 +589,7 @@ SPECTACULAR_SETTINGS = {
         "CaseStatusEnum": "common.utils.STATUS_CHOICE",
         "SolutionStatusEnum": "cases.models.Solution.STATUS_CHOICES",
         "DocumentStatusEnum": "common.models.Document.DOCUMENT_STATUS_CHOICE",
-        "InvoiceStatusEnum": "invoices.models.Invoice.INVOICE_STATUS",
+        "InvoiceStatusEnum": "invoices.models.INVOICE_STATUS",
         "ContactFormStatusEnum": "common.models.ContactFormSubmission.STATUS_CHOICES",
         "LeadStatusEnum": "common.utils.LEAD_STATUS",
     },
@@ -689,6 +709,15 @@ if not IS_DEV_ENV:
 ORG_API_KEY_AUTH_ENABLED = os.environ.get(
     "DJANGO_ORG_API_KEY_AUTH", "true"
 ).strip().lower() not in ("false", "0", "no", "off")
+
+# Requests a personal token or the org key may make per minute. Unset, blank or
+# below 1 means no ceiling from this setting. The count lives in the default
+# cache, so it holds across workers only when they share one (CACHE_URL).
+_token_rate = os.environ.get("API_TOKEN_RATE_PER_MINUTE", "").strip()
+API_TOKEN_RATE_PER_MINUTE = int(_token_rate) if _token_rate else None
+if API_TOKEN_RATE_PER_MINUTE is not None and API_TOKEN_RATE_PER_MINUTE < 1:
+    API_TOKEN_RATE_PER_MINUTE = None
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5181")
 
 # Every link this system puts in an email is built from this one value, via
@@ -728,3 +757,9 @@ if not IS_DEV_ENV:
 # nothing: the schema is served from whatever host serves the app.
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+
+# Phone pushes through Firebase Cloud Messaging (`common.push`): the path of a
+# Firebase service-account JSON file. Empty or unreadable leaves push off, and
+# in-app notifications still work. Only phones built with the same Firebase
+# project receive them; see docs/features/lead-alerts.md.
+FCM_SERVICE_ACCOUNT_FILE = os.environ.get("FCM_SERVICE_ACCOUNT_FILE", "").strip()

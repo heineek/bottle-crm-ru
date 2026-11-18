@@ -61,6 +61,8 @@ API_RESOURCES = frozenset(
         "accounts",
         "activities",
         "api-settings",
+        # Industry apps. Every write under it is admin-only in the view.
+        "apps",
         # Downloading a file attached to a record. Read-only in practice: the
         # only view under this root is the download, and it is gated by the
         # parent record's own read predicate.
@@ -72,7 +74,12 @@ API_RESOURCES = frozenset(
         "contacts",
         "custom-fields",
         "dashboard",
+        # Phone push tokens. Listed so the vocabulary matches the URLconf; no
+        # scope reaches it, the whole root is in CREDENTIAL_PATHS below.
+        "devices",
         "documents",
+        # Calls, meetings and messages logged on a record, and enquiries.
+        "interactions",
         "invoices",
         "leads",
         "macros",
@@ -90,6 +97,7 @@ API_RESOURCES = frozenset(
         # token on any path outside `/api/portal/`.
         "portal",
         "profile",
+        "projects",
         "public",
         # A profile's own saved list filters (G29).
         "saved-views",
@@ -183,12 +191,47 @@ CREDENTIAL_PATHS = (
     # tasks with no other check, and it keeps working after the token that
     # minted it is revoked. Managed from a signed-in session only.
     "/api/profile/calendar-feed/",
+    # A registered phone receives the member's lead alerts, names included,
+    # and keeps receiving them after the token that registered it is revoked.
+    # Registered from the signed-in phone app only.
+    "/api/devices/",
 )
 
 # What the organization API key is worth once this module is enforcing. It reads,
 # it does not write, and the deny-list above still applies to it. Expressed as a
 # scope list so the org key and a read-only PAT go through one code path.
 ORG_API_KEY_SCOPES = ("*:read",)
+
+# What extensions add to the two lists above, from their `AppConfig.ready`.
+_registered_resources = set()
+_registered_credential_paths = []
+
+_RESOURCE_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+
+
+def register_resource(name):
+    """Accept ``name`` as a scope resource, as if it were in ``API_RESOURCES``.
+
+    For an extension that serves its own root under ``/api/``. Idempotent.
+    """
+    if not isinstance(name, str) or not _RESOURCE_NAME.fullmatch(name):
+        raise ValueError(f"{name!r} is not an API root segment.")
+    _registered_resources.add(name)
+
+
+def register_credential_path(prefix):
+    """Refuse every token and the org key on paths under ``prefix``, as
+    ``CREDENTIAL_PATHS`` does. For an extension's ``AppConfig.ready``. Idempotent.
+    """
+    if (
+        not isinstance(prefix, str)
+        or not prefix.startswith("/api/")
+        or not prefix.endswith("/")
+        or prefix == "/api/"
+    ):
+        raise ValueError(f"{prefix!r} is not a path prefix under /api/.")
+    if prefix not in _registered_credential_paths:
+        _registered_credential_paths.append(prefix)
 
 
 def normalize_scope(raw):
@@ -208,7 +251,11 @@ def normalize_scope(raw):
             % {"scope": repr(raw)}
         )
     resource, action = parts
-    if resource != WILDCARD and resource not in API_RESOURCES:
+    if (
+        resource != WILDCARD
+        and resource not in API_RESOURCES
+        and resource not in _registered_resources
+    ):
         raise ValueError(
             _("Unknown scope resource %(resource)s.") % {"resource": repr(resource)}
         )
@@ -300,7 +347,8 @@ def scopes_allow(scopes, method, path):
 
 def credential_path_denial(path):
     """Return a denial reason when ``path`` manages credentials, else ``None``."""
-    if any(path.startswith(prefix) for prefix in CREDENTIAL_PATHS):
+    prefixes = (*CREDENTIAL_PATHS, *_registered_credential_paths)
+    if any(path.startswith(prefix) for prefix in prefixes):
         return _(
             "API tokens and organization API keys cannot read or manage other "
             "credentials. Sign in to manage them."

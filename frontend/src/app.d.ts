@@ -1,5 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { ModuleRow } from '#lib/v2/modules.js';
+
 declare global {
   namespace App {
     interface Error {
@@ -9,10 +11,10 @@ declare global {
       label?: string;
     }
     interface Locals {
-      user?: any; // You might want to replace 'any' with a more specific type for user
-      org?: any; // You might want to replace 'any' with a more specific type for org
+      user?: { id?: string; name: string; email: string; profilePhoto: string };
+      org?: { id: string; name: string };
       org_name?: string;
-      /** Decided once per request in hooks.server.js (#lib/i18n/locale.js). */
+      /** Decided once per request in hooks.server.ts (#lib/i18n/locale.ts). */
       locale?: string;
       org_settings?: {
         default_currency?: string;
@@ -22,11 +24,16 @@ declare global {
         default_language?: string;
       };
       profile?: {
+        org?: { id: string; name: string };
         role?: string;
         is_organization_admin?: boolean;
       };
     }
-    // interface PageData {}
+    /** What the `(app)` layout gives every page, which shared components read from `page.data`. */
+    interface PageData {
+      counts?: Record<string, number>;
+      modules?: ModuleRow[] | null;
+    }
     // interface PageState {}
     // interface Platform {}
   }

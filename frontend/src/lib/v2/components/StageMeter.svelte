@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * One segment per open stage of the deal's own pipeline. A closed deal (a
@@ -9,10 +9,20 @@
    * `steps` are the pipeline's open stages in board order, `{code}` each. A
    * code the pipeline does not list still renders its name, with no segment
    * lit.
-   *
-   * @type {{ code: string, name: string, kind: string | null, steps: { code: string }[], label?: boolean }}
    */
-  let { code, name, kind, steps, label = true } = $props();
+  let {
+    code,
+    name,
+    kind,
+    steps,
+    label = true
+  }: {
+    code: string;
+    name: string;
+    kind: string | null;
+    steps: { code: string }[];
+    label?: boolean;
+  } = $props();
 
   let closed = $derived(kind === 'won' || kind === 'lost');
   let index = $derived(steps.findIndex((s) => s.code === code));

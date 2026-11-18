@@ -20,7 +20,8 @@ from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -37,7 +38,7 @@ from cases.serializer import (
     ApprovalSerializer,
 )
 from common.models import Activity
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, is_org_admin, may_configure
 from common.validators import uuid_param
 
 
@@ -121,9 +122,37 @@ def _record(case, action, metadata, actor):
 # Rule CRUD
 
 
+class ApprovalRuleListRowSerializer(ApprovalRuleSerializer):
+    """Schema only: a rule as the list returns it, with its pending count."""
+
+    pending_count = serializers.IntegerField(read_only=True)
+
+    class Meta(ApprovalRuleSerializer.Meta):
+        fields = (*ApprovalRuleSerializer.Meta.fields, "pending_count")
+
+
 class ApprovalRuleListCreateView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Approvals"],
+        responses={
+            200: inline_serializer(
+                name="ApprovalRuleListResponse",
+                fields={
+                    "rules": ApprovalRuleListRowSerializer(many=True),
+                    "totals": inline_serializer(
+                        name="ApprovalRuleListTotals",
+                        fields={
+                            "count": serializers.IntegerField(),
+                            "active": serializers.IntegerField(),
+                            "pending": serializers.IntegerField(),
+                        },
+                    ),
+                },
+            )
+        },
+    )
     def get(self, request):
         org = request.profile.org
         qs = ApprovalRule.objects.filter(org=org).prefetch_related(
@@ -142,8 +171,13 @@ class ApprovalRuleListCreateView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        tags=["Approvals"],
+        request=ApprovalRuleSerializer,
+        responses={201: ApprovalRuleSerializer},
+    )
     def post(self, request):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         serializer = ApprovalRuleSerializer(data=request.data, context={"org": org})
@@ -179,6 +213,7 @@ class ApprovalRuleDetailView(APIView):
     def _get(self, pk, org):
         return ApprovalRule.objects.filter(pk=pk, org=org).first()
 
+    @extend_schema(tags=["Approvals"], responses={200: ApprovalRuleSerializer})
     def get(self, request, pk):
         rule = self._get(pk, request.profile.org)
         if rule is None:
@@ -188,8 +223,13 @@ class ApprovalRuleDetailView(APIView):
             )
         return Response(ApprovalRuleSerializer(rule).data)
 
+    @extend_schema(
+        tags=["Approvals"],
+        request=ApprovalRuleSerializer(partial=True),
+        responses={200: ApprovalRuleSerializer},
+    )
     def put(self, request, pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         rule = self._get(pk, request.profile.org)
         if rule is None:
@@ -211,8 +251,22 @@ class ApprovalRuleDetailView(APIView):
         rule = serializer.save()
         return Response(ApprovalRuleSerializer(rule).data)
 
+    @extend_schema(
+        tags=["Approvals"],
+        responses={
+            # 200 when the rule has requests and is switched off instead.
+            200: inline_serializer(
+                name="ApprovalRuleDeactivatedResponse",
+                fields={
+                    "id": serializers.CharField(),
+                    "is_active": serializers.BooleanField(),
+                },
+            ),
+            204: None,
+        },
+    )
     def delete(self, request, pk):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         rule = self._get(pk, request.profile.org)
         if rule is None:
@@ -243,6 +297,11 @@ class CaseRequestApprovalView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Approvals"],
+        request=ApprovalRequestSerializer,
+        responses={201: ApprovalSerializer},
+    )
     @transaction.atomic
     def post(self, request, pk):
         org = request.profile.org
@@ -336,6 +395,15 @@ class ApprovalInboxView(APIView):
 
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Approvals"],
+        responses={
+            200: inline_serializer(
+                name="ApprovalInboxResponse",
+                fields={"approvals": ApprovalSerializer(many=True)},
+            )
+        },
+    )
     def get(self, request):
         org = request.profile.org
         qs = (
@@ -419,6 +487,14 @@ def _load_pending(pk, profile):
 class ApprovalApproveView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Approvals"],
+        request=inline_serializer(
+            name="ApprovalApproveRequest",
+            fields={"note": serializers.CharField(required=False)},
+        ),
+        responses={200: ApprovalSerializer},
+    )
     @transaction.atomic
     def post(self, request, pk):
         approval = _load_pending(pk, request.profile)
@@ -477,6 +553,14 @@ class ApprovalApproveView(APIView):
 class ApprovalRejectView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Approvals"],
+        request=inline_serializer(
+            name="ApprovalRejectRequest",
+            fields={"reason": serializers.CharField()},
+        ),
+        responses={200: ApprovalSerializer},
+    )
     @transaction.atomic
     def post(self, request, pk):
         reason = (request.data.get("reason") or "").strip()
@@ -547,6 +631,9 @@ class ApprovalRejectView(APIView):
 class ApprovalCancelView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
 
+    @extend_schema(
+        tags=["Approvals"], request=None, responses={200: ApprovalSerializer}
+    )
     @transaction.atomic
     def post(self, request, pk):
         approval = _load_pending(pk, request.profile)

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * Adding a person.
@@ -13,14 +13,15 @@
    */
   import { tick, untrack } from 'svelte';
   import { enhance } from '$app/forms';
+  import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import DuplicateNotice from '#lib/v2/components/DuplicateNotice.svelte';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   // `untrack` so a re-render after a failed save does not throw away what the
   // person typed; `result.values` is the server's echo of the same fields.
@@ -39,12 +40,11 @@
       ...(result?.values ?? {})
     }))
   );
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state<Record<string, boolean>>({});
   let submitted = $state(false);
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!form.first_name.trim()) e.first_name = m.contacts_form_first_name_required();
     if (!form.last_name.trim()) e.last_name = m.contacts_form_last_name_required();
 
@@ -61,23 +61,19 @@
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (/** @type {string} */ field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
-  /** @type {import('./$types').SubmitFunction} */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
     }
   };
 
-  let chosenAccount = $derived(
-    data.accounts.find((/** @type {any} */ a) => a.id === form.account) ?? null
-  );
+  let chosenAccount = $derived(data.accounts.find((a) => a.id === form.account) ?? null);
 </script>
 
 <PageHeader title={m.contacts_new_contact()} center>
@@ -239,6 +235,13 @@
         <span class="v2-sub">{m.contacts_new_dnc_hint()}</span>
       </span>
     </label>
+
+    <RecordFieldInputs
+      fields={data.customFields ?? []}
+      typed={result?.values?.custom_fields}
+      errors={result?.fieldErrors}
+      heading={m.common_details()}
+    />
 
     <DuplicateNotice
       module="contacts"

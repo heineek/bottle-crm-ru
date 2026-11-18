@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Web forms: the list.
    *
@@ -41,11 +41,11 @@
   import { Plus, ShieldAlert } from '@lucide/svelte';
   import { WEBFORM_TARGETS } from '#lib/v2/webform-fields.js';
   import { isOn, OBJECT_MODULES } from '#lib/v2/modules.js';
-  import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let totals = $derived(data.totals);
   let drafts = $derived(Math.max(totals.count - totals.published, 0));
@@ -58,9 +58,9 @@
   let busy = $state(false);
 
   /** A submit handler that flips `busy` while the action runs. */
-  const working = () => {
+  const working: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };

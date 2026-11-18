@@ -1,0 +1,137 @@
+import { fail, redirect } from '@sveltejs/kit';
+import {
+  deleteIntake,
+  getIntake,
+  replaceIntakeKey,
+  testIntake,
+  updateIntake
+} from '#lib/server/v2/lead-intakes.js';
+import { getLeadSources } from '#lib/server/v2/lead-sources.js';
+import { getOrgPeopleAndTeams } from '#lib/server/v2/org-people.js';
+import { getTags } from '#lib/server/v2/tags.js';
+import { fieldDefinitions } from '#lib/server/v2/record-custom-fields.js';
+import { readableError } from '#lib/server/v2/form-errors.js';
+import { apiStatus } from '#lib/api-errors.js';
+import { m } from '#lib/paraglide/messages.js';
+import type { Actions, PageServerLoad } from './$types';
+
+/**
+ * One webhook: where to post, its settings and mapping, and its newest
+ * deliveries. Another org's id or a missing one is a 404; a member gets the
+ * same "admins only" state as the list.
+ */
+export const load: PageServerLoad = async (event) => {
+  const detail = await getIntake(event, event.params.id);
+  if (detail.forbidden) return detail;
+  const [{ sources }, people, tags, definitions] = await Promise.all([
+    getLeadSources(event),
+    getOrgPeopleAndTeams(event.cookies),
+    getTags(event).then(
+      (answer) => answer.tags,
+      () => []
+    ),
+    fieldDefinitions(event.cookies, 'Lead')
+  ]);
+  return {
+    ...detail,
+    sources,
+    people: people.people,
+    tags: tags.map((t) => ({ id: t.id, name: t.name, is_active: t.is_active })),
+    customFields: definitions.map((d) => ({ key: d.key, label: d.label }))
+  };
+};
+
+/**
+ * The mapping arrives as one JSON string, since rows are added and removed in
+ * the browser. A malformed one is "not sent", never "empty", so a broken
+ * input cannot wipe the stored mapping.
+ */
+function readMapping(form: FormData): unknown[] | undefined {
+  const raw = form.get('mapping')?.toString();
+  if (!raw) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Turn an API refusal into the sentence the page shows, under `key`. */
+function refused(key: string, err: unknown, fallback: string) {
+  if (apiStatus(err) === 403) {
+    return fail(403, { [key]: { error: m.settings_lead_capture_change_admin_only() } });
+  }
+  if (apiStatus(err) === 404)
+    return fail(404, { [key]: { error: m.settings_lead_capture_gone_now() } });
+  return fail(400, { [key]: { error: readableError(err, fallback) } });
+}
+
+export const actions: Actions = {
+  async save(event) {
+    const form = await event.request.formData();
+    const values: {
+      name: string;
+      default_source: string;
+      source_detail: string;
+      assignee: string | null;
+      tags: string[];
+      mapping?: unknown[];
+    } = {
+      name: form.get('name')?.toString() ?? '',
+      default_source: form.get('default_source')?.toString() ?? '',
+      source_detail: form.get('source_detail')?.toString() ?? '',
+      // Nobody is a real choice, so an empty select is sent as null.
+      assignee: form.get('assignee')?.toString() || null,
+      tags: form.getAll('tags').map(String).filter(Boolean)
+    };
+    const mapping = readMapping(form);
+    if (mapping !== undefined) values.mapping = mapping;
+    if (!values.name.trim())
+      return fail(400, { save: { error: m.settings_lead_capture_needs_name() } });
+    try {
+      await updateIntake(event, event.params.id, values);
+    } catch (err) {
+      return refused('save', err, m.settings_lead_capture_save_failed());
+    }
+    return { saved: true };
+  },
+
+  // Only `is_active`, so switching on or off never carries the settings form.
+  async toggle(event) {
+    const form = await event.request.formData();
+    try {
+      await updateIntake(event, event.params.id, { is_active: form.get('is_active') === 'true' });
+    } catch (err) {
+      return refused('toggle', err, m.settings_lead_capture_change_failed());
+    }
+    return { toggled: true };
+  },
+
+  async test(event) {
+    try {
+      await testIntake(event, event.params.id);
+    } catch (err) {
+      return refused('test', err, m.settings_lead_capture_test_failed());
+    }
+    return { tested: true };
+  },
+
+  async key(event) {
+    try {
+      const { key } = await replaceIntakeKey(event, event.params.id);
+      return { replaced: { key } };
+    } catch (err) {
+      return refused('key', err, m.settings_lead_capture_key_failed());
+    }
+  },
+
+  async remove(event) {
+    try {
+      await deleteIntake(event, event.params.id);
+    } catch (err) {
+      return refused('remove', err, m.settings_lead_capture_delete_failed());
+    }
+    redirect(303, '/settings/lead-capture');
+  }
+};

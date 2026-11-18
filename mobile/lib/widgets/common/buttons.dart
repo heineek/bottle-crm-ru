@@ -91,8 +91,6 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                         Icon(widget.icon, size: 20, color: Colors.white),
                         const SizedBox(width: 8),
                       ],
-                      // Flexible: a longer translation ellipsizes instead
-                      // of overflowing the fixed-height button.
                       Flexible(
                         child: Text(
                           widget.label,
@@ -296,53 +294,6 @@ class AppFAB extends StatelessWidget {
       onPressed: onPressed,
       mini: mini,
       child: Icon(icon),
-    );
-  }
-}
-
-/// Quick Action Button - For contact actions (call, email, message)
-class QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
-  final Color? color;
-
-  const QuickActionButton({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.onPressed,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final buttonColor = color ?? AppColors.primary600;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: AppLayout.borderRadiusMd,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: buttonColor.withValues(alpha: 0.1),
-            borderRadius: AppLayout.borderRadiusMd,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 24, color: buttonColor),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppTypography.labelSmall.copyWith(color: buttonColor),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

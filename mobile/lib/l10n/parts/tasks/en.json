@@ -307,5 +307,7 @@
   },
   "tasksBoardAddCardFailed": "Could not add that card.",
   "tasksBoardAddCard": "Add card",
-  "tasksBoardTryAgain": "Try again"
+  "tasksBoardTryAgain": "Try again",
+  "tasksRelatedKindProject": "Project",
+  "tasksDetailSelectedProject": "Selected project"
 }

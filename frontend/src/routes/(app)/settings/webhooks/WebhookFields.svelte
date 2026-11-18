@@ -1,24 +1,32 @@
-<script>
+<script lang="ts">
+  import { DOCS_WEBHOOKS, WEBHOOK_FORMATS } from '#lib/v2/lead-alerts.js';
   /**
    * The fields a webhook is made of, shared by the create panel and the edit
    * panel so the two cannot drift. The event checkboxes are drawn from the
    * catalogue the API returns, grouped by module; the serializer is what
    * refuses a name outside it.
-   *
-   * @type {{
-   *   catalogue: { module: string, label: string, events: string[] }[],
-   *   values?: { url?: string, description?: string, format?: string, events?: string[] },
-   *   idPrefix: string
-   * }}
    */
   import { m } from '#lib/paraglide/messages.js';
 
-  let { catalogue, values = {}, idPrefix } = $props();
+  let {
+    catalogue,
+    values = {},
+    idPrefix
+  }: {
+    catalogue: { module: string; label: string; events: string[] }[];
+    values?: { url?: string; description?: string; format?: string; events?: string[] };
+    idPrefix: string;
+  } = $props();
+
+  // A stored format outside the list keeps an option, or the select would
+  // submit its first entry in its place.
+  let unknownFormat = $derived(
+    values.format && !WEBHOOK_FORMATS.some((f) => f.value === values.format) ? values.format : ''
+  );
 
   let chosen = $derived(new Set(values.events ?? []));
 
-  /** @type {Record<string, () => string>} */
-  const ACTION_LABEL = {
+  const ACTION_LABEL: Record<string, () => string> = {
     created: m.settings_webhooks_event_created,
     updated: m.settings_webhooks_event_updated,
     deleted: m.settings_webhooks_event_deleted,
@@ -28,8 +36,8 @@
     comment_added: m.settings_webhooks_event_comment_added
   };
 
-  /** "ticket.comment_added" reads as "Comment added"; an action this list lacks is spelled out from its code. @param {string} name */
-  const actionLabel = (name) => {
+  /** "ticket.comment_added" reads as "Comment added"; an action this list lacks is spelled out from its code. */
+  const actionLabel = (name: string) => {
     const action = name.split('.')[1] ?? name;
     const known = ACTION_LABEL[action];
     if (known) return known();
@@ -72,13 +80,21 @@
   <div class="v2-field">
     <label for="{idPrefix}-format">{m.settings_webhooks_format_label()}</label>
     <select id="{idPrefix}-format" name="format" class="v2-input">
-      <option value="json" selected={(values.format ?? 'json') === 'json'}>
-        {m.settings_webhooks_format_json_option()}
-      </option>
-      <option value="slack" selected={values.format === 'slack'}>
-        {m.settings_webhooks_format_slack_option()}
-      </option>
+      {#each WEBHOOK_FORMATS as f (f.value)}
+        <option value={f.value} selected={(values.format ?? 'json') === f.value}>{f.label}</option>
+      {/each}
+      {#if unknownFormat}
+        <option value={unknownFormat} selected
+          >{m.settings_webhooks_format_current({ format: unknownFormat })}</option
+        >
+      {/if}
     </select>
+    <p class="v2-hint">
+      {m.settings_webhooks_format_teams_hint()}
+      <a href={DOCS_WEBHOOKS} target="_blank" rel="noopener noreferrer"
+        >{m.settings_webhooks_read_more()}</a
+      >
+    </p>
   </div>
 
   <fieldset class="wh-events">

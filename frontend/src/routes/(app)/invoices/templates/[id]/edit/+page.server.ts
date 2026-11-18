@@ -1,0 +1,76 @@
+import { fail, redirect, error } from '@sveltejs/kit';
+import { getInvoiceTemplateForEdit, updateInvoiceTemplate } from '#lib/server/v2/templates.js';
+import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
+import { apiStatus } from '#lib/api-errors.js';
+import type { Actions, PageServerLoad } from './$types';
+
+/**
+ * Editing an invoice template.
+ *
+ * Admin-only, enforced server-side twice over: `getInvoiceTemplateForEdit`
+ * returns `can_edit: false` for a non-admin without fetching anything, and the
+ * editor route it would have called is admin-gated in the API. The fetch is
+ * org-scoped, so a foreign or unknown id 404s.
+ *
+ * This page is the reason `GET /invoices/templates/<id>/editor/` exists: every
+ * other read strips `template_html` / `template_css`, so before it a form here
+ * could not show what was saved, and saving would have blanked it.
+ */
+export const load: PageServerLoad = async (event) => {
+  try {
+    return await getInvoiceTemplateForEdit(event, event.params.id);
+  } catch (err) {
+    if (apiStatus(err) === 404) error(404, m.invoices_template_not_found());
+    throw err;
+  }
+};
+
+/**
+ * Read only the fields this form owns.
+ *
+ * `is_default` is not among them on purpose. It is a singleton the model swaps
+ * inside a transaction and it has its own control on the list page; reading it
+ * here would send an unchecked box along with every unrelated save and demote
+ * the org's current default.
+ */
+function readValues(form: FormData) {
+  return {
+    name: form.get('name')?.toString() ?? '',
+    primary_color: form.get('primary_color')?.toString() ?? '',
+    secondary_color: form.get('secondary_color')?.toString() ?? '',
+    default_notes: form.get('default_notes')?.toString() ?? '',
+    default_terms: form.get('default_terms')?.toString() ?? '',
+    footer_text: form.get('footer_text')?.toString() ?? '',
+    template_html: form.get('template_html')?.toString() ?? '',
+    template_css: form.get('template_css')?.toString() ?? ''
+  };
+}
+
+export const actions: Actions = {
+  save: async (event) => {
+    const form = await event.request.formData();
+    const logo = form.get('logo');
+    const logoFile = logo instanceof File && logo.size > 0 ? logo : null;
+    const values = readValues(form);
+
+    if (!values.name.trim()) {
+      return fail(400, { values, error: m.invoices_template_name_required() });
+    }
+
+    try {
+      await updateInvoiceTemplate(event, event.params.id, values, logoFile);
+    } catch (err) {
+      if (apiStatus(err) === 403) {
+        return fail(403, {
+          values,
+          error: m.invoices_template_change_admin_only()
+        });
+      }
+      if (apiStatus(err) === 404) error(404, m.invoices_template_not_found());
+      return fail(400, { values, error: readableError(err, m.invoices_template_save_failed()) });
+    }
+
+    redirect(303, '/invoices/templates');
+  }
+};

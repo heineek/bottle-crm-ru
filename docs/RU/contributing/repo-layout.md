@@ -71,7 +71,7 @@ SQL). Как эти части работают вместе при обрабо
 ```
 frontend/src/
 ├── lib/
-│   ├── api.js, api-helpers.js   # API client (fetch/axios wrappers)
+│   ├── api-helpers.ts           # API client (`apiRequest`, a fetch wrapper)
 │   ├── components/              # Shared UI components (shadcn-svelte based)
 │   ├── server/                  # Server-side load-function helpers
 │   ├── shell/                   # App shell (nav, layout chrome)

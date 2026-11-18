@@ -13,6 +13,7 @@ library;
 
 import '../../l10n/l10n.dart';
 import '../../services/app_language.dart';
+import '../api/schema.g.dart' as api;
 
 /// The three goal kinds the backend accepts (`common/utils.py` GOAL_TYPES).
 const List<String> goalTypes = ['REVENUE', 'DEALS_CLOSED', 'ACTIVITIES'];
@@ -183,27 +184,30 @@ class SalesGoal {
   /// activities as "$40".
   bool get isMoney => goalType == 'REVENUE';
 
+  /// Reads a `SalesGoal`.
   factory SalesGoal.fromJson(Map<String, dynamic> json) {
-    final assigned = json['assigned_to_detail'] as Map<String, dynamic>?;
-    final team = json['team_detail'] as Map<String, dynamic>?;
+    final w = api.SalesGoal.fromJson(json);
+    final assigned = w.assignedToDetail;
     return SalesGoal(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      goalType: json['goal_type']?.toString() ?? 'REVENUE',
-      targetValue: _toDouble(json['target_value']),
-      periodType: json['period_type']?.toString() ?? 'MONTHLY',
-      periodStart: json['period_start']?.toString() ?? '',
-      periodEnd: json['period_end']?.toString() ?? '',
-      currency: _code(json['currency']),
-      assignedToId: json['assigned_to']?.toString(),
+      id: w.id ?? '',
+      name: w.name ?? '',
+      goalType: w.goalType ?? 'REVENUE',
+      targetValue: double.tryParse(w.targetValue ?? '') ?? 0,
+      periodType: w.periodType ?? 'MONTHLY',
+      periodStart: w.periodStart ?? '',
+      periodEnd: w.periodEnd ?? '',
+      currency: _code(w.currency),
+      assignedToId: w.assignedTo,
       assignedToName: assigned == null ? null : _personName(assigned),
-      teamId: json['team']?.toString(),
-      teamName: team?['name']?.toString(),
-      isActive: json['is_active'] as bool? ?? true,
-      typeWeights: _toWeights(json['type_weights']),
-      progressValue: _toDouble(json['progress_value']),
-      progressPercent: (json['progress_percent'] as num?)?.toInt() ?? 0,
-      status: json['status']?.toString() ?? 'on_track',
+      teamId: w.team,
+      teamName: w.teamDetail?.name,
+      isActive: w.isActive ?? true,
+      // The wire type keeps only the numeric weights, which is the point: a
+      // weight of "heavy" is not a weight of zero.
+      typeWeights: <String, num>{...?w.typeWeights},
+      progressValue: w.progressValue ?? 0,
+      progressPercent: w.progressPercent ?? 0,
+      status: w.status ?? 'on_track',
     );
   }
 }
@@ -248,18 +252,19 @@ class GoalLeaderRow {
   /// Same rule as [SalesGoal.isMoney].
   bool get isMoney => goalType == 'REVENUE';
 
+  /// Reads a `SalesGoalLeaderboardRow`.
   factory GoalLeaderRow.fromJson(Map<String, dynamic> json) {
-    final user = json['user'] as Map<String, dynamic>?;
+    final w = api.SalesGoalLeaderboardRow.fromJson(json);
     return GoalLeaderRow(
-      rank: (json['rank'] as num?)?.toInt() ?? 0,
-      goalId: json['goal_id']?.toString() ?? '',
-      goalName: json['goal_name']?.toString() ?? '',
-      user: user?['name']?.toString() ?? appL10n.appUnknownPerson,
-      target: _toDouble(json['target']),
-      achieved: _toDouble(json['achieved']),
-      percent: (json['percent'] as num?)?.toInt() ?? 0,
-      goalType: json['goal_type']?.toString() ?? 'REVENUE',
-      currency: _code(json['currency']),
+      rank: w.rank ?? 0,
+      goalId: w.goalId ?? '',
+      goalName: w.goalName ?? '',
+      user: w.user?.name ?? appL10n.appUnknownPerson,
+      target: w.target ?? 0,
+      achieved: w.achieved ?? 0,
+      percent: w.percent ?? 0,
+      goalType: w.goalType ?? 'REVENUE',
+      currency: _code(w.currency),
     );
   }
 }
@@ -406,21 +411,16 @@ String? validateGoalForm({
 }
 
 /// A currency code off the payload, or null when there is none.
-String? _code(dynamic value) {
-  final code = value?.toString().trim() ?? '';
+String? _code(String? value) {
+  final code = value?.trim() ?? '';
   return code.isEmpty ? null : code;
 }
 
-double _toDouble(dynamic value) {
-  if (value is num) return value.toDouble();
-  return double.tryParse(value?.toString() ?? '') ?? 0;
-}
-
-String _personName(Map<String, dynamic> profile) {
-  final details = profile['user_details'] as Map<String, dynamic>?;
-  final name = details?['name']?.toString() ?? '';
+String _personName(api.Profile profile) {
+  final details = profile.userDetails;
+  final name = details?.name ?? '';
   if (name.trim().isNotEmpty) return name.trim();
-  final email = details?['email']?.toString() ?? '';
+  final email = details?.email ?? '';
   return email.isNotEmpty ? email : appL10n.appUnnamedPerson;
 }
 
@@ -447,22 +447,6 @@ String? _shortDate(String isoDate) {
   if (month == null || day == null || month < 1 || month > 12) return null;
   final year = int.tryParse(parts[0]) ?? 2000;
   return localDateFormat('d MMM', 'MMMd').format(DateTime(year, month, day));
-}
-
-/// The stored deal type weights, narrowed to the numbers they must be.
-///
-/// The column is free-form JSON, and the write serializer is what guarantees
-/// its shape, so a row written before that validator existed (or by hand in a
-/// shell) can still hold a string or a null. Anything that is not a number is
-/// dropped rather than coerced: a weight of "heavy" is not a weight of zero,
-/// and quietly inventing one would misreport somebody's quota.
-Map<String, num> _toWeights(dynamic value) {
-  if (value is! Map) return const {};
-  final weights = <String, num>{};
-  value.forEach((key, weight) {
-    if (weight is num) weights[key.toString()] = weight;
-  });
-  return weights;
 }
 
 /// One finished period from `/api/opportunities/goals/history/`.
@@ -514,23 +498,24 @@ class GoalHistoryPeriod {
   /// Same rule as [SalesGoal.isMoney], applied to the period's own type.
   bool get isMoney => goalType == 'REVENUE';
 
+  /// Reads a `SalesGoalHistoryPeriod`.
   factory GoalHistoryPeriod.fromJson(Map<String, dynamic> json) {
-    final goals = json['goals'] as List<dynamic>? ?? const [];
+    final w = api.SalesGoalHistoryPeriod.fromJson(json);
     return GoalHistoryPeriod(
-      periodStart: json['period_start']?.toString() ?? '',
-      periodEnd: json['period_end']?.toString() ?? '',
-      periodType: json['period_type']?.toString() ?? 'MONTHLY',
-      goalType: json['goal_type']?.toString() ?? 'REVENUE',
-      goalsCount: (json['goals_count'] as num?)?.toInt() ?? 0,
-      attainedCount: (json['attained_count'] as num?)?.toInt() ?? 0,
-      target: _toDouble(json['target']),
-      achieved: _toDouble(json['achieved']),
-      percent: (json['percent'] as num?)?.toInt() ?? 0,
-      currency: _code(json['currency']),
-      goals: goals
-          .whereType<Map<String, dynamic>>()
-          .map(SalesGoal.fromJson)
-          .toList(),
+      periodStart: w.periodStart ?? '',
+      periodEnd: w.periodEnd ?? '',
+      periodType: w.periodType ?? 'MONTHLY',
+      goalType: w.goalType ?? 'REVENUE',
+      goalsCount: w.goalsCount ?? 0,
+      attainedCount: w.attainedCount ?? 0,
+      target: w.target ?? 0,
+      achieved: w.achieved ?? 0,
+      percent: w.percent ?? 0,
+      currency: _code(w.currency),
+      goals: [
+        for (final g in w.goals ?? const <api.SalesGoal>[])
+          SalesGoal.fromJson(g.json),
+      ],
     );
   }
 }

@@ -23,7 +23,7 @@ from common.modules import (
     module_is_available,
     only_available,
 )
-from common.object_registry import all_objects
+from common.object_registry import BUILT_IN, all_objects
 from common.permissions import HasOrgContext, can_mass_import, is_org_admin
 from contacts.access import visible_contacts_qs
 from contacts.models import Contact
@@ -31,6 +31,7 @@ from invoices.models import UNPAID_STATUSES, Invoice
 from invoices.permissions import visible_invoices_qs
 from leads.access import visible_leads_qs
 from leads.models import Lead
+from leads.response import unanswered_summary
 from opportunity.access import visible_deals_qs
 from opportunity.models import DealPipeline, Opportunity, stage_kind_q
 from opportunity.stages import aging_q, stage_index
@@ -114,29 +115,58 @@ def _readable(queryset, visible):
     return queryset.filter(pk__in=visible.values("pk"))
 
 
+# Leads waiting for an answer that the caller can see (`leads.response`).
+_UNANSWERED_LEADS = inline_serializer(
+    name="UnansweredLeads",
+    fields={
+        "count": serializers.IntegerField(),
+        "oldest_since": serializers.DateTimeField(allow_null=True),
+    },
+)
+
+
 # Activity rows store the bare model name, not the registry label.
 _MODEL_NAME_MODULES = {label.split(".")[1]: key for label, key in MODEL_MODULES.items()}
+
+# Written for hook entries' records. Named here as well as read off the
+# entries, so an org whose last such object was archived still hides them.
+_HOOK_ENTITY_TYPES = ("CustomRecord",)
 
 
 def _readable_activities(profile):
     """The org's activities that ``profile`` may see: one query, whatever the size.
 
-    An admin sees the whole org's feed, as before. Anyone else sees an activity
-    only while its record is one they can open, resolved as one id subquery per
-    registry entry with ``activity_feed`` on. An activity carries the record's
-    name and what was done to it, so it has to pass the same read rule as the
-    record's detail view. That fails closed three ways: a type with no entry or
-    with the feed off (Event, Document and Team have no entry, and nothing
-    writes them today) is hidden, and so is an activity whose record has since
-    been deleted, because no read rule can match a row that no longer exists.
+    An admin sees the whole org's feed, as before, except a hook entry's
+    (a custom record's): that row shows only while its record belongs to an
+    entry the org still has, so an archived object's activity leaves the feed
+    as its records leave the lists. Anyone else sees an activity only while
+    its record is one they can open, resolved as one id subquery per registry
+    entry with ``activity_feed`` on. An activity carries the record's name and what was
+    done to it, so it has to pass the same read rule as the record's detail
+    view. That fails closed three ways: a type with no entry or with the feed
+    off (Event, Document and Team have no entry, and nothing writes them today)
+    is hidden, and so is an activity whose record has since been deleted,
+    because no read rule can match a row that no longer exists.
     """
-    qs = Activity.objects.filter(org=profile.org)
+    org = profile.org
+    qs = Activity.objects.filter(org=org)
     if is_org_admin(profile):
-        available = available_modules(profile.org)
+        available = available_modules(org)
         off = [n for n, key in _MODEL_NAME_MODULES.items() if key not in available]
-        return qs.exclude(entity_type__in=off) if off else qs
+        if off:
+            qs = qs.exclude(entity_type__in=off)
+        built_in = {e.key for e in BUILT_IN}
+        hooks = [e for e in all_objects(org) if e.key not in built_in]
+        records = Q()
+        for entry in hooks:
+            records |= Q(
+                entity_type=entry.model.__name__,
+                entity_id__in=entry.records(org).values("pk"),
+            )
+        hook_types = {*_HOOK_ENTITY_TYPES, *(e.model.__name__ for e in hooks)}
+        return qs.filter(~Q(entity_type__in=hook_types) | records)
     readable = Q()
-    for entry in all_objects(profile.org):
+    for entry in all_objects(org):
         if entry.activity_feed:
             readable |= Q(
                 entity_type=entry.model.__name__,
@@ -161,15 +191,72 @@ class ApiHomeView(APIView):
                     "contacts_count": serializers.IntegerField(),
                     "leads_count": serializers.IntegerField(),
                     "opportunities_count": serializers.IntegerField(),
-                    "urgent_counts": serializers.DictField(),
-                    "pipeline_by_stage": serializers.DictField(),
-                    "revenue_metrics": serializers.DictField(),
-                    "hot_leads": serializers.ListField(),
+                    "urgent_counts": inline_serializer(
+                        name="ApiHomeUrgentCounts",
+                        fields={
+                            "overdue_tasks": serializers.IntegerField(),
+                            "tasks_due_today": serializers.IntegerField(),
+                            "followups_today": serializers.IntegerField(),
+                            "hot_leads": serializers.IntegerField(),
+                        },
+                    ),
+                    # Keyed by stage code; empty while Pipeline is off.
+                    "pipeline_by_stage": serializers.DictField(
+                        child=inline_serializer(
+                            name="ApiHomeStageFigures",
+                            fields={
+                                "count": serializers.IntegerField(),
+                                "value": serializers.FloatField(),
+                                "label": serializers.CharField(),
+                                "kind": serializers.CharField(),
+                                "order": serializers.IntegerField(),
+                            },
+                        )
+                    ),
+                    "revenue_metrics": inline_serializer(
+                        name="ApiHomeRevenueMetrics",
+                        fields={
+                            "pipeline_value": serializers.FloatField(),
+                            "open_opportunities_count": serializers.IntegerField(),
+                            "weighted_pipeline": serializers.FloatField(),
+                            "won_this_month": serializers.FloatField(),
+                            "conversion_rate": serializers.FloatField(),
+                            "currency": serializers.CharField(),
+                            "other_currency_count": serializers.IntegerField(),
+                        },
+                    ),
+                    "hot_leads": inline_serializer(
+                        name="ApiHomeHotLead",
+                        many=True,
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "first_name": serializers.CharField(allow_null=True),
+                            "last_name": serializers.CharField(allow_null=True),
+                            "company": serializers.CharField(allow_null=True),
+                            "rating": serializers.CharField(allow_null=True),
+                            "next_follow_up": serializers.DateField(allow_null=True),
+                            "last_contacted": serializers.DateField(allow_null=True),
+                        },
+                    ),
                     "tasks": TaskSerializer(many=True),
                     "activities": serializer.DashboardActivitySerializer(many=True),
-                    "goal_summary": serializers.ListField(),
+                    "goal_summary": inline_serializer(
+                        name="ApiHomeGoal",
+                        many=True,
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "name": serializers.CharField(),
+                            "goal_type": serializers.CharField(),
+                            "currency": serializers.CharField(allow_null=True),
+                            "target_value": serializers.FloatField(),
+                            "progress_value": serializers.FloatField(),
+                            "progress_percent": serializers.IntegerField(),
+                            "status": serializers.CharField(),
+                        },
+                    ),
                     "empty_workspace": serializers.BooleanField(),
                     "can_import": serializers.BooleanField(),
+                    "unanswered_leads": _UNANSWERED_LEADS,
                 },
             )
         },
@@ -418,6 +505,7 @@ class ApiHomeView(APIView):
         ).data
 
         context.update(import_prompt_facts(profile))
+        context["unanswered_leads"] = unanswered_summary(all_leads, org)
 
         return Response(context, status=status.HTTP_200_OK)
 
@@ -455,14 +543,34 @@ class ApiTodayView(APIView):
             200: inline_serializer(
                 name="ApiTodayResponse",
                 fields={
-                    "queue": serializers.ListField(child=serializers.DictField()),
+                    "queue": inline_serializer(
+                        name="ApiTodayQueueItem",
+                        many=True,
+                        fields={
+                            "id": serializers.CharField(),
+                            "tone": serializers.ChoiceField(
+                                choices=["rust", "clay", "slate"]
+                            ),
+                            "due": serializers.CharField(),
+                            "title": serializers.CharField(),
+                            "detail": serializers.CharField(),
+                            "action": serializers.CharField(),
+                            "href": serializers.CharField(),
+                        },
+                    ),
                     "summary": inline_serializer(
                         name="ApiTodaySummary",
                         fields={
                             "count": serializers.IntegerField(),
                             "shown": serializers.IntegerField(),
-                            "sources": serializers.ListField(
-                                child=serializers.DictField()
+                            "sources": inline_serializer(
+                                name="ApiTodaySource",
+                                many=True,
+                                fields={
+                                    "label": serializers.CharField(),
+                                    "count": serializers.IntegerField(),
+                                    "href": serializers.CharField(),
+                                },
                             ),
                             "quiet_deals": serializers.IntegerField(),
                             "quiet_value": serializers.FloatField(),
@@ -471,7 +579,17 @@ class ApiTodayView(APIView):
                             "can_import": serializers.BooleanField(),
                         },
                     ),
-                    "later": serializers.ListField(child=serializers.DictField()),
+                    "later": inline_serializer(
+                        name="ApiTodayLaterItem",
+                        many=True,
+                        fields={
+                            "id": serializers.CharField(),
+                            "day": serializers.CharField(),
+                            "title": serializers.CharField(),
+                            "meta": serializers.CharField(),
+                        },
+                    ),
+                    "unanswered_leads": _UNANSWERED_LEADS,
                 },
             )
         },
@@ -822,8 +940,19 @@ class ApiTodayView(APIView):
         later_rows.sort(key=lambda r: r[0])
         later = [row for _, row in later_rows[:6]]
 
+        # Beside the queue rather than in it: a count of leads waiting for an
+        # answer, for the card the full dashboard shows too.
+        leads = _readable(
+            only_available(org, "leads", Lead.objects.filter(org=org)),
+            visible_leads_qs(profile),
+        )
         return Response(
-            {"queue": queue, "summary": summary, "later": later},
+            {
+                "queue": queue,
+                "summary": summary,
+                "later": later,
+                "unanswered_leads": unanswered_summary(leads, org),
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -854,7 +983,16 @@ class ActivityListView(APIView):
                 description="Filter by entity type (Account, Lead, Contact, etc.)",
             ),
         ],
-        responses={200: serializer.DashboardActivitySerializer(many=True)},
+        responses={
+            200: inline_serializer(
+                name="ActivityListResponse",
+                fields={
+                    "error": serializers.BooleanField(),
+                    "count": serializers.IntegerField(),
+                    "activities": serializer.DashboardActivitySerializer(many=True),
+                },
+            )
+        },
     )
     def get(self, request, *args, **kwargs):
         # A malformed or negative `limit` used to reach `int()` and the slice

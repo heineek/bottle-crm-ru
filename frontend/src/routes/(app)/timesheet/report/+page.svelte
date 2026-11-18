@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
   /**
-   * Where the time went: totals by agent, ticket or account over a window.
+   * Where the time went: totals by agent, ticket, project or account over a
+   * window, with each agent's billable share.
    *
    * The timesheet answers "what did I do this week". This answers the two
    * questions asked of that data afterwards, which are somebody else's: how
@@ -12,30 +13,43 @@
    * of it.
    */
   import { resolve } from '$app/paths';
+  import { asInternalPath } from '#lib/utils/paths.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import StatCard from '#lib/v2/components/StatCard.svelte';
   import { money, count, shortDate, hoursMinutes as hm } from '#lib/v2/format.js';
+  import { billableSharePercent } from '#lib/v2/time-entry.js';
   import { Download } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
   let report = $derived(data.report);
   let filters = $derived(data.filters);
 
   /** What each row's name means, said once above the table rather than per row. */
-  const GROUP_NOUN = {
+  const GROUP_NOUN: Record<string, () => string> = {
     agent: m.timesheet_group_agent,
     ticket: m.timesheet_group_ticket,
+    project: m.timesheet_group_project,
     account: m.timesheet_group_account
   };
-  const GROUP_BY = {
+  const GROUP_BY: Record<string, () => string> = {
     agent: m.timesheet_report_by_agent,
     ticket: m.timesheet_report_by_ticket,
+    project: m.timesheet_report_by_project,
     account: m.timesheet_report_by_account
   };
   const GROUPS = Object.keys(GROUP_NOUN);
+  let groups = $derived(GROUPS.filter((g) => g !== 'project' || data.projectsOn));
+
+  /** Where a row's name links, or null for a bucket with no record (`key` null). */
+  const ROW_HREF = {
+    ticket: 'tickets',
+    project: 'projects',
+    account: 'accounts'
+  } as Record<string, string>;
+  let byAgent = $derived(report.group_by === 'agent');
 
   let billableShare = $derived(
     report.totals.total_minutes
@@ -59,6 +73,7 @@
     if (filters.billable === 'true' || filters.billable === 'false') {
       qs.set('billable', filters.billable);
     }
+    if (filters.project) qs.set('project', filters.project);
     return qs.toString();
   });
 
@@ -73,7 +88,8 @@
     <a href={resolve('timesheet')}>{m.timesheet_title()}</a>
   {/snippet}
   {#snippet sub()}
-    {shortDate(report.start)} - {shortDate(report.end)} · {GROUP_BY[report.group_by]()}
+    {shortDate(report.start)} - {shortDate(report.end)} · {GROUP_BY[report.group_by]?.() ??
+      report.group_by}{filters.project ? ` · ${m.timesheet_report_one_project()}` : ''}
   {/snippet}
   {#snippet actions()}
     <!-- An anchor, not a fetch: the browser's own download, and the proxy
@@ -90,6 +106,9 @@
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <form method="GET" class="filters">
+    {#if filters.project}
+      <input type="hidden" name="project" value={filters.project} />
+    {/if}
     <div class="v2-field">
       <label for="r-start">{m.timesheet_report_from()}</label>
       <input id="r-start" class="v2-input" type="date" name="start" value={report.start} />
@@ -101,7 +120,7 @@
     <div class="v2-field">
       <label for="r-group">{m.timesheet_report_group_by()}</label>
       <select id="r-group" class="v2-input" name="group_by" value={report.group_by}>
-        {#each GROUPS as group (group)}
+        {#each groups as group (group)}
           <option value={group}>{GROUP_NOUN[group]()}</option>
         {/each}
       </select>
@@ -116,6 +135,13 @@
     </div>
     <button class="v2-btn v2-btn-primary filters-go">{m.timesheet_report_apply()}</button>
   </form>
+  {#if filters.project}
+    <p class="v2-sub" style="font-size:12px;margin:8px 0 0">
+      {m.timesheet_report_project_only()}
+      <a href={resolve(`projects/${filters.project}`)}>{m.timesheet_report_open_project()}</a> ·
+      <a href={resolve('timesheet/report')}>{m.timesheet_report_show_all_time()}</a>
+    </p>
+  {/if}
 
   <div class="v2-stats" style="margin-top:14px">
     <StatCard
@@ -156,9 +182,10 @@
         <table class="v2-table">
           <thead>
             <tr>
-              <th>{GROUP_NOUN[report.group_by]()}</th>
+              <th>{GROUP_NOUN[report.group_by]?.() ?? ''}</th>
               <th class="v2-r">{m.timesheet_report_col_entries()}</th>
               <th class="v2-r">{m.timesheet_report_col_billable()}</th>
+              {#if byAgent}<th class="v2-r">{m.timesheet_report_col_share()}</th>{/if}
               <th class="v2-r">{m.timesheet_report_col_value()}</th>
               <th class="v2-r">{m.timesheet_report_col_logged()}</th>
             </tr>
@@ -167,10 +194,11 @@
             {#each report.rows as row (row.key ?? row.name)}
               <tr>
                 <td data-m="title">
-                  {#if report.group_by === 'ticket' && row.key}
-                    <a href={resolve(`tickets/${row.key}`)} class="v2-table-primary">{row.name}</a>
-                  {:else if report.group_by === 'account' && row.key}
-                    <a href={resolve(`accounts/${row.key}`)} class="v2-table-primary">{row.name}</a>
+                  {#if ROW_HREF[report.group_by] && row.key}
+                    <a
+                      href={resolve(asInternalPath(`/${ROW_HREF[report.group_by]}/${row.key}`))}
+                      class="v2-table-primary">{row.name}</a
+                    >
                   {:else}
                     {row.name}
                   {/if}
@@ -181,6 +209,12 @@
                 <td class="v2-num v2-r" data-m="meta" data-l={m.timesheet_report_cell_billable()}>
                   {hm(row.billable_minutes)}
                 </td>
+                {#if byAgent}
+                  {@const share = billableSharePercent(row)}
+                  <td class="v2-num v2-r" data-m="meta" data-l={m.timesheet_report_cell_share()}>
+                    {share === null ? m.timesheet_report_no_time() : `${share}%`}
+                  </td>
+                {/if}
                 <td class="v2-num v2-r" data-m="meta" data-l={m.timesheet_report_cell_worth()}>
                   {money(row.billable_value, currency)}
                 </td>

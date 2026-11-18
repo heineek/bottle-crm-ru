@@ -595,22 +595,6 @@
       }
     }
   },
-  "ticketsPanelTimeRunning": "Running",
-  "ticketsPanelTimeStop": "Stop",
-  "ticketsPanelTimeEntry": "Time entry",
-  "ticketsPanelTimeSheetTitle": "Add time entry",
-  "ticketsPanelTimeDuration": "Duration",
-  "ticketsPanelTimeDescriptionHint": "What did you work on?",
-  "ticketsPanelTimeAddEntry": "Add entry",
-  "ticketsPanelTimeZero": "0m",
-  "ticketsPanelTimeHours": "{hours}h",
-  "@ticketsPanelTimeHours": {
-    "placeholders": {
-      "hours": {
-        "type": "int"
-      }
-    }
-  },
   "ticketsPanelApprovalRequestTitle": "Request approval",
   "ticketsPanelApprovalRequestHint": "Optional note for the approver",
   "ticketsPanelApprovalSendRequest": "Send request",
@@ -879,5 +863,17 @@
   "ticketsListFilterByAccount": "Filter by Account",
   "ticketsListAllAccounts": "All Accounts",
   "ticketsListFilterByAssignee": "Filter by Assignee",
-  "ticketsListFilterByTag": "Filter by Tag"
+  "ticketsListFilterByTag": "Filter by Tag",
+  "ticketsPanelTimeProjectRunning": "You already have a running timer on a project.",
+  "ticketsPanelTimeInvoiceCreated": "Draft invoice created",
+  "ticketsPanelTimeLinkAccount": "Link this ticket to an account to bill its time.",
+  "ticketsPanelTimeBill": "{count, plural, one{Bill time ({count} entry)} other{Bill time ({count} entries)}}",
+  "@ticketsPanelTimeBill": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailCustomFields": "Custom fields"
 }

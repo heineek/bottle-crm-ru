@@ -1,4 +1,6 @@
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
+import 'custom_field_definition.dart';
 
 /// A contact: a person at an account.
 ///
@@ -11,6 +13,7 @@ class Contact {
     required this.lastName,
     this.email,
     this.phone,
+    this.phoneE164 = '',
     this.organization,
     this.title,
     this.department,
@@ -30,6 +33,11 @@ class Contact {
     this.tagNames = const [],
     this.createdAt,
     this.canDelete = false,
+    this.source = '',
+    this.sourceDetail = '',
+    this.sourceRef = '',
+    this.customFields = const {},
+    this.customFieldDefinitions = const [],
   });
 
   final String id;
@@ -37,6 +45,10 @@ class Contact {
   final String lastName;
   final String? email;
   final String? phone;
+
+  /// The phone in international form, set by the server; empty when it
+  /// does not parse. WhatsApp needs it.
+  final String phoneE164;
 
   final String? organization;
   final String? title;
@@ -76,6 +88,19 @@ class Contact {
   /// Delete is never offered on a guess.
   final bool canDelete;
 
+  /// Where the person came from, copied from their lead at conversion. A
+  /// source key as the server sent it. None of the three is in [toPayload],
+  /// so an edit here never touches them.
+  final String source;
+  final String sourceDetail;
+  final String sourceRef;
+
+  final Map<String, dynamic> customFields;
+
+  /// The org's active contact fields, sent beside the detail record like
+  /// [canDelete]. Empty wherever they were not sent, such as a list row.
+  final List<CustomFieldDefinition> customFieldDefinitions;
+
   String get fullName {
     final name = '${firstName.trim()} ${lastName.trim()}'.trim();
     return name.isEmpty ? (email ?? appL10n.appUnnamedContact) : name;
@@ -100,40 +125,59 @@ class Contact {
     return email;
   }
 
+  /// Reads a `Contact`, the list row and the detail's `contact_obj`.
   factory Contact.fromJson(
     Map<String, dynamic> json, {
     bool canDelete = false,
+    List<CustomFieldDefinition> customFieldDefinitions = const [],
   }) {
-    final account = json['account_detail'];
+    final w = api.Contact.fromJson(json);
+    final account = w.accountDetail;
+    final customFields = w.customFields;
     return Contact(
-      id: json['id']?.toString() ?? '',
-      firstName: json['first_name'] as String? ?? '',
-      lastName: json['last_name'] as String? ?? '',
-      email: _str(json['email']) ?? _str(json['primary_email']),
-      phone: _str(json['phone']) ?? _str(json['mobile_number']),
-      organization: _str(json['organization']),
-      title: _str(json['title']),
-      department: _str(json['department']),
-      doNotCall: json['do_not_call'] as bool? ?? false,
-      linkedinUrl: _str(json['linkedin_url']),
-      addressLine: _str(json['address_line']),
-      city: _str(json['city']),
-      state: _str(json['state']),
-      postcode: _str(json['postcode']),
-      country: _str(json['country']),
-      description: _str(json['description']),
-      isActive: json['is_active'] as bool? ?? true,
-      accountId: account is Map
-          ? account['id']?.toString()
-          : _str(json['account']),
-      accountName: account is Map ? _str(account['name']) : null,
-      linkedAccounts: ContactAccountLink.listFrom(json['linked_accounts']),
-      assignedToNames: _profileNames(json['assigned_to']),
-      tagNames: _tagNames(json['tags']),
-      createdAt: json['created_at'] == null
-          ? null
-          : DateTime.tryParse(json['created_at'].toString()),
+      id: w.id ?? '',
+      firstName: w.firstName ?? '',
+      lastName: w.lastName ?? '',
+      email: _str(w.email),
+      phone: _str(w.phone),
+      phoneE164: w.phoneE164 ?? '',
+      organization: _str(w.organization),
+      title: _str(w.title),
+      department: _str(w.department),
+      doNotCall: w.doNotCall ?? false,
+      linkedinUrl: _str(w.linkedinUrl),
+      addressLine: _str(w.addressLine),
+      city: _str(w.city),
+      state: _str(w.state),
+      postcode: _str(w.postcode),
+      country: _str(w.country),
+      description: _str(w.description),
+      isActive: w.isActive ?? true,
+      accountId: account != null ? account.id : _str(w.account),
+      accountName: account != null ? _str(account.name) : null,
+      linkedAccounts: ContactAccountLink.listFrom(
+        w.linkedAccounts?.map((a) => a.json).toList(),
+      ),
+      assignedToNames: [
+        for (final p in w.assignedTo ?? const <api.Profile>[])
+          if (p.userDetails?.name ?? p.userDetails?.email case final name?
+              when name.trim().isNotEmpty)
+            name,
+      ],
+      // `tags` is a list of ids here, not of tags.
+      tagNames: [
+        for (final tag in w.tags ?? const <String>[])
+          if (tag.trim().isNotEmpty) tag,
+      ],
+      createdAt: DateTime.tryParse(w.createdAt ?? ''),
       canDelete: canDelete,
+      source: w.source ?? '',
+      sourceDetail: w.sourceDetail ?? '',
+      sourceRef: w.sourceRef ?? '',
+      customFields: customFields is Map
+          ? Map<String, dynamic>.from(customFields)
+          : const {},
+      customFieldDefinitions: customFieldDefinitions,
     );
   }
 
@@ -159,6 +203,7 @@ class Contact {
       'description': _orNull(description),
       'account': _orNull(accountId),
       'is_active': isActive,
+      'custom_fields': customFields,
     };
   }
 
@@ -181,6 +226,7 @@ class Contact {
     bool? isActive,
     String? accountId,
     bool clearAccount = false,
+    Map<String, dynamic>? customFields,
   }) {
     return Contact(
       id: id,
@@ -188,6 +234,7 @@ class Contact {
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      phoneE164: phoneE164,
       organization: organization ?? this.organization,
       title: title ?? this.title,
       department: department ?? this.department,
@@ -207,6 +254,11 @@ class Contact {
       tagNames: tagNames,
       createdAt: createdAt,
       canDelete: canDelete,
+      source: source,
+      sourceDetail: sourceDetail,
+      sourceRef: sourceRef,
+      customFields: customFields ?? this.customFields,
+      customFieldDefinitions: customFieldDefinitions,
     );
   }
 }
@@ -218,19 +270,21 @@ class ContactAccountLink {
   final String id;
   final String name;
 
+  /// Reads `linked_accounts`, a list of `ContactAccountRef`s.
   static List<ContactAccountLink> listFrom(dynamic raw) {
     if (raw is! List) return const [];
-    return raw
-        .whereType<Map<String, dynamic>>()
-        .map(
-          (row) => ContactAccountLink(
-            id: row['id']?.toString() ?? '',
-            name: (row['name'] as String?)?.trim().isNotEmpty == true
-                ? (row['name'] as String).trim()
-                : appL10n.appUnnamedAccount,
-          ),
-        )
-        .toList(growable: false);
+    ContactAccountLink link(api.ContactAccountRef ref) {
+      final name = ref.name?.trim() ?? '';
+      return ContactAccountLink(
+        id: ref.id ?? '',
+        name: name.isNotEmpty ? name : appL10n.appUnnamedAccount,
+      );
+    }
+
+    return [
+      for (final row in raw.whereType<Map<String, dynamic>>())
+        link(api.ContactAccountRef.fromJson(row)),
+    ];
   }
 }
 
@@ -243,29 +297,4 @@ String? _str(dynamic v) {
 String? _orNull(String? v) {
   final s = v?.trim();
   return (s == null || s.isEmpty) ? null : s;
-}
-
-/// `assigned_to` is a list of profiles, whose display name lives one level
-/// down in `user_details`.
-List<String> _profileNames(dynamic raw) {
-  if (raw is! List) return const [];
-  return raw
-      .map((e) {
-        if (e is! Map) return null;
-        final user = e['user_details'];
-        if (user is Map) return (user['name'] ?? user['email'])?.toString();
-        return null;
-      })
-      .whereType<String>()
-      .where((s) => s.trim().isNotEmpty)
-      .toList(growable: false);
-}
-
-List<String> _tagNames(dynamic raw) {
-  if (raw is! List) return const [];
-  return raw
-      .map((e) => e is Map ? e['name']?.toString() : e?.toString())
-      .whereType<String>()
-      .where((s) => s.trim().isNotEmpty)
-      .toList(growable: false);
 }

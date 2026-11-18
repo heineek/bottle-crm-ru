@@ -6,8 +6,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../data/api/enterprise_schema.g.dart' as enterprise;
+import '../data/api/schema.g.dart' as api;
+import '../data/models/custom_object.dart';
 import '../l10n/l10n.dart';
 import '../services/api_service.dart';
+
+enum _CsvKind { contacts, tickets, leads, object }
 
 /// Spreadsheet import for contacts, tickets and leads: preview, then commit.
 ///
@@ -29,8 +34,13 @@ import '../services/api_service.dart';
 /// mapping against each module's own fields, cap the size at 5 MB and the rows
 /// at 5000, throttle, and scope every write to the caller's org. The checks
 /// below only save somebody an upload the server would refuse.
-enum CsvImportTarget {
-  contacts(
+///
+/// A target is one of the three built-in lists, or the records of one custom
+/// object ([CsvImportTarget.forObject]). Two targets are equal when they import
+/// into the same place, so a target is a provider key.
+class CsvImportTarget {
+  static const contacts = CsvImportTarget._(
+    kind: _CsvKind.contacts,
     singular: 'contact',
     plural: 'contacts',
     requiredHeaders: ['first_name', 'last_name'],
@@ -76,8 +86,10 @@ enum CsvImportTarget {
       'Sales',
       'vip;newsletter',
     ],
-  ),
-  tickets(
+  );
+
+  static const tickets = CsvImportTarget._(
+    kind: _CsvKind.tickets,
     singular: 'ticket',
     plural: 'tickets',
     requiredHeaders: ['name', 'status', 'priority'],
@@ -111,8 +123,10 @@ enum CsvImportTarget {
       'auth;urgent',
       '',
     ],
-  ),
-  leads(
+  );
+
+  static const leads = CsvImportTarget._(
+    kind: _CsvKind.leads,
     singular: 'lead',
     plural: 'leads',
     requiredHeaders: ['first_name', 'last_name'],
@@ -154,24 +168,85 @@ enum CsvImportTarget {
     ],
   );
 
-  const CsvImportTarget({
+  const CsvImportTarget._({
+    required _CsvKind kind,
     required this.singular,
     required this.plural,
     required this.requiredHeaders,
     required this.templateHeaders,
     required this.templateExample,
     this.optionalHelp,
-  });
+    this.objectKey,
+    this.fields = const [],
+  }) : _kind = kind;
+
+  /// The three built-in targets.
+  static const values = [contacts, tickets, leads];
+
+  /// The records of the custom object [key]. The template and the sample line
+  /// come from [fields], whose active, non-link members become columns; the
+  /// columns a file can be matched to come from the server's preview.
+  factory CsvImportTarget.forObject({
+    required String key,
+    required String label,
+    required String labelPlural,
+    String nameLabel = 'Name',
+    List<ObjectField> fields = const [],
+  }) {
+    final columns = [
+      for (final f in fields)
+        if (f.isActive && !f.isLink && !_reservedImportKeys.contains(f.key)) f,
+    ]..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    final lowerPlural = labelPlural.toLowerCase();
+    return CsvImportTarget._(
+      kind: _CsvKind.object,
+      objectKey: key,
+      fields: columns,
+      singular: label.toLowerCase(),
+      plural: lowerPlural,
+      requiredHeaders: [nameLabel],
+      templateHeaders: [
+        nameLabel,
+        for (final f in columns) f.label,
+        'Assigned to',
+        'Tags',
+      ],
+      templateExample: [
+        'Example ${label.toLowerCase()}',
+        for (final f in columns) _exampleValue(f),
+        'agent@yourco.com',
+        'vip,featured',
+      ],
+    );
+  }
+
+  final _CsvKind _kind;
+
+  /// The object's key, for a custom object's target.
+  final String? objectKey;
+
+  /// The columns a custom object's template and sample line are built from.
+  final List<ObjectField> fields;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CsvImportTarget &&
+      other._kind == _kind &&
+      other.objectKey == objectKey;
+
+  @override
+  int get hashCode => Object.hash(_kind, objectKey);
 
   final String singular;
   final String plural;
 
   /// The web's description line, word for word: the ticket drawer's, or the
   /// contacts and leads import dialogs'.
-  String get description => switch (this) {
-    CsvImportTarget.contacts => appL10n.appCsvDescriptionContacts,
-    CsvImportTarget.tickets => appL10n.appCsvDescriptionTickets,
-    CsvImportTarget.leads => appL10n.appCsvDescriptionLeads,
+  String get description => switch (_kind) {
+    _CsvKind.contacts => appL10n.appCsvDescriptionContacts,
+    _CsvKind.tickets => appL10n.appCsvDescriptionTickets,
+    _CsvKind.leads => appL10n.appCsvDescriptionLeads,
+    _CsvKind.object => appL10n.appCsvDescriptionObject(plural),
   };
 
   /// The headers the template-only import refuses a file without, and the
@@ -190,23 +265,20 @@ enum CsvImportTarget {
 
   /// Whether the import matches columns (`mapping`), which takes `.xlsx` too.
   /// Tickets keep the template-only import, `.csv` only.
-  bool get usesMapping => this != CsvImportTarget.tickets;
+  bool get usesMapping => _kind != _CsvKind.tickets;
 
-  String get _moduleUrl {
-    switch (this) {
-      case CsvImportTarget.contacts:
-        return ApiConfig.contacts;
-      case CsvImportTarget.tickets:
-        return ApiConfig.tickets;
-      case CsvImportTarget.leads:
-        return ApiConfig.leads;
-    }
-  }
+  String get _moduleUrl => switch (_kind) {
+    _CsvKind.contacts => ApiConfig.contacts,
+    _CsvKind.tickets => ApiConfig.tickets,
+    _CsvKind.leads => ApiConfig.leads,
+    _CsvKind.object => ApiConfig.objectRecords(objectKey ?? ''),
+  };
 
   String get previewUrl => ApiConfig.csvImportPreview(_moduleUrl);
   String get commitUrl => ApiConfig.csvImportCommit(_moduleUrl);
 
-  String get templateFileName => '$plural-import-template.csv';
+  /// A custom object's file is named by its key, as the web's is.
+  String get templateFileName => '${objectKey ?? plural}-import-template.csv';
 
   /// The name the web drawer gives its "Download errors" file.
   String get errorsFileName => '$plural-import-errors.csv';
@@ -215,32 +287,53 @@ enum CsvImportTarget {
   String get skippedFileName => '$plural-skipped-rows.csv';
 
   /// One valid row of a preview as the web drawer's sample table shows it:
-  /// the name, then the other columns it prints, blanks left out. The keys
-  /// are the ones the import views put in `valid[]` for this module.
+  /// the name, then the other columns it prints, blanks left out. The row is
+  /// this module's `valid[]` item: a `ContactImportRow`, `CaseImportValidRow`
+  /// or `LeadImportRow`.
   ({String title, String details}) sampleLine(Map<String, dynamic> row) {
-    String text(String key) => row[key]?.toString().trim() ?? '';
+    String text(String? value) => value?.trim() ?? '';
     final List<String> details;
     final String title;
-    switch (this) {
-      case CsvImportTarget.contacts:
-        title = '${text('first_name')} ${text('last_name')}'.trim();
-        details = [text('email'), text('phone'), text('organization')];
-      case CsvImportTarget.tickets:
-        title = text('name');
+    switch (_kind) {
+      case _CsvKind.contacts:
+        final r = api.ContactImportRow.fromJson(row);
+        title = '${text(r.firstName)} ${text(r.lastName)}'.trim();
+        details = [text(r.email), text(r.phone), text(r.organization)];
+      case _CsvKind.tickets:
+        final r = api.CaseImportValidRow.fromJson(row);
+        title = text(r.name);
         details = [
-          text('status'),
-          text('priority'),
-          if (row['account_id'] != null) appL10n.appCsvAccountLinked,
+          text(r.status),
+          text(r.priority),
+          if (r.accountId != null) appL10n.appCsvAccountLinked,
         ];
-      case CsvImportTarget.leads:
-        title = '${text('first_name')} ${text('last_name')}'.trim();
-        details = [text('email'), text('company_name'), text('status')];
+      case _CsvKind.leads:
+        final r = api.LeadImportRow.fromJson(row);
+        title = '${text(r.firstName)} ${text(r.lastName)}'.trim();
+        details = [text(r.email), text(r.companyName), text(r.status)];
+      case _CsvKind.object:
+        final r = enterprise.CustomRecordImportRow.fromJson(row);
+        title = text(r.name);
+        final values = r.customFields;
+        details = [
+          for (final f in fields)
+            if (values != null && hasFieldValue(values[f.key]))
+              displayValue(f, values[f.key]),
+        ].take(3).toList();
     }
     return (
       title: title.isEmpty ? appL10n.appUnnamedPerson : title,
       details: details.where((d) => d.isNotEmpty).join(' \u00b7 '),
     );
   }
+
+  /// The file's row number of one valid row (see [sampleLine]), if it says.
+  int? sampleRow(Map<String, dynamic> row) => switch (_kind) {
+    _CsvKind.contacts => api.ContactImportRow.fromJson(row).row,
+    _CsvKind.tickets => api.CaseImportValidRow.fromJson(row).row,
+    _CsvKind.leads => api.LeadImportRow.fromJson(row).row,
+    _CsvKind.object => enterprise.CustomRecordImportRow.fromJson(row).row,
+  };
 
   /// The template as CSV text, quoting a cell only when it holds a comma, as
   /// the web does.
@@ -250,13 +343,55 @@ enum CsvImportTarget {
   ].join('\n');
 
   /// The record kind for [count] records, in the current language.
-  String noun(int count) => appL10n.appCsvNoun(name, count);
+  /// The heading of the import sheet, with or without "from CSV".
+  String title({required bool mapping}) => switch (_kind) {
+    _CsvKind.object =>
+      mapping
+          ? appL10n.appCsvTitleObject(plural)
+          : appL10n.appCsvTitleFromCsvObject(plural),
+    _ =>
+      mapping
+          ? appL10n.appCsvTitle(_kind.name)
+          : appL10n.appCsvTitleFromCsv(_kind.name),
+  };
+
+  String get noneToImport => _kind == _CsvKind.object
+      ? appL10n.appCsvNoneToImportObject(plural)
+      : appL10n.appCsvNoneToImport(_kind.name);
+
+  /// A custom object's noun is its own label, which is never translated.
+  String noun(int count) => switch (_kind) {
+    _CsvKind.object => count == 1 ? singular : plural,
+    _ => appL10n.appCsvNoun(_kind.name, count),
+  };
+}
+
+/// Field keys the server never takes as import targets: they would collide
+/// with the name, assignee and tags columns (and `full_name`).
+const _reservedImportKeys = {'name', 'assigned_to', 'tags', 'full_name'};
+
+/// A cell for a custom field's column in the template, by its type.
+String _exampleValue(ObjectField f) {
+  switch (f.fieldType) {
+    case 'number':
+      return '3';
+    case 'checkbox':
+      return 'Yes';
+    case 'date':
+      return '2026-12-31';
+    case 'textarea':
+      return 'A longer note';
+    case 'dropdown':
+      return f.options.isEmpty ? '' : f.options.first.label;
+    default:
+      return 'Example';
+  }
 }
 
 /// Mirrors `MAX_UPLOAD_BYTES` in the three import views.
 const int csvImportMaxBytes = 5 * 1024 * 1024;
 
-/// The web's wording for a 403 (`frontend/src/lib/server/v2/csv-import.js`),
+/// The web's wording for a 403 (`frontend/src/lib/server/v2/csv-import.ts`),
 /// kept identical so both clients say the same thing.
 String get csvImportForbiddenMessage => appL10n.appCsvForbidden;
 
@@ -296,11 +431,16 @@ class CsvRowError {
     required this.message,
   });
 
-  factory CsvRowError.fromJson(Map<String, dynamic> json) => CsvRowError(
-    row: (json['row'] as num?)?.toInt() ?? 0,
-    field: json['field']?.toString() ?? '',
-    message: json['message']?.toString() ?? '',
-  );
+  /// Reads a `LeadImportRowError`; the contacts and tickets ones are the
+  /// same shape.
+  factory CsvRowError.fromJson(Map<String, dynamic> json) {
+    final w = api.LeadImportRowError.fromJson(json);
+    return CsvRowError(
+      row: w.row ?? 0,
+      field: w.field ?? '',
+      message: w.message ?? '',
+    );
+  }
 
   final int row;
   final String field;
@@ -318,13 +458,16 @@ class CsvImportColumn {
     required this.samples,
   });
 
-  factory CsvImportColumn.fromJson(Map<String, dynamic> json) =>
-      CsvImportColumn(
-        index: (json['index'] as num?)?.toInt() ?? 0,
-        header: json['header']?.toString() ?? '',
-        field: json['field']?.toString(),
-        samples: _strings(json['samples']),
-      );
+  /// Reads an `ImportColumn`.
+  factory CsvImportColumn.fromJson(Map<String, dynamic> json) {
+    final w = api.ImportColumn.fromJson(json);
+    return CsvImportColumn(
+      index: w.index ?? 0,
+      header: w.header ?? '',
+      field: w.field,
+      samples: w.samples ?? const [],
+    );
+  }
 
   final int index;
   final String header;
@@ -347,11 +490,15 @@ class CsvImportField {
     required this.required,
   });
 
-  factory CsvImportField.fromJson(Map<String, dynamic> json) => CsvImportField(
-    name: json['name']?.toString() ?? '',
-    label: json['label']?.toString() ?? '',
-    required: json['required'] == true,
-  );
+  /// Reads an `ImportField`.
+  factory CsvImportField.fromJson(Map<String, dynamic> json) {
+    final w = api.ImportField.fromJson(json);
+    return CsvImportField(
+      name: w.name ?? '',
+      label: w.label ?? '',
+      required: w.required_ == true,
+    );
+  }
 
   final String name;
   final String label;
@@ -374,13 +521,17 @@ class CsvSkippedRow {
     required this.kind,
   });
 
-  factory CsvSkippedRow.fromJson(Map<String, dynamic> json) => CsvSkippedRow(
-    row: (json['row'] as num?)?.toInt() ?? 0,
-    field: json['field']?.toString() ?? '',
-    message: json['message']?.toString() ?? '',
-    cells: _strings(json['cells']),
-    kind: json['kind']?.toString() ?? '',
-  );
+  /// Reads an `ImportSkippedRow`.
+  factory CsvSkippedRow.fromJson(Map<String, dynamic> json) {
+    final w = api.ImportSkippedRow.fromJson(json);
+    return CsvSkippedRow(
+      row: w.row ?? 0,
+      field: w.field ?? '',
+      message: w.message ?? '',
+      cells: w.cells ?? const [],
+      kind: w.kind ?? '',
+    );
+  }
 
   final int row;
   final String field;
@@ -388,10 +539,6 @@ class CsvSkippedRow {
   final List<String> cells;
   final String kind;
 }
-
-List<String> _strings(Object? raw) => raw is List
-    ? raw.map((v) => v?.toString() ?? '').toList(growable: false)
-    : const [];
 
 List<T> _objects<T>(Object? raw, T Function(Map<String, dynamic>) read) =>
     raw is List
@@ -406,13 +553,13 @@ List<CsvSkippedRow> _skippedRows(Object? raw) =>
 
 /// `dropped` as the server sends it, `[{field, count}]`, keyed by field in the
 /// server's order.
-Map<String, int> _droppedCounts(Object? raw) => {
-  for (final d in _objects(raw, (d) => d))
-    d['field']?.toString() ?? '': (d['count'] as num?)?.toInt() ?? 0,
+Map<String, int> _droppedCounts(List<api.ImportDropped>? rows) => {
+  for (final d in rows ?? const <api.ImportDropped>[])
+    d.field ?? '': d.count ?? 0,
 };
 
 /// One cell of a CSV this app writes, with the two rules the web
-/// (`frontend/src/lib/utils/csv.js`) and the server's exports
+/// (`frontend/src/lib/utils/csv.ts`) and the server's exports
 /// (`common/csv_export.py`) apply: a cell a spreadsheet would run as a formula
 /// is prefixed with `'`, since a message can quote the value that was refused
 /// and a skipped row carries the file's own cells; and a cell holding a quote,
@@ -548,29 +695,43 @@ class CsvImportPreview {
     this.skippedCount = 0,
   });
 
+  /// Reads a `LeadImportPreviewResponse`, which is one of two shapes:
+  /// `LeadImportTemplatePreview` (the shape `CaseImportPreviewResponse` has
+  /// too) or `LeadImportMappedPreview`. The contacts ones match field for
+  /// field.
   factory CsvImportPreview.fromJson(Map<String, dynamic> json) {
-    final summary = json['summary'] is Map<String, dynamic>
-        ? json['summary'] as Map<String, dynamic>
-        : const <String, dynamic>{};
-    int count(String key) => (summary[key] as num?)?.toInt() ?? 0;
-    final headerError = json['header_error']?.toString();
-    final columns = json['columns'];
+    final template = api.LeadImportTemplatePreview.fromJson(json);
+    final mapped = api.LeadImportMappedPreview.fromJson(json);
+    final headerError = template.headerError;
+    final columns = mapped.columns;
     return CsvImportPreview(
-      total: count('total'),
-      valid: count('valid'),
-      invalid: count('invalid'),
-      errors: _rowErrors(json['errors']),
-      validRows: _objects(json['valid'], (row) => row),
+      total: template.summary?.total ?? 0,
+      valid: template.summary?.valid ?? 0,
+      invalid: template.summary?.invalid ?? 0,
+      errors: [
+        for (final e in template.errors ?? const <api.LeadImportRowError>[])
+          CsvRowError.fromJson(e.json),
+      ],
+      validRows: [
+        for (final row in template.valid ?? const <api.LeadImportRow>[])
+          row.json,
+      ],
       headerError: (headerError == null || headerError.isEmpty)
           ? null
           : headerError,
-      columns: columns is List
-          ? _objects(columns, CsvImportColumn.fromJson)
-          : null,
-      fields: _objects(json['fields'], CsvImportField.fromJson),
-      skipped: _skippedRows(json['skipped']),
-      dropped: _droppedCounts(json['dropped']),
-      skippedCount: count('skipped'),
+      columns: columns == null
+          ? null
+          : [for (final c in columns) CsvImportColumn.fromJson(c.json)],
+      fields: [
+        for (final f in mapped.fields ?? const <api.ImportField>[])
+          CsvImportField.fromJson(f.json),
+      ],
+      skipped: [
+        for (final r in mapped.skipped ?? const <api.ImportSkippedRow>[])
+          CsvSkippedRow.fromJson(r.json),
+      ],
+      dropped: _droppedCounts(mapped.dropped),
+      skippedCount: mapped.summary?.skipped ?? 0,
     );
   }
 
@@ -627,12 +788,19 @@ class CsvImportResult {
     this.dropped = const {},
   });
 
-  factory CsvImportResult.fromJson(Map<String, dynamic> json) =>
-      CsvImportResult(
-        created: (json['created'] as num?)?.toInt() ?? 0,
-        skipped: _skippedRows(json['skipped']),
-        dropped: _droppedCounts(json['dropped']),
-      );
+  /// Reads a `LeadImportCommitResponse`; the contacts and tickets ones are
+  /// the same shape.
+  factory CsvImportResult.fromJson(Map<String, dynamic> json) {
+    final w = api.LeadImportCommitResponse.fromJson(json);
+    return CsvImportResult(
+      created: w.created ?? 0,
+      skipped: [
+        for (final row in w.skipped ?? const <api.ImportSkippedRow>[])
+          CsvSkippedRow.fromJson(row.json),
+      ],
+      dropped: _droppedCounts(w.dropped),
+    );
+  }
 
   final int created;
   final List<CsvSkippedRow> skipped;
@@ -941,7 +1109,7 @@ class CsvImportNotifier extends Notifier<CsvImportState> {
     ApiResponse<Map<String, dynamic>> response,
     String fallback,
   ) {
-    if (response.statusCode == 403) return csvImportForbiddenMessage;
+    if (response.statusCode == 403) return _forbiddenMessage(response.data);
     if (response.statusCode == 413) return csvImportTooLargeMessage;
     if (response.statusCode == 429) return csvImportThrottledMessage;
     final body = response.data;
@@ -954,6 +1122,14 @@ class CsvImportNotifier extends Notifier<CsvImportState> {
     }
     return fallback;
   }
+}
+
+/// A 403 shows the server's `detail` sentence (the import permission, or the
+/// plan not including custom objects), else the fixed permission sentence.
+String _forbiddenMessage(Map<String, dynamic>? body) {
+  final detail = body?['detail'];
+  if (detail is String && detail.trim().isNotEmpty) return detail;
+  return csvImportForbiddenMessage;
 }
 
 /// One import per module, discarded when its sheet closes, so reopening the

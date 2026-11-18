@@ -3,10 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
-import '../data/api_envelope.dart';
+import '../data/api/enterprise_schema.g.dart' as enterprise;
+import '../data/api/schema.g.dart' as api;
 import '../data/models/custom_field_definition.dart';
 import '../data/models/custom_object.dart';
 import '../data/models/lookup_models.dart';
+import '../data/models/object_board.dart';
+import '../data/models/object_record_filters.dart';
 import '../l10n/l10n.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
@@ -91,10 +94,10 @@ class ObjectSettingsData {
 /// The object and every field it has, turned-off ones included for admins.
 final objectSettingsProvider = FutureProvider.autoDispose
     .family<ObjectSettingsData, String>((ref, key) async {
-      final api = ApiService();
+      final service = ApiService();
       final results = await Future.wait([
-        api.get(ApiConfig.object(key)),
-        api.get(ApiConfig.objectFields(key)),
+        service.get(ApiConfig.object(key)),
+        service.get(ApiConfig.objectFields(key)),
       ]);
       final object = results[0];
       final fields = results[1];
@@ -104,11 +107,13 @@ final objectSettingsProvider = FutureProvider.autoDispose
       if (!fields.success || fields.data == null) {
         throw Exception(fields.message ?? appL10n.appMsgFailedToLoadItsFields);
       }
+      final list = enterprise.CustomObjectFieldList.fromJson(fields.data!);
       return ObjectSettingsData(
         summary: ObjectSummary.fromJson(object.data!),
-        fields: listFromEnvelope(fields.data!, const [
-          'fields',
-        ]).map(ObjectField.fromJson).toList(),
+        fields: [
+          for (final f in list.fields ?? const <enterprise.CustomObjectField>[])
+            ObjectField.fromJson(f.json),
+        ],
       );
     }, retry: (_, _) => null);
 
@@ -119,10 +124,14 @@ class ObjectRecordsData {
   final int count;
   final String query;
 
+  /// Every filter the list was fetched with, search text included.
+  final ObjectRecordFilters filters;
+
   const ObjectRecordsData({
     this.records = const [],
     this.count = 0,
     this.query = '',
+    this.filters = const ObjectRecordFilters(),
   });
 
   bool get hasMore => records.length < count;
@@ -132,53 +141,70 @@ class ObjectRecordsNotifier extends AsyncNotifier<ObjectRecordsData> {
   ObjectRecordsNotifier(this.key);
 
   final String key;
-  String _query = '';
+  ObjectRecordFilters _filters = const ObjectRecordFilters();
   // Bumped whenever the list is replaced, so a page fetched for an older list
   // is dropped instead of appended.
   int _generation = 0;
   int? _pagingGeneration;
 
   @override
-  Future<ObjectRecordsData> build() => _fetch(query: '', offset: 0);
+  Future<ObjectRecordsData> build() =>
+      _fetch(filters: const ObjectRecordFilters(), offset: 0);
+
+  /// What the list is narrowed by now, which its export sends too.
+  ObjectRecordFilters get filters => _filters;
 
   Future<ObjectRecordsData> _fetch({
-    required String query,
+    required ObjectRecordFilters filters,
     required int offset,
   }) async {
+    // `dynamic` so a list value is a repeated parameter.
+    final params = <String, dynamic>{
+      'limit': '$objectRecordsPageSize',
+      if (offset > 0) 'offset': '$offset',
+      ...filters.toQuery(),
+    };
     final response = await ApiService().get(
-      ApiConfig.objectRecords(key),
-      queryParams: {
-        'limit': '$objectRecordsPageSize',
-        if (offset > 0) 'offset': '$offset',
-        if (query.isNotEmpty) 'q': query,
-      },
+      Uri.parse(
+        ApiConfig.objectRecords(key),
+      ).replace(queryParameters: params).toString(),
     );
     final data = response.data;
     if (!response.success || data == null) {
       throw Exception(response.message ?? appL10n.appMsgFailedToLoadRecords);
     }
-    final records = listFromEnvelope(data, const [
-      'results',
-    ]).map(ObjectRecord.fromJson).toList();
+    final list = enterprise.CustomRecordList.fromJson(data);
+    final records = [
+      for (final r in list.results ?? const <enterprise.CustomRecord>[])
+        ObjectRecord.fromJson(r.json),
+    ];
     return ObjectRecordsData(
       records: records,
-      count: data['count'] as int? ?? records.length,
-      query: query,
+      count: list.count ?? records.length,
+      query: filters.query,
+      filters: filters,
     );
   }
 
-  Future<void> setQuery(String query) async {
-    _query = query.trim();
+  Future<void> setQuery(String query) =>
+      setFilters(_filters.copyWith(query: query.trim()));
+
+  Future<void> setFilters(ObjectRecordFilters filters) async {
+    _filters = filters;
     final generation = ++_generation;
     state = const AsyncLoading();
-    final next = await AsyncValue.guard(() => _fetch(query: _query, offset: 0));
+    final next = await AsyncValue.guard(
+      () => _fetch(filters: _filters, offset: 0),
+    );
     if (!ref.mounted || generation != _generation) return;
     state = next;
   }
 
   Future<void> refresh() async {
     final generation = ++_generation;
-    final next = await AsyncValue.guard(() => _fetch(query: _query, offset: 0));
+    final next = await AsyncValue.guard(
+      () => _fetch(filters: _filters, offset: 0),
+    );
     if (!ref.mounted || generation != _generation) return;
     state = next;
   }
@@ -191,7 +217,7 @@ class ObjectRecordsNotifier extends AsyncNotifier<ObjectRecordsData> {
     _pagingGeneration = generation;
     try {
       final next = await AsyncValue.guard(
-        () => _fetch(query: current.query, offset: current.records.length),
+        () => _fetch(filters: current.filters, offset: current.records.length),
       );
       final page = next.value;
       if (!ref.mounted || page == null || generation != _generation) return;
@@ -200,6 +226,7 @@ class ObjectRecordsNotifier extends AsyncNotifier<ObjectRecordsData> {
           records: [...current.records, ...page.records],
           count: page.count,
           query: current.query,
+          filters: current.filters,
         ),
       );
     } finally {
@@ -212,6 +239,93 @@ final objectRecordsProvider = AsyncNotifierProvider.autoDispose
     .family<ObjectRecordsNotifier, ObjectRecordsData, String>(
       ObjectRecordsNotifier.new,
       retry: (_, _) => null,
+    );
+
+/// The board of one object. It takes the list's filters, which the screen
+/// hands over whenever they change.
+class ObjectBoardNotifier extends AsyncNotifier<ObjectBoard> {
+  ObjectBoardNotifier(this.key);
+
+  final String key;
+  ObjectRecordFilters? _filters;
+  int _generation = 0;
+
+  @override
+  Future<ObjectBoard> build() =>
+      _fetch(_filters ?? ref.read(objectRecordsProvider(key).notifier).filters);
+
+  Future<ObjectBoard> _fetch(ObjectRecordFilters filters) async {
+    _filters = filters;
+    final response = await ref
+        .read(customObjectsApiProvider)
+        .fetchBoard(key, filters.toQuery());
+    final data = response.data;
+    if (!response.success || data == null) {
+      throw Exception(
+        settingsWriteError(response, appL10n.appObjectsBoardLoadFailed),
+      );
+    }
+    return ObjectBoard.fromJson(data);
+  }
+
+  Future<void> setFilters(ObjectRecordFilters filters) async {
+    final generation = ++_generation;
+    state = const AsyncLoading();
+    final next = await AsyncValue.guard(() => _fetch(filters));
+    if (!ref.mounted || generation != _generation) return;
+    state = next;
+  }
+
+  Future<void> refresh() => setFilters(_filters ?? const ObjectRecordFilters());
+
+  /// Moves a card to the end of [target] at once and asks the server. A
+  /// refusal puts the board back and returns the server's words; null means
+  /// it landed.
+  Future<String?> move(ObjectRecord record, ObjectBoardColumn target) async {
+    final before = state.value;
+    if (before == null) return appL10n.appObjectsBoardNotLoaded;
+    final generation = ++_generation;
+    state = AsyncData(before.moved(record, target));
+    final response = await ref
+        .read(customObjectsApiProvider)
+        .moveCard(key, boardMoveBody(record, target));
+    if (!ref.mounted) return null;
+    if (!response.success) {
+      if (generation == _generation) state = AsyncData(before);
+      return boardMoveError(response);
+    }
+    final moved = enterprise.CustomRecordMoved.fromJson(
+      response.data ?? const {},
+    ).record;
+    final current = state.value;
+    if (moved != null && current != null && generation == _generation) {
+      state = AsyncData(current.replaced(ObjectRecord.fromJson(moved.json)));
+    }
+    return null;
+  }
+}
+
+final objectBoardProvider = AsyncNotifierProvider.autoDispose
+    .family<ObjectBoardNotifier, ObjectBoard, String>(
+      ObjectBoardNotifier.new,
+      retry: (_, _) => null,
+    );
+
+/// What the server refused a card move with: the value's or the record's
+/// message, a 403's detail, or a plain fallback.
+String boardMoveError(ApiResponse<dynamic> response) => settingsWriteError(
+  response,
+  appL10n.appObjectsBoardMoveFailed,
+  labels: const {'value': ''},
+);
+
+/// What the server refused a note with: the text's message, a 403's detail
+/// (the plan, or whose notes these are), or a plain fallback.
+String noteError(ApiResponse<dynamic> response, String fallback) =>
+    settingsWriteError(
+      response,
+      fallback,
+      labels: {'comment': appL10n.appObjectsNoteField},
     );
 
 const int linkSearchLimit = 20;
@@ -248,6 +362,39 @@ class CustomObjectsApi {
     String attachmentId,
   ) => _api.delete(ApiConfig.objectRecordAttachment(key, id, attachmentId));
 
+  /// Adds a note; the answer is the record, as `fetchRecord` returns it.
+  Future<ApiResponse<Map<String, dynamic>>> addNote(
+    String key,
+    String id,
+    String text,
+  ) => _api.post(ApiConfig.objectRecord(key, id), {'comment': text});
+
+  Future<ApiResponse<Map<String, dynamic>>> editNote(
+    String key,
+    String commentId,
+    String text,
+  ) => _api.patch(ApiConfig.objectComment(key, commentId), {'comment': text});
+
+  Future<ApiResponse<Map<String, dynamic>>> deleteNote(
+    String key,
+    String commentId,
+  ) => _api.delete(ApiConfig.objectComment(key, commentId));
+
+  /// The board, narrowed by the list's own filters.
+  Future<ApiResponse<Map<String, dynamic>>> fetchBoard(
+    String key,
+    Map<String, dynamic> filters,
+  ) => _api.get(
+    Uri.parse(
+      ApiConfig.objectBoard(key),
+    ).replace(queryParameters: filters.isEmpty ? null : filters).toString(),
+  );
+
+  Future<ApiResponse<Map<String, dynamic>>> moveCard(
+    String key,
+    Map<String, dynamic> body,
+  ) => _api.post(ApiConfig.objectBoardMove(key), body);
+
   Future<ApiResponse<Map<String, dynamic>>> createObject(
     Map<String, dynamic> body,
   ) => _api.post(ApiConfig.objects, body);
@@ -275,6 +422,24 @@ class CustomObjectsApi {
     String key,
     String fieldKey,
   ) => _api.delete(ApiConfig.objectField(key, fieldKey));
+
+  Future<ApiResponse<Map<String, dynamic>>> fetchMatches(
+    String id, {
+    bool dismissed = false,
+  }) => _api.get(
+    ApiConfig.realEstateMatches(id),
+    queryParams: dismissed ? {'dismissed': 'true'} : null,
+  );
+
+  Future<ApiResponse<Map<String, dynamic>>> dismissMatch(
+    String id,
+    String otherId,
+  ) => _api.put(ApiConfig.realEstateMatchDismissed(id, otherId), {});
+
+  Future<ApiResponse<Map<String, dynamic>>> undismissMatch(
+    String id,
+    String otherId,
+  ) => _api.delete(ApiConfig.realEstateMatchDismissed(id, otherId));
 
   Future<ApiResponse<Map<String, dynamic>>> addRelated(
     String to,
@@ -307,8 +472,8 @@ class CustomObjectsApi {
   );
 
   /// Built-in kinds are searched through their community list endpoints and
-  /// read the way the matching lookup in `lookup_provider.dart` reads them.
-  /// A failed request throws, so it never reads as "no matches".
+  /// labelled the way the matching lookup in `lookup_provider.dart` labels
+  /// them. A failed request throws, so it never reads as "no matches".
   Future<List<LinkedRecord>> searchTargets(String target, String query) async {
     final spec = _searchSpec(target);
     if (spec == null) return const [];
@@ -321,24 +486,25 @@ class CustomObjectsApi {
       throw Exception(response.message ?? appL10n.appMsgCouldNotSearch);
     }
     return [
-      for (final row in listFromEnvelope(
-        data,
-        spec.paths,
-      ).take(linkSearchLimit))
+      for (final row in spec.rows(data).take(linkSearchLimit))
         LinkedRecord(
-          id: row['id']?.toString() ?? '',
+          id: row.id ?? '',
           object: target,
-          name: spec.label(row),
+          name: spec.label(row.json),
         ),
     ];
   }
 }
 
+typedef _Row = ({String? id, Map<String, dynamic> json});
+
 class _SearchSpec {
-  const _SearchSpec(this.url, this.paths, this.label, {this.param = 'search'});
+  const _SearchSpec(this.url, this.rows, this.label, {this.param = 'search'});
 
   final String url;
-  final List<String> paths;
+
+  /// The rows of the answer, read through its response component.
+  final List<_Row> Function(Map<String, dynamic> body) rows;
   final String Function(Map<String, dynamic> row) label;
   final String param;
 }
@@ -351,41 +517,86 @@ _SearchSpec? _searchSpec(String target) {
     case 'lead':
       return _SearchSpec(
         ApiConfig.leads,
-        const ['open_leads.open_leads'],
+        (body) => [
+          for (final r
+              in api.LeadListResponse.fromJson(body).openLeads?.openLeads ??
+                  const <api.Lead>[])
+            (id: r.id, json: r.json),
+        ],
         (row) => EntityLookup.person(
           row,
           fallbackKeys: const ['email', 'company_name'],
         ).label,
       );
     case 'contact':
-      return _SearchSpec(ApiConfig.contacts, const [
-        'results',
-        'contacts',
-      ], (row) => ContactLookup.fromJson(row).fullName);
+      return _SearchSpec(
+        ApiConfig.contacts,
+        (body) => [
+          for (final r
+              in api.ContactListResponse.fromJson(body).results ??
+                  const <api.Contact>[])
+            (id: r.id, json: r.json),
+        ],
+        (row) => ContactLookup.fromJson(row).fullName,
+      );
     case 'account':
-      return _SearchSpec(ApiConfig.accounts, const [
-        'active_accounts.open_accounts',
-        'accounts',
-        'results',
-      ], _name);
+      return _SearchSpec(
+        ApiConfig.accounts,
+        (body) => [
+          for (final r
+              in api.AccountListResponse.fromJson(
+                    body,
+                  ).activeAccounts?.openAccounts ??
+                  const <api.Account>[])
+            (id: r.id, json: r.json),
+        ],
+        _name,
+      );
     case 'deal':
-      return _SearchSpec(ApiConfig.opportunities, const [
-        'opportunities',
-      ], _name);
+      return _SearchSpec(
+        ApiConfig.opportunities,
+        (body) => [
+          for (final r
+              in api.OpportunityListResponse.fromJson(body).opportunities ??
+                  const <api.OpportunityList>[])
+            (id: r.id, json: r.json),
+        ],
+        _name,
+      );
     case 'ticket':
-      return _SearchSpec(ApiConfig.tickets, const ['cases'], _name);
+      return _SearchSpec(
+        ApiConfig.tickets,
+        (body) => [
+          for (final r
+              in api.CaseListResponse.fromJson(body).cases ??
+                  const <api.Case>[])
+            (id: r.id, json: r.json),
+        ],
+        _name,
+      );
     case 'task':
-      return _SearchSpec(ApiConfig.tasks, const [
-        'tasks',
-        'results',
-      ], (row) => EntityLookup.fromJson(row, labelKeys: const ['title']).label);
+      return _SearchSpec(
+        ApiConfig.tasks,
+        (body) => [
+          for (final r
+              in api.TaskListResponse.fromJson(body).tasks ??
+                  const <api.TaskList>[])
+            (id: r.id, json: r.json),
+        ],
+        (row) => EntityLookup.fromJson(row, labelKeys: const ['title']).label,
+      );
   }
   if (target.startsWith('obj:')) {
     final key = target.substring(4);
     try {
       return _SearchSpec(
         ApiConfig.objectRecords(key),
-        const ['results'],
+        (body) => [
+          for (final r
+              in enterprise.CustomRecordList.fromJson(body).results ??
+                  const <enterprise.CustomRecord>[])
+            (id: r.id, json: r.json),
+        ],
         _name,
         param: 'q',
       );
@@ -446,6 +657,7 @@ Map<String, dynamic> recordWriteBody({
   required Map<String, dynamic> customFields,
   required Map<String, List<String>> links,
   required List<String> assignees,
+  List<String>? tags,
   ObjectRecord? original,
 }) {
   final body = <String, dynamic>{'name': name};
@@ -483,6 +695,14 @@ Map<String, dynamic> recordWriteBody({
       ? assignees.isNotEmpty
       : !_sameSet(original.assignedTo.map((p) => p.id), assignees);
   if (sendAssignees) body['assigned_to'] = assignees;
+
+  // Sending tags replaces the set, so an edit sends them only when they moved.
+  if (tags != null) {
+    final sendTags = original == null
+        ? tags.isNotEmpty
+        : !_sameSet(original.tags.map((t) => t.id), tags);
+    if (sendTags) body['tags'] = tags;
+  }
   return body;
 }
 
@@ -510,6 +730,7 @@ String recordWriteError(
     if (data['assigned_to'] != null) {
       add(appL10n.commonAssignedTo, data['assigned_to']);
     }
+    if (data['tags'] != null) add(appL10n.commonTags, data['tags']);
     for (final section in const ['custom_fields', 'links']) {
       final nested = data[section];
       if (nested is! Map) continue;
@@ -528,6 +749,27 @@ String recordWriteError(
     if (detail.isNotEmpty) return detail;
   }
   return response.message ?? appL10n.appMsgCouldNotSaveThatRecord;
+}
+
+/// The write that chooses (or, with an empty key, clears) the board field.
+/// It is its own body, so editing an object never rewrites the setting.
+Map<String, dynamic> boardFieldBody(String fieldKey) => {
+  'board_field': fieldKey,
+};
+
+/// The active dropdown fields the board can group by, in field order.
+List<ObjectField> boardChoices(List<ObjectField> fields) => ObjectDefinition(
+  summary: const ObjectSummary(key: '', label: '', labelPlural: ''),
+  fields: fields,
+).boardChoices;
+
+/// What the settings page says the board groups by.
+String boardLabelOf(ObjectSummary summary, List<ObjectField> fields) {
+  if (summary.boardField.isEmpty) return appL10n.appObjectsNoBoard;
+  for (final f in fields) {
+    if (f.key == summary.boardField) return f.label;
+  }
+  return summary.boardField;
 }
 
 /// The object settings write body, as the web's `readObjectForm` builds it.
@@ -618,6 +860,7 @@ Map<String, String> get objectFormLabels {
     'name_label': l10n.appObjectFormNameLabel,
     'description': l10n.commonDescription,
     'record_access': l10n.appObjectFormRecordAccess,
+    'board_field': l10n.appObjectFormBoardField,
   };
 }
 
@@ -650,7 +893,9 @@ String settingsWriteError(
     final lines = [
       for (final e in data.entries)
         if (_messageText(e.value).isNotEmpty)
-          '${labels[e.key] ?? e.key}: ${_messageText(e.value)}',
+          labels[e.key] == ''
+              ? _messageText(e.value)
+              : '${labels[e.key] ?? e.key}: ${_messageText(e.value)}',
     ];
     if (lines.isNotEmpty) return lines.join('\n');
   }

@@ -303,5 +303,29 @@
   "contacts_owner_unknown": "Unknown",
   "contacts_attachment_fallback": "Attachment",
   "contacts_event_added": "Contact added",
-  "contacts_not_found": "That contact does not exist, or you do not have access to them."
+  "contacts_not_found": "That contact does not exist, or you do not have access to them.",
+  "contacts_detail_filter_conversations": "Conversations",
+  "contacts_detail_composer_label": "Add to the timeline",
+  "contacts_detail_composer_note": "Note",
+  "contacts_detail_composer_log": "Log activity",
+  "contacts_detail_note_placeholder_short": "Write a note…",
+  "contacts_detail_interactions_failed": "Calls and messages could not be loaded, so they are missing below.",
+  "contacts_detail_interaction_delete_explain": "Removes it from every timeline it is on.",
+  "contacts_detail_interactions_more": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Showing the latest calls and messages; {countShown} older one is not shown.",
+        "countPlural=other": "Showing the latest calls and messages; {countShown} older ones are not shown."
+      }
+    }
+  ],
+  "contacts_detail_rail_source": "Source",
+  "contacts_detail_rail_sub_source": "Sub-source",
+  "contacts_detail_rail_reference": "Reference"
 }

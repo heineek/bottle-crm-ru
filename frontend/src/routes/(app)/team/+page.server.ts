@@ -1,0 +1,97 @@
+import { fail } from '@sveltejs/kit';
+import { listTeam, inviteUser, setRole, setStatus, isRole } from '#lib/server/v2/team.js';
+import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
+import { apiStatus } from '#lib/api-errors.js';
+import type { Actions, PageServerLoad } from './$types';
+
+/**
+ * Team and access.
+ *
+ * Server load, so the JWT cookie stays server-side. The list, the totals and
+ * the per-person token counts all arrive from the real org; a non-admin gets
+ * `forbidden` back rather than a broken page, because the underlying endpoints
+ * are admin-only.
+ */
+export const load: PageServerLoad = async ({ cookies }) => {
+  return await listTeam({ cookies });
+};
+
+export const actions: Actions = {
+  /**
+   * Invite a new member: email + role. The server is the boundary. It gates
+   * this to admins, rejects a duplicate within the org with a 400, and reuses
+   * an account that already exists elsewhere instead of erroring.
+   */
+  invite: async ({ cookies, request }) => {
+    const form = await request.formData();
+    const email = form.get('email')?.toString().trim();
+    const role = form.get('role')?.toString() || 'USER';
+    if (!email) return fail(400, { invite: { error: m.team_err_email() } });
+    if (!isRole(role)) return fail(400, { invite: { error: m.team_err_role() } });
+
+    try {
+      await inviteUser({ cookies }, { email, role });
+    } catch (err) {
+      return fail(apiStatus(err) === 403 ? 403 : 400, {
+        invite: {
+          error:
+            apiStatus(err) === 403
+              ? m.team_err_invite_forbidden()
+              : readableError(err, m.team_err_invite_failed())
+        }
+      });
+    }
+    return { invited: email };
+  },
+
+  /**
+   * Change someone's role. The page only shows this control for another
+   * person's row and never for the last admin, mirroring the server's rules,
+   * but the server is what enforces them: a member cannot promote themselves
+   * and nobody can change their own role here.
+   */
+  setRole: async ({ cookies, request }) => {
+    const form = await request.formData();
+    const userId = form.get('userId')?.toString();
+    const role = form.get('role')?.toString();
+    if (!userId || !role || !isRole(role)) {
+      return fail(400, { error: m.team_err_which_role() });
+    }
+    try {
+      await setRole({ cookies }, userId, role);
+    } catch (err) {
+      return fail(apiStatus(err) === 403 ? 403 : 400, {
+        error:
+          apiStatus(err) === 403
+            ? m.team_err_role_forbidden()
+            : readableError(err, m.team_err_role_failed())
+      });
+    }
+    return { roleChanged: userId };
+  },
+
+  /**
+   * Activate or deactivate a member. The server refuses to deactivate the last
+   * active admin (a 400), so the org can never be stranded without one.
+   */
+  setStatus: async ({ cookies, request }) => {
+    const form = await request.formData();
+    const userId = form.get('userId')?.toString();
+    const status = form.get('status')?.toString();
+    if (!userId || (status !== 'Active' && status !== 'Inactive')) {
+      return fail(400, { error: m.team_err_which_status() });
+    }
+    try {
+      await setStatus({ cookies }, userId, status);
+    } catch (err) {
+      return fail(apiStatus(err) === 403 ? 403 : 400, {
+        error:
+          apiStatus(err) === 403
+            ? m.team_err_status_forbidden()
+            : readableError(err, m.team_err_status_failed())
+      });
+    }
+    return { statusChanged: userId };
+  }
+};

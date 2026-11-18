@@ -55,7 +55,7 @@ import '../screens/settings/custom_fields_screen.dart';
 import '../screens/settings/macros_screen.dart';
 import '../screens/settings/object_settings_screen.dart';
 import '../screens/settings/objects_settings_screen.dart';
-import '../screens/settings/modules_screen.dart';
+import '../screens/settings/apps_screen.dart';
 import '../screens/settings/more_screen.dart';
 import '../screens/settings/profile_screen.dart';
 import '../screens/settings/api_tokens_screen.dart';
@@ -69,7 +69,10 @@ import '../screens/settings/inbound_email_screen.dart';
 import '../screens/settings/deal_pipeline_detail_screen.dart';
 import '../screens/settings/deal_pipelines_screen.dart';
 import '../screens/settings/lead_pipeline_detail_screen.dart';
+import '../screens/settings/lead_capture_screen.dart';
+import '../screens/settings/lead_intake_detail_screen.dart';
 import '../screens/settings/lead_pipelines_screen.dart';
+import '../screens/settings/lead_sources_screen.dart';
 import '../screens/settings/organization_edit_screen.dart';
 import '../screens/settings/organization_screen.dart';
 import '../screens/settings/help_center_screen.dart';
@@ -94,6 +97,9 @@ import '../screens/tickets/ticket_board_screen.dart';
 import '../screens/timesheet/time_report_screen.dart';
 import '../screens/timesheet/timesheet_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
+import '../screens/projects/project_detail_screen.dart';
+import '../screens/projects/project_form_screen.dart';
+import '../screens/projects/projects_list_screen.dart';
 import '../screens/documents/documents_list_screen.dart';
 import '../screens/documents/document_form_screen.dart';
 import '../screens/goals/goals_screen.dart';
@@ -374,6 +380,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
+        path: AppRoutes.projects,
+        name: 'projects',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.projects,
+          child: const ProjectsListScreen(),
+        ),
+      ),
+      // Literal `new` before `:id`, or "new" is read as a project id.
+      GoRoute(
+        path: AppRoutes.projectNew,
+        name: 'projectNew',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.projectNew,
+          child: ProjectFormScreen(
+            fromDealId: state.uri.queryParameters['deal'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.projectDetail,
+        name: 'projectDetail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.projectDetail,
+          child: ProjectDetailScreen(
+            projectId: state.pathParameters['id'] ?? '',
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.projectEdit,
+        name: 'projectEdit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.projectEdit,
+          child: ProjectFormScreen(projectId: state.pathParameters['id']),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.documents,
         name: 'documents',
         parentNavigatorKey: _rootNavigatorKey,
@@ -634,6 +681,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: AppRoutes.settingsLeadSources,
+        name: 'settingsLeadSources',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.settingsLeadSources,
+          child: const LeadSourcesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsLeadCapture,
+        name: 'settingsLeadCapture',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.settingsLeadCapture,
+          child: const LeadCaptureScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsLeadCaptureWebhookDetail,
+        name: 'settingsLeadCaptureWebhookDetail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ModuleGate(
+          path: AppRoutes.settingsLeadCaptureWebhookDetail,
+          child: LeadIntakeDetailScreen(
+            intakeId: state.pathParameters['intakeId'] ?? '',
+          ),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.settingsDealPipelines,
         name: 'settingsDealPipelines',
         parentNavigatorKey: _rootNavigatorKey,
@@ -871,10 +947,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OrganizationEditScreen(),
       ),
       GoRoute(
-        path: AppRoutes.settingsModules,
-        name: 'settingsModules',
+        path: AppRoutes.settingsApps,
+        name: 'settingsApps',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ModulesScreen(),
+        builder: (context, state) => const AppsScreen(),
       ),
       GoRoute(
         path: AppRoutes.settingsOrganization,
@@ -1131,6 +1207,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         initialDueDate: DateTime.tryParse(
                           state.uri.queryParameters['due'] ?? '',
                         ),
+                        // `?project=<id>` from a project's Tasks tab.
+                        initialProjectId: state.uri.queryParameters['project'],
                       ),
                     ),
                   ),

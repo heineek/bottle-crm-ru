@@ -85,6 +85,8 @@ ORG_SCOPED_TABLES = [
     # Settings
     "apiSettings",  # Note: camelCase
     "pack_application",
+    # Industry apps installed on the org, stamped by common/0061.
+    "installed_app",
     # Email & Invoicing
     "account_email",
     "emailLogs",
@@ -119,6 +121,8 @@ ORG_SCOPED_TABLES = [
     #
     # Notifications
     "notification",
+    # Phone push tokens (common/0066), registered per org by the phone app.
+    "device_token",
     # Case watchers (Tier 2 watchers-mentions)
     "case_watcher",
     # Business hours (Tier 2 business-hours-sla)
@@ -132,6 +136,9 @@ ORG_SCOPED_TABLES = [
     "csat_survey",
     # Time tracking (Tier 3 time-tracking).
     "time_entry",
+    # Projects and per-person rates, stamped by projects/0002.
+    "project",
+    "project_rate",
     # Approval workflows (Tier 3 approvals).
     "approval_rule",
     "approval",
@@ -144,6 +151,13 @@ ORG_SCOPED_TABLES = [
     "web_form_field",
     "web_form_submission",
     "web_form_daily_stat",
+    # Lead sources, lead webhooks and their deliveries, stamped by leads/0020.
+    "lead_source",
+    "lead_intake",
+    "lead_intake_event",
+    # Calls, meetings, messages and enquiries logged on records, stamped by
+    # interactions/0002.
+    "interaction",
     # Outbound webhooks (G12). Both carry org_id; the delivery worker sets the
     # context from the org it was queued for. See webhooks/tasks.py.
     "webhook_endpoint",

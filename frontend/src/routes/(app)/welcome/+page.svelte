@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
@@ -8,12 +8,11 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any }} */
-  let { data } = $props();
+  let { data }: PageProps = $props();
 
-  /** @type {'contacts' | 'leads'} */
-  let chosen = $state('contacts');
+  let chosen: 'contacts' | 'leads' = $state('contacts');
 
   let leadsOn = $derived(isOn(data.modules, 'leads'));
 
@@ -24,12 +23,12 @@
 
   let CHOICES = $derived([
     {
-      entity: /** @type {const} */ ('contacts'),
+      entity: 'contacts' as const,
       title: m.app_welcome_contacts_title(),
       line: m.app_welcome_contacts_line()
     },
     {
-      entity: /** @type {const} */ ('leads'),
+      entity: 'leads' as const,
       title: m.app_welcome_leads_title(),
       line: m.app_welcome_leads_line()
     }

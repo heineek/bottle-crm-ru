@@ -279,6 +279,9 @@ URL и в журналы доступа, которые его записыва�
 
 ## Поля {#fields}
 
+Payload контакта также содержит `source`, `source_detail` и `source_ref`, а ещё доступное только для
+чтения поле `phone_e164` (телефон, нормализованный для сопоставления).
+
 `CreateContactSerializer.Meta.fields` (`contacts/serializer.py:147-174`) определяет, что принимают
 `POST /api/contacts/`, `PUT /api/contacts/{id}/` и `PATCH /api/contacts/{id}/`. В отличие от
 `Lead.first_name`/`last_name`, у `Contact.first_name` и `Contact.last_name` нет ни `blank=True`, ни
@@ -291,6 +294,9 @@ URL и в журналы доступа, которые его записыва�
 | `last_name` | string | **обязательно** | |
 | `email` | string | необязательно | Если передан, уникален в пределах организации без учёта регистра |
 | `phone` | string | необязательно | |
+| `source` | ключ из [источников лидов](leads.md#lead-sources) организации | необязательно | То же правило, что для `source` лида. Заполняется из лида при его конвертации |
+| `source_detail` | string, не более 100 | необязательно | |
+| `source_ref` | string, не более 255 | необязательно | |
 | `organization` | string | необязательно | Свободный текст, может называть не ту компанию, на которую ссылается `account` |
 | `title` | string | необязательно | |
 | `department` | string | необязательно | |

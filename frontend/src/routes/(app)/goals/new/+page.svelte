@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { untrack, tick } from 'svelte';
   import { enhance } from '$app/forms';
@@ -11,9 +11,9 @@
   import { TriangleAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps, SubmitFunction } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form: result } = $props();
+  let { data, form: result }: PageProps = $props();
 
   /**
    * A goal is a target and a period, aimed at someone. This asks for exactly
@@ -45,14 +45,13 @@
     }))
   );
 
-  let touched = $state(/** @type {Record<string, boolean>} */ ({}));
+  let touched = $state({} as Record<string, boolean>);
   let submitted = $state(false);
 
   const REQUIRED = ['name', 'target_value', 'period_start', 'period_end'];
 
   let errors = $derived.by(() => {
-    /** @type {Record<string, string>} */
-    const e = {};
+    const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = m.goals_form_name_error();
 
     const target = Number(form.target_value);
@@ -69,21 +68,19 @@
   });
 
   let valid = $derived(Object.keys(errors).length === 0);
-  const show = (field) => (touched[field] || submitted) && errors[field];
+  const show = (field: string) => (touched[field] || submitted) && errors[field];
 
-  const unit = (n) => (form.goal_type === 'REVENUE' ? money(n, form.currency) : count(n));
+  const unit = (n: number) => (form.goal_type === 'REVENUE' ? money(n, form.currency) : count(n));
 
   // The empty "Select Currency" placeholder is dropped: a goal always has one.
   const currencyOptions = CURRENCY_CODES.filter((c) => c.value);
 
-  /** @type {import('./$types').SubmitFunction} */
-  const check = async ({ cancel }) => {
+  const check: SubmitFunction = async ({ cancel }) => {
     submitted = true;
     if (!valid) {
       cancel();
       await tick();
-      /** @type {HTMLElement | null} */
-      const first = document.querySelector('[aria-invalid="true"]');
+      const first: HTMLElement | null = document.querySelector('[aria-invalid="true"]');
       first?.focus();
     }
   };

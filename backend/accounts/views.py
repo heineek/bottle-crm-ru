@@ -19,9 +19,8 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,6 +32,7 @@ from accounts.serializer import (
     AccountCreateSerializer,
     AccountDetailEditSwaggerSerializer,
     AccountSerializer,
+    AccountWithRelatedSerializer,
     AccountWriteSerializer,
     EmailSerializer,
     EmailWriteSerializer,
@@ -44,6 +44,7 @@ from cases.access import visible_cases_qs
 from cases.models import Case
 from cases.serializer import CaseSerializer, parent_access_context
 from cases.workflow import TERMINAL_STATUSES
+from common.custom_fields import custom_field_filter
 from common.custom_fields import validate_payload as validate_custom_fields_payload
 from common.lookups import get_on_visible_record_or_404
 from common.models import (
@@ -57,6 +58,7 @@ from common.models import (
 from common.module_deletes import delete_refusal
 from common.modules import module_is_available, only_available
 from common.money import currency_block, deal_currency
+from common.pagination import CappedLimitOffsetPagination
 from common.permissions import HasOrgContext, is_org_admin
 from common.serializer import (
     AttachmentsSerializer,
@@ -71,6 +73,7 @@ from common.utils import (
     CURRENCY_CODES,
     INDCHOICES,
     PRIORITY_CHOICE,
+    SOURCES,
     STATUS_CHOICE,
     create_attachment,
     handle_m2m_assignment,
@@ -86,7 +89,7 @@ from invoices.serializer import InvoiceListSerializer
 from leads.access import visible_leads_qs
 from leads.serializer import LeadPickerSerializer
 from opportunity.access import visible_deals_qs
-from opportunity.models import SOURCES, DealPipeline, Opportunity, stage_kind_q
+from opportunity.models import DealPipeline, Opportunity, stage_kind_q
 from opportunity.serializer import OpportunitySerializer
 from opportunity.stages import stage_choices
 from opportunity.workflow import OPEN, WON
@@ -302,18 +305,32 @@ def account_list_queryset(profile, params):
     created_at_lte = date_param(params, "created_at__lte")
     if created_at_lte:
         queryset = queryset.filter(created_at__date__lte=created_at_lte)
-    # Custom-field filters: ?cf_<key>=<value> -> custom_fields contains pair.
-    for raw_key, raw_value in params.items():
-        if raw_key.startswith("cf_") and raw_value:
-            cf_key = raw_key[3:]
-            if cf_key:
-                queryset = queryset.filter(custom_fields__contains={cf_key: raw_value})
+    queryset = queryset.filter(custom_field_filter("Account", profile.org, params))
     if params.get("is_active") in ("true", "false"):
         queryset = queryset.filter(is_active=params.get("is_active") == "true")
     return queryset.distinct()
 
 
-class AccountsListView(APIView, LimitOffsetPagination):
+def _choice_pairs():
+    """A choices list such as COUNTRIES, sent as `[value, label]` pairs."""
+    return serializers.ListField(
+        child=serializers.ListField(child=serializers.CharField())
+    )
+
+
+def _ack(name, **extra):
+    """The `{error, message}` reply of a write that returns no record."""
+    return inline_serializer(
+        name=name,
+        fields={
+            "error": serializers.BooleanField(),
+            "message": serializers.CharField(),
+            **extra,
+        },
+    )
+
+
+class AccountsListView(APIView, CappedLimitOffsetPagination):
     permission_classes = (IsAuthenticated, HasOrgContext)
     model = Account
     serializer_class = AccountSerializer
@@ -416,6 +433,53 @@ class AccountsListView(APIView, LimitOffsetPagination):
         tags=["Accounts"],
         operation_id="accounts_list",
         parameters=swagger_params.account_get_params,
+        responses={
+            200: inline_serializer(
+                name="AccountListResponse",
+                fields={
+                    "per_page": serializers.IntegerField(),
+                    "page_number": serializers.IntegerField(),
+                    "active_accounts": inline_serializer(
+                        name="AccountListActive",
+                        fields={
+                            "offset": serializers.IntegerField(allow_null=True),
+                            "open_accounts": AccountSerializer(many=True),
+                            "open_accounts_count": serializers.IntegerField(),
+                        },
+                    ),
+                    "closed_accounts": inline_serializer(
+                        name="AccountListClosed",
+                        fields={
+                            "offset": serializers.IntegerField(allow_null=True),
+                            "close_accounts": AccountSerializer(many=True),
+                            "close_accounts_count": serializers.IntegerField(),
+                        },
+                    ),
+                    "contacts": inline_serializer(
+                        name="AccountListContact",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "first_name": serializers.CharField(),
+                        },
+                        many=True,
+                    ),
+                    "teams": TeamsSerializer(many=True),
+                    "countries": _choice_pairs(),
+                    "industries": _choice_pairs(),
+                    "tags": TagsSerializer(many=True),
+                    "users": inline_serializer(
+                        name="AccountListUser",
+                        fields={
+                            "id": serializers.UUIDField(),
+                            "user__email": serializers.EmailField(),
+                        },
+                        many=True,
+                    ),
+                    "leads": LeadPickerSerializer(many=True),
+                    "status": serializers.ListField(child=serializers.CharField()),
+                },
+            )
+        },
     )
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
@@ -425,7 +489,10 @@ class AccountsListView(APIView, LimitOffsetPagination):
         tags=["Accounts"],
         operation_id="accounts_create",
         parameters=swagger_params.organization_params,
-        request=AccountCreateSerializer,
+        request=AccountWriteSerializer,
+        responses={
+            200: _ack("AccountCreateResponse", id=serializers.UUIDField()),
+        },
     )
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -545,6 +612,7 @@ class AccountDetailView(APIView):
         operation_id="accounts_update",
         parameters=swagger_params.organization_params,
         request=AccountWriteSerializer,
+        responses={200: _ack("AccountUpdateResponse")},
     )
     def put(self, request, pk, format=None):
         data = request.data
@@ -641,6 +709,7 @@ class AccountDetailView(APIView):
         tags=["Accounts"],
         operation_id="accounts_destroy",
         parameters=swagger_params.organization_params,
+        responses={200: _ack("AccountDeleteResponse")},
     )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
@@ -662,8 +731,8 @@ class AccountDetailView(APIView):
         try:
             self.object.delete()
         except ProtectedError:
-            # All three of Invoice, Estimate and RecurringInvoice point here with
-            # on_delete=PROTECT, so all three must be named. An account blocked
+            # Project, Invoice, Estimate and RecurringInvoice point here with
+            # on_delete=PROTECT, so all four must be named. An account blocked
             # only by a recurring invoice used to be told to go and look at two
             # lists that were already empty.
             return Response(
@@ -671,7 +740,8 @@ class AccountDetailView(APIView):
                     "error": True,
                     "errors": _(
                         "This account can't be deleted while it still has "
-                        "invoices, estimates or recurring invoices linked to it."
+                        "projects, invoices, estimates or recurring invoices "
+                        "linked to it."
                     ),
                 },
                 status=status.HTTP_409_CONFLICT,
@@ -685,6 +755,41 @@ class AccountDetailView(APIView):
         tags=["Accounts"],
         operation_id="accounts_retrieve",
         parameters=swagger_params.organization_params,
+        responses={
+            200: inline_serializer(
+                name="AccountDetailResponse",
+                fields={
+                    "account_obj": AccountWithRelatedSerializer(),
+                    "attachments": AttachmentsSerializer(many=True),
+                    "comments": CommentSerializer(many=True),
+                    "contacts": ContactSerializer(many=True),
+                    "opportunity_list": OpportunitySerializer(many=True),
+                    "users": ProfileSerializer(many=True),
+                    "cases": CaseSerializer(many=True),
+                    "teams": TeamsSerializer(many=True),
+                    "stages": _choice_pairs(),
+                    "sources": _choice_pairs(),
+                    "countries": _choice_pairs(),
+                    "currencies": _choice_pairs(),
+                    "case_types": _choice_pairs(),
+                    "case_priority": _choice_pairs(),
+                    "case_status": _choice_pairs(),
+                    "comment_permission": serializers.BooleanField(),
+                    "tasks": TaskSerializer(many=True),
+                    "invoices": InvoiceListSerializer(many=True),
+                    "users_mention": inline_serializer(
+                        name="AccountMentionUser",
+                        fields={"user__email": serializers.EmailField()},
+                        many=True,
+                    ),
+                    "status": serializers.ListField(child=serializers.CharField()),
+                    "custom_field_definitions": CustomFieldDefinitionSerializer(
+                        many=True
+                    ),
+                    "can_delete": serializers.BooleanField(),
+                },
+            )
+        },
     )
     def get(self, request, pk, format=None):
         self.account = self.get_object(pk=pk)
@@ -823,6 +928,16 @@ class AccountDetailView(APIView):
         operation_id="accounts_add_comment",
         parameters=swagger_params.organization_params,
         request=AccountDetailEditSwaggerSerializer,
+        responses={
+            200: inline_serializer(
+                name="AccountCommentAttachmentResponse",
+                fields={
+                    "account_obj": AccountWithRelatedSerializer(),
+                    "attachments": AttachmentsSerializer(many=True),
+                    "comments": CommentSerializer(many=True),
+                },
+            )
+        },
     )
     def post(self, request, pk, **kwargs):
         data = request.data
@@ -889,6 +1004,7 @@ class AccountDetailView(APIView):
         parameters=swagger_params.organization_params,
         request=AccountWriteSerializer,
         description="Partial Account Update",
+        responses={200: _ack("AccountPatchResponse")},
     )
     def patch(self, request, pk, format=None):
         """Handle partial updates to an account.
@@ -928,6 +1044,7 @@ class AccountCommentView(APIView):
         tags=["Accounts"],
         parameters=swagger_params.organization_params,
         request=AccountCommentEditSwaggerSerializer,
+        responses={200: _ack("AccountCommentUpdateResponse")},
     )
     def put(self, request, pk, format=None):
         data = request.data
@@ -965,6 +1082,7 @@ class AccountCommentView(APIView):
         parameters=swagger_params.organization_params,
         request=AccountCommentEditSwaggerSerializer,
         description="Partial Comment Update",
+        responses={200: _ack("AccountCommentPatchResponse")},
     )
     def patch(self, request, pk, format=None):
         """Handle partial updates to a comment."""
@@ -990,7 +1108,11 @@ class AccountCommentView(APIView):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    @extend_schema(tags=["Accounts"], parameters=swagger_params.organization_params)
+    @extend_schema(
+        tags=["Accounts"],
+        parameters=swagger_params.organization_params,
+        responses={200: _ack("AccountCommentDeleteResponse")},
+    )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
         if is_org_admin(request.profile) or request.profile == self.object.commented_by:
@@ -1013,7 +1135,11 @@ class AccountAttachmentView(APIView):
     permission_classes = (IsAuthenticated, HasOrgContext)
     serializer_class = AccountDetailEditSwaggerSerializer
 
-    @extend_schema(tags=["Accounts"], parameters=swagger_params.organization_params)
+    @extend_schema(
+        tags=["Accounts"],
+        parameters=swagger_params.organization_params,
+        responses={200: _ack("AccountAttachmentDeleteResponse")},
+    )
     def delete(self, request, pk, format=None):
         # Scoped to the caller's org. `Attachments` is one generic table shared
         # by every module, and this looked the row up by primary key alone, so
@@ -1061,6 +1187,9 @@ class AccountCreateMailView(APIView):
         tags=["Accounts"],
         parameters=swagger_params.organization_params,
         request=EmailWriteSerializer,
+        responses={
+            200: _ack("AccountCreateMailResponse", id=serializers.UUIDField()),
+        },
     )
     def post(self, request, pk, *args, **kwargs):
         """Compose and send (or schedule) mail from one of this org's accounts.

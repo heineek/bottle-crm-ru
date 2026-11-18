@@ -74,6 +74,11 @@ app.conf.beat_schedule = {
         "task": "common.tasks.flush_expired_refresh_tokens",
         "schedule": crontab(hour=3, minute=30),
     },
+    # Remind about leads waiting longer than their org's setting, every minute
+    "remind-waiting-leads": {
+        "task": "leads.tasks.remind_waiting_leads",
+        "schedule": crontab(minute="*"),
+    },
     # Send webhook deliveries whose retry is due, every minute
     "dispatch-due-webhook-deliveries": {
         "task": "webhooks.tasks.dispatch_due_deliveries",
@@ -88,5 +93,11 @@ app.conf.beat_schedule = {
     "prune-automation-runs": {
         "task": "automation.tasks.prune_runs",
         "schedule": crontab(hour=3, minute=50),
+    },
+    # Draft retainer invoices for ended months, hourly so each org's month
+    # closes within an hour of its own midnight
+    "draft-retainer-invoices": {
+        "task": "projects.tasks.draft_retainer_invoices",
+        "schedule": crontab(minute=20),
     },
 }

@@ -14,16 +14,31 @@ typedef LeadTagTap = void Function(String tagId, String tagLabel);
 /// assignee, opportunity value, and tap-to-call/email actions.
 class LeadCard extends StatelessWidget {
   final Lead lead;
+
+  /// The lead's source as the org names it, looked up by the caller.
+  final String sourceLabel;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final LeadTagTap? onTagTap;
 
+  /// "waiting 2 h 14 min", shown instead of the lead's age.
+  final String? waitingLabel;
+
+  /// What the phone and mail icons do instead of opening the app directly,
+  /// such as offering to log the call afterwards.
+  final VoidCallback? onCall;
+  final VoidCallback? onEmail;
+
   const LeadCard({
     super.key,
     required this.lead,
+    this.sourceLabel = '',
     this.onTap,
     this.onLongPress,
     this.onTagTap,
+    this.waitingLabel,
+    this.onCall,
+    this.onEmail,
   });
 
   @override
@@ -123,12 +138,32 @@ class LeadCard extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 2),
-            Text(
-              _formatTimeAgo(lead.createdAt),
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textTertiary,
+            if (waitingLabel != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    LucideIcons.hourglass,
+                    size: 11,
+                    color: AppColors.warning700,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    waitingLabel!,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.warning700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(
+                _formatTimeAgo(lead.createdAt),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textTertiary,
+                ),
               ),
-            ),
           ],
         ),
       ],
@@ -200,18 +235,20 @@ class LeadCard extends StatelessWidget {
           _CardActionIcon(
             icon: LucideIcons.phone,
             tooltip: context.l10n.appCallNumber(lead.phone!),
-            onTap: () =>
-                _launch(context, Uri(scheme: 'tel', path: lead.phone!)),
+            onTap:
+                onCall ??
+                () => _launch(context, Uri(scheme: 'tel', path: lead.phone!)),
           ),
         if (hasPhone && hasEmail) const SizedBox(width: 2),
         if (hasEmail)
           _CardActionIcon(
             icon: LucideIcons.mail,
             tooltip: context.l10n.appEmailAddress(lead.email),
-            onTap: () =>
-                _launch(context, Uri(scheme: 'mailto', path: lead.email)),
+            onTap:
+                onEmail ??
+                () => _launch(context, Uri(scheme: 'mailto', path: lead.email)),
           ),
-        if (!hasPhone && !hasEmail) ...[
+        if (!hasPhone && !hasEmail && sourceLabel.isNotEmpty) ...[
           // Fall back to the source pill when no actions are available.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -223,13 +260,13 @@ class LeadCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  lead.source.icon,
+                  LucideIcons.compass,
                   size: 11,
                   color: AppColors.textSecondary,
                 ),
                 const SizedBox(width: 3),
                 Text(
-                  lead.source.displayName,
+                  sourceLabel,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),

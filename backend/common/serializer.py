@@ -3,6 +3,7 @@ import re
 from disposable_email_domains import blocklist as disposable_domains
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from drf_spectacular.utils import extend_schema_field
@@ -10,6 +11,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from common.app_members import app_member_name, is_app_member_address
 from common.custom_fields import validate_definition_options
 from common.links import frontend_url
 from common.models import (
@@ -31,7 +33,7 @@ from common.models import (
 from common.modules import module_is_available, module_off_message
 from common.object_registry import BUILT_IN, object_module
 from common.permissions import is_org_admin
-from common.utils import CURRENCY_SYMBOLS, validate_upload_size
+from common.utils import CURRENCY_SYMBOLS, ROLES, validate_upload_size
 from common.validators import flexible_phone_validator, validate_help_center_slug
 
 # Safe at module level: contacts.models imports common.models and common.base,
@@ -129,6 +131,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = ("id", "name")
 
 
+@extend_schema_field(serializers.DictField(child=serializers.CharField()))
+class _TerminologyField(serializers.JSONField):
+    """`Org.terminology` as ModelSerializer builds it, typed in the schema as
+    the label map the pack applier writes."""
+
+
 class OrgSettingsSerializer(serializers.ModelSerializer):
     """The org's own settings: company profile, locale, and case-handling switches.
 
@@ -147,7 +155,8 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
     edited. `member_count` and `created_at` are read-only header context.
 
     `vertical` and `terminology` are read-only here too: they are written exclusively
-    by the vertical-pack applier (`common/packs/applier.py`), never by a client. A
+    by the vertical-pack applier (`common/packs/applier.py`) and by removing an
+    industry app (`common/apps_catalogue.py`), never by a client. A
     writable path would let any admin PATCH `terminology` to arbitrary tenant-supplied
     text (still safe to render -- see `$lib/terminology.js` on the frontend -- but not
     something this endpoint is meant to let anyone set by hand) or overwrite `vertical`,
@@ -161,6 +170,11 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
     currency_symbol = serializers.SerializerMethodField()
     logo_url = serializers.SerializerMethodField()
     member_count = serializers.SerializerMethodField()
+    terminology = _TerminologyField(
+        read_only=True,
+        help_text="Label overrides, e.g. {'lead.plural': 'Enquiries'}.",
+        style={"base_template": "textarea.html"},
+    )
 
     class Meta:
         model = Org
@@ -195,6 +209,7 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
             "number_date_part",
             "number_padding",
             "invoice_number_start",
+            "lead_reminder_minutes",
             # Vertical pack. Read-only -- see the class docstring.
             "vertical",
             "terminology",
@@ -241,7 +256,15 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
     def validate_logo(self, logo):
         return validate_upload_size(logo)
 
-    @extend_schema_field(str)
+    def update(self, instance, validated_data):
+        # Only off to on: a change of minutes keeps the leads already waiting
+        # since then due under the new value.
+        turning_on = validated_data.get("lead_reminder_minutes") is not None
+        if turning_on and instance.lead_reminder_minutes is None:
+            validated_data["lead_reminder_since"] = timezone.now()
+        return super().update(instance, validated_data)
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_logo_url(self, obj):
         if obj.logo:
             request = self.context.get("request")
@@ -284,7 +307,7 @@ class HelpCenterSettingsSerializer(serializers.ModelSerializer):
         fields = ("help_center_enabled", "help_center_slug", "public_url")
         read_only_fields = ("public_url",)
 
-    @extend_schema_field(str)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_public_url(self, obj):
         if not obj.help_center_slug:
             return None
@@ -345,6 +368,14 @@ class SocialLoginSerializer(serializers.Serializer):
     token = serializers.CharField()
 
 
+class CommentUserDetailsSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    profile_pic = serializers.CharField(allow_null=True)
+    # An app member's name (`common.app_members`); null for a person, whom the
+    # clients name by `email` as before.
+    name = serializers.CharField(allow_null=True)
+
+
 class CommentUserSerializer(serializers.ModelSerializer):
     """Simplified user serializer for comments"""
 
@@ -354,9 +385,14 @@ class CommentUserSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ("id", "user_details")
 
+    @extend_schema_field(CommentUserDetailsSerializer(allow_null=True))
     def get_user_details(self, obj):
         if obj.user:
-            return {"email": obj.user.email, "profile_pic": obj.user.profile_pic}
+            return {
+                "email": obj.user.email,
+                "profile_pic": obj.user.profile_pic,
+                "name": app_member_name(obj),
+            }
         return None
 
 
@@ -382,13 +418,13 @@ class CommentSerializer(serializers.ModelSerializer):
     """Serializer for Comment model using ContentType"""
 
     content_type = serializers.SlugRelatedField(slug_field="model", read_only=True)
-    commented_by = CommentUserSerializer(read_only=True)
+    commented_by = CommentUserSerializer(read_only=True, allow_null=True)
     # A portal reply has no Profile, so `commented_by` is null on it. Without
     # this field the agents' clients had nothing to render and fell back to
     # "Unknown" on mobile, which is a worse answer than the one before the
     # portal existed. The two author fields are mutually exclusive by check
     # constraint (`comment_single_author`), so exactly one is ever populated.
-    commented_by_contact = CommentContactSerializer(read_only=True)
+    commented_by_contact = CommentContactSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = Comment
@@ -457,10 +493,16 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+@extend_schema_field({"type": "object", "additionalProperties": True})
+class _VerbDataField(serializers.JSONField):
+    """`Notification.data`: an object whose keys depend on the verb."""
+
+
 class NotificationSerializer(serializers.ModelSerializer):
     """In-app notification. List/feed shape returned by GET and SSE."""
 
-    actor = CommentUserSerializer(read_only=True)
+    actor = CommentUserSerializer(read_only=True, allow_null=True)
+    data = _VerbDataField(read_only=True)
 
     class Meta:
         model = Notification
@@ -494,12 +536,41 @@ class LeadCommentSerializer(serializers.ModelSerializer):
         )
 
 
+@extend_schema_field(
+    {
+        "oneOf": [
+            {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "value": {"type": "string"},
+                        "label": {"type": "string"},
+                    },
+                    "required": ["value", "label"],
+                },
+            },
+            # `validate_definition_options` lets a non-dropdown field store {}.
+            {"type": "object", "maxProperties": 0},
+        ],
+        "nullable": True,
+    }
+)
+class _DefinitionOptionsField(serializers.JSONField):
+    pass
+
+
 class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
     """Per-org custom-field definition. key/target_model/field_type are immutable
     after creation. Admins must create a new definition to change shape."""
 
     target_model = serializers.ChoiceField(
         choices=sorted((e.custom_field_target, e.label_plural) for e in BUILT_IN)
+    )
+    options = _DefinitionOptionsField(
+        required=False,
+        allow_null=True,
+        help_text="List of {value, label} pairs for dropdown fields.",
     )
 
     class Meta:
@@ -578,7 +649,7 @@ class CustomFieldDefinitionSerializer(serializers.ModelSerializer):
 class ActivitySerializer(serializers.ModelSerializer):
     """Activity timeline row, used by audit-log feeds (Cases first)."""
 
-    user = CommentUserSerializer(read_only=True)
+    user = CommentUserSerializer(read_only=True, allow_null=True)
     # The label from `Activity.ACTION_CHOICES` ("Time Logged"), so no client
     # has to keep its own copy of a verb list that lives on the model. Both
     # the web and the Flutter timeline already read this key and were falling
@@ -615,7 +686,7 @@ class OrgProfileCreateSerializer(serializers.ModelSerializer):
         # here only exposes the created org's id in the response; it does not
         # open a new mass-assignment surface (a client-supplied "id" in the
         # request body is still ignored, same as before this field existed).
-        # Callers (org/new/+page.server.js) need this id to switch the
+        # Callers (org/new/+page.server.ts) need this id to switch the
         # session into the org they just created and to apply a vertical
         # pack to it -- see the C1 fix in the vertical-packs final review.
         # `timezone` is optional on purpose. Mobile builds ship from an app
@@ -726,6 +797,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
             if self.instance.email.lower() == email.lower():
                 return self.instance.email
             raise serializers.ValidationError(_("Email cannot be changed here."))
+        # An app member's account is never a person to invite.
+        if is_app_member_address(email):
+            raise serializers.ValidationError(_("This address cannot be invited."))
         # Creating a membership: an account owned elsewhere is reused by the
         # view, so only same-org duplicates are rejected here.
         if not Profile.objects.filter(user__email__iexact=email, org=self.org).exists():
@@ -847,11 +921,22 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "name", "profile_pic"]
 
 
+class ProfileUserDetailsSerializer(serializers.Serializer):
+    """The shape of `Profile.user_details`, for the schema."""
+
+    email = serializers.EmailField()
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    is_active = serializers.BooleanField()
+    profile_pic = serializers.CharField(allow_null=True)
+    last_login = serializers.DateTimeField(allow_null=True)
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     # address = BillingAddressSerializer()
     user_details = serializers.SerializerMethodField()
 
-    @extend_schema_field(dict)
+    @extend_schema_field(ProfileUserDetailsSerializer)
     def get_user_details(self, obj):
         return obj.user_details
 
@@ -874,8 +959,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 class ProfileSelfUpdateSerializer(serializers.Serializer):
     """The fields a user may change on their OWN profile via PATCH /api/profile/.
 
-    Deliberately just ``phone`` (on Profile), ``name`` and ``language`` (on User). Role, org
-    and the ``has_*_access`` flags are NOT here:
+    Deliberately just ``phone`` and the two lead alert switches (on Profile)
+    and ``name`` and ``language`` (on User). Role, org and the ``has_*_access``
+    flags are NOT here:
     those decide permissions and are an admin's to set. Leaving them out is what
     keeps this self-edit endpoint from becoming the same self-serve privilege
     escalation ``CreateProfileSerializer`` once was. A field the serializer does
@@ -899,6 +985,8 @@ class ProfileSelfUpdateSerializer(serializers.Serializer):
     language = serializers.ChoiceField(
         required=False, allow_blank=True, choices=settings.LANGUAGES
     )
+    lead_alerts_email = serializers.BooleanField(required=False)
+    lead_alerts_push = serializers.BooleanField(required=False)
 
 
 class AttachmentsSerializer(serializers.ModelSerializer):
@@ -957,14 +1045,22 @@ class AttachmentsCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class DocumentTeamSerializer(serializers.Serializer):
+    """The shape of one `DocumentSerializer.teams` entry, for the schema."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    member_count = serializers.IntegerField()
+
+
 class DocumentSerializer(serializers.ModelSerializer):
     shared_to = ProfileSerializer(read_only=True, many=True)
     teams = serializers.SerializerMethodField()
-    created_by = UserSerializer()
+    created_by = UserSerializer(allow_null=True)
     org = OrganizationSerializer()
     size_bytes = serializers.SerializerMethodField()
 
-    @extend_schema_field(list)
+    @extend_schema_field(DocumentTeamSerializer(many=True))
     def get_teams(self, obj):
         # `member_count` is what a reader needs to understand a team share;
         # "Support (3)" says how many people the pick actually reaches, which a
@@ -976,7 +1072,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             for team in obj.teams.all()
         ]
 
-    @extend_schema_field(int)
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_size_bytes(self, obj):
         # The file's size on disk, so the list can show "284 kB" instead of a
         # bare filename. Guarded because `.size` reaches the storage backend: a
@@ -1232,6 +1328,17 @@ class MagicLinkVerifyCodeSerializer(serializers.Serializer):
     code = serializers.RegexField(r"^\d{6}$", required=True, max_length=6)
 
 
+class UserOrganizationSerializer(serializers.Serializer):
+    """Response-only: one org in `UserDetailSerializer.organizations`."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField(allow_null=True)
+    role = serializers.ChoiceField(choices=ROLES)
+    is_organization_admin = serializers.BooleanField()
+    has_sales_access = serializers.BooleanField()
+    has_marketing_access = serializers.BooleanField()
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     """Detailed user serializer with profile and organizations"""
 
@@ -1248,7 +1355,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "organizations",
         ]
 
-    @extend_schema_field(list)
+    @extend_schema_field(UserOrganizationSerializer(many=True))
     def get_organizations(self, obj):
         """Get all organizations the user belongs to"""
         profiles = Profile.objects.filter(user=obj, is_active=True).select_related(
@@ -1286,7 +1393,9 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     org = OrganizationSerializer(read_only=True)
     teams = serializers.SerializerMethodField()
-    last_login = serializers.DateTimeField(source="user.last_login", read_only=True)
+    last_login = serializers.DateTimeField(
+        source="user.last_login", read_only=True, allow_null=True
+    )
     # `is_org_admin`, not the column; see `ShowOrganizationListSerializer`.
     is_organization_admin = serializers.SerializerMethodField()
 
@@ -1313,6 +1422,8 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
             "is_active",
             "teams",
             "last_login",
+            "lead_alerts_email",
+            "lead_alerts_push",
         ]
 
 
@@ -1329,8 +1440,8 @@ class ActivityUserSerializer(serializers.Serializer):
 
     @extend_schema_field(str)
     def get_name(self, obj):
-        """Get display name from email"""
-        return obj.user.email.split("@")[0]
+        """An app member's name, else the email's local part."""
+        return app_member_name(obj) or obj.user.email.split("@")[0]
 
 
 class DashboardActivitySerializer(serializers.ModelSerializer):
@@ -1346,7 +1457,10 @@ class DashboardActivitySerializer(serializers.ModelSerializer):
     visibly.
     """
 
-    user = ActivityUserSerializer(read_only=True)
+    user = ActivityUserSerializer(read_only=True, allow_null=True)
+    # The model's class name; the object registry logs types the choices omit,
+    # such as Estimate and RecurringInvoice.
+    entity_type = serializers.CharField(read_only=True)
     action_display = serializers.CharField(source="get_action_display", read_only=True)
     timestamp = serializers.DateTimeField(source="created_at", read_only=True)
     humanized_time = serializers.CharField(source="created_on_arrow", read_only=True)
@@ -1369,7 +1483,7 @@ class DashboardActivitySerializer(serializers.ModelSerializer):
 
 class TeamsSerializer(serializers.ModelSerializer):
     users = ProfileSerializer(read_only=True, many=True)
-    created_by = UserSerializer()
+    created_by = UserSerializer(allow_null=True)
 
     class Meta:
         model = Teams
@@ -1422,6 +1536,12 @@ class TeamCreateSerializer(serializers.ModelSerializer):
 
 
 class TeamswaggerCreateSerializer(serializers.ModelSerializer):
+    """The team body the views read. ``users`` replaces the members and names
+    only people of the org; left out, null or blank, an edit keeps the members
+    and a new team has none. An empty list removes every member."""
+
+    users = serializers.ListField(child=serializers.UUIDField(), required=False)
+
     class Meta:
         model = Teams
         fields = (
@@ -1429,9 +1549,12 @@ class TeamswaggerCreateSerializer(serializers.ModelSerializer):
             "description",
             "users",
         )
+        extra_kwargs = {"description": {"required": False}}
 
 
 class PersonalAccessTokenListSerializer(serializers.ModelSerializer):
+    scopes = serializers.ListField(child=serializers.CharField(), read_only=True)
+
     class Meta:
         model = PersonalAccessToken
         fields = (

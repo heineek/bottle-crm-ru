@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Your task calendar feed (G14).
    *
@@ -21,16 +21,15 @@
   import { enhance } from '$app/forms';
   import { CalendarDays, Copy, Check, ShieldAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let feed = $derived(data.feed);
   let busy = $state(false);
   let copied = $state(false);
 
-  /** @param {string} value */
-  async function copyUrl(value) {
+  async function copyUrl(value: string) {
     try {
       await navigator.clipboard.writeText(value);
       copied = true;
@@ -142,7 +141,7 @@
           class="v2-setting feed-actions"
           use:enhance={() => {
             busy = true;
-            return async (/** @type {any} */ { update }) => {
+            return async ({ update }) => {
               await update();
               busy = false;
             };

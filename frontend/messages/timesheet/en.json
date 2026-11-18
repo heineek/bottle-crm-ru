@@ -27,7 +27,7 @@
       }
     }
   ],
-  "timesheet_running_on": "{duration} on {ticket}",
+  "timesheet_running_on": "{duration} on {parent}",
   "timesheet_stop_timer": "Stop timer",
   "timesheet_weekday_mon": "Mon",
   "timesheet_weekday_tue": "Tue",
@@ -42,7 +42,7 @@
   "timesheet_entry_billed_number": "billed {number}",
   "timesheet_entry_billed": "billed",
   "timesheet_day_empty": "Nothing logged",
-  "timesheet_footer_note": "Time is logged against a ticket, so every hour here is attached to something a customer can be shown. Rates are saved on each entry when it is logged. Changing your rate does not rewrite what past weeks were worth.",
+  "timesheet_footer_note": "Time is logged against a ticket or a project, so every hour here is attached to something a customer can be shown. Rates are saved on each entry when it is logged. Changing your rate does not rewrite what past weeks were worth.",
   "timesheet_error_stop_failed": "Could not stop the timer.",
   "timesheet_report_title": "Time report",
   "timesheet_report_by_agent": "by agent",
@@ -75,5 +75,16 @@
   "timesheet_error_rate": "The rate must be a positive number.",
   "timesheet_report_cell_entries": "entries",
   "timesheet_report_cell_billable": "billable",
-  "timesheet_report_cell_worth": "worth"
+  "timesheet_report_cell_worth": "worth",
+  "timesheet_parent_ticket_unnamed": "A ticket",
+  "timesheet_parent_project_unnamed": "A project",
+  "timesheet_group_project": "Project",
+  "timesheet_report_by_project": "by project",
+  "timesheet_report_one_project": "one project",
+  "timesheet_report_col_share": "Billable share",
+  "timesheet_report_cell_share": "share",
+  "timesheet_report_no_time": "No time",
+  "timesheet_report_project_only": "One project's time only.",
+  "timesheet_report_open_project": "Open the project",
+  "timesheet_report_show_all_time": "Show all time"
 }

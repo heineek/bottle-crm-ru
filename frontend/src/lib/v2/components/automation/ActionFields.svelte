@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import {
     fieldOf,
@@ -15,7 +15,11 @@
     setActionValue,
     shownValue,
     recipientLabel,
-    replacePerson
+    replacePerson,
+    type Catalogue,
+    type CatalogueObject,
+    type RuleAction,
+    type RuleValue
   } from '#lib/v2/automation.js';
   import { TASK_PRIORITY_LABEL } from '#lib/v2/enums.js';
   import RuleValueInput from './RuleValueInput.svelte';
@@ -23,24 +27,32 @@
   /**
    * The fields of one action, by its type. A stored target, field, person,
    * recipient or endpoint the catalogue lost stays selected and marked.
-   *
-   * @type {{ catalogue: any, object: any, action: any, errorId?: string }}
    */
-  let { catalogue, object, action = $bindable(), errorId = undefined } = $props();
+  let {
+    catalogue,
+    object,
+    action = $bindable(),
+    errorId = undefined
+  }: {
+    catalogue: Catalogue;
+    object: CatalogueObject | null;
+    action: RuleAction;
+    errorId?: string;
+  } = $props();
 
   const uid = $props.id();
   const people = $derived(catalogue?.people ?? []);
 
   // What the action held before "Clear it instead" was ticked.
-  let previous = $state();
+  let previous: RuleValue | undefined = $state();
   let clear = $derived(isClearing(action));
 
   let targets = $derived(targetsFor(catalogue, object));
   let target = $derived(targets.find((t) => t.value === action.target) ?? null);
   let fieldOptions = $derived(
     (target?.object?.fields ?? [])
-      .filter((/** @type {any} */ f) => f.settable)
-      .map((/** @type {any} */ f) => ({ value: f.key, label: f.label }))
+      .filter((f) => f.settable)
+      .map((f) => ({ value: f.key, label: f.label }))
   );
   let field = $derived(fieldOf(target?.object, action.field));
 
@@ -55,19 +67,15 @@
   let audience = $derived(taskAudience(object));
   let one = $derived(replacePerson(action));
   let endpoints = $derived(
-    (catalogue?.endpoints ?? []).map((/** @type {any} */ e) => ({
-      value: e.id,
-      label: e.description
-    }))
+    (catalogue?.endpoints ?? []).map((e) => ({ value: e.id, label: e.description ?? '' }))
   );
 
-  /** The single person of a replace, as the list the API stores. @param {string} id */
-  function setOne(id) {
+  /** The single person of a replace, as the list the API stores. */
+  function setOne(id: string) {
     action.people = id ? [id] : [];
   }
 
-  /** @param {boolean} on */
-  function setClear(on) {
+  function setClear(on: boolean) {
     if (on) previous = action.value;
     applyClear(action, on, previous);
   }
@@ -175,7 +183,7 @@
           onchange={(e) => setOne(e.currentTarget.value)}
         >
           <option value="">{m.app_automation_choose_person()}</option>
-          {#each withStored( people.map( (/** @type {any} */ p) => ({ value: p.id, label: p.name }) ), action.people, { person: true } ) as o (o.value)}
+          {#each withStored( people.map( (p) => ({ value: p.id, label: p.name }) ), action.people, { person: true } ) as o (o.value)}
             <option value={o.value}>{o.label}</option>
           {/each}
         </select>

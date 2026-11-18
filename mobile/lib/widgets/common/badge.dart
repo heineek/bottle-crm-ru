@@ -196,11 +196,17 @@ class LabelPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: pillColor,
-              fontWeight: FontWeight.w500,
+          // Flexible: a tag wider than the row ellipsizes instead of
+          // overflowing it.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.caption.copyWith(
+                color: pillColor,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           if (onRemove != null) ...[
@@ -260,35 +266,6 @@ class CountBadge extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-/// Source Badge - Lead source indicator
-class SourceBadge extends StatelessWidget {
-  final LeadSource source;
-
-  const SourceBadge({super.key, required this.source});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(source.icon, size: 12, color: AppColors.gray500),
-          const SizedBox(width: 4),
-          Text(
-            source.label,
-            style: AppTypography.labelSmall.copyWith(color: AppColors.gray600),
-          ),
-        ],
       ),
     );
   }

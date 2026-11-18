@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   /**
    * Personal access tokens: the org-wide oversight view.
    *
@@ -49,16 +49,15 @@
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import { count, relativeDays, shortDate } from '#lib/v2/format.js';
   import { ROLE_LABEL } from '#lib/v2/enums.js';
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import { Plus, ShieldAlert, Copy, Check } from '@lucide/svelte';
   import { tokenStatus, staleness, scopeSummary, EXPIRY_CHOICES } from '#lib/v2/token-rules.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
-  let totals = $derived(data.totals);
   let subParts = $derived(
     messageParts(m.settings_tokens_sub({ live: slot('live'), total: slot('total') }))
   );
@@ -68,26 +67,25 @@
   let copied = $state(false);
 
   /** A submit handler that flips `busy` while the action runs. */
-  const working = () => {
+  const working: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update }) => {
+    return async ({ update }) => {
       await update();
       busy = false;
     };
   };
 
   /** Create both submits and, on success, closes its own form. */
-  const createSubmit = () => {
+  const createSubmit: SubmitFunction = () => {
     busy = true;
-    return async (/** @type {any} */ { update, result }) => {
+    return async ({ update, result }) => {
       await update();
       busy = false;
       if (result?.type === 'success' && result?.data?.created) creating = false;
     };
   };
 
-  /** @param {string} value */
-  async function copyToken(value) {
+  async function copyToken(value: string) {
     try {
       await navigator.clipboard.writeText(value);
       copied = true;
@@ -110,7 +108,8 @@
     />
   </div>
 {:else}
-  <PageHeader title={m.settings_tokens_title()}>
+  {@const totals = data.totals}
+  <PageHeader title="m.settings_tokens_title()">
     {#snippet crumb()}<SettingsCrumb />{/snippet}
     {#snippet sub()}
       {#each subParts as p, i (i)}{#if p.key === 'live'}<span class="v2-num"

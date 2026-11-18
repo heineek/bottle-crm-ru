@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { untrack } from 'svelte';
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
@@ -6,17 +6,31 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import Avatar from '#lib/v2/components/Avatar.svelte';
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
+  import Pill from '#lib/v2/components/Pill.svelte';
+  import Timeline from '#lib/v2/components/Timeline.svelte';
+  import CommentComposer from '#lib/v2/components/CommentComposer.svelte';
   import { shortDate } from '#lib/v2/format.js';
-  import { recordHref, uploadTooLarge } from '#lib/v2/custom-objects.js';
+  import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
+  import {
+    canWriteObject,
+    recordHref,
+    relatedView,
+    uploadTooLarge
+  } from '#lib/v2/custom-objects.js';
   import { Pencil } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
+  import type { MatchRow } from '#lib/server/v2/real-estate.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let def = $derived(data.definition);
   let record = $derived(data.record);
+  let canWrite = $derived(canWriteObject(def, data.customObjects?.has_custom_objects));
   let assignees = $derived(record.assigned_to ?? []);
+  // A missing `tags` (an older API) shows nothing.
+  let tags = $derived(record.tags ?? []);
   let uploadNote = $state('');
   let uploading = $state(false);
 
@@ -28,14 +42,36 @@
     uploading = false;
   });
 
-  /** @param {Event} event */
-  function checkPicked(event) {
-    const input = /** @type {HTMLInputElement} */ (event.currentTarget);
+  function checkPicked(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
     uploadNote = (file && uploadTooLarge(file)) || '';
     if (uploadNote) input.value = '';
   }
 </script>
+
+{#snippet matchRow(objectKey: string, row: MatchRow, action: string, label: string)}
+  <div class="cf-row match">
+    <div class="cf-value">
+      <a class="match-name" href={resolve(asInternalPath(`/objects/${objectKey}/${row.id}`))}
+        >{row.name}</a
+      >
+      {#if row.facts.length > 0}
+        <span class="v2-sub match-facts">
+          {#each row.facts as fact, i (i)}
+            <span>{fact.label}: {fact.value}</span>
+          {/each}
+        </span>
+      {/if}
+    </div>
+    <form method="POST" {action} use:enhance>
+      <input type="hidden" name="other" value={row.id} />
+      <button class="v2-btn v2-btn-quiet match-btn" type="submit" aria-label="{label} {row.name}"
+        >{label}</button
+      >
+    </form>
+  </div>
+{/snippet}
 
 <PageHeader title={record.name} record>
   {#snippet leading()}
@@ -70,21 +106,20 @@
         <p class="v2-error" role="alert" style="margin:0 0 14px">{form.deleteError}</p>
       {/if}
 
-      <div class="v2-label" style="margin:0 0 10px">{m.common_details()}</div>
-      <div class="v2-card cf">
-        <div class="cf-row">
-          <span class="cf-label">{def.name_label}</span>
-          <span class="cf-value">{record.name}</span>
+      <CustomFieldsCard
+        flush
+        fields={[
+          { key: '__name', label: def.name_label, value: record.name, filled: true },
+          ...data.details
+        ]}
+      />
+
+      {#if tags.length > 0}
+        <div class="v2-label" style="margin:22px 0 10px">{m.objects_tags()}</div>
+        <div class="tags">
+          {#each tags as tag (tag.id)}<Pill>{tag.name}</Pill>{/each}
         </div>
-        {#each data.details as f (f.key)}
-          <div class="cf-row">
-            <span class="cf-label">{f.label}</span>
-            <span class="cf-value" class:v2-muted={!f.filled}
-              >{f.filled ? f.value : m.app_objects_none()}</span
-            >
-          </div>
-        {/each}
-      </div>
+      {/if}
 
       {#if data.linkFields.length > 0}
         <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_links()}</div>
@@ -117,6 +152,46 @@
         </div>
       {/if}
 
+      {#if data.matches}
+        {@const mt = data.matches}
+        <div class="v2-label" id="matches" style="margin:22px 0 10px">
+          {mt.state === 'ok' ? mt.heading : m.objects_matches()}
+        </div>
+        {#if form?.matchError}
+          <p class="v2-error" role="alert" style="margin:0 0 10px">{form.matchError}</p>
+        {/if}
+        <div class="v2-card cf">
+          {#if mt.state === 'failed'}
+            <p class="v2-sub" style="margin:9px 0">{m.objects_matches_failed()}</p>
+          {:else}
+            {#each mt.rows as row (row.id)}
+              {@render matchRow(mt.objectKey, row, '?/dismiss', m.objects_matches_dismiss())}
+            {:else}
+              <p class="v2-sub" style="margin:9px 0">{m.objects_matches_none()}</p>
+            {/each}
+            {#if mt.dismissedCount > 0}
+              <p class="v2-sub" style="margin:9px 0">
+                {m.objects_matches_dismissed({ count: mt.dismissedCount })}
+                {#if mt.dismissed === null}
+                  ·
+                  <a href="?dismissed=1#matches" data-sveltekit-noscroll
+                    >{m.objects_matches_show()}</a
+                  >
+                {:else}
+                  ·
+                  <a href="?#matches" data-sveltekit-noscroll>{m.objects_matches_hide()}</a>
+                {/if}
+              </p>
+              {#each mt.dismissed ?? [] as row (row.id)}
+                {@render matchRow(mt.objectKey, row, '?/undismiss', m.objects_matches_undo())}
+              {/each}
+            {/if}
+          {/if}
+        </div>
+      {/if}
+
+      <RelatedRecords related={relatedView(data.related)} error={form?.related?.error} />
+
       <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_photos()}</div>
       {#if form?.fileError}
         <p class="v2-error" role="alert" style="margin:0 0 10px">{form.fileError}</p>
@@ -126,7 +201,7 @@
           {#each data.photos as p (p.id)}
             <div class="photo v2-card">
               <a
-                href={resolve(asInternalPath(p.href))}
+                href={resolve(asInternalPath(p.href ?? ''))}
                 aria-label={m.app_objects_download_aria({ name: p.file_name })}
               >
                 <img src={p.href} alt={p.file_name} loading="lazy" />
@@ -157,7 +232,7 @@
         {#each data.files as f (f.id)}
           <div class="cf-row file-row">
             <span class="cf-value">
-              <a class="file-link" href={resolve(asInternalPath(f.href))}>{f.file_name}</a>
+              <a class="file-link" href={resolve(asInternalPath(f.href ?? ''))}>{f.file_name}</a>
               <span class="v2-sub" style="display:block;font-size:12px">
                 {f.created_by?.name ?? m.app_objects_unknown()} · {shortDate(f.created_at)}
               </span>
@@ -212,6 +287,21 @@
           </p>
         {/if}
       {/if}
+
+      <div class="v2-label" style="margin:22px 0 10px">{m.objects_timeline()}</div>
+      {#if canWrite}
+        <CommentComposer
+          files={false}
+          placeholder={m.objects_note_placeholder()}
+          maxlength={10000}
+          error={form?.noteError}
+        />
+      {/if}
+      <Timeline
+        events={data.timeline}
+        noteFailure={form?.noteFailure ?? null}
+        canWriteNotes={canWrite}
+      />
 
       <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_assignees()}</div>
       <div class="v2-card cf">
@@ -295,6 +385,28 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .match {
+    align-items: center;
+  }
+  .match-name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .match-facts {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 14px;
+    font-size: 12px;
+  }
+  .match-btn {
+    min-height: 44px;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
   .links {
     display: flex;

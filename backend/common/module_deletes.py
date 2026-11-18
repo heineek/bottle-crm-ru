@@ -60,6 +60,11 @@ DELETE_GUARDS: dict[str, tuple[Guard, ...]] = {
                 "%(count)d recurring invoice", "%(count)d recurring invoices", "count"
             ),
         ),
+        Guard(
+            "projects.Project",
+            "account",
+            ngettext_lazy("%(count)d project", "%(count)d projects", "count"),
+        ),
     ),
     "cases.Case": (
         Guard(
@@ -107,6 +112,11 @@ DELETE_GUARDS: dict[str, tuple[Guard, ...]] = {
             ngettext_lazy(
                 "%(count)d board membership", "%(count)d board memberships", "count"
             ),
+        ),
+        Guard(
+            "projects.ProjectRate",
+            "profile",
+            ngettext_lazy("%(count)d project rate", "%(count)d project rates", "count"),
         ),
     ),
 }

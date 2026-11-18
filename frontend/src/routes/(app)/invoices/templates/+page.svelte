@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * How an invoice looks when it reaches a customer.
@@ -29,9 +29,9 @@
   import { Plus, FileCode, ShieldAlert } from '@lucide/svelte';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let canManage = $derived(data.can_manage);
   let totals = $derived(data.totals);

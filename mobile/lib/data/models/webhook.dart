@@ -6,6 +6,7 @@
 library;
 
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 
 /// One module's events, as the checkbox group on the form draws them.
 class WebhookEventGroup {
@@ -19,13 +20,13 @@ class WebhookEventGroup {
   final String label;
   final List<String> events;
 
+  /// Reads a `WebhookEventGroup`, one entry of the list's `event_catalogue`.
   factory WebhookEventGroup.fromJson(Map<String, dynamic> json) {
+    final w = api.WebhookEventGroup.fromJson(json);
     return WebhookEventGroup(
-      module: json['module']?.toString() ?? '',
-      label: json['label']?.toString() ?? '',
-      events: (json['events'] as List? ?? const [])
-          .map((e) => e.toString())
-          .toList(growable: false),
+      module: w.module ?? '',
+      label: w.label ?? '',
+      events: w.events ?? const [],
     );
   }
 }
@@ -47,6 +48,7 @@ class WebhookEndpoint {
 
   static const String formatJson = 'json';
   static const String formatSlack = 'slack';
+  static const String formatTeams = 'teams';
 
   final String id;
   final String url;
@@ -72,7 +74,7 @@ class WebhookEndpoint {
     }
     if (createdByName.isNotEmpty) return createdByName;
     if (createdByEmail.isNotEmpty) return createdByEmail;
-    return 'a removed user';
+    return appL10n.appWebhookRemovedUser;
   }
 
   /// `whsec_...abcd`. The full secret is never on a list or detail response.
@@ -81,27 +83,27 @@ class WebhookEndpoint {
 
   String get title => description.isNotEmpty ? description : url;
 
-  String get formatLabel => format == formatSlack
-      ? appL10n.appWebhookFormatSlack
-      : appL10n.appWebhookFormatJson;
+  String get formatLabel => switch (format) {
+    formatSlack => appL10n.appWebhookFormatSlack,
+    formatTeams => appL10n.appWebhookFormatTeams,
+    _ => appL10n.appWebhookFormatJson,
+  };
 
+  /// Reads a `WebhookEndpoint`.
   factory WebhookEndpoint.fromJson(Map<String, dynamic> json) {
-    final creator = json['created_by'];
-    final by = creator is Map ? creator : const {};
+    final w = api.WebhookEndpoint.fromJson(json);
     return WebhookEndpoint(
-      id: json['id']?.toString() ?? '',
-      url: json['url']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
-      events: (json['events'] as List? ?? const [])
-          .map((e) => e.toString())
-          .toList(growable: false),
-      format: json['format']?.toString() ?? formatJson,
-      isActive: json['is_active'] == true,
-      disabledReason: json['disabled_reason']?.toString() ?? '',
-      secretHint: json['secret_hint']?.toString() ?? '',
-      createdByName: by['name']?.toString() ?? '',
-      createdByEmail: by['email']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      id: w.id ?? '',
+      url: w.url ?? '',
+      description: w.description ?? '',
+      events: w.events ?? const [],
+      format: w.format ?? formatJson,
+      isActive: w.isActive ?? false,
+      disabledReason: w.disabledReason ?? '',
+      secretHint: w.secretHint ?? '',
+      createdByName: w.createdBy?.name ?? '',
+      createdByEmail: w.createdBy?.email ?? '',
+      createdAt: DateTime.tryParse(w.createdAt ?? ''),
     );
   }
 }
@@ -138,17 +140,17 @@ class WebhookDelivery {
     _ => appL10n.appWebhookPending,
   };
 
+  /// Reads a `WebhookDelivery`.
   factory WebhookDelivery.fromJson(Map<String, dynamic> json) {
-    final code = json['response_status'];
-    final attempts = json['attempts'];
+    final w = api.WebhookDelivery.fromJson(json);
     return WebhookDelivery(
-      id: json['id']?.toString() ?? '',
-      event: json['event']?.toString() ?? '',
-      status: json['status']?.toString() ?? pending,
-      attempts: attempts is int ? attempts : 0,
-      responseStatus: code is int ? code : null,
-      error: json['error']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      id: w.id ?? '',
+      event: w.event ?? '',
+      status: w.status ?? pending,
+      attempts: w.attempts ?? 0,
+      responseStatus: w.responseStatus,
+      error: w.error ?? '',
+      createdAt: DateTime.tryParse(w.createdAt ?? ''),
     );
   }
 }

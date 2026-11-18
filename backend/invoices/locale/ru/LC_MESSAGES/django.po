@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-crm invoices\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 10:01+0000\n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
 "PO-Revision-Date: 2026-11-10 12:00+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Russian\n"
@@ -11,8 +11,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "Invoice created successfully"
 msgstr "Счёт создан"
@@ -210,8 +209,15 @@ msgstr "Счёт создан из сделки"
 msgid "Only admins can create invoices from time entries."
 msgstr "Создавать счета по записям учёта времени могут только администраторы."
 
-msgid "account_id is required."
-msgstr "Укажите account_id."
+msgid "Send either account_id or project_id."
+msgstr "Передайте либо account_id, либо project_id."
+
+#, python-format
+msgid "group_by must be one of %(choices)s."
+msgstr "group_by должен быть одним из значений: %(choices)s."
+
+msgid "Project not found."
+msgstr "Проект не найден."
 
 msgid "entry_ids must be a non-empty list."
 msgstr "entry_ids должен быть непустым списком."
@@ -221,6 +227,13 @@ msgstr "Компания не найдена."
 
 msgid "One or more time entries were not found."
 msgstr "Одна или несколько записей учёта времени не найдены."
+
+msgid "This project has no unbilled time to bill."
+msgstr "В этом проекте нет невыставленного времени."
+
+#, python-format
+msgid "Time entry %(id)s is not on this project."
+msgstr "Запись учёта времени %(id)s не относится к этому проекту."
 
 #, python-format
 msgid "Time entry %(id)s is not on a ticket for this account."
@@ -337,6 +350,9 @@ msgstr "Ставка налога не может превышать 100."
 
 msgid "Shipping cannot be negative."
 msgstr "Стоимость доставки не может быть отрицательной."
+
+msgid "A deposit must be more than 0% and at most 100%."
+msgstr "Предоплата должна быть больше 0% и не больше 100%."
 
 msgctxt "estimate status"
 msgid "Draft"
@@ -618,6 +634,18 @@ msgstr "IP-адрес принявшего"
 msgid "Accepted User Agent"
 msgstr "Браузер принявшего"
 
+msgid "Introduction"
+msgstr "Вступление"
+
+msgid "Deposit (%)"
+msgstr "Предоплата (%)"
+
+msgid "Start a project when accepted"
+msgstr "Начать проект после принятия"
+
+msgid "Project billing type"
+msgstr "Тип оплаты проекта"
+
 msgid "Frequency"
 msgstr "Периодичность"
 
@@ -669,7 +697,8 @@ msgstr ""
 "уже нельзя. Запросите обновлённое предложение."
 
 msgid "Your name and email are required to accept this estimate."
-msgstr "Чтобы принять коммерческое предложение, укажите имя и адрес эл. почты."
+msgstr ""
+"Чтобы принять коммерческое предложение, укажите имя и адрес эл. почты."
 
 msgid "Please enter a valid email address."
 msgstr "Введите корректный адрес эл. почты."
@@ -709,8 +738,8 @@ msgstr "Позиция ссылается на товар другой орга�
 
 #, python-format
 msgid ""
-"This estimate is %(status)s. Its lines and amounts can only be changed while "
-"it is a Draft."
+"This estimate is %(status)s. Its lines and amounts can only be changed while"
+" it is a Draft."
 msgstr ""
 "Коммерческое предложение в статусе «%(status)s». Его позиции и суммы можно "
 "менять только в черновике."
@@ -756,12 +785,19 @@ msgstr "Контакт не относится к выбранной компа�
 
 msgid "An estimate cannot expire before it is issued."
 msgstr ""
-"Срок действия коммерческого предложения не может закончиться раньше даты его "
-"выставления."
+"Срок действия коммерческого предложения не может закончиться раньше даты его"
+" выставления."
+
+msgid "Choose an account to start a project for."
+msgstr "Выберите компанию, для которой начать проект."
+
+msgid "Only an admin can start a project from an estimate."
+msgstr ""
+"Начать проект из коммерческого предложения может только администратор."
 
 msgid ""
-"A custom frequency needs an interval in days. Without one the schedule would "
-"bill monthly."
+"A custom frequency needs an interval in days. Without one the schedule would"
+" bill monthly."
 msgstr ""
 "Для своего интервала укажите число дней. Без него счета будут выставляться "
 "ежемесячно."
@@ -885,11 +921,11 @@ msgstr "Напоминание об оплате"
 
 #, python-format
 msgid ""
-"This is a friendly reminder that invoice <strong>#%(number)s</strong> is now "
-"<span class=\"overdue\">%(days)s day overdue</span>."
+"This is a friendly reminder that invoice <strong>#%(number)s</strong> is now"
+" <span class=\"overdue\">%(days)s day overdue</span>."
 msgid_plural ""
-"This is a friendly reminder that invoice <strong>#%(number)s</strong> is now "
-"<span class=\"overdue\">%(days)s days overdue</span>."
+"This is a friendly reminder that invoice <strong>#%(number)s</strong> is now"
+" <span class=\"overdue\">%(days)s days overdue</span>."
 msgstr[0] ""
 "Напоминаем, что оплата счёта <strong>№%(number)s</strong> <span "
 "class=\"overdue\">просрочена на %(days)s день</span>."
@@ -902,11 +938,11 @@ msgstr[2] ""
 
 #, python-format
 msgid ""
-"This is a friendly reminder that invoice <strong>#%(number)s</strong> is due "
-"soon."
+"This is a friendly reminder that invoice <strong>#%(number)s</strong> is due"
+" soon."
 msgstr ""
-"Напоминаем, что скоро наступит срок оплаты счёта <strong>№%(number)s</"
-"strong>."
+"Напоминаем, что скоро наступит срок оплаты счёта "
+"<strong>№%(number)s</strong>."
 
 msgid "View & Pay Invoice"
 msgstr "Открыть и оплатить счёт"
@@ -948,6 +984,10 @@ msgstr "Нет позиций"
 
 msgid "Discount"
 msgstr "Скидка"
+
+#, python-format
+msgid "Deposit on acceptance (%(percent)s%%)"
+msgstr "Предоплата при принятии (%(percent)s%%)"
 
 msgid "Acceptance"
 msgstr "Принятие"

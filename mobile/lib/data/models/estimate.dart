@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../l10n/l10n.dart';
+import '../api/schema.g.dart' as api;
 import 'deal.dart' show Currency;
+import 'invoice.dart' show InvoiceStatus;
+import 'project.dart' show ProjectRef;
 
 /// `invoices.models.ESTIMATE_STATUS`. Six values, no underscores this time.
 enum EstimateStatus {
@@ -59,6 +62,8 @@ class Estimate {
     this.convertedInvoiceId,
     this.convertedInvoiceNumber,
     this.opportunityName,
+    this.project,
+    this.depositInvoice,
   });
 
   final String id;
@@ -77,6 +82,18 @@ class Estimate {
   final String? convertedInvoiceId;
   final String? convertedInvoiceNumber;
   final String? opportunityName;
+
+  /// Set by the server when the client accepts: the project the estimate
+  /// started and the draft deposit invoice it raised.
+  final ProjectRef? project;
+  final EstimateDepositInvoice? depositInvoice;
+
+  /// A deposit invoice that still bills the client. Raising the full invoice
+  /// does not take it off, so the person is told before converting.
+  EstimateDepositInvoice? get liveDepositInvoice {
+    final deposit = depositInvoice;
+    return deposit == null || deposit.isCancelled ? null : deposit;
+  }
 
   String get statusLabel => status?.label ?? rawStatus;
 
@@ -105,43 +122,71 @@ class Estimate {
           status == EstimateStatus.sent ||
           status == EstimateStatus.viewed);
 
+  /// Reads an `EstimateList` row.
   factory Estimate.fromJson(Map<String, dynamic> json) {
-    final converted = json['converted_to_invoice'];
-    final opportunity = json['opportunity'];
+    final w = api.EstimateList.fromJson(json);
+    final converted = w.convertedToInvoice;
+    final projectId = w.project?.id ?? '';
+    final deposit = w.depositInvoice;
+    final depositId = deposit?.id ?? '';
     return Estimate(
-      id: json['id']?.toString() ?? '',
-      estimateNumber: json['estimate_number']?.toString() ?? '',
-      title: json['title'] as String? ?? '',
-      status: EstimateStatus.fromString(json['status'] as String?),
-      rawStatus: json['status']?.toString() ?? '',
-      accountName: json['account_name'] as String?,
-      clientName: json['client_name'] as String? ?? '',
-      issueDate: _date(json['issue_date']),
-      expiryDate: _date(json['expiry_date']),
-      totalAmount: _num(json['total_amount']),
-      currency: json['currency'] as String?,
-      isExpired: json['is_expired'] as bool? ?? false,
-      convertedInvoiceId: converted is Map<String, dynamic>
-          ? converted['id']?.toString()
-          : null,
-      convertedInvoiceNumber: converted is Map<String, dynamic>
-          ? converted['invoice_number'] as String?
-          : null,
-      opportunityName: opportunity is Map<String, dynamic>
-          ? opportunity['name'] as String?
-          : null,
+      id: w.id ?? '',
+      estimateNumber: w.estimateNumber ?? '',
+      title: w.title ?? '',
+      status: EstimateStatus.fromString(w.status),
+      rawStatus: w.status ?? '',
+      accountName: w.accountName,
+      clientName: w.clientName ?? '',
+      issueDate: _date(w.issueDate),
+      expiryDate: _date(w.expiryDate),
+      totalAmount: _num(w.totalAmount),
+      currency: w.currency,
+      isExpired: w.isExpired ?? false,
+      convertedInvoiceId: converted?.id,
+      convertedInvoiceNumber: converted?.invoiceNumber,
+      opportunityName: w.opportunity?.name,
+      project: projectId.isEmpty
+          ? null
+          : ProjectRef(id: projectId, name: w.project?.name ?? ''),
+      depositInvoice: depositId.isEmpty
+          ? null
+          : EstimateDepositInvoice(
+              id: depositId,
+              invoiceNumber: deposit?.invoiceNumber ?? '',
+              rawStatus: deposit?.status ?? '',
+              totalAmount: _num(deposit?.totalAmount),
+            ),
     );
   }
 }
 
-double _num(dynamic value) {
-  if (value is num) return value.toDouble();
-  return double.tryParse(value?.toString() ?? '') ?? 0;
+/// The draft deposit invoice an accepted estimate raised, as the list row
+/// carries it.
+class EstimateDepositInvoice {
+  const EstimateDepositInvoice({
+    required this.id,
+    this.invoiceNumber = '',
+    this.rawStatus = '',
+    this.totalAmount = 0,
+  });
+
+  final String id;
+  final String invoiceNumber;
+  final String rawStatus;
+  final double totalAmount;
+
+  InvoiceStatus? get status => InvoiceStatus.fromString(rawStatus);
+
+  String get statusLabel => status?.label ?? rawStatus.replaceAll('_', ' ');
+
+  bool get isCancelled => status == InvoiceStatus.cancelled;
 }
 
+double _num(String? value) => double.tryParse(value ?? '') ?? 0;
+
 /// A YYYY-MM-DD date as a local calendar date, never UTC midnight.
-DateTime? _date(dynamic value) {
-  final text = value?.toString().trim() ?? '';
+DateTime? _date(String? value) {
+  final text = value?.trim() ?? '';
   if (text.isEmpty || text == 'null') return null;
   if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(text)) {
     return DateTime.tryParse('${text}T00:00:00');

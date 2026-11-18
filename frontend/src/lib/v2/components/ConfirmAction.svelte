@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * A destructive action that takes two clicks.
@@ -14,19 +14,18 @@
    */
   import { enhance } from '$app/forms';
 
-  /** @type {{
-   *   action: string,
-   *   label?: string,
-   *   confirmLabel?: string,
-   *   explain?: string,
-   *   hidden?: Record<string, string>
-   * }} */
   let {
     action,
     label = m.common_delete(),
     confirmLabel = m.common_confirm(),
     explain = '',
     hidden = {}
+  }: {
+    action: string;
+    label?: string;
+    confirmLabel?: string;
+    explain?: string;
+    hidden?: Record<string, string>;
   } = $props();
 
   let armed = $state(false);
@@ -40,7 +39,7 @@
     {action}
     use:enhance={() => {
       busy = true;
-      return async (/** @type {any} */ { update }) => {
+      return async ({ update }) => {
         await update();
         busy = false;
         // Disarm either way. On success the row is gone; on failure the page

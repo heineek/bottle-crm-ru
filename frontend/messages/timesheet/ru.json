@@ -29,7 +29,7 @@
       }
     }
   ],
-  "timesheet_running_on": "{duration}: {ticket}",
+  "timesheet_running_on": "{duration}: {parent}",
   "timesheet_stop_timer": "Остановить таймер",
   "timesheet_weekday_mon": "Пн",
   "timesheet_weekday_tue": "Вт",
@@ -44,7 +44,7 @@
   "timesheet_entry_billed_number": "в счёте {number}",
   "timesheet_entry_billed": "выставлено",
   "timesheet_day_empty": "Ничего не учтено",
-  "timesheet_footer_note": "Время учитывается по обращению, поэтому каждый час здесь привязан к тому, что можно показать клиенту. Ставка сохраняется в записи в момент учёта. Изменение ставки не пересчитывает стоимость прошлых недель.",
+  "timesheet_footer_note": "Время учитывается по обращению или проекту, поэтому каждый час здесь привязан к тому, что можно показать клиенту. Ставка сохраняется в записи в момент учёта. Изменение ставки не пересчитывает стоимость прошлых недель.",
   "timesheet_error_stop_failed": "Не удалось остановить таймер.",
   "timesheet_report_title": "Отчёт по времени",
   "timesheet_report_by_agent": "по сотрудникам",
@@ -77,5 +77,16 @@
   "timesheet_error_rate": "Ставка должна быть положительным числом.",
   "timesheet_report_cell_entries": "записи",
   "timesheet_report_cell_billable": "оплачиваемое",
-  "timesheet_report_cell_worth": "стоимость"
+  "timesheet_report_cell_worth": "стоимость",
+  "timesheet_parent_ticket_unnamed": "Обращение",
+  "timesheet_parent_project_unnamed": "Проект",
+  "timesheet_group_project": "Проект",
+  "timesheet_report_by_project": "по проектам",
+  "timesheet_report_one_project": "один проект",
+  "timesheet_report_col_share": "Доля оплачиваемого",
+  "timesheet_report_cell_share": "доля",
+  "timesheet_report_no_time": "Нет времени",
+  "timesheet_report_project_only": "Только время одного проекта.",
+  "timesheet_report_open_project": "Открыть проект",
+  "timesheet_report_show_all_time": "Показать всё время"
 }

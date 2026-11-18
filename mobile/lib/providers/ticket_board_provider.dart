@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/ticket_board.dart';
 import '../services/api_service.dart';
 
@@ -50,13 +51,13 @@ class TicketBoardNotifier extends AsyncNotifier<TicketBoardData> {
         listResponse.message ?? appL10n.appMsgCouldNotLoadThePipelines,
       );
     }
-    final rows = listResponse.data!['pipelines'];
-    final pipelines = rows is List
-        ? rows
-              .whereType<Map<String, dynamic>>()
-              .map(TicketPipelineSummary.fromJson)
-              .toList()
-        : <TicketPipelineSummary>[];
+    final rows = api.CasePipelineListResponse.fromJson(
+      listResponse.data!,
+    ).pipelines;
+    final pipelines = [
+      for (final p in rows ?? const <api.CasePipelineList>[])
+        TicketPipelineSummary.fromJson(p.json),
+    ];
 
     TicketPipelineSummary? active;
     for (final p in pipelines) {

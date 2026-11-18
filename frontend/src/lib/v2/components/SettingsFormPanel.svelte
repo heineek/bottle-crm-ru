@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   /**
    * The chrome around a settings form.
@@ -21,16 +21,8 @@
    * `{#if}`.
    */
   import { enhance } from '$app/forms';
+  import type { Snippet } from 'svelte';
 
-  /** @type {{
-   *   title: string,
-   *   action: string,
-   *   error?: string | null,
-   *   submitLabel?: string,
-   *   oncancel: () => void,
-   *   ondone?: () => void,
-   *   fields: import('svelte').Snippet
-   * }} */
   let {
     title,
     action,
@@ -39,6 +31,14 @@
     oncancel,
     ondone,
     fields
+  }: {
+    title: string;
+    action: string;
+    error?: string | null;
+    submitLabel?: string;
+    oncancel: () => void;
+    ondone?: () => void;
+    fields: Snippet;
   } = $props();
 
   // Disables submit while a request is in flight so a double-click cannot
@@ -52,7 +52,7 @@
     {action}
     use:enhance={() => {
       busy = true;
-      return async (/** @type {any} */ { result, update }) => {
+      return async ({ result, update }) => {
         await update();
         busy = false;
         // Close only on success. A rejected submit has to leave the panel

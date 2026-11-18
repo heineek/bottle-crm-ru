@@ -189,19 +189,25 @@ scripted client. The throttles and the captcha are what apply there. CORS header
 
 ## What happens to a submission
 
-`webforms/service.py` is the single write path, shared with the deprecated endpoint below.
+`webforms/service.py` is the single write path, shared with the deprecated endpoint below. From
+django-crm 1.26.0 it hands each lead form submission to `leads.intake.receive_lead`, the service
+lead webhooks and lead addresses use too, so a repeat enquiry is recognised the same way on every
+route (see [Lead capture](../features/lead-capture.md#what-happens-to-an-arriving-lead)).
 
-- **A new address creates a lead**, with `status="assigned"`, `source` from the form's configured
+- **A new person creates a lead**, with `status="assigned"`, `source` from the form's configured
   lead source, the form's assignee (or, on a rotation form, the member whose turn it is; see
   [Assigning new leads](#assigning-new-leads)), and the form's tags.
-- **A repeat address merges**, matched case-insensitively within the same org. The merge **fills
-  blank fields only and never overwrites a populated one**. Anyone who knows a prospect's email
-  address can post your form, so an overwrite would let a stranger rewrite that prospect's record.
-  Assignment, status, source and the pipeline columns are never touched by a merge: they belong to
-  whoever owns the lead now.
-- **The message becomes a comment**, not an overwrite. `description` is deliberately outside the
-  mergeable set, so a returning visitor's second message is added to the lead's timeline rather
-  than replacing the first.
+- **A repeat enquiry merges**, matched within the same org by email address (ignoring case) or,
+  failing that, by phone number in international form (read with the org's default country). The
+  merge **fills blank fields only and never overwrites a populated one**, and a match by phone
+  alone never takes the submitted email address: it goes into the enquiry instead. Anyone who knows a
+  prospect's email address can post your form, so an overwrite would let a stranger rewrite that
+  prospect's record. Assignment, source and the pipeline columns are never touched by a merge:
+  they belong to whoever owns the lead now. The form's tags are added. A closed lead is reopened as
+  Recycled, and a converted lead is left alone: the message goes on the contact it became instead.
+- **The message becomes an enquiry**, not an overwrite. `description` is deliberately outside the
+  mergeable set, so a returning visitor's second message is added to the lead's timeline as an
+  `enquiry` [interaction](../api/interactions.md) rather than replacing the first.
 - **Every submission is stored**, accepted or rejected, which is what makes spam review and an
   honest conversion rate possible. `GET /api/webforms/<id>/submissions/` lists them. The internal
   reject reason is never returned: naming the control that caught a bot is how the next bot gets
@@ -216,8 +222,11 @@ without answering it therefore emails nobody.
 The form's active notify list and the record's assignee are emailed once per accepted submission,
 in one message. For a lead that is whoever the lead is actually assigned to: the member a rotation
 picked, or the existing owner when a repeat address merged into a lead somebody already holds (from
-django-crm 1.13.0; before, it was always the form's `assign_to`). For a ticket it is the form's
-active `assign_to`. Rejected submissions notify nobody, because an org told about every bot learns to ignore the notification
+django-crm 1.13.0; before, it was always the form's `assign_to`), unless they switched **Lead
+alerts by email** off (from 1.39.0, see [Lead alerts](../features/lead-alerts.md#choosing-how-you-hear)).
+From 1.42.0, a repeat address that matches a converted lead emails the owners of the contact the
+lead became instead, and the email opens the contact; an owner whose user account is deactivated
+is skipped. For a ticket it is the form's active `assign_to`. Rejected submissions notify nobody, because an org told about every bot learns to ignore the notification
 and then misses the real one.
 
 `GET /api/webforms/<id>/analytics/` returns a fixed trailing 30 days of views, submissions, spam

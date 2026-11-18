@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import NextAction from '#lib/v2/components/NextAction.svelte';
 </script>

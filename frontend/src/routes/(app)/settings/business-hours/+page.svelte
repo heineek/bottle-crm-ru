@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   /**
    * The calendar every response target is measured against.
@@ -27,9 +27,9 @@
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { Plus, Clock, TriangleAlert } from '@lucide/svelte';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let calendar = $derived(data.calendar);
 
@@ -55,9 +55,9 @@
   // needed here. `closed` drives both the checkbox and whether the two time
   // inputs are disabled; a closed day still carries a sensible default time
   // so re-opening it doesn't hand back a blank field.
-  let hourRows = $state(
-    /** @type {{ day: string, key: string, open: string, close: string, closed: boolean }[]} */ ([])
-  );
+  let hourRows = $state<
+    { day: string; key: string; open: string; close: string; closed: boolean }[]
+  >([]);
 
   function openHoursEdit() {
     hourRows = calendar.days.map((d) => ({

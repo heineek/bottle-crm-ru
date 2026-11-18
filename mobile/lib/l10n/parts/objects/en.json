@@ -156,5 +156,105 @@
   },
   "objectsRemoveBodyUnnamed": "This record will no longer link here.",
   "objectsRelated": "Related",
-  "objectsDeletePhotoTooltip": "Delete photo"
+  "objectsDeletePhotoTooltip": "Delete photo",
+  "objectsBoardLoadFailed": "Failed to load the board",
+  "objectsBoardNoColumns": "This board has no columns",
+  "objectsBoardColumnEmpty": "No {plural}",
+  "@objectsBoardColumnEmpty": {
+    "placeholders": {
+      "plural": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsBoardOtherValuesFootnote": "Values that are no longer options",
+  "objectsMatchesDismissFailed": "Could not dismiss that match",
+  "objectsMatchesUndoFailed": "Could not undo",
+  "objectsMatchesTitle": "Matches",
+  "objectsMatchesNoneDismissed": "None dismissed.",
+  "objectsMatchesNoneYet": "No matches yet.",
+  "objectsMatchesHideDismissed": "Hide dismissed",
+  "objectsMatchesDismissedCount": "{count} dismissed",
+  "@objectsMatchesDismissedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectsMatchesShow": "Show",
+  "objectsMatchesLoadFailed": "Could not load matches",
+  "objectsMatchesUntitled": "Untitled",
+  "objectsMatchesUndo": "Undo",
+  "objectsMatchesDismiss": "Dismiss",
+  "objectsMatchesUndoFor": "Undo {name}",
+  "@objectsMatchesUndoFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsMatchesDismissFor": "Dismiss {name}",
+  "@objectsMatchesDismissFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsFilterTitle": "Filters",
+  "objectsFilterNoMembers": "No members",
+  "objectsFilterNoTags": "No tags",
+  "objectsFilterMember": "Member",
+  "objectsFilterTag": "Tag",
+  "objectsFilterMe": "Me",
+  "objectsFilterOtherMembers": "Other members",
+  "objectsFilterAnyTag": "Any tag",
+  "objectsFilterClearAll": "Clear all",
+  "objectsDetailNoteAddFailed": "Could not add that note.",
+  "objectsDetailNoteUpdateFailed": "Could not update that note.",
+  "objectsDetailNoteDeleteFailed": "Could not delete that note.",
+  "objectsDetailNoteDeleteTitle": "Delete note?",
+  "objectsDetailTimeline": "Timeline",
+  "objectsDetailNoteHint": "Add a note",
+  "objectsDetailNoteAdd": "Add note",
+  "objectsDetailAddedNote": "added a note",
+  "objectsDetailCreatedNoActor": "{label} created",
+  "@objectsDetailCreatedNoActor": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsDetailCreatedThis": "created this {label}",
+  "@objectsDetailCreatedThis": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsFormTagInactive": "{name} (no longer active)",
+  "@objectsFormTagInactive": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "objectsFormRemoveTag": "Remove tag",
+  "objectsFormChooseTags": "Choose tags",
+  "objectsListFiltersOn": "Filters ({count} on)",
+  "@objectsListFiltersOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectsListModeList": "List",
+  "objectsListModeBoard": "Board",
+  "objectsListImport": "Import from a spreadsheet"
 }

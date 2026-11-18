@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
@@ -15,9 +15,9 @@
   import { isOn } from '#lib/v2/modules.js';
   import { m } from '#lib/paraglide/messages.js';
   import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   let invoices = $derived(data.invoices);
   let totals = $derived(data.totals);
@@ -26,12 +26,10 @@
    * The money is per currency: there are no exchange rates, so the header
    * shows one currency at a time with a switch when there are several. The
    * picked one, else the org's own, else the first one invoiced in.
-   *
-   * @type {string | null}
    */
-  let picked = $state(null);
+  let picked: string | null = $state(null);
   let cur = $derived(
-    totals.currencies.includes(picked)
+    picked !== null && totals.currencies.includes(picked)
       ? picked
       : totals.currencies.includes(data.org.currency)
         ? data.org.currency
@@ -40,7 +38,7 @@
   let sums = $derived(totals.byCurrency[cur] ?? totals.blank);
 
   /** Rows with a send in flight, so the button can show it is working. */
-  let sending = $state(/** @type {Record<string, boolean>} */ ({}));
+  let sending = $state<Record<string, boolean>>({});
 
   /**
    * Days past due, or days remaining. A settled invoice has no age, once it
@@ -49,17 +47,19 @@
    */
   const SETTLED = ['Paid', 'Cancelled'];
 
-  function ageLabel(inv) {
+  type Dated = { status: string; due_date: string | null };
+
+  function ageLabel(inv: Dated) {
     if (SETTLED.includes(inv.status)) return '—';
-    if (!inv.due_date) return '—';
     const n = daysSince(inv.due_date);
+    if (n === null) return '—';
     if (n > 0) return m.invoices_age_late({ n });
     if (n === 0) return m.invoices_age_due_today();
     return m.invoices_age_left({ n: Math.abs(n) });
   }
 
-  const isLate = (inv) =>
-    !SETTLED.includes(inv.status) && inv.due_date && daysSince(inv.due_date) > 0;
+  const isLate = (inv: Dated) =>
+    !SETTLED.includes(inv.status) && inv.due_date && (daysSince(inv.due_date) ?? 0) > 0;
 </script>
 
 <PageHeader title={m.invoices_title()}>

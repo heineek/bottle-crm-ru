@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import '../../../../app.css';
   import '#lib/v2/styles/v2.css';
   import imgLogo from '#lib/assets/images/logo.png';
   import { m } from '#lib/paraglide/messages.js';
+  import type { PageProps } from './$types';
 
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
 
   const error = $derived(form?.error ?? data.error);
   let submitting = $state(false);
@@ -41,7 +42,7 @@
           <h1>{m.public_verify_heading()}</h1>
           <p>{m.public_verify_hint()}</p>
         </div>
-        <!-- A plain submit, never an automatic one: see +page.server.js. No
+        <!-- A plain submit, never an automatic one: see +page.server.ts. No
              `action` attribute, so it posts back to this URL, token included. -->
         <form method="POST" onsubmit={() => (submitting = true)}>
           <button type="submit" class="v2-btn v2-btn-primary v2-btn-block" disabled={submitting}>

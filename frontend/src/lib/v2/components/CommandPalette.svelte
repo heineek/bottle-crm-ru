@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -11,11 +11,14 @@
     LifeBuoy,
     Receipt,
     BookOpen,
+    Boxes,
     Plus,
     CornerDownLeft
   } from '@lucide/svelte';
   import { paletteActions, searchPlaceholder, noHitsText } from '#lib/v2/nav.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { ModuleRow } from '#lib/v2/modules.js';
+  import type { SearchHit } from '#lib/server/v2/search.js';
 
   /**
    * One search across every record type, opened with ⌘K.
@@ -26,18 +29,20 @@
    * Empty query shows actions rather than an empty box. The fastest way to
    * start a new deal is ⌘K, "new", Enter, and that only works if the actions
    * are there before you type.
-   *
-   * @type {{ open: boolean, onclose: () => void, modules?: import('#lib/v2/modules.js').ModuleRow[] | null }}
    */
-  let { open = false, onclose, modules = null } = $props();
+  let {
+    open = false,
+    onclose,
+    modules = null
+  }: { open: boolean; onclose: () => void; modules?: ModuleRow[] | null } = $props();
 
   let actions = $derived(
     paletteActions(modules).map((a) => ({ ...a, icon: ACTION_ICONS[a.icon] }))
   );
 
-  const ACTION_ICONS = { Plus, Columns3, Receipt };
+  const ACTION_ICONS: Record<string, typeof Plus> = { Plus, Columns3, Receipt };
 
-  const ICON = {
+  const ICON: Record<string, typeof Plus> = {
     Deals: Columns3,
     Accounts: Building2,
     Contacts: Users,
@@ -49,7 +54,7 @@
   };
 
   /** `kind` is the code the icons key on; this is its heading. */
-  const KIND_LABEL = {
+  const KIND_LABEL: Record<string, () => string> = {
     Deals: () => m.app_palette_kind_deals(),
     Accounts: () => m.app_palette_kind_accounts(),
     Contacts: () => m.app_palette_kind_contacts(),
@@ -61,21 +66,23 @@
   };
 
   let query = $state('');
-  let hits = $state(/** @type {any[]} */ ([]));
+  /** A palette row: a search hit or an action. */
+  type PaletteRow = SearchHit & { icon?: typeof Plus };
+  let hits = $state<PaletteRow[]>([]);
   let cursor = $state(0);
-  /** @type {HTMLInputElement | undefined} */
-  let input = $state();
+  let input: HTMLInputElement | undefined = $state();
 
   let rows = $derived(query.trim() ? hits : actions);
 
+  type Group = { kind: string; rows: PaletteRow[] };
   /** Grouped for display, but `rows` stays flat so ↑/↓ crosses group borders. */
   let groups = $derived(
-    rows.reduce((acc, r) => {
+    rows.reduce((acc: Group[], r) => {
       const g = acc.find((x) => x.kind === r.kind);
       if (g) g.rows.push(r);
       else acc.push({ kind: r.kind, rows: [r] });
       return acc;
-    }, /** @type {{kind: string, rows: any[]}[]} */ ([]))
+    }, [] as Group[])
   );
 
   // Re-runs whenever the query changes. `seq` drops out-of-order responses,
@@ -92,7 +99,7 @@
       return;
     }
     fetch(`/api/search?q=${encodeURIComponent(q)}`)
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<{ results?: SearchHit[] }>)
       .then((r) => {
         if (mine !== seq) return;
         hits = r.results || [];
@@ -109,7 +116,7 @@
     if (open) input?.focus();
   });
 
-  function onkeydown(e) {
+  function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
       onclose();
@@ -125,7 +132,7 @@
     }
   }
 
-  function choose(row) {
+  function choose(row: { href: string } | undefined) {
     if (!row) return;
     onclose();
     query = '';
@@ -174,7 +181,8 @@
           <div class="v2-palette-group v2-label">{KIND_LABEL[group.kind]?.() ?? group.kind}</div>
           {#each group.rows as row (row.id)}
             {@const i = rows.indexOf(row)}
-            {@const Icon = row.icon ?? ICON[row.kind] ?? Search}
+            {@const Icon =
+              row.icon ?? ICON[row.kind] ?? (row.href.startsWith('/objects/') ? Boxes : Search)}
             <button
               class="v2-palette-row"
               type="button"

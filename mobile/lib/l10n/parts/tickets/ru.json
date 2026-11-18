@@ -251,15 +251,6 @@
   "ticketsPanelTimeBillable": "Оплачиваемое",
   "ticketsPanelTimeStart": "Запустить таймер",
   "ticketsPanelTimeMore": "+ ещё {count}",
-  "ticketsPanelTimeRunning": "Идёт",
-  "ticketsPanelTimeStop": "Остановить",
-  "ticketsPanelTimeEntry": "Запись времени",
-  "ticketsPanelTimeSheetTitle": "Добавить запись времени",
-  "ticketsPanelTimeDuration": "Длительность",
-  "ticketsPanelTimeDescriptionHint": "Над чем вы работали?",
-  "ticketsPanelTimeAddEntry": "Добавить",
-  "ticketsPanelTimeZero": "0 мин",
-  "ticketsPanelTimeHours": "{hours} ч",
   "ticketsPanelApprovalRequestTitle": "Запросить согласование",
   "ticketsPanelApprovalRequestHint": "Комментарий для согласующего (необязательно)",
   "ticketsPanelApprovalSendRequest": "Отправить запрос",
@@ -389,5 +380,10 @@
   "ticketsListFilterByAccount": "Фильтр по компании",
   "ticketsListAllAccounts": "Все компании",
   "ticketsListFilterByAssignee": "Фильтр по ответственному",
-  "ticketsListFilterByTag": "Фильтр по тегу"
+  "ticketsListFilterByTag": "Фильтр по тегу",
+  "ticketsPanelTimeProjectRunning": "У вас уже запущен таймер в проекте.",
+  "ticketsPanelTimeInvoiceCreated": "Черновик счёта создан",
+  "ticketsPanelTimeLinkAccount": "Чтобы выставить счёт за время, привяжите обращение к компании.",
+  "ticketsPanelTimeBill": "{count, plural, one{Выставить счёт за время ({count} запись)} few{Выставить счёт за время ({count} записи)} many{Выставить счёт за время ({count} записей)} other{Выставить счёт за время ({count} записи)}}",
+  "ticketsDetailCustomFields": "Дополнительные поля"
 }

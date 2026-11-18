@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from common import swagger_params
 from common.models import APISettings, Profile, Tags
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.serializer import (
     APISettingsListSerializer,
     APISettingsSerializer,
@@ -50,7 +50,7 @@ def _tag_names(value):
             except json.JSONDecodeError:
                 value = None
     if not isinstance(value, list) or not all(isinstance(n, str) for n in value):
-        raise DRFValidationError({"tags": ["tags must be a list of tag names."]})
+        raise DRFValidationError({"tags": [_("tags must be a list of tag names.")]})
     names = [name.strip() for name in value]
     for name in names:
         error = Tags.name_error(name)
@@ -177,7 +177,7 @@ class DomainList(APIView):
         # Creating a setting mints an API key that posts leads into the org, so
         # the write half of this endpoint is admin-only while the read half
         # stays open to every member.
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         params = request.data
         org = request.profile.org
@@ -247,7 +247,7 @@ class DomainDetailView(APIView):
         },
     )
     def put(self, request, pk, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         api_setting = self.get_object(pk)
         params = request.data
@@ -286,7 +286,7 @@ class DomainDetailView(APIView):
     def patch(self, request, pk, **kwargs):
         """Partial update: `tags` and `lead_assigned_to` are replaced when sent
         and left alone when absent, with the same org scoping as PUT."""
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         api_setting = self.get_object(pk)
         params = request.data
@@ -324,7 +324,7 @@ class DomainDetailView(APIView):
         },
     )
     def delete(self, request, pk, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         api_setting = self.get_object(pk)
         if api_setting:

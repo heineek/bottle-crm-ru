@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from common.models import CustomFieldDefinition
 from common.object_registry import all_objects, built_in_objects
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext, may_configure
 from common.serializer import CustomFieldDefinitionSerializer
 
 
@@ -79,6 +79,34 @@ def _cf_totals(definitions, missing_by_id):
     }
 
 
+class CustomFieldDefinitionRowSerializer(CustomFieldDefinitionSerializer):
+    """A listed definition. `records_missing_value` is left out under
+    `include_counts=false`."""
+
+    records_missing_value = serializers.IntegerField(required=False)
+
+    class Meta(CustomFieldDefinitionSerializer.Meta):
+        fields = (*CustomFieldDefinitionSerializer.Meta.fields, "records_missing_value")
+
+
+_DefinitionListResponse = inline_serializer(
+    name="CustomFieldDefinitionListResponse",
+    fields={
+        "definitions": CustomFieldDefinitionRowSerializer(many=True),
+        "totals": inline_serializer(
+            name="CustomFieldTotals",
+            allow_null=True,
+            fields={
+                "count": serializers.IntegerField(),
+                "active": serializers.IntegerField(),
+                "models_extended": serializers.IntegerField(),
+                "required_with_gaps": serializers.IntegerField(),
+            },
+        ),
+    },
+)
+
+
 class CustomFieldDefinitionListCreateView(APIView):
     """GET ?target_model=Case lists definitions; POST creates one (admin)."""
 
@@ -86,7 +114,7 @@ class CustomFieldDefinitionListCreateView(APIView):
 
     @extend_schema(
         tags=["CustomFields"],
-        responses={200: CustomFieldDefinitionSerializer(many=True)},
+        responses={200: _DefinitionListResponse},
     )
     def get(self, request, *args, **kwargs):
         org = request.profile.org
@@ -131,7 +159,7 @@ class CustomFieldDefinitionListCreateView(APIView):
         responses={201: CustomFieldDefinitionSerializer},
     )
     def post(self, request, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         org = request.profile.org
         serializer = CustomFieldDefinitionSerializer(
@@ -168,11 +196,11 @@ class CustomFieldDefinitionDetailView(APIView):
 
     @extend_schema(
         tags=["CustomFields"],
-        request=CustomFieldDefinitionSerializer,
+        request=CustomFieldDefinitionSerializer(partial=True),
         responses={200: CustomFieldDefinitionSerializer},
     )
     def put(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         obj = self._get_object(pk, request.profile.org)
         if not obj:
@@ -207,7 +235,7 @@ class CustomFieldDefinitionDetailView(APIView):
         },
     )
     def delete(self, request, pk, *args, **kwargs):
-        if not is_org_admin(request.profile):
+        if not may_configure(request.profile):
             return _admin_required()
         obj = self._get_object(pk, request.profile.org)
         if not obj:

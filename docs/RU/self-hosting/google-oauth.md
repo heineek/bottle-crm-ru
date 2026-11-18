@@ -10,7 +10,7 @@ Google.
 
 Создайте в Google Cloud Console OAuth 2.0 Client ID типа «Web application». Redirect URI, который
 нужно для него разрешить, строится страницей входа фронтенда
-(`frontend/src/routes/(no-layout)/login/+page.server.js`) как `${GOOGLE_LOGIN_DOMAIN}/login`;
+(`frontend/src/routes/(no-layout)/login/+page.server.ts`) как `${GOOGLE_LOGIN_DOMAIN}/login`;
 `GOOGLE_LOGIN_DOMAIN` является переменной окружения **фронтенда** (`frontend/.env.example` задаёт ей по
 умолчанию `http://localhost:5181`), поэтому регистрировать в Google нужно `http://localhost:5181/login`
 для локальной разработки или `https://<your-frontend-host>/login` в продакшене. Для мобильного
@@ -48,7 +48,7 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 Веб-сценарий представляет собой стандартный OAuth Authorization Code flow с PKCE, разделённый между
 фронтендом и `GoogleOAuthCallbackView`:
 
-1. `login/+page.server.js` генерирует пару PKCE `code_verifier`/`code_challenge` и случайный `state`,
+1. `login/+page.server.ts` генерирует пару PKCE `code_verifier`/`code_challenge` и случайный `state`,
    сохраняет verifier и state в короткоживущих httpOnly cookie и перенаправляет браузер на эндпоинт
    авторизации Google с `code_challenge`.
 2. Google перенаправляет обратно на `/login?code=...&state=...`. Фронтенд сверяет полученный `state`

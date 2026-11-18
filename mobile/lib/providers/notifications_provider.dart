@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../data/api/schema.g.dart' as api;
 import '../data/models/app_notification.dart';
 import '../services/api_service.dart';
 
@@ -60,22 +61,29 @@ class NotificationsNotifier extends AsyncNotifier<NotificationFeed> {
         response.message ?? appL10n.appMsgCouldNotLoadNotifications,
       );
     }
-    final data = response.data!;
-    final items = ((data['results'] as List<dynamic>?) ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .map(AppNotification.fromJson)
-        .toList();
+    final data = api.NotificationListResponse.fromJson(response.data!);
+    final items = [
+      for (final row in data.results ?? const <api.Notification>[])
+        AppNotification.fromJson(row.json),
+    ];
     return NotificationFeed(
       items: items,
-      unreadCount:
-          data['unread_count'] as int? ?? items.where((n) => n.isUnread).length,
-      total: data['count'] as int? ?? items.length,
+      unreadCount: data.unreadCount ?? items.where((n) => n.isUnread).length,
+      total: data.count ?? items.length,
     );
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(_fetch);
+  }
+
+  /// Fetch again without clearing what is on screen: the badge reads zero
+  /// while the feed loads, so a push or a resume must not flash it. A failed
+  /// fetch keeps the old feed.
+  Future<void> quietRefresh() async {
+    final next = await AsyncValue.guard(_fetch);
+    if (next.hasValue) state = next;
   }
 
   /// Mark one notification read, optimistically.

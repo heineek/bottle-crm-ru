@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -18,6 +18,7 @@
    * is backed by a row that exists (`Task` has no history table, so there are no
    * invented status events beyond the record's own creation).
    */
+  import CustomFieldsCard from '#lib/v2/components/CustomFieldsCard.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
@@ -38,9 +39,9 @@
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { m } from '#lib/paraglide/messages.js';
   import { taskKindLabel, taskPriorityLabel, taskStatusLabel } from '../labels.js';
+  import type { PageProps } from './$types';
 
-  /** @type {{ data: any, form: any }} */
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
   let related = $derived(relatedView(data.related));
 
   let { task, activity, contacts, owners, canDelete } = $derived(data);
@@ -83,12 +84,10 @@
   // and clear it. `fileInput` is the element itself. A file input's value can
   // only be cleared through the DOM, not by rebinding.
   let fileName = $state('');
-  /** @type {HTMLInputElement | undefined} */
-  let fileInput;
+  let fileInput: HTMLInputElement | undefined;
 
-  /** @param {Event} e */
-  function pickFile(e) {
-    fileName = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0]?.name ?? '';
+  function pickFile(e: Event) {
+    fileName = (e.currentTarget as HTMLInputElement).files?.[0]?.name ?? '';
   }
   function clearFile() {
     if (fileInput) fileInput.value = '';
@@ -103,13 +102,13 @@
   // ── activity feed ────────────────────────────────────────────────────────
   // Three real kinds (comment / file / created). The filter only appears once
   // there is a file to filter. With nothing but comments it would sort one pile.
-  let hasFiles = $derived(activity.some((/** @type {any} */ e) => e.type === 'file'));
-  let filter = $state(/** @type {'all'|'comments'|'files'} */ ('all'));
+  let hasFiles = $derived(activity.some((e) => e.type === 'file'));
+  let filter = $state<'all' | 'comments' | 'files'>('all');
   let shown = $derived(
     filter === 'files'
-      ? activity.filter((/** @type {any} */ e) => e.type === 'file')
+      ? activity.filter((e) => e.type === 'file')
       : filter === 'comments'
-        ? activity.filter((/** @type {any} */ e) => e.type !== 'file')
+        ? activity.filter((e) => e.type !== 'file')
         : activity
   );
   let newestId = $derived(shown[0]?.id ?? null);
@@ -117,9 +116,8 @@
   /**
    * The line under an event: "Attached" for a file, the author where known, then
    * how long ago, joined so no separator dangles when a part is missing.
-   * @param {{type:string,by:string|null,at:string}} e
    */
-  function metaFor(e) {
+  function metaFor(e: { type: string; by: string | null; at: string }) {
     const parts = [];
     if (e.type === 'file') parts.push(m.tasks_activity_attached());
     if (e.by) parts.push(e.by);
@@ -127,8 +125,7 @@
     return parts.join(' · ');
   }
 
-  /** @param {string} iso */
-  function dayGroup(iso) {
+  function dayGroup(iso: string) {
     const n = daysSince(iso);
     if (n === 0) return m.tasks_day_today();
     if (n === 1) return m.tasks_day_yesterday();
@@ -137,8 +134,10 @@
 
   // Interleave day headers so each date is announced once, in order.
   let feed = $derived.by(() => {
-    /** @type {Array<{kind:'day',id:string,label:string}|{kind:'event',id:string,event:any}>} */
-    const out = [];
+    const out: Array<
+      | { kind: 'day'; id: string; label: string }
+      | { kind: 'event'; id: string; event: (typeof activity)[number] }
+    > = [];
     let last = null;
     for (const e of shown) {
       const g = dayGroup(e.at);
@@ -225,6 +224,8 @@
             {m.tasks_detail_no_note()}
           </p>
         {/if}
+
+        <CustomFieldsCard fields={data.customFields ?? []} />
 
         <RelatedRecords {related} error={form?.related?.error} />
 

@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../l10n/l10n.dart';
 import '../config/api_config.dart';
+import '../core/app_info.dart';
+import 'api_contract.dart';
 import 'app_language.dart';
 
 /// Callback invoked when the access token has aged out (or, as a fallback, when
@@ -168,7 +170,7 @@ class ApiService {
     // cold start, where `AuthService.initialize()` does this same check once.
     //
     // The web client refreshes the same way, off the `exp` claim on every
-    // request (`frontend/src/hooks.server.js`), rather than off a status code.
+    // request (`frontend/src/hooks.server.ts`), rather than off a status code.
     if (requiresAuth && _accessTokenNeedsRefresh && _refreshCallback != null) {
       await _refreshAccessToken();
     }
@@ -199,6 +201,9 @@ class ApiService {
     final headers = Map<String, String>.from(ApiConfig.defaultHeaders);
     // So API errors read in the language the screen around them is in.
     headers['Accept-Language'] = currentLanguage;
+    // A phone request without it is an older build, whose lead and deal writes
+    // the server guards (it may send `other` over a source it never knew).
+    headers['X-BottleCRM-App'] = appVersion;
 
     if (requiresAuth && _accessToken != null) {
       headers['Authorization'] = 'Bearer $_accessToken';
@@ -296,6 +301,10 @@ class ApiService {
         sentences.add('$capitalised: ${messages.first}');
       } else if (messages is String && messages.isNotEmpty) {
         sentences.add('$capitalised: $messages');
+      } else if (messages is Map) {
+        // `{"custom_fields": {"budget": "is required"}}`: name the inner field.
+        final inner = _fieldErrorSentences(messages);
+        if (inner != null) sentences.add(inner);
       }
     }
     return sentences.isEmpty ? null : sentences.join('\n');
@@ -307,6 +316,7 @@ class ApiService {
     bool requiresAuth = true,
     Map<String, String>? queryParams,
   }) async {
+    debugCheckApiRequest('GET', url);
     try {
       final uri = queryParams != null
           ? Uri.parse(url).replace(queryParameters: queryParams)
@@ -346,6 +356,7 @@ class ApiService {
     String url, {
     bool requiresAuth = true,
   }) async {
+    debugCheckApiRequest('GET', url);
     try {
       final uri = Uri.parse(url);
       debugPrint('GET (bytes) $uri');
@@ -380,6 +391,7 @@ class ApiService {
     bool requiresAuth = true,
     Map<String, String>? queryParams,
   }) async {
+    debugCheckApiRequest('GET', url);
     try {
       final uri = queryParams != null
           ? Uri.parse(url).replace(queryParameters: queryParams)
@@ -419,6 +431,7 @@ class ApiService {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
+    debugCheckApiRequest('POST', url, body.keys);
     try {
       // The URL only. A request body is never safe to log here: the refresh
       // call carries the refresh token, sign-in carries the Google id token,
@@ -491,6 +504,7 @@ class ApiService {
     // same whatever the verb; which fields go is the caller's decision.
     String method = 'POST',
   }) async {
+    debugCheckApiRequest(method, url, [fileField, ...fields.keys]);
     assert(
       (filePath == null) != (fileBytes == null),
       'Pass filePath or fileBytes, not both and not neither',
@@ -556,6 +570,7 @@ class ApiService {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
+    debugCheckApiRequest('PUT', url, body.keys);
     try {
       debugPrint('PUT $url');
 
@@ -594,6 +609,7 @@ class ApiService {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
+    debugCheckApiRequest('PATCH', url, body.keys);
     try {
       debugPrint('PATCH $url');
 
@@ -629,15 +645,18 @@ class ApiService {
   /// Perform DELETE request
   Future<ApiResponse<Map<String, dynamic>>> delete(
     String url, {
+    Map<String, dynamic>? body,
     bool requiresAuth = true,
   }) async {
+    debugCheckApiRequest('DELETE', url, body?.keys ?? const []);
     try {
       debugPrint('DELETE $url');
 
       final uri = Uri.parse(url);
+      final encoded = body == null ? null : jsonEncode(body);
       final response = await _sendWithRetry(
         requiresAuth: requiresAuth,
-        send: (headers) => _client.delete(uri, headers: headers),
+        send: (headers) => _client.delete(uri, headers: headers, body: encoded),
       );
 
       final data = _parseResponse(response);

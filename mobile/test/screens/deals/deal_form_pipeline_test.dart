@@ -179,8 +179,8 @@ class _FakeDeals extends DealsNotifier {
 
   @override
   Future<({bool success, String? error, Deal? deal, String? nameError})>
-  createDeal(Deal deal) async {
-    created.add(deal.toJson());
+  createDeal(Deal deal, {bool withLeadSource = false}) async {
+    created.add(deal.toJson(withLeadSource: withLeadSource));
     return (success: true, error: null, deal: null, nameError: null);
   }
 }

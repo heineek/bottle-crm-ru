@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
@@ -10,8 +10,6 @@
    * Give it an `href` and the action becomes a link. Without one it stays a
    * button, which on the fixture pages goes nowhere. Fine while a page is a
    * sandbox, not fine once the record it names is real and one click away.
-   *
-   * @type {{ label?: string, text: string, action?: string, href?: string|null, secondary?: string, tone?: 'ember'|'rust' }}
    */
   let {
     label = m.app_next_action_label(),
@@ -20,6 +18,13 @@
     href = null,
     secondary = null,
     tone = 'ember'
+  }: {
+    label?: string;
+    text: string;
+    action?: string | null;
+    href?: string | null;
+    secondary?: string | null;
+    tone?: 'ember' | 'rust';
   } = $props();
 
   let accent = $derived(tone === 'rust' ? 'var(--v2-rust)' : 'var(--v2-ember)');
