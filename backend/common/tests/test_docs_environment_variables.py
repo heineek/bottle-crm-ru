@@ -15,7 +15,11 @@ REPO_ROOT = Path(settings.BASE_DIR).parent
 SETTINGS_PATH = Path(settings.BASE_DIR) / "crm" / "settings.py"
 ENV_DOCKER_PATH = REPO_ROOT / ".env.docker"
 COMPOSE_PATH = REPO_ROOT / "docker-compose.yml"
-REFERENCE_PATH = REPO_ROOT / "docs" / "reference" / "environment-variables.md"
+# The English page and its Russian translation must both list the same names.
+REFERENCE_PATHS = [
+    REPO_ROOT / "docs" / lang / "reference" / "environment-variables.md"
+    for lang in ("EN", "RU")
+]
 
 # Matches os.environ.get("NAME") and os.getenv("NAME"), including calls whose
 # argument sits on the following line.
@@ -64,11 +68,9 @@ def test_variables_read_by_settings_handles_a_wrapped_call():
     assert _variables_read_by_settings(text) == {"EMAIL_BACKEND"}
 
 
-@pytest.mark.skipif(
-    not REFERENCE_PATH.exists(), reason="reference page not written yet"
-)
-def test_no_documented_variable_is_read_nowhere():
-    documented = _documented_variables(REFERENCE_PATH.read_text())
+@pytest.mark.parametrize("reference", REFERENCE_PATHS, ids=lambda p: p.parts[-3])
+def test_no_documented_variable_is_read_nowhere(reference):
+    documented = _documented_variables(reference.read_text())
     known = (
         _variables_read_by_settings(SETTINGS_PATH.read_text())
         | _variables_in_env_files()
@@ -82,16 +84,14 @@ def test_no_documented_variable_is_read_nowhere():
     )
 
 
-@pytest.mark.skipif(
-    not REFERENCE_PATH.exists(), reason="reference page not written yet"
-)
-def test_every_variable_settings_reads_is_documented():
-    documented = _documented_variables(REFERENCE_PATH.read_text())
+@pytest.mark.parametrize("reference", REFERENCE_PATHS, ids=lambda p: p.parts[-3])
+def test_every_variable_settings_reads_is_documented(reference):
+    documented = _documented_variables(reference.read_text())
     read = _variables_read_by_settings(SETTINGS_PATH.read_text())
     missing = sorted(read - documented - UNDOCUMENTED_BY_DESIGN)
     assert not missing, (
-        "crm/settings.py reads these variables but the reference does not list them:\n  "
+        f"crm/settings.py reads these variables but {reference} does not list them:\n  "
         + "\n  ".join(missing)
-        + "\n\nAdd a row to docs/reference/environment-variables.md, or add the "
+        + "\n\nAdd a row to docs/EN/reference/environment-variables.md and its docs/RU/ translation, or add the "
         "name to UNDOCUMENTED_BY_DESIGN with a comment saying why."
     )

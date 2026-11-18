@@ -18,7 +18,7 @@ crm/settings.py) so the connection count is bounded some other way.
 
 Agents and scripts reach the CRM through the REST API under `/api/`,
 authenticated with a personal access token (`Authorization: Bearer
-bcrm_pat_...`). See docs/integrations/ai-agents.md.
+bcrm_pat_...`). See docs/EN/integrations/ai-agents.md.
 """
 
 import os

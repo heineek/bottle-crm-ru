@@ -3,11 +3,13 @@ site_description: Self-hosted, multi-tenant CRM. Setup, self-hosting, API and de
 site_url: https://django-crm.readthedocs.io/
 repo_url: https://github.com/django-crm/Django-CRM
 repo_name: django-crm/Django-CRM
-edit_uri: edit/master/docs/
+edit_uri: edit/master/docs/EN/
 
-docs_dir: docs
+# English is the source. The Russian translation in docs/RU/ builds from
+# mkdocs.ru.yml, which inherits this file.
+docs_dir: docs/EN
 
-# docs/ also holds internal specs, plans and design references. MkDocs copies
+# docs/EN/ also holds internal specs, plans and design references. MkDocs copies
 # every file under docs_dir into the built site regardless of nav, so these
 # must be excluded explicitly or they are published.
 exclude_docs: |

@@ -704,7 +704,7 @@ wheels = [
 
 [[package]]
 name = "django-crm"
-version = "1.59.0"
+version = "1.59.1"
 source = { editable = "." }
 dependencies = [
     { name = "cairocffi" },

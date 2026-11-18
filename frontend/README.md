@@ -6,7 +6,7 @@ in [`../mobile`](../mobile) uses. For what BottleCRM is, see the [project README
 
 ## Run it locally
 
-Start the backend first (see [Development setup](../docs/contributing/development-setup.md)), then:
+Start the backend first (see [Development setup](../docs/EN/contributing/development-setup.md)), then:
 
 ```bash
 cd frontend
@@ -36,6 +36,6 @@ address.
 
 ## More
 
-- [Manual setup](../docs/getting-started/manual-setup.md) and [Docker quick start](../docs/getting-started/docker-quick-start.md)
+- [Manual setup](../docs/EN/getting-started/manual-setup.md) and [Docker quick start](../docs/EN/getting-started/docker-quick-start.md)
 - [Contributing](../CONTRIBUTING.md)
 - License: [MIT](../LICENSE)

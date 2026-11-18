@@ -18,7 +18,7 @@ name: Tag release
 # a GitHub Release with generated notes, and starts publish.yml, which builds
 # the wheel, uploads it to PyPI and pushes the frontend image to GHCR.
 #
-# See docs/contributing/releasing.md.
+# See docs/EN/contributing/releasing.md.
 on:
   push:
     branches: [master]

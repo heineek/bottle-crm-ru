@@ -13,23 +13,23 @@ Thank you for helping improve BottleCRM. Contributions of all sizes are welcome,
 
 Full instructions (cloning, Docker, the backend (`uv`), the frontend (`pnpm`), running the mobile app, adding dependencies, and running tests) live in the documentation site under Contributing:
 
-- [Development setup](docs/contributing/development-setup.md). Get all three projects running locally.
-- [Testing](docs/contributing/testing.md), running the suite, markers, and what CI runs.
-- [Code style](docs/contributing/code-style.md), Python, frontend, and Flutter conventions, and what CI does and doesn't enforce.
-- [Repository layout](docs/contributing/repo-layout.md), where each part of the codebase lives.
-- [Security rules](docs/contributing/security-rules.md). The rules this codebase treats as non-negotiable.
-- [Adding an org-scoped model](docs/contributing/adding-an-org-scoped-model.md). What a new multi-tenant model needs, including its RLS policy.
-- [Localization](docs/localization/index.md). How strings are translated, and [how to add a language](docs/localization/adding-a-language.md).
+- [Development setup](docs/EN/contributing/development-setup.md). Get all three projects running locally.
+- [Testing](docs/EN/contributing/testing.md), running the suite, markers, and what CI runs.
+- [Code style](docs/EN/contributing/code-style.md), Python, frontend, and Flutter conventions, and what CI does and doesn't enforce.
+- [Repository layout](docs/EN/contributing/repo-layout.md), where each part of the codebase lives.
+- [Security rules](docs/EN/contributing/security-rules.md). The rules this codebase treats as non-negotiable.
+- [Adding an org-scoped model](docs/EN/contributing/adding-an-org-scoped-model.md). What a new multi-tenant model needs, including its RLS policy.
+- [Localization](docs/EN/localization/index.md). How strings are translated, and [how to add a language](docs/EN/localization/adding-a-language.md).
 
 ## Submitting a Pull Request
 
 1. Create a branch from `master` with a descriptive name.
 2. Make focused changes and include tests where appropriate.
-3. Run the relevant development checks. See [Testing](docs/contributing/testing.md) and [Code style](docs/contributing/code-style.md).
+3. Run the relevant development checks. See [Testing](docs/EN/contributing/testing.md) and [Code style](docs/EN/contributing/code-style.md).
 4. Update documentation when behavior, setup, or public APIs change.
 5. Push your branch and open a pull request against `master`.
 
-In the pull request description, explain what changed, why it changed, how it was tested, and include screenshots for visible UI changes. See [Pull requests](docs/contributing/pull-requests.md) for what CI runs and what review focuses on.
+In the pull request description, explain what changed, why it changed, how it was tested, and include screenshots for visible UI changes. See [Pull requests](docs/EN/contributing/pull-requests.md) for what CI runs and what review focuses on.
 
 ## Pull Request Checklist
 
