@@ -576,6 +576,3 @@ export const INVOICE_STATUSES = [
 ];
 export const ESTIMATE_STATUSES = ['Draft', 'Sent', 'Viewed', 'Accepted', 'Declined', 'Expired'];
 export const DOCUMENT_STATUSES = ['active', 'inactive'];
-
-// Kept until the ticket screens use restrictedTicketName().
-export const RESTRICTED_TICKET_NAME = 'A ticket you cannot open';

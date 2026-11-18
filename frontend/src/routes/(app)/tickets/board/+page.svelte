@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { resolve } from '$app/paths';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import Pill from '#lib/v2/components/Pill.svelte';
   import Avatar from '#lib/v2/components/Avatar.svelte';
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { count } from '#lib/v2/format.js';
-  import { PRIORITY_TONE } from '#lib/v2/enums.js';
+  import { CASE_PRIORITY_LABEL, PRIORITY_TONE } from '#lib/v2/enums.js';
   import { Columns3, List, TriangleAlert } from '@lucide/svelte';
   import { flip } from 'svelte/animate';
   import { dndzone, type DndEvent } from 'svelte-dnd-action';
@@ -83,10 +85,9 @@
         return true;
       }
       const refusal = result.type === 'failure' ? result.data?.error : undefined;
-      moveError =
-        (typeof refusal === 'string' && refusal) || 'Could not move the ticket, so it went back.';
+      moveError = (typeof refusal === 'string' && refusal) || m.tickets_board_move_failed_back();
     } catch {
-      moveError = 'Could not move the ticket, so it went back.';
+      moveError = m.tickets_board_move_failed_back();
     }
     await refreshAll();
     return false;
@@ -109,10 +110,12 @@
   }
 </script>
 
-<PageHeader title={data.pipeline ? data.pipeline.name : 'Tickets board'}>
+<PageHeader title={data.pipeline ? data.pipeline.name : m.tickets_board_title()}>
   {#snippet sub()}
     <span class="v2-num">{count(data.total)}</span>
-    {data.pipeline ? 'in this pipeline' : 'tickets by status'}
+    {data.pipeline
+      ? m.tickets_board_sub_pipeline()
+      : m.tickets_board_sub_status({ count: data.total })}
   {/snippet}
   {#snippet actions()}
     {#if data.pipelines.length > 0}
@@ -122,19 +125,19 @@
         <select
           name="pipeline"
           class="v2-btn tb-picker"
-          aria-label="Board columns"
+          aria-label={m.tickets_board_columns_label()}
           value={data.pipeline?.id ?? ''}
           onchange={(e) => e.currentTarget.form?.requestSubmit()}
         >
-          <option value="">By status</option>
+          <option value="">{m.tickets_board_by_status()}</option>
           {#each data.pipelines as p (p.id)}
             <option value={p.id}>{p.name}</option>
           {/each}
         </select>
       </form>
     {/if}
-    <a class="v2-btn v2-btn-quiet" href={resolve('tickets')}><List />List</a>
-    <span class="v2-btn" aria-current="true"><Columns3 />Board</span>
+    <a class="v2-btn v2-btn-quiet" href={resolve('tickets')}><List />{m.tickets_board_list()}</a>
+    <span class="v2-btn" aria-current="true"><Columns3 />{m.tickets_board_board()}</span>
   {/snippet}
 </PageHeader>
 
@@ -149,21 +152,17 @@
 
 {#if data.lanes.length === 0}
   <div class="v2-scroll">
-    <EmptyState
-      title="This pipeline has no stages yet"
-      body="There is nowhere on it to move a ticket. An admin can add stages to the pipeline, or you can go back to the board by status."
-    >
+    <EmptyState title={m.tickets_board_empty_title()} body={m.tickets_board_empty_body()}>
       {#snippet icon()}<Columns3 size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn" href={resolve('tickets/board')}>By status</a>
-        <a class="v2-btn" href={resolve('tickets')}>Back to the list</a>
+        <a class="v2-btn" href={resolve('tickets/board')}>{m.tickets_board_by_status()}</a>
+        <a class="v2-btn" href={resolve('tickets')}>{m.tickets_board_back_to_list()}</a>
       {/snippet}
     </EmptyState>
   </div>
 {:else}
   <p class="v2-sub v2-pad" style="font-size:11.5px;margin:10px 0 0;flex:none">
-    Drag a card, or use "Move to" on it, to change its {data.pipeline ? 'stage' : 'status'}. Moving
-    a ticket to Closed closes it, so an approval rule can refuse it.
+    {data.pipeline ? m.tickets_board_hint_stage() : m.tickets_board_hint_status()}
   </p>
   <div class="v2-board" style="padding-top:12px">
     {#each boardLanes as lane (lane.id)}
@@ -177,7 +176,9 @@
         </div>
         {#if lane.truncated}
           <p class="v2-sub" style="padding:0 2px 6px;font-size:11.5px">
-            Showing the first <span class="v2-num">{lane.rows.length}</span>.
+            {#each messageParts(m.tickets_board_lane_truncated( { count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+                  class="v2-num">{lane.rows.length}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
         <div
@@ -205,22 +206,24 @@
               <div class="v2-deal-card-foot">
                 {#if ticket.owner}<Avatar name={ticket.owner} size={21} />{/if}
                 {#if ticket.priority}
-                  <Pill tone={PRIORITY_TONE[ticket.priority] ?? 'slate'}>{ticket.priority}</Pill>
+                  <Pill tone={PRIORITY_TONE[ticket.priority] ?? 'slate'}
+                    >{CASE_PRIORITY_LABEL[ticket.priority] ?? ticket.priority}</Pill
+                  >
                 {/if}
                 {#if ticket.slaBreached}
-                  <Pill tone="rust" dot>SLA breached</Pill>
+                  <Pill tone="rust" dot>{m.tickets_board_sla_breached()}</Pill>
                 {:else if ticket.slaAtRisk}
-                  <Pill tone="clay" dot>SLA at risk</Pill>
+                  <Pill tone="clay" dot>{m.tickets_board_sla_at_risk()}</Pill>
                 {/if}
               </div>
               {#if boardLanes.length > 1 && ticket.canMove}
                 <select
                   class="v2-input tb-move"
-                  aria-label="Move {ticket.name} to"
+                  aria-label={m.tickets_board_move_label({ name: ticket.name })}
                   disabled={busy}
                   onchange={(e) => moveBySelect(ticket.id, e)}
                 >
-                  <option value="">Move to…</option>
+                  <option value="">{m.tickets_board_move_placeholder()}</option>
                   {#each data.lanes as target (target.id)}
                     {#if target.id !== lane.id}
                       <option value={target.id}>{target.name}</option>
@@ -230,7 +233,9 @@
               {/if}
             </div>
           {:else}
-            <p class="v2-sub" style="padding:10px 2px;font-size:12px">Nothing here.</p>
+            <p class="v2-sub" style="padding:10px 2px;font-size:12px">
+              {m.tickets_board_lane_empty()}
+            </p>
           {/each}
         </div>
       </section>

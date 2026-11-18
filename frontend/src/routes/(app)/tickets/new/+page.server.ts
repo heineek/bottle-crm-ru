@@ -11,6 +11,7 @@ import {
   saveRefusal
 } from '#lib/server/v2/record-custom-fields.js';
 import type { components } from '#lib/api-schema.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ cookies, url }) => {
@@ -52,7 +53,7 @@ export const actions: Actions = {
         values: typeof values;
         error: string;
         fieldErrors?: Record<string, string>;
-      } = { values, error: 'A ticket needs a subject.' };
+      } = { values, error: m.tickets_new_subject_required() };
       return fail(400, missing);
     }
 
@@ -62,7 +63,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not raise this ticket.')
+        ...saveRefusal(err, custom.definitions, m.tickets_new_create_failed())
       });
     }
 

@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
 import {
   getTicketForEdit,
   updateTicket,
@@ -67,7 +68,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not save this ticket.')
+        ...saveRefusal(err, custom.definitions, m.tickets_edit_save_failed())
       });
     }
 

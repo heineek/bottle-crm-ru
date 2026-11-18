@@ -17,6 +17,8 @@
   import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps, SubmitFunction } from './$types';
 
   let { data, form: result }: PageProps = $props();
@@ -38,9 +40,8 @@
   let errors = $derived.by(() => {
     const e: Record<string, string> = {};
     const name = (form.name ?? '').trim();
-    if (!name) e.name = 'A ticket needs a subject.';
-    else if (name.length > 64)
-      e.name = `Subjects are capped at 64 characters (this is ${name.length}).`;
+    if (!name) e.name = m.tickets_edit_name_required();
+    else if (name.length > 64) e.name = m.tickets_edit_name_too_long({ count: name.length });
 
     return e;
   });
@@ -59,9 +60,9 @@
   };
 </script>
 
-<PageHeader title="Edit ticket" center>
+<PageHeader title={m.tickets_edit_title()} center>
   {#snippet crumb()}
-    <a href={resolve('tickets')}>Tickets</a>
+    <a href={resolve('tickets')}>{m.tickets_detail_crumb_tickets()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`tickets/${ticket.id}`)}>{ticket.name}</a>
   {/snippet}
@@ -77,14 +78,14 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this change</div>
+          <div style="font-weight:600">{m.tickets_edit_refused()}</div>
           <div class="v2-sub" style="margin-top:2px">{result.error}</div>
         </div>
       </div>
     {/if}
 
     <div class="v2-field">
-      <label for="f-name">Subject</label>
+      <label for="f-name">{m.tickets_edit_subject()}</label>
       <input
         id="f-name"
         name="name"
@@ -98,7 +99,7 @@
 
     <div class="triple">
       <div class="v2-field">
-        <label for="f-status">Status</label>
+        <label for="f-status">{m.common_status()}</label>
         <select id="f-status" name="status" class="v2-input" bind:value={form.status}>
           {#each data.statuses as s (s.value)}
             <option value={s.value}>{s.label}</option>
@@ -106,7 +107,7 @@
         </select>
       </div>
       <div class="v2-field">
-        <label for="f-priority">Priority</label>
+        <label for="f-priority">{m.common_priority()}</label>
         <select id="f-priority" name="priority" class="v2-input" bind:value={form.priority}>
           {#each data.priorities as p (p.value)}
             <option value={p.value}>{p.label}</option>
@@ -114,9 +115,9 @@
         </select>
       </div>
       <div class="v2-field">
-        <label for="f-type">Type</label>
+        <label for="f-type">{m.tickets_detail_type()}</label>
         <select id="f-type" name="case_type" class="v2-input" bind:value={form.case_type}>
-          <option value="">Not set</option>
+          <option value="">{m.tickets_detail_not_set()}</option>
           {#each data.caseTypes as t (t.value)}
             <option value={t.value}>{t.label}</option>
           {/each}
@@ -126,7 +127,7 @@
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-closed">Closed on</label>
+        <label for="f-closed">{m.tickets_edit_closed_on()}</label>
         <input
           id="f-closed"
           name="closed_on"
@@ -139,16 +140,16 @@
              close itself, and a date already saved is left alone. -->
         <p class="v2-hint" id="f-closed-hint">
           {#if data.form.closed_on}
-            Left empty, the saved date is kept.
+            {m.tickets_edit_closed_on_kept()}
           {:else}
-            Optional. Left empty, a close is dated today in your organization's timezone.
+            {m.tickets_edit_closed_on_hint()}
           {/if}
         </p>
       </div>
       <div class="v2-field">
-        <label for="f-owner">Assignee</label>
+        <label for="f-owner">{m.tickets_detail_assignee()}</label>
         <select id="f-owner" name="assigned_to" class="v2-input" bind:value={form.assigned_to}>
-          <option value="">Nobody</option>
+          <option value="">{m.tickets_edit_nobody()}</option>
           {#each data.owners as o (o.id)}
             <option value={o.id}>{o.name}</option>
           {/each}
@@ -161,15 +162,16 @@
         <input type="hidden" name="assigned_to_original" value={data.form.assigned_to} />
         {#if data.server.assignee_count > 1}
           <p class="v2-hint">
-            <span class="v2-num">{data.server.assignee_count}</span> people are on this ticket. Changing
-            this replaces all of them.
+            {#each messageParts(m.tickets_edit_assignees_replaced( { count: data.server.assignee_count, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                  class="v2-num">{data.server.assignee_count}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
       </div>
     </div>
 
     <div class="v2-field">
-      <label for="f-contacts">People affected</label>
+      <label for="f-contacts">{m.tickets_edit_people_affected()}</label>
       <select
         id="f-contacts"
         name="contacts"
@@ -188,11 +190,11 @@
         what makes "remove the last person" expressible.
       -->
       <input type="hidden" name="contacts_present" value="1" />
-      <p class="v2-hint">Hold ctrl or cmd to pick more than one.</p>
+      <p class="v2-hint">{m.tickets_edit_multi_hint()}</p>
     </div>
 
     <div class="v2-field">
-      <label for="f-desc">What happened</label>
+      <label for="f-desc">{m.tickets_edit_what_happened()}</label>
       <textarea
         id="f-desc"
         name="description"
@@ -203,19 +205,17 @@
 
     <p class="v2-sub" style="font-size:12px;margin:6px 0 0">
       {#if data.server.account}
-        Linked to <a href={resolve(`accounts/${data.server.account.id}`)}
-          >{data.server.account.name}</a
-        >, which cannot be changed after the ticket is raised.
+        {#each messageParts(m.tickets_edit_linked_account( { account: slot('account') } )) as p, i (i)}{#if p.key}<a
+              href={resolve(`accounts/${data.server.account.id}`)}>{data.server.account.name}</a
+            >{:else}{p.text}{/if}{/each}
       {:else}
-        Not linked to an account, and that cannot be changed after the ticket is raised.
+        {m.tickets_edit_no_account()}
       {/if}
       {#if data.server.team_count || data.server.tag_count}
-        <span class="v2-num">{data.server.team_count}</span> team{data.server.team_count === 1
-          ? ''
-          : 's'} and <span class="v2-num">{data.server.tag_count}</span> tag{data.server
-          .tag_count === 1
-          ? ''
-          : 's'} are kept as they are.
+        {#each messageParts(m.tickets_edit_teams_tags_kept( { teams: data.server.team_count, tags: data.server.tag_count, teamsShown: slot('teams'), tagsShown: slot('tags') } )) as p, i (i)}{#if p.key === 'teams'}<span
+              class="v2-num">{data.server.team_count}</span
+            >{:else if p.key === 'tags'}<span class="v2-num">{data.server.tag_count}</span
+            >{:else}{p.text}{/if}{/each}
       {/if}
     </p>
 
@@ -227,8 +227,8 @@
     />
 
     <div class="actions">
-      <button class="v2-btn v2-btn-primary" type="submit">Save ticket</button>
-      <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit">{m.tickets_edit_save()}</button>
+      <a class="v2-btn" href={resolve(`tickets/${ticket.id}`)}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>

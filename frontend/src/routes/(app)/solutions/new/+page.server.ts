@@ -3,6 +3,7 @@ import { createArticle } from '#lib/server/v2/solutions.js';
 import { getTags } from '#lib/server/v2/tags.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -37,7 +38,7 @@ export const actions: Actions = {
     try {
       created = await createArticle({ cookies }, values);
     } catch (err) {
-      return fail(400, { values, error: readableError(err, 'Could not save this article.') });
+      return fail(400, { values, error: readableError(err, m.solutions_err_save()) });
     }
 
     redirect(303, `/solutions/${created.id}`);

@@ -37,6 +37,7 @@
   import { enhance } from '$app/forms';
   import { untrack } from 'svelte';
   import { ChevronLeft, Eye, EyeOff } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -68,40 +69,40 @@
    */
   let consequence = $derived.by(() => {
     if (isPublished && status === 'approved')
-      return { tone: 'moss', text: 'Live for customers to read, and suggested on tickets.' };
+      return { tone: 'moss', text: m.solutions_form_consequence_live() };
     if (isPublished)
       return {
         tone: 'clay',
-        text: 'This will be refused: an article has to be approved before it can be published. Set the status to Approved, or leave it internal for now.'
+        text: m.solutions_form_consequence_refused()
       };
     if (status === 'approved')
       return {
         tone: 'clay',
-        text: 'Checked, but no customer can read it yet. Publishing is what releases it.'
+        text: m.solutions_form_consequence_approved()
       };
     return {
       tone: 'slate',
-      text: 'Internal only. Agents can still search for it and attach it to a ticket.'
+      text: m.solutions_form_consequence_internal()
     };
   });
 </script>
 
-<PageHeader title="New article" center width="760px">
+<PageHeader title={m.solutions_new_article()} center width="760px">
   {#snippet crumb()}
-    <a href={resolve('solutions')}><ChevronLeft size={13} />Knowledge base</a>
+    <a href={resolve('solutions')}><ChevronLeft size={13} />{m.solutions_list_title()}</a>
   {/snippet}
   {#snippet sub()}
-    Write the answer once, attach it to every ticket that asks
+    {m.solutions_new_sub()}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('solutions')}>Cancel</a>
+    <a class="v2-btn" href={resolve('solutions')}>{m.common_cancel()}</a>
     <button
       class="v2-btn v2-btn-primary"
       type="submit"
       form="article-form"
       disabled={!ready || saving}
     >
-      {saving ? 'Saving…' : 'Save article'}
+      {saving ? m.solutions_form_saving() : m.solutions_new_save()}
     </button>
   {/snippet}
 </PageHeader>
@@ -132,30 +133,29 @@
 
       <div class="v2-card" style="padding:18px 20px">
         <label class="f">
-          <span>Title</span>
+          <span>{m.solutions_form_title()}</span>
           <input
             name="title"
             bind:value={title}
-            placeholder="Fixing an SSO login loop after an identity provider change"
+            placeholder={m.solutions_new_title_placeholder()}
           />
           <!-- The title is what an agent scans in a list of forty under time
                pressure, so the guidance is about scanning, not SEO. -->
-          <em>Say the symptom the way a customer would report it, not the fix.</em>
+          <em>{m.solutions_form_title_hint()}</em>
         </label>
 
         <label class="f" style="margin-top:18px">
-          <span>Answer</span>
+          <span>{m.solutions_form_answer()}</span>
           <textarea
             name="description"
             rows="9"
             bind:value={description}
-            placeholder="What is happening, why, and the steps that resolve it."></textarea>
+            placeholder={m.solutions_new_answer_placeholder()}></textarea>
           <em>
             {#if description.trim().length && description.trim().length <= 20}
-              A few more words: this is the text an agent will paste to a customer.
+              {m.solutions_new_answer_short()}
             {:else}
-              This is pasted into replies as-is, so write it to be read by the person with the
-              problem.
+              {m.solutions_new_answer_hint()}
             {/if}
           </em>
         </label>
@@ -163,14 +163,13 @@
 
       {#if data.tags.length > 0}
         <div class="v2-card" style="padding:18px 20px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:4px">Tags</div>
+          <div class="v2-label" style="margin-bottom:4px">{m.solutions_form_tags()}</div>
           <!-- Tag names are internal. They file the article for agents and
                drive "related articles" in the portal, but the portal never
                prints them: this org's vocabulary includes things like "At
                Risk" and "VIP", written for deals rather than for customers. -->
           <p class="lead">
-            Internal filing. Customers never see these names, but articles sharing one are shown to
-            each other in the portal.
+            {m.solutions_new_tags_lead()}
           </p>
           <div class="tags">
             {#each data.tags as tag (tag.id)}
@@ -184,33 +183,33 @@
       {/if}
 
       <div class="v2-card" style="padding:18px 20px;margin-top:14px">
-        <div class="v2-label" style="margin-bottom:4px">Review and visibility</div>
+        <div class="v2-label" style="margin-bottom:4px">{m.solutions_new_review_visibility()}</div>
         <p class="lead">
-          These are two separate facts about the article and this form keeps them separate.
+          {m.solutions_new_review_lead()}
         </p>
 
         <div class="switches">
           <label class="f" style="max-width:220px">
-            <span>Review status</span>
+            <span>{m.solutions_form_review_status()}</span>
             <select name="status" bind:value={status}>
               {#each statuses as s (s)}
                 <option value={s}>{SOLUTION_STATUS_LABEL[s]}</option>
               {/each}
             </select>
             {#if !data.canRelease}
-              <em>Approving is an admin's call. It is what lets an article be published.</em>
+              <em>{m.solutions_form_approve_admin()}</em>
             {/if}
           </label>
 
           {#if data.canRelease}
             <div class="pub">
-              <span class="pub-label">Customer visibility</span>
+              <span class="pub-label">{m.solutions_new_customer_visibility()}</span>
               <div class="seg">
                 <button type="button" class:on={!isPublished} onclick={() => (isPublished = false)}>
-                  <EyeOff size={13} />Internal
+                  <EyeOff size={13} />{m.solutions_new_internal()}
                 </button>
                 <button type="button" class:on={isPublished} onclick={() => (isPublished = true)}>
-                  <Eye size={13} />Published
+                  <Eye size={13} />{m.solutions_new_published()}
                 </button>
               </div>
               <!-- A segmented control cannot post a value on its own. The

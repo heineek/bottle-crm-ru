@@ -17,6 +17,7 @@
  */
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { canMoveCard } from '#lib/v2/board-drag.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -44,7 +45,7 @@ function toCard(row: Schemas['CaseKanbanCard']) {
   const breached = Boolean(row.is_sla_breached);
   return {
     id: row.id,
-    name: row.name || 'Untitled ticket',
+    name: row.name || m.tickets_board_untitled(),
     account: row.account_name ?? '',
     owner: owner?.user_details?.name || owner?.user_details?.email || '',
     priority: row.priority ?? '',

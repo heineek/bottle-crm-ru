@@ -5,8 +5,7 @@ import {
   subtreeTruncated,
   cascadeSummary,
   closeResultMessage,
-  cascadedCount,
-  RESTRICTED_NAME
+  cascadedCount
 } from './close.js';
 
 function node(over: any = {}) {
@@ -115,7 +114,7 @@ describe('openDescendants', () => {
       ]
     });
     expect(openDescendants(tree, 'p')).toEqual([
-      { id: 'hidden', name: RESTRICTED_NAME, status: 'New', restricted: true }
+      { id: 'hidden', name: 'A ticket you cannot open', status: 'New', restricted: true }
     ]);
   });
 

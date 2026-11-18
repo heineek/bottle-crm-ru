@@ -4,6 +4,7 @@ import { readFilters, buildFilterQuery } from '#lib/server/v2/filter-params.js';
 import { getTags } from '#lib/server/v2/tags.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -53,12 +54,12 @@ export const actions: Actions = {
   publish: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'No article to publish.' });
+    if (!id) return fail(400, { error: m.solutions_err_no_publish_id() });
 
     try {
       await setPublished({ cookies }, id, true);
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not publish this article.') });
+      return fail(400, { error: readableError(err, m.solutions_err_publish()) });
     }
     return { published: true };
   }

@@ -42,6 +42,7 @@ import { error, type Cookies } from '@sveltejs/kit';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { rethrowModuleOff } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -134,7 +135,7 @@ export async function getArticle({ cookies }: { cookies: Cookies }, id: string) 
     // On the status, not on the wording. Another org's article is a 404 and
     // not a 403, which would confirm the id exists.
     if (apiStatus(err) === 404) {
-      error(404, 'That article does not exist, or it belongs to another team.');
+      error(404, m.solutions_not_found());
     }
     throw err;
   }

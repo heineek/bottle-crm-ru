@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getTicketBoard, moveTicket } from '#lib/server/v2/ticket-board.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -32,12 +33,12 @@ export const actions = {
     const mode = String(form.get('mode') || '');
     const aboveId = String(form.get('above_id') || '');
     const belowId = String(form.get('below_id') || '');
-    if (!id || !laneId) return fail(400, { error: 'Missing ticket or column.' });
+    if (!id || !laneId) return fail(400, { error: m.tickets_board_missing_target() });
     try {
       await moveTicket({ cookies }, id, { mode, laneId, aboveId, belowId });
       return { success: true };
     } catch (err) {
-      const message = readableError(err, 'Could not move the ticket.').replace(/^status: /, '');
+      const message = readableError(err, m.tickets_board_move_failed()).replace(/^status: /, '');
       return fail(apiStatus(err) === 403 ? 403 : 400, { error: message });
     }
   }

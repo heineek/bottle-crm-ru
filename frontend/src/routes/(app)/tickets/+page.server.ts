@@ -12,6 +12,7 @@ import { parseBulkForm } from '#lib/server/v2/bulk-form.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { forwardCsvImport } from '#lib/server/v2/csv-import.js';
 import { loadSavedViews, savedViewActions } from '#lib/server/v2/saved-views.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -63,22 +64,22 @@ export const actions = {
   // comes back as its sentence for the bulk bar's banner, not an error page.
   bulkUpdate: async ({ request, cookies }) => {
     const { ids, fields } = parseBulkForm(await request.formData());
-    if (ids.length === 0) return fail(400, { message: 'Select at least one ticket.' });
+    if (ids.length === 0) return fail(400, { message: m.tickets_list_bulk_none_selected() });
     try {
       const res = await bulkUpdateTickets({ cookies }, ids, fields);
       return { ok: true, kind: 'update' as const, summary: summarizeBulk(res.results) };
     } catch (err) {
-      return fail(400, { message: readableError(err, 'Could not update these tickets.') });
+      return fail(400, { message: readableError(err, m.tickets_list_bulk_update_failed()) });
     }
   },
   bulkDelete: async ({ request, cookies }) => {
     const ids = (await request.formData()).getAll('ids').map(String);
-    if (ids.length === 0) return fail(400, { message: 'Select at least one ticket.' });
+    if (ids.length === 0) return fail(400, { message: m.tickets_list_bulk_none_selected() });
     try {
       const res = await bulkDeleteTickets({ cookies }, ids);
       return { ok: true, kind: 'delete' as const, summary: summarizeBulk(res.results) };
     } catch (err) {
-      return fail(400, { message: readableError(err, 'Could not delete these tickets.') });
+      return fail(400, { message: readableError(err, m.tickets_list_bulk_delete_failed()) });
     }
   },
   // The CSV import drawer's two steps; see `forwardCsvImport`.

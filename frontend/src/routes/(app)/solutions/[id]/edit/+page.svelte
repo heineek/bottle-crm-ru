@@ -16,6 +16,8 @@
   import { untrack } from 'svelte';
   import { ChevronLeft } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -59,27 +61,29 @@
   let locked = $derived(data.article.is_published);
 </script>
 
-<PageHeader title="Edit article" record center width="760px">
+<PageHeader title={m.solutions_edit_title()} record center width="760px">
   {#snippet crumb()}
     <a href={resolve(`solutions/${data.article.id}`)}
       ><ChevronLeft size={13} />{data.article.title}</a
     >
   {/snippet}
   {#snippet sub()}
-    {data.article.author || 'Unknown author'}
+    {data.article.author || m.solutions_detail_unknown_author()}
     {#if ticketsOn}
-      · used on <span class="v2-num">{data.article.use_count}</span> tickets
+      · {#each messageParts(m.solutions_edit_used_on( { count: data.article.use_count, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{data.article.use_count}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve(`solutions/${data.article.id}`)}>Cancel</a>
+    <a class="v2-btn" href={resolve(`solutions/${data.article.id}`)}>{m.common_cancel()}</a>
     <button
       class="v2-btn v2-btn-primary"
       type="submit"
       form="article-form"
       disabled={!ready || saving}
     >
-      {saving ? 'Saving…' : 'Save changes'}
+      {saving ? m.solutions_form_saving() : m.solutions_edit_save()}
     </button>
   {/snippet}
 </PageHeader>
@@ -107,35 +111,32 @@
 
       {#if data.article.is_published}
         <p class="notice">
-          {ticketsOn
-            ? 'This article is published, so anything saved here is what customers read in the portal and what agents are offered on tickets.'
-            : 'This article is published, so anything saved here is what customers read in the portal.'}
+          {ticketsOn ? m.solutions_edit_notice_tickets() : m.solutions_edit_notice()}
         </p>
       {/if}
 
       <div class="v2-card" style="padding:18px 20px">
         <label class="f">
-          <span>Title</span>
+          <span>{m.solutions_form_title()}</span>
           <input name="title" bind:value={title} />
-          <em>Say the symptom the way a customer would report it, not the fix.</em>
+          <em>{m.solutions_form_title_hint()}</em>
         </label>
 
         <label class="f" style="margin-top:18px">
-          <span>Answer</span>
+          <span>{m.solutions_form_answer()}</span>
           <textarea name="description" rows="12" bind:value={description}></textarea>
-          <em>This is pasted into replies as-is.</em>
+          <em>{m.solutions_edit_answer_hint()}</em>
         </label>
       </div>
 
       {#if data.tags.length > 0}
         <div class="v2-card" style="padding:18px 20px;margin-top:14px">
-          <div class="v2-label" style="margin-bottom:4px">Tags</div>
+          <div class="v2-label" style="margin-bottom:4px">{m.solutions_form_tags()}</div>
           <!-- Internal filing only. The portal uses these to pick related
                articles and never prints the names, which read like "At Risk"
                and "VIP" because the vocabulary is shared with deals. -->
           <p class="lead">
-            Customers never see these names, but articles sharing one are shown to each other in the
-            portal.
+            {m.solutions_edit_tags_lead()}
           </p>
           <div class="tags">
             {#each data.tags as tag (tag.id)}
@@ -156,7 +157,7 @@
 
       <div class="v2-card" style="padding:18px 20px;margin-top:14px">
         <label class="f" style="max-width:240px">
-          <span>Review status</span>
+          <span>{m.solutions_form_review_status()}</span>
           <select name="status" bind:value={status} disabled={locked}>
             {#each statuses as s (s)}
               <option value={s}>{SOLUTION_STATUS_LABEL[s]}</option>
@@ -164,11 +165,11 @@
           </select>
           <em>
             {#if locked}
-              A published article cannot move back down the workflow. Unpublish it first.
+              {m.solutions_edit_locked()}
             {:else if !data.canRelease}
-              Approving is an admin's call. It is what lets an article be published.
+              {m.solutions_form_approve_admin()}
             {:else}
-              Approving does not publish it. That is a separate button on the article.
+              {m.solutions_edit_approve_hint()}
             {/if}
           </em>
         </label>

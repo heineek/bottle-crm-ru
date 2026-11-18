@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { CASE_PRIORITY_LABEL, CASE_TYPE_LABEL } from '#lib/v2/enums.js';
   import { resolve } from '$app/paths';
   /**
    * Service health. The questions, in the order a support lead asks them:
@@ -43,12 +46,13 @@
    */
   function duration(mins: number | null | undefined) {
     if (mins == null) return '—';
-    if (mins < 60) return `${mins}m`;
+    if (mins < 60) return m.tickets_duration_m({ n: mins });
     const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h < 24) return m ? `${h}h ${m}m` : `${h}h`;
+    const rest = mins % 60;
+    if (h < 24)
+      return rest ? m.tickets_duration_h_m({ h, m: rest }) : m.tickets_duration_h({ n: h });
     const d = Math.floor(h / 24);
-    return h % 24 ? `${d}d ${h % 24}h` : `${d}d`;
+    return h % 24 ? m.tickets_duration_d_h({ d, h: h % 24 }) : m.tickets_duration_d({ n: d });
   }
 
   // Attainment among *decided* cases (met vs missed). A priority with no
@@ -80,12 +84,14 @@
     data.csat.count ? Math.round((n / data.csat.count) * 100) : 0;
 </script>
 
-<PageHeader title="Service analytics">
+<PageHeader title={m.tickets_analytics_title()}>
   {#snippet sub()}
     {#if canView}
-      Last <span class="v2-num">{totals.window_days}</span> days
+      {#each messageParts(m.tickets_analytics_window( { count: totals.window_days, shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{totals.window_days}</span
+          >{:else}{p.text}{/if}{/each}
     {:else}
-      Service health
+      {m.tickets_analytics_service_health()}
     {/if}
   {/snippet}
 </PageHeader>
@@ -98,35 +104,34 @@
          so a capped card pinned to the left leaves the rest of a wide screen
          empty. margin-inline centres the column. -->
     <div class="v2-card" style="padding:20px 22px;max-width:520px;margin-inline:auto">
-      <strong>This dashboard is for administrators.</strong>
+      <strong>{m.tickets_analytics_admins_title()}</strong>
       <p>
-        Opened and closed volume, response attainment, customer satisfaction and the queue breakdown
-        are whole-organisation figures, so they are limited to admins. Your own tickets are on the <a
-          href={resolve('tickets')}>Tickets</a
-        > tab.
+        {m.tickets_analytics_admins_body()}
+        <a href={resolve('tickets')}>{m.tickets_analytics_admins_link()}</a
+        >{m.tickets_analytics_admins_tail()}
       </p>
     </div>
   </div>
 {:else}
   <div class="v2-pad" style="padding-top:16px;flex:none">
     <div class="v2-stats">
-      <StatCard label="Opened" value={count(totals.opened)} tone="ink" />
-      <StatCard label="Closed" value={count(totals.closed)} tone="moss" />
+      <StatCard label={m.tickets_analytics_opened()} value={count(totals.opened)} tone="ink" />
+      <StatCard label={m.tickets_analytics_closed()} value={count(totals.closed)} tone="moss" />
       <StatCard
-        label="Backlog"
+        label={m.tickets_analytics_backlog()}
         value={count(totals.open_now)}
         tone={net > 0 ? 'clay' : 'slate'}
         detail={net > 0
-          ? `Grew by ${net} over the window`
+          ? m.tickets_analytics_backlog_grew({ count: net })
           : net < 0
-            ? `Shrank by ${Math.abs(net)} over the window`
-            : 'Level over the window'}
+            ? m.tickets_analytics_backlog_shrank({ count: Math.abs(net) })
+            : m.tickets_analytics_backlog_level()}
       />
       <StatCard
-        label="Median resolution"
-        value={`${totals.median_resolution_hours}h`}
+        label={m.tickets_analytics_median_resolution()}
+        value={m.tickets_duration_h({ n: totals.median_resolution_hours })}
         tone="slate"
-        detail="Median, not mean. One three-week ticket should not move it"
+        detail={m.tickets_analytics_median_resolution_detail()}
       />
     </div>
   </div>
@@ -136,15 +141,22 @@
       <!-- Volume -->
       <div class="v2-card" style="padding:16px 18px 14px;margin-bottom:18px">
         <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px">
-          <div class="v2-label">Opened and closed, per day</div>
+          <div class="v2-label">{m.tickets_analytics_volume_title()}</div>
           <span class="v2-sub" style="font-size:11.5px;margin-left:auto">
-            <i class="v2-swatch v2-swatch-in"></i>opened
-            <i class="v2-swatch" style="margin-left:10px"></i>closed
+            <i class="v2-swatch v2-swatch-in"></i>{m.tickets_analytics_legend_opened()}
+            <i class="v2-swatch" style="margin-left:10px"></i>{m.tickets_analytics_legend_closed()}
           </span>
         </div>
         <div class="v2-cols">
           {#each data.volume as d (d.date)}
-            <div class="v2-col" title="{shortDate(d.date)}, {d.opened} opened, {d.closed} closed">
+            <div
+              class="v2-col"
+              title={m.tickets_analytics_volume_bar({
+                date: shortDate(d.date),
+                opened: d.opened,
+                closed: d.closed
+              })}
+            >
               <i class="in" style="height:{(d.opened / peak) * 100}%"></i>
               <i class="out" style="height:{(d.closed / peak) * 100}%"></i>
             </div>
@@ -161,10 +173,9 @@
       <div class="v2-split" style="margin-bottom:18px">
         <!-- First response -->
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:4px">First response, against target</div>
+          <div class="v2-label" style="margin-bottom:4px">{m.tickets_analytics_first_title()}</div>
           <p class="v2-sub" style="font-size:11.5px;margin:0 0 14px">
-            Each priority carries its own target from the escalation policy, so each one is scored
-            against its own promise.
+            {m.tickets_analytics_first_body()}
           </p>
           {#each data.firstResponse as r (r.priority)}
             {@const pct = attainment(r)}
@@ -172,9 +183,12 @@
               <div
                 style="display:flex;align-items:baseline;gap:8px;font-size:12.5px;margin-bottom:5px"
               >
-                <b style="font-weight:600">{r.priority}</b>
+                <b style="font-weight:600">{CASE_PRIORITY_LABEL[r.priority] ?? r.priority}</b>
                 <span class="v2-sub" style="font-size:11.5px">
-                  target {duration(r.target_minutes)} · median {duration(r.median_minutes)}
+                  {m.tickets_analytics_target_median({
+                    target: duration(r.target_minutes),
+                    median: duration(r.median_minutes)
+                  })}
                 </span>
                 <span
                   class="v2-num"
@@ -189,12 +203,13 @@
                 <i style="width:{pct ?? 0}%;background:{barColor(pct)}"></i>
               </div>
               <div class="v2-bar-legend">
-                <span><span class="v2-num">{r.met}</span> in time</span>
+                <span><span class="v2-num">{r.met}</span> {m.tickets_analytics_in_time()}</span>
                 <span>
                   {#if r.missed}
-                    <span class="v2-num" style="color:var(--v2-rust)">{r.missed}</span> late
+                    <span class="v2-num" style="color:var(--v2-rust)">{r.missed}</span>
+                    {m.tickets_analytics_late()}
                   {:else}
-                    none late
+                    {m.tickets_analytics_none_late()}
                   {/if}
                 </span>
               </div>
@@ -204,9 +219,9 @@
 
         <!-- Mix -->
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:4px">What the queue is made of</div>
+          <div class="v2-label" style="margin-bottom:4px">{m.tickets_analytics_mix_title()}</div>
           <p class="v2-sub" style="font-size:11.5px;margin:0 0 14px">
-            Incidents and problems are work; questions are usually a gap in the knowledge base.
+            {m.tickets_analytics_mix_body()}
           </p>
           {#each data.byType as t (t.case_type)}
             {@const share = Math.round(
@@ -214,7 +229,7 @@
             )}
             <div style="margin-bottom:13px">
               <div style="display:flex;align-items:baseline;font-size:12.5px;margin-bottom:5px">
-                <span>{t.case_type}</span>
+                <span>{CASE_TYPE_LABEL[t.case_type] ?? t.case_type}</span>
                 <span class="v2-sub v2-num" style="margin-left:auto;font-size:12px">
                   {t.count} · {share}%
                 </span>
@@ -226,8 +241,10 @@
           {#if isOn(data.modules, 'knowledge_base') && data.byType.find((t) => t.case_type === 'Question')}
             <p class="v2-sub" style="font-size:11.5px;margin:16px 0 0">
               <a href={resolve('solutions')} style="color:inherit">
-                {data.byType.find((t) => t.case_type === 'Question')?.count} questions in this window
-              </a>. The ones that repeat belong in the knowledge base.
+                {m.tickets_analytics_questions_link({
+                  count: data.byType.find((t) => t.case_type === 'Question')?.count ?? 0
+                })}
+              </a>. {m.tickets_analytics_questions_tail()}
             </p>
           {/if}
         </div>
@@ -237,13 +254,12 @@
         <!-- Next response. Built like the first-response card above, scored the
              same way: per priority, against that priority's own target. -->
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:4px">Next response, against target</div>
+          <div class="v2-label" style="margin-bottom:4px">{m.tickets_analytics_next_title()}</div>
           <p class="v2-sub" style="font-size:11.5px;margin:0 0 14px">
-            The wait after a customer writes back, once the first reply has gone. Counted around the
-            clock, against each priority's <a
-              href={resolve('settings/escalation')}
-              style="color:inherit">next reply target</a
-            >. A reply still overdue on an open ticket counts as late.
+            {m.tickets_analytics_next_body()}
+            <a href={resolve('settings/escalation')} style="color:inherit"
+              >{m.tickets_analytics_next_link()}</a
+            >. {m.tickets_analytics_next_tail()}
           </p>
           {#each data.nextResponse as r (r.priority)}
             {@const pct = attainment(r)}
@@ -251,11 +267,12 @@
               <div
                 style="display:flex;align-items:baseline;gap:8px;font-size:12.5px;margin-bottom:5px"
               >
-                <b style="font-weight:600">{r.priority}</b>
+                <b style="font-weight:600">{CASE_PRIORITY_LABEL[r.priority] ?? r.priority}</b>
                 <span class="v2-sub" style="font-size:11.5px">
-                  target {duration(minutesOf(r.target_hours))} · median {duration(
-                    minutesOf(r.median_hours)
-                  )}
+                  {m.tickets_analytics_target_median({
+                    target: duration(minutesOf(r.target_hours)),
+                    median: duration(minutesOf(r.median_hours))
+                  })}
                 </span>
                 <span
                   class="v2-num"
@@ -270,12 +287,13 @@
                 <i style="width:{pct ?? 0}%;background:{barColor(pct)}"></i>
               </div>
               <div class="v2-bar-legend">
-                <span><span class="v2-num">{r.met}</span> in time</span>
+                <span><span class="v2-num">{r.met}</span> {m.tickets_analytics_in_time()}</span>
                 <span>
                   {#if r.missed}
-                    <span class="v2-num" style="color:var(--v2-rust)">{r.missed}</span> late
+                    <span class="v2-num" style="color:var(--v2-rust)">{r.missed}</span>
+                    {m.tickets_analytics_late()}
                   {:else}
-                    none late
+                    {m.tickets_analytics_none_late()}
                   {/if}
                 </span>
               </div>
@@ -285,34 +303,33 @@
 
         <!-- Satisfaction -->
         <div class="v2-card" style="padding:16px 18px">
-          <div class="v2-label" style="margin-bottom:4px">Customer satisfaction</div>
+          <div class="v2-label" style="margin-bottom:4px">{m.tickets_analytics_csat_title()}</div>
           {#if data.csat.count === 0}
             <p class="v2-sub" style="font-size:11.5px;margin:0">
-              No ratings came back in this window. A survey goes to the ticket's contact when it
-              closes, if surveys are switched on in <a
-                href={resolve('settings/organization')}
-                style="color:inherit">organisation settings</a
+              {m.tickets_analytics_csat_empty()}
+              <a href={resolve('settings/organization')} style="color:inherit"
+                >{m.tickets_analytics_csat_empty_link()}</a
               >.
             </p>
           {:else}
             <p class="v2-sub" style="font-size:11.5px;margin:0 0 10px">
-              What customers answered in the survey sent when their ticket closed, on a scale of 1
-              to 5.
+              {m.tickets_analytics_csat_body()}
             </p>
             <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
               <span class="v2-stat-value" style="margin:0">
                 {data.csat.average == null ? '—' : data.csat.average.toFixed(1)}
               </span>
               <span class="v2-sub" style="font-size:12px">
-                average from <span class="v2-num">{count(data.csat.count)}</span>
-                {data.csat.count === 1 ? 'rating' : 'ratings'}
+                {m.tickets_analytics_csat_average_from()}
+                <span class="v2-num">{count(data.csat.count)}</span>
+                {m.tickets_analytics_csat_ratings({ count: data.csat.count })}
               </span>
             </div>
             {#each RATINGS as rating (rating)}
               {@const n = data.csat.distribution[rating] ?? 0}
               <div style="margin-bottom:11px">
                 <div style="display:flex;align-items:baseline;font-size:12.5px;margin-bottom:5px">
-                  <span>{rating} out of 5</span>
+                  <span>{m.tickets_analytics_rating_of_5({ rating })}</span>
                   <span class="v2-sub v2-num" style="margin-left:auto;font-size:12px">
                     {n} · {ratingShare(n)}%
                   </span>
@@ -325,16 +342,16 @@
       </div>
 
       <!-- Per agent -->
-      <div class="v2-label" style="margin-bottom:10px">Who is carrying it</div>
+      <div class="v2-label" style="margin-bottom:10px">{m.tickets_analytics_agents_title()}</div>
       <div class="v2-table-wrap">
         <table class="v2-table">
           <thead>
             <tr>
-              <th>Agent</th>
-              <th class="v2-r">Open now</th>
-              <th class="v2-r">Closed this week</th>
-              <th class="v2-r">Median first response</th>
-              <th class="v2-r">Missed target</th>
+              <th>{m.tickets_analytics_col_agent()}</th>
+              <th class="v2-r">{m.tickets_analytics_col_open_now()}</th>
+              <th class="v2-r">{m.tickets_analytics_col_closed_week()}</th>
+              <th class="v2-r">{m.tickets_analytics_col_median_first()}</th>
+              <th class="v2-r">{m.tickets_analytics_col_missed()}</th>
             </tr>
           </thead>
           <tbody>
@@ -378,16 +395,14 @@
         <Clock size={15} style="color:var(--v2-slate);flex:none;margin-top:2px" />
         <p class="v2-sub" style="font-size:12px;margin:0">
           {#if totals.business_hours_applied}
-            These figures count elapsed time around the clock, evenings and weekends included. Each
-            ticket's own SLA deadline is counted inside {totals.calendar_name}, so a reply on time
-            there can show as late here.
+            {m.tickets_analytics_clock_business({ calendar: totals.calendar_name ?? '' })}
             <a href={resolve('settings/business-hours')} style="color:inherit"
-              >Change the calendar</a
+              >{m.tickets_analytics_clock_change()}</a
             >.
           {:else}
-            Elapsed time is counted around the clock. No business-hours calendar is set, so evenings
-            and weekends count against a target.
-            <a href={resolve('settings/business-hours')} style="color:inherit">Set up a calendar</a
+            {m.tickets_analytics_clock_none()}
+            <a href={resolve('settings/business-hours')} style="color:inherit"
+              >{m.tickets_analytics_clock_setup()}</a
             >.
           {/if}
         </p>
