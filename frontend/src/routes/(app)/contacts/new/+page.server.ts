@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, createContact, getContactFormOptions } from '#lib/server/v2/contacts.js';
+import { m } from '#lib/paraglide/messages.js';
 import {
   fieldsForNew,
   readCustomFields,
@@ -46,7 +47,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values: submitted,
-        ...saveRefusal(err, custom.definitions, 'Could not create this contact.')
+        ...saveRefusal(err, custom.definitions, m.contacts_new_failed())
       });
     }
 

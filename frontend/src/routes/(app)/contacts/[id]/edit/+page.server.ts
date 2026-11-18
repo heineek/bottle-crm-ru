@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, getContactForEdit, updateContact } from '#lib/server/v2/contacts.js';
+import { m } from '#lib/paraglide/messages.js';
 import { readCustomFields, saveRefusal } from '#lib/server/v2/record-custom-fields.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -56,7 +57,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values: submitted,
-        ...saveRefusal(err, custom.definitions, 'Could not save this contact.')
+        ...saveRefusal(err, custom.definitions, m.contacts_edit_failed())
       });
     }
 

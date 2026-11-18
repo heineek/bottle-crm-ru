@@ -40,9 +40,12 @@
   } from '#lib/v2/format.js';
   import { whatsappHref } from '#lib/v2/interactions.js';
   import {
+    CASE_PRIORITY_LABEL,
+    CASE_STATUS_LABEL,
+    CASE_STATUS_TONE,
     CLOSED_KINDS,
     PRIORITY_TONE,
-    CASE_STATUS_TONE,
+    TASK_PRIORITY_LABEL,
     TASK_PRIORITY_TONE
   } from '#lib/v2/enums.js';
   import { sourceLabel } from '#lib/v2/lead-sources.js';
@@ -62,6 +65,7 @@
   import RelatedRecords from '#lib/v2/components/RelatedRecords.svelte';
   import { relatedView } from '#lib/v2/custom-objects.js';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -164,7 +168,7 @@
    */
   function metaFor(e: FeedEvent) {
     const parts = [];
-    if (e.type === 'file') parts.push('Attached');
+    if (e.type === 'file') parts.push(m.contacts_detail_attached());
     if (e.by) parts.push(e.by);
     parts.push(relativeTime(e.at));
     return parts.join(' · ');
@@ -172,8 +176,8 @@
 
   function dayGroup(iso: string | null) {
     const n = daysSince(iso);
-    if (n === 0) return 'Today';
-    if (n === 1) return 'Yesterday';
+    if (n === 0) return m.contacts_detail_today();
+    if (n === 1) return m.contacts_detail_yesterday();
     return shortDate(iso);
   }
 
@@ -204,13 +208,33 @@
    */
   let headline = $derived(
     !contact.is_active
-      ? `${contact.first_name} is marked inactive${contact.account ? ` at ${contact.account.name}` : ''}. Find out who replaced them before the next conversation.`
+      ? contact.account
+        ? m.contacts_detail_headline_inactive_at({
+            name: contact.first_name,
+            account: contact.account.name
+          })
+        : m.contacts_detail_headline_inactive({ name: contact.first_name })
       : !contact.email && (!contact.phone || contact.do_not_call)
-        ? `There is no way to reach ${contact.first_name} on this record: no email${contact.do_not_call ? ', and they asked not to be called' : ' and no phone'}.`
+        ? contact.do_not_call
+          ? m.contacts_detail_headline_unreachable_dnc({ name: contact.first_name })
+          : m.contacts_detail_headline_unreachable({ name: contact.first_name })
         : dealsOn && openCount && !contact.owner
-          ? `${contact.first_name} is on ${onlyOpenDeal ? onlyOpenDeal.name : `${openCount} open deal${openCount === 1 ? '' : 's'}`} worth ${openPipeline}, and nobody owns this record.`
+          ? onlyOpenDeal
+            ? m.contacts_detail_headline_unowned_deal({
+                name: contact.first_name,
+                deal: onlyOpenDeal.name,
+                amount: openPipeline
+              })
+            : m.contacts_detail_headline_unowned_deals({
+                name: contact.first_name,
+                count: openCount,
+                amount: openPipeline
+              })
           : tasksOn && overdueTasks.length
-            ? `${overdueTasks.length === 1 ? 'A task' : `${overdueTasks.length} tasks`} naming ${contact.first_name} ${overdueTasks.length === 1 ? 'is' : 'are'} past due.`
+            ? m.contacts_detail_headline_overdue({
+                name: contact.first_name,
+                count: overdueTasks.length
+              })
             : null
   );
 </script>
@@ -220,34 +244,35 @@
     <Avatar name={contact.name} size={42} />
   {/snippet}
   {#snippet crumb()}
-    <a href={resolve('contacts')}>Contacts</a>
+    <a href={resolve('contacts')}>{m.contacts_list_title()}</a>
     <ChevronRight size={12} />
     {#if contact.account}
       <a href={resolve(`accounts/${contact.account.id}`)}>{contact.account.name}</a>
     {:else if contact.organization}
       <span>{contact.organization}</span>
     {:else}
-      <span>No account</span>
+      <span>{m.contacts_detail_no_account()}</span>
     {/if}
   {/snippet}
   {#snippet sub()}
-    {[contact.title, contact.department].filter(Boolean).join(' · ') || 'No title recorded'}
+    {[contact.title, contact.department].filter(Boolean).join(' · ') || m.contacts_no_title()}
     {#if contact.updated_at}
-      · updated {relativeDays(contact.updated_at)}
+      · {m.contacts_detail_sub_updated({ when: relativeDays(contact.updated_at) })}
     {/if}
   {/snippet}
   {#snippet actions()}
     {#if contact.email}
-      <a class="v2-btn" href="mailto:{contact.email}"><Mail />Email</a>
+      <a class="v2-btn" href="mailto:{contact.email}"><Mail />{m.common_email()}</a>
     {/if}
     {#if contact.do_not_call}
       <!-- Disabled rather than removed: the reason has to stay visible, or
            somebody just looks up the number somewhere else. -->
-      <button class="v2-btn" type="button" disabled title="This person asked not to be called">
-        <PhoneOff />Do not call
+      <button class="v2-btn" type="button" disabled title={m.contacts_detail_dnc_title()}>
+        <PhoneOff />{m.contacts_do_not_call()}
       </button>
     {:else if contact.phone}
-      <a class="v2-btn" href="tel:{contact.phone}" onclick={() => startLog('call')}><Phone />Call</a
+      <a class="v2-btn" href="tel:{contact.phone}" onclick={() => startLog('call')}
+        ><Phone />{m.contacts_detail_call()}</a
       >
     {/if}
     {#if whatsapp}
@@ -259,16 +284,17 @@
         onclick={() => startLog('whatsapp')}><MessageCircle />WhatsApp</a
       >
     {/if}
-    <a class="v2-btn v2-btn-primary" href={resolve(`contacts/${contact.id}/edit`)}><Pencil />Edit</a
+    <a class="v2-btn v2-btn-primary" href={resolve(`contacts/${contact.id}/edit`)}
+      ><Pencil />{m.common_edit()}</a
     >
     {#if data.canDelete}
       <!-- Offered only when the API's delete rule admits this caller; the
            DELETE asks the same rule again. -->
       <ConfirmAction
         action="?/delete"
-        label="Delete"
-        confirmLabel="Delete for good"
-        explain="Deletes {contact.name} permanently. This cannot be undone."
+        label={m.common_delete()}
+        confirmLabel={m.contacts_detail_delete_confirm()}
+        explain={m.contacts_detail_delete_explain({ name: contact.name })}
       />
     {/if}
   {/snippet}
@@ -281,9 +307,11 @@
         {#if headline}
           <div style="margin-bottom:20px">
             <NextAction
-              label={contact.is_active ? 'Needs you' : 'Out of date'}
+              label={contact.is_active
+                ? m.contacts_detail_needs_you()
+                : m.contacts_detail_out_of_date()}
               text={headline}
-              action="Edit this contact"
+              action={m.contacts_detail_edit_action()}
               href="/contacts/{contact.id}/edit"
               tone={contact.is_active ? 'ember' : 'rust'}
             />
@@ -302,9 +330,10 @@
 
         {#if dealsOn}
           <div class="v2-label" style="margin-bottom:10px">
-            Deals they are named on
+            {m.contacts_detail_deals_title()}
             {#if openCount}
-              <span class="v2-num" style="margin-left:6px">{openPipeline}</span> open
+              <span class="v2-num" style="margin-left:6px">{openPipeline}</span>
+              {m.contacts_detail_deals_open()}
             {/if}
           </div>
           <div class="v2-card" style="overflow:hidden;margin-bottom:22px">
@@ -321,8 +350,8 @@
                   <div class="v2-sub" style="font-size:11.5px">
                     {d.stage_label}{d.closed_on
                       ? CLOSED_KINDS.includes(d.stage_kind ?? '')
-                        ? ` · closed ${shortDate(d.closed_on)}`
-                        : ` · due ${shortDate(d.closed_on)}`
+                        ? ` · ${m.contacts_detail_deal_closed({ date: shortDate(d.closed_on) })}`
+                        : ` · ${m.contacts_detail_deal_due({ date: shortDate(d.closed_on) })}`
                       : ''}
                   </div>
                 </div>
@@ -332,8 +361,7 @@
               </a>
             {:else}
               <p class="v2-sub" style="padding:14px 15px;font-size:12.5px">
-                No deals name this person. Add them to the deal they are actually involved in. The
-                account having deals is a different fact.
+                {m.contacts_detail_deals_empty()}
               </p>
             {/each}
           </div>
@@ -341,10 +369,10 @@
 
         {#if tasksOn}
           <div class="v2-label" style="margin-bottom:10px">
-            Tasks
+            {m.contacts_detail_tasks_title()}
             {#if overdueTasks.length}
               <span style="margin-left:6px;color:var(--v2-rust);font-weight:600"
-                >· {overdueTasks.length} overdue</span
+                >· {m.contacts_detail_tasks_overdue({ count: overdueTasks.length })}</span
               >
             {/if}
           </div>
@@ -362,7 +390,9 @@
                 style="display:flex;gap:12px;align-items:center;padding:11px 15px;border-bottom:1px solid var(--v2-line-soft);color:inherit;text-decoration:none"
               >
                 <span style="flex:1;font-size:13px;min-width:0">{t.title}</span>
-                <Pill tone={TASK_PRIORITY_TONE[t.priority]}>{t.priority}</Pill>
+                <Pill tone={TASK_PRIORITY_TONE[t.priority]}
+                  >{TASK_PRIORITY_LABEL[t.priority] ?? t.priority}</Pill
+                >
                 <span
                   class="v2-sub"
                   style={late && t.status !== 'Completed'
@@ -370,17 +400,17 @@
                     : 'font-size:11.5px;white-space:nowrap'}
                 >
                   {t.status === 'Completed'
-                    ? 'done'
+                    ? m.contacts_detail_task_done()
                     : late
-                      ? `${late}d late`
+                      ? m.contacts_detail_task_late({ count: late })
                       : t.due_date
                         ? relativeDays(t.due_date)
-                        : 'no due date'}
+                        : m.contacts_detail_task_no_due()}
                 </span>
               </a>
             {:else}
               <p class="v2-sub" style="padding:14px 15px;font-size:12.5px">
-                Nothing outstanding that names this person.
+                {m.contacts_detail_tasks_empty()}
               </p>
             {/each}
           </div>
@@ -388,9 +418,10 @@
 
         {#if ticketsOn}
           <div class="v2-label" style="margin-bottom:10px">
-            Tickets
+            {m.contacts_detail_tickets_title()}
             {#if openTickets.length}
-              <span class="v2-num" style="margin-left:6px">{openTickets.length}</span> open
+              <span class="v2-num" style="margin-left:6px">{openTickets.length}</span>
+              {m.contacts_detail_tickets_open({ count: openTickets.length })}
             {/if}
           </div>
           <div class="v2-card" style="overflow:hidden;margin-bottom:22px">
@@ -402,17 +433,23 @@
                 style="display:flex;gap:12px;align-items:center;padding:11px 15px;border-bottom:1px solid var(--v2-line-soft);color:inherit;text-decoration:none"
               >
                 <span style="flex:1;font-size:13px;min-width:0">{t.name}</span>
-                <Pill tone={CASE_STATUS_TONE[t.status]}>{t.status}</Pill>
-                <Pill tone={PRIORITY_TONE[t.priority]}>{t.priority}</Pill>
+                <Pill tone={CASE_STATUS_TONE[t.status]}
+                  >{CASE_STATUS_LABEL[t.status] ?? t.status}</Pill
+                >
+                <Pill tone={PRIORITY_TONE[t.priority]}
+                  >{CASE_PRIORITY_LABEL[t.priority] ?? t.priority}</Pill
+                >
               </a>
             {:else}
-              <p class="v2-sub" style="padding:14px 15px;font-size:12.5px">No tickets.</p>
+              <p class="v2-sub" style="padding:14px 15px;font-size:12.5px">
+                {m.contacts_detail_tickets_empty()}
+              </p>
             {/each}
           </div>
         {/if}
 
         {#if contact.description}
-          <div class="v2-label" style="margin:0 0 10px">About</div>
+          <div class="v2-label" style="margin:0 0 10px">{m.contacts_detail_about()}</div>
           <div class="v2-card about">{contact.description}</div>
         {/if}
 
@@ -421,24 +458,27 @@
         <RelatedRecords {related} error={form?.related?.error} />
 
         <div class="act-head">
-          <div class="v2-label">Activity</div>
+          <div class="v2-label">{m.contacts_detail_activity()}</div>
           {#if kinds.length > 1}
-            <div class="seg" role="group" aria-label="Filter activity">
-              <button aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}>All</button>
+            <div class="seg" role="group" aria-label={m.contacts_detail_activity_filter()}>
+              <button aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}
+                >{m.contacts_detail_filter_all()}</button
+              >
               {#if kinds.includes('interaction')}
                 <button
                   aria-pressed={filter === 'interaction'}
-                  onclick={() => (filter = 'interaction')}>Conversations</button
+                  onclick={() => (filter = 'interaction')}
+                  >{m.contacts_detail_filter_conversations()}</button
                 >
               {/if}
               {#if kinds.includes('note')}
                 <button aria-pressed={filter === 'note'} onclick={() => (filter = 'note')}
-                  >Notes</button
+                  >{m.common_notes()}</button
                 >
               {/if}
               {#if kinds.includes('file')}
                 <button aria-pressed={filter === 'file'} onclick={() => (filter = 'file')}
-                  >Files</button
+                  >{m.contacts_detail_filter_files()}</button
                 >
               {/if}
             </div>
@@ -447,12 +487,16 @@
 
         <div class="composer" bind:this={composerEl}>
           {#if logLive}
-            <div class="seg composer-switch" role="group" aria-label="Add to the timeline">
+            <div
+              class="seg composer-switch"
+              role="group"
+              aria-label={m.contacts_detail_composer_label()}
+            >
               <button aria-pressed={composer === 'note'} onclick={() => (composer = 'note')}
-                >Note</button
+                >{m.contacts_detail_composer_note()}</button
               >
               <button aria-pressed={composer === 'log'} onclick={() => (composer = 'log')}
-                >Log activity</button
+                >{m.contacts_detail_composer_log()}</button
               >
             </div>
           {/if}
@@ -491,21 +535,22 @@
                 rows="2"
                 bind:value={note}
                 class="note-input"
-                placeholder={logLive ? 'Write a note…' : 'Log a call, a reply, what they said…'}
-              ></textarea>
+                placeholder={logLive
+                  ? m.contacts_detail_note_placeholder_short()
+                  : m.contacts_detail_note_placeholder()}></textarea>
               <div class="note-actions">
                 <button class="v2-btn v2-btn-primary" type="submit" disabled={saving || !canSubmit}>
                   {saving
-                    ? 'Saving…'
+                    ? m.contacts_detail_saving()
                     : note.trim()
-                      ? 'Add note'
+                      ? m.contacts_detail_add_note()
                       : fileName
-                        ? 'Attach file'
-                        : 'Add note'}
+                        ? m.contacts_detail_attach_file()
+                        : m.contacts_detail_add_note()}
                 </button>
                 <label class="v2-btn" class:has-file={fileName}>
                   <Paperclip size={14} />
-                  <span class="attach-label">{fileName || 'Attach file'}</span>
+                  <span class="attach-label">{fileName || m.contacts_detail_attach_file()}</span>
                   <input
                     bind:this={fileInput}
                     type="file"
@@ -519,7 +564,7 @@
                     type="button"
                     class="v2-btn-quiet clear-file"
                     onclick={clearFile}
-                    title="Remove file"
+                    title={m.contacts_detail_remove_file()}
                   >
                     <X size={13} />
                   </button>
@@ -534,7 +579,7 @@
 
         {#if data.interactions.failed}
           <p class="note-err" style="margin:0 0 12px">
-            Calls and messages could not be loaded, so they are missing below.
+            {m.contacts_detail_interactions_failed()}
           </p>
         {/if}
         {#if form?.activity?.deleteError}
@@ -579,9 +624,9 @@
                       <ConfirmAction
                         action="?/deleteActivity"
                         hidden={{ interaction: e.interaction ?? '' }}
-                        label="Delete"
-                        confirmLabel="Delete for good"
-                        explain="Removes it from every timeline it is on."
+                        label={m.common_delete()}
+                        confirmLabel={m.contacts_detail_delete_confirm()}
+                        explain={m.contacts_detail_interaction_delete_explain()}
                       />
                     </div>
                   {/if}
@@ -590,12 +635,12 @@
             {/if}
           {:else}
             <p class="v2-sub" style="font-size:12.5px">
-              Nothing logged yet. The first note you add shows up here.
+              {m.contacts_detail_activity_empty()}
             </p>
           {/each}
           {#if data.interactions.more}
             <p class="v2-sub" style="font-size:12px">
-              Showing the latest calls and messages; {data.interactions.more} older ones are not shown.
+              {m.contacts_detail_interactions_more({ count: data.interactions.more })}
             </p>
           {/if}
         </div>
@@ -604,13 +649,13 @@
   </div>
 
   <aside class="v2-rail">
-    <div class="v2-label v2-rail-head">Contact</div>
+    <div class="v2-label v2-rail-head">{m.contacts_detail_rail_contact()}</div>
     <dl class="v2-kv">
-      <dt>Title</dt>
+      <dt>{m.contacts_detail_rail_title()}</dt>
       <dd>{contact.title || '—'}</dd>
-      <dt>Department</dt>
+      <dt>{m.contacts_field_department()}</dt>
       <dd>{contact.department || '—'}</dd>
-      <dt>Account</dt>
+      <dt>{m.contacts_field_account()}</dt>
       <dd>
         {#if contact.account}
           <a href={resolve(`accounts/${contact.account.id}`)} style="color:inherit"
@@ -620,7 +665,7 @@
         {/if}
       </dd>
       {#if contact.other_accounts.length}
-        <dt>Also at</dt>
+        <dt>{m.contacts_detail_rail_also_at()}</dt>
         <dd>
           {#each contact.other_accounts as other, i (other.id)}
             {i > 0 ? ', ' : ''}<a href={resolve(`accounts/${other.id}`)} style="color:inherit"
@@ -633,65 +678,68 @@
         <!-- Typed into the contact rather than linked, and often a different
              company from the account. Shown as what it is instead of being
              quietly presented as the account. -->
-        <dt>Company typed in</dt>
+        <dt>{m.contacts_field_company_typed()}</dt>
         <dd>{contact.organization}</dd>
       {/if}
-      <dt>Email</dt>
+      <dt>{m.common_email()}</dt>
       <dd style="font-size:12px;word-break:break-all">
         {#if contact.email}<a href="mailto:{contact.email}" style="color:inherit">{contact.email}</a
           >{:else},
         {/if}
       </dd>
-      <dt>Phone</dt>
+      <dt>{m.common_phone()}</dt>
       <dd class="v2-num" style="font-size:12px">
         {#if contact.phone}<a href="tel:{contact.phone}" style="color:inherit">{contact.phone}</a
           >{:else},
         {/if}
       </dd>
       {#if contact.linkedin_url}
-        <dt>LinkedIn</dt>
+        <dt>{m.contacts_field_linkedin()}</dt>
         <dd style="font-size:12px;word-break:break-all">
           <a href={contact.linkedin_url} rel="external noreferrer noopener" target="_blank"
-            >Profile</a
+            >{m.contacts_detail_rail_profile()}</a
           >
         </dd>
       {/if}
-      <dt>Owner</dt>
+      <dt>{m.common_owner()}</dt>
       <dd>
-        {owners.length ? owners.join(', ') : 'Unassigned'}
+        {owners.length ? owners.join(', ') : m.contacts_unassigned()}
       </dd>
-      <dt>Status</dt>
+      <dt>{m.common_status()}</dt>
       <dd>
         <span style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap">
           <Pill tone={contact.is_active ? 'moss' : 'slate'}>
-            {contact.is_active ? 'Active' : 'Inactive'}
+            {contact.is_active ? m.contacts_active() : m.contacts_inactive()}
           </Pill>
           {#if contact.do_not_call}
-            <Pill tone="rust"><PhoneOff size={11} />Do not call</Pill>
+            <Pill tone="rust"><PhoneOff size={11} />{m.contacts_do_not_call()}</Pill>
           {/if}
         </span>
       </dd>
       {#if contact.source}
-        <dt>Source</dt>
+        <dt>{m.contacts_detail_rail_source()}</dt>
         <dd>{sourceLabel(data.sources, contact.source)}</dd>
       {/if}
       {#if contact.source_detail}
-        <dt>Sub-source</dt>
+        <dt>{m.contacts_detail_rail_sub_source()}</dt>
         <dd>{contact.source_detail}</dd>
       {/if}
       {#if contact.source_ref}
-        <dt>Reference</dt>
+        <dt>{m.contacts_detail_rail_reference()}</dt>
         <dd class="v2-num" style="font-size:12px;overflow-wrap:anywhere">{contact.source_ref}</dd>
       {/if}
-      <dt>Added</dt>
+      <dt>{m.contacts_detail_rail_added()}</dt>
+
       <dd>{shortDate(contact.created_at)}</dd>
-      <dt>Updated</dt>
+      <dt>{m.common_updated()}</dt>
       <dd>{contact.updated_at ? relativeDays(contact.updated_at) : '—'}</dd>
     </dl>
 
     {#if colleagues.length}
       <div class="v2-label v2-rail-head">
-        Also at {contact.account?.name ?? 'this account'}
+        {contact.account?.name != null
+          ? m.contacts_detail_colleagues_at({ name: contact.account.name })
+          : m.contacts_detail_colleagues_here()}
       </div>
       {#each colleagues as c (c.id)}
         <a
@@ -702,7 +750,7 @@
           <Avatar name={c.name} size={27} />
           <div style="min-width:0">
             <div style="font-size:12.5px;font-weight:550">{c.name}</div>
-            <div class="v2-sub" style="font-size:11.5px">{c.title || 'No title recorded'}</div>
+            <div class="v2-sub" style="font-size:11.5px">{c.title || m.contacts_no_title()}</div>
           </div>
         </a>
       {/each}

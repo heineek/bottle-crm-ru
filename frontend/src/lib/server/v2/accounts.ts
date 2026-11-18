@@ -50,6 +50,9 @@ import { error, type Cookies } from '@sveltejs/kit';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { fieldsForDetail, fieldsForEdit } from '#lib/server/v2/record-custom-fields.js';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { industryLabel as translatedIndustry } from '#lib/v2/enums.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -88,6 +91,8 @@ function isPastDue(invoice: Schemas['InvoiceList']) {
  */
 function industryLabel(industry: string | null) {
   if (!industry) return '';
+  // English keeps the title case this list always showed; others translate.
+  if (getLocale() !== 'en') return translatedIndustry(industry);
   return industry
     .toLowerCase()
     .split(' ')
@@ -320,7 +325,7 @@ export async function getAccount({ cookies }: { cookies: Cookies }, id: string) 
 }
 
 function profileName(profile: Schemas['Profile']) {
-  return profile?.user_details?.email || 'Unknown';
+  return profile?.user_details?.email || m.accounts_server_unknown_owner();
 }
 
 /** Scalar fields the account forms own. Everything else is server-derived. */
@@ -516,7 +521,7 @@ async function fetchDetail(
     // On the status, not on the wording. Django answers a missing record with
     // "No Account matches the given query.", no "404" in it anywhere.
     if (apiStatus(err) === 404) {
-      error(404, 'That account does not exist, or you do not have access to it.');
+      error(404, m.accounts_server_not_found());
     }
     throw err;
   }

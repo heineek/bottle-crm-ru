@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { EDITABLE_FIELDS, getAccountForEdit, updateAccount } from '#lib/server/v2/accounts.js';
+import { m } from '#lib/paraglide/messages.js';
 import { readCustomFields, saveRefusal } from '#lib/server/v2/record-custom-fields.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -42,7 +43,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values: submitted,
-        ...saveRefusal(err, custom.definitions, 'Could not save this account.')
+        ...saveRefusal(err, custom.definitions, m.accounts_edit_failed())
       });
     }
 

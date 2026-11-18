@@ -1,0 +1,266 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "accounts_list_title": "Accounts",
+  "accounts_list_count_noun": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "accounts",
+        "countPlural=other": "accounts"
+      }
+    }
+  ],
+  "accounts_list_with_deal_won": "with a deal won",
+  "accounts_list_new_button": "New account",
+  "accounts_list_filtered_note": "These numbers describe the filtered list.",
+  "accounts_list_sorted_meta": "Sorted by revenue won",
+  "accounts_list_empty_title": "No accounts yet",
+  "accounts_list_empty_body_leads": "An account is a company you sell to. One appears automatically the first time you convert a lead, or you can add one directly.",
+  "accounts_list_empty_body": "An account is a company you sell to. Add the first one to get started.",
+  "accounts_list_go_to_leads": "Go to leads",
+  "accounts_list_col_account": "Account",
+  "accounts_list_col_industry": "Industry",
+  "accounts_list_col_won": "Won",
+  "accounts_list_col_open_pipeline": "Open pipeline",
+  "accounts_list_col_past_due": "Past due",
+  "accounts_list_col_tickets": "Tickets",
+  "accounts_list_cell_pipeline": "Pipeline",
+  "accounts_list_no_address": "No address",
+  "accounts_list_open_tickets": "{count} open",
+  "accounts_list_showing_some": "Showing {shown} of {total}",
+  "accounts_list_showing_all": "Showing all {total}",
+  "accounts_list_inactive_hidden": "{count} inactive not shown",
+  "accounts_form_name_label": "Account name",
+  "accounts_form_name_hint": "Has to be unique in this organisation, ignoring capitals.",
+  "accounts_form_industry_label": "Industry",
+  "accounts_form_not_recorded": "Not recorded",
+  "accounts_form_owner_nobody": "Nobody",
+  "accounts_form_website_label": "Website",
+  "accounts_form_headcount_label": "Headcount",
+  "accounts_form_revenue_label": "Annual revenue",
+  "accounts_form_city_label": "City",
+  "accounts_form_country_label": "Country",
+  "accounts_form_error_name": "Give the account the name you would search for.",
+  "accounts_form_error_revenue_number": "Annual revenue has to be a number.",
+  "accounts_form_error_revenue_negative": "Annual revenue cannot be negative.",
+  "accounts_form_error_headcount_whole": "Headcount is a whole number.",
+  "accounts_form_error_headcount_negative": "Headcount cannot be negative.",
+  "accounts_form_error_email": "That does not look like an email address.",
+  "accounts_form_error_phone": "7 to 25 characters: digits, spaces, brackets, dots, dashes. No extensions.",
+  "accounts_new_title": "New account",
+  "accounts_new_sub": "A company you sell to. Everything else attaches to it later.",
+  "accounts_new_server_refused": "The server refused this",
+  "accounts_new_submit": "Create account",
+  "accounts_new_failed": "Could not create this account.",
+  "accounts_edit_title": "Edit {name}",
+  "accounts_edit_sub_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} deal",
+        "countPlural=other": "{countShown} deals"
+      }
+    }
+  ],
+  "accounts_edit_sub_invoices": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} invoice",
+        "countPlural=other": "{countShown} invoices"
+      }
+    }
+  ],
+  "accounts_edit_sub_none": "No related records yet",
+  "accounts_edit_saved": "Saved.",
+  "accounts_edit_saved_body": "“{name}” has been updated.",
+  "accounts_edit_back": "Back to the account",
+  "accounts_edit_server_refused": "The server refused this change",
+  "accounts_edit_fields_need_you": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} field still needs you",
+        "countPlural=other": "{countShown} fields still need you"
+      }
+    }
+  ],
+  "accounts_edit_nothing_saved": "Nothing has been saved.",
+  "accounts_edit_owner_many_hint": "{count} people are on this account. This select shows the first; changing it replaces all of them, and leaving it alone keeps them.",
+  "accounts_edit_revenue_hint": "What this company turns over. Not what you have sold them. That is Revenue won, and it is counted from the deals.",
+  "accounts_edit_address_label": "Address",
+  "accounts_edit_state_label": "State",
+  "accounts_edit_postcode_label": "Postcode",
+  "accounts_edit_rel_contacts": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} contact",
+        "countPlural=other": "{countShown} contacts"
+      }
+    }
+  ],
+  "accounts_edit_rel_teams": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} team",
+        "countPlural=other": "{countShown} teams"
+      }
+    }
+  ],
+  "accounts_edit_rel_tags": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} tag",
+        "countPlural=other": "{countShown} tags"
+      }
+    }
+  ],
+  "accounts_edit_untouched": "This form does not touch the {list} on this account. They are edited where they live.",
+  "accounts_edit_submit": "Save changes",
+  "accounts_edit_failed": "Could not save this account.",
+  "accounts_detail_no_industry": "No industry",
+  "accounts_detail_staff": "{count} staff",
+  "accounts_detail_customer_since": "customer since {date}",
+  "accounts_detail_no_deals_won": "No deals won yet",
+  "accounts_detail_owned_by": "owned by {owner}",
+  "accounts_detail_statement_button": "Statement",
+  "accounts_detail_delete_confirm": "Delete for good",
+  "accounts_detail_delete_explain": "Deletes {name} permanently. This cannot be undone.",
+  "accounts_detail_delete_failed": "Could not delete this account.",
+  "accounts_detail_headline_both": "{deal} is stalled and {invoice} is past due, same account, two problems.",
+  "accounts_detail_headline_stalled": [
+    {
+      "declarations": [
+        "input days",
+        "local daysPlural = days: plural",
+        "local daysShown = days: number"
+      ],
+      "selectors": ["daysPlural"],
+      "match": {
+        "daysPlural=one": "{deal} has not moved in {daysShown} days.",
+        "daysPlural=other": "{deal} has not moved in {daysShown} days."
+      }
+    }
+  ],
+  "accounts_detail_headline_past_due": "{invoice} is past due, {amount}.",
+  "accounts_detail_needs_you": "Needs you",
+  "accounts_detail_open_deal": "Open the deal",
+  "accounts_detail_stat_revenue_won": "Revenue won",
+  "accounts_detail_stat_deals_won": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} deal won",
+        "countPlural=other": "{countShown} deals won"
+      }
+    }
+  ],
+  "accounts_detail_stat_nothing_won": "Nothing won yet",
+  "accounts_detail_stat_open_pipeline": "Open pipeline",
+  "accounts_detail_stat_open_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} open deal",
+        "countPlural=other": "{countShown} open deals"
+      }
+    }
+  ],
+  "accounts_detail_stat_no_open_deals": "No open deals",
+  "accounts_detail_stat_past_due": "Past due",
+  "accounts_detail_stat_nothing_past_due": "Nothing past due",
+  "accounts_detail_stat_open_tickets": "Open tickets",
+  "accounts_detail_stat_none_open": "None open",
+  "accounts_detail_deals_title": "Deals",
+  "accounts_detail_deal_closed_on": "closed {date}",
+  "accounts_detail_deal_due_on": "due {date}",
+  "accounts_detail_deal_days": "{days}d",
+  "accounts_detail_deals_empty": "No deals yet. Create one when there is something real to sell.",
+  "accounts_detail_people_title": "People",
+  "accounts_detail_no_title": "No title recorded",
+  "accounts_detail_email_person": "Email {name}",
+  "accounts_detail_call_person": "Call {name}",
+  "accounts_detail_people_empty_before": "Nobody here yet.",
+  "accounts_detail_people_empty_link": "Add the person",
+  "accounts_detail_people_empty_after": " you actually talk to.",
+  "accounts_detail_tickets_title": "Tickets",
+  "accounts_detail_tickets_empty_before": "No tickets.",
+  "accounts_detail_tickets_empty_link": "Raise one",
+  "accounts_detail_tickets_empty_after": " if something is wrong.",
+  "accounts_detail_invoices_title": "Invoices",
+  "accounts_detail_invoice_past_due": "Past due",
+  "accounts_detail_invoices_empty": "Nothing billed yet.",
+  "accounts_statement_title": "Statement",
+  "accounts_statement_account_fallback": "Account",
+  "accounts_statement_period": "{start} to {end}",
+  "accounts_statement_sub": "What the account was billed, paid and owes",
+  "accounts_statement_download_pdf": "Download PDF",
+  "accounts_statement_admins_title": "Statements are for administrators.",
+  "accounts_statement_admins_before": "A statement adds up every invoice on the account, including ones you may not open, so it is limited to admins. The invoices you can open are on",
+  "accounts_statement_admins_link": "the account's page",
+  "accounts_statement_from": "From",
+  "accounts_statement_to": "To",
+  "accounts_statement_show": "Show",
+  "accounts_statement_previous_month": "Previous month",
+  "accounts_statement_this_month": "This month",
+  "accounts_statement_in_currency": "In {currency}",
+  "accounts_statement_opening_balance": "Opening balance",
+  "accounts_statement_invoiced": "Invoiced",
+  "accounts_statement_paid": "Paid",
+  "accounts_statement_cancelled": "{amount} cancelled",
+  "accounts_statement_in_credit": "In credit",
+  "accounts_statement_balance_due": "Balance due",
+  "accounts_statement_col_date": "Date",
+  "accounts_statement_col_invoice": "Invoice",
+  "accounts_statement_col_details": "Details",
+  "accounts_statement_col_amount": "Amount",
+  "accounts_statement_col_balance": "Balance",
+  "accounts_statement_empty": "Nothing was billed or paid in this period, and nothing is owed.",
+  "accounts_merge_title": "Merge {singular}s",
+  "accounts_server_unknown_owner": "Unknown",
+  "accounts_server_not_found": "That account does not exist, or you do not have access to it."
+}

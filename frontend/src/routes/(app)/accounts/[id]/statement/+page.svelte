@@ -16,6 +16,7 @@
   import StatCard from '#lib/v2/components/StatCard.svelte';
   import { money, shortDate, longDate } from '#lib/v2/format.js';
   import { ChevronRight, Download } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -27,17 +28,22 @@
     `?start_date=${period.start_date}&end_date=${period.end_date}`;
 </script>
 
-<PageHeader title="Statement" record>
+<PageHeader title={m.accounts_statement_title()} record>
   {#snippet crumb()}
-    <a href={resolve('accounts')}>Accounts</a>
+    <a href={resolve('accounts')}>{m.accounts_list_title()}</a>
     <ChevronRight size={12} />
-    <a href={resolve(`accounts/${data.accountId}`)}>{statement?.account.name || 'Account'}</a>
+    <a href={resolve(`accounts/${data.accountId}`)}
+      >{statement?.account.name || m.accounts_statement_account_fallback()}</a
+    >
   {/snippet}
   {#snippet sub()}
     {#if statement}
-      {longDate(statement.start_date)} to {longDate(statement.end_date)}
+      {m.accounts_statement_period({
+        start: longDate(statement.start_date),
+        end: longDate(statement.end_date)
+      })}
     {:else}
-      What the account was billed, paid and owes
+      {m.accounts_statement_sub()}
     {/if}
   {/snippet}
   {#snippet actions()}
@@ -48,7 +54,8 @@
         target="_blank"
         rel="noopener"
       >
-        <Download size={14} /> Download PDF
+        <Download size={14} />
+        {m.accounts_statement_download_pdf()}
       </a>
     {/if}
   {/snippet}
@@ -58,17 +65,16 @@
   <div class="v2-pad" style="padding-bottom:32px">
     {#if !data.can_view}
       <div class="v2-card stmt-note">
-        <strong>Statements are for administrators.</strong>
+        <strong>{m.accounts_statement_admins_title()}</strong>
         <p>
-          A statement adds up every invoice on the account, including ones you may not open, so it
-          is limited to admins. The invoices you can open are on
-          <a href={resolve(`accounts/${data.accountId}`)}>the account's page</a>.
+          {m.accounts_statement_admins_before()}
+          <a href={resolve(`accounts/${data.accountId}`)}>{m.accounts_statement_admins_link()}</a>.
         </p>
       </div>
     {:else}
       <form method="GET" class="stmt-period">
         <div class="v2-field">
-          <label for="s-start">From</label>
+          <label for="s-start">{m.accounts_statement_from()}</label>
           <input
             id="s-start"
             name="start_date"
@@ -79,7 +85,7 @@
           />
         </div>
         <div class="v2-field">
-          <label for="s-end">To</label>
+          <label for="s-end">{m.accounts_statement_to()}</label>
           <input
             id="s-end"
             name="end_date"
@@ -89,15 +95,17 @@
             required
           />
         </div>
-        <button class="v2-btn v2-btn-primary">Show</button>
+        <button class="v2-btn v2-btn-primary">{m.accounts_statement_show()}</button>
       </form>
       <div class="stmt-presets">
         {#if data.previous}
           <a href={resolve(`accounts/${data.accountId}/statement${query(data.previous)}`)}
-            >Previous month</a
+            >{m.accounts_statement_previous_month()}</a
           >
         {/if}
-        <a href={resolve(`accounts/${data.accountId}/statement`)}>This month</a>
+        <a href={resolve(`accounts/${data.accountId}/statement`)}
+          >{m.accounts_statement_this_month()}</a
+        >
       </div>
 
       {#if data.error}
@@ -109,25 +117,34 @@
           {@const inCredit = section.closing_balance < 0}
           <section class="stmt-section">
             {#if statement.currencies.length > 1}
-              <h2 class="v2-label">In {section.currency}</h2>
+              <h2 class="v2-label">
+                {m.accounts_statement_in_currency({ currency: section.currency })}
+              </h2>
             {/if}
             <div class="v2-stats" style="margin-bottom:12px">
               <StatCard
-                label="Opening balance"
+                label={m.accounts_statement_opening_balance()}
                 value={money(section.opening_balance, section.currency)}
                 tone="slate"
               />
-              <StatCard label="Invoiced" value={money(section.invoiced, section.currency)} />
               <StatCard
-                label="Paid"
+                label={m.accounts_statement_invoiced()}
+                value={money(section.invoiced, section.currency)}
+              />
+              <StatCard
+                label={m.accounts_statement_paid()}
                 value={money(section.paid, section.currency)}
                 tone="moss"
                 detail={section.cancelled
-                  ? `${money(section.cancelled, section.currency)} cancelled`
+                  ? m.accounts_statement_cancelled({
+                      amount: money(section.cancelled, section.currency)
+                    })
                   : undefined}
               />
               <StatCard
-                label={inCredit ? 'In credit' : 'Balance due'}
+                label={inCredit
+                  ? m.accounts_statement_in_credit()
+                  : m.accounts_statement_balance_due()}
                 value={money(Math.abs(section.closing_balance), section.currency)}
                 tone={section.closing_balance > 0 ? 'rust' : 'moss'}
               />
@@ -136,18 +153,18 @@
               <table class="v2-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Invoice</th>
-                    <th>Details</th>
-                    <th class="v2-r">Amount</th>
-                    <th class="v2-r">Balance</th>
+                    <th>{m.accounts_statement_col_date()}</th>
+                    <th>{m.accounts_statement_col_invoice()}</th>
+                    <th>{m.accounts_statement_col_details()}</th>
+                    <th class="v2-r">{m.accounts_statement_col_amount()}</th>
+                    <th class="v2-r">{m.accounts_statement_col_balance()}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td>{shortDate(statement.start_date)}</td>
                     <td data-m="hide"></td>
-                    <td data-m="meta" class="v2-muted">Opening balance</td>
+                    <td data-m="meta" class="v2-muted">{m.accounts_statement_opening_balance()}</td>
                     <td data-m="hide"></td>
                     <td class="v2-r v2-num" data-m="tag"
                       >{money(section.opening_balance, section.currency)}</td
@@ -170,7 +187,10 @@
                       >
                         {money(entry.amount, section.currency)}
                       </td>
-                      <td class="v2-r v2-num" data-m="meta" data-l="Balance"
+                      <td
+                        class="v2-r v2-num"
+                        data-m="meta"
+                        data-l={m.accounts_statement_col_balance()}
                         >{money(entry.balance, section.currency)}</td
                       >
                     </tr>
@@ -181,7 +201,7 @@
           </section>
         {:else}
           <p class="v2-sub stmt-empty">
-            Nothing was billed or paid in this period, and nothing is owed.
+            {m.accounts_statement_empty()}
           </p>
         {/each}
       {/if}

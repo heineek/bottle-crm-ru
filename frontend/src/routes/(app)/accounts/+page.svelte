@@ -9,6 +9,8 @@
   import { activeChips, activePresetKey } from '#lib/v2/filters.js';
   import { Download, Plus, Building2 } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -33,10 +35,11 @@
   );
 </script>
 
-<PageHeader title="Accounts">
+<PageHeader title={m.accounts_list_title()}>
   {#snippet sub()}
     <!-- The count is the size of the whole result set, not of this page. -->
-    <span class="v2-num">{count(totals.count)}</span> accounts
+    <span class="v2-num">{count(totals.count)}</span>
+    {m.accounts_list_count_noun({ count: totals.count ?? 0 })}
     <!-- `customers` is counted from the rows actually loaded, because the
          accounts endpoint returns no aggregate for it (see the note in
          `lib/server/v2/accounts.js`). Printing it beside a whole-set count
@@ -44,7 +47,8 @@
          covered everything, so it is shown only when this page IS the whole
          set. A figure that disappears beats a figure that is wrong. -->
     {#if dealsOn && (totals.shown ?? 0) >= (totals.count ?? 0)}
-      · <span class="v2-num">{count(totals.customers)}</span> with a deal won
+      · <span class="v2-num">{count(totals.customers)}</span>
+      {m.accounts_list_with_deal_won()}
     {/if}
   {/snippet}
   {#snippet actions()}
@@ -55,15 +59,17 @@
       href="{resolve('api/accounts/export')}?{page.url.searchParams}"
       data-sveltekit-reload
     >
-      <Download />Export
+      <Download />{m.common_export()}
     </a>
-    <a class="v2-btn v2-btn-primary" href={resolve('accounts/new')}><Plus />New account</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('accounts/new')}
+      ><Plus />{m.accounts_list_new_button()}</a
+    >
   {/snippet}
 </PageHeader>
 
 {#if isFiltered}
   <p class="v2-sub" style="font-size:11.5px;margin:8px 0 0">
-    These numbers describe the filtered list.
+    {m.accounts_list_filtered_note()}
   </p>
 {/if}
 
@@ -74,22 +80,22 @@
   tags={data.tags}
   meId={data.meId}
   saved={data.savedViews}
-  meta={dealsOn ? 'Sorted by revenue won' : null}
+  meta={dealsOn ? m.accounts_list_sorted_meta() : null}
 />
 
 <div class="v2-scroll">
   {#if accounts.length === 0}
     <EmptyState
-      title="No accounts yet"
-      body={leadsOn
-        ? 'An account is a company you sell to. One appears automatically the first time you convert a lead, or you can add one directly.'
-        : 'An account is a company you sell to. Add the first one to get started.'}
+      title={m.accounts_list_empty_title()}
+      body={leadsOn ? m.accounts_list_empty_body_leads() : m.accounts_list_empty_body()}
     >
       {#snippet icon()}<Building2 size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('accounts/new')}>New account</a>
+        <a class="v2-btn v2-btn-primary" href={resolve('accounts/new')}
+          >{m.accounts_list_new_button()}</a
+        >
         {#if leadsOn}
-          <a class="v2-btn" href={resolve('leads')}>Go to leads</a>
+          <a class="v2-btn" href={resolve('leads')}>{m.accounts_list_go_to_leads()}</a>
         {/if}
       {/snippet}
     </EmptyState>
@@ -98,14 +104,14 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Account</th>
-            <th>Industry</th>
+            <th>{m.accounts_list_col_account()}</th>
+            <th>{m.accounts_list_col_industry()}</th>
             {#if dealsOn}
-              <th class="v2-r">Won</th>
-              <th class="v2-r">Open pipeline</th>
+              <th class="v2-r">{m.accounts_list_col_won()}</th>
+              <th class="v2-r">{m.accounts_list_col_open_pipeline()}</th>
             {/if}
-            {#if invoicesOn}<th class="v2-r">Past due</th>{/if}
-            {#if ticketsOn}<th>Tickets</th>{/if}
+            {#if invoicesOn}<th class="v2-r">{m.accounts_list_col_past_due()}</th>{/if}
+            {#if ticketsOn}<th>{m.accounts_list_col_tickets()}</th>{/if}
           </tr>
         </thead>
         <tbody>
@@ -115,7 +121,8 @@
                 <a class="v2-row-link" href={resolve(`accounts/${a.id}`)}>
                   <div class="v2-table-primary">{a.name}</div>
                   <div class="v2-table-secondary">
-                    {[a.city, a.country_display].filter(Boolean).join(', ') || 'No address'}
+                    {[a.city, a.country_display].filter(Boolean).join(', ') ||
+                      m.accounts_list_no_address()}
                   </div>
                 </a>
               </td>
@@ -131,14 +138,14 @@
                 </td>
                 <!-- Labelled on a phone: without the header row, two money
                    columns side by side are two unattributed numbers. -->
-                <td class="v2-r v2-num" data-l="Pipeline">
+                <td class="v2-r v2-num" data-l={m.accounts_list_cell_pipeline()}>
                   {a.pipeline_by_currency?.length ? moneyEach(a.pipeline_by_currency) : '—'}
                 </td>
               {/if}
               {#if invoicesOn}
                 <td
                   class="v2-r v2-num"
-                  data-l="Past due"
+                  data-l={m.accounts_list_col_past_due()}
                   style={a.overdue_by_currency?.length
                     ? 'color:var(--v2-rust);font-weight:600'
                     : ''}
@@ -149,7 +156,9 @@
               {#if ticketsOn}
                 <td>
                   {#if a.open_tickets}
-                    <Pill tone="slate">{a.open_tickets} open</Pill>
+                    <Pill tone="slate"
+                      >{m.accounts_list_open_tickets({ count: a.open_tickets })}</Pill
+                    >
                   {:else}
                     <span class="v2-muted">—</span>
                   {/if}
@@ -162,13 +171,19 @@
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
       {#if totals.shown < totals.count}
-        Showing <span class="v2-num">{totals.shown}</span> of
-        <span class="v2-num">{count(totals.count)}</span>
+        {#each messageParts(m.accounts_list_showing_some( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+              class="v2-num">{totals.shown}</span
+            >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+            >{:else}{p.text}{/if}{/each}
       {:else}
-        Showing all <span class="v2-num">{count(totals.count)}</span>
+        {#each messageParts(m.accounts_list_showing_all( { total: slot('total') } )) as p, i (i)}{#if p.key === 'total'}<span
+              class="v2-num">{count(totals.count)}</span
+            >{:else}{p.text}{/if}{/each}
       {/if}
       {#if totals.inactive}
-        · <span class="v2-num">{totals.inactive}</span> inactive not shown
+        · {#each messageParts(m.accounts_list_inactive_hidden( { count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+              class="v2-num">{totals.inactive}</span
+            >{:else}{p.text}{/if}{/each}
       {/if}
     </p>
   {/if}

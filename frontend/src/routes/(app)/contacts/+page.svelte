@@ -10,6 +10,8 @@
   import ContactImportDrawer from '#lib/components/contacts/ContactImportDrawer.svelte';
   import { Download, Users, PhoneOff, Plus, Upload } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -20,23 +22,27 @@
   let importOpen = $state(false);
 </script>
 
-<PageHeader title="Contacts">
+<PageHeader title={m.contacts_list_title()}>
   {#snippet sub()}
-    <span class="v2-num">{count(totals.count)}</span> people
+    <span class="v2-num">{count(totals.count)}</span>
+    {m.contacts_list_sub_people({ count: totals.count })}
     {#if !data.includeInactive && totals.inactive}
-      · <span class="v2-num">{count(totals.inactive)}</span> inactive hidden
+      · <span class="v2-num">{count(totals.inactive)}</span>
+      {m.contacts_list_sub_inactive_hidden({ count: totals.inactive })}
     {/if}
     {#if totals.do_not_call}
-      · <span class="v2-num">{count(totals.do_not_call)}</span> do not call
+      · <span class="v2-num">{count(totals.do_not_call)}</span>
+      {m.contacts_list_sub_do_not_call()}
     {/if}
   {/snippet}
   {#snippet actions()}
     {#if data.includeInactive}
-      <a class="v2-btn" href={resolve('contacts')}>Hide inactive</a>
+      <a class="v2-btn" href={resolve('contacts')}>{m.contacts_list_hide_inactive()}</a>
     {:else}
-      <a class="v2-btn" href={resolve('contacts?inactive=1')}>Show inactive</a>
+      <a class="v2-btn" href={resolve('contacts?inactive=1')}>{m.contacts_list_show_inactive()}</a>
     {/if}
-    <button class="v2-btn" onclick={() => (importOpen = true)}><Upload />Import</button>
+    <button class="v2-btn" onclick={() => (importOpen = true)}><Upload />{m.common_import()}</button
+    >
     <!-- The page's own query string: the export rebuilds the same API query
          from it, so the file holds every row this list would page through. -->
     <a
@@ -44,9 +50,11 @@
       href="{resolve('api/contacts/export')}?{page.url.searchParams}"
       data-sveltekit-reload
     >
-      <Download />Export
+      <Download />{m.common_export()}
     </a>
-    <a class="v2-btn v2-btn-primary" href={resolve('contacts/new')}><Plus />New contact</a>
+    <a class="v2-btn v2-btn-primary" href={resolve('contacts/new')}
+      ><Plus />{m.contacts_new_contact()}</a
+    >
   {/snippet}
 </PageHeader>
 
@@ -57,23 +65,23 @@
   tags={data.tags}
   meId={data.meId}
   saved={data.savedViews}
-  meta="Most recently added first"
+  meta={m.contacts_list_filter_meta()}
 />
 
 <div class="v2-scroll">
   {#if contacts.length === 0}
     <EmptyState
-      title="No contacts yet"
-      body={leadsOn
-        ? 'A contact is a person at an account. Convert a lead, or add one directly and attach them to the account they work for.'
-        : 'A contact is a person at an account. Add one and attach them to the account they work for.'}
+      title={m.contacts_list_empty_title()}
+      body={leadsOn ? m.contacts_list_empty_body_leads() : m.contacts_list_empty_body()}
     >
       {#snippet icon()}<Users size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn v2-btn-primary" href={resolve('contacts/new')}>New contact</a>
-        <button class="v2-btn" onclick={() => (importOpen = true)}>Import</button>
+        <a class="v2-btn v2-btn-primary" href={resolve('contacts/new')}
+          >{m.contacts_new_contact()}</a
+        >
+        <button class="v2-btn" onclick={() => (importOpen = true)}>{m.common_import()}</button>
         {#if leadsOn}
-          <a class="v2-btn" href={resolve('leads')}>Go to leads</a>
+          <a class="v2-btn" href={resolve('leads')}>{m.contacts_list_go_to_leads()}</a>
         {/if}
       {/snippet}
     </EmptyState>
@@ -82,12 +90,12 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Account</th>
-            <th>Reachable on</th>
-            <th>Email</th>
-            <th data-m="hide">Owner</th>
-            <th class="v2-r">Updated</th>
+            <th>{m.contacts_col_name()}</th>
+            <th>{m.contacts_col_account()}</th>
+            <th>{m.contacts_col_reachable()}</th>
+            <th>{m.common_email()}</th>
+            <th data-m="hide">{m.common_owner()}</th>
+            <th class="v2-r">{m.common_updated()}</th>
           </tr>
         </thead>
         <tbody>
@@ -103,7 +111,7 @@
                   <span>
                     <span class="v2-table-primary">{c.name}</span>
                     <span class="v2-table-secondary" style="display:block">
-                      {c.title || 'No title recorded'}
+                      {c.title || m.contacts_no_title()}
                     </span>
                   </span>
                 </a>
@@ -123,7 +131,7 @@
                     <span class="v2-sub" style="font-size:11px">+{c.other_accounts.length}</span>
                   {/if}
                 {:else if c.organization}
-                  <span class="v2-muted" title="Typed in, not linked to an account">
+                  <span class="v2-muted" title={m.contacts_list_typed_in_title()}>
                     {c.organization}
                   </span>
                 {:else}
@@ -138,14 +146,14 @@
                 -->
                 <span style="display:inline-flex;gap:6px;align-items:center">
                   {#if c.do_not_call}
-                    <Pill tone="rust"><PhoneOff size={11} />Do not call</Pill>
+                    <Pill tone="rust"><PhoneOff size={11} />{m.contacts_do_not_call()}</Pill>
                   {:else if c.phone}
                     <span class="v2-num" style="font-size:12px">{c.phone}</span>
                   {:else}
-                    <span class="v2-muted">No phone</span>
+                    <span class="v2-muted">{m.contacts_list_no_phone()}</span>
                   {/if}
                   {#if !c.is_active}
-                    <Pill tone="slate">Inactive</Pill>
+                    <Pill tone="slate">{m.contacts_inactive()}</Pill>
                   {/if}
                 </span>
               </td>
@@ -153,10 +161,10 @@
                 {#if c.email}
                   <a href="mailto:{c.email}" style="color:inherit">{c.email}</a>
                 {:else}
-                  <span class="v2-muted">No email</span>
+                  <span class="v2-muted">{m.contacts_list_no_email()}</span>
                 {/if}
               </td>
-              <td data-m="hide">{c.owner ?? 'Unassigned'}</td>
+              <td data-m="hide">{c.owner ?? m.contacts_unassigned()}</td>
               <td class="v2-r v2-muted">
                 <!--
                   When the record was last edited, which is all the CRM knows.
@@ -171,8 +179,10 @@
       </table>
     </div>
     <p class="v2-sub v2-pad" style="font-size:12px;padding-bottom:24px">
-      Showing <span class="v2-num">{contacts.length}</span> of
-      <span class="v2-num">{count(totals.count)}</span>
+      {#each messageParts(m.contacts_list_showing( { shown: slot('shown'), total: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{contacts.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
   {/if}
 </div>

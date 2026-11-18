@@ -45,6 +45,7 @@ import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { fieldsForDetail, fieldsForEdit } from '#lib/server/v2/record-custom-fields.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -60,7 +61,7 @@ function num(value: unknown) {
 }
 
 function profileName(profile: Schemas['Profile']) {
-  return profile?.user_details?.email || 'Unknown';
+  return profile?.user_details?.email || m.contacts_owner_unknown();
 }
 
 /**
@@ -257,7 +258,7 @@ function buildContactActivity(response: Schemas['ContactDetailResponse']) {
       type: 'file',
       at: a.created_at,
       by: null,
-      body: a.file_name || 'Attachment',
+      body: a.file_name || m.contacts_attachment_fallback(),
       href: attachmentHref(a.id)
     });
   }
@@ -269,7 +270,7 @@ function buildContactActivity(response: Schemas['ContactDetailResponse']) {
       type: 'status',
       at: contact.created_at,
       by: null,
-      body: 'Contact added'
+      body: m.contacts_event_added()
     });
   }
 
@@ -546,7 +547,7 @@ async function fetchDetail(
     // On the status, not on the wording. Django answers a missing record with
     // "No Contact matches the given query.", no "404" in it anywhere.
     if (apiStatus(err) === 404) {
-      error(404, 'That contact does not exist, or you do not have access to them.');
+      error(404, m.contacts_not_found());
     }
     throw err;
   }

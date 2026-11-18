@@ -17,6 +17,8 @@
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import DuplicateNotice from '#lib/v2/components/DuplicateNotice.svelte';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps, SubmitFunction } from './$types';
 
   let { data, form: result }: PageProps = $props();
@@ -43,17 +45,17 @@
 
   let errors = $derived.by(() => {
     const e: Record<string, string> = {};
-    if (!form.first_name.trim()) e.first_name = 'A person needs a first name.';
-    if (!form.last_name.trim()) e.last_name = 'A person needs a last name.';
+    if (!form.first_name.trim()) e.first_name = m.contacts_form_first_name_required();
+    if (!form.last_name.trim()) e.last_name = m.contacts_form_last_name_required();
 
     if (form.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email))
-      e.email = 'That does not look like an email address.';
+      e.email = m.contacts_form_email_invalid();
 
     // The exact regex from `flexible_phone_validator`. Extensions like "x123"
     // are rejected by the model, so they are caught at the field rather than
     // as an opaque whole-form refusal after the save.
     if (form.phone && !/^[\d\s\-()+.]{7,25}$/.test(form.phone))
-      e.phone = '7 to 25 characters: digits, spaces, brackets, dots, dashes. No extensions.';
+      e.phone = m.contacts_form_phone_invalid();
 
     return e;
   });
@@ -74,14 +76,14 @@
   let chosenAccount = $derived(data.accounts.find((a) => a.id === form.account) ?? null);
 </script>
 
-<PageHeader title="New contact" center>
+<PageHeader title={m.contacts_new_contact()} center>
   {#snippet crumb()}
-    <a href={resolve('contacts')}>Contacts</a>
+    <a href={resolve('contacts')}>{m.contacts_list_title()}</a>
     <ChevronRight size={12} />
-    <span>New</span>
+    <span>{m.contacts_crumb_new()}</span>
   {/snippet}
   {#snippet sub()}
-    A person at an account. Everything optional can wait until they exist.
+    {m.contacts_new_sub()}
   {/snippet}
 </PageHeader>
 
@@ -95,7 +97,7 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this contact</div>
+          <div style="font-weight:600">{m.contacts_new_refused()}</div>
           <div class="v2-sub" style="margin-top:2px">{result.error}</div>
         </div>
       </div>
@@ -110,20 +112,16 @@
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
           <div style="font-weight:600">
-            {Object.keys(errors).length} field{Object.keys(errors).length === 1 ? '' : 's'} still need{Object.keys(
-              errors
-            ).length === 1
-              ? 's'
-              : ''} you
+            {m.contacts_form_fields_need_you({ count: Object.keys(errors).length })}
           </div>
-          <div class="v2-sub" style="margin-top:2px">Nothing has been created.</div>
+          <div class="v2-sub" style="margin-top:2px">{m.contacts_new_nothing_created()}</div>
         </div>
       </div>
     {/if}
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-first">First name</label>
+        <label for="f-first">{m.contacts_field_first_name()}</label>
         <input
           id="f-first"
           name="first_name"
@@ -135,7 +133,7 @@
         {#if show('first_name')}<p class="v2-error">{errors.first_name}</p>{/if}
       </div>
       <div class="v2-field">
-        <label for="f-last">Last name</label>
+        <label for="f-last">{m.contacts_field_last_name()}</label>
         <input
           id="f-last"
           name="last_name"
@@ -150,7 +148,7 @@
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-email">Email</label>
+        <label for="f-email">{m.common_email()}</label>
         <input
           id="f-email"
           name="email"
@@ -163,11 +161,11 @@
         {#if show('email')}
           <p class="v2-error">{errors.email}</p>
         {:else}
-          <p class="v2-hint">Has to be unique in this organisation, ignoring capitals.</p>
+          <p class="v2-hint">{m.contacts_form_email_hint()}</p>
         {/if}
       </div>
       <div class="v2-field">
-        <label for="f-phone">Phone</label>
+        <label for="f-phone">{m.common_phone()}</label>
         <input
           id="f-phone"
           name="phone"
@@ -182,39 +180,41 @@
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-title">Job title</label>
+        <label for="f-title">{m.contacts_field_title()}</label>
         <input id="f-title" name="title" class="v2-input" bind:value={form.title} />
       </div>
       <div class="v2-field">
-        <label for="f-dept">Department</label>
+        <label for="f-dept">{m.contacts_field_department()}</label>
         <input id="f-dept" name="department" class="v2-input" bind:value={form.department} />
       </div>
     </div>
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-account">Account</label>
+        <label for="f-account">{m.contacts_field_account()}</label>
         <select id="f-account" name="account" class="v2-input" bind:value={form.account}>
-          <option value="">Not linked</option>
+          <option value="">{m.contacts_form_not_linked()}</option>
           {#each data.accounts as a (a.id)}
             <option value={a.id}>{a.name}</option>
           {/each}
         </select>
         {#if chosenAccount}
-          <p class="v2-hint">Also adds them to {chosenAccount.name}'s people.</p>
+          <p class="v2-hint">{m.contacts_new_account_hint({ name: chosenAccount.name })}</p>
         {:else if data.account_total > data.accounts.length}
           <p class="v2-hint">
-            Showing <span class="v2-num">{data.accounts.length}</span> of
-            <span class="v2-num">{data.account_total}</span> accounts.
+            {#each messageParts(m.contacts_form_accounts_showing( { total: data.account_total, shown: slot('shown'), totalCount: slot('total') } )) as p, i (i)}{#if p.key === 'shown'}<span
+                  class="v2-num">{data.accounts.length}</span
+                >{:else if p.key === 'total'}<span class="v2-num">{data.account_total}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {:else}
-          <p class="v2-hint">Can be left empty and set later.</p>
+          <p class="v2-hint">{m.contacts_new_account_empty_hint()}</p>
         {/if}
       </div>
       <div class="v2-field">
-        <label for="f-owner">Owner</label>
+        <label for="f-owner">{m.common_owner()}</label>
         <select id="f-owner" name="assigned_to" class="v2-input" bind:value={form.assigned_to}>
-          <option value="">Nobody</option>
+          <option value="">{m.contacts_form_nobody()}</option>
           {#each data.owners as o (o.id)}
             <option value={o.id}>{o.name}</option>
           {/each}
@@ -223,19 +223,16 @@
     </div>
 
     <div class="v2-field">
-      <label for="f-org">Company typed in</label>
+      <label for="f-org">{m.contacts_field_company_typed()}</label>
       <input id="f-org" name="organization" class="v2-input" bind:value={form.organization} />
-      <p class="v2-hint">
-        Only needed when there is no account to link, an imported record, or a company nobody has
-        created yet.
-      </p>
+      <p class="v2-hint">{m.contacts_new_company_hint()}</p>
     </div>
 
     <label class="flag">
       <input type="checkbox" name="do_not_call" bind:checked={form.do_not_call} />
       <span>
-        <strong>Do not call</strong>
-        <span class="v2-sub">Tick if they have already asked not to be phoned.</span>
+        <strong>{m.contacts_do_not_call()}</strong>
+        <span class="v2-sub">{m.contacts_new_dnc_hint()}</span>
       </span>
     </label>
 
@@ -243,7 +240,7 @@
       fields={data.customFields ?? []}
       typed={result?.values?.custom_fields}
       errors={result?.fieldErrors}
-      heading="Details"
+      heading={m.common_details()}
     />
 
     <DuplicateNotice
@@ -257,8 +254,8 @@
     />
 
     <div class="actions">
-      <button class="v2-btn v2-btn-primary" type="submit">Create contact</button>
-      <a class="v2-btn" href={resolve('contacts')}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit">{m.contacts_new_submit()}</button>
+      <a class="v2-btn" href={resolve('contacts')}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>

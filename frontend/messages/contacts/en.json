@@ -1,0 +1,331 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "contacts_list_title": "Contacts",
+  "contacts_list_sub_people": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "people",
+        "countPlural=other": "people"
+      }
+    }
+  ],
+  "contacts_list_sub_inactive_hidden": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "inactive hidden",
+        "countPlural=other": "inactive hidden"
+      }
+    }
+  ],
+  "contacts_list_sub_do_not_call": "do not call",
+  "contacts_list_hide_inactive": "Hide inactive",
+  "contacts_list_show_inactive": "Show inactive",
+  "contacts_new_contact": "New contact",
+  "contacts_list_filter_meta": "Most recently added first",
+  "contacts_list_empty_title": "No contacts yet",
+  "contacts_list_empty_body_leads": "A contact is a person at an account. Convert a lead, or add one directly and attach them to the account they work for.",
+  "contacts_list_empty_body": "A contact is a person at an account. Add one and attach them to the account they work for.",
+  "contacts_list_go_to_leads": "Go to leads",
+  "contacts_col_name": "Name",
+  "contacts_col_account": "Account",
+  "contacts_col_reachable": "Reachable on",
+  "contacts_no_title": "No title recorded",
+  "contacts_list_typed_in_title": "Typed in, not linked to an account",
+  "contacts_do_not_call": "Do not call",
+  "contacts_list_no_phone": "No phone",
+  "contacts_inactive": "Inactive",
+  "contacts_active": "Active",
+  "contacts_list_no_email": "No email",
+  "contacts_unassigned": "Unassigned",
+  "contacts_list_showing": "Showing {shown} of {total}",
+  "contacts_crumb_new": "New",
+  "contacts_new_sub": "A person at an account. Everything optional can wait until they exist.",
+  "contacts_form_first_name_required": "A person needs a first name.",
+  "contacts_form_last_name_required": "A person needs a last name.",
+  "contacts_form_email_invalid": "That does not look like an email address.",
+  "contacts_form_phone_invalid": "7 to 25 characters: digits, spaces, brackets, dots, dashes. No extensions.",
+  "contacts_form_linkedin_invalid": "A LinkedIn URL starts with http:// or https://.",
+  "contacts_new_refused": "The server refused this contact",
+  "contacts_edit_refused": "The server refused this change",
+  "contacts_form_fields_need_you": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} field still needs you",
+        "countPlural=other": "{countShown} fields still need you"
+      }
+    }
+  ],
+  "contacts_new_nothing_created": "Nothing has been created.",
+  "contacts_edit_nothing_saved": "Nothing has been saved.",
+  "contacts_field_first_name": "First name",
+  "contacts_field_last_name": "Last name",
+  "contacts_field_title": "Job title",
+  "contacts_field_department": "Department",
+  "contacts_field_account": "Account",
+  "contacts_field_company_typed": "Company typed in",
+  "contacts_field_linkedin": "LinkedIn",
+  "contacts_field_address": "Address",
+  "contacts_field_city": "City",
+  "contacts_field_state": "State",
+  "contacts_field_postcode": "Postcode",
+  "contacts_field_country": "Country",
+  "contacts_form_email_hint": "Has to be unique in this organisation, ignoring capitals.",
+  "contacts_form_not_linked": "Not linked",
+  "contacts_form_nobody": "Nobody",
+  "contacts_form_not_recorded": "Not recorded",
+  "contacts_new_account_hint": "Also adds them to {name}'s people.",
+  "contacts_form_accounts_showing": [
+    {
+      "declarations": ["input total", "local totalPlural = total: plural"],
+      "selectors": ["totalPlural"],
+      "match": {
+        "totalPlural=one": "Showing {shown} of {totalCount} accounts.",
+        "totalPlural=other": "Showing {shown} of {totalCount} accounts."
+      }
+    }
+  ],
+  "contacts_new_account_empty_hint": "Can be left empty and set later.",
+  "contacts_new_company_hint": "Only needed when there is no account to link, an imported record, or a company nobody has created yet.",
+  "contacts_new_dnc_hint": "Tick if they have already asked not to be phoned.",
+  "contacts_new_submit": "Create contact",
+  "contacts_new_failed": "Could not create this contact.",
+  "contacts_edit_title": "Edit {name}",
+  "contacts_edit_sub_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} deal",
+        "countPlural=other": "{countShown} deals"
+      }
+    }
+  ],
+  "contacts_edit_sub_tickets": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} ticket",
+        "countPlural=other": "{countShown} tickets"
+      }
+    }
+  ],
+  "contacts_edit_no_related": "No related records yet",
+  "contacts_edit_saved": "Saved.",
+  "contacts_edit_saved_body": "“{name}” has been updated.",
+  "contacts_edit_back": "Back to the contact",
+  "contacts_edit_account_hint": "Also adds this person to that account's people.",
+  "contacts_edit_owners_hint": "{count} people are on this contact. This select shows the first; changing it replaces all of them, and leaving it alone keeps them.",
+  "contacts_edit_company_hint": "Free text, kept for imported records. Where it disagrees with the linked account, the account is what the rest of the CRM uses.",
+  "contacts_edit_dnc_hint": "They asked not to be phoned. The number stays on the record.",
+  "contacts_edit_active_label": "Still works here",
+  "contacts_edit_active_hint": "Clear this when somebody leaves. They stay on the account's history and drop out of the working list.",
+  "contacts_edit_untouched_owners": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} owners",
+        "countPlural=other": "{countShown} owners"
+      }
+    }
+  ],
+  "contacts_edit_untouched_teams": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} team",
+        "countPlural=other": "{countShown} teams"
+      }
+    }
+  ],
+  "contacts_edit_untouched_tags": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} tag",
+        "countPlural=other": "{countShown} tags"
+      }
+    }
+  ],
+  "contacts_edit_untouched_links": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} other account link",
+        "countPlural=other": "{countShown} other account links"
+      }
+    }
+  ],
+  "contacts_edit_untouched_note": "This form does not touch the {list} on this contact. They are edited where they live.",
+  "contacts_edit_submit": "Save changes",
+  "contacts_edit_failed": "Could not save this contact.",
+  "contacts_merge_title": "Merge contacts",
+  "contacts_detail_attached": "Attached",
+  "contacts_detail_today": "Today",
+  "contacts_detail_yesterday": "Yesterday",
+  "contacts_detail_headline_inactive_at": "{name} is marked inactive at {account}. Find out who replaced them before the next conversation.",
+  "contacts_detail_headline_inactive": "{name} is marked inactive. Find out who replaced them before the next conversation.",
+  "contacts_detail_headline_unreachable_dnc": "There is no way to reach {name} on this record: no email, and they asked not to be called.",
+  "contacts_detail_headline_unreachable": "There is no way to reach {name} on this record: no email and no phone.",
+  "contacts_detail_headline_unowned_deal": "{name} is on {deal} worth {amount}, and nobody owns this record.",
+  "contacts_detail_headline_unowned_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{name} is on {countShown} open deal worth {amount}, and nobody owns this record.",
+        "countPlural=other": "{name} is on {countShown} open deals worth {amount}, and nobody owns this record."
+      }
+    }
+  ],
+  "contacts_detail_headline_overdue": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "A task naming {name} is past due.",
+        "countPlural=other": "{countShown} tasks naming {name} are past due."
+      }
+    }
+  ],
+  "contacts_detail_no_account": "No account",
+  "contacts_detail_sub_updated": "updated {when}",
+  "contacts_detail_dnc_title": "This person asked not to be called",
+  "contacts_detail_call": "Call",
+  "contacts_detail_delete_confirm": "Delete for good",
+  "contacts_detail_delete_explain": "Deletes {name} permanently. This cannot be undone.",
+  "contacts_detail_needs_you": "Needs you",
+  "contacts_detail_out_of_date": "Out of date",
+  "contacts_detail_edit_action": "Edit this contact",
+  "contacts_detail_deals_title": "Deals they are named on",
+  "contacts_detail_deals_open": "open",
+  "contacts_detail_deal_closed": "closed {date}",
+  "contacts_detail_deal_due": "due {date}",
+  "contacts_detail_deals_empty": "No deals name this person. Add them to the deal they are actually involved in. The account having deals is a different fact.",
+  "contacts_detail_tasks_title": "Tasks",
+  "contacts_detail_tasks_overdue": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} overdue",
+        "countPlural=other": "{countShown} overdue"
+      }
+    }
+  ],
+  "contacts_detail_task_done": "done",
+  "contacts_detail_task_late": "{count}d late",
+  "contacts_detail_task_no_due": "no due date",
+  "contacts_detail_tasks_empty": "Nothing outstanding that names this person.",
+  "contacts_detail_tickets_title": "Tickets",
+  "contacts_detail_tickets_open": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "open",
+        "countPlural=other": "open"
+      }
+    }
+  ],
+  "contacts_detail_tickets_empty": "No tickets.",
+  "contacts_detail_about": "About",
+  "contacts_detail_activity": "Activity",
+  "contacts_detail_activity_filter": "Filter activity",
+  "contacts_detail_filter_all": "All",
+  "contacts_detail_filter_files": "Files",
+  "contacts_detail_note_placeholder": "Log a call, a reply, what they said…",
+  "contacts_detail_saving": "Saving…",
+  "contacts_detail_add_note": "Add note",
+  "contacts_detail_attach_file": "Attach file",
+  "contacts_detail_remove_file": "Remove file",
+  "contacts_detail_activity_empty": "Nothing logged yet. The first note you add shows up here.",
+  "contacts_detail_rail_contact": "Contact",
+  "contacts_detail_rail_title": "Title",
+  "contacts_detail_rail_also_at": "Also at",
+  "contacts_detail_rail_profile": "Profile",
+  "contacts_detail_rail_added": "Added",
+  "contacts_detail_colleagues_at": "Also at {name}",
+  "contacts_detail_colleagues_here": "Also at this account",
+  "contacts_note_empty": "Write a note or attach a file before you save.",
+  "contacts_note_failed": "Could not save that note.",
+  "contacts_delete_failed": "Could not delete this contact.",
+  "contacts_owner_unknown": "Unknown",
+  "contacts_attachment_fallback": "Attachment",
+  "contacts_event_added": "Contact added",
+  "contacts_not_found": "That contact does not exist, or you do not have access to them.",
+  "contacts_detail_filter_conversations": "Conversations",
+  "contacts_detail_composer_label": "Add to the timeline",
+  "contacts_detail_composer_note": "Note",
+  "contacts_detail_composer_log": "Log activity",
+  "contacts_detail_note_placeholder_short": "Write a note…",
+  "contacts_detail_interactions_failed": "Calls and messages could not be loaded, so they are missing below.",
+  "contacts_detail_interaction_delete_explain": "Removes it from every timeline it is on.",
+  "contacts_detail_interactions_more": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Showing the latest calls and messages; {countShown} older one is not shown.",
+        "countPlural=other": "Showing the latest calls and messages; {countShown} older ones are not shown."
+      }
+    }
+  ],
+  "contacts_detail_rail_source": "Source",
+  "contacts_detail_rail_sub_source": "Sub-source",
+  "contacts_detail_rail_reference": "Reference"
+}

@@ -5,6 +5,7 @@ import {
   readCustomFields,
   saveRefusal
 } from '#lib/server/v2/record-custom-fields.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ cookies }) => {
@@ -38,7 +39,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(400, {
         values: submitted,
-        ...saveRefusal(err, custom.definitions, 'Could not create this account.')
+        ...saveRefusal(err, custom.definitions, m.accounts_new_failed())
       });
     }
 
