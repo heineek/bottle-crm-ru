@@ -1,0 +1,111 @@
+# Russian translation of the orders app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-10 09:43+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgctxt "order status"
+msgid "Draft"
+msgstr "Черновик"
+
+msgctxt "order status"
+msgid "Activated"
+msgstr "Активирован"
+
+msgctxt "order status"
+msgid "Completed"
+msgstr "Выполнен"
+
+msgctxt "order status"
+msgid "Cancelled"
+msgstr "Отменён"
+
+msgid "Order Name"
+msgstr "Название заказа"
+
+msgid "Order Number"
+msgstr "Номер заказа"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Currency"
+msgstr "Валюта"
+
+msgid "Subtotal"
+msgstr "Промежуточный итог"
+
+msgid "Discount Amount"
+msgstr "Сумма скидки"
+
+msgid "Tax Amount"
+msgstr "Сумма налога"
+
+msgid "Total Amount"
+msgstr "Итоговая сумма"
+
+msgid "Order Date"
+msgstr "Дата заказа"
+
+msgid "Activated Date"
+msgstr "Дата активации"
+
+msgid "Shipped Date"
+msgstr "Дата отгрузки"
+
+msgid "Billing Address"
+msgstr "Платёжный адрес"
+
+msgid "Billing City"
+msgstr "Город (платёжный адрес)"
+
+msgid "Billing State"
+msgstr "Регион (платёжный адрес)"
+
+msgid "Billing Postal Code"
+msgstr "Индекс (платёжный адрес)"
+
+msgid "Billing Country"
+msgstr "Страна (платёжный адрес)"
+
+msgid "Shipping Address"
+msgstr "Адрес доставки"
+
+msgid "Shipping City"
+msgstr "Город доставки"
+
+msgid "Shipping State"
+msgstr "Регион доставки"
+
+msgid "Shipping Postal Code"
+msgstr "Почтовый индекс доставки"
+
+msgid "Shipping Country"
+msgstr "Страна доставки"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "Item Name"
+msgstr "Название позиции"
+
+msgid "Quantity"
+msgstr "Количество"
+
+msgid "Unit Price"
+msgstr "Цена за единицу"
+
+msgid "Total"
+msgstr "Итого"
+
+msgid "Sort Order"
+msgstr "Порядок сортировки"

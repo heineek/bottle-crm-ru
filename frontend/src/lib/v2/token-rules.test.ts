@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   lastActivityAt,
   staleness,
@@ -152,5 +153,25 @@ describe('scopesFromChoice', () => {
   it('anything else means unrestricted, which is the empty list', () => {
     expect(scopesFromChoice('full')).toEqual([]);
     expect(scopesFromChoice(undefined)).toEqual([]);
+  });
+});
+
+describe('in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('translates status, staleness, scope and expiry labels', () => {
+    expect(scopeSummary(token({ owner: undefined }), { own: true })).toBe('Everything you can');
+    overwriteGetLocale(() => 'ru');
+    expect(tokenStatus(token()).label).toBe('Действует');
+    expect(staleness(token({ last_used_at: ago(122) }), NOW)).toBe('не используется 122 дня');
+    expect(scopeSummary(token())).toBe('Всё, что может Ada');
+    expect(scopeSummary(token({ owner: undefined }), { own: true })).toBe('Всё, что можете вы');
+    expect(EXPIRY_CHOICES.map((c) => c.label)).toEqual([
+      'Через 90 дней',
+      'Через 30 дней',
+      'Через 1 год',
+      'Никогда'
+    ]);
   });
 });

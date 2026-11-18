@@ -1,0 +1,365 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "projects_title": "Проекты",
+  "projects_new_button": "Создать проект",
+  "projects_list_meta": "Сначала новые",
+  "projects_search_placeholder": "Поиск по названию",
+  "projects_search_label": "Поиск проектов по названию",
+  "projects_empty_match_title": "Нет подходящих проектов",
+  "projects_empty_title": "Проектов пока нет",
+  "projects_empty_match_body": "В этом представлении ничего нет. Сбросьте фильтр или поиск, чтобы увидеть больше.",
+  "projects_empty_body": "Проект объединяет работу для клиента: задачи, учтённое время и счета за эту работу. Создайте его здесь или из выигранной сделки.",
+  "projects_col_project": "Проект",
+  "projects_col_budget_used": "Расход бюджета",
+  "projects_col_logged": "Учтено",
+  "projects_col_due": "Срок",
+  "projects_col_billing": "Оплата",
+  "projects_no_budget": "Бюджет не задан",
+  "projects_due_on": "Срок {date}",
+  "projects_showing_of": "Показано {shown} из {total}",
+  "projects_status_active": "Активен",
+  "projects_status_on_hold": "Приостановлен",
+  "projects_status_completed": "Завершён",
+  "projects_status_cancelled": "Отменён",
+  "projects_billing_time_and_materials": "По времени и материалам",
+  "projects_billing_fixed_fee": "Фиксированная сумма",
+  "projects_billing_retainer": "Ретейнер",
+  "projects_billing_non_billable": "Неоплачиваемый",
+  "projects_group_single": "Одна позиция на всё",
+  "projects_group_person": "Позиция на каждого человека",
+  "projects_group_task": "Позиция на каждую задачу",
+  "projects_group_entry": "Позиция на каждую запись",
+  "projects_hours_short": "{hours} ч",
+  "projects_minutes_short": "{minutes} мин",
+  "projects_hours_minutes_short": "{hours} ч {minutes} мин",
+  "projects_burn_of_hours": "{percent}% бюджета часов",
+  "projects_burn_of_budget": "{percent}% бюджета",
+  "projects_notify_hours_share": "Проект {project} израсходовал {percent}% бюджета часов",
+  "projects_notify_amount_share": "Проект {project} израсходовал {percent}% бюджета в деньгах",
+  "projects_notify_hours_all": "Проект {project} израсходовал весь бюджет часов",
+  "projects_notify_amount_all": "Проект {project} израсходовал весь бюджет в деньгах",
+  "projects_notify_retainer_invoice": "Черновик счёта по ретейнеру {number} за {month} создан для проекта {project}",
+  "projects_field_budget_hours": "Бюджет часов",
+  "projects_field_budget_amount": "Бюджет в деньгах",
+  "projects_field_hourly_rate": "Почасовая ставка",
+  "projects_field_monthly_fee": "Ежемесячная плата",
+  "projects_field_included_hours": "Объём часов в месяц",
+  "projects_field_overage_rate": "Ставка за переработку",
+  "projects_field_carried_hours": "Перенесённые часы",
+  "projects_error_name": "Укажите название проекта.",
+  "projects_error_account": "Выберите компанию, для которой этот проект.",
+  "projects_error_not_number": "Поле «{field}» должно быть числом не меньше 0.",
+  "projects_error_due_before_start": "Срок не может быть раньше даты начала.",
+  "projects_error_rate_missing": "Для каждого человека в списке ставок укажите ставку не меньше 0.",
+  "projects_error_rate_duplicate": "У человека может быть только одна ставка в проекте.",
+  "projects_error_monthly_fee": "Укажите ежемесячную плату.",
+  "projects_error_overage_rate": "Укажите ставку за переработку.",
+  "projects_error_percent_needs_budget": "Чтобы выставить счёт на процент от суммы, сначала задайте бюджет проекта в деньгах.",
+  "projects_error_percent_range": "Процент должен быть больше 0 и не больше 100.",
+  "projects_error_amount_positive": "Сумма должна быть больше 0.",
+  "projects_error_amount_mode": "Выберите сумму или процент от фиксированной суммы.",
+  "projects_retainer_no_fee": "Ежемесячная плата не задана",
+  "projects_retainer_fee": "{amount} в месяц",
+  "projects_retainer_ended": "Ретейнер завершён после месяца: {month}",
+  "projects_someone": "Кто-то",
+  "projects_no_account": "Без компании",
+  "projects_attachment": "Вложение",
+  "projects_error_not_found": "Такого проекта нет, или у вас нет к нему доступа.",
+  "projects_new_title": "Новый проект",
+  "projects_crumb_new": "Новый",
+  "projects_from_deal_note": "Заполнено из сделки {deal}. Ничего не сохранится, пока вы не создадите проект.",
+  "projects_draft_missed": "Не удалось открыть эту сделку, поэтому форма пуста. Выберите компанию ниже.",
+  "projects_create_button": "Создать проект",
+  "projects_edit_title": "Изменение проекта",
+  "projects_save_changes": "Сохранить изменения",
+  "projects_draft_account": "Компания сделки",
+  "projects_draft_deal": "Сделка",
+  "projects_error_create": "Не удалось создать проект.",
+  "projects_error_save": "Не удалось сохранить проект.",
+  "projects_error_delete": "Не удалось удалить этот проект.",
+  "projects_error_timer_start": "Не удалось запустить таймер.",
+  "projects_error_timer_stop": "Не удалось остановить таймер.",
+  "projects_error_log_time": "Не удалось учесть это время.",
+  "projects_error_entry_change": "Не удалось изменить эту запись.",
+  "projects_error_entry_delete": "Не удалось удалить эту запись.",
+  "projects_error_bill_time": "Не удалось выставить счёт за это время.",
+  "projects_error_bill_month": "Не удалось выставить счёт за этот месяц.",
+  "projects_error_invoice_amount": "Не удалось создать этот счёт.",
+  "projects_tab_overview": "Обзор",
+  "projects_tab_tasks": "Задачи",
+  "projects_tab_time": "Время",
+  "projects_tab_invoices": "Счета",
+  "projects_tab_files": "Файлы",
+  "projects_tab_comments": "Комментарии",
+  "projects_from_deal": "из сделки {deal}",
+  "projects_from_estimate": "из коммерческого предложения {number}",
+  "projects_bill_time": "Выставить счёт за время",
+  "projects_delete_confirm": "Удалить навсегда",
+  "projects_delete_explain": "Проект {name} будет удалён. Его задачи, время и счета останутся, но больше не будут с ним связаны.",
+  "projects_sections_label": "Разделы проекта",
+  "projects_bill_up_to": "Выставить по дату",
+  "projects_bill_check": "Проверить",
+  "projects_bill_preview_failed": "Не удалось загрузить предпросмотр. Счёт всё равно включит все оплачиваемые записи по эту дату, за которые ещё не выставлен счёт.",
+  "projects_bill_nothing": "По {date} выставлять нечего. За все оплачиваемые записи до этой даты счёт уже выставлен.",
+  "projects_bill_lines": "Позиции счёта",
+  "projects_create_draft_invoice": "Создать черновик счёта",
+  "projects_bill_hint": "Записи будут отмечены как выставленные в счёт. Если отменить счёт, их можно будет выставить снова.",
+  "projects_bill_month": "Выставить счёт за {month}",
+  "projects_bill_month_explain": "Будет создан черновик счёта за {month}, это время отмечено как выставленное в счёт, затем откроется счёт.",
+  "projects_stat_hours_logged": "Учтено часов",
+  "projects_percent_of": "{percent}% из {total}",
+  "projects_no_hours_budget": "Бюджет часов не задан",
+  "projects_stat_billable_value": "Оплачиваемая сумма",
+  "projects_no_budget_amount": "Бюджет в деньгах не задан",
+  "projects_stat_unbilled": "Ещё не выставлено",
+  "projects_stat_unbilled_detail": "Оплачиваемое время без счёта",
+  "projects_stat_invoiced": "Выставлено в счетах",
+  "projects_of_fee": "из фиксированной суммы {fee}",
+  "projects_stat_invoiced_detail": "Счета, кроме отменённых",
+  "projects_hours_budget": "Бюджет часов",
+  "projects_meter_hours_label": "{percent}% бюджета часов",
+  "projects_meter_amount_label": "{percent}% бюджета",
+  "projects_legend_logged": "Учтено: {value}",
+  "projects_legend_budget": "Бюджет: {value}",
+  "projects_legend_billable": "Оплачиваемое: {value}",
+  "projects_fee": "Фиксированная сумма",
+  "projects_budget": "Бюджет",
+  "projects_invoice_amount": "Выставить счёт на сумму",
+  "projects_invoice_mode_label": "Счёт",
+  "projects_mode_amount": "Сумма",
+  "projects_mode_percent": "Процент от фиксированной суммы",
+  "projects_percentage": "Процент",
+  "projects_amount_in": "Сумма в {currency}",
+  "projects_line_description": "Описание позиции",
+  "projects_line_placeholder": "{name}, фиксированная сумма",
+  "projects_invoice_amount_hint": "Одна позиция в {currency} для компании {account}. Счёт откроется как черновик, чтобы вы проверили и отправили его.",
+  "projects_account": "Компания",
+  "projects_deal": "Сделка",
+  "projects_per_hour": "{amount}/ч",
+  "projects_not_set": "Не задано",
+  "projects_start": "Начало",
+  "projects_people": "Люди",
+  "projects_people_empty": "В проекте пока никого нет.",
+  "projects_rates_hint": "Учтённое здесь время берёт ставку человека в этом проекте, а если её нет, почасовую ставку проекта.",
+  "projects_view_label": "Вид",
+  "projects_view_list": "Список",
+  "projects_view_board": "По статусам",
+  "projects_new_task": "Создать задачу",
+  "projects_tasks_failed": "Не удалось загрузить задачи. Остальное на странице работает.",
+  "projects_tasks_empty": "Задач пока нет. Добавьте первую задачу для этого проекта.",
+  "projects_task": "Задача",
+  "projects_timer": "Таймер",
+  "projects_start_timer_short": "Старт",
+  "projects_lane_empty": "Здесь пусто.",
+  "projects_time_summary": "Учтено всеми: {logged} · оплачиваемое: {billable}",
+  "projects_who_logged": "Кто учёл время",
+  "projects_stop_timer": "Остановить {time}",
+  "projects_start_timer": "Запустить таймер",
+  "projects_log_time": "Учесть время",
+  "projects_minutes": "Минуты",
+  "projects_rate_per_hour": "Ставка в час",
+  "projects_rate_placeholder": "Из проекта",
+  "projects_no_task": "Без задачи",
+  "projects_what_was_done": "Что сделано",
+  "projects_what_was_done_placeholder": "Подготовил текст главной страницы",
+  "projects_billable": "Оплачиваемое",
+  "projects_log_hint_admin": "Отсчитывается назад от текущего момента. Если ставка не указана, запись берёт ставку человека в этом проекте, а если её нет, почасовую ставку проекта.",
+  "projects_log_hint_member": "Отсчитывается назад от текущего момента. Запись берёт вашу ставку в этом проекте, а если её нет, почасовую ставку проекта.",
+  "projects_open_running_project": "Открыть этот проект",
+  "projects_open_running_ticket": "Открыть это обращение",
+  "projects_time_failed": "Не удалось загрузить записи времени. Остальное в проекте работает.",
+  "projects_time_empty": "Время пока не учтено. Запустите таймер или учтите уже отработанное время.",
+  "projects_who": "Кто",
+  "projects_when": "Когда",
+  "projects_no_description": "Без описания",
+  "projects_running": "Идёт",
+  "projects_ago": "{age} назад",
+  "projects_stop": "Остановить",
+  "projects_invoiced": "В счёте",
+  "projects_keep": "Оставить",
+  "projects_not_billable": "Неоплачиваемое",
+  "projects_mark_non_billable": "Отметить как неоплачиваемое",
+  "projects_mark_billable": "Отметить как оплачиваемое",
+  "projects_delete_entry": "Удалить эту запись",
+  "projects_invoices_empty": "Счетов по этому проекту пока нет.",
+  "projects_invoices_empty_bill": "Выставьте счёт за время кнопкой вверху.",
+  "projects_invoice": "Счёт",
+  "projects_issued": "Выставлен",
+  "projects_total": "Итого",
+  "projects_invoice_draft": "Черновик",
+  "projects_invoiced_total": "Выставлено в счетах: {amount}, без учёта отменённых счетов.",
+  "projects_invoiced_total_of_fee": "Выставлено в счетах: {amount} из фиксированной суммы {fee}, без учёта отменённых счетов.",
+  "projects_file_note_placeholder": "Заметка к файлу (необязательно)",
+  "projects_files_empty": "Файлов в проекте пока нет.",
+  "projects_comments_empty": "Комментариев пока нет.",
+  "projects_list_count": [
+    {
+      "declarations": [
+        "input count",
+        "input shown",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{shown} проект",
+        "countPlural=few": "{shown} проекта",
+        "countPlural=many": "{shown} проектов",
+        "countPlural=other": "{shown} проекта"
+      }
+    }
+  ],
+  "projects_task_count": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} задача",
+        "countPlural=few": "{countShown} задачи",
+        "countPlural=many": "{countShown} задач",
+        "countPlural=other": "{countShown} задачи"
+      }
+    }
+  ],
+  "projects_unrated_entries": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} запись без ставки, она будет выставлена в счёт по 0.",
+        "countPlural=few": "{countShown} записи без ставки, они будут выставлены в счёт по 0.",
+        "countPlural=many": "{countShown} записей без ставки, они будут выставлены в счёт по 0.",
+        "countPlural=other": "{countShown} записи без ставки, они будут выставлены в счёт по 0."
+      }
+    }
+  ],
+  "projects_bill_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input entries",
+        "input hours",
+        "input value",
+        "input date",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{entries} запись, {hours}, {value} ещё не выставлены в счёт, по {date}.",
+        "countPlural=few": "{entries} записи, {hours}, {value} ещё не выставлены в счёт, по {date}.",
+        "countPlural=many": "{entries} записей, {hours}, {value} ещё не выставлены в счёт, по {date}.",
+        "countPlural=other": "{entries} записи, {hours}, {value} ещё не выставлены в счёт, по {date}."
+      }
+    }
+  ],
+  "projects_retainer_used_in": [
+    {
+      "declarations": [
+        "input count",
+        "input month",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} час за {month}",
+        "countPlural=few": "{countShown} часа за {month}",
+        "countPlural=many": "{countShown} часов за {month}",
+        "countPlural=other": "{countShown} часа за {month}"
+      }
+    }
+  ],
+  "projects_retainer_used_of": [
+    {
+      "declarations": [
+        "input count",
+        "input month",
+        "input used",
+        "local countPlural = count: plural",
+        "local countShown = count: number",
+        "local usedShown = used: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "Использовано {usedShown} из {countShown} часа за {month}",
+        "countPlural=few": "Использовано {usedShown} из {countShown} часов за {month}",
+        "countPlural=many": "Использовано {usedShown} из {countShown} часов за {month}",
+        "countPlural=other": "Использовано {usedShown} из {countShown} часа за {month}"
+      }
+    }
+  ],
+  "projects_retainer_overage": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "Переработка пока: {countShown} час",
+        "countPlural=few": "Переработка пока: {countShown} часа",
+        "countPlural=many": "Переработка пока: {countShown} часов",
+        "countPlural=other": "Переработка пока: {countShown} часа"
+      }
+    }
+  ],
+  "projects_retainer_overage_amount": [
+    {
+      "declarations": [
+        "input count",
+        "input amount",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "Переработка пока: {countShown} час, {amount}",
+        "countPlural=few": "Переработка пока: {countShown} часа, {amount}",
+        "countPlural=many": "Переработка пока: {countShown} часов, {amount}",
+        "countPlural=other": "Переработка пока: {countShown} часа, {amount}"
+      }
+    }
+  ],
+  "projects_retainer_carried": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "{countShown} час перенесён с прошлых месяцев",
+        "countPlural=few": "{countShown} часа перенесены с прошлых месяцев",
+        "countPlural=many": "{countShown} часов перенесено с прошлых месяцев",
+        "countPlural=other": "{countShown} часа перенесено с прошлых месяцев"
+      }
+    }
+  ]
+}

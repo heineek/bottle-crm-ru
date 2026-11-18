@@ -1,0 +1,228 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "You do not have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Assigned a task for you."
+msgstr "Вам назначена задача."
+
+msgid "Owner"
+msgstr "Владелец"
+
+msgid "Admin"
+msgstr "Администратор"
+
+msgid "Member"
+msgstr "Участник"
+
+msgid "Low"
+msgstr "Низкий"
+
+msgid "Medium"
+msgstr "Средний"
+
+msgid "High"
+msgstr "Высокий"
+
+msgid "Urgent"
+msgstr "Срочный"
+
+msgid "Pipeline Name"
+msgstr "Название воронки"
+
+msgid "Description"
+msgstr "Описание"
+
+msgctxt "task stage type"
+msgid "Open"
+msgstr "Открытые"
+
+msgctxt "task stage type"
+msgid "In Progress"
+msgstr "В работе"
+
+msgctxt "task stage type"
+msgid "Completed"
+msgstr "Выполненные"
+
+msgid "Stage Name"
+msgstr "Название этапа"
+
+msgid "Maps to Status"
+msgstr "Соответствует статусу"
+
+msgid "WIP Limit"
+msgstr "Лимит WIP"
+
+msgctxt "task status"
+msgid "New"
+msgstr "Новая"
+
+msgctxt "task status"
+msgid "In Progress"
+msgstr "В работе"
+
+msgctxt "task status"
+msgid "Completed"
+msgstr "Выполнена"
+
+msgid "title"
+msgstr "название"
+
+msgid "status"
+msgstr "статус"
+
+msgid "priority"
+msgstr "приоритет"
+
+msgid "Notes"
+msgstr "Заметки"
+
+msgid "Kanban Order"
+msgstr "Порядок на канбан-доске"
+
+#, python-format
+msgid ""
+"A task can only be linked to one parent entity (Account, Opportunity, Case, "
+"Lead, or Project). Currently linked to: %(parents)s"
+msgstr ""
+"Задачу можно связать только с одной родительской записью (компанией, сделкой,"
+" обращением, лидом или проектом). Сейчас связана с: %(parents)s"
+
+msgid "No such project."
+msgstr "Такого проекта нет."
+
+#, python-format
+msgid ""
+"A task can only be linked to one parent entity (Account, Opportunity, Case, "
+"Lead, or Project). Currently set: %(parents)s"
+msgstr ""
+"Задачу можно связать только с одной родительской записью (компанией, сделкой,"
+" обращением, лидом или проектом). Сейчас указано: %(parents)s"
+
+#, python-format
+msgid "maps_to_status must be one of %(statuses)s, or empty."
+msgstr "maps_to_status должен быть одним из значений %(statuses)s или пустым."
+
+msgid "Either stage_id or status must be provided"
+msgstr "Укажите stage_id или status"
+
+msgid "A task has been assigned to you in BottleCRM"
+msgstr "Вам назначена задача в BottleCRM"
+
+#, python-format
+msgid "Hi %(name)s,"
+msgstr "Здравствуйте, %(name)s!"
+
+#, python-format
+msgid "%(assigner)s assigned a task to you."
+msgstr "%(assigner)s назначил(а) вам задачу."
+
+msgid "Task"
+msgstr "Задача"
+
+msgid "Assigned by"
+msgstr "Кто назначил"
+
+msgid "View Task"
+msgstr "Открыть задачу"
+
+msgid "Permission denied"
+msgstr "Доступ запрещён"
+
+msgid "Only board owner can delete the board"
+msgstr "Удалить доску может только её владелец"
+
+msgid "A column with this name already exists on this board."
+msgstr "На этой доске уже есть колонка с таким названием."
+
+msgid "Invalid column for this board."
+msgstr "Эта колонка не относится к этой доске."
+
+#, python-format
+msgid ""
+"This task is in the %(pipeline)s pipeline. Move it to one of that pipeline's "
+"stages."
+msgstr ""
+"Эта задача находится в воронке «%(pipeline)s». Переместите её на один из "
+"этапов этой воронки."
+
+#, python-format
+msgid "Stage '%(stage)s' has reached its WIP limit of %(limit)s"
+msgstr "Этап «%(stage)s» достиг лимита WIP: %(limit)s"
+
+msgid "Task moved successfully"
+msgstr "Задача перемещена"
+
+msgid "Only admins can create pipelines"
+msgstr "Создавать воронки могут только администраторы"
+
+#, python-format
+msgid "Cannot delete pipeline with %(count)s tasks. Move tasks first."
+msgid_plural "Cannot delete pipeline with %(count)s tasks. Move tasks first."
+msgstr[0] ""
+"Нельзя удалить воронку, в которой %(count)s задача. Сначала переместите "
+"задачи."
+msgstr[1] ""
+"Нельзя удалить воронку, в которой %(count)s задачи. Сначала переместите "
+"задачи."
+msgstr[2] ""
+"Нельзя удалить воронку, в которой %(count)s задач. Сначала переместите "
+"задачи."
+
+#, python-format
+msgid "Cannot delete stage with %(count)s tasks. Move tasks first."
+msgid_plural "Cannot delete stage with %(count)s tasks. Move tasks first."
+msgstr[0] ""
+"Нельзя удалить этап, на котором %(count)s задача. Сначала переместите задачи."
+msgstr[1] ""
+"Нельзя удалить этап, на котором %(count)s задачи. Сначала переместите задачи."
+msgstr[2] ""
+"Нельзя удалить этап, на котором %(count)s задач. Сначала переместите задачи."
+
+msgid "Send every stage of this pipeline exactly once, in the new order."
+msgstr "Передайте каждый этап этой воронки ровно один раз, в новом порядке."
+
+msgid "Stages reordered successfully"
+msgstr "Порядок этапов изменён"
+
+msgid "Task Created Successfully"
+msgstr "Задача создана"
+
+msgid "Task updated Successfully"
+msgstr "Задача обновлена"
+
+msgid "Task deleted Successfully"
+msgstr "Задача удалена"
+
+msgid "Comment Submitted"
+msgstr "Комментарий добавлен"
+
+msgid "You don't have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Comment Updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment Deleted Successfully"
+msgstr "Комментарий удалён"
+
+msgid "Attachment Deleted Successfully"
+msgstr "Вложение удалено"

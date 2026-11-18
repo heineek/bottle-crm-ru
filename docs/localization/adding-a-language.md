@@ -1,11 +1,9 @@
 # Adding a language
 
 This page walks through bringing BottleCRM into a new language, with Persian (`fa`) as the running
-example. BottleCRM ships in English only so far, so the first language also creates the API's
-catalog directories; after that, a new language is translation work plus a handful of one-line
-registrations, since the infrastructure is in place on all three layers. Expect roughly 1,900 API
-strings (about 260 of them country and currency names), 4,600 web strings and 4,000 mobile
-strings.
+example. A new language is translation work plus a handful of one-line registrations, since the
+infrastructure is in place on all three layers. Expect roughly 1,900 API strings (about 260 of them
+country and currency names), 4,600 web strings and 4,000 mobile strings.
 
 Read [Localization](index.md) first for how a language is chosen, and [Adding a string](adding-strings.md)
 for the catalog formats. If the language is written right to left, also read
@@ -21,10 +19,10 @@ for the catalog formats. If the language is written right to left, also read
    `pt`). The code is what `User.language` stores and what `Accept-Language` is matched against;
    a regional request (`fa-IR`) falls back to its base language automatically.
 3. **Write a glossary.** Create `docs/localization/glossary-<code>.md` (add it to the nav in
-   `mkdocs.yml`) and fill in the terms before translating screens: lead, deal, account, ticket,
-   pipeline, stage, status words and their grammatical gender if the language has one. A glossary
-   agreed up front is what keeps four thousand strings, translated over weeks, saying the same
-   thing.
+   `mkdocs.yml`; the [Russian glossary](glossary-ru.md) is a model) and fill in the terms before
+   translating screens: lead, deal, account, ticket, pipeline, stage, status words and their
+   grammatical gender if the language has one. A glossary agreed up front is what keeps four
+   thousand strings, translated over weeks, saying the same thing.
 
 ## 1. API {#1-api}
 
@@ -32,19 +30,13 @@ Register the language in `backend/crm/settings.py`, under its own name, so the p
 that language whatever the interface is in:
 
 ```python
-LANGUAGES = [("en", "English"), ("fa", "فارسی")]
+LANGUAGES = [("en", "English"), ("ru", "Русский"), ("fa", "فارسی")]
 ```
 
-Then create and fill the catalogs. `update_messages` only visits apps that have a `locale/`
-directory, so for the first translated language create one in every app listed under `packages` in
-`backend/pyproject.toml`, except `crm`:
+Then create and fill the catalogs:
 
 ```bash
 cd backend
-for app in accounts automation business_hours cases common contacts interactions invoices \
-           leads macros opportunity orders projects tasks webforms webhooks; do
-  mkdir -p "$app/locale"
-done
 uv run python manage.py update_messages -l fa       # creates <app>/locale/fa/LC_MESSAGES/django.po
 # translate every msgstr in each django.po
 uv run python manage.py update_messages --compile   # builds the .mo files
@@ -109,7 +101,7 @@ Plurals use ICU syntax (`{count, plural, =1{...} other{...}}`) and need the lang
 as on the web. `flutter_localizations` already translates Flutter's own widgets (date pickers,
 copy/paste menus) for every major language and sets the text direction from the locale. Run
 `flutter analyze` and `flutter test`, and add `*_fa_test.dart` screen tests that render the
-busiest screens in the new language at phone width.
+busiest screens in the new language at phone width (the `*_ru_test.dart` tests are a template).
 
 ## 4. Register it everywhere at once {#4-register-it-everywhere-at-once}
 

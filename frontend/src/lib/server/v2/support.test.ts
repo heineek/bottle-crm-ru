@@ -165,4 +165,15 @@ describe('support categories', () => {
   it('labels each category', () => {
     expect(SUPPORT_CATEGORIES.find((c) => c.value === 'billing')?.label).toBe('Billing');
   });
+
+  it('labels each category in the request locale, not the one at import', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const before = getLocale;
+    try {
+      overwriteGetLocale(() => 'ru');
+      expect(SUPPORT_CATEGORIES.find((c) => c.value === 'billing')?.label).toBe('Оплата');
+    } finally {
+      overwriteGetLocale(before);
+    }
+  });
 });

@@ -319,6 +319,16 @@ jobs:
           cd "$RUNNER_TEMP/neutral"
           "$RUNNER_TEMP/pkgenv/bin/python" -c "import django; django.setup(); from django.template.loader import get_template; [get_template(n) for n in ('magic_link_email.html', 'magic_link_code_email.html', 'root_email_template_new.html', 'healthz.html', 'assigned_to/leads_assigned.html', 'opportunity/goal_milestone.html', 'csat/survey_email.html')]; print('templates resolve from the installed package')"
 
+      # .mo files ship inside each app's locale/ dir; a packaging change that
+      # drops them leaves every language but English silently untranslated.
+      - name: Load packaged translations
+        env:
+          DJANGO_SETTINGS_MODULE: crm.settings
+          SECRET_KEY: startup-check-only-not-a-deployment-secret
+        run: |
+          cd "$RUNNER_TEMP/neutral"
+          "$RUNNER_TEMP/pkgenv/bin/python" -c "import django; django.setup(); from django.utils import translation; translation.activate('ru'); from common.utils import COUNTRIES; name = str(dict(COUNTRIES)['DE']); assert name == 'Германия', name; print('translations load from the installed package')"
+
   frontend-checks:
     runs-on: ubuntu-latest
 

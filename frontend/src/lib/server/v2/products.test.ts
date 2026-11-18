@@ -28,4 +28,15 @@ describe('CURRENCY_CHOICES names', () => {
   it('names the currency and keeps the code', () => {
     expect(CURRENCY_CHOICES.find((c) => c.code === 'EUR')?.label).toBe('EUR, Euro');
   });
+
+  it('names the currency in the request locale', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      expect(CURRENCY_CHOICES.find((c) => c.code === 'EUR')?.label).toBe('EUR, евро');
+    } finally {
+      overwriteGetLocale(base);
+    }
+  });
 });

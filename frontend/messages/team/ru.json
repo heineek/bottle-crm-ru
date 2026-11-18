@@ -1,0 +1,110 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "team_err_email": "Введите адрес электронной почты.",
+  "team_err_role": "Выберите допустимую роль.",
+  "team_err_invite_forbidden": "Приглашать людей может только администратор.",
+  "team_err_invite_failed": "Не удалось отправить приглашение.",
+  "team_err_which_role": "Какому человеку и какую роль?",
+  "team_err_role_forbidden": "У вас нет прав это менять.",
+  "team_err_role_failed": "Не удалось изменить роль.",
+  "team_err_which_status": "Какому человеку и активен он или нет?",
+  "team_err_status_forbidden": "Менять активность участников может только администратор.",
+  "team_err_status_failed": "Не удалось изменить статус.",
+  "team_unnamed": "Без имени",
+  "team_title": "Команда и доступ",
+  "team_forbidden_label": "Только для администраторов",
+  "team_forbidden_text": "Управлять людьми, ролями и доступом могут только администраторы организации. Если нужно добавить человека или сменить роль, обратитесь к администратору вашей команды.",
+  "team_sub_people": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} человек",
+        "countPlural=few": "{shown} человека",
+        "countPlural=many": "{shown} человек",
+        "countPlural=other": "{shown} человека"
+      }
+    }
+  ],
+  "team_sub_admins": [
+    {
+      "declarations": ["input count", "input shown", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{shown} администратор",
+        "countPlural=few": "{shown} администратора",
+        "countPlural=many": "{shown} администраторов",
+        "countPlural=other": "{shown} администратора"
+      }
+    }
+  ],
+  "team_invite_button": "Пригласить",
+  "team_stat_active": "Активные участники",
+  "team_stat_admins": "Администраторы",
+  "team_stat_admins_detail": "Могут менять роли и настройки организации",
+  "team_stat_never": "Ни разу не входили",
+  "team_stat_never_some": "Приглашены, место не занято",
+  "team_stat_never_none": "Все уже входили",
+  "team_stat_deactivated": "Деактивированы",
+  "team_invite_label": "Пригласить по email",
+  "team_invite_placeholder": "name@company.com",
+  "team_role_label": "Роль",
+  "team_role_member": "Участник",
+  "team_role_admin": "Администратор",
+  "team_send_invite": "Отправить приглашение",
+  "team_invited": "{email} теперь участник. Пока он не войдёт с этим адресом, ниже будет указано «никогда».",
+  "team_error_label": "Не получилось",
+  "team_loose_end_label": "Незакрытый вопрос",
+  "team_loose_end_text": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} API-токен принадлежит деактивированной учётной записи. После деактивации войти с ним нельзя, но он не отозван. Если снова активировать учётную запись, он заработает. Отзовите его, чтобы закрыть этот вопрос.",
+        "countPlural=few": "{countShown} API-токена принадлежат деактивированной учётной записи. После деактивации войти с ними нельзя, но они не отозваны. Если снова активировать учётную запись, они заработают. Отзовите их, чтобы закрыть этот вопрос.",
+        "countPlural=many": "{countShown} API-токенов принадлежат деактивированной учётной записи. После деактивации войти с ними нельзя, но они не отозваны. Если снова активировать учётную запись, они заработают. Отзовите их, чтобы закрыть этот вопрос.",
+        "countPlural=other": "{countShown} API-токена принадлежат деактивированной учётной записи. После деактивации войти с ними нельзя, но они не отозваны. Если снова активировать учётную запись, они заработают. Отзовите их, чтобы закрыть этот вопрос."
+      }
+    }
+  ],
+  "team_review_tokens": "Проверить токены",
+  "team_people": "Люди",
+  "team_col_person": "Человек",
+  "team_col_role": "Роль",
+  "team_col_teams": "Команды",
+  "team_col_tokens": "Токены",
+  "team_col_last_login": "Последний вход",
+  "team_col_manage": "Управление",
+  "team_you_suffix": ", это вы",
+  "team_deactivated": "Деактивирован",
+  "team_never": "никогда",
+  "team_last_admin_hint": "В организации должен остаться хотя бы один администратор",
+  "team_make_member": "Сделать участником",
+  "team_make_admin": "Сделать администратором",
+  "team_last_active_admin_hint": "В организации должен остаться хотя бы один активный администратор",
+  "team_deactivate": "Деактивировать",
+  "team_reactivate": "Активировать снова",
+  "team_teams": "Команды",
+  "team_member_count": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} участник",
+        "countPlural=few": "{countShown} участника",
+        "countPlural=many": "{countShown} участников",
+        "countPlural=other": "{countShown} участника"
+      }
+    }
+  ],
+  "team_no_teams": "Команд пока нет.",
+  "team_footer": "Ролей две: администратор и участник, других API не знает. Администраторы могут приглашать людей, менять роли и настройки организации. Сервер не позволит никому сменить собственную роль или деактивировать последнего администратора. Состав команд здесь пока не редактируется."
+}

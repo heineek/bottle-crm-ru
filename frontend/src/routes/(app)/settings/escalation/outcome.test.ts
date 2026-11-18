@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   actionNotifies,
   teamPhrase,
@@ -253,5 +254,27 @@ describe('joinWithAnd', () => {
     expect(joinWithAnd(['Urgent'])).toBe('Urgent');
     expect(joinWithAnd(['Urgent', 'High'])).toBe('Urgent and High');
     expect(joinWithAnd(['Urgent', 'High', 'Low'])).toBe('Urgent, High and Low');
+  });
+});
+
+describe('in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('builds whole sentences', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(escalationOutcome(policy({ notify_team: SUPPORT }), 'first_response').text).toBe(
+      'Уведомить: Alice и команда Support'
+    );
+    expect(escalationOutcome(policy({ is_active: false }), 'first_response').text).toBe(
+      'Ничего. Политика выключена'
+    );
+    expect(
+      teamIgnoredNote(
+        policy({ first_response_action: 'reassign', notify_team: SUPPORT }),
+        'first_response'
+      )
+    ).toBe('Команда Support здесь не уведомляется: эта часть политики только переназначает.');
+    expect(joinWithAnd(['A', 'B', 'C'])).toBe('A, B и C');
   });
 });

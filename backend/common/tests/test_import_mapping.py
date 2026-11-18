@@ -294,3 +294,24 @@ class TestChoiceLookup:
         with translation.override("en"):
             en = dict(choice_lookup(choices))
         assert fr == en == {"won": "won", "gagné": "won"}
+
+
+class TestChoiceLookupInRussian:
+    @pytest.fixture(autouse=True)
+    def fresh_cache(self):
+        from common.import_mapping import choice_lookup
+
+        choice_lookup.cache_clear()
+        yield
+        choice_lookup.cache_clear()
+
+    def test_russian_label_imports_back(self):
+        from common.import_mapping import choice_lookup
+        from common.utils import LEAD_STATUS, STATUS_CHOICE
+
+        leads = choice_lookup(LEAD_STATUS)
+        assert leads["в работе"] == "in process"
+        assert leads["закрыт"] == "closed"
+        tickets = choice_lookup(STATUS_CHOICE)
+        assert tickets["закрыто"] == "Closed"
+        assert "в работе" not in tickets

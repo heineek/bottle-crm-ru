@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as runtime from '#lib/paraglide/runtime.js';
 import {
+  CASE_STATUS_LABEL,
+  ESTIMATE_STATUS_LABEL,
+  INVOICE_STATUS_LABEL,
   LEAD_STATUS_LABEL,
+  TASK_PRIORITY_LABEL,
   CASE_PRIORITY_LABEL,
   AGING_LABEL,
   invoiceStatusLabel,
@@ -30,5 +35,39 @@ describe('labels in English', () => {
 
   it('keep the two priority sets apart', () => {
     expect('Medium' in CASE_PRIORITY_LABEL).toBe(false);
+  });
+});
+
+describe('labels in Russian', () => {
+  let original: typeof runtime.getLocale;
+  beforeEach(() => {
+    original = runtime.getLocale;
+    runtime.overwriteGetLocale(() => 'ru');
+  });
+  afterEach(() => runtime.overwriteGetLocale(original));
+
+  it('agree in gender with their entity', () => {
+    expect(LEAD_STATUS_LABEL.closed).toBe('Закрыт');
+    expect(CASE_STATUS_LABEL.Closed).toBe('Закрыто');
+    expect(INVOICE_STATUS_LABEL.Sent).toBe('Отправлен');
+    expect(ESTIMATE_STATUS_LABEL.Sent).toBe('Отправлено');
+    expect(AGING_LABEL.red).toBe('Застряла');
+  });
+
+  it('name each priority set', () => {
+    expect(CASE_PRIORITY_LABEL.Normal).toBe('Обычный');
+    expect(TASK_PRIORITY_LABEL.Medium).toBe('Средний');
+  });
+
+  it('switch per read, not per import', () => {
+    expect(invoiceStatusLabel('Cancelled')).toBe('Отменён');
+    expect(industryLabel('BANKING')).toBe('Банки');
+    expect(LEAD_STATUSES.find((o) => o.value === 'CLOSED')?.label).toBe('Закрыт');
+    runtime.overwriteGetLocale(() => 'en');
+    expect(invoiceStatusLabel('Cancelled')).toBe('Cancelled');
+  });
+
+  it('name currencies through Intl', () => {
+    expect(CURRENCY_CODES.find((o) => o.value === 'EUR')?.label).toBe('EUR - евро');
   });
 });

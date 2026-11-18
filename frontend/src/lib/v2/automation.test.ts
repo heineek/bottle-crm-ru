@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   actorName,
   pausedByModule,
@@ -1214,6 +1215,35 @@ describe('rules paused by a module', () => {
     expect(OBJECT_LABELS.ticket).toBe('Ticket');
     expect(Object.keys(OBJECT_LABELS)).toEqual(
       expect.arrayContaining(['lead', 'contact', 'account', 'deal', 'ticket', 'task'])
+    );
+  });
+});
+
+describe('labels in Russian', () => {
+  const base = getLocale;
+  afterEach(() => overwriteGetLocale(base));
+
+  it('reads operators, statuses, counts and trigger sentences in the current locale', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(operatorLabel('neq')).toBe('не равно');
+    expect(operatorLabel('gt', 'date')).toBe('позже');
+    expect(STATUS.paused.label).toBe('Приостановлено');
+    expect(OBJECT_LABELS.ticket).toBe('Обращение');
+    expect(runsLabel({ runs_7d: 5, failures_7d: 2 })).toBe('5 запусков, со сбоем: 2');
+    expect(hubValue({ active: 2, failing: 0, attention: false }).value).toBe('2 активных правила');
+    const ruCatalogue = {
+      ...catalogue,
+      objects: [{ ...lead, label: 'Лид', fields: [f('hot', 'Горячий', 'boolean')] }]
+    };
+    expect(
+      triggerSentence(
+        { object_key: 'lead', trigger: { event: 'updated', field: 'hot', to: true } },
+        ruCatalogue
+      )
+    ).toBe('Поле «Горячий» меняется на Да');
+    expect(switchLabel('off')).toBe('Сохранить и включить');
+    expect(placeErrors({ rows: { 'actions.1': 'Плохо.' } }, () => false).general).toBe(
+      'Действие 2: Плохо.'
     );
   });
 });

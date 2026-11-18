@@ -1,0 +1,703 @@
+# Russian translation of the leads app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#, python-format
+msgid "New lead assigned: %(name)s%(source)s"
+msgstr "Вам назначен новый лид: %(name)s%(source)s"
+
+#, python-format
+msgid "New lead: %(name)s%(source)s"
+msgstr "Новый лид: %(name)s%(source)s"
+
+#, python-format
+msgid "%(name)s enquired again%(source)s"
+msgstr "%(name)s обратился повторно%(source)s"
+
+#, python-format
+msgid "%(name)s is waiting for a reply"
+msgstr "%(name)s ждёт ответа"
+
+msgid "Lead title"
+msgstr "Название лида"
+
+msgid "Salutation"
+msgstr "Форма обращения"
+
+msgid "First name"
+msgstr "Имя"
+
+msgid "Last name"
+msgstr "Фамилия"
+
+msgid "Email"
+msgstr "Эл. почта"
+
+msgid "Phone"
+msgstr "Телефон"
+
+msgid "Job title"
+msgstr "Должность"
+
+msgid "Website"
+msgstr "Сайт"
+
+msgid "LinkedIn URL"
+msgstr "Ссылка на LinkedIn"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Industry"
+msgstr "Отрасль"
+
+msgid "Rating"
+msgstr "Рейтинг"
+
+msgid "Deal value"
+msgstr "Сумма сделки"
+
+msgid "Currency"
+msgstr "Валюта"
+
+msgid "Win probability (%)"
+msgstr "Вероятность успеха (%)"
+
+msgid "Expected close date"
+msgstr "Ожидаемая дата закрытия"
+
+msgid "Address"
+msgstr "Адрес"
+
+msgid "City"
+msgstr "Город"
+
+msgid "State"
+msgstr "Регион"
+
+msgid "Postal code"
+msgstr "Почтовый индекс"
+
+msgid "Country"
+msgstr "Страна"
+
+msgid "Last contacted"
+msgstr "Последний контакт"
+
+msgid "Next follow-up"
+msgstr "Следующий контакт"
+
+msgid "Notes"
+msgstr "Заметки"
+
+msgid "Company"
+msgstr "Компания"
+
+msgid "Assigned to (emails)"
+msgstr "Ответственные (email)"
+
+msgid "Teams"
+msgstr "Команды"
+
+msgid "Tags"
+msgstr "Теги"
+
+msgid "Full name (split into first and last)"
+msgstr "Полное имя (разделяется на имя и фамилию)"
+
+msgid ""
+"File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+msgstr ""
+"Не удалось прочитать файл в кодировке UTF-8. Сохраните CSV в UTF-8 и "
+"попробуйте снова."
+
+msgid "CSV could not be read: it contains NUL characters"
+msgstr "Не удалось прочитать CSV: в нём есть символы NUL"
+
+#, python-format
+msgid "CSV could not be read: %(error)s"
+msgstr "Не удалось прочитать CSV: %(error)s"
+
+msgid "CSV is empty"
+msgstr "CSV-файл пуст"
+
+#, python-format
+msgid "Header(s) given more than once: %(headers)s"
+msgstr "Заголовки указаны больше одного раза: %(headers)s"
+
+#, python-format
+msgid "Missing required header(s): %(headers)s"
+msgstr "Нет обязательных заголовков: %(headers)s"
+
+#, python-format
+msgid "Unknown header(s): %(headers)s"
+msgstr "Неизвестные заголовки: %(headers)s"
+
+#, python-format
+msgid "Too many rows (%(count)s); limit is %(limit)s"
+msgstr "Слишком много строк (%(count)s), допустимо не больше %(limit)s"
+
+msgid "Row has more cells than the header; quote values that contain commas"
+msgstr ""
+"В строке больше ячеек, чем в заголовке. Заключите значения с запятыми в "
+"кавычки"
+
+#, python-format
+msgid ""
+"Your organisation requires custom field(s) on every lead that CSV import "
+"cannot set: %(fields)s"
+msgstr ""
+"В вашей организации у каждого лида должны быть заполнены дополнительные поля,"
+" которые импорт из CSV заполнить не может: %(fields)s"
+
+msgid "A lead needs a first or last name"
+msgstr "У лида должно быть имя или фамилия"
+
+msgid "A lead with this email already exists"
+msgstr "Лид с таким email уже существует"
+
+msgid "A lead needs a first name, last name or title"
+msgstr "У лида должно быть имя, фамилия или название"
+
+#, python-format
+msgid ""
+"A lead cannot be imported as %(status)s. Import it, then convert it so its "
+"account, contact and deal are created."
+msgstr ""
+"Лид нельзя импортировать в статусе «%(status)s». Импортируйте его, а затем "
+"конвертируйте, чтобы создались компания, контакт и сделка."
+
+#, python-format
+msgid "Duplicate email also used by row %(row)s"
+msgstr "Повторяющийся email, он уже есть в строке %(row)s"
+
+#, python-format
+msgid "No active user '%(email)s' in your organisation"
+msgstr "В вашей организации нет активного пользователя «%(email)s»"
+
+#, python-format
+msgid "No team '%(name)s' in your organisation"
+msgstr "В вашей организации нет команды «%(name)s»"
+
+#, python-format
+msgid "Tag '%(name)s': %(error)s"
+msgstr "Тег «%(name)s»: %(error)s"
+
+msgid ""
+"A lead was created at the same time that conflicts with this import (likely a"
+" duplicate email). Run the preview again."
+msgstr ""
+"Одновременно с импортом был создан лид, который ему противоречит (вероятно, с"
+" тем же email). Запустите предпросмотр ещё раз."
+
+msgid "Fix the invalid rows before importing"
+msgstr "Исправьте ошибочные строки перед импортом"
+
+msgid "A lead with this phone number already exists in your organization"
+msgstr "Лид с таким номером телефона уже есть в вашей организации"
+
+msgid ""
+"A lead with this name already exists; add an email or phone to confirm it's a"
+" different person"
+msgstr ""
+"Лид с таким именем уже существует. Добавьте email или телефон, чтобы "
+"подтвердить, что это другой человек"
+
+#, python-format
+msgid "Duplicate phone number also used by row %(row)s in this file"
+msgstr "Повторяющийся номер телефона, он уже есть в строке %(row)s этого файла"
+
+#, python-format
+msgid ""
+"Same name as row %(row)s in this file; add an email or phone to either row to"
+" confirm they're different people"
+msgstr ""
+"То же имя, что и в строке %(row)s этого файла. Добавьте email или телефон в "
+"одну из строк, чтобы подтвердить, что это разные люди"
+
+msgid "Nothing in this file can be imported."
+msgstr "Из этого файла нечего импортировать."
+
+msgid "Send a list of {from, to} rows."
+msgstr "Передайте список строк {from, to}."
+
+#, python-format
+msgid "Use at most %(max)s rows."
+msgstr "Используйте не больше %(max)s строк."
+
+#, python-format
+msgid "Row %(number)s is not a from, to pair."
+msgstr "Строка %(number)s не является парой from, to."
+
+#, python-format
+msgid "Row %(number)s: name the field in the post, up to %(max)s characters."
+msgstr ""
+"Строка %(number)s: укажите поле из запроса, не длиннее %(max)s символов."
+
+#, python-format
+msgid "Row %(number)s: choose a lead field or one of your lead custom fields."
+msgstr ""
+"Строка %(number)s: выберите поле лида или одно из ваших дополнительных полей "
+"лида."
+
+msgid "Title"
+msgstr "Название"
+
+msgid "Job Title"
+msgstr "Должность"
+
+msgid "Sub-source"
+msgstr "Подысточник"
+
+msgid "Reference"
+msgstr "Основание"
+
+msgid "Hot"
+msgstr "Горячий"
+
+msgid "Warm"
+msgstr "Тёплый"
+
+msgid "Cold"
+msgstr "Холодный"
+
+msgid "Deal Value"
+msgstr "Сумма сделки"
+
+msgid "Win Probability %"
+msgstr "Вероятность успеха, %"
+
+msgid "Expected Close Date"
+msgstr "Ожидаемая дата закрытия"
+
+msgid "Postal Code"
+msgstr "Почтовый индекс"
+
+msgid "Last Contacted"
+msgstr "Последний контакт"
+
+msgid "Next Follow-up"
+msgstr "Следующий контакт"
+
+msgid "Company Name"
+msgstr "Название компании"
+
+msgid "Kanban Order"
+msgstr "Порядок на канбан-доске"
+
+msgid "Email is required to convert lead"
+msgstr "Чтобы конвертировать лид, укажите email"
+
+msgid "Pipeline Name"
+msgstr "Название воронки"
+
+msgid "Description"
+msgstr "Описание"
+
+msgctxt "lead stage type"
+msgid "Open"
+msgstr "Открыт"
+
+msgctxt "lead stage type"
+msgid "Won"
+msgstr "Выигран"
+
+msgctxt "lead stage type"
+msgid "Lost"
+msgstr "Проигран"
+
+msgid "Stage Name"
+msgstr "Название этапа"
+
+msgid "Maps to Status"
+msgstr "Соответствует статусу"
+
+msgid "Default Win Probability %"
+msgstr "Вероятность успеха по умолчанию, %"
+
+msgid "WIP Limit"
+msgstr "Лимит WIP"
+
+msgctxt "lead webhook preset"
+msgid "Generic"
+msgstr "Универсальный"
+
+msgid "Google Ads lead form"
+msgstr "Форма лидов Google Ads"
+
+msgctxt "lead webhook delivery"
+msgid "Created"
+msgstr "Создан"
+
+msgctxt "lead webhook delivery"
+msgid "Merged"
+msgstr "Объединён"
+
+msgctxt "lead webhook delivery"
+msgid "Duplicate"
+msgstr "Дубликат"
+
+msgctxt "lead webhook delivery"
+msgid "Test"
+msgstr "Тест"
+
+msgctxt "lead webhook delivery"
+msgid "Rejected"
+msgstr "Отклонён"
+
+msgid "Another lead in this organisation already uses that email address."
+msgstr "Этот email уже указан у другого лида в организации."
+
+msgid ""
+"This lead is already converted. Converting it again would create a second "
+"opportunity against the same account."
+msgstr ""
+"Этот лид уже конвертирован. Повторная конвертация создаст вторую сделку для "
+"той же компании."
+
+#, python-format
+msgid ""
+"A converted lead cannot be changed back to '%(status)s'. The account, contact"
+" and opportunity created by the conversion are not removed, so the lead would"
+" reopen with duplicates already downstream of it."
+msgstr ""
+"Конвертированный лид нельзя вернуть в статус «%(status)s». Компания, контакт "
+"и сделка, созданные при конвертации, не удаляются, поэтому лид вернулся бы в "
+"работу вместе с уже созданными дубликатами."
+
+msgid "This pipeline already has a stage with that name."
+msgstr "В этой воронке уже есть этап с таким названием."
+
+msgid "A stage cannot convert a lead. Convert it from the lead's own page."
+msgstr "Этап не может конвертировать лид. Конвертируйте его на странице лида."
+
+msgid "Either stage_id or status must be provided"
+msgstr "Укажите stage_id или status"
+
+#, python-format
+msgid ""
+"An account named '%(name)s' already exists and you don't have access to it. "
+"Ask an admin to convert this lead or give you access."
+msgstr ""
+"Компания «%(name)s» уже существует, но у вас нет к ней доступа. Попросите "
+"администратора конвертировать этот лид или выдать вам доступ."
+
+msgid "Choose one of your lead sources."
+msgstr "Выберите один из ваших источников лидов."
+
+msgctxt "lead source"
+msgid "Call"
+msgstr "Звонок"
+
+msgctxt "lead source"
+msgid "Email"
+msgstr "Электронная почта"
+
+msgctxt "lead source"
+msgid "Existing customer"
+msgstr "Действующий клиент"
+
+msgctxt "lead source"
+msgid "Partner"
+msgstr "Партнёр"
+
+msgctxt "lead source"
+msgid "Public relations"
+msgstr "Связи с общественностью"
+
+msgctxt "lead source"
+msgid "Campaign"
+msgstr "Кампания"
+
+msgctxt "lead source"
+msgid "Other"
+msgstr "Другое"
+
+msgctxt "lead source"
+msgid "Web form"
+msgstr "Веб-форма"
+
+msgctxt "lead source"
+msgid "Meta ads"
+msgstr "Реклама Meta"
+
+msgctxt "lead source"
+msgid "Google ads"
+msgstr "Реклама Google"
+
+msgctxt "lead source"
+msgid "LinkedIn ads"
+msgstr "Реклама LinkedIn"
+
+msgctxt "lead source"
+msgid "Directory or marketplace"
+msgstr "Каталог или маркетплейс"
+
+msgctxt "lead source"
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+msgctxt "lead source"
+msgid "Referral"
+msgstr "Рекомендация"
+
+msgctxt "lead source"
+msgid "Walk-in"
+msgstr "Визит в офис"
+
+msgid "Assigned a lead for you. "
+msgstr "Вам назначен лид. "
+
+msgid "Someone"
+msgstr "Кто-то"
+
+#, python-format
+msgid "%(name)s enquired again"
+msgstr "%(name)s обратился повторно"
+
+#, python-format
+msgid "<strong>%(name)s</strong> enquired again through %(channel_label)s."
+msgstr "<strong>%(name)s</strong> повторно обратился через %(channel_label)s."
+
+#, python-format
+msgid "<strong>%(name)s</strong> enquired again."
+msgstr "<strong>%(name)s</strong> обратился повторно."
+
+msgid ""
+"They are already a contact, so the new enquiry was added to their contact "
+"record."
+msgstr ""
+"Это уже контакт, поэтому новое обращение добавлено в его карточку контакта."
+
+msgid ""
+"The new enquiry was added to their lead, and any field that was already "
+"filled in was left as it was."
+msgstr ""
+"Новое обращение добавлено в его лид, а уже заполненные поля остались без "
+"изменений."
+
+msgid "Open the contact"
+msgstr "Открыть контакт"
+
+msgid "Open the lead"
+msgstr "Открыть лид"
+
+msgid "A lead is converted from its page, not by an edit."
+msgstr "Лид конвертируется на своей странице, а не при редактировании."
+
+msgid "A converted lead cannot be merged."
+msgstr "Конвертированный лид нельзя объединить."
+
+#, python-format
+msgid "No file uploaded (expected field '%(field)s')"
+msgstr "Файл не загружен (ожидается поле «%(field)s»)"
+
+msgid "File must have a .csv extension"
+msgstr "У файла должно быть расширение .csv"
+
+msgid "File exceeds the 5 MB upload limit"
+msgstr "Файл больше допустимых 5 МБ"
+
+msgid "Permission denied"
+msgstr "Доступ запрещён"
+
+msgid "Admin access required"
+msgstr "Требуются права администратора"
+
+msgid "Leads created Successfully"
+msgstr "Лиды созданы"
+
+msgid "Not found."
+msgstr "Не найдено."
+
+msgid "The body is larger than 64 KB."
+msgstr "Тело запроса больше 64 КБ."
+
+msgid "Wrong key."
+msgstr "Неверный ключ."
+
+msgid "Leads are switched off for this organization."
+msgstr "Лиды отключены в этой организации."
+
+msgid "The post has no lead fields in it."
+msgstr "В запросе нет полей лида."
+
+msgid "The lead could not be saved. Try again."
+msgstr "Не удалось сохранить лид. Попробуйте ещё раз."
+
+msgid "Too many posts. Try again later."
+msgstr "Слишком много запросов. Повторите попытку позже."
+
+msgid "Some values in the post could not be saved."
+msgstr "Некоторые значения из запроса не удалось сохранить."
+
+msgid "Content-Length is not a number."
+msgstr "Content-Length не является числом."
+
+msgid "The body is not UTF-8."
+msgstr "Тело запроса не в кодировке UTF-8."
+
+#, python-format
+msgid "Send at most %(max)s fields."
+msgstr "Передайте не больше %(max)s полей."
+
+msgid "The body is not valid JSON."
+msgstr "Тело запроса не является корректным JSON."
+
+msgid "Send the body as JSON or form-encoded."
+msgstr "Передайте тело запроса в формате JSON или form-encoded."
+
+msgid "The body must be a JSON object."
+msgstr "Тело запроса должно быть объектом JSON."
+
+msgid "The body is nested too deeply."
+msgstr "У тела запроса слишком глубокая вложенность."
+
+msgid "This field may not be blank."
+msgstr "Это поле не может быть пустым."
+
+msgid "This user is deactivated. Choose an active member."
+msgstr "Этот пользователь деактивирован. Выберите активного участника."
+
+msgid "Switch the webhook on first."
+msgstr "Сначала включите вебхук."
+
+msgid "A converted lead cannot be moved."
+msgstr "Конвертированный лид нельзя переместить."
+
+msgid "Convert a lead from its own page, not from the board."
+msgstr "Конвертируйте лид на его странице, а не на доске."
+
+#, python-format
+msgid ""
+"This lead is in the %(pipeline)s pipeline. Move it to one of that pipeline's "
+"stages."
+msgstr ""
+"Этот лид находится в воронке «%(pipeline)s». Переместите его на один из "
+"этапов этой воронки."
+
+#, python-format
+msgid ""
+"Stage '%(stage)s' converts the lead. Convert it from its own page instead."
+msgstr "Этап «%(stage)s» конвертирует лид. Конвертируйте лид на его странице."
+
+#, python-format
+msgid "Stage '%(stage)s' has reached its WIP limit of %(limit)s"
+msgstr "Этап «%(stage)s» достиг лимита WIP: %(limit)s"
+
+msgid "Lead moved successfully"
+msgstr "Лид перемещён"
+
+msgid "Only admins can create pipelines"
+msgstr "Создавать воронки могут только администраторы"
+
+#, python-format
+msgid ""
+"This pipeline still has %(count)d lead(s). Move them out of its stages first."
+msgid_plural ""
+"This pipeline still has %(count)d lead(s). Move them out of its stages first."
+msgstr[0] ""
+"В этой воронке остался %(count)d лид. Сначала уберите его с её этапов."
+msgstr[1] ""
+"В этой воронке осталось %(count)d лида. Сначала уберите их с её этапов."
+msgstr[2] ""
+"В этой воронке осталось %(count)d лидов. Сначала уберите их с её этапов."
+
+#, python-format
+msgid ""
+"This stage still has %(count)d lead(s). Move them to another stage first."
+msgid_plural ""
+"This stage still has %(count)d lead(s). Move them to another stage first."
+msgstr[0] ""
+"На этом этапе остался %(count)d лид. Сначала перенесите его на другой этап."
+msgstr[1] ""
+"На этом этапе осталось %(count)d лида. Сначала перенесите их на другой этап."
+msgstr[2] ""
+"На этом этапе осталось %(count)d лидов. Сначала перенесите их на другой этап."
+
+msgid "Send every stage of this pipeline exactly once, in the new order."
+msgstr "Передайте каждый этап этой воронки ровно один раз, в новом порядке."
+
+msgid "Stages reordered successfully"
+msgstr "Порядок этапов изменён"
+
+msgid "Comment Submitted"
+msgstr "Комментарий добавлен"
+
+msgid "You don't have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Comment Updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment Deleted Successfully"
+msgstr "Комментарий удалён"
+
+msgid "You do not have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Attachment Deleted Successfully"
+msgstr "Вложение удалено"
+
+msgid "You don't have permission, please contact the admin!."
+msgstr "У вас нет прав. Обратитесь к администратору."
+
+msgid "Invalid data"
+msgstr "Некорректные данные"
+
+msgid "Lead Created sucessfully."
+msgstr "Лид создан."
+
+msgid "A lead with this email already exists in your organization."
+msgstr "Лид с таким email уже есть в вашей организации."
+
+msgid "A lead with these details already exists."
+msgstr "Лид с такими данными уже существует."
+
+msgid "Lead Converted Successfully"
+msgstr "Лид конвертирован"
+
+msgid "Lead Created Successfully"
+msgstr "Лид создан"
+
+msgid "Lead updated Successfully"
+msgstr "Лид обновлён"
+
+msgid ""
+"This lead needs an email address before it can be converted. The contact "
+"record is created from it."
+msgstr ""
+"Чтобы конвертировать этот лид, укажите email: по нему создаётся контакт."
+
+msgid "Lead deleted Successfully"
+msgstr "Лид удалён"
+
+msgid "you don't have permission to delete this lead"
+msgstr "у вас нет прав на удаление этого лида"
+
+#, python-format
+msgid "Choose a whole number of days from %(min)s to %(max)s."
+msgstr "Укажите целое число дней от %(min)s до %(max)s."
+
+msgid "Only admins can change lead sources"
+msgstr "Изменять источники лидов могут только администраторы"
+
+msgid "A source with this name already exists."
+msgstr "Источник с таким названием уже существует."
+
+msgid "Send each of this organisation's source keys once."
+msgstr "Передайте каждый ключ источника этой организации ровно один раз."

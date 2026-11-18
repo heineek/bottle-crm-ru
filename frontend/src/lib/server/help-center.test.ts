@@ -5,6 +5,7 @@ const { canonicalSlug, getHelpArticle, getHelpCenter, listAllArticles, pageNumbe
 // The stub that vitest.config.js aliases `$app/env/private` to, so this is the module the code
 // under test reads. Imported by path because only the stub has a setter.
 const { setRelaySecret } = await import('../../../test/stubs/app-env-private.js');
+const { getLocale: baseGetLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
 
 const SECRET = 'r'.repeat(48);
 
@@ -119,6 +120,22 @@ describe('API calls', () => {
     await expect(getHelpCenter(event(), 'acme')).rejects.toMatchObject({
       body: { message: 'Not found' }
     });
+  });
+
+  it('words the 404 and the 429 in the visitor locale', async () => {
+    overwriteGetLocale(() => 'ru');
+    try {
+      fetchMock.mockResolvedValue(reply(404, {}));
+      await expect(getHelpCenter(event(), 'acme')).rejects.toMatchObject({
+        body: { message: 'Не найдено' }
+      });
+      fetchMock.mockResolvedValue(reply(429, {}));
+      await expect(getHelpCenter(event(), 'acme')).rejects.toMatchObject({
+        body: { message: 'Слишком много запросов. Повторите попытку чуть позже.' }
+      });
+    } finally {
+      overwriteGetLocale(baseGetLocale);
+    }
   });
 
   it('walks every page for the sitemap and stops at the count', async () => {

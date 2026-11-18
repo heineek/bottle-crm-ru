@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import {
   count,
   money,
@@ -159,5 +159,39 @@ describe('runTime', () => {
   it('falls back to UTC for a timezone it does not know', () => {
     expect(runTime('2026-10-22T05:12:00Z', 'Not/AZone', now)).toBe('Today 05:12');
     expect(runTime('2026-10-22T05:12:00Z', '', now)).toBe('Today 05:12');
+  });
+});
+
+describe('in Russian', () => {
+  const now = () => new Date('2026-08-20T12:00:00');
+  let original: typeof import('#lib/paraglide/runtime.js').getLocale;
+  beforeEach(async () => {
+    const runtime = await import('#lib/paraglide/runtime.js');
+    original = runtime.getLocale;
+    runtime.overwriteGetLocale(() => 'ru');
+  });
+  afterEach(async () => {
+    const runtime = await import('#lib/paraglide/runtime.js');
+    runtime.overwriteGetLocale(original);
+  });
+
+  it('formats money, counts and dates for the locale', () => {
+    expect(money(1234, 'RUB')).toBe('1 234 ₽');
+    expect(count(1234567)).toBe('1 234 567');
+    expect(longDate('2026-08-08')).toBe('8 августа 2026 г.');
+  });
+
+  it('uses Russian plural forms for relative days', () => {
+    expect(relativeDays('2026-08-20', now())).toBe('сегодня');
+    expect(relativeDays('2026-08-19', now())).toBe('вчера');
+    expect(relativeDays('2026-08-15', now())).toBe('5 дней назад');
+    expect(relativeDays('2026-07-30', now())).toBe('21 день назад');
+    expect(relativeDays('2026-08-24', now())).toBe('через 4 дня');
+  });
+
+  it('translates relative times and durations', () => {
+    expect(relativeTime('2026-08-20T11:59:40', now())).toBe('только что');
+    expect(relativeTime('2026-08-20T09:00:00', now())).toBe('3 часа назад');
+    expect(hoursMinutes(108)).toBe('1 ч 48 мин');
   });
 });

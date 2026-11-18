@@ -40,7 +40,7 @@ Backend:
 
 Frontend:
 
-- Strings: `m` from `#lib/paraglide/messages.js`, keys in `messages/<module>/{en,<lang>}.json`, never called at module load; part of a sentence styled with `slot()`/`messageParts()` from `#lib/utils/message-parts.js`.
+- Strings: `m` from `#lib/paraglide/messages.js`, keys in `messages/<module>/{en,<lang>}.json`, never called at module load; part of a sentence styled with `slot()`/`messageParts()` from `#lib/utils/message-parts.js`. Russian terms: `docs/localization/glossary-ru.md`.
 - Formatting: `#lib/v2/format.js` (`money(n, currency)`, which defaults to USD, so pass `data.org.currency`; `shortDate`, `longDate`, `relativeTime`). The org's "today": `todayIn(tz)` from `#lib/v2/dates.js` with `data.org.timezone`.
 - Admin: `isOrgAdmin` from `#lib/admin.js`. Labels and tones: `#lib/v2/enums.js`. Classes: `cn` from `#lib/utils.js`. DRF errors to a sentence: `readableError` from `#lib/server/v2/form-errors.js`.
 - Lists and filters: `#lib/v2/filters.js`, `#lib/server/v2/filter-params.js`, `#lib/server/v2/list-queries.js`, `#lib/server/v2/saved-views.js`. Custom fields: `#lib/server/v2/custom-fields.js`. @mentions: `MentionTextarea` and `MentionBody` in `#lib/v2/components/`, fed by `mentionPeople()` from `#lib/v2/mentions.js`.

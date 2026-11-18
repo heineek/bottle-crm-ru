@@ -7,6 +7,7 @@ import 'package:bottle_crm/providers/auth_provider.dart';
 import 'package:bottle_crm/providers/deal_pipelines_provider.dart';
 import 'package:bottle_crm/providers/deals_provider.dart';
 import 'package:bottle_crm/screens/deals/deals_list_screen.dart';
+import 'package:bottle_crm/services/app_language.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -345,6 +346,48 @@ void main() {
       expect(dealsNotifier.loadMoreCalls, 1);
     });
   });
+  group('DealsListScreen in Russian', () {
+    setUp(() => applyLanguage('ru'));
+    tearDown(() => applyLanguage('en'));
+
+    testWidgets('the empty list reads Russian at 390px', (tester) async {
+      tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        _testApp(
+          _FakeDealsNotifier(DealsListData()),
+          locale: const Locale('ru'),
+        ),
+      );
+      await _switchToListView(tester);
+
+      expect(find.text('Сделки'), findsOneWidget);
+      expect(find.text('Мои'), findsOneWidget);
+      expect(find.text('Застрявшие'), findsOneWidget);
+      expect(find.text('Ближайшее закрытие'), findsOneWidget);
+      expect(find.text('Сделок пока нет'), findsOneWidget);
+      expect(find.text('Добавить сделку'), findsOneWidget);
+      expect(find.text('No deals yet'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a stage group keeps the stage name the org wrote', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _testApp(
+          _FakeDealsNotifier(DealsListData(deals: [_deal(stage: _lost)])),
+          locale: const Locale('ru'),
+        ),
+      );
+      await _switchToListView(tester);
+
+      expect(find.text('Closed Lost'), findsOneWidget);
+      expect(find.text('Активные'), findsOneWidget);
+    });
+  });
 }
 
 /// A default pipeline with a custom open stage and a renamed won stage, so
@@ -398,6 +441,7 @@ Widget _testApp(
   List<DealPipeline>? pipelines,
   DealBoard board = const DealBoard(),
   _FakeBoard? boardNotifier,
+  Locale? locale,
 }) {
   return ProviderScope(
     overrides: [
@@ -410,6 +454,7 @@ Widget _testApp(
     ],
     child: MaterialApp(
       theme: AppTheme.light,
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,

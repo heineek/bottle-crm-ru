@@ -1,0 +1,197 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Disposable email addresses are not allowed."
+msgstr "Одноразовые адреса электронной почты не принимаются."
+
+msgid "Form not found."
+msgstr "Форма не найдена."
+
+msgid "This form cannot be submitted from this site."
+msgstr "Эту форму нельзя отправить с этого сайта."
+
+msgid "Could not verify that you are human. Please try again."
+msgstr "Не удалось подтвердить, что вы не робот. Попробуйте ещё раз."
+
+msgid "Thanks."
+msgstr "Спасибо."
+
+msgid "Sorry, that could not be sent. Please try again."
+msgstr "Не удалось отправить форму. Попробуйте ещё раз."
+
+msgid "Could not reach the server. Please check your connection and try again."
+msgstr ""
+"Не удалось связаться с сервером. Проверьте подключение и попробуйте ещё раз."
+
+msgid "No such custom field for this form."
+msgstr "Для этой формы нет такого дополнительного поля."
+
+#, python-format
+msgid "'%(value)s' is not a field a web form may collect."
+msgstr "«%(value)s» нельзя собирать через веб-форму."
+
+msgid ""
+"A field must name exactly one of a lead field, a ticket field or a custom "
+"field."
+msgstr ""
+"Поле должно ссылаться ровно на одно из полей: поле лида, поле обращения или "
+"дополнительное поле."
+
+msgid "Give the field a label."
+msgstr "Укажите подпись поля."
+
+msgid "This does not match the field the row names."
+msgstr "Это не соответствует полю, указанному в строке."
+
+msgid "This user is deactivated. Choose an active member."
+msgstr "Этот пользователь деактивирован. Выберите активного участника."
+
+msgid ""
+"Rotation is for lead forms only. Tickets from a ticket form are assigned by "
+"your routing rules."
+msgstr ""
+"Ротация доступна только для форм лидов. Обращения из формы обращений "
+"назначаются по вашим правилам маршрутизации."
+
+msgid "Choose at least one member to rotate between."
+msgstr "Выберите хотя бы одного участника для ротации."
+
+msgid "Enter an http or https URL. Other schemes are not allowed."
+msgstr "Введите URL с http или https. Другие схемы не допускаются."
+
+msgid "Provide a list of origins, for example [\"https://example.com\"]."
+msgstr "Передайте список источников, например [\"https://example.com\"]."
+
+msgid "Each origin must be a non-empty string."
+msgstr "Каждый источник должен быть непустой строкой."
+
+#, python-format
+msgid ""
+"'%(entry)s' is not a valid origin. Use a scheme and a host, for example "
+"https://example.com."
+msgstr ""
+"«%(entry)s» не является корректным источником. Укажите схему и хост, например"
+" https://example.com."
+
+#, python-format
+msgid ""
+"'%(entry)s' has a path. An origin is only a scheme, host and optional port."
+msgstr ""
+"В «%(entry)s» есть путь. Источник состоит только из схемы, хоста и, при "
+"необходимости, порта."
+
+msgid ""
+"This form backs a legacy web-to-lead API key, so it can only create leads."
+msgstr ""
+"Эта форма обслуживает устаревший API-ключ web-to-lead, поэтому может "
+"создавать только лиды."
+
+msgid ""
+"This form already has submissions, so what it creates cannot change. Create a"
+" new form instead."
+msgstr ""
+"У этой формы уже есть заявки, поэтому изменить, что она создаёт, нельзя. "
+"Создайте новую форму."
+
+msgid ""
+"Send the new field list with the target change. The current fields were "
+"chosen for the old target."
+msgstr ""
+"Передайте новый список полей вместе со сменой назначения. Текущие поля "
+"подобраны для прежнего назначения."
+
+#, python-format
+msgid "A %(target)s form cannot collect a %(source)s field."
+msgstr ""
+"Форма с назначением «%(target)s» не может собирать поле типа «%(source)s»."
+
+msgid ""
+"Turnstile needs both a site key and a secret. Verification fails closed, so a"
+" half-configured captcha rejects every submission."
+msgstr ""
+"Для Turnstile нужны и ключ сайта, и секрет. Без них проверка не проходит, "
+"поэтому настроенная наполовину капча отклоняет все заявки."
+
+#, python-format
+msgid "New ticket: %(form)s"
+msgstr "Новое обращение: %(form)s"
+
+#, python-format
+msgid "New submission: %(form)s"
+msgstr "Новая заявка: %(form)s"
+
+msgid "Leave this field empty"
+msgstr "Оставьте это поле пустым"
+
+#, python-format
+msgid "A new ticket was opened through <strong>%(name)s</strong>."
+msgstr "Через форму <strong>%(name)s</strong> создано новое обращение."
+
+#, python-format
+msgid "A new submission arrived through <strong>%(name)s</strong>."
+msgstr "Через форму <strong>%(name)s</strong> пришла новая заявка."
+
+msgid ""
+"They are already a contact, so the submission was added to their contact "
+"record rather than creating a lead."
+msgstr ""
+"Это уже контакт, поэтому заявка добавлена в его карточку контакта, а не "
+"создала новый лид."
+
+msgid ""
+"This address already had a lead, so the details were merged into it rather "
+"than creating a second record. Any field that was already filled in was left "
+"as it was."
+msgstr ""
+"Для этого адреса уже был лид, поэтому данные объединены с ним, а вторая "
+"запись не создана. Уже заполненные поля остались без изменений."
+
+msgid "Open the ticket"
+msgstr "Открыть обращение"
+
+msgid "Open the contact"
+msgstr "Открыть контакт"
+
+msgid "Open the lead"
+msgstr "Открыть лид"
+
+msgid "Admin access required"
+msgstr "Требуются права администратора"
+
+msgid "This form is already published."
+msgstr "Эта форма уже опубликована."
+
+msgid ""
+"Add an email field before publishing. It is how each ticket finds its "
+"contact, or creates one."
+msgstr ""
+"Перед публикацией добавьте поле электронной почты. По нему каждое обращение "
+"находит свой контакт или создаёт новый."
+
+msgid ""
+"Add an email field before publishing. It is what lets a repeat submission "
+"update the existing lead instead of failing."
+msgstr ""
+"Перед публикацией добавьте поле электронной почты. Благодаря ему повторная "
+"заявка обновляет существующий лид, а не завершается ошибкой."
+
+msgid "This form redirects on success but has no redirect URL set."
+msgstr ""
+"После отправки эта форма перенаправляет посетителя, но URL для "
+"перенаправления не задан."
+
+#, python-format
+msgid "%(reason)s Switch it on before publishing this form."
+msgstr "%(reason)s Включите модуль, прежде чем публиковать эту форму."
+
+msgid "This form is not published."
+msgstr "Эта форма не опубликована."

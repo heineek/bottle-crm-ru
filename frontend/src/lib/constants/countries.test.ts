@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as runtime from '#lib/paraglide/runtime.js';
 import { COUNTRIES, getCountryName, sortedCountries } from '#lib/constants/countries.js';
 
 describe('countries in English', () => {
@@ -13,5 +14,23 @@ describe('countries in English', () => {
     expect(names[0]).toBe('Afghanistan');
     expect(names).toHaveLength(COUNTRIES.length);
     expect(Object.getOwnPropertyDescriptor(list[0], 'name')?.get).toBeUndefined();
+  });
+});
+
+describe('countries in Russian', () => {
+  let original: typeof runtime.getLocale;
+  beforeEach(() => {
+    original = runtime.getLocale;
+    runtime.overwriteGetLocale(() => 'ru');
+  });
+  afterEach(() => runtime.overwriteGetLocale(original));
+
+  it('read the region name from Intl', () => {
+    expect(getCountryName('DE')).toBe('Германия');
+    expect(COUNTRIES.find((c) => c.code === 'GB')?.name).toBe('Великобритания');
+  });
+
+  it('sort by the Russian name', () => {
+    expect(sortedCountries()[0].name).toBe('Австралия');
   });
 });

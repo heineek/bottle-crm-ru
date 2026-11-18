@@ -1,0 +1,286 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "accounts_list_title": "Компании",
+  "accounts_list_count_noun": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "компания",
+        "countPlural=few": "компании",
+        "countPlural=many": "компаний",
+        "countPlural=other": "компании"
+      }
+    }
+  ],
+  "accounts_list_with_deal_won": "с выигранной сделкой",
+  "accounts_list_new_button": "Новая компания",
+  "accounts_list_filtered_note": "Эти цифры относятся к отфильтрованному списку.",
+  "accounts_list_sorted_meta": "По выручке от выигранных сделок",
+  "accounts_list_empty_title": "Компаний пока нет",
+  "accounts_list_empty_body_leads": "Компания: организация, которой вы продаёте. Она появляется автоматически, когда вы впервые конвертируете лид, или её можно добавить вручную.",
+  "accounts_list_empty_body": "Компания: организация, которой вы продаёте. Добавьте первую, чтобы начать.",
+  "accounts_list_go_to_leads": "Перейти к лидам",
+  "accounts_list_col_account": "Компания",
+  "accounts_list_col_industry": "Отрасль",
+  "accounts_list_col_won": "Выиграно",
+  "accounts_list_col_open_pipeline": "Открытая воронка",
+  "accounts_list_col_past_due": "Просрочено",
+  "accounts_list_col_tickets": "Обращения",
+  "accounts_list_cell_pipeline": "Воронка",
+  "accounts_list_no_address": "Адрес не указан",
+  "accounts_list_open_tickets": "открыто: {count}",
+  "accounts_list_showing_some": "Показано {shown} из {total}",
+  "accounts_list_showing_all": "Показаны все: {total}",
+  "accounts_list_inactive_hidden": "скрыто неактивных: {count}",
+  "accounts_form_name_label": "Название компании",
+  "accounts_form_name_hint": "Должно быть уникальным в организации без учёта регистра.",
+  "accounts_form_industry_label": "Отрасль",
+  "accounts_form_not_recorded": "Не указано",
+  "accounts_form_owner_nobody": "Никто",
+  "accounts_form_website_label": "Сайт",
+  "accounts_form_headcount_label": "Численность",
+  "accounts_form_revenue_label": "Годовая выручка",
+  "accounts_form_city_label": "Город",
+  "accounts_form_country_label": "Страна",
+  "accounts_form_error_name": "Укажите название, по которому вы будете искать компанию.",
+  "accounts_form_error_revenue_number": "Годовая выручка должна быть числом.",
+  "accounts_form_error_revenue_negative": "Годовая выручка не может быть отрицательной.",
+  "accounts_form_error_headcount_whole": "Численность должна быть целым числом.",
+  "accounts_form_error_headcount_negative": "Численность не может быть отрицательной.",
+  "accounts_form_error_email": "Это не похоже на адрес электронной почты.",
+  "accounts_form_error_phone": "От 7 до 25 символов: цифры, пробелы, скобки, точки, дефисы. Без добавочных номеров.",
+  "accounts_new_title": "Новая компания",
+  "accounts_new_sub": "Организация, которой вы продаёте. Всё остальное привяжется к ней позже.",
+  "accounts_new_server_refused": "Сервер отклонил запрос",
+  "accounts_new_submit": "Создать компанию",
+  "accounts_new_failed": "Не удалось создать компанию.",
+  "accounts_edit_title": "Изменить «{name}»",
+  "accounts_edit_sub_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} сделка",
+        "countPlural=few": "{countShown} сделки",
+        "countPlural=many": "{countShown} сделок",
+        "countPlural=other": "{countShown} сделки"
+      }
+    }
+  ],
+  "accounts_edit_sub_invoices": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} счёт",
+        "countPlural=few": "{countShown} счёта",
+        "countPlural=many": "{countShown} счетов",
+        "countPlural=other": "{countShown} счёта"
+      }
+    }
+  ],
+  "accounts_edit_sub_none": "Связанных записей пока нет",
+  "accounts_edit_saved": "Сохранено.",
+  "accounts_edit_saved_body": "Компания «{name}» обновлена.",
+  "accounts_edit_back": "Вернуться к компании",
+  "accounts_edit_server_refused": "Сервер отклонил изменение",
+  "accounts_edit_fields_need_you": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} поле требует внимания",
+        "countPlural=few": "{countShown} поля требуют внимания",
+        "countPlural=many": "{countShown} полей требуют внимания",
+        "countPlural=other": "{countShown} поля требуют внимания"
+      }
+    }
+  ],
+  "accounts_edit_nothing_saved": "Ничего не сохранено.",
+  "accounts_edit_owner_many_hint": "Ответственных у компании: {count}. Здесь показан первый; если его сменить, заменятся все, а если не трогать, все останутся.",
+  "accounts_edit_revenue_hint": "Оборот самой компании, а не то, что вы ей продали. Проданное показано в «Выручке по выигранным» и считается по сделкам.",
+  "accounts_edit_address_label": "Адрес",
+  "accounts_edit_state_label": "Регион",
+  "accounts_edit_postcode_label": "Индекс",
+  "accounts_edit_rel_contacts": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} контакт",
+        "countPlural=few": "{countShown} контакта",
+        "countPlural=many": "{countShown} контактов",
+        "countPlural=other": "{countShown} контакта"
+      }
+    }
+  ],
+  "accounts_edit_rel_teams": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} команда",
+        "countPlural=few": "{countShown} команды",
+        "countPlural=many": "{countShown} команд",
+        "countPlural=other": "{countShown} команды"
+      }
+    }
+  ],
+  "accounts_edit_rel_tags": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} тег",
+        "countPlural=few": "{countShown} тега",
+        "countPlural=many": "{countShown} тегов",
+        "countPlural=other": "{countShown} тега"
+      }
+    }
+  ],
+  "accounts_edit_untouched": "Эта форма не меняет связанные с компанией записи: {list}. Они редактируются на своих страницах.",
+  "accounts_edit_submit": "Сохранить изменения",
+  "accounts_edit_failed": "Не удалось сохранить компанию.",
+  "accounts_detail_no_industry": "Отрасль не указана",
+  "accounts_detail_staff": "сотрудников: {count}",
+  "accounts_detail_customer_since": "клиент с {date}",
+  "accounts_detail_no_deals_won": "Выигранных сделок пока нет",
+  "accounts_detail_owned_by": "владелец: {owner}",
+  "accounts_detail_statement_button": "Выписка",
+  "accounts_detail_delete_confirm": "Удалить навсегда",
+  "accounts_detail_delete_explain": "Запись «{name}» будет удалена безвозвратно. Это действие нельзя отменить.",
+  "accounts_detail_delete_failed": "Не удалось удалить компанию.",
+  "accounts_detail_headline_both": "Сделка «{deal}» застряла, а счёт {invoice} просрочен: одна компания, две проблемы.",
+  "accounts_detail_headline_stalled": [
+    {
+      "declarations": [
+        "input days",
+        "local daysPlural = days: plural",
+        "local daysShown = days: number"
+      ],
+      "selectors": ["daysPlural"],
+      "match": {
+        "daysPlural=one": "Сделка «{deal}» не движется {daysShown} день.",
+        "daysPlural=few": "Сделка «{deal}» не движется {daysShown} дня.",
+        "daysPlural=many": "Сделка «{deal}» не движется {daysShown} дней.",
+        "daysPlural=other": "Сделка «{deal}» не движется {daysShown} дня."
+      }
+    }
+  ],
+  "accounts_detail_headline_past_due": "Счёт {invoice} просрочен: {amount}.",
+  "accounts_detail_needs_you": "Требует внимания",
+  "accounts_detail_open_deal": "Открыть сделку",
+  "accounts_detail_stat_revenue_won": "Выручка по выигранным",
+  "accounts_detail_stat_deals_won": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} сделка выиграна",
+        "countPlural=few": "{countShown} сделки выиграны",
+        "countPlural=many": "{countShown} сделок выиграно",
+        "countPlural=other": "{countShown} сделки выиграно"
+      }
+    }
+  ],
+  "accounts_detail_stat_nothing_won": "Пока ничего не выиграно",
+  "accounts_detail_stat_open_pipeline": "Открытая воронка",
+  "accounts_detail_stat_open_deals": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} открытая сделка",
+        "countPlural=few": "{countShown} открытые сделки",
+        "countPlural=many": "{countShown} открытых сделок",
+        "countPlural=other": "{countShown} открытой сделки"
+      }
+    }
+  ],
+  "accounts_detail_stat_no_open_deals": "Нет открытых сделок",
+  "accounts_detail_stat_past_due": "Просрочено",
+  "accounts_detail_stat_nothing_past_due": "Просрочек нет",
+  "accounts_detail_stat_open_tickets": "Открытые обращения",
+  "accounts_detail_stat_none_open": "Открытых нет",
+  "accounts_detail_deals_title": "Сделки",
+  "accounts_detail_deal_closed_on": "закрыта {date}",
+  "accounts_detail_deal_due_on": "срок {date}",
+  "accounts_detail_deal_days": "{days} дн.",
+  "accounts_detail_deals_empty": "Сделок пока нет. Создайте сделку, когда появится что продавать.",
+  "accounts_detail_people_title": "Люди",
+  "accounts_detail_no_title": "Должность не указана",
+  "accounts_detail_email_person": "Написать: {name}",
+  "accounts_detail_call_person": "Позвонить: {name}",
+  "accounts_detail_people_empty_before": "Здесь пока никого нет.",
+  "accounts_detail_people_empty_link": "Добавьте человека",
+  "accounts_detail_people_empty_after": ", с которым вы действительно общаетесь.",
+  "accounts_detail_tickets_title": "Обращения",
+  "accounts_detail_tickets_empty_before": "Обращений нет.",
+  "accounts_detail_tickets_empty_link": "Создайте обращение",
+  "accounts_detail_tickets_empty_after": ", если что-то не так.",
+  "accounts_detail_invoices_title": "Счета",
+  "accounts_detail_invoice_past_due": "Просрочен",
+  "accounts_detail_invoices_empty": "Счетов пока нет.",
+  "accounts_statement_title": "Выписка",
+  "accounts_statement_account_fallback": "Компания",
+  "accounts_statement_period": "с {start} по {end}",
+  "accounts_statement_sub": "Сколько выставлено, оплачено и сколько осталось к оплате",
+  "accounts_statement_download_pdf": "Скачать PDF",
+  "accounts_statement_admins_title": "Выписки доступны только администраторам.",
+  "accounts_statement_admins_before": "Выписка суммирует все счета компании, включая те, что вам недоступны, поэтому её видят только администраторы. Доступные вам счета есть на",
+  "accounts_statement_admins_link": "странице компании",
+  "accounts_statement_from": "С",
+  "accounts_statement_to": "По",
+  "accounts_statement_show": "Показать",
+  "accounts_statement_previous_month": "Прошлый месяц",
+  "accounts_statement_this_month": "Этот месяц",
+  "accounts_statement_in_currency": "В валюте {currency}",
+  "accounts_statement_opening_balance": "Начальный баланс",
+  "accounts_statement_invoiced": "Выставлено",
+  "accounts_statement_paid": "Оплачено",
+  "accounts_statement_cancelled": "отменено: {amount}",
+  "accounts_statement_in_credit": "Переплата",
+  "accounts_statement_balance_due": "К оплате",
+  "accounts_statement_col_date": "Дата",
+  "accounts_statement_col_invoice": "Счёт",
+  "accounts_statement_col_details": "Описание",
+  "accounts_statement_col_amount": "Сумма",
+  "accounts_statement_col_balance": "Баланс",
+  "accounts_statement_empty": "За этот период ничего не выставлено и не оплачено, долга нет.",
+  "accounts_merge_title": "Объединение: {singular}",
+  "accounts_server_unknown_owner": "Неизвестно",
+  "accounts_server_not_found": "Такой компании нет, или у вас нет к ней доступа."
+}

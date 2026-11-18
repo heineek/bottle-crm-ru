@@ -1,0 +1,127 @@
+# Russian translation of the accounts app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Account Name"
+msgstr "Название компании"
+
+msgid "Email"
+msgstr "Эл. почта"
+
+msgid "Phone"
+msgstr "Телефон"
+
+msgid "Website"
+msgstr "Сайт"
+
+msgid "Industry"
+msgstr "Отрасль"
+
+msgid "Number of Employees"
+msgstr "Количество сотрудников"
+
+msgid "Annual Revenue"
+msgstr "Годовая выручка"
+
+msgid "Currency"
+msgstr "Валюта"
+
+msgid "Address"
+msgstr "Адрес"
+
+msgid "City"
+msgstr "Город"
+
+msgid "State"
+msgstr "Регион"
+
+msgid "Postal Code"
+msgstr "Почтовый индекс"
+
+msgid "Country"
+msgstr "Страна"
+
+msgid "Notes"
+msgstr "Заметки"
+
+msgid "Brackets do not match, Enter valid tags."
+msgstr "Скобки не совпадают. Введите корректные теги."
+
+msgid "Account already exists with this name"
+msgstr "Компания с таким названием уже существует"
+
+msgid "Annual revenue cannot be negative."
+msgstr "Годовая выручка не может быть отрицательной."
+
+msgid "Assigned a account for you."
+msgstr "Вам назначена компания."
+
+msgid "Account Created Successfully"
+msgstr "Компания создана"
+
+msgid "Account Updated Successfully"
+msgstr "Компания обновлена"
+
+msgid "You do not have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "This account"
+msgstr "Эта компания"
+
+msgid ""
+"This account can't be deleted while it still has projects, invoices, "
+"estimates or recurring invoices linked to it."
+msgstr ""
+"Эту компанию нельзя удалить, пока с ней связаны проекты, счета, коммерческие "
+"предложения или регулярные счета."
+
+msgid "Account Deleted Successfully."
+msgstr "Компания удалена."
+
+msgid "Comment Submitted"
+msgstr "Комментарий добавлен"
+
+msgid "You don't have permission to edit this Comment"
+msgstr "У вас нет прав на изменение этого комментария"
+
+msgid "Comment Updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment Deleted Successfully"
+msgstr "Комментарий удалён"
+
+msgid "You don't have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Attachment Deleted Successfully"
+msgstr "Вложение удалено"
+
+msgid "You don't have permission to delete this Attachment"
+msgstr "У вас нет прав на удаление этого вложения"
+
+msgid "Account not found"
+msgstr "Компания не найдена"
+
+msgid "A scheduled email needs a date and time."
+msgstr "Для запланированного письма укажите дату и время."
+
+#, python-format
+msgid "Not a contact of this account: %(ids)s"
+msgstr "Не контакты этой компании: %(ids)s"
+
+msgid "Email sent successfully"
+msgstr "Письмо отправлено"
+
+msgid "Email scheduled successfully"
+msgstr "Письмо запланировано"

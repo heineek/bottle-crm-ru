@@ -11175,9 +11175,10 @@ export interface components {
         KindD56Enum: "call" | "meeting" | "email" | "whatsapp" | "sms" | "enquiry";
         /**
          * @description * `en` - English
+         *     * `ru` - Русский
          * @enum {string}
          */
-        LanguageEnum: "en";
+        LanguageEnum: "en" | "ru";
         LanguageOption: {
             code: string;
             name: string;

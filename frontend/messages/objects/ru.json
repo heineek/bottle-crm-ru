@@ -1,0 +1,53 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "objects_note_empty": "Заметка не может быть пустой.",
+  "objects_note_save_failed": "Не удалось сохранить заметку.",
+  "objects_note_delete_failed": "Не удалось удалить заметку.",
+  "objects_no_matches_filters": "Ничего не подходит под эти фильтры. Уберите часть фильтров или сократите запрос.",
+  "objects_tags": "Теги",
+  "objects_matches": "Совпадения",
+  "objects_matches_failed": "Не удалось загрузить совпадения.",
+  "objects_matches_dismiss": "Скрыть",
+  "objects_matches_none": "Совпадений пока нет.",
+  "objects_matches_dismissed": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Скрыто: {countShown}",
+        "countPlural=few": "Скрыто: {countShown}",
+        "countPlural=many": "Скрыто: {countShown}",
+        "countPlural=other": "Скрыто: {countShown}"
+      }
+    }
+  ],
+  "objects_matches_show": "Показать",
+  "objects_matches_hide": "Свернуть",
+  "objects_matches_undo": "Вернуть",
+  "objects_timeline": "Хронология",
+  "objects_note_placeholder": "Добавить заметку…",
+  "objects_view_list": "Список",
+  "objects_view_board": "Доска",
+  "objects_see_plans": "Посмотреть тарифы",
+  "objects_notes_empty": "Сначала напишите комментарий или прикрепите файл.",
+  "objects_notes_save_failed": "Не удалось сохранить.",
+  "objects_board_missing_record": "Не указана запись.",
+  "objects_board_missing_column": "Не указана колонка.",
+  "objects_board_bad_column": "В эту колонку нельзя перемещать карточки.",
+  "objects_board_not_movable": "Эту запись вы не можете переместить.",
+  "objects_board_move_failed": "Не удалось переместить запись.",
+  "objects_board_moved_back": "Не удалось переместить запись, она вернулась на место.",
+  "objects_board_title": "{plural}: доска",
+  "objects_board_sub": "{shown} по полю «{field}»",
+  "objects_board_hint": "Перетащите карточку или выберите в ней «Переместить в…», чтобы изменить поле «{field}».",
+  "objects_board_read_only": "Эта доска доступна только для чтения.",
+  "objects_board_truncated": "Показаны первые {shown}.",
+  "objects_board_other_lane": "Значения, которых больше нет среди вариантов. Переместите карточку, чтобы это исправить.",
+  "objects_board_move_aria": "Переместить «{name}» в",
+  "objects_board_move_to": "Переместить в…",
+  "objects_board_empty_lane": "Здесь пусто."
+}

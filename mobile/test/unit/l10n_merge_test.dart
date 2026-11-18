@@ -11,6 +11,7 @@ void main() {
   test('the ARBs are the merge of the fragments', () {
     final merged = mergeArbs();
     expect(merged.keys, contains('app_en.arb'));
+    expect(merged.keys, contains('app_ru.arb'));
     for (final entry in merged.entries) {
       expect(
         File('$arbDir/${entry.key}').readAsStringSync(),

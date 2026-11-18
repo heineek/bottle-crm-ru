@@ -3,7 +3,7 @@
 Every user-facing string goes through its layer's catalog. Write the English exactly as a user
 should read it, and add every other shipped language at the same time: the [checks](index.md#the-checks)
 fail on a key that is missing in any language. Use the terms of the language's glossary, if it has
-one.
+one (for Russian, the [Russian glossary](glossary-ru.md)).
 
 ## API {#api}
 

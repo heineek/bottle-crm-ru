@@ -1,0 +1,290 @@
+# Russian translation of the contacts app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "No file uploaded (expected field 'file')"
+msgstr "Файл не загружен (ожидается поле «file»)"
+
+msgid "File must have a .csv extension"
+msgstr "У файла должно быть расширение .csv"
+
+msgid "File exceeds the 5 MB upload limit"
+msgstr "Файл больше допустимых 5 МБ"
+
+msgid "Permission denied"
+msgstr "Доступ запрещён"
+
+msgid "First name"
+msgstr "Имя"
+
+msgid "Last name"
+msgstr "Фамилия"
+
+msgid "Email"
+msgstr "Эл. почта"
+
+msgid "Phone"
+msgstr "Телефон"
+
+msgid "Company"
+msgstr "Компания"
+
+msgid "Job Title"
+msgstr "Должность"
+
+msgid "Department"
+msgstr "Отдел"
+
+msgid "Do Not Call"
+msgstr "Не звонить"
+
+msgid "LinkedIn URL"
+msgstr "Ссылка на LinkedIn"
+
+msgid "Address"
+msgstr "Адрес"
+
+msgid "City"
+msgstr "Город"
+
+msgid "State"
+msgstr "Регион"
+
+msgid "Postal Code"
+msgstr "Почтовый индекс"
+
+msgid "Country"
+msgstr "Страна"
+
+msgid "Notes"
+msgstr "Заметки"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Sub-source"
+msgstr "Подысточник"
+
+msgid "Reference"
+msgstr "Основание"
+
+msgid "No such account."
+msgstr "Такой компании нет."
+
+msgid "Contact already exists with this email"
+msgstr "Контакт с таким email уже существует"
+
+msgid "Job title"
+msgstr "Должность"
+
+msgid "Do not call"
+msgstr "Не звонить"
+
+msgid "Postal code"
+msgstr "Почтовый индекс"
+
+msgid "Account"
+msgstr "Компания"
+
+msgid "Assigned to (emails)"
+msgstr "Ответственные (email)"
+
+msgid "Teams"
+msgstr "Команды"
+
+msgid "Tags"
+msgstr "Теги"
+
+msgid "Full name (split into first and last)"
+msgstr "Полное имя (разделяется на имя и фамилию)"
+
+msgid ""
+"File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+msgstr ""
+"Не удалось прочитать файл в кодировке UTF-8. Сохраните CSV в UTF-8 и "
+"попробуйте снова."
+
+msgid "CSV could not be read: it contains NUL characters"
+msgstr "Не удалось прочитать CSV: в нём есть символы NUL"
+
+#, python-format
+msgid "CSV could not be read: %(error)s"
+msgstr "Не удалось прочитать CSV: %(error)s"
+
+msgid "CSV is empty"
+msgstr "CSV-файл пуст"
+
+#, python-format
+msgid "Missing required header(s): %(headers)s"
+msgstr "Нет обязательных заголовков: %(headers)s"
+
+#, python-format
+msgid "Unknown header(s): %(headers)s"
+msgstr "Неизвестные заголовки: %(headers)s"
+
+#, python-format
+msgid "Too many rows (%(count)s); limit is %(limit)s"
+msgstr "Слишком много строк (%(count)s), допустимо не больше %(limit)s"
+
+msgid "First name is required"
+msgstr "Укажите имя"
+
+#, python-format
+msgid "First name exceeds %(max)d characters"
+msgid_plural "First name exceeds %(max)d characters"
+msgstr[0] "Имя длиннее %(max)d символа"
+msgstr[1] "Имя длиннее %(max)d символов"
+msgstr[2] "Имя длиннее %(max)d символов"
+
+msgid "Last name is required"
+msgstr "Укажите фамилию"
+
+#, python-format
+msgid "Last name exceeds %(max)d characters"
+msgid_plural "Last name exceeds %(max)d characters"
+msgstr[0] "Фамилия длиннее %(max)d символа"
+msgstr[1] "Фамилия длиннее %(max)d символов"
+msgstr[2] "Фамилия длиннее %(max)d символов"
+
+#, python-format
+msgid "Email exceeds %(max)d characters"
+msgid_plural "Email exceeds %(max)d characters"
+msgstr[0] "Email длиннее %(max)d символа"
+msgstr[1] "Email длиннее %(max)d символов"
+msgstr[2] "Email длиннее %(max)d символов"
+
+#, python-format
+msgid "'%(email)s' is not a valid email"
+msgstr "«%(email)s» не является корректным email"
+
+#, python-format
+msgid "Duplicate email also used by row %(row)s in this file"
+msgstr "Повторяющийся email, он уже есть в строке %(row)s этого файла"
+
+msgid "A contact with this email already exists in your organization"
+msgstr "Контакт с таким email уже есть в вашей организации"
+
+msgid ""
+"Phone must be 7-25 characters of digits and separators (+ - ( ) . space)"
+msgstr ""
+"Телефон должен содержать от 7 до 25 символов: цифры и разделители (+ - ( ) . "
+"пробел)"
+
+#, python-format
+msgid "Duplicate phone number also used by row %(row)s in this file"
+msgstr "Повторяющийся номер телефона, он уже есть в строке %(row)s этого файла"
+
+msgid "A contact with this phone number already exists in your organization"
+msgstr "Контакт с таким номером телефона уже есть в вашей организации"
+
+#, python-format
+msgid ""
+"Same name as row %(row)s in this file; add an email or phone to either row to"
+" confirm they're different people"
+msgstr ""
+"То же имя, что и в строке %(row)s этого файла. Добавьте email или телефон в "
+"одну из строк, чтобы подтвердить, что это разные люди"
+
+msgid ""
+"A contact with this name already exists; add an email or phone to confirm "
+"it's a different person"
+msgstr ""
+"Контакт с таким именем уже существует. Добавьте email или телефон, чтобы "
+"подтвердить, что это другой человек"
+
+#, python-format
+msgid "Exceeds %(max)d characters"
+msgid_plural "Exceeds %(max)d characters"
+msgstr[0] "Длиннее %(max)d символа"
+msgstr[1] "Длиннее %(max)d символов"
+msgstr[2] "Длиннее %(max)d символов"
+
+msgid "Must be a valid URL starting with http:// or https://"
+msgstr "Укажите корректный URL, начинающийся с http:// или https://"
+
+#, python-format
+msgid "'%(country)s' is not a known country code"
+msgstr "«%(country)s» не является известным кодом страны"
+
+msgid "Use yes/no, true/false, or 1/0"
+msgstr "Используйте yes/no, true/false или 1/0"
+
+#, python-format
+msgid "No account you can open is named '%(name)s'"
+msgstr "Нет доступной вам компании с названием «%(name)s»"
+
+#, python-format
+msgid "No active member with email '%(email)s'"
+msgstr "Нет активного участника с email «%(email)s»"
+
+#, python-format
+msgid "No team named '%(name)s'"
+msgstr "Нет команды с названием «%(name)s»"
+
+msgid "Exceeds 64 characters"
+msgstr "Длиннее 64 символов"
+
+#, python-format
+msgid "Tag '%(name)s': %(error)s"
+msgstr "Тег «%(name)s»: %(error)s"
+
+msgid ""
+"A contact was created concurrently that conflicts with this import (likely a "
+"duplicate email). Re-run preview and try again."
+msgstr ""
+"Одновременно с импортом был создан контакт, который ему противоречит "
+"(вероятно, с тем же email). Запустите предпросмотр ещё раз и повторите "
+"попытку."
+
+msgid "Fix the invalid rows before importing"
+msgstr "Исправьте ошибочные строки перед импортом"
+
+msgid "Nothing in this file can be imported."
+msgstr "Из этого файла нечего импортировать."
+
+msgid "Assigned a contact for you."
+msgstr "Вам назначен контакт."
+
+msgid "Contact created Successfuly"
+msgstr "Контакт создан"
+
+msgid "Contact Updated Successfully"
+msgstr "Контакт обновлён"
+
+msgid "You don't have permission to perform this action."
+msgstr "У вас нет прав на это действие."
+
+msgid "Contact Deleted Successfully."
+msgstr "Контакт удалён."
+
+msgid "Comment Submitted"
+msgstr "Комментарий добавлен"
+
+msgid "You don't have permission to edit this Comment"
+msgstr "У вас нет прав на изменение этого комментария"
+
+msgid "Comment Updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment Deleted Successfully"
+msgstr "Комментарий удалён"
+
+msgid "You don't have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Attachment Deleted Successfully"
+msgstr "Вложение удалено"
+
+msgid "You don't have permission to delete this Attachment"
+msgstr "У вас нет прав на удаление этого вложения"

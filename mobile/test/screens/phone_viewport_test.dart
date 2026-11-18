@@ -2825,6 +2825,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('renders in Russian without overflowing', (tester) async {
+      await pump(
+        tester,
+        ProviderScope(
+          overrides: [languageProvider.overrideWith(() => _FakeLanguage())],
+          child: const MaterialApp(
+            locale: Locale('ru'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: LanguageScreen(),
+          ),
+        ),
+      );
+      expect(find.text('Автоматически'), findsOneWidget);
+      expect(find.text('Русский'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('fits with the system font scaled up', (tester) async {
       await pump(tester, languageApp(_FakeLanguage()), textScale: 1.5);
       expect(tester.takeException(), isNull);

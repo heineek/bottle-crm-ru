@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 
 const apiRequest = vi.fn();
 vi.mock('#lib/api-helpers.js', () => ({
@@ -15,6 +15,8 @@ const {
   getTimeReport,
   getTimesheet
 } = await import('#lib/server/v2/timesheet.js');
+const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+const baseGetLocale = getLocale;
 // Cast rather than shaping a full Cookies mock, matching leads.test.ts and
 // tags.test.ts: stopTimer only ever calls `cookies.get`, and `apiRequest`
 // itself is mocked above, so nothing here touches
@@ -218,5 +220,25 @@ describe('the week', () => {
     expect(apiRequest.mock.calls[0][0]).toBe(
       '/time-entries/timesheet/?start=2026-01-05&end=2026-01-11'
     );
+  });
+});
+
+describe('timesheet input errors in Russian', () => {
+  beforeEach(() => apiRequest.mockReset());
+  afterEach(() => overwriteGetLocale(baseGetLocale));
+
+  it('rejects out-of-range minutes', async () => {
+    overwriteGetLocale(() => 'ru');
+    await expect(logTicketTime(event, 't1', { minutes: 2000, description: 'x' })).rejects.toThrow(
+      'Минуты должны быть целым числом от 1 до 1440.'
+    );
+  });
+
+  it('asks which entry to stop', async () => {
+    overwriteGetLocale(() => 'ru');
+    await expect(stopTimer(event, '')).rejects.toThrow(
+      'Какая запись времени? Идентификатор записи не передан.'
+    );
+    expect(apiRequest).not.toHaveBeenCalled();
   });
 });

@@ -146,3 +146,18 @@ describe('createRecurringInvoice', () => {
     expect(result).toEqual({ id: 'r1', title: 'Monthly retainer' });
   });
 });
+
+describe('createRecurringInvoice in Russian', () => {
+  it('refuses in the request locale', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      await expect(createRecurringInvoice({ cookies }, { contact_id: 'c1' })).rejects.toThrow(
+        'Выберите компанию.'
+      );
+    } finally {
+      overwriteGetLocale(base);
+    }
+  });
+});

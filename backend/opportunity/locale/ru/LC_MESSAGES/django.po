@@ -1,0 +1,479 @@
+# Russian translation of the opportunity app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Manual"
+msgstr "Вручную"
+
+msgid "Calculated from Products"
+msgstr "Рассчитана по товарам"
+
+msgid "Percentage (%)"
+msgstr "Процент (%)"
+
+msgid "Fixed Amount"
+msgstr "Фиксированная сумма"
+
+msgid "Pipeline Name"
+msgstr "Название воронки"
+
+msgid "Code"
+msgstr "Код"
+
+msgid "Label"
+msgstr "Название"
+
+msgid "Expected Days"
+msgstr "Ожидаемое число дней"
+
+msgid "Warning Days"
+msgstr "Дней до предупреждения"
+
+msgid "Opportunity Name"
+msgstr "Название сделки"
+
+msgid "Stage"
+msgstr "Этап"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Currency"
+msgstr "Валюта"
+
+msgid "Amount"
+msgstr "Сумма"
+
+msgid "Amount Source"
+msgstr "Источник суммы"
+
+msgid "Probability (%)"
+msgstr "Вероятность (%)"
+
+msgid "Expected Close Date"
+msgstr "Ожидаемая дата закрытия"
+
+msgid "Lead Source"
+msgstr "Источник лида"
+
+msgid "Sub-source"
+msgstr "Подысточник"
+
+msgid "Reference"
+msgstr "Основание"
+
+msgid "Notes"
+msgstr "Заметки"
+
+msgid "Stage Changed At"
+msgstr "Дата смены этапа"
+
+msgid "Kanban Order"
+msgstr "Порядок на канбан-доске"
+
+#, python-format
+msgid "%(time)s ago"
+msgstr "%(time)s назад"
+
+msgid "Close date is required when a deal is closed"
+msgstr "У закрытой сделки должна быть дата закрытия"
+
+msgid "Amount is required for a won deal"
+msgstr "У выигранной сделки должна быть сумма"
+
+msgid "This pipeline has no open stage for the deal."
+msgstr "В этой воронке нет открытого этапа для сделки."
+
+msgid "Item Name"
+msgstr "Название позиции"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "Quantity"
+msgstr "Количество"
+
+msgid "Unit Price"
+msgstr "Цена за единицу"
+
+msgid "Discount Type"
+msgstr "Тип скидки"
+
+msgid "Discount Value"
+msgstr "Размер скидки"
+
+msgid "Discount Amount"
+msgstr "Сумма скидки"
+
+msgid "Subtotal"
+msgstr "Промежуточный итог"
+
+msgid "Total"
+msgstr "Итого"
+
+msgctxt "sort position"
+msgid "Order"
+msgstr "Порядок"
+
+msgid "Goal Name"
+msgstr "Название цели"
+
+msgid "Goal Type"
+msgstr "Тип цели"
+
+msgid "Target Value"
+msgstr "Плановое значение"
+
+msgid "Period Type"
+msgstr "Тип периода"
+
+msgid "Period Start"
+msgstr "Начало периода"
+
+msgid "Period End"
+msgstr "Конец периода"
+
+msgid "Deal Type Weights"
+msgstr "Веса типов сделок"
+
+msgid "Product not found or does not belong to your organization"
+msgstr "Товар не найден или не относится к вашей организации"
+
+msgid "No such account."
+msgstr "Такой компании нет."
+
+msgid "Opportunity already exists with this name"
+msgstr "Сделка с таким названием уже существует"
+
+msgid "That is not a stage of this deal's pipeline."
+msgstr "Это не этап воронки этой сделки."
+
+msgid "Choose a stage of the pipeline the deal is moving to."
+msgstr "Выберите этап воронки, в которую переходит сделка."
+
+msgid "A deal cannot be closed without the date it closed on."
+msgstr "Сделку нельзя закрыть без даты закрытия."
+
+msgid "A won deal has to record what it was worth."
+msgstr "У выигранной сделки должна быть указана сумма."
+
+msgid ""
+"This deal's amount is the sum of its line items. Edit the line items to "
+"change it."
+msgstr ""
+"Сумма этой сделки складывается из её позиций. Чтобы изменить сумму, измените"
+" позиции."
+
+msgid "A stage needs a name."
+msgstr "У этапа должно быть название."
+
+msgid "This pipeline already has a stage with this name."
+msgstr "В этой воронке уже есть этап с таким названием."
+
+msgid "A pipeline needs a name."
+msgstr "У воронки должно быть название."
+
+msgid "A pipeline with this name exists."
+msgstr "Воронка с таким названием уже есть."
+
+msgid "Selected assignee is not a member of this organization."
+msgstr "Выбранный ответственный не состоит в этой организации."
+
+msgid "Selected team does not belong to this organization."
+msgstr "Выбранная команда не принадлежит этой организации."
+
+msgid "Deal type weights must be an object mapping a deal type to a number."
+msgstr ""
+"Веса типов сделок должны быть объектом, где каждому типу сделки "
+"соответствует число."
+
+#, python-format
+msgid "'%(type)s' is not a deal type. Choose from: %(types)s."
+msgstr "«%(type)s» не является типом сделки. Выберите из списка: %(types)s."
+
+#, python-format
+msgid "The weight for '%(type)s' must be a number."
+msgstr "Вес для «%(type)s» должен быть числом."
+
+#, python-format
+msgid "The weight for '%(type)s' cannot be negative."
+msgstr "Вес для «%(type)s» не может быть отрицательным."
+
+#, python-format
+msgid "The weight for '%(type)s' cannot be above %(max)s."
+msgstr "Вес для «%(type)s» не может быть больше %(max)s."
+
+msgid "Period end must be after period start."
+msgstr "Конец периода должен быть позже его начала."
+
+msgid "Target value must be greater than 0."
+msgstr "Плановое значение должно быть больше 0."
+
+msgid "A goal belongs to a person or to a team, not to both."
+msgstr "Цель назначается либо человеку, либо команде, но не обоим сразу."
+
+msgid ""
+"An activities goal counts logged activity, which has no deal type to weigh."
+msgstr ""
+"Цель по активностям считает записанные активности, у которых нет типа сделки"
+" для взвешивания."
+
+msgid "Assigned an opportunity for you."
+msgstr "Вам назначена сделка."
+
+#, python-format
+msgid "[BottleCRM] %(count)d deal went stale"
+msgid_plural "[BottleCRM] %(count)d deals went stale"
+msgstr[0] "[BottleCRM] %(count)d сделка застряла"
+msgstr[1] "[BottleCRM] %(count)d сделки застряли"
+msgstr[2] "[BottleCRM] %(count)d сделок застряли"
+
+#, python-format
+msgid "[BottleCRM] Goal '%(name)s' reached %(milestone)s!"
+msgstr "[BottleCRM] Цель «%(name)s» выполнена на %(milestone)s!"
+
+#, python-format
+msgid "Congratulations, %(name)s!"
+msgstr "Поздравляем, %(name)s!"
+
+#, python-format
+msgid ""
+"Your sales goal <strong>\"%(goal_name)s\"</strong> has reached the "
+"<strong>%(milestone)s</strong> milestone!"
+msgstr ""
+"Ваша цель продаж <strong>«%(goal_name)s»</strong> выполнена на "
+"<strong>%(milestone)s</strong>!"
+
+msgid "Goal"
+msgstr "Цель"
+
+msgid "Milestone"
+msgstr "Отметка"
+
+msgid "Progress"
+msgstr "Прогресс"
+
+msgid "Achieved"
+msgstr "Достигнуто"
+
+msgid "Target"
+msgstr "План"
+
+msgid "Period"
+msgstr "Период"
+
+#, python-format
+msgid "%(start)s to %(end)s"
+msgstr "с %(start)s по %(end)s"
+
+msgid "View Goals"
+msgstr "Открыть цели"
+
+#, python-format
+msgid "Hello %(name)s"
+msgstr "Здравствуйте, %(name)s!"
+
+#, python-format
+msgid ""
+"<strong>%(deal_count)s</strong> of your deals just went stale, past the time"
+" its stage expects:"
+msgid_plural ""
+"<strong>%(deal_count)s</strong> of your deals just went stale, past the time"
+" their stages expect:"
+msgstr[0] ""
+"<strong>%(deal_count)s</strong> ваша сделка только что застряла: она дольше,"
+" чем положено, находится на своём этапе:"
+msgstr[1] ""
+"<strong>%(deal_count)s</strong> ваши сделки только что застряли: они дольше,"
+" чем положено, находятся на своих этапах:"
+msgstr[2] ""
+"<strong>%(deal_count)s</strong> ваших сделок только что застряли: они "
+"дольше, чем положено, находятся на своих этапах:"
+
+msgid "Deal"
+msgstr "Сделка"
+
+msgid "Days in Stage"
+msgstr "Дней на этапе"
+
+msgid "Expected"
+msgstr "Норма"
+
+#, python-format
+msgid "%(days)sd"
+msgstr "%(days)s дн."
+
+msgid "Each deal is emailed about once in each stage."
+msgstr "О каждой сделке мы пишем примерно один раз на каждом этапе."
+
+#, python-format
+msgid "%(still_waiting)s more stale deal from earlier is still waiting."
+msgid_plural ""
+"%(still_waiting)s more stale deals from earlier are still waiting."
+msgstr[0] "Ещё %(still_waiting)s застрявшая ранее сделка по-прежнему ждёт."
+msgstr[1] "Ещё %(still_waiting)s застрявшие ранее сделки по-прежнему ждут."
+msgstr[2] "Ещё %(still_waiting)s застрявших ранее сделок по-прежнему ждут."
+
+msgid "View Stale Deals"
+msgstr "Открыть застрявшие сделки"
+
+msgid "Only admins can update aging config"
+msgstr "Менять настройки застоя сделок могут только администраторы"
+
+msgid "Expected a list of stage configs"
+msgstr "Ожидается список настроек этапов"
+
+msgid "Aging config updated"
+msgstr "Настройки застоя сделок обновлены"
+
+msgid "Only admins can create goals."
+msgstr "Создавать цели могут только администраторы."
+
+msgid "Goal Created Successfully"
+msgstr "Цель создана"
+
+msgid "Goal not found."
+msgstr "Цель не найдена."
+
+msgid "Only admins can update goals."
+msgstr "Изменять цели могут только администраторы."
+
+msgid "Goal Updated Successfully"
+msgstr "Цель обновлена"
+
+msgid "Only admins can delete goals."
+msgstr "Удалять цели могут только администраторы."
+
+msgid "Goal Deleted Successfully"
+msgstr "Цель удалена"
+
+msgid "Opportunity moved successfully"
+msgstr "Сделка перемещена"
+
+msgid "Opportunity not found"
+msgstr "Сделка не найдена"
+
+msgid "Line item created successfully"
+msgstr "Позиция добавлена"
+
+msgid "Line item not found"
+msgstr "Позиция не найдена"
+
+msgid "Line item updated successfully"
+msgstr "Позиция обновлена"
+
+msgid "Line item deleted successfully"
+msgstr "Позиция удалена"
+
+msgid "Comment Submitted"
+msgstr "Комментарий добавлен"
+
+msgid "You don't have permission to perform this action."
+msgstr "У вас нет прав на это действие."
+
+msgid "Comment Updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment Deleted Successfully"
+msgstr "Комментарий удалён"
+
+msgid "You do not have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Attachment Deleted Successfully"
+msgstr "Вложение удалено"
+
+msgid "Opportunity Created Successfully"
+msgstr "Сделка создана"
+
+msgid "Opportunity not found."
+msgstr "Сделка не найдена."
+
+msgid "Opportunity Updated Successfully"
+msgstr "Сделка обновлена"
+
+msgid "You do not have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Opportunity Deleted Successfully."
+msgstr "Сделка удалена."
+
+msgid "Only admins can change deal pipelines."
+msgstr "Изменять воронки сделок могут только администраторы."
+
+msgid "A pipeline needs at least one open stage, and this is its last."
+msgstr "В воронке должен быть хотя бы один открытый этап, а это последний."
+
+msgid "A pipeline needs at least one won stage, and this is its last."
+msgstr "В воронке должен быть хотя бы один этап выигрыша, а это последний."
+
+msgid "A pipeline needs at least one lost stage, and this is its last."
+msgstr "В воронке должен быть хотя бы один этап проигрыша, а это последний."
+
+msgid ""
+"The default pipeline cannot be deleted: deals that name no pipeline land in "
+"it."
+msgstr ""
+"Воронку по умолчанию нельзя удалить: в неё попадают сделки, для которых "
+"воронка не указана."
+
+#, python-format
+msgid ""
+"This pipeline still holds %(count)d deal(s). Move them to another pipeline "
+"first."
+msgid_plural ""
+"This pipeline still holds %(count)d deal(s). Move them to another pipeline "
+"first."
+msgstr[0] ""
+"В этой воронке осталась %(count)d сделка. Сначала перенесите её в другую "
+"воронку."
+msgstr[1] ""
+"В этой воронке осталось %(count)d сделки. Сначала перенесите их в другую "
+"воронку."
+msgstr[2] ""
+"В этой воронке осталось %(count)d сделок. Сначала перенесите их в другую "
+"воронку."
+
+msgid "Send every stage of this pipeline exactly once, in the new order."
+msgstr "Передайте каждый этап этой воронки ровно один раз, в новом порядке."
+
+msgid "Move the deals out of this stage before changing its kind."
+msgstr "Прежде чем менять тип этапа, перенесите с него сделки."
+
+#, python-format
+msgid ""
+"This stage still holds %(count)d deal(s). Move them to another stage first."
+msgid_plural ""
+"This stage still holds %(count)d deal(s). Move them to another stage first."
+msgstr[0] ""
+"На этом этапе осталась %(count)d сделка. Сначала перенесите её на другой "
+"этап."
+msgstr[1] ""
+"На этом этапе осталось %(count)d сделки. Сначала перенесите их на другой "
+"этап."
+msgstr[2] ""
+"На этом этапе осталось %(count)d сделок. Сначала перенесите их на другой "
+"этап."
+
+msgctxt "deal stage kind"
+msgid "Open"
+msgstr "Открыта"
+
+msgctxt "deal stage kind"
+msgid "Won"
+msgstr "Выиграна"
+
+msgctxt "deal stage kind"
+msgid "Lost"
+msgstr "Проиграна"

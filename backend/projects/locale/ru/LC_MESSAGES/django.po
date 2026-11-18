@@ -1,0 +1,142 @@
+# Russian translation of the projects app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-18 15:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Choose a task on this project."
+msgstr "Выберите задачу этого проекта."
+
+msgctxt "project status"
+msgid "Active"
+msgstr "Активен"
+
+msgctxt "project status"
+msgid "On hold"
+msgstr "Приостановлен"
+
+msgctxt "project status"
+msgid "Completed"
+msgstr "Завершён"
+
+msgctxt "project status"
+msgid "Cancelled"
+msgstr "Отменён"
+
+msgid "Time and materials"
+msgstr "По времени и материалам"
+
+msgid "Fixed fee"
+msgstr "Фиксированная сумма"
+
+msgid "Non-billable"
+msgstr "Неоплачиваемый"
+
+msgid "Retainer"
+msgstr "Ретейнер"
+
+msgctxt "budget alert"
+msgid "None"
+msgstr "Нет"
+
+msgid "Name"
+msgstr "Название"
+
+msgid "This project is not on a retainer."
+msgstr "Этот проект не на ретейнере."
+
+msgid "This month is already billed."
+msgstr "За этот месяц счёт уже выставлен."
+
+msgid "This retainer has ended."
+msgstr "Этот ретейнер закончился."
+
+msgid "This retainer is not running. Make the project active to bill it."
+msgstr ""
+"Этот ретейнер не действует. Сделайте проект активным, чтобы выставить счёт."
+
+#, python-format
+msgid "This retainer starts in %(month)s."
+msgstr "Этот ретейнер начинается в %(month)s."
+
+msgid "At most 744 hours, the hours in a month."
+msgstr "Не больше 744 часов, это число часов в месяце."
+
+msgid "No such account."
+msgstr "Такой компании нет."
+
+msgid "No such deal."
+msgstr "Такой сделки нет."
+
+msgid "A project needs a name."
+msgstr "Укажите название проекта."
+
+msgid "The due date cannot be before the start date."
+msgstr "Срок не может быть раньше даты начала."
+
+msgid "The currency cannot change once the project has time or invoices."
+msgstr "Валюту нельзя изменить, если в проекте уже есть время или счета."
+
+msgid "Set the monthly fee."
+msgstr "Укажите ежемесячную плату."
+
+msgid "Set the rate for hours over the allowance."
+msgstr "Укажите ставку за часы сверх объёма часов."
+
+msgid "Choose people who are members of this organization."
+msgstr "Выберите людей, которые состоят в этой организации."
+
+#, python-format
+msgid "%(name)s is not an active member of this organization."
+msgstr "%(name)s не является активным участником этой организации."
+
+msgid "Send a list of rates."
+msgstr "Передайте список ставок."
+
+msgid "Each rate needs a profile and an hourly_rate."
+msgstr "Для каждой ставки нужны profile и hourly_rate."
+
+msgid "Send at most one rate per person."
+msgstr "Передайте не больше одной ставки на человека."
+
+msgid "Project not found."
+msgstr "Проект не найден."
+
+msgid "Send a whole number."
+msgstr "Передайте целое число."
+
+msgid "Send a number of 0 or more."
+msgstr "Передайте число не меньше 0."
+
+msgid "You do not have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Opportunity not found."
+msgstr "Сделка не найдена."
+
+msgid "Only admins can bill a project."
+msgstr "Выставлять счета по проекту могут только администраторы."
+
+msgid "Send either an amount or a percent."
+msgstr "Передайте либо сумму, либо процент."
+
+msgid "The amount must be more than 0."
+msgstr "Сумма должна быть больше 0."
+
+msgid "The percent must be more than 0 and at most 100."
+msgstr "Процент должен быть больше 0 и не больше 100."
+
+msgid "Set the project's budget amount first."
+msgstr "Сначала укажите сумму бюджета проекта."
+
+msgid "Send a month as YYYY-MM."
+msgstr "Передайте месяц в формате YYYY-MM."

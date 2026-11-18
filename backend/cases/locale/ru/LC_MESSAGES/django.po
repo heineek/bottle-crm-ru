@@ -1,0 +1,978 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "You do not have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+#, python-format
+msgid "unknown frt bucket: %(bucket)s"
+msgstr "Неизвестный интервал FRT: %(bucket)s"
+
+#, python-format
+msgid "unknown sla bucket: %(bucket)s"
+msgstr "Неизвестный интервал SLA: %(bucket)s"
+
+msgid "backlog drilldown requires a bucket=YYYY-MM-DD"
+msgstr "Для детализации бэклога укажите bucket=YYYY-MM-DD"
+
+msgid "agents drilldown requires a bucket=<profile_id>"
+msgstr "Для детализации по сотрудникам укажите bucket=<profile_id>"
+
+#, python-format
+msgid "unknown metric: %(metric)s"
+msgstr "Неизвестная метрика: %(metric)s"
+
+#, python-format
+msgid ""
+"'%(value)s' is not a valid date. Use YYYY-MM-DD or an ISO-8601 timestamp."
+msgstr ""
+"«%(value)s» не является датой. Используйте формат YYYY-MM-DD или метку "
+"времени ISO-8601."
+
+#, python-format
+msgid "'%(value)s' is not a whole number of days."
+msgstr "«%(value)s» не является целым числом дней."
+
+msgid "Admin access required"
+msgstr "Требуются права администратора"
+
+msgid "only fmt=csv is supported"
+msgstr "Поддерживается только fmt=csv"
+
+msgid "Approver is outside this org."
+msgstr "Согласующий не состоит в этой организации."
+
+msgid "Team is outside this org."
+msgstr "Команда не относится к этой организации."
+
+msgid "Rule not found"
+msgstr "Правило не найдено"
+
+msgid "Rule not found or inactive."
+msgstr "Правило не найдено или неактивно."
+
+msgid "Rule does not match this case."
+msgstr "Правило не подходит для этого обращения."
+
+msgid "No active approval rule matches this case."
+msgstr "Для этого обращения нет активного правила согласования."
+
+msgid "An approval is already pending for this case."
+msgstr "Для этого обращения уже ожидается согласование."
+
+msgid "Approval not found"
+msgstr "Согласование не найдено"
+
+#, python-format
+msgid "Approval already %(state)s."
+msgstr "Решение по этому запросу уже принято: %(state)s."
+
+msgid "You are not an approver for this rule."
+msgstr "Вы не являетесь согласующим по этому правилу."
+
+msgid "You cannot approve your own request; another approver must decide it."
+msgstr ""
+"Нельзя согласовать собственный запрос: решение должен принять другой "
+"согласующий."
+
+msgid "Rejection reason is required."
+msgstr "Укажите причину отклонения."
+
+msgid "You cannot reject your own request; another approver must decide it."
+msgstr ""
+"Нельзя отклонить собственный запрос: решение должен принять другой "
+"согласующий."
+
+msgid "Only the requester can cancel."
+msgstr "Отменить может только автор запроса."
+
+msgid "Admin"
+msgstr "Администратор"
+
+msgid "Manager"
+msgstr "Менеджер"
+
+msgid "Pre-Close"
+msgstr "Перед закрытием"
+
+msgctxt "approval state"
+msgid "Pending"
+msgstr "Ожидает"
+
+msgctxt "approval state"
+msgid "Approved"
+msgstr "Согласовано"
+
+msgctxt "approval state"
+msgid "Rejected"
+msgstr "Отклонено"
+
+msgctxt "approval state"
+msgid "Cancelled"
+msgstr "Отменено"
+
+#, python-format
+msgid ""
+"An approval is required before this case can be closed (rule: %(rule)s)."
+msgstr "Чтобы закрыть это обращение, нужно согласование (правило: %(rule)s)."
+
+#, python-format
+msgid "Select at most %(max)s tickets at a time."
+msgstr "Выберите не больше %(max)s обращений за раз."
+
+msgid "ids required"
+msgstr "Укажите ids"
+
+msgid "fields required"
+msgstr "Укажите fields"
+
+#, python-format
+msgid "Unsupported fields: %(fields)s"
+msgstr "Неподдерживаемые поля: %(fields)s"
+
+#, python-format
+msgid "Invalid value for '%(field)s'"
+msgstr "Недопустимое значение поля «%(field)s»"
+
+msgid "Invalid value for 'closed_on'"
+msgstr "Недопустимое значение поля «closed_on»"
+
+msgid "Survey link has expired."
+msgstr "Срок действия ссылки на опрос истёк."
+
+msgid "Invalid survey link."
+msgstr "Недействительная ссылка на опрос."
+
+msgid "Survey link is no longer valid."
+msgstr "Ссылка на опрос больше не действует."
+
+#, python-format
+msgid "%(org)s support"
+msgstr "Поддержка %(org)s"
+
+msgid "your support team"
+msgstr "ваша служба поддержки"
+
+msgid "Survey is locked. Edit window has closed."
+msgstr "Опрос закрыт: время для изменения ответа истекло."
+
+#, python-format
+msgid "rating must be an integer %(min)s-%(max)s"
+msgstr "Оценка должна быть целым числом от %(min)s до %(max)s"
+
+#, python-format
+msgid "rating must be %(min)s..%(max)s"
+msgstr "Оценка должна быть от %(min)s до %(max)s"
+
+msgid "Escalation policy not found"
+msgstr "Политика эскалации не найдена"
+
+msgid "Escalation policy deleted"
+msgstr "Политика эскалации удалена"
+
+msgid "Not found"
+msgstr "Не найдено"
+
+msgid "No file uploaded (expected field 'file')"
+msgstr "Файл не загружен (ожидается поле «file»)"
+
+msgid "File must have a .csv extension"
+msgstr "У файла должно быть расширение .csv"
+
+msgid "File exceeds the 5 MB upload limit"
+msgstr "Файл больше допустимых 5 МБ"
+
+msgid "Permission denied"
+msgstr "Доступ запрещён"
+
+msgid "Mailbox not found"
+msgstr "Почтовый ящик не найден"
+
+msgid "Mailbox deleted"
+msgstr "Почтовый ящик удалён"
+
+#, python-format
+msgid ""
+"This ticket is in the %(pipeline)s pipeline. Move it to one of that "
+"pipeline's stages."
+msgstr ""
+"Это обращение находится в воронке «%(pipeline)s». Переместите его на один из "
+"этапов этой воронки."
+
+#, python-format
+msgid "Stage '%(stage)s' has reached its WIP limit of %(limit)s"
+msgstr "Этап «%(stage)s» достиг лимита WIP: %(limit)s"
+
+msgid "Case moved successfully"
+msgstr "Обращение перемещено"
+
+msgid "Only admins can create pipelines"
+msgstr "Создавать воронки могут только администраторы"
+
+#, python-format
+msgid "Cannot delete pipeline with %(count)s cases. Move cases first."
+msgid_plural "Cannot delete pipeline with %(count)s cases. Move cases first."
+msgstr[0] ""
+"Нельзя удалить воронку, в которой %(count)s обращение. Сначала переместите "
+"обращения."
+msgstr[1] ""
+"Нельзя удалить воронку, в которой %(count)s обращения. Сначала переместите "
+"обращения."
+msgstr[2] ""
+"Нельзя удалить воронку, в которой %(count)s обращений. Сначала переместите "
+"обращения."
+
+#, python-format
+msgid "Cannot delete stage with %(count)s cases. Move cases first."
+msgid_plural "Cannot delete stage with %(count)s cases. Move cases first."
+msgstr[0] ""
+"Нельзя удалить этап, на котором %(count)s обращение. Сначала переместите "
+"обращения."
+msgstr[1] ""
+"Нельзя удалить этап, на котором %(count)s обращения. Сначала переместите "
+"обращения."
+msgstr[2] ""
+"Нельзя удалить этап, на котором %(count)s обращений. Сначала переместите "
+"обращения."
+
+msgid "Send every stage of this pipeline exactly once, in the new order."
+msgstr "Передайте каждый этап этой воронки ровно один раз, в новом порядке."
+
+msgid "Stages reordered successfully"
+msgstr "Порядок этапов изменён"
+
+msgid "Only an admin can approve or publish a knowledge-base article."
+msgstr "Одобрять и публиковать статьи базы знаний может только администратор."
+
+msgid "You must be an admin, or the creator of this ticket, to merge it."
+msgstr "Объединить это обращение может только администратор или его автор."
+
+msgid "Cannot merge a ticket into itself."
+msgstr "Нельзя объединить обращение с самим собой."
+
+msgid "Ticket not found."
+msgstr "Обращение не найдено."
+
+msgid "You must be an admin, or the creator of both tickets, to merge them."
+msgstr ""
+"Объединить эти обращения может только администратор или автор обоих "
+"обращений."
+
+msgid "Tickets already merged."
+msgstr "Обращения уже объединены."
+
+msgid "Source ticket is already merged into a different ticket."
+msgstr "Исходное обращение уже объединено с другим обращением."
+
+msgid "Target ticket has already been merged elsewhere."
+msgstr "Целевое обращение уже объединено с другим обращением."
+
+msgid "Tickets merged"
+msgstr "Обращения объединены"
+
+msgctxt "Name of the case"
+msgid "Name"
+msgstr "Название"
+
+msgid "First Response At"
+msgstr "Время первого ответа"
+
+msgid "Resolved At"
+msgstr "Время решения"
+
+msgid "First Response SLA (hours)"
+msgstr "SLA первого ответа (часы)"
+
+msgid "Resolution SLA (hours)"
+msgstr "SLA решения (часы)"
+
+msgid "Kanban Order"
+msgstr "Порядок на канбан-доске"
+
+msgid "Last Escalation Fired At"
+msgstr "Время последней эскалации"
+
+msgid "Closed date is required when closing a case"
+msgstr "При закрытии обращения укажите дату закрытия"
+
+msgid "A case cannot be its own parent."
+msgstr "Обращение не может быть родительским для самого себя."
+
+msgid "Linking would create a cycle in the case tree."
+msgstr "Такая связь создаст цикл в дереве обращений."
+
+#, python-format
+msgid "Case tree is limited to %(max)d levels."
+msgstr "Глубина дерева обращений ограничена %(max)d уровнями."
+
+msgid "Cannot link to a case that has been merged."
+msgstr "Нельзя связать с объединённым обращением."
+
+msgid "A merged case cannot be linked under a parent."
+msgstr "Объединённое обращение нельзя привязать к родительскому."
+
+msgid "Manual"
+msgstr "Вручную"
+
+msgid "Mention"
+msgstr "Упоминание"
+
+msgid "Auto (Assignee)"
+msgstr "Авто (ответственный)"
+
+msgid "Auto (Team)"
+msgstr "Авто (команда)"
+
+msgctxt "solution status"
+msgid "Draft"
+msgstr "Черновик"
+
+msgctxt "solution status"
+msgid "Reviewed"
+msgstr "Проверена"
+
+msgctxt "solution status"
+msgid "Approved"
+msgstr "Одобрена"
+
+msgid "Pipeline Name"
+msgstr "Название воронки"
+
+msgid "Description"
+msgstr "Описание"
+
+msgctxt "case stage type"
+msgid "Open"
+msgstr "Открыто"
+
+msgctxt "case stage type"
+msgid "Closed"
+msgstr "Закрыто"
+
+msgctxt "case stage type"
+msgid "Rejected"
+msgstr "Отклонено"
+
+msgid "Stage Name"
+msgstr "Название этапа"
+
+msgid "Maps to Status"
+msgstr "Соответствует статусу"
+
+msgid "WIP Limit"
+msgstr "Лимит WIP"
+
+msgid "Notify"
+msgstr "Уведомить"
+
+msgid "Reassign"
+msgstr "Переназначить"
+
+msgid "Notify and reassign"
+msgstr "Уведомить и переназначить"
+
+msgid "AWS SES (SNS direct delivery)"
+msgstr "AWS SES (прямая доставка через SNS)"
+
+msgid "Inbound Address"
+msgstr "Входящий адрес"
+
+msgctxt "inbound mailbox creates"
+msgid "Tickets"
+msgstr "Обращения"
+
+msgctxt "inbound mailbox creates"
+msgid "Leads"
+msgstr "Лиды"
+
+msgctxt "email direction"
+msgid "Inbound"
+msgstr "Входящее"
+
+msgctxt "email direction"
+msgid "Outbound"
+msgstr "Исходящее"
+
+msgid "Round-robin within target_assignees"
+msgstr "По очереди среди target_assignees"
+
+msgid "Least busy in target_assignees"
+msgstr "Наименее загруженный из target_assignees"
+
+msgid "Single profile in target_assignees"
+msgstr "Один профиль из target_assignees"
+
+msgid "Assign to target_team"
+msgstr "Назначить на target_team"
+
+msgid "Cannot link to or from a merged case."
+msgstr "Нельзя связывать объединённое обращение."
+
+msgid "Linking would create a cycle."
+msgstr "Такая связь создаст цикл."
+
+msgid ""
+"This case's parent chain already contains a cycle, so nothing can be linked "
+"under it."
+msgstr ""
+"В цепочке родителей этого обращения уже есть цикл, поэтому к нему ничего "
+"нельзя привязать."
+
+#, python-format
+msgid "Case tree is limited to %(max)s levels."
+msgstr "Глубина дерева обращений ограничена %(max)s уровнями."
+
+msgid "Case is not linked to a parent."
+msgstr "Обращение не привязано к родительскому."
+
+msgid "Parent case not found in this organization."
+msgstr "Родительское обращение не найдено в этой организации."
+
+msgid "Cannot close a merged case."
+msgstr "Нельзя закрыть объединённое обращение."
+
+#, python-format
+msgid ""
+"%(count)s linked ticket under this one is not yours to close, so nothing was "
+"closed. Close this ticket on its own, or ask an admin to close them all."
+msgid_plural ""
+"%(count)s linked tickets under this one are not yours to close, so nothing "
+"was closed. Close this ticket on its own, or ask an admin to close them all."
+msgstr[0] ""
+"%(count)s связанное обращение под этим вы не можете закрыть, поэтому ничего "
+"не закрыто. Закройте только это обращение или попросите администратора "
+"закрыть все."
+msgstr[1] ""
+"%(count)s связанных обращения под этим вы не можете закрыть, поэтому ничего "
+"не закрыто. Закройте только это обращение или попросите администратора "
+"закрыть все."
+msgstr[2] ""
+"%(count)s связанных обращений под этим вы не можете закрыть, поэтому ничего "
+"не закрыто. Закройте только это обращение или попросите администратора "
+"закрыть все."
+
+#, python-format
+msgid ""
+"%(count)s linked ticket under this one need an approval before closing "
+"(%(names)s), so nothing was closed."
+msgid_plural ""
+"%(count)s linked tickets under this one need an approval before closing "
+"(%(names)s), so nothing was closed."
+msgstr[0] ""
+"%(count)s связанному обращению под этим нужно согласование перед закрытием "
+"(%(names)s), поэтому ничего не закрыто."
+msgstr[1] ""
+"%(count)s связанным обращениям под этим нужно согласование перед закрытием "
+"(%(names)s), поэтому ничего не закрыто."
+msgstr[2] ""
+"%(count)s связанным обращениям под этим нужно согласование перед закрытием "
+"(%(names)s), поэтому ничего не закрыто."
+
+msgid "Give the request a short summary."
+msgstr "Кратко опишите запрос."
+
+msgid "Write a message before sending."
+msgstr "Напишите сообщение перед отправкой."
+
+msgid "Case not found"
+msgstr "Обращение не найдено"
+
+msgid "Unknown status."
+msgstr "Неизвестный статус."
+
+msgid "Article not found"
+msgstr "Статья не найдена"
+
+msgid "must be text"
+msgstr "должно быть текстом"
+
+#, python-format
+msgid "must be at most %(max)s characters"
+msgstr "должно быть не длиннее %(max)s символов"
+
+#, python-format
+msgid "is not a supported pattern: %(detail)s"
+msgstr "не является поддерживаемым шаблоном: %(detail)s"
+
+msgid "Routing rule not found"
+msgstr "Правило маршрутизации не найдено"
+
+msgid "Routing rule deleted"
+msgstr "Правило маршрутизации удалено"
+
+msgid "case_id is required"
+msgstr "Укажите case_id"
+
+msgid "No such account."
+msgstr "Такой компании нет."
+
+msgid "Case already exists with this name"
+msgstr "Обращение с таким названием уже существует"
+
+#, python-format
+msgid "reopen_to_status must be one of %(statuses)s"
+msgstr "reopen_to_status должен быть одним из значений %(statuses)s"
+
+msgid "reopen_window_days must be between 1 and 365"
+msgstr "reopen_window_days должен быть от 1 до 365"
+
+#, python-format
+msgid "Policy already exists for priority %(priority)s."
+msgstr "Политика для приоритета %(priority)s уже существует."
+
+msgid "This user is deactivated. Choose an active member."
+msgstr "Этот пользователь деактивирован. Выберите активного участника."
+
+msgid "A generated address cannot be changed."
+msgstr "Сгенерированный адрес нельзя изменить."
+
+#, python-format
+msgid ""
+"Addresses at %(domain)s can only be generated. Choose \"Generate an address\""
+" instead."
+msgstr ""
+"Адреса в домене %(domain)s можно только сгенерировать. Выберите "
+"«Сгенерировать адрес»."
+
+#, python-format
+msgid "A mailbox with address %(address)s already exists for this org."
+msgstr "Почтовый ящик с адресом %(address)s в этой организации уже есть."
+
+msgid ""
+"Enter an SNS topic ARN, like arn:aws:sns:us-east-1:123456789012:inbound-mail."
+msgstr ""
+"Введите ARN темы SNS, например arn:aws:sns:us-east-1:123456789012:inbound-"
+"mail."
+
+msgid "An address is generated only when the mailbox is created."
+msgstr "Адрес генерируется только при создании почтового ящика."
+
+msgid ""
+"This server has no inbound email domain, so it cannot make an address. Type "
+"one instead."
+msgstr ""
+"На этом сервере не настроен домен для входящей почты, поэтому создать адрес "
+"нельзя. Введите адрес вручную."
+
+msgid "Leave the address empty to have one generated."
+msgstr "Оставьте адрес пустым, чтобы он был сгенерирован."
+
+msgid "This field is required."
+msgstr "Обязательное поле."
+
+msgid "A generated address receives its mail through AWS SES."
+msgstr "Сгенерированный адрес получает почту через AWS SES."
+
+msgid "No free address was found. Try again."
+msgstr "Свободный адрес не найден. Попробуйте ещё раз."
+
+msgid "conditions must be a list of objects."
+msgstr "conditions должен быть списком объектов."
+
+#, python-format
+msgid "conditions[%(index)s] must be an object."
+msgstr "conditions[%(index)s] должен быть объектом."
+
+#, python-format
+msgid "conditions[%(index)s].field is required."
+msgstr "Укажите conditions[%(index)s].field."
+
+#, python-format
+msgid "conditions[%(index)s].field %(field)s is not supported."
+msgstr "conditions[%(index)s].field %(field)s не поддерживается."
+
+#, python-format
+msgid "conditions[%(index)s].op %(op)s is not supported."
+msgstr "conditions[%(index)s].op %(op)s не поддерживается."
+
+#, python-format
+msgid "conditions[%(index)s].value is required."
+msgstr "Укажите conditions[%(index)s].value."
+
+#, python-format
+msgid "conditions[%(index)s].value %(problem)s."
+msgstr "conditions[%(index)s].value %(problem)s."
+
+msgid "by_team strategy requires target_team_id."
+msgstr "Для стратегии by_team укажите target_team_id."
+
+#, python-format
+msgid "%(strategy)s strategy requires at least one target assignee."
+msgstr "Для стратегии %(strategy)s укажите хотя бы одного ответственного."
+
+msgid "Description is required when logging time manually."
+msgstr "При ручном учёте времени укажите описание."
+
+msgid "ended_at must be on or after started_at."
+msgstr "ended_at должно быть не раньше started_at."
+
+msgid "hourly_rate cannot be negative."
+msgstr "hourly_rate не может быть отрицательным."
+
+msgid "Description cannot be empty."
+msgstr "Описание не может быть пустым."
+
+msgid "Either stage_id or status must be provided"
+msgstr "Укажите stage_id или status"
+
+#, python-format
+msgid "group_by must be one of %(choices)s."
+msgstr "group_by должен быть одним из значений: %(choices)s."
+
+msgid "No time entries supplied."
+msgstr "Не переданы записи учёта времени."
+
+#, python-format
+msgid "Cannot invoice entries in multiple currencies: %(currencies)s."
+msgstr "Нельзя выставить счёт по записям в разных валютах: %(currencies)s."
+
+#, python-format
+msgid "Time entry %(id)s has already been invoiced."
+msgstr "По записи учёта времени %(id)s уже выставлен счёт."
+
+#, python-format
+msgid "Time entry %(id)s is still running and cannot be invoiced."
+msgstr "Запись учёта времени %(id)s ещё идёт, по ней нельзя выставить счёт."
+
+#, python-format
+msgid "Time entry %(id)s is not marked billable."
+msgstr "Запись учёта времени %(id)s не отмечена как оплачиваемая."
+
+msgid ""
+"File could not be decoded as UTF-8. Save your CSV as UTF-8 and try again."
+msgstr ""
+"Не удалось прочитать файл в кодировке UTF-8. Сохраните CSV в UTF-8 и "
+"попробуйте снова."
+
+msgid "CSV could not be read: it contains NUL characters"
+msgstr "Не удалось прочитать CSV: в нём есть символы NUL"
+
+#, python-format
+msgid "CSV could not be read: %(error)s"
+msgstr "Не удалось прочитать CSV: %(error)s"
+
+msgid "CSV is empty"
+msgstr "CSV-файл пуст"
+
+#, python-format
+msgid "Missing required header(s): %(headers)s"
+msgstr "Нет обязательных заголовков: %(headers)s"
+
+#, python-format
+msgid "Unknown header(s): %(headers)s"
+msgstr "Неизвестные заголовки: %(headers)s"
+
+#, python-format
+msgid "Too many rows (%(count)s); limit is %(max)s"
+msgstr "Слишком много строк (%(count)s), максимум %(max)s"
+
+msgid "Name is required"
+msgstr "Укажите название"
+
+#, python-format
+msgid "Name exceeds %(max)s characters"
+msgstr "Название длиннее %(max)s символов"
+
+#, python-format
+msgid "Duplicate of row %(row)s within this file"
+msgstr "Повторяет строку %(row)s этого файла"
+
+msgid "A ticket with this name already exists"
+msgstr "Обращение с таким названием уже существует"
+
+#, python-format
+msgid "Status must be one of: %(values)s"
+msgstr "Статус должен быть одним из: %(values)s"
+
+#, python-format
+msgid "Priority must be one of: %(values)s"
+msgstr "Приоритет должен быть одним из: %(values)s"
+
+#, python-format
+msgid "Case type must be one of: %(values)s"
+msgstr "Тип обращения должен быть одним из: %(values)s"
+
+msgid "Date must be a real date in YYYY-MM-DD format"
+msgstr "Укажите существующую дату в формате YYYY-MM-DD"
+
+#, python-format
+msgid "No account you can open is named '%(name)s'"
+msgstr "Нет доступной вам компании с названием «%(name)s»"
+
+#, python-format
+msgid "'%(email)s' is not a valid email"
+msgstr "«%(email)s» не является корректным email"
+
+#, python-format
+msgid "No contact you can open has the email '%(email)s'"
+msgstr "Нет доступного вам контакта с email «%(email)s»"
+
+#, python-format
+msgid "No active member with email '%(email)s'"
+msgstr "Нет активного участника с email «%(email)s»"
+
+#, python-format
+msgid "No team named '%(name)s'"
+msgstr "Нет команды с названием «%(name)s»"
+
+#, python-format
+msgid "Tag '%(name)s': %(error)s"
+msgstr "Тег «%(name)s»: %(error)s"
+
+msgid "Fix the invalid rows before importing"
+msgstr "Исправьте ошибочные строки перед импортом"
+
+#, python-format
+msgid ""
+"This article is published, so it cannot be moved back to '%(status)s'. "
+"Unpublish it first."
+msgstr ""
+"Эта статья опубликована, поэтому её нельзя вернуть в статус «%(status)s». "
+"Сначала снимите её с публикации."
+
+msgid ""
+"Only approved solutions can be published. Please set status to 'approved' "
+"first."
+msgstr ""
+"Опубликовать можно только одобренную статью. Сначала установите статус "
+"«approved»."
+
+msgid "Only approved solutions can be published. Please approve it first."
+msgstr "Опубликовать можно только одобренную статью. Сначала одобрите её."
+
+msgid "Not good"
+msgstr "Плохо"
+
+msgid "Great"
+msgstr "Отлично"
+
+msgid "Assigned to case."
+msgstr "Вам назначено обращение."
+
+#, python-format
+msgid "How did we do?, %(case)s"
+msgstr "Как мы справились? %(case)s"
+
+msgid "A contact"
+msgstr "Контакт"
+
+#, python-format
+msgid "Your request is now %(status)s."
+msgstr "Статус вашего запроса: %(status)s."
+
+#, python-format
+msgid "How did we do on \"%(name)s\"?"
+msgstr "Как мы справились с обращением «%(name)s»?"
+
+msgid "How did we do?"
+msgstr "Как мы справились?"
+
+#, python-format
+msgid "Hi %(name)s,"
+msgstr "Здравствуйте, %(name)s!"
+
+msgid "Hi there,"
+msgstr "Здравствуйте!"
+
+#, python-format
+msgid ""
+"Your case with %(org_name)s is closed. Tap a star to rate it, and we will "
+"only ask you this once."
+msgstr ""
+"Ваше обращение в %(org_name)s закрыто. Нажмите на звезду, чтобы оценить его. "
+"Мы спросим об этом только один раз."
+
+msgid "Case"
+msgstr "Обращение"
+
+#, python-format
+msgid ""
+"Or <a href=\"%(link)s\" style=\"color:#EA580C;\">open the survey</a> to leave"
+" a comment as well."
+msgstr ""
+"Или <a href=\"%(link)s\" style=\"color:#EA580C;\">откройте опрос</a>, чтобы "
+"также оставить комментарий."
+
+#, python-format
+msgid "Hello %(contact_name)s,"
+msgstr "Здравствуйте, %(contact_name)s!"
+
+#, python-format
+msgid "%(author_name)s replied to your request \"%(case_name)s\":"
+msgstr "%(author_name)s ответил(а) на ваш запрос «%(case_name)s»:"
+
+#, python-format
+msgid "Your request \"%(case_name)s\" is now <strong>%(case_status)s</strong>."
+msgstr ""
+"Статус вашего запроса «%(case_name)s»: <strong>%(case_status)s</strong>."
+
+msgid ""
+"You can reply to this email, and your reply will be added to the request."
+msgstr ""
+"Вы можете ответить на это письмо, и ваш ответ будет добавлен к запросу."
+
+msgid ""
+"Please do not reply to this email. To answer, use the support portal link "
+"below."
+msgstr ""
+"Пожалуйста, не отвечайте на это письмо. Чтобы ответить, воспользуйтесь "
+"ссылкой на портал поддержки ниже."
+
+#, python-format
+msgid "View the request in the %(org_name)s support portal"
+msgstr "Открыть запрос на портале поддержки %(org_name)s"
+
+msgid ""
+"You will be asked to sign in, and we will email you a six digit code to do "
+"that."
+msgstr ""
+"Вам нужно будет войти: для этого мы отправим вам на почту шестизначный код."
+
+msgid "No ticket"
+msgstr "Без обращения"
+
+msgid "No project"
+msgstr "Без проекта"
+
+msgid "No account"
+msgstr "Без компании"
+
+#, python-format
+msgid "group_by must be one of %(groupings)s, not %(value)s."
+msgstr "group_by должен быть одним из значений %(groupings)s, а не %(value)s."
+
+msgid "Unknown agent"
+msgstr "Неизвестный агент"
+
+#, python-format
+msgid "Invalid date %(value)s; expected YYYY-MM-DD."
+msgstr "Недопустимая дата %(value)s, ожидается YYYY-MM-DD."
+
+msgid "Only admins can report on another profile's time."
+msgstr "Отчёт по времени другого профиля доступен только администраторам."
+
+msgid "billable must be 'true' or 'false'."
+msgstr "billable должен быть «true» или «false»."
+
+msgid "end must be on or after start."
+msgstr "end должно быть не раньше start."
+
+msgid "Send true or false."
+msgstr "Передайте true или false."
+
+msgid "You already have a running timer."
+msgstr "У вас уже запущен таймер."
+
+msgid "Not found."
+msgstr "Не найдено."
+
+msgid "Not authorized to edit this entry."
+msgstr "У вас нет прав на изменение этой записи."
+
+msgid "Cannot edit an entry that has been invoiced."
+msgstr "Нельзя изменить запись, по которой выставлен счёт."
+
+msgid "Only time on a project can name a task."
+msgstr "Указать задачу можно только для времени по проекту."
+
+msgid "Not authorized to delete this entry."
+msgstr "У вас нет прав на удаление этой записи."
+
+msgid "Cannot delete an entry that has been invoiced."
+msgstr "Нельзя удалить запись, по которой выставлен счёт."
+
+msgid "Not authorized to stop this entry."
+msgstr "У вас нет прав на остановку этой записи."
+
+msgid "Timer is already stopped."
+msgstr "Таймер уже остановлен."
+
+msgid "Only admins can view another profile's timesheet."
+msgstr "Учёт времени другого профиля доступен только администраторам."
+
+msgid "This ticket is not currently merged."
+msgstr "Это обращение сейчас не объединено."
+
+msgid ""
+"Unmerge metadata is missing for this ticket (it was merged before unmerge "
+"tracking was added). Please restore manually."
+msgstr ""
+"Для этого обращения нет данных для разъединения (оно было объединено до того,"
+" как они начали сохраняться). Восстановите его вручную."
+
+msgid "Target ticket no longer exists; cannot unmerge."
+msgstr "Целевого обращения больше нет, разъединить невозможно."
+
+msgid "You must be an admin, or the creator of both tickets, to unmerge them."
+msgstr ""
+"Разъединить эти обращения может только администратор или автор обоих "
+"обращений."
+
+msgid "Tickets unmerged"
+msgstr "Обращения разъединены"
+
+msgid "Case Created Successfully"
+msgstr "Обращение создано"
+
+msgid "Case Updated Successfully"
+msgstr "Обращение обновлено"
+
+msgid "This ticket"
+msgstr "Это обращение"
+
+msgid "Case Deleted Successfully."
+msgstr "Обращение удалено."
+
+msgid "Comment Submitted"
+msgstr "Комментарий добавлен"
+
+msgid "You don't have permission to perform this action."
+msgstr "У вас нет прав на это действие."
+
+msgid "Comment Updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment Deleted Successfully"
+msgstr "Комментарий удалён"
+
+msgid "You do not have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Attachment Deleted Successfully"
+msgstr "Вложение удалено"
+
+msgid "solution_id required"
+msgstr "Укажите solution_id"
+
+msgid "Solution not found"
+msgstr "Статья не найдена"
+
+msgid "An app member cannot watch a ticket."
+msgstr "Участник-приложение не может отслеживать обращение."
+
+msgid "A ticket becomes Duplicate only by merging it into another ticket."
+msgstr ""
+"Обращение получает статус «Дубликат» только при объединении с другим "
+"обращением."
+
+msgid ""
+"This ticket is merged into another. Unmerge it first to change its status."
+msgstr ""
+"Это обращение объединено с другим. Чтобы изменить его статус, сначала "
+"разъедините их."

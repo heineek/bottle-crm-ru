@@ -235,6 +235,7 @@ USE_I18N = True
 LANGUAGE_CODE = "en"
 LANGUAGES = [
     ("en", "English"),
+    ("ru", "Русский"),
 ]
 
 USE_TZ = True

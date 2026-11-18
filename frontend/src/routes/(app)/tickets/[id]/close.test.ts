@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   findNode,
   openDescendants,
@@ -180,6 +181,24 @@ describe('closeResultMessage', () => {
 
   it('claims no cascade when the box was unticked', () => {
     expect(closeResultMessage({ cascade: false, cascaded: 0 })).toBe('Ticket closed.');
+  });
+});
+
+describe('in Russian', () => {
+  const baseGetLocale = getLocale;
+  afterEach(() => overwriteGetLocale(baseGetLocale));
+
+  it('agrees the count with its noun', () => {
+    overwriteGetLocale(() => 'ru');
+    expect(cascadeSummary({ count: 2 })).toBe(
+      '2 связанных обращения ещё открыты и будут закрыты вместе с этим.'
+    );
+    expect(closeResultMessage({ cascade: true, cascaded: 1 })).toBe(
+      'Обращение закрыто вместе с 1 связанным обращением.'
+    );
+    expect(closeResultMessage({ cascade: true, cascaded: 5 })).toBe(
+      'Обращение закрыто вместе с 5 связанными обращениями.'
+    );
   });
 });
 

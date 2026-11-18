@@ -267,4 +267,28 @@ void main() {
       });
     }
   });
+
+  group('Russian', () {
+    test('is bundled and matched from a regional tag', () {
+      expect(supportedLanguages, contains('ru'));
+      expect(supportedLanguage('ru-RU'), 'ru');
+      expect(supportedLanguage('RU_ru'), 'ru');
+    });
+
+    test('is resolved from the user, the phone or the org', () {
+      const en = [Locale('en', 'US')];
+      expect(resolveLanguage(user: 'ru', device: en, org: 'en'), 'ru');
+      expect(resolveLanguage(device: const [Locale('ru', 'RU')]), 'ru');
+      expect(resolveLanguage(device: const [Locale('de')], org: 'ru'), 'ru');
+    });
+
+    test('uses its own order and month names', () {
+      applyLanguage('ru');
+      expect(Intl.defaultLocale, 'ru');
+      expect(
+        localDateFormat('MMM d, yyyy', 'yMMMMd').format(DateTime(2026, 11, 10)),
+        '10 ноября 2026\u202fг.',
+      );
+    });
+  });
 }

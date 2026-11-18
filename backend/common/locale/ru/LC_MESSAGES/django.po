@@ -1,0 +1,2800 @@
+# Russian translation of the BottleCRM common app.
+# This file is distributed under the same license as the django-crm package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: BottleCRM\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Login Success"
+msgstr "Успешный вход"
+
+msgid "Login Failure"
+msgstr "Неудачный вход"
+
+msgid "Logout"
+msgstr "Выход"
+
+msgid "Organization Switch"
+msgstr "Смена организации"
+
+msgid "Token Refresh"
+msgstr "Обновление токена"
+
+msgid "Token Revoked"
+msgstr "Токен отозван"
+
+msgid "Permission Denied"
+msgstr "Доступ запрещён"
+
+msgid "Cross-Org Access Attempt"
+msgstr "Попытка доступа к другой организации"
+
+msgid "API Key Used"
+msgstr "Использован API-ключ"
+
+msgid "Invalid API Key"
+msgstr "Неверный API-ключ"
+
+msgid "Membership Revoked"
+msgstr "Членство отозвано"
+
+msgid "Suspicious Activity"
+msgstr "Подозрительная активность"
+
+msgid "Vertical Pack Sample Data Cleared"
+msgstr "Удалены демо-данные отраслевого пакета"
+
+msgid "Webhook Paused"
+msgstr "Вебхук приостановлен"
+
+msgid "Webhook Re-enabled"
+msgstr "Вебхук снова включён"
+
+msgid "Webhook Destination Changed"
+msgstr "Изменён адрес вебхука"
+
+msgid "Record Merged"
+msgstr "Записи объединены"
+
+msgid "Calendar Feed Enabled"
+msgstr "Календарная лента включена"
+
+msgid "Calendar Feed Regenerated"
+msgstr "Ссылка на календарную ленту обновлена"
+
+msgid "Calendar Feed Disabled"
+msgstr "Календарная лента отключена"
+
+msgid "API Token Created"
+msgstr "Создан API-токен"
+
+msgid "API Token Revoked"
+msgstr "API-токен отозван"
+
+msgid "Feature Grant Changed"
+msgstr "Изменён доступ к функции"
+
+msgid "Modules Changed"
+msgstr "Изменены модули"
+
+msgid "App Installed"
+msgstr "Приложение установлено"
+
+msgid "App Updated"
+msgstr "Приложение обновлено"
+
+msgid "App Removed"
+msgstr "Приложение удалено"
+
+msgid "BottleCRM tasks"
+msgstr "Задачи BottleCRM"
+
+msgid "options is only valid for dropdown fields"
+msgstr "options допустимо только для полей-списков"
+
+msgid "Dropdown fields require a non-empty list of {value, label} pairs"
+msgstr "Для поля-списка нужен непустой список пар {value, label}"
+
+#, python-format
+msgid "Entry %(index)d must be an object with value and label"
+msgstr "Элемент %(index)d должен быть объектом с value и label"
+
+#, python-format
+msgid "Entry %(index)d is missing a non-empty string value"
+msgstr "В элементе %(index)d нет непустой строки value"
+
+#, python-format
+msgid "Entry %(index)d is missing a non-empty string label"
+msgstr "В элементе %(index)d нет непустой строки label"
+
+#, python-format
+msgid "Duplicate dropdown value: %(value)s"
+msgstr "Значение списка повторяется: %(value)s"
+
+msgid "must not contain null characters"
+msgstr "не должно содержать нулевых символов"
+
+msgid "must be a number"
+msgstr "должно быть числом"
+
+msgid "must be a boolean"
+msgstr "должно быть логическим значением"
+
+msgid "must be a YYYY-MM-DD date"
+msgstr "должно быть датой в формате ГГГГ-ММ-ДД"
+
+#, python-format
+msgid "unsupported field_type %(type)s"
+msgstr "неподдерживаемый field_type %(type)s"
+
+msgid "must be an object"
+msgstr "должно быть объектом"
+
+#, python-format
+msgid "must be one of %(choices)s"
+msgstr "должно быть одним из значений: %(choices)s"
+
+msgid "is required"
+msgstr "обязательное поле"
+
+msgid ""
+"Organization API key authentication is disabled on this deployment. Use a "
+"personal access token."
+msgstr ""
+"Вход по API-ключу организации на этом сервере отключён. Используйте "
+"персональный токен доступа."
+
+msgid "Invalid API Key configuration"
+msgstr "API-ключ настроен неверно"
+
+msgid "The column choices could not be read."
+msgstr "Не удалось прочитать сопоставление столбцов."
+
+msgid "The column choices name a column the file does not have."
+msgstr "В сопоставлении указан столбец, которого нет в файле."
+
+msgid "The column choices include a field that cannot be imported."
+msgstr "В сопоставлении есть поле, которое нельзя импортировать."
+
+#, python-format
+msgid "Two columns are set to %(field)s; choose one."
+msgstr "Поле %(field)s выбрано для двух столбцов, оставьте один."
+
+msgid "Too many requests. Try again later."
+msgstr "Слишком много запросов. Повторите попытку позже."
+
+msgid "Organization context is required. Please login again."
+msgstr "Не выбрана организация. Войдите снова."
+
+msgid "email address"
+msgstr "адрес электронной почты"
+
+msgid "name"
+msgstr "имя"
+
+msgid "staff status"
+msgstr "статус сотрудника"
+
+msgid "Address"
+msgstr "Адрес"
+
+msgid "Street"
+msgstr "Улица"
+
+msgid "City"
+msgstr "Город"
+
+msgid "State"
+msgstr "Регион"
+
+msgid "Post/Zip-code"
+msgstr "Почтовый индекс"
+
+msgid "5 minutes"
+msgstr "5 минут"
+
+msgid "15 minutes"
+msgstr "15 минут"
+
+msgid "30 minutes"
+msgstr "30 минут"
+
+msgid "60 minutes"
+msgstr "60 минут"
+
+#, python-format
+msgid "A tag name can be at most %(max)d characters."
+msgstr "Название тега может содержать не больше %(max)d символов."
+
+msgid "A tag name needs at least one letter or digit."
+msgstr "В названии тега должна быть хотя бы одна буква или цифра."
+
+#, python-format
+msgid ""
+"A tag name is too long once normalised: it becomes %(length)d characters and"
+" the limit is %(max)d."
+msgstr ""
+"Название тега слишком длинное после нормализации: получается %(length)d "
+"символов, а допустимо не больше %(max)d."
+
+#, python-format
+msgid "Tag '%(name)s' is archived; an admin can restore it in Settings > Tags"
+msgstr ""
+"Тег «%(name)s» в архиве; администратор может восстановить его в разделе "
+"«Настройки > Теги»"
+
+msgctxt "activity action"
+msgid "Created"
+msgstr "Создано"
+
+msgctxt "activity action"
+msgid "Updated"
+msgstr "Изменено"
+
+msgctxt "activity action"
+msgid "Deleted"
+msgstr "Удалено"
+
+msgctxt "activity action"
+msgid "Viewed"
+msgstr "Просмотрено"
+
+msgctxt "activity action"
+msgid "Commented"
+msgstr "Добавлен комментарий"
+
+msgctxt "activity action"
+msgid "Assigned"
+msgstr "Назначен ответственный"
+
+msgctxt "activity action"
+msgid "Status Changed"
+msgstr "Изменён статус"
+
+msgctxt "activity action"
+msgid "Priority Changed"
+msgstr "Изменён приоритет"
+
+msgctxt "activity action"
+msgid "Routed"
+msgstr "Распределено"
+
+msgctxt "activity action"
+msgid "Escalated"
+msgstr "Эскалировано"
+
+msgctxt "activity action"
+msgid "Reopened"
+msgstr "Открыто снова"
+
+msgctxt "activity action"
+msgid "Merged"
+msgstr "Объединено"
+
+msgctxt "activity action"
+msgid "Merge Target"
+msgstr "Объединено в эту запись"
+
+msgctxt "activity action"
+msgid "Unmerged"
+msgstr "Объединение отменено"
+
+msgctxt "activity action"
+msgid "Unmerge Target"
+msgstr "Отменено объединение в эту запись"
+
+msgctxt "activity action"
+msgid "Linked Solution"
+msgstr "Привязана статья"
+
+msgctxt "activity action"
+msgid "Unlinked Solution"
+msgstr "Отвязана статья"
+
+msgctxt "activity action"
+msgid "Watched"
+msgstr "Добавлено в отслеживаемые"
+
+msgctxt "activity action"
+msgid "Unwatched"
+msgstr "Убрано из отслеживаемых"
+
+msgctxt "activity action"
+msgid "Mentioned"
+msgstr "Упоминание"
+
+msgctxt "activity action"
+msgid "Approval Requested"
+msgstr "Запрошено согласование"
+
+msgctxt "activity action"
+msgid "Approved"
+msgstr "Согласовано"
+
+msgctxt "activity action"
+msgid "Rejected"
+msgstr "Отклонено"
+
+msgctxt "activity action"
+msgid "Approval Cancelled"
+msgstr "Согласование отменено"
+
+msgctxt "activity action"
+msgid "Linked Asset"
+msgstr "Привязан актив"
+
+msgctxt "activity action"
+msgid "Unlinked Asset"
+msgstr "Отвязан актив"
+
+msgctxt "activity action"
+msgid "Linked Jira"
+msgstr "Привязана задача Jira"
+
+msgctxt "activity action"
+msgid "Linked Parent"
+msgstr "Привязано к родительскому"
+
+msgctxt "activity action"
+msgid "Unlinked Parent"
+msgstr "Отвязано от родительского"
+
+msgctxt "activity action"
+msgid "Parent Closed Cascade"
+msgstr "Закрыто вместе с родительским"
+
+msgctxt "activity action"
+msgid "Time Logged"
+msgstr "Учтено время"
+
+#, python-format
+msgid "%(time)s ago"
+msgstr "%(time)s назад"
+
+msgctxt "app status"
+msgid "Installed"
+msgstr "Установлено"
+
+msgctxt "app status"
+msgid "Removed"
+msgstr "Удалено"
+
+#, python-format
+msgid "%(count)d ticket"
+msgid_plural "%(count)d tickets"
+msgstr[0] "%(count)d обращение"
+msgstr[1] "%(count)d обращения"
+msgstr[2] "%(count)d обращений"
+
+#, python-format
+msgid "%(count)d deal"
+msgid_plural "%(count)d deals"
+msgstr[0] "%(count)d сделка"
+msgstr[1] "%(count)d сделки"
+msgstr[2] "%(count)d сделок"
+
+#, python-format
+msgid "%(count)d invoice"
+msgid_plural "%(count)d invoices"
+msgstr[0] "%(count)d счёт"
+msgstr[1] "%(count)d счёта"
+msgstr[2] "%(count)d счетов"
+
+#, python-format
+msgid "%(count)d estimate"
+msgid_plural "%(count)d estimates"
+msgstr[0] "%(count)d коммерческое предложение"
+msgstr[1] "%(count)d коммерческих предложения"
+msgstr[2] "%(count)d коммерческих предложений"
+
+#, python-format
+msgid "%(count)d recurring invoice"
+msgid_plural "%(count)d recurring invoices"
+msgstr[0] "%(count)d регулярный счёт"
+msgstr[1] "%(count)d регулярных счёта"
+msgstr[2] "%(count)d регулярных счетов"
+
+#, python-format
+msgid "%(count)d project"
+msgid_plural "%(count)d projects"
+msgstr[0] "%(count)d проект"
+msgstr[1] "%(count)d проекта"
+msgstr[2] "%(count)d проектов"
+
+#, python-format
+msgid "%(count)d time entry"
+msgid_plural "%(count)d time entries"
+msgstr[0] "%(count)d запись учёта времени"
+msgstr[1] "%(count)d записи учёта времени"
+msgstr[2] "%(count)d записей учёта времени"
+
+#, python-format
+msgid "%(count)d approval"
+msgid_plural "%(count)d approvals"
+msgstr[0] "%(count)d согласование"
+msgstr[1] "%(count)d согласования"
+msgstr[2] "%(count)d согласований"
+
+#, python-format
+msgid "%(count)d watched ticket"
+msgid_plural "%(count)d watched tickets"
+msgstr[0] "%(count)d отслеживаемое обращение"
+msgstr[1] "%(count)d отслеживаемых обращения"
+msgstr[2] "%(count)d отслеживаемых обращений"
+
+#, python-format
+msgid "%(count)d saved reply"
+msgid_plural "%(count)d saved replies"
+msgstr[0] "%(count)d шаблон ответа"
+msgstr[1] "%(count)d шаблона ответа"
+msgstr[2] "%(count)d шаблонов ответа"
+
+#, python-format
+msgid "%(count)d board"
+msgid_plural "%(count)d boards"
+msgstr[0] "%(count)d доска"
+msgstr[1] "%(count)d доски"
+msgstr[2] "%(count)d досок"
+
+#, python-format
+msgid "%(count)d board membership"
+msgid_plural "%(count)d board memberships"
+msgstr[0] "%(count)d участие в доске"
+msgstr[1] "%(count)d участия в досках"
+msgstr[2] "%(count)d участий в досках"
+
+#, python-format
+msgid "%(count)d project rate"
+msgid_plural "%(count)d project rates"
+msgstr[0] "%(count)d ставка в проекте"
+msgstr[1] "%(count)d ставки в проектах"
+msgstr[2] "%(count)d ставок в проектах"
+
+#, python-format
+msgid ""
+"%(subject)s has %(things)s. %(label)s is switched off, so switch it on to "
+"review it before deleting."
+msgid_plural ""
+"%(subject)s has %(things)s. %(label)s is switched off, so switch it on to "
+"review them before deleting."
+msgstr[0] ""
+"%(subject)s: есть связанные записи (%(things)s). Модуль «%(label)s» "
+"отключён: включите его, чтобы проверить запись перед удалением."
+msgstr[1] ""
+"%(subject)s: есть связанные записи (%(things)s). Модуль «%(label)s» "
+"отключён: включите его, чтобы проверить их перед удалением."
+msgstr[2] ""
+"%(subject)s: есть связанные записи (%(things)s). Модуль «%(label)s» "
+"отключён: включите его, чтобы проверить их перед удалением."
+
+msgid "This field is required."
+msgstr "Обязательное поле."
+
+msgid "Send a list of module keys."
+msgstr "Передайте список ключей модулей."
+
+#, python-format
+msgid "Unknown module: \"%(key)s\"."
+msgstr "Неизвестный модуль: «%(key)s»."
+
+#, python-format
+msgid "\"%(name)s\""
+msgstr "«%(name)s»"
+
+#, python-format
+msgid "%(shown)s and %(extra)d more"
+msgstr "%(shown)s и ещё %(extra)d"
+
+#, python-format
+msgid ""
+"%(label)s still receives submissions from the published web form "
+"\"%(form)s\". Unpublish it first, so no submission is lost."
+msgstr ""
+"Модуль «%(label)s» ещё получает заявки из опубликованной веб-формы "
+"«%(form)s». Сначала снимите её с публикации, чтобы не потерять заявки."
+
+#, python-format
+msgid ""
+"%(label)s still receives submissions from %(count)d published web forms: "
+"%(names)s. Unpublish them first, so no submission is lost."
+msgstr ""
+"Модуль «%(label)s» ещё получает заявки из опубликованных веб-форм "
+"(%(count)d): %(names)s. Сначала снимите их с публикации, чтобы не потерять "
+"заявки."
+
+#, python-format
+msgid ""
+"%(label)s still receives email at %(address)s. Switch that mailbox off "
+"first, so no email is lost."
+msgstr ""
+"Модуль «%(label)s» ещё получает письма на адрес %(address)s. Сначала "
+"отключите этот почтовый ящик, чтобы не потерять письма."
+
+#, python-format
+msgid ""
+"%(label)s still receives email at %(count)d mailboxes: %(addresses)s. Switch"
+" them off first, so no email is lost."
+msgstr ""
+"Модуль «%(label)s» ещё получает письма на почтовые ящики (%(count)d): "
+"%(addresses)s. Сначала отключите их, чтобы не потерять письма."
+
+msgid "Name each module once."
+msgstr "Укажите каждый модуль один раз."
+
+#, python-format
+msgid "%(label)s needs %(needs)s. Switch %(needs)s on first."
+msgstr ""
+"Модулю «%(label)s» нужен модуль «%(needs)s». Сначала включите «%(needs)s»."
+
+msgid "Pipeline"
+msgstr "Воронка"
+
+msgid "Deals, deal pipelines, line items, the deal board and stage aging."
+msgstr ""
+"Сделки, воронки продаж, позиции, доска сделок и контроль застоя на этапах."
+
+#, python-brace-format
+msgid ""
+"Everything in {label} leaves every menu, search and Today, and stale-deal "
+"emails stop. Converting a lead no longer creates a deal, and Goals switches "
+"off too."
+msgstr ""
+"Всё из раздела «{label}» пропадает из меню, поиска и раздела «Сегодня», а "
+"письма о застрявших сделках больше не приходят. При конвертации лида сделка "
+"не создаётся, а модуль «Цели» тоже отключается."
+
+msgid "Leads"
+msgstr "Лиды"
+
+msgid "Leads, lead pipelines, and lead import and export."
+msgstr "Лиды, воронки лидов, импорт и экспорт лидов."
+
+#, python-brace-format
+msgid "{label} leave every menu, search and Today."
+msgstr "Раздел «{label}» пропадает из меню, поиска и раздела «Сегодня»."
+
+msgid "Goals"
+msgstr "Цели"
+
+msgid "Sales goals, the leaderboard and goal history."
+msgstr "Цели продаж, рейтинг и история целей."
+
+#, python-brace-format
+msgid "{label} leave every menu, and goal milestone emails stop."
+msgstr ""
+"Раздел «{label}» пропадает из меню, а письма о достижении этапов цели больше"
+" не приходят."
+
+msgid "Tasks"
+msgstr "Задачи"
+
+msgid "Tasks, boards, the task calendar and its calendar feed."
+msgstr "Задачи, доски, календарь задач и подписка на него."
+
+#, python-brace-format
+msgid ""
+"{label} leave every menu and Today, calendar feeds stop updating, and "
+"automation rules skip their Create a task steps."
+msgstr ""
+"Раздел «{label}» пропадает из меню и раздела «Сегодня», подписки на "
+"календарь перестают обновляться, а правила автоматизации пропускают шаги "
+"«Создать задачу»."
+
+msgid "Tickets"
+msgstr "Обращения"
+
+msgid ""
+"Tickets, approvals, ticket analytics, routing, escalation, the reopen "
+"policy, business hours, saved replies, inbound email, CSAT and portal "
+"tickets."
+msgstr ""
+"Обращения, согласования, аналитика обращений, маршрутизация, эскалация, "
+"правила повторного открытия, рабочие часы, шаблоны ответов, входящая почта, "
+"CSAT и обращения из портала."
+
+#, python-brace-format
+msgid ""
+"{label} leave every menu and Today, SLA escalation stops, CSAT survey links "
+"stop opening, and customers stop seeing their tickets in the portal."
+msgstr ""
+"Раздел «{label}» пропадает из меню и раздела «Сегодня», эскалация по SLA "
+"останавливается, ссылки на опросы CSAT перестают открываться, а клиенты "
+"больше не видят свои обращения в портале."
+
+msgid "Knowledge base"
+msgstr "База знаний"
+
+msgid "Articles, the public help center and portal articles."
+msgstr "Статьи, публичный справочный центр и статьи в портале."
+
+msgid ""
+"Articles leave every menu, the public help center goes offline, and the "
+"portal stops showing articles."
+msgstr ""
+"Статьи пропадают из меню, публичный справочный центр становится недоступен, "
+"а портал перестаёт показывать статьи."
+
+msgid "Documents"
+msgstr "Документы"
+
+msgid "Documents and their downloads."
+msgstr "Документы и их скачивание."
+
+#, python-brace-format
+msgid "{label} leave every menu, and their downloads stop opening."
+msgstr ""
+"Раздел «{label}» пропадает из меню, а ссылки на скачивание перестают "
+"открываться."
+
+msgid "Projects"
+msgstr "Проекты"
+
+msgid ""
+"Projects, their people, rates and budgets, tasks and time on them, and "
+"billing a project's time."
+msgstr ""
+"Проекты, их участники, ставки и бюджеты, задачи и время по ним, а также "
+"выставление счетов за время по проекту."
+
+#, python-brace-format
+msgid ""
+"{label} leave every menu, time can no longer be logged on them, and budget "
+"notifications stop."
+msgstr ""
+"Раздел «{label}» пропадает из меню, учитывать по проектам время больше "
+"нельзя, а уведомления о бюджете перестают приходить."
+
+msgid "Invoices"
+msgstr "Счета"
+
+msgid ""
+"Invoices, estimates, recurring invoices, invoice templates, invoice reports,"
+" account statements, and public invoice and estimate links."
+msgstr ""
+"Счета, коммерческие предложения, регулярные счета, шаблоны счетов, отчёты по"
+" счетам, выписки по компаниям и публичные ссылки на счета и коммерческие "
+"предложения."
+
+#, python-brace-format
+msgid ""
+"Recurring invoices stop being sent, and links you have already sent to "
+"customers stop opening. Recurring invoices that fall due while {label} is "
+"off are not sent later. Payment reminders that fall due while {label} is off"
+" are not sent later."
+msgstr ""
+"Регулярные счета больше не отправляются, а ссылки, которые вы уже отправили "
+"клиентам, перестают открываться. Регулярные счета, срок которых наступит, "
+"пока модуль «{label}» отключён, не будут отправлены позже. Напоминания об "
+"оплате, срок которых наступит, пока модуль «{label}» отключён, не будут "
+"отправлены позже."
+
+msgid "Timesheet"
+msgstr "Учёт времени"
+
+msgid "Time entries, the timesheet and the time report."
+msgstr "Записи времени, табель и отчёт по времени."
+
+msgid ""
+"Time entries leave every menu, ticket and project, and running timers are no"
+" longer stopped automatically."
+msgstr ""
+"Записи времени пропадают из меню, обращений и проектов, а запущенные таймеры"
+" больше не останавливаются автоматически."
+
+#, python-format
+msgid "%(label)s is switched off for this organization."
+msgstr "Модуль «%(label)s» отключён в этой организации."
+
+#, python-format
+msgid "Lead called %(value)s"
+msgstr "Лид «%(value)s»"
+
+#, python-format
+msgid "Leads called %(value)s"
+msgstr "Лиды «%(value)s»"
+
+#, python-format
+msgid "Deal called %(value)s"
+msgstr "Сделка «%(value)s»"
+
+#, python-format
+msgid "Deals called %(value)s"
+msgstr "Сделки «%(value)s»"
+
+#, python-format
+msgid "Contact called %(value)s"
+msgstr "Контакт «%(value)s»"
+
+#, python-format
+msgid "Contacts called %(value)s"
+msgstr "Контакты «%(value)s»"
+
+#, python-format
+msgid "Account called %(value)s"
+msgstr "Компания «%(value)s»"
+
+#, python-format
+msgid "Accounts called %(value)s"
+msgstr "Компании «%(value)s»"
+
+#, python-format
+msgid "Invoice called %(value)s"
+msgstr "Счёт «%(value)s»"
+
+#, python-format
+msgid "Invoices called %(value)s"
+msgstr "Счета «%(value)s»"
+
+msgid "This app is already installed."
+msgstr "Это приложение уже установлено."
+
+msgid "This app is not installed."
+msgstr "Это приложение не установлено."
+
+msgid "This app has no update."
+msgstr "Для этого приложения нет обновления."
+
+#, python-format
+msgid "%(where)s: maps_to_status 'Duplicate' is not allowed. %(why)s"
+msgstr "%(where)s: maps_to_status 'Duplicate' не допускается. %(why)s"
+
+msgid "Invalid token"
+msgstr "Неверный токен"
+
+msgid "Token revoked or expired"
+msgstr "Токен отозван или истёк"
+
+msgid "Token owner or org is inactive"
+msgstr "Владелец токена или организация неактивны"
+
+msgid "You must be an organization administrator to perform this action."
+msgstr "Это действие доступно только администратору организации."
+
+msgid "Super admin access required."
+msgstr "Нужны права суперадминистратора."
+
+msgid "Not a portal token."
+msgstr "Это не токен портала."
+
+msgid "Portal access has been withdrawn."
+msgstr "Доступ к порталу отозван."
+
+msgid "You do not have Permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "Send the filters as an object."
+msgstr "Передайте фильтры объектом."
+
+#, python-format
+msgid "A view can hold at most %(max)d filters."
+msgstr "В представлении может быть не больше %(max)d фильтров."
+
+#, python-format
+msgid "This list does not filter by: %(params)s."
+msgstr "Этот список нельзя отфильтровать по: %(params)s."
+
+#, python-format
+msgid "%(param)s: every value must be text."
+msgstr "%(param)s: каждое значение должно быть текстом."
+
+#, python-format
+msgid "%(param)s: at most %(max)d values."
+msgstr "%(param)s: не больше %(max)d значений."
+
+#, python-format
+msgid "%(param)s: a value can be at most %(max)d characters."
+msgstr "%(param)s: значение может содержать не больше %(max)d символов."
+
+msgid "Give the view a name."
+msgstr "Укажите название представления."
+
+msgid "This is set by the server."
+msgstr "Это значение задаёт сервер."
+
+msgid "A saved view cannot move to another list."
+msgstr "Сохранённое представление нельзя перенести в другой список."
+
+#, python-format
+msgid "You can save at most %(max)d views for one list."
+msgstr "Для одного списка можно сохранить не больше %(max)d представлений."
+
+msgid "You already have a view with this name for this list."
+msgstr "У вас уже есть представление с таким названием для этого списка."
+
+msgid "A scope cannot be empty."
+msgstr "Область доступа не может быть пустой."
+
+#, python-format
+msgid "Scope %(scope)s is not in <resource>:<action> form."
+msgstr "Область доступа %(scope)s не в формате <resource>:<action>."
+
+#, python-format
+msgid "Unknown scope resource %(resource)s."
+msgstr "Неизвестный ресурс области доступа %(resource)s."
+
+#, python-format
+msgid "Unknown scope action %(action)s. Use 'read' or 'write'."
+msgstr ""
+"Неизвестное действие области доступа %(action)s. Используйте 'read' или "
+"'write'."
+
+msgid ""
+"API tokens and organization API keys cannot read or manage other "
+"credentials. Sign in to manage them."
+msgstr ""
+"API-токены и API-ключи организации не могут просматривать другие учётные "
+"данные и управлять ими. Для этого войдите в систему."
+
+#, python-format
+msgid "This token is not scoped for %(action)s access to this endpoint."
+msgstr "У этого токена нет области доступа %(action)s для этого адреса API."
+
+#, python-format
+msgid ""
+"This token is not scoped for %(action)s access to %(resource)s. It needs the"
+" %(scope)s scope."
+msgstr ""
+"У этого токена нет доступа %(action)s к %(resource)s. Нужна область доступа "
+"%(scope)s."
+
+msgid "Untitled lead"
+msgstr "Лид без названия"
+
+msgid "Unnamed contact"
+msgstr "Контакт без имени"
+
+msgid "Invoice"
+msgstr "Счёт"
+
+msgid ""
+"A starting number only applies to numbers without a date. A dated number's "
+"counter restarts at 1 each period."
+msgstr ""
+"Начальный номер применяется только к номерам без даты. У номера с датой "
+"счётчик в каждом периоде начинается с 1."
+
+msgid "That address is already taken. Choose another."
+msgstr "Этот адрес уже занят. Выберите другой."
+
+msgid "Choose an address before turning the help center on."
+msgstr "Прежде чем включить справочный центр, выберите адрес."
+
+#, python-format
+msgid "Invalid content type: %(type)s"
+msgstr "Недопустимый тип содержимого: %(type)s"
+
+msgid "key is required"
+msgstr "key обязателен"
+
+msgid "key must be a lowercase slug starting with a letter (a-z, 0-9, _)"
+msgstr ""
+"key должен состоять из строчных латинских букв, цифр и _ и начинаться с "
+"буквы (a-z, 0-9, _)"
+
+#, python-format
+msgid "%(field)s cannot be changed after creation"
+msgstr "%(field)s нельзя изменить после создания"
+
+#, python-format
+msgid "a %(model)s field with key %(key)s already exists"
+msgstr "поле %(model)s с ключом %(key)s уже существует"
+
+msgid "organization name should not contain any special characters"
+msgstr "название организации не должно содержать специальных символов"
+
+msgid "Organization already exists with this name"
+msgstr "Организация с таким названием уже существует"
+
+msgid "Email cannot be changed here."
+msgstr "Здесь нельзя изменить адрес электронной почты."
+
+msgid "This address cannot be invited."
+msgstr "Этот адрес нельзя пригласить."
+
+msgid "Given Email id already exists"
+msgstr "Этот адрес электронной почты уже используется"
+
+msgid "Only the account's owner can change their picture."
+msgstr "Сменить фото может только владелец учётной записи."
+
+msgid "Only an admin can change this, and never on themselves."
+msgstr "Изменить это может только администратор, причём не для себя."
+
+msgid "Document with this Title already exists"
+msgstr "Документ с таким названием уже существует"
+
+msgid "Please provide valid schema"
+msgstr "Укажите корректную схему адреса"
+
+msgid ""
+"Please provide a valid URL with schema and without trailing slash - Example:"
+" http://google.com"
+msgstr ""
+"Укажите корректный адрес со схемой и без косой черты в конце, например: "
+"http://google.com"
+
+msgid "Disposable email addresses are not allowed."
+msgstr "Одноразовые адреса электронной почты не принимаются."
+
+msgid "Team already exists with this name"
+msgstr "Команда с таким названием уже существует"
+
+msgid "Name is required."
+msgstr "Укажите название."
+
+msgid "Name too long (max 255)."
+msgstr "Название слишком длинное (не больше 255)."
+
+msgid "scopes must be a list of strings."
+msgstr "scopes должно быть списком строк."
+
+msgid "Too many scopes (max 32)."
+msgstr "Слишком много областей доступа (не больше 32)."
+
+msgid "expires_at must be in the future."
+msgstr "expires_at должно быть в будущем."
+
+msgid ""
+"That .xlsx file could not be opened. Save it again, or export it as .csv."
+msgstr ""
+"Не удалось открыть этот файл .xlsx. Сохраните его заново или экспортируйте в"
+" .csv."
+
+msgid "That .xlsx file is too large to read."
+msgstr "Этот файл .xlsx слишком большой."
+
+#, python-format
+msgid "Too many rows (more than %(max)d); the limit is %(max)d."
+msgstr "Слишком много строк (больше %(max)d), допустимо не больше %(max)d."
+
+#, python-format
+msgid "Too many columns (more than %(max)d); the limit is %(max)d."
+msgstr "Слишком много столбцов (больше %(max)d), допустимо не больше %(max)d."
+
+msgid "The file is empty."
+msgstr "Файл пустой."
+
+#, python-format
+msgid "Too many rows (%(count)d); the limit is %(max)d."
+msgstr "Слишком много строк (%(count)d), допустимо не больше %(max)d."
+
+msgid "The file could not be read: it contains NUL characters."
+msgstr "Не удалось прочитать файл: в нём есть символы NUL."
+
+msgid "The file could not be read."
+msgstr "Не удалось прочитать файл."
+
+msgid "Save it as .xlsx or .csv and try again."
+msgstr "Сохраните его в формате .xlsx или .csv и попробуйте снова."
+
+msgid "No file uploaded (expected field 'file')"
+msgstr "Файл не загружен (ожидается поле «file»)"
+
+msgid "File exceeds the 5 MB upload limit"
+msgstr "Файл больше допустимых 5 МБ"
+
+msgid "Welcome to BottleCRM"
+msgstr "Добро пожаловать в BottleCRM"
+
+#, python-format
+msgid "Your BottleCRM sign-in code: %(code)s"
+msgstr "Ваш код для входа в BottleCRM: %(code)s"
+
+msgid "Your BottleCRM sign-in link"
+msgstr "Ваша ссылка для входа в BottleCRM"
+
+#, python-format
+msgid "Your sign-in code: %(code)s"
+msgstr "Ваш код для входа: %(code)s"
+
+msgid "Account Activated "
+msgstr "Учётная запись активирована "
+
+msgid "Account Deactivated "
+msgstr "Учётная запись деактивирована "
+
+msgid "CRM : Your account is Deleted. "
+msgstr "CRM: ваша учётная запись удалена. "
+
+msgid "An account has been assigned to you in BottleCRM"
+msgstr "В BottleCRM вам назначена компания"
+
+#, python-format
+msgid "Hi %(name)s,"
+msgstr "Здравствуйте, %(name)s!"
+
+#, python-format
+msgid "%(created_by)s assigned an account to you."
+msgstr "%(created_by)s назначает вас ответственным за компанию."
+
+msgid "Account"
+msgstr "Компания"
+
+msgid "Assigned by"
+msgstr "Кто назначил"
+
+msgid "View Account"
+msgstr "Открыть компанию"
+
+msgid "A case has been assigned to you in BottleCRM"
+msgstr "В BottleCRM вам назначено обращение"
+
+#, python-format
+msgid "%(created_by)s assigned a case to you."
+msgstr "%(created_by)s назначает вас ответственным за обращение."
+
+msgid "Case"
+msgstr "Обращение"
+
+msgid "View Case"
+msgstr "Открыть обращение"
+
+msgid "A contact has been assigned to you in BottleCRM"
+msgstr "В BottleCRM вам назначен контакт"
+
+#, python-format
+msgid "%(created_by)s assigned a contact to you."
+msgstr "%(created_by)s назначает вас ответственным за контакт."
+
+msgid "Contact"
+msgstr "Контакт"
+
+msgid "View Contact"
+msgstr "Открыть контакт"
+
+msgid "A lead has been assigned to you in BottleCRM"
+msgstr "В BottleCRM вам назначен лид"
+
+#, python-format
+msgid "%(created_by)s assigned a lead to you."
+msgstr "%(created_by)s назначает вас ответственным за лид."
+
+msgid "A lead has been assigned to you."
+msgstr "Вам назначен лид."
+
+msgid "Lead"
+msgstr "Лид"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "View Lead"
+msgstr "Открыть лид"
+
+msgid "An opportunity has been assigned to you in BottleCRM"
+msgstr "В BottleCRM вам назначена сделка"
+
+#, python-format
+msgid "%(created_by)s assigned an opportunity to you."
+msgstr "%(created_by)s назначает вас ответственным за сделку."
+
+msgid "Opportunity"
+msgstr "Сделка"
+
+msgid "View Opportunity"
+msgstr "Открыть сделку"
+
+msgid "Your BottleCRM sign-in code"
+msgstr "Ваш код для входа в BottleCRM"
+
+msgid "Sign in to BottleCRM"
+msgstr "Войти в BottleCRM"
+
+msgid ""
+"Enter this code in the BottleCRM mobile app to sign in. The code expires in "
+"10 minutes."
+msgstr ""
+"Введите этот код в мобильном приложении BottleCRM, чтобы войти. Код "
+"действует 10 минут."
+
+msgid "If you didn't request this code, you can safely ignore this email."
+msgstr ""
+"Если вы не запрашивали код, просто не обращайте внимания на это письмо."
+
+msgid "Your sign-in link for BottleCRM"
+msgstr "Ваша ссылка для входа в BottleCRM"
+
+msgid ""
+"Click the button below to sign in to your account. This link expires in 10 "
+"minutes."
+msgstr ""
+"Нажмите кнопку ниже, чтобы войти в свою учётную запись. Ссылка действует 10 "
+"минут."
+
+msgid "If you didn't request this link, you can safely ignore this email."
+msgstr ""
+"Если вы не запрашивали ссылку, просто не обращайте внимания на это письмо."
+
+#, python-format
+msgid "Hello %(contact_name)s,"
+msgstr "Здравствуйте, %(contact_name)s!"
+
+#, python-format
+msgid "Your sign-in code for %(org_name)s support is:"
+msgstr "Ваш код для входа в службу поддержки %(org_name)s:"
+
+msgid "It expires in 10 minutes and can be used once."
+msgstr "Код действует 10 минут, и его можно использовать один раз."
+
+msgid ""
+"If you did not ask to sign in, you can ignore this email and nothing will "
+"happen."
+msgstr ""
+"Если вы не пытались войти, просто не обращайте внимания на это письмо: "
+"ничего не произойдёт."
+
+msgid "Sent by BottleCRM"
+msgstr "Отправлено из BottleCRM"
+
+msgid "Your BottleCRM account has been deleted"
+msgstr "Ваша учётная запись BottleCRM удалена"
+
+msgid "Account Deleted"
+msgstr "Учётная запись удалена"
+
+#, python-format
+msgid ""
+"Your account has been deleted by %(deleted_by)s. You are no longer able to "
+"access your account."
+msgstr ""
+"Вашу учётную запись удалил пользователь %(deleted_by)s. Доступа к ней у вас "
+"больше нет."
+
+msgid ""
+"If you believe this was a mistake, please contact your organization "
+"administrator."
+msgstr ""
+"Если вы считаете, что это ошибка, обратитесь к администратору организации."
+
+msgid "Your BottleCRM account has been activated"
+msgstr "Ваша учётная запись BottleCRM активирована"
+
+msgid "Account Activated"
+msgstr "Учётная запись активирована"
+
+#, python-format
+msgid ""
+"Your account has been activated by %(status_changed_user)s. You can now log "
+"in and access all BottleCRM features."
+msgstr ""
+"Вашу учётную запись активировал пользователь %(status_changed_user)s. Теперь"
+" вы можете войти и пользоваться всеми возможностями BottleCRM."
+
+msgid "Log In"
+msgstr "Войти"
+
+msgid "Your BottleCRM account has been deactivated"
+msgstr "Ваша учётная запись BottleCRM деактивирована"
+
+msgid "Account Deactivated"
+msgstr "Учётная запись деактивирована"
+
+#, python-format
+msgid ""
+"Your account has been deactivated by %(status_changed_user)s. You'll receive"
+" an email if your account is reactivated."
+msgstr ""
+"Вашу учётную запись деактивировал пользователь %(status_changed_user)s. Если"
+" её снова активируют, вы получите письмо."
+
+msgid "Please contact your admin if you have any questions."
+msgstr "Если у вас есть вопросы, обратитесь к администратору."
+
+msgid "Activate your BottleCRM account"
+msgstr "Активируйте учётную запись BottleCRM"
+
+msgid ""
+"Thanks for creating an account. Click the button below to verify your email "
+"and activate your account."
+msgstr ""
+"Спасибо за регистрацию. Нажмите кнопку ниже, чтобы подтвердить адрес "
+"электронной почты и активировать учётную запись."
+
+msgid "Link expires in"
+msgstr "Ссылка действует"
+
+msgid "2 hours"
+msgstr "2 часа"
+
+msgid "Verify Your Email"
+msgstr "Подтвердить адрес"
+
+msgid "Once activated, you'll have access to all BottleCRM features."
+msgstr "После активации вам будут доступны все возможности BottleCRM."
+
+msgid ""
+"Your account has been created. You can now set up your organization and "
+"start managing your contacts, deals, and more."
+msgstr ""
+"Ваша учётная запись создана. Теперь вы можете настроить организацию и начать"
+" работать с контактами, сделками и не только."
+
+msgid "Get Started"
+msgstr "Начать работу"
+
+msgctxt "industry"
+msgid "ADVERTISING"
+msgstr "РЕКЛАМА"
+
+msgctxt "industry"
+msgid "AGRICULTURE"
+msgstr "СЕЛЬСКОЕ ХОЗЯЙСТВО"
+
+msgctxt "industry"
+msgid "APPAREL & ACCESSORIES"
+msgstr "ОДЕЖДА И АКСЕССУАРЫ"
+
+msgctxt "industry"
+msgid "AUTOMOTIVE"
+msgstr "АВТОМОБИЛИ"
+
+msgctxt "industry"
+msgid "BANKING"
+msgstr "БАНКИ"
+
+msgctxt "industry"
+msgid "BIOTECHNOLOGY"
+msgstr "БИОТЕХНОЛОГИИ"
+
+msgctxt "industry"
+msgid "BUILDING MATERIALS & EQUIPMENT"
+msgstr "СТРОЙМАТЕРИАЛЫ И ОБОРУДОВАНИЕ"
+
+msgctxt "industry"
+msgid "CHEMICAL"
+msgstr "ХИМИЯ"
+
+msgctxt "industry"
+msgid "COMPUTER"
+msgstr "КОМПЬЮТЕРЫ"
+
+msgctxt "industry"
+msgid "EDUCATION"
+msgstr "ОБРАЗОВАНИЕ"
+
+msgctxt "industry"
+msgid "ELECTRONICS"
+msgstr "ЭЛЕКТРОНИКА"
+
+msgctxt "industry"
+msgid "ENERGY"
+msgstr "ЭНЕРГЕТИКА"
+
+msgctxt "industry"
+msgid "ENTERTAINMENT & LEISURE"
+msgstr "РАЗВЛЕЧЕНИЯ И ДОСУГ"
+
+msgctxt "industry"
+msgid "FINANCE"
+msgstr "ФИНАНСЫ"
+
+msgctxt "industry"
+msgid "FOOD & BEVERAGE"
+msgstr "ПРОДУКТЫ ПИТАНИЯ И НАПИТКИ"
+
+msgctxt "industry"
+msgid "GROCERY"
+msgstr "ПРОДУКТОВАЯ РОЗНИЦА"
+
+msgctxt "industry"
+msgid "HEALTHCARE"
+msgstr "ЗДРАВООХРАНЕНИЕ"
+
+msgctxt "industry"
+msgid "INSURANCE"
+msgstr "СТРАХОВАНИЕ"
+
+msgctxt "industry"
+msgid "LEGAL"
+msgstr "ЮРИДИЧЕСКИЕ УСЛУГИ"
+
+msgctxt "industry"
+msgid "MANUFACTURING"
+msgstr "ПРОИЗВОДСТВО"
+
+msgctxt "industry"
+msgid "PUBLISHING"
+msgstr "ИЗДАТЕЛЬСКОЕ ДЕЛО"
+
+msgctxt "industry"
+msgid "REAL ESTATE"
+msgstr "НЕДВИЖИМОСТЬ"
+
+msgctxt "industry"
+msgid "SERVICE"
+msgstr "УСЛУГИ"
+
+msgctxt "industry"
+msgid "SOFTWARE"
+msgstr "ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ"
+
+msgctxt "industry"
+msgid "SPORTS"
+msgstr "СПОРТ"
+
+msgctxt "industry"
+msgid "TECHNOLOGY"
+msgstr "ТЕХНОЛОГИИ"
+
+msgctxt "industry"
+msgid "TELECOMMUNICATIONS"
+msgstr "ТЕЛЕКОММУНИКАЦИИ"
+
+msgctxt "industry"
+msgid "TELEVISION"
+msgstr "ТЕЛЕВИДЕНИЕ"
+
+msgctxt "industry"
+msgid "TRANSPORTATION"
+msgstr "ТРАНСПОРТ"
+
+msgctxt "industry"
+msgid "VENTURE CAPITAL"
+msgstr "ВЕНЧУРНЫЙ КАПИТАЛ"
+
+msgctxt "account type"
+msgid "CUSTOMER"
+msgstr "КЛИЕНТ"
+
+msgctxt "account type"
+msgid "INVESTOR"
+msgstr "ИНВЕСТОР"
+
+msgctxt "account type"
+msgid "PARTNER"
+msgstr "ПАРТНЁР"
+
+msgctxt "account type"
+msgid "RESELLER"
+msgstr "РЕСЕЛЛЕР"
+
+msgctxt "lead status"
+msgid "Assigned"
+msgstr "Назначен"
+
+msgctxt "lead status"
+msgid "In Process"
+msgstr "В работе"
+
+msgctxt "lead status"
+msgid "Converted"
+msgstr "Конвертирован"
+
+msgctxt "lead status"
+msgid "Recycled"
+msgstr "Возвращён в работу"
+
+msgctxt "lead status"
+msgid "Closed"
+msgstr "Закрыт"
+
+msgctxt "lead source"
+msgid "Call"
+msgstr "Звонок"
+
+msgctxt "lead source"
+msgid "Email"
+msgstr "Электронная почта"
+
+msgctxt "lead source"
+msgid "Existing Customer"
+msgstr "Действующий клиент"
+
+msgctxt "lead source"
+msgid "Partner"
+msgstr "Партнёр"
+
+msgctxt "lead source"
+msgid "Public Relations"
+msgstr "Связи с общественностью"
+
+msgctxt "lead source"
+msgid "Campaign"
+msgstr "Кампания"
+
+msgctxt "lead source"
+msgid "Other"
+msgstr "Другое"
+
+msgctxt "ticket status"
+msgid "New"
+msgstr "Новое"
+
+msgctxt "ticket status"
+msgid "Assigned"
+msgstr "Назначено"
+
+msgctxt "ticket status"
+msgid "Pending"
+msgstr "Ожидает"
+
+msgctxt "ticket status"
+msgid "Closed"
+msgstr "Закрыто"
+
+msgctxt "ticket status"
+msgid "Rejected"
+msgstr "Отклонено"
+
+msgctxt "ticket status"
+msgid "Duplicate"
+msgstr "Дубликат"
+
+msgctxt "priority"
+msgid "Low"
+msgstr "Низкий"
+
+msgctxt "priority"
+msgid "Normal"
+msgstr "Обычный"
+
+msgctxt "priority"
+msgid "High"
+msgstr "Высокий"
+
+msgctxt "priority"
+msgid "Urgent"
+msgstr "Срочный"
+
+msgctxt "ticket type"
+msgid "Question"
+msgstr "Вопрос"
+
+msgctxt "ticket type"
+msgid "Incident"
+msgstr "Инцидент"
+
+msgctxt "ticket type"
+msgid "Problem"
+msgstr "Проблема"
+
+msgctxt "deal type"
+msgid "New Business"
+msgstr "Новый бизнес"
+
+msgctxt "deal type"
+msgid "Existing Business"
+msgstr "Действующий бизнес"
+
+msgctxt "deal type"
+msgid "Renewal"
+msgstr "Продление"
+
+msgctxt "deal type"
+msgid "Upsell"
+msgstr "Допродажа"
+
+msgctxt "deal type"
+msgid "Cross-sell"
+msgstr "Кросс-продажа"
+
+msgctxt "lead source"
+msgid "Existing customer"
+msgstr "Действующий клиент"
+
+msgctxt "lead source"
+msgid "Public relations"
+msgstr "Связи с общественностью"
+
+msgctxt "lead source"
+msgid "Web form"
+msgstr "Веб-форма"
+
+msgctxt "event status"
+msgid "Planned"
+msgstr "Запланировано"
+
+msgctxt "event status"
+msgid "Held"
+msgstr "Проведено"
+
+msgctxt "event status"
+msgid "Not Held"
+msgstr "Не проведено"
+
+msgctxt "event status"
+msgid "Not Started"
+msgstr "Не начато"
+
+msgctxt "event status"
+msgid "Started"
+msgstr "Начато"
+
+msgctxt "event status"
+msgid "Completed"
+msgstr "Завершено"
+
+msgctxt "event status"
+msgid "Canceled"
+msgstr "Отменено"
+
+msgctxt "event status"
+msgid "Deferred"
+msgstr "Отложено"
+
+msgid "United Kingdom"
+msgstr "Великобритания"
+
+msgid "Afghanistan"
+msgstr "Афганистан"
+
+msgid "Aland Islands"
+msgstr "Аландские о-ва"
+
+msgid "Albania"
+msgstr "Албания"
+
+msgid "Algeria"
+msgstr "Алжир"
+
+msgid "American Samoa"
+msgstr "Американское Самоа"
+
+msgid "Andorra"
+msgstr "Андорра"
+
+msgid "Angola"
+msgstr "Ангола"
+
+msgid "Anguilla"
+msgstr "Ангилья"
+
+msgid "Antarctica"
+msgstr "Антарктида"
+
+msgid "Antigua and Barbuda"
+msgstr "Антигуа и Барбуда"
+
+msgid "Argentina"
+msgstr "Аргентина"
+
+msgid "Armenia"
+msgstr "Армения"
+
+msgid "Aruba"
+msgstr "Аруба"
+
+msgid "Australia"
+msgstr "Австралия"
+
+msgid "Austria"
+msgstr "Австрия"
+
+msgid "Azerbaijan"
+msgstr "Азербайджан"
+
+msgid "Bahamas"
+msgstr "Багамы"
+
+msgid "Bahrain"
+msgstr "Бахрейн"
+
+msgid "Bangladesh"
+msgstr "Бангладеш"
+
+msgid "Barbados"
+msgstr "Барбадос"
+
+msgid "Belarus"
+msgstr "Беларусь"
+
+msgid "Belgium"
+msgstr "Бельгия"
+
+msgid "Belize"
+msgstr "Белиз"
+
+msgid "Benin"
+msgstr "Бенин"
+
+msgid "Bermuda"
+msgstr "Бермудские о-ва"
+
+msgid "Bhutan"
+msgstr "Бутан"
+
+msgid "Bolivia"
+msgstr "Боливия"
+
+msgid "Bosnia and Herzegovina"
+msgstr "Босния и Герцеговина"
+
+msgid "Botswana"
+msgstr "Ботсвана"
+
+msgid "Bouvet Island"
+msgstr "о-в Буве"
+
+msgid "Brazil"
+msgstr "Бразилия"
+
+msgid "British Indian Ocean Territory"
+msgstr "Британская территория в Индийском океане"
+
+msgid "Brunei Darussalam"
+msgstr "Бруней"
+
+msgid "Bulgaria"
+msgstr "Болгария"
+
+msgid "Burkina Faso"
+msgstr "Буркина-Фасо"
+
+msgid "Burundi"
+msgstr "Бурунди"
+
+msgid "Cambodia"
+msgstr "Камбоджа"
+
+msgid "Cameroon"
+msgstr "Камерун"
+
+msgid "Canada"
+msgstr "Канада"
+
+msgid "Cape Verde"
+msgstr "Кабо-Верде"
+
+msgid "Cayman Islands"
+msgstr "о-ва Кайман"
+
+msgid "Central African Republic"
+msgstr "Центрально-Африканская Республика"
+
+msgid "Chad"
+msgstr "Чад"
+
+msgid "Chile"
+msgstr "Чили"
+
+msgid "China"
+msgstr "Китай"
+
+msgid "Christmas Island"
+msgstr "о-в Рождества"
+
+msgid "Cocos (Keeling) Islands"
+msgstr "Кокосовые о-ва"
+
+msgid "Colombia"
+msgstr "Колумбия"
+
+msgid "Comoros"
+msgstr "Коморы"
+
+msgid "Congo"
+msgstr "Республика Конго"
+
+msgid "Congo, The Democratic Republic of the"
+msgstr "Демократическая Республика Конго"
+
+msgid "Cook Islands"
+msgstr "о-ва Кука"
+
+msgid "Costa Rica"
+msgstr "Коста-Рика"
+
+msgid "Cote d'Ivoire"
+msgstr "Кот-д’Ивуар"
+
+msgid "Croatia"
+msgstr "Хорватия"
+
+msgid "Cuba"
+msgstr "Куба"
+
+msgid "Cyprus"
+msgstr "Кипр"
+
+msgid "Czech Republic"
+msgstr "Чехия"
+
+msgid "Denmark"
+msgstr "Дания"
+
+msgid "Djibouti"
+msgstr "Джибути"
+
+msgid "Dominica"
+msgstr "Доминика"
+
+msgid "Dominican Republic"
+msgstr "Доминиканская Республика"
+
+msgid "Ecuador"
+msgstr "Эквадор"
+
+msgid "Egypt"
+msgstr "Египет"
+
+msgid "El Salvador"
+msgstr "Сальвадор"
+
+msgid "Equatorial Guinea"
+msgstr "Экваториальная Гвинея"
+
+msgid "Eritrea"
+msgstr "Эритрея"
+
+msgid "Estonia"
+msgstr "Эстония"
+
+msgid "Ethiopia"
+msgstr "Эфиопия"
+
+msgid "Falkland Islands (Malvinas)"
+msgstr "Фолклендские о-ва"
+
+msgid "Faroe Islands"
+msgstr "Фарерские о-ва"
+
+msgid "Fiji"
+msgstr "Фиджи"
+
+msgid "Finland"
+msgstr "Финляндия"
+
+msgid "France"
+msgstr "Франция"
+
+msgid "French Guiana"
+msgstr "Французская Гвиана"
+
+msgid "French Polynesia"
+msgstr "Французская Полинезия"
+
+msgid "French Southern Territories"
+msgstr "Французские Южные территории"
+
+msgid "Gabon"
+msgstr "Габон"
+
+msgid "Gambia"
+msgstr "Гамбия"
+
+msgid "Georgia"
+msgstr "Грузия"
+
+msgid "Germany"
+msgstr "Германия"
+
+msgid "Ghana"
+msgstr "Гана"
+
+msgid "Gibraltar"
+msgstr "Гибралтар"
+
+msgid "Greece"
+msgstr "Греция"
+
+msgid "Greenland"
+msgstr "Гренландия"
+
+msgid "Grenada"
+msgstr "Гренада"
+
+msgid "Guadeloupe"
+msgstr "Гваделупа"
+
+msgid "Guam"
+msgstr "Гуам"
+
+msgid "Guatemala"
+msgstr "Гватемала"
+
+msgid "Guernsey"
+msgstr "Гернси"
+
+msgid "Guinea"
+msgstr "Гвинея"
+
+msgid "Guinea-Bissau"
+msgstr "Гвинея-Бисау"
+
+msgid "Guyana"
+msgstr "Гайана"
+
+msgid "Haiti"
+msgstr "Гаити"
+
+msgid "Heard Island and McDonald Islands"
+msgstr "о-ва Херд и Макдональд"
+
+msgid "Holy See (Vatican City State)"
+msgstr "Ватикан"
+
+msgid "Honduras"
+msgstr "Гондурас"
+
+msgid "Hong Kong"
+msgstr "Гонконг (САР)"
+
+msgid "Hungary"
+msgstr "Венгрия"
+
+msgid "Iceland"
+msgstr "Исландия"
+
+msgid "India"
+msgstr "Индия"
+
+msgid "Indonesia"
+msgstr "Индонезия"
+
+msgid "Iran, Islamic Republic of"
+msgstr "Иран"
+
+msgid "Iraq"
+msgstr "Ирак"
+
+msgid "Ireland"
+msgstr "Ирландия"
+
+msgid "Isle of Man"
+msgstr "о-в Мэн"
+
+msgid "Israel"
+msgstr "Израиль"
+
+msgid "Italy"
+msgstr "Италия"
+
+msgid "Jamaica"
+msgstr "Ямайка"
+
+msgid "Japan"
+msgstr "Япония"
+
+msgid "Jersey"
+msgstr "Джерси"
+
+msgid "Jordan"
+msgstr "Иордания"
+
+msgid "Kazakhstan"
+msgstr "Казахстан"
+
+msgid "Kenya"
+msgstr "Кения"
+
+msgid "Kiribati"
+msgstr "Кирибати"
+
+msgid "Korea, Democratic People's Republic of"
+msgstr "КНДР"
+
+msgid "Korea, Republic of"
+msgstr "Республика Корея"
+
+msgid "Kuwait"
+msgstr "Кувейт"
+
+msgid "Kyrgyzstan"
+msgstr "Киргизия"
+
+msgid "Lao People's Democratic Republic"
+msgstr "Лаос"
+
+msgid "Latvia"
+msgstr "Латвия"
+
+msgid "Lebanon"
+msgstr "Ливан"
+
+msgid "Lesotho"
+msgstr "Лесото"
+
+msgid "Liberia"
+msgstr "Либерия"
+
+msgid "Libyan Arab Jamahiriya"
+msgstr "Ливия"
+
+msgid "Liechtenstein"
+msgstr "Лихтенштейн"
+
+msgid "Lithuania"
+msgstr "Литва"
+
+msgid "Luxembourg"
+msgstr "Люксембург"
+
+msgid "Macao"
+msgstr "Макао (САР)"
+
+msgid "Macedonia, The Former Yugoslav Republic of"
+msgstr "Северная Македония"
+
+msgid "Madagascar"
+msgstr "Мадагаскар"
+
+msgid "Malawi"
+msgstr "Малави"
+
+msgid "Malaysia"
+msgstr "Малайзия"
+
+msgid "Maldives"
+msgstr "Мальдивы"
+
+msgid "Mali"
+msgstr "Мали"
+
+msgid "Malta"
+msgstr "Мальта"
+
+msgid "Marshall Islands"
+msgstr "Маршалловы о-ва"
+
+msgid "Martinique"
+msgstr "Мартиника"
+
+msgid "Mauritania"
+msgstr "Мавритания"
+
+msgid "Mauritius"
+msgstr "Маврикий"
+
+msgid "Mayotte"
+msgstr "Майотта"
+
+msgid "Mexico"
+msgstr "Мексика"
+
+msgid "Micronesia, Federated States of"
+msgstr "Федеративные Штаты Микронезии"
+
+msgid "Moldova"
+msgstr "Молдова"
+
+msgid "Monaco"
+msgstr "Монако"
+
+msgid "Mongolia"
+msgstr "Монголия"
+
+msgid "Montenegro"
+msgstr "Черногория"
+
+msgid "Montserrat"
+msgstr "Монтсеррат"
+
+msgid "Morocco"
+msgstr "Марокко"
+
+msgid "Mozambique"
+msgstr "Мозамбик"
+
+msgid "Myanmar"
+msgstr "Мьянма (Бирма)"
+
+msgid "Namibia"
+msgstr "Намибия"
+
+msgid "Nauru"
+msgstr "Науру"
+
+msgid "Nepal"
+msgstr "Непал"
+
+msgid "Netherlands"
+msgstr "Нидерланды"
+
+msgid "Netherlands Antilles"
+msgstr "Нидерландские Антильские острова"
+
+msgid "New Caledonia"
+msgstr "Новая Каледония"
+
+msgid "New Zealand"
+msgstr "Новая Зеландия"
+
+msgid "Nicaragua"
+msgstr "Никарагуа"
+
+msgid "Niger"
+msgstr "Нигер"
+
+msgid "Nigeria"
+msgstr "Нигерия"
+
+msgid "Niue"
+msgstr "Ниуэ"
+
+msgid "Norfolk Island"
+msgstr "о-в Норфолк"
+
+msgid "Northern Mariana Islands"
+msgstr "Северные Марианские о-ва"
+
+msgid "Norway"
+msgstr "Норвегия"
+
+msgid "Oman"
+msgstr "Оман"
+
+msgid "Pakistan"
+msgstr "Пакистан"
+
+msgid "Palau"
+msgstr "Палау"
+
+msgid "Palestinian Territory, Occupied"
+msgstr "Палестинские территории"
+
+msgid "Panama"
+msgstr "Панама"
+
+msgid "Papua New Guinea"
+msgstr "Папуа-Новая Гвинея"
+
+msgid "Paraguay"
+msgstr "Парагвай"
+
+msgid "Peru"
+msgstr "Перу"
+
+msgid "Philippines"
+msgstr "Филиппины"
+
+msgid "Pitcairn"
+msgstr "о-ва Питкэрн"
+
+msgid "Poland"
+msgstr "Польша"
+
+msgid "Portugal"
+msgstr "Португалия"
+
+msgid "Puerto Rico"
+msgstr "Пуэрто-Рико"
+
+msgid "Qatar"
+msgstr "Катар"
+
+msgid "Reunion"
+msgstr "Реюньон"
+
+msgid "Romania"
+msgstr "Румыния"
+
+msgid "Russian Federation"
+msgstr "Россия"
+
+msgid "Rwanda"
+msgstr "Руанда"
+
+msgid "Saint Barthelemy"
+msgstr "Сен-Бартелеми"
+
+msgid "Saint Helena"
+msgstr "о-в Св. Елены"
+
+msgid "Saint Kitts and Nevis"
+msgstr "Сент-Китс и Невис"
+
+msgid "Saint Lucia"
+msgstr "Сент-Люсия"
+
+msgid "Saint Martin"
+msgstr "Сен-Мартен"
+
+msgid "Saint Pierre and Miquelon"
+msgstr "Сен-Пьер и Микелон"
+
+msgid "Saint Vincent and the Grenadines"
+msgstr "Сент-Винсент и Гренадины"
+
+msgid "Samoa"
+msgstr "Самоа"
+
+msgid "San Marino"
+msgstr "Сан-Марино"
+
+msgid "Sao Tome and Principe"
+msgstr "Сан-Томе и Принсипи"
+
+msgid "Saudi Arabia"
+msgstr "Саудовская Аравия"
+
+msgid "Senegal"
+msgstr "Сенегал"
+
+msgid "Serbia"
+msgstr "Сербия"
+
+msgid "Seychelles"
+msgstr "Сейшельские о-ва"
+
+msgid "Sierra Leone"
+msgstr "Сьерра-Леоне"
+
+msgid "Singapore"
+msgstr "Сингапур"
+
+msgid "Slovakia"
+msgstr "Словакия"
+
+msgid "Slovenia"
+msgstr "Словения"
+
+msgid "Solomon Islands"
+msgstr "Соломоновы о-ва"
+
+msgid "Somalia"
+msgstr "Сомали"
+
+msgid "South Africa"
+msgstr "Южно-Африканская Республика"
+
+msgid "South Georgia and the South Sandwich Islands"
+msgstr "Южная Георгия и Южные Сандвичевы о-ва"
+
+msgid "Spain"
+msgstr "Испания"
+
+msgid "Sri Lanka"
+msgstr "Шри-Ланка"
+
+msgid "Sudan"
+msgstr "Судан"
+
+msgid "Suriname"
+msgstr "Суринам"
+
+msgid "Svalbard and Jan Mayen"
+msgstr "Шпицберген и Ян-Майен"
+
+msgid "Swaziland"
+msgstr "Эсватини"
+
+msgid "Sweden"
+msgstr "Швеция"
+
+msgid "Switzerland"
+msgstr "Швейцария"
+
+msgid "Syrian Arab Republic"
+msgstr "Сирия"
+
+msgid "Taiwan, Province of China"
+msgstr "Тайвань"
+
+msgid "Tajikistan"
+msgstr "Таджикистан"
+
+msgid "Tanzania, United Republic of"
+msgstr "Танзания"
+
+msgid "Thailand"
+msgstr "Таиланд"
+
+msgid "Timor-Leste"
+msgstr "Восточный Тимор"
+
+msgid "Togo"
+msgstr "Того"
+
+msgid "Tokelau"
+msgstr "Токелау"
+
+msgid "Tonga"
+msgstr "Тонга"
+
+msgid "Trinidad and Tobago"
+msgstr "Тринидад и Тобаго"
+
+msgid "Tunisia"
+msgstr "Тунис"
+
+msgid "Turkey"
+msgstr "Турция"
+
+msgid "Turkmenistan"
+msgstr "Туркменистан"
+
+msgid "Turks and Caicos Islands"
+msgstr "Тёркс и Кайкос"
+
+msgid "Tuvalu"
+msgstr "Тувалу"
+
+msgid "Uganda"
+msgstr "Уганда"
+
+msgid "Ukraine"
+msgstr "Украина"
+
+msgid "United Arab Emirates"
+msgstr "ОАЭ"
+
+msgid "United States"
+msgstr "Соединённые Штаты"
+
+msgid "United States Minor Outlying Islands"
+msgstr "Внешние малые о-ва (США)"
+
+msgid "Uruguay"
+msgstr "Уругвай"
+
+msgid "Uzbekistan"
+msgstr "Узбекистан"
+
+msgid "Vanuatu"
+msgstr "Вануату"
+
+msgid "Venezuela"
+msgstr "Венесуэла"
+
+msgid "Viet Nam"
+msgstr "Вьетнам"
+
+msgid "Virgin Islands, British"
+msgstr "Виргинские о-ва (Великобритания)"
+
+msgid "Virgin Islands, U.S."
+msgstr "Виргинские о-ва (США)"
+
+msgid "Wallis and Futuna"
+msgstr "Уоллис и Футуна"
+
+msgid "Western Sahara"
+msgstr "Западная Сахара"
+
+msgid "Yemen"
+msgstr "Йемен"
+
+msgid "Zambia"
+msgstr "Замбия"
+
+msgid "Zimbabwe"
+msgstr "Зимбабве"
+
+msgctxt "goal type"
+msgid "Revenue"
+msgstr "Выручка"
+
+msgctxt "goal type"
+msgid "Deals Closed"
+msgstr "Закрытые сделки"
+
+msgctxt "goal type"
+msgid "Activities"
+msgstr "Активности"
+
+msgctxt "goal period"
+msgid "Monthly"
+msgstr "Месяц"
+
+msgctxt "goal period"
+msgid "Quarterly"
+msgstr "Квартал"
+
+msgctxt "goal period"
+msgid "Yearly"
+msgstr "Год"
+
+msgctxt "goal period"
+msgid "Custom"
+msgstr "Свой период"
+
+msgid "USD, Dollar"
+msgstr "USD, доллар США"
+
+msgid "EUR, Euro"
+msgstr "EUR, евро"
+
+msgid "GBP, Pound"
+msgstr "GBP, фунт стерлингов"
+
+msgid "INR, Rupee"
+msgstr "INR, индийская рупия"
+
+msgid "CAD, Dollar"
+msgstr "CAD, канадский доллар"
+
+msgid "AUD, Dollar"
+msgstr "AUD, австралийский доллар"
+
+msgid "JPY, Yen"
+msgstr "JPY, иена"
+
+msgid "CNY, Yuan"
+msgstr "CNY, юань"
+
+msgid "CHF, Franc"
+msgstr "CHF, швейцарский франк"
+
+msgid "SGD, Dollar"
+msgstr "SGD, сингапурский доллар"
+
+msgid "AED, Dirham"
+msgstr "AED, дирхам ОАЭ"
+
+msgid "BRL, Real"
+msgstr "BRL, бразильский реал"
+
+msgid "MXN, Peso"
+msgstr "MXN, мексиканское песо"
+
+msgid "ZAR, Rand"
+msgstr "ZAR, южноафриканский рэнд"
+
+msgid "Phone must be in E.164 format (e.g., +12025551234)"
+msgstr "Телефон должен быть в формате E.164 (например, +12025551234)"
+
+msgid ""
+"Enter a valid phone number (7-25 characters, digits and separators only)"
+msgstr ""
+"Введите корректный номер телефона (от 7 до 25 символов: только цифры и "
+"разделители)"
+
+#, python-format
+msgid "'%(value)s' is not a valid id."
+msgstr "«%(value)s» не является корректным идентификатором."
+
+#, python-format
+msgid "%(field)s must be a list of ids."
+msgstr "%(field)s должно быть списком идентификаторов."
+
+#, python-format
+msgid "'%(value)s' is not a valid date. Use YYYY-MM-DD."
+msgstr ""
+"«%(value)s» не является корректной датой. Используйте формат ГГГГ-ММ-ДД."
+
+#, python-format
+msgid "'%(value)s' is not a valid number."
+msgstr "«%(value)s» не является корректным числом."
+
+#, python-format
+msgid "%(value)s is not a valid IANA timezone."
+msgstr "%(value)s не является часовым поясом IANA."
+
+#, python-format
+msgid "%(value)r is not a supported language."
+msgstr "Язык %(value)r не поддерживается."
+
+#, python-format
+msgid "Use between %(min)d and %(max)d characters."
+msgstr "Используйте от %(min)d до %(max)d символов."
+
+msgid ""
+"Use lowercase letters, numbers and single hyphens, not starting or ending "
+"with a hyphen."
+msgstr ""
+"Используйте строчные латинские буквы, цифры и одиночные дефисы; адрес не "
+"может начинаться или заканчиваться дефисом."
+
+#, python-format
+msgid "'%(value)s' is reserved. Choose another address."
+msgstr "Адрес «%(value)s» зарезервирован. Выберите другой."
+
+msgid "Use letters, numbers, hyphens and underscores only."
+msgstr "Используйте только латинские буквы, цифры, дефисы и подчёркивания."
+
+msgid "Only an organization admin can do this."
+msgstr "Это может сделать только администратор организации."
+
+msgid "Unknown app."
+msgstr "Неизвестное приложение."
+
+msgid "Send action=install, upgrade or remove."
+msgstr "Передайте action=install, upgrade или remove."
+
+msgid "That attachment has no file."
+msgstr "У этого вложения нет файла."
+
+msgid "Unknown event type."
+msgstr "Неизвестный тип события."
+
+msgid "Must be on or before 'to'."
+msgstr "Должно быть не позже 'to'."
+
+msgid "User account is disabled"
+msgstr "Учётная запись отключена"
+
+msgid "Missing required parameters"
+msgstr "Не хватает обязательных параметров"
+
+msgid "Failed to communicate with Google"
+msgstr "Не удалось связаться с Google"
+
+msgid "Token exchange failed"
+msgstr "Не удалось обменять токен"
+
+msgid "No ID token received"
+msgstr "ID-токен не получен"
+
+msgid "Invalid ID token format"
+msgstr "Неверный формат ID-токена"
+
+msgid "No email in token"
+msgstr "В токене нет адреса электронной почты"
+
+msgid "Google account email is not verified"
+msgstr "Адрес электронной почты аккаунта Google не подтверждён"
+
+msgid "Missing idToken"
+msgstr "Нет idToken"
+
+msgid "Refresh token is required"
+msgstr "Нужен токен обновления"
+
+msgid "Organization membership revoked. Please login again."
+msgstr "Ваше участие в организации отозвано. Войдите снова."
+
+msgid "Invalid or expired token"
+msgstr "Токен недействителен или истёк"
+
+msgid "User not found"
+msgstr "Пользователь не найден"
+
+msgid "Signed out."
+msgstr "Вы вышли из системы."
+
+msgid "org_id is required"
+msgstr "Нужен org_id"
+
+msgid "org_id must be a valid UUID"
+msgstr "org_id должен быть корректным UUID"
+
+msgid "User does not have access to this organization"
+msgstr "У пользователя нет доступа к этой организации"
+
+msgid "If this email is valid, you will receive a sign-in link."
+msgstr "Если этот адрес зарегистрирован, вы получите ссылку для входа."
+
+msgid "Invalid request"
+msgstr "Некорректный запрос"
+
+msgid "Invalid or expired link"
+msgstr "Ссылка недействительна или истекла"
+
+msgid "Invalid or expired code"
+msgstr "Код неверен или истёк"
+
+msgid "Not found"
+msgstr "Не найдено"
+
+#, python-format
+msgid "Priority: %(priority)s"
+msgstr "Приоритет: %(priority)s"
+
+msgid "Admin access required"
+msgstr "Требуются права администратора"
+
+msgid "Custom field not found"
+msgstr "Дополнительное поле не найдено"
+
+msgid "Custom field deactivated"
+msgstr "Дополнительное поле отключено"
+
+msgctxt "short date: month day"
+msgid "M j"
+msgstr "j E"
+
+msgctxt "today queue"
+msgid "Overdue"
+msgstr "Просрочено"
+
+msgctxt "today queue"
+msgid "Today"
+msgstr "Сегодня"
+
+#, python-format
+msgid "%(priority)s · %(account)s · awaiting first reply"
+msgstr "%(priority)s · %(account)s · ждёт первого ответа"
+
+msgid "No account"
+msgstr "Без компании"
+
+msgctxt "today queue"
+msgid "Reply"
+msgstr "Ответить"
+
+#, python-format
+msgid "%(amount)s · %(account)s · due %(date)s"
+msgstr "%(amount)s · %(account)s · срок %(date)s"
+
+msgid "Send a reminder"
+msgstr "Отправить напоминание"
+
+msgid "Stalled"
+msgstr "Застряла"
+
+msgid "Aging"
+msgstr "Дольше обычного"
+
+#, python-format
+msgid "No movement for %(days)d days · %(amount)s · %(stage)s"
+msgid_plural "No movement for %(days)d days · %(amount)s · %(stage)s"
+msgstr[0] "Без движения %(days)d день · %(amount)s · %(stage)s"
+msgstr[1] "Без движения %(days)d дня · %(amount)s · %(stage)s"
+msgstr[2] "Без движения %(days)d дней · %(amount)s · %(stage)s"
+
+msgid "Open the deal"
+msgstr "Открыть сделку"
+
+#, python-format
+msgid "Due %(date)s · %(priority)s"
+msgstr "Срок %(date)s · %(priority)s"
+
+msgid "Open the task"
+msgstr "Открыть задачу"
+
+msgid "tickets awaiting a reply"
+msgid_plural "tickets awaiting a reply"
+msgstr[0] "обращение ждёт ответа"
+msgstr[1] "обращения ждут ответа"
+msgstr[2] "обращений ждут ответа"
+
+msgid "overdue invoices"
+msgid_plural "overdue invoices"
+msgstr[0] "просроченный счёт"
+msgstr[1] "просроченных счёта"
+msgstr[2] "просроченных счетов"
+
+msgid "quiet deals"
+msgid_plural "quiet deals"
+msgstr[0] "затихшая сделка"
+msgstr[1] "затихшие сделки"
+msgstr[2] "затихших сделок"
+
+msgid "tasks due"
+msgid_plural "tasks due"
+msgstr[0] "задача к выполнению"
+msgstr[1] "задачи к выполнению"
+msgstr[2] "задач к выполнению"
+
+#, python-format
+msgid "Task · %(priority)s"
+msgstr "Задача · %(priority)s"
+
+#, python-format
+msgid "%(name)s expected to close"
+msgstr "%(name)s: ожидается закрытие"
+
+#, python-format
+msgid "%(title)s due"
+msgstr "%(title)s: срок оплаты"
+
+msgid "This is not a push token."
+msgstr "Это не push-токен."
+
+msgid "Document Created Successfully"
+msgstr "Документ создан"
+
+msgid "Document deleted Successfully"
+msgstr "Документ удалён"
+
+msgid "Document Updated Successfully"
+msgstr "Документ обновлён"
+
+msgid "That document has no file."
+msgstr "У этого документа нет файла."
+
+msgid "A record cannot be merged into itself."
+msgstr "Запись нельзя объединить саму с собой."
+
+msgid ""
+"You may not delete the record being merged away, so you cannot merge it."
+msgstr ""
+"У вас нет права удалить запись, которая исчезнет при объединении, поэтому "
+"объединить её нельзя."
+
+#, python-format
+msgid "Merged %(merged)s into %(keeper)s."
+msgstr "Запись %(merged)s объединена с %(keeper)s."
+
+msgid "Only admins can switch modules on or off."
+msgstr "Включать и отключать модули могут только администраторы."
+
+msgid "Organization context required"
+msgstr "Не выбрана организация"
+
+msgid "Only admins can update organization settings"
+msgstr "Изменять настройки организации могут только администраторы"
+
+msgid "Only admins can change the help center."
+msgstr "Изменять справочный центр могут только администраторы."
+
+msgid "Cannot access a different organization"
+msgstr "Нет доступа к другой организации"
+
+msgid "Cannot update a different organization"
+msgstr "Нельзя изменить другую организацию"
+
+msgid "An app member cannot create an org."
+msgstr "Участник-приложение не может создать организацию."
+
+msgid "New Org is Created."
+msgstr "Организация создана."
+
+msgid "Only organization admins can update organization details"
+msgstr "Изменять данные организации могут только её администраторы"
+
+msgid "Organization not found"
+msgstr "Организация не найдена"
+
+msgid "Organization updated successfully"
+msgstr "Организация обновлена"
+
+msgid "Only organization admins can access the API key"
+msgstr "Доступ к API-ключу есть только у администраторов организации"
+
+msgid "API key rotated. The previous key is no longer valid."
+msgstr "API-ключ заменён. Прежний ключ больше не действует."
+
+msgid "Profile updated successfully"
+msgstr "Профиль обновлён"
+
+msgid "Unknown pack."
+msgstr "Неизвестный набор."
+
+msgid "If this email is valid, you will receive a sign-in code."
+msgstr "Если этот адрес зарегистрирован, вы получите код для входа."
+
+msgid "That code is not valid any more. Request a new one."
+msgstr "Этот код больше не действует. Запросите новый."
+
+#, python-format
+msgid "Choose one of: %(lists)s."
+msgstr "Выберите одно из значений: %(lists)s."
+
+msgid "No such saved view."
+msgstr "Такого сохранённого представления нет."
+
+msgid "tags must be a list of tag names."
+msgstr "tags должно быть списком названий тегов."
+
+msgid "Each assignee must be an active member of this organization."
+msgstr ""
+"Каждый ответственный должен быть активным участником этой организации."
+
+msgid "API key added sucessfully"
+msgstr "API-ключ добавлен"
+
+msgid "API setting Updated sucessfully"
+msgstr "Настройки API обновлены"
+
+msgid "API setting Updated successfully"
+msgstr "Настройки API обновлены"
+
+msgid "API setting deleted sucessfully"
+msgstr "Настройки API удалены"
+
+msgid "API keys"
+msgstr "API-ключи"
+
+msgid "Articles"
+msgstr "Статьи"
+
+msgid "Web forms"
+msgstr "Веб-формы"
+
+msgid "Lead webhooks"
+msgstr "Вебхуки для лидов"
+
+msgid "Macros"
+msgstr "Шаблоны ответов"
+
+#, python-format
+msgid "%(field)s must be text."
+msgstr "%(field)s должно быть текстом."
+
+msgid "Only admins can create tags"
+msgstr "Создавать теги могут только администраторы"
+
+msgid "Tag reactivated successfully"
+msgstr "Тег снова активен"
+
+msgid "A tag with this name already exists."
+msgstr "Тег с таким названием уже существует."
+
+msgid "Tag Created Successfully"
+msgstr "Тег создан"
+
+msgid "Tag not found."
+msgstr "Тег не найден."
+
+msgid "Only admins can update tags"
+msgstr "Изменять теги могут только администраторы"
+
+msgid "Tag Updated Successfully"
+msgstr "Тег обновлён"
+
+msgid "Only admins can archive tags"
+msgstr "Архивировать теги могут только администраторы"
+
+msgid "Tag archived successfully"
+msgstr "Тег перенесён в архив"
+
+msgid "Only admins can restore tags"
+msgstr "Восстанавливать теги могут только администраторы"
+
+msgid "Tag restored successfully"
+msgstr "Тег восстановлен"
+
+msgid "Only admins can merge tags"
+msgstr "Объединять теги могут только администраторы"
+
+msgid "A tag cannot merge into itself."
+msgstr "Тег нельзя объединить с самим собой."
+
+msgid "Restore that tag before merging records onto it."
+msgstr "Сначала восстановите этот тег, а затем переносите на него записи."
+
+#, python-format
+msgid "Merged %(source)s into %(target)s. %(moved)d record(s) moved."
+msgid_plural "Merged %(source)s into %(target)s. %(moved)d record(s) moved."
+msgstr[0] ""
+"Тег %(source)s объединён с тегом %(target)s. Перенесена %(moved)d запись."
+msgstr[1] ""
+"Тег %(source)s объединён с тегом %(target)s. Перенесено %(moved)d записи."
+msgstr[2] ""
+"Тег %(source)s объединён с тегом %(target)s. Перенесено %(moved)d записей."
+
+msgid "Send member ids, or an empty list to remove every member."
+msgstr ""
+"Передайте идентификаторы участников или пустой список, чтобы удалить всех "
+"участников."
+
+#, python-format
+msgid "'%(id)s' is not a member of this organization."
+msgstr "«%(id)s» не является участником этой организации."
+
+msgid "You don't have permission to perform this action."
+msgstr "У вас нет прав на это действие."
+
+msgid "Team Created Successfully"
+msgstr "Команда создана"
+
+msgid "Team Updated Successfully"
+msgstr "Команда обновлена"
+
+msgid "Team Deleted Successfully"
+msgstr "Команда удалена"
+
+msgid "User already in organization"
+msgstr "Пользователь уже состоит в организации"
+
+msgid "User Created Successfully"
+msgstr "Пользователь создан"
+
+msgid "User company doesnot match with header...."
+msgstr "Организация пользователя не совпадает с указанной в заголовке."
+
+msgid "User Updated Successfully"
+msgstr "Пользователь обновлён"
+
+msgid "User company does not match with header...."
+msgstr "Организация пользователя не совпадает с указанной в заголовке."
+
+msgid "This person"
+msgstr "Этот пользователь"
+
+msgid ""
+"This user can't be deleted while they still have time entries or approvals "
+"linked to them."
+msgstr ""
+"Этого пользователя нельзя удалить, пока с ним связаны записи учёта времени "
+"или согласования."
+
+msgid "You do not have permission to perform this action"
+msgstr "У вас нет прав на это действие"
+
+msgid "The organization must keep at least one active admin."
+msgstr "В организации должен остаться хотя бы один активный администратор."
+
+msgid "Please enter Valid Status for user"
+msgstr "Укажите корректный статус пользователя"

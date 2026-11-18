@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   MODULE_KEYS,
   isOn,
@@ -135,6 +136,22 @@ describe('module logic', () => {
     expect(todayClearText(off('tickets', 'invoices', 'deals', 'tasks'))).toBe(
       'Nothing is waiting on you.'
     );
+  });
+
+  describe('in Russian', () => {
+    const base = getLocale;
+    afterEach(() => overwriteGetLocale(base));
+
+    it('names the default labels and what Today is clear of', () => {
+      overwriteGetLocale(() => 'ru');
+      expect(labelOf(null, 'tickets')).toBe('Обращения');
+      expect(todayClearText(null)).toBe(
+        'Нет просроченных обращений, счетов, затихших сделок или задач.'
+      );
+      expect(todayClearText(MODULE_KEYS.map((k) => row(k, { available: false })))).toBe(
+        'Ничего не ждёт вашего внимания.'
+      );
+    });
   });
 
   it('drops tickets from the notifications line when Tickets is off', () => {

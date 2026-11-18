@@ -100,4 +100,15 @@ describe('NUMBER_DATE_PARTS', () => {
     expect(NUMBER_DATE_PARTS[0].label).toBe('No date, one running count');
     expect(NUMBER_DATE_PARTS.map((p) => p.value)).toEqual(['NONE', 'YEAR', 'MONTH', 'DAY']);
   });
+
+  it('labels each part in the request locale, read when used', async () => {
+    const { getLocale, overwriteGetLocale } = await import('#lib/paraglide/runtime.js');
+    const base = getLocale;
+    overwriteGetLocale(() => 'ru');
+    try {
+      expect(NUMBER_DATE_PARTS[1].label).toBe('Год, нумерация с начала каждого года');
+    } finally {
+      overwriteGetLocale(base);
+    }
+  });
 });

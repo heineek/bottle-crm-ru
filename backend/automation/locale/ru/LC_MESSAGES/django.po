@@ -1,0 +1,376 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-10 09:42+0000\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Name"
+msgstr "Название"
+
+msgid "Email"
+msgstr "Эл. почта"
+
+msgid "Phone"
+msgstr "Телефон"
+
+msgid "Website"
+msgstr "Сайт"
+
+msgid "City"
+msgstr "Город"
+
+msgid "Country"
+msgstr "Страна"
+
+msgid "Industry"
+msgstr "Отрасль"
+
+msgid "Employees"
+msgstr "Сотрудники"
+
+msgid "Annual revenue"
+msgstr "Годовая выручка"
+
+msgid "Assigned to"
+msgstr "Ответственный"
+
+msgid "First name"
+msgstr "Имя"
+
+msgid "Last name"
+msgstr "Фамилия"
+
+msgid "Company"
+msgstr "Компания"
+
+msgid "Job title"
+msgstr "Должность"
+
+msgid "Department"
+msgstr "Отдел"
+
+msgid "Do not call"
+msgstr "Не звонить"
+
+msgid "Deal name"
+msgstr "Название сделки"
+
+msgid "Stage"
+msgstr "Этап"
+
+msgid "Outcome"
+msgstr "Итог"
+
+#, python-brace-format
+msgid "{label} (any pipeline)"
+msgstr "{label} (любая воронка)"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Amount"
+msgstr "Сумма"
+
+msgid "Probability"
+msgstr "Вероятность"
+
+msgid "Close date"
+msgstr "Дата закрытия"
+
+msgid "Title"
+msgstr "Название"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Rating"
+msgstr "Рейтинг"
+
+msgid "Estimated value"
+msgstr "Ожидаемая сумма"
+
+msgid "Expected close date"
+msgstr "Ожидаемая дата закрытия"
+
+msgid "Next follow-up"
+msgstr "Следующий контакт"
+
+msgid "Priority"
+msgstr "Приоритет"
+
+msgid "Due date"
+msgstr "Срок"
+
+msgid "Subject"
+msgstr "Тема"
+
+msgid "Closed on"
+msgstr "Дата закрытия"
+
+msgid "Paused because the admin who switched it on is no longer an admin."
+msgstr ""
+"Приостановлено: администратор, который включил правило, больше не "
+"администратор."
+
+msgid "Paused because the admin who switched it on was deactivated."
+msgstr "Приостановлено: администратор, который включил правило, деактивирован."
+
+msgid "Paused because the admin who switched it on left the organization."
+msgstr ""
+"Приостановлено: администратор, который включил правило, покинул организацию."
+
+msgid ""
+"Paused because the person who switched it on is not a member of this "
+"organization."
+msgstr ""
+"Приостановлено: человек, который включил правило, не состоит в этой "
+"организации."
+
+msgid "Paused because the user who switched it on was deleted."
+msgstr "Приостановлено: пользователь, который включил правило, удалён."
+
+msgid "Open the record"
+msgstr "Открыть запись"
+
+#, python-format
+msgid "Open the record: %(url)s"
+msgstr "Открыть запись: %(url)s"
+
+msgid "Sent by BottleCRM"
+msgstr "Отправлено из BottleCRM"
+
+msgid "This field is not available."
+msgstr "Это поле недоступно."
+
+msgid "This person is not an active member of this org."
+msgstr "Этот человек не является активным участником организации."
+
+msgid "Each person must be an active member of this org."
+msgstr "Каждый человек должен быть активным участником организации."
+
+msgid "Enter a value."
+msgstr "Введите значение."
+
+msgid "Rules cannot be built on this object."
+msgstr "Для этого объекта нельзя создавать правила."
+
+msgid "Choose all or any."
+msgstr "Выберите «все» или «любое»."
+
+#, python-format
+msgid "Unknown key: %(keys)s."
+msgid_plural "Unknown keys: %(keys)s."
+msgstr[0] "Неизвестный ключ: %(keys)s."
+msgstr[1] "Неизвестные ключи: %(keys)s."
+msgstr[2] "Неизвестные ключи: %(keys)s."
+
+msgid "Choose at least one person."
+msgstr "Выберите хотя бы одного человека."
+
+#, python-format
+msgid "Choose at most %(count)s person."
+msgid_plural "Choose at most %(count)s people."
+msgstr[0] "Выберите не больше %(count)s человека."
+msgstr[1] "Выберите не больше %(count)s человек."
+msgstr[2] "Выберите не больше %(count)s человек."
+
+msgid "Choose each person once."
+msgstr "Выберите каждого человека только один раз."
+
+msgid "Enter text."
+msgstr "Введите текст."
+
+msgid "Enter a number."
+msgstr "Введите число."
+
+msgid "Enter a date as YYYY-MM-DD."
+msgstr "Введите дату в формате ГГГГ-ММ-ДД."
+
+msgid "Enter true or false."
+msgstr "Введите true или false."
+
+msgid "Choose one of the options."
+msgstr "Выберите один из вариантов."
+
+msgid "A rule cannot set this option."
+msgstr "Правило не может установить этот вариант."
+
+msgid "This field cannot be used in rules."
+msgstr "Это поле нельзя использовать в правилах."
+
+msgid "Choose what sets the rule off."
+msgstr "Выберите, что запускает правило."
+
+msgid "Choose created or updated."
+msgstr "Выберите создание или изменение."
+
+msgid "A created trigger takes no field."
+msgstr "Для триггера создания поле не указывается."
+
+msgid "A created trigger takes no value."
+msgstr "Для триггера создания значение не указывается."
+
+msgid "Choose a field for this value."
+msgstr "Выберите поле для этого значения."
+
+msgid "A change of people cannot set off a rule."
+msgstr "Смена людей не может запускать правило."
+
+msgid "Conditions must be a list."
+msgstr "Условия должны быть списком."
+
+#, python-format
+msgid "At most %(count)s condition."
+msgid_plural "At most %(count)s conditions."
+msgstr[0] "Не больше %(count)s условия."
+msgstr[1] "Не больше %(count)s условий."
+msgstr[2] "Не больше %(count)s условий."
+
+msgid "Each condition must be an object."
+msgstr "Каждое условие должно быть объектом."
+
+msgid "Only an updated trigger has an old value."
+msgstr "Прежнее значение есть только у триггера изменения."
+
+msgid "People have no old value to compare."
+msgstr "У людей нет прежнего значения для сравнения."
+
+msgid "This operator does not apply to this field."
+msgstr "Этот оператор не применяется к этому полю."
+
+msgid "This operator takes no value."
+msgstr "Этому оператору не нужно значение."
+
+msgid "Choose at least one option."
+msgstr "Выберите хотя бы один вариант."
+
+msgid "Actions must be a list."
+msgstr "Действия должны быть списком."
+
+msgid "Add at least one action."
+msgstr "Добавьте хотя бы одно действие."
+
+#, python-format
+msgid "At most %(count)s action."
+msgid_plural "At most %(count)s actions."
+msgstr[0] "Не больше %(count)s действия."
+msgstr[1] "Не больше %(count)s действий."
+msgstr[2] "Не больше %(count)s действий."
+
+msgid "Each action must be an object."
+msgstr "Каждое действие должно быть объектом."
+
+msgid "Unknown action."
+msgstr "Неизвестное действие."
+
+msgid "This object has no parent a rule can set."
+msgstr ""
+"У этого объекта нет родительской записи, которую может изменить правило."
+
+msgid "Choose the record, its parent or a link."
+msgstr "Выберите запись, её родительскую запись или связь."
+
+msgid "A rule cannot set this field."
+msgstr "Правило не может изменить это поле."
+
+msgid "Enter a value, or null to clear the field."
+msgstr "Введите значение или null, чтобы очистить поле."
+
+msgid "This object has no assignees a rule can set."
+msgstr "У этого объекта нет ответственных, которых может назначить правило."
+
+msgid "Choose replace or rotate."
+msgstr "Выберите замену или ротацию."
+
+msgid "Replace takes exactly one person."
+msgstr "Для замены нужен ровно один человек."
+
+#, python-format
+msgid "Rotate takes %(min)s to %(max)s person."
+msgid_plural "Rotate takes %(min)s to %(max)s people."
+msgstr[0] "Для ротации нужно от %(min)s до %(max)s человека."
+msgstr[1] "Для ротации нужно от %(min)s до %(max)s человек."
+msgstr[2] "Для ротации нужно от %(min)s до %(max)s человек."
+
+#, python-format
+msgid "Enter a title of 1 to %(max)s character."
+msgid_plural "Enter a title of 1 to %(max)s characters."
+msgstr[0] "Введите название длиной от 1 до %(max)s символа."
+msgstr[1] "Введите название длиной от 1 до %(max)s символов."
+msgstr[2] "Введите название длиной от 1 до %(max)s символов."
+
+#, python-format
+msgid "Enter a whole number of days from 0 to %(max)s."
+msgid_plural "Enter a whole number of days from 0 to %(max)s."
+msgstr[0] "Введите целое число дней от 0 до %(max)s."
+msgstr[1] "Введите целое число дней от 0 до %(max)s."
+msgstr[2] "Введите целое число дней от 0 до %(max)s."
+
+msgid "Choose Low, Medium or High."
+msgstr "Выберите низкий, средний или высокий приоритет."
+
+msgid "Choose who gets the task."
+msgstr "Выберите, кому поставить задачу."
+
+msgid "Choose a person."
+msgstr "Выберите человека."
+
+msgid "Only a task for a chosen person takes one."
+msgstr "Человека можно указать, только если задача ставится выбранному человеку."
+
+msgid "Choose recipients from the list."
+msgstr "Выберите получателей из списка."
+
+msgid "Choose who to notify."
+msgstr "Выберите, кого уведомить."
+
+#, python-format
+msgid "Enter a message of 1 to %(max)s character."
+msgid_plural "Enter a message of 1 to %(max)s characters."
+msgstr[0] "Введите сообщение длиной от 1 до %(max)s символа."
+msgstr[1] "Введите сообщение длиной от 1 до %(max)s символов."
+msgstr[2] "Введите сообщение длиной от 1 до %(max)s символов."
+
+msgid "Choose an active JSON endpoint of this org."
+msgstr "Выберите активный JSON-вебхук этой организации."
+
+msgid "Over your plan's limit"
+msgstr "Превышен лимит вашего тарифа"
+
+msgid "Paused"
+msgstr "Приостановлено"
+
+msgid "Off"
+msgstr "Выключено"
+
+#, python-format
+msgid "Paused: %(module)s is switched off"
+msgstr "Приостановлено: модуль «%(module)s» выключен"
+
+#, python-format
+msgid "Needs attention: %(error)s"
+msgstr "Требует внимания: %(error)s"
+
+msgid "On"
+msgstr "Включено"
+
+msgid "No such record."
+msgstr "Такой записи нет."
+
+msgid "Send a list of rule ids."
+msgstr "Передайте список идентификаторов правил."
+
+msgid "Each id must be one of this org's rules."
+msgstr "Каждый идентификатор должен принадлежать правилу этой организации."
+
+msgid "Name each rule once."
+msgstr "Укажите каждое правило только один раз."

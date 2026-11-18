@@ -1,0 +1,1090 @@
+# Russian translation of the BottleCRM invoices app.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-crm invoices\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 14:21+0000\n"
+"PO-Revision-Date: 2026-11-10 12:00+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Invoice created successfully"
+msgstr "Счёт создан"
+
+msgid "Invoice updated successfully"
+msgstr "Счёт обновлён"
+
+msgid "Cannot send a paid invoice"
+msgstr "Нельзя отправить оплаченный счёт"
+
+msgid "Cannot send a cancelled invoice"
+msgstr "Нельзя отправить отменённый счёт"
+
+msgid "Invoice sent successfully"
+msgstr "Счёт отправлен"
+
+msgid "Payment recorded successfully"
+msgstr "Платёж записан"
+
+msgid "Invoice duplicated successfully"
+msgstr "Копия счёта создана"
+
+msgid "Invoice is already cancelled"
+msgstr "Счёт уже отменён"
+
+msgid "Cannot cancel a paid invoice"
+msgstr "Нельзя отменить оплаченный счёт"
+
+msgid "Invoice cancelled successfully"
+msgstr "Счёт отменён"
+
+msgid "PDF generation unavailable"
+msgstr "Создание PDF недоступно"
+
+msgid "Failed to generate PDF"
+msgstr "Не удалось создать PDF"
+
+msgid "Line item added"
+msgstr "Позиция добавлена"
+
+msgid "Line item not found"
+msgstr "Позиция не найдена"
+
+msgid "Line item updated"
+msgstr "Позиция обновлена"
+
+msgid "Line item deleted"
+msgstr "Позиция удалена"
+
+msgid "Payment recorded"
+msgstr "Платёж записан"
+
+msgid "Payment not found"
+msgstr "Платёж не найден"
+
+msgid "Payment deleted"
+msgstr "Платёж удалён"
+
+msgid "Only an administrator can change the product catalog."
+msgstr "Изменять каталог товаров может только администратор."
+
+msgid "Product created"
+msgstr "Товар создан"
+
+msgid "Product not found"
+msgstr "Товар не найден"
+
+msgid "Product updated"
+msgstr "Товар обновлён"
+
+msgid "Product deleted"
+msgstr "Товар удалён"
+
+msgid "Estimate created"
+msgstr "Коммерческое предложение создано"
+
+msgid "Estimate updated"
+msgstr "Коммерческое предложение обновлено"
+
+msgid "Estimate deleted"
+msgstr "Коммерческое предложение удалено"
+
+msgid "Estimate already converted to invoice"
+msgstr "Коммерческое предложение уже преобразовано в счёт"
+
+msgid "Estimate converted to invoice"
+msgstr "Коммерческое предложение преобразовано в счёт"
+
+msgid "Estimate sent successfully"
+msgstr "Коммерческое предложение отправлено"
+
+msgid "Cannot send an accepted estimate"
+msgstr "Нельзя отправить принятое коммерческое предложение"
+
+msgid "Cannot send a declined estimate"
+msgstr "Нельзя отправить отклонённое коммерческое предложение"
+
+msgid "Cannot send an expired estimate"
+msgstr "Нельзя отправить истёкшее коммерческое предложение"
+
+#, python-format
+msgid ""
+"This estimate expired on %(date)s. Update the expiry date or raise a new "
+"quote before sending it."
+msgstr ""
+"Срок действия этого коммерческого предложения истёк %(date)s. Перед "
+"отправкой измените срок действия или подготовьте новое предложение."
+
+msgid "Recurring invoice created"
+msgstr "Регулярный счёт создан"
+
+msgid "Recurring invoice updated"
+msgstr "Регулярный счёт обновлён"
+
+msgid "Recurring invoice deleted"
+msgstr "Регулярный счёт удалён"
+
+msgid "Recurring invoice resumed"
+msgstr "Регулярный счёт возобновлён"
+
+msgid "Recurring invoice paused"
+msgstr "Регулярный счёт приостановлен"
+
+msgid "Only an administrator can change invoice templates."
+msgstr "Изменять шаблоны счетов может только администратор."
+
+msgid "Template created"
+msgstr "Шаблон создан"
+
+msgid "Template not found"
+msgstr "Шаблон не найден"
+
+msgid "Template updated"
+msgstr "Шаблон обновлён"
+
+msgid "Template deleted"
+msgstr "Шаблон удалён"
+
+msgid "Only an administrator can view invoice template markup."
+msgstr "Просматривать разметку шаблона счёта может только администратор."
+
+msgid "Comment text required"
+msgstr "Введите текст комментария"
+
+msgid "Comment added"
+msgstr "Комментарий добавлен"
+
+msgid "Permission denied"
+msgstr "Доступ запрещён"
+
+msgid "Comment updated"
+msgstr "Комментарий обновлён"
+
+msgid "Comment deleted"
+msgstr "Комментарий удалён"
+
+msgid "File required"
+msgstr "Выберите файл"
+
+msgid "Attachment uploaded"
+msgstr "Вложение загружено"
+
+msgid "Attachment deleted"
+msgstr "Вложение удалено"
+
+msgid "Only an administrator can view invoice reports."
+msgstr "Просматривать отчёты по счетам может только администратор."
+
+msgid "Only an administrator can view account statements."
+msgstr "Просматривать выписки по компаниям может только администратор."
+
+msgid "Account not found"
+msgstr "Компания не найдена"
+
+msgid "Opportunity not found"
+msgstr "Сделка не найдена"
+
+msgid "Invoice can only be created from won opportunities"
+msgstr "Счёт можно создать только из выигранной сделки"
+
+msgid "Opportunity has no products/line items to invoice"
+msgstr "В сделке нет товаров или позиций для счёта"
+
+msgid "Opportunity must have an account to create an invoice"
+msgstr "Чтобы создать счёт, укажите в сделке компанию"
+
+msgid ""
+"Opportunity must have at least one contact you can open to create an invoice"
+msgstr ""
+"Чтобы создать счёт, в сделке должен быть хотя бы один контакт, доступный вам"
+
+msgid "Invoice created successfully from opportunity"
+msgstr "Счёт создан из сделки"
+
+msgid "Only admins can create invoices from time entries."
+msgstr "Создавать счета по записям учёта времени могут только администраторы."
+
+msgid "Send either account_id or project_id."
+msgstr "Передайте либо account_id, либо project_id."
+
+#, python-format
+msgid "group_by must be one of %(choices)s."
+msgstr "group_by должен быть одним из значений: %(choices)s."
+
+msgid "Project not found."
+msgstr "Проект не найден."
+
+msgid "entry_ids must be a non-empty list."
+msgstr "entry_ids должен быть непустым списком."
+
+msgid "Account not found."
+msgstr "Компания не найдена."
+
+msgid "One or more time entries were not found."
+msgstr "Одна или несколько записей учёта времени не найдены."
+
+msgid "This project has no unbilled time to bill."
+msgstr "В этом проекте нет невыставленного времени."
+
+#, python-format
+msgid "Time entry %(id)s is not on this project."
+msgstr "Запись учёта времени %(id)s не относится к этому проекту."
+
+#, python-format
+msgid "Time entry %(id)s is not on a ticket for this account."
+msgstr "Запись учёта времени %(id)s не относится к обращению этой компании."
+
+msgid "Draft invoice created from time entries."
+msgstr "Черновик счёта создан по записям учёта времени."
+
+msgctxt "invoice status"
+msgid "Draft"
+msgstr "Черновик"
+
+msgctxt "invoice status"
+msgid "Sent"
+msgstr "Отправлен"
+
+msgctxt "invoice status"
+msgid "Viewed"
+msgstr "Просмотрен"
+
+msgctxt "invoice status"
+msgid "Paid"
+msgstr "Оплачен"
+
+msgctxt "invoice status"
+msgid "Partially Paid"
+msgstr "Оплачен частично"
+
+msgctxt "invoice status"
+msgid "Overdue"
+msgstr "Просрочен"
+
+msgctxt "invoice status"
+msgid "Pending"
+msgstr "Ожидает"
+
+msgctxt "invoice status"
+msgid "Cancelled"
+msgstr "Отменён"
+
+msgid "Due on Receipt"
+msgstr "Оплата при получении"
+
+msgid "Net 15"
+msgstr "Отсрочка 15 дней"
+
+msgid "Net 30"
+msgstr "Отсрочка 30 дней"
+
+msgid "Net 45"
+msgstr "Отсрочка 45 дней"
+
+msgid "Net 60"
+msgstr "Отсрочка 60 дней"
+
+msgctxt "payment terms"
+msgid "Custom"
+msgstr "Особые условия"
+
+msgid "Cash"
+msgstr "Наличные"
+
+msgid "Check"
+msgstr "Банковский чек"
+
+msgid "Credit Card"
+msgstr "Банковская карта"
+
+msgid "Bank Transfer"
+msgstr "Банковский перевод"
+
+msgid "PayPal"
+msgstr "PayPal"
+
+msgid "Stripe"
+msgstr "Stripe"
+
+msgid "Other"
+msgstr "Другое"
+
+msgid "Weekly"
+msgstr "Еженедельно"
+
+msgid "Bi-weekly"
+msgstr "Раз в две недели"
+
+msgid "Monthly"
+msgstr "Ежемесячно"
+
+msgid "Quarterly"
+msgstr "Ежеквартально"
+
+msgid "Semi-annually"
+msgstr "Раз в полгода"
+
+msgid "Yearly"
+msgstr "Ежегодно"
+
+msgctxt "frequency"
+msgid "Custom"
+msgstr "Свой интервал"
+
+msgid "Percentage (%)"
+msgstr "Процент (%)"
+
+msgid "Fixed Amount"
+msgstr "Фиксированная сумма"
+
+msgid "Tax rate cannot be negative."
+msgstr "Ставка налога не может быть отрицательной."
+
+msgid "Tax rate cannot exceed 100."
+msgstr "Ставка налога не может превышать 100."
+
+msgid "Shipping cannot be negative."
+msgstr "Стоимость доставки не может быть отрицательной."
+
+msgid "A deposit must be more than 0% and at most 100%."
+msgstr "Предоплата должна быть больше 0% и не больше 100%."
+
+msgctxt "estimate status"
+msgid "Draft"
+msgstr "Черновик"
+
+msgctxt "estimate status"
+msgid "Sent"
+msgstr "Отправлено"
+
+msgctxt "estimate status"
+msgid "Viewed"
+msgstr "Просмотрено"
+
+msgctxt "estimate status"
+msgid "Accepted"
+msgstr "Принято"
+
+msgctxt "estimate status"
+msgid "Declined"
+msgstr "Отклонено"
+
+msgctxt "estimate status"
+msgid "Expired"
+msgstr "Истекло"
+
+msgid "Once"
+msgstr "Один раз"
+
+msgid "Weekly until paid"
+msgstr "Еженедельно до оплаты"
+
+msgid "Custom schedule"
+msgstr "Своё расписание"
+
+msgid "Template Name"
+msgstr "Название шаблона"
+
+msgid "Logo"
+msgstr "Логотип"
+
+msgid "Primary Color"
+msgstr "Основной цвет"
+
+msgid "Secondary Color"
+msgstr "Дополнительный цвет"
+
+msgid "Custom HTML"
+msgstr "Свой HTML"
+
+msgid "Custom CSS"
+msgstr "Свой CSS"
+
+msgid "Default Notes"
+msgstr "Примечания по умолчанию"
+
+msgid "Default Terms"
+msgstr "Условия по умолчанию"
+
+msgid "Footer Text"
+msgstr "Текст нижнего колонтитула"
+
+msgid "Is Default"
+msgstr "По умолчанию"
+
+msgid "Product Name"
+msgstr "Название товара"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "SKU"
+msgstr "Артикул"
+
+msgid "Price"
+msgstr "Цена"
+
+msgid "Currency"
+msgstr "Валюта"
+
+msgid "Category"
+msgstr "Категория"
+
+msgid "Is Active"
+msgstr "Активен"
+
+msgid "Invoice Title"
+msgstr "Название счёта"
+
+msgid "Invoice Number"
+msgstr "Номер счёта"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Client Name"
+msgstr "Имя клиента"
+
+msgid "Client Email"
+msgstr "Эл. почта клиента"
+
+msgid "Client Phone"
+msgstr "Телефон клиента"
+
+msgid "Billing Address"
+msgstr "Платёжный адрес"
+
+msgid "Billing City"
+msgstr "Город (платёжный адрес)"
+
+msgid "Billing State"
+msgstr "Регион (платёжный адрес)"
+
+msgid "Billing Postal Code"
+msgstr "Индекс (платёжный адрес)"
+
+msgid "Billing Country"
+msgstr "Страна (платёжный адрес)"
+
+msgid "Client Address"
+msgstr "Адрес клиента"
+
+msgid "Client City"
+msgstr "Город клиента"
+
+msgid "Client State"
+msgstr "Регион клиента"
+
+msgid "Client Postal Code"
+msgstr "Индекс клиента"
+
+msgid "Client Country"
+msgstr "Страна клиента"
+
+msgid "Subtotal"
+msgstr "Промежуточный итог"
+
+msgid "Discount Type"
+msgstr "Тип скидки"
+
+msgid "Discount Value"
+msgstr "Размер скидки"
+
+msgid "Discount Amount"
+msgstr "Сумма скидки"
+
+msgid "Tax Rate (%)"
+msgstr "Ставка налога (%)"
+
+msgid "Tax Amount"
+msgstr "Сумма налога"
+
+msgid "Shipping"
+msgstr "Доставка"
+
+msgid "Total Amount"
+msgstr "Итоговая сумма"
+
+msgid "Amount Paid"
+msgstr "Оплачено"
+
+msgid "Amount Due"
+msgstr "К оплате"
+
+msgid "Issue Date"
+msgstr "Дата выставления"
+
+msgid "Due Date"
+msgstr "Срок оплаты"
+
+msgid "Payment Terms"
+msgstr "Условия оплаты"
+
+msgid "Sent At"
+msgstr "Дата отправки"
+
+msgid "Viewed At"
+msgstr "Дата просмотра"
+
+msgid "Paid At"
+msgstr "Дата оплаты"
+
+msgid "Cancelled At"
+msgstr "Дата отмены"
+
+msgid "Reminders Enabled"
+msgstr "Напоминания включены"
+
+msgid "Remind Days Before Due"
+msgstr "За сколько дней до срока напомнить"
+
+msgid "Remind Days After Due"
+msgstr "Через сколько дней после срока напомнить"
+
+msgid "Reminder Frequency"
+msgstr "Частота напоминаний"
+
+msgid "Last Reminder Sent"
+msgstr "Последнее напоминание"
+
+msgid "Reminders Sent"
+msgstr "Отправлено напоминаний"
+
+msgid "Public Token"
+msgstr "Публичный токен"
+
+msgid "Public Link Enabled"
+msgstr "Публичная ссылка включена"
+
+msgid "Notes"
+msgstr "Заметки"
+
+msgid "Terms & Conditions"
+msgstr "Условия"
+
+msgid "Internal Details"
+msgstr "Внутренние сведения"
+
+msgid "Billing Period"
+msgstr "Расчётный период"
+
+msgid "PO Number"
+msgstr "Номер заказа на закупку"
+
+#, python-format
+msgid "%(time)s ago"
+msgstr "%(time)s назад"
+
+msgid "Item Name"
+msgstr "Название позиции"
+
+msgid "Quantity"
+msgstr "Количество"
+
+msgid "Unit Price"
+msgstr "Цена за единицу"
+
+msgid "Total"
+msgstr "Итого"
+
+msgid "Order"
+msgstr "Порядок"
+
+msgid "Amount"
+msgstr "Сумма"
+
+msgid "Payment Date"
+msgstr "Дата платежа"
+
+msgid "Payment Method"
+msgstr "Способ оплаты"
+
+msgid "Reference Number"
+msgstr "Номер документа"
+
+msgid "Estimate Number"
+msgstr "Номер коммерческого предложения"
+
+msgid "Title"
+msgstr "Название"
+
+msgid "Expiry Date"
+msgstr "Действует до"
+
+msgid "Accepted At"
+msgstr "Дата принятия"
+
+msgid "Declined At"
+msgstr "Дата отклонения"
+
+msgid "Accepted By Name"
+msgstr "Имя принявшего"
+
+msgid "Accepted By Email"
+msgstr "Эл. почта принявшего"
+
+msgid "Accepted From IP"
+msgstr "IP-адрес принявшего"
+
+msgid "Accepted User Agent"
+msgstr "Браузер принявшего"
+
+msgid "Introduction"
+msgstr "Вступление"
+
+msgid "Deposit (%)"
+msgstr "Предоплата (%)"
+
+msgid "Start a project when accepted"
+msgstr "Начать проект после принятия"
+
+msgid "Project billing type"
+msgstr "Тип оплаты проекта"
+
+msgid "Frequency"
+msgstr "Периодичность"
+
+msgid "Custom Days Interval"
+msgstr "Интервал в днях"
+
+msgid "Start Date"
+msgstr "Дата начала"
+
+msgid "End Date"
+msgstr "Дата окончания"
+
+msgid "Next Generation Date"
+msgstr "Дата следующего счёта"
+
+msgid "Auto Send"
+msgstr "Автоотправка"
+
+msgid "Invoices Generated"
+msgstr "Создано счетов"
+
+msgid "Change Details"
+msgstr "Описание изменений"
+
+msgid "Invoice not found"
+msgstr "Счёт не найден"
+
+msgid "Estimate not found"
+msgstr "Коммерческое предложение не найдено"
+
+msgid "Recurring invoice not found"
+msgstr "Регулярный счёт не найден"
+
+msgid "Invoice not found or link expired"
+msgstr "Счёт не найден или срок действия ссылки истёк"
+
+msgid "Estimate not found or link expired"
+msgstr "Коммерческое предложение не найдено или срок действия ссылки истёк"
+
+msgid "Estimate cannot be accepted in current state"
+msgstr "Коммерческое предложение нельзя принять в текущем статусе"
+
+#, python-format
+msgid ""
+"This estimate expired on %(date)s and can no longer be accepted. Please "
+"request an updated quote."
+msgstr ""
+"Срок действия этого коммерческого предложения истёк %(date)s, принять его "
+"уже нельзя. Запросите обновлённое предложение."
+
+msgid "Your name and email are required to accept this estimate."
+msgstr ""
+"Чтобы принять коммерческое предложение, укажите имя и адрес эл. почты."
+
+msgid "Please enter a valid email address."
+msgstr "Введите корректный адрес эл. почты."
+
+msgid "Estimate accepted successfully"
+msgstr "Коммерческое предложение принято"
+
+msgid "Estimate cannot be declined in current state"
+msgstr "Коммерческое предложение нельзя отклонить в текущем статусе"
+
+msgid "Estimate declined"
+msgstr "Коммерческое предложение отклонено"
+
+msgid "Use a six digit hex colour, for example #3B82F6."
+msgstr "Укажите цвет шестью шестнадцатеричными цифрами, например #3B82F6."
+
+msgid "Quantity must be more than zero."
+msgstr "Количество должно быть больше нуля."
+
+msgid "Unit price cannot be negative."
+msgstr "Цена за единицу не может быть отрицательной."
+
+msgid "A discount cannot be negative."
+msgstr "Скидка не может быть отрицательной."
+
+msgid "A percentage discount cannot exceed 100."
+msgstr "Скидка в процентах не может превышать 100."
+
+msgid "A discount cannot exceed the line's amount."
+msgstr "Скидка не может превышать сумму позиции."
+
+msgid "Product not found or does not belong to your organization"
+msgstr "Товар не найден или не относится к вашей организации"
+
+msgid "A line item references a product from another organization."
+msgstr "Позиция ссылается на товар другой организации."
+
+#, python-format
+msgid ""
+"This estimate is %(status)s. Its lines and amounts can only be changed while"
+" it is a Draft."
+msgstr ""
+"Коммерческое предложение в статусе «%(status)s». Его позиции и суммы можно "
+"менять только в черновике."
+
+#, python-format
+msgid ""
+"This invoice is %(status)s. Its lines and amounts can only be changed while "
+"it is a Draft."
+msgstr ""
+"Счёт в статусе «%(status)s». Его позиции и суммы можно менять только в "
+"черновике."
+
+msgid "A discount cannot exceed the subtotal."
+msgstr "Скидка не может превышать промежуточный итог."
+
+msgid "Contact not found, or you do not have access to it."
+msgstr "Контакт не найден, или у вас нет к нему доступа."
+
+msgid "Account not found, or you do not have access to it."
+msgstr "Компания не найдена, или у вас нет к ней доступа."
+
+msgid "Opportunity not found, or you do not have access to it."
+msgstr "Сделка не найдена, или у вас нет к ней доступа."
+
+msgid "Cannot record a payment against a cancelled invoice."
+msgstr "Нельзя записать платёж по отменённому счёту."
+
+msgid "Payment amount must be greater than zero."
+msgstr "Сумма платежа должна быть больше нуля."
+
+#, python-format
+msgid "Payment amount exceeds the amount due (%(amount)s)."
+msgstr "Сумма платежа превышает сумму к оплате (%(amount)s)."
+
+msgid "Organization context required"
+msgstr "Не выбрана организация"
+
+msgid "Template not found or does not belong to your organization"
+msgstr "Шаблон не найден или не относится к вашей организации"
+
+msgid "Contact does not belong to the selected account"
+msgstr "Контакт не относится к выбранной компании"
+
+msgid "An estimate cannot expire before it is issued."
+msgstr ""
+"Срок действия коммерческого предложения не может закончиться раньше даты его"
+" выставления."
+
+msgid "Choose an account to start a project for."
+msgstr "Выберите компанию, для которой начать проект."
+
+msgid "Only an admin can start a project from an estimate."
+msgstr ""
+"Начать проект из коммерческого предложения может только администратор."
+
+msgid ""
+"A custom frequency needs an interval in days. Without one the schedule would"
+" bill monthly."
+msgstr ""
+"Для своего интервала укажите число дней. Без него счета будут выставляться "
+"ежемесячно."
+
+msgid "The next generation date cannot be before the start date."
+msgstr "Дата следующего счёта не может быть раньше даты начала."
+
+msgid "Add at least one line before turning on auto-send."
+msgstr "Перед включением автоотправки добавьте хотя бы одну позицию."
+
+msgid "The end date must be on or after the start date."
+msgstr "Дата окончания не может быть раньше даты начала."
+
+#, python-format
+msgid "A statement can cover at most %(count)d day."
+msgid_plural "A statement can cover at most %(count)d days."
+msgstr[0] "Выписка может охватывать не более %(count)d дня."
+msgstr[1] "Выписка может охватывать не более %(count)d дней."
+msgstr[2] "Выписка может охватывать не более %(count)d дней."
+
+#, python-format
+msgid "%(method)s, ref %(reference)s"
+msgstr "%(method)s, № %(reference)s"
+
+#, python-format
+msgid "Payment (%(detail)s)"
+msgstr "Платёж (%(detail)s)"
+
+msgid "Invoice cancelled"
+msgstr "Счёт отменён"
+
+#, python-format
+msgid "Invoice #%(number)s has been assigned to you"
+msgstr "Вам назначен счёт №%(number)s"
+
+#, python-format
+msgid "Invoice #%(number)s from %(org)s"
+msgstr "Счёт №%(number)s от %(org)s"
+
+#, python-format
+msgid "Payment Reminder: Invoice #%(number)s"
+msgstr "Напоминание об оплате: счёт №%(number)s"
+
+#, python-format
+msgid "Estimate #%(number)s from %(org)s"
+msgstr "Коммерческое предложение №%(number)s от %(org)s"
+
+#, python-format
+msgid "Hi %(name)s,"
+msgstr "Здравствуйте, %(name)s!"
+
+#, python-format
+msgid "An invoice has been assigned to you by %(first)s %(last)s."
+msgstr "%(first)s %(last)s назначает вас ответственным за счёт."
+
+msgid "An invoice has been assigned to you."
+msgstr "Вам назначен счёт."
+
+msgid "Invoice"
+msgstr "Счёт"
+
+msgid "Assigned by"
+msgstr "Кто назначил"
+
+msgid "View Invoice"
+msgstr "Открыть счёт"
+
+#, python-format
+msgid "Estimate from %(org)s"
+msgstr "Коммерческое предложение от %(org)s"
+
+#, python-format
+msgid "Dear %(name)s,"
+msgstr "Здравствуйте, %(name)s!"
+
+#, python-format
+msgid "Please find attached your estimate <strong>#%(number)s</strong>."
+msgstr ""
+"Во вложении ваше коммерческое предложение <strong>№%(number)s</strong>."
+
+msgid "Date"
+msgstr "Дата"
+
+msgid "F d, Y"
+msgstr "j E Y"
+
+msgid "Valid Until"
+msgstr "Действует до"
+
+msgid "View Estimate Online"
+msgstr "Открыть предложение онлайн"
+
+msgid ""
+"If you have any questions or would like to proceed with this estimate, "
+"please don't hesitate to contact us."
+msgstr ""
+"Если у вас есть вопросы или вы готовы принять предложение, свяжитесь с нами."
+
+msgid "Thank you for considering our services!"
+msgstr "Благодарим за интерес к нашим услугам!"
+
+#, python-format
+msgid "Invoice from %(org)s"
+msgstr "Счёт от %(org)s"
+
+#, python-format
+msgid "Please find attached your invoice <strong>#%(number)s</strong>."
+msgstr "Во вложении ваш счёт <strong>№%(number)s</strong>."
+
+msgid "View Invoice Online"
+msgstr "Открыть счёт онлайн"
+
+msgid "If you have any questions, please don't hesitate to contact us."
+msgstr "Если у вас есть вопросы, свяжитесь с нами."
+
+msgid "Thank you for your business!"
+msgstr "Спасибо за сотрудничество!"
+
+msgid "Payment Reminder"
+msgstr "Напоминание об оплате"
+
+#, python-format
+msgid ""
+"This is a friendly reminder that invoice <strong>#%(number)s</strong> is now"
+" <span class=\"overdue\">%(days)s day overdue</span>."
+msgid_plural ""
+"This is a friendly reminder that invoice <strong>#%(number)s</strong> is now"
+" <span class=\"overdue\">%(days)s days overdue</span>."
+msgstr[0] ""
+"Напоминаем, что оплата счёта <strong>№%(number)s</strong> <span "
+"class=\"overdue\">просрочена на %(days)s день</span>."
+msgstr[1] ""
+"Напоминаем, что оплата счёта <strong>№%(number)s</strong> <span "
+"class=\"overdue\">просрочена на %(days)s дня</span>."
+msgstr[2] ""
+"Напоминаем, что оплата счёта <strong>№%(number)s</strong> <span "
+"class=\"overdue\">просрочена на %(days)s дней</span>."
+
+#, python-format
+msgid ""
+"This is a friendly reminder that invoice <strong>#%(number)s</strong> is due"
+" soon."
+msgstr ""
+"Напоминаем, что скоро наступит срок оплаты счёта "
+"<strong>№%(number)s</strong>."
+
+msgid "View & Pay Invoice"
+msgstr "Открыть и оплатить счёт"
+
+msgid ""
+"If you have already made payment, please disregard this reminder. If you "
+"have any questions about this invoice, please don't hesitate to contact us."
+msgstr ""
+"Если вы уже оплатили счёт, не обращайте внимания на это напоминание. Если у "
+"вас есть вопросы по счёту, свяжитесь с нами."
+
+msgid "Thank you!"
+msgstr "Спасибо!"
+
+#, python-format
+msgid "Estimate %(number)s"
+msgstr "Коммерческое предложение %(number)s"
+
+msgid "Estimate"
+msgstr "Коммерческое предложение"
+
+msgid "From"
+msgstr "От кого"
+
+msgid "Prepared For"
+msgstr "Для кого"
+
+msgid "Estimate Date"
+msgstr "Дата предложения"
+
+msgid "Reference"
+msgstr "Основание"
+
+msgid "Tax"
+msgstr "Налог"
+
+msgid "No line items"
+msgstr "Нет позиций"
+
+msgid "Discount"
+msgstr "Скидка"
+
+#, python-format
+msgid "Deposit on acceptance (%(percent)s%%)"
+msgstr "Предоплата при принятии (%(percent)s%%)"
+
+msgid "Acceptance"
+msgstr "Принятие"
+
+#, python-format
+msgid "This estimate is valid until %(date)s."
+msgstr "Коммерческое предложение действует до %(date)s."
+
+msgid "This estimate is valid for 30 days from the date above."
+msgstr "Коммерческое предложение действует 30 дней с указанной выше даты."
+
+msgid "To accept this estimate, please contact us or sign below."
+msgstr "Чтобы принять предложение, свяжитесь с нами или подпишите его ниже."
+
+msgid "Signature"
+msgstr "Подпись"
+
+#, python-format
+msgid "Invoice %(number)s"
+msgstr "Счёт %(number)s"
+
+msgid "Tel"
+msgstr "Тел."
+
+msgid "Email"
+msgstr "Эл. почта"
+
+msgid "Web"
+msgstr "Сайт"
+
+msgid "Invoice #"
+msgstr "Счёт №"
+
+msgid "Terms"
+msgstr "Условия оплаты"
+
+msgid "Invoice Date"
+msgstr "Дата счёта"
+
+msgid "Yours Sincerely,"
+msgstr "С уважением,"
+
+msgid "Tax ID"
+msgstr "ИНН"
+
+#, python-format
+msgid "Copyright &copy; %(year)s. %(name)s. All rights reserved."
+msgstr "&copy; %(year)s. %(name)s. Все права защищены."
+
+#, python-format
+msgid "Statement for %(name)s"
+msgstr "Выписка: %(name)s"
+
+msgid "Statement"
+msgstr "Выписка"
+
+msgctxt "period start"
+msgid "From"
+msgstr "С"
+
+msgctxt "period end"
+msgid "To"
+msgstr "По"
+
+msgid "Issued"
+msgstr "Дата выписки"
+
+#, python-format
+msgid "Amounts in %(currency)s"
+msgstr "Суммы в %(currency)s"
+
+msgid "Details"
+msgstr "Описание"
+
+msgid "Balance"
+msgstr "Остаток"
+
+msgid "M d, Y"
+msgstr "d.m.Y"
+
+msgid "Opening balance"
+msgstr "Начальный остаток"
+
+msgid "Invoiced"
+msgstr "Выставлено"
+
+msgid "Payments"
+msgstr "Платежи"
+
+msgid "Cancelled"
+msgstr "Отменено"
+
+msgid "In credit"
+msgstr "Переплата"
+
+msgid "Balance due"
+msgstr "К оплате"
+
+msgid "Nothing was billed or paid in this period, and nothing is owed."
+msgstr "За этот период ничего не выставлено и не оплачено, задолженности нет."

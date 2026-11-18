@@ -299,7 +299,7 @@ interactive HTML form is what comes back instead of JSON.
 
 Error messages, labels the API sends (module names, choice lists) and the mail it sends are
 translated. English is the source language and the fallback for anything not yet translated; the
-supported languages are `settings.LANGUAGES` (only `en` so far). `backend/common/locale.py` decides which
+supported languages are `settings.LANGUAGES` (`en`, `ru`). `backend/common/locale.py` decides which
 one applies, in this order:
 
 1. `User.language`, the caller's own choice, set with `PATCH /api/profile/` (`{"language": "en"}`;

@@ -1,15 +1,15 @@
 # Localization
 
-The interface ships in English, the source language. The API, the web app and the mobile app all
-go through message catalogs, agree on which language to use, and are ready for a translation.
-This section is for developers who want to add a string, fix a translation, or bring in a new
-language.
+The interface ships in English, the source language, and Russian. The API, the web app and the
+mobile app all go through message catalogs and agree on which language to use. This section is
+for developers who want to add a string, fix a translation, or bring in a new language.
 
 | Page | Read it when |
 |---|---|
 | [Adding a string](adding-strings.md) | You add or change any text a user reads, in any of the three layers |
 | [Adding a language](adding-a-language.md) | You want to translate BottleCRM into a language it does not ship yet |
 | [Right-to-left languages](right-to-left.md) | The new language is written right to left (Persian, Arabic, Hebrew, Urdu) |
+| [Russian glossary](glossary-ru.md) | You translate into Russian or review a Russian string |
 
 ## What is translated
 
