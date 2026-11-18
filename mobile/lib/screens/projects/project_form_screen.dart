@@ -9,6 +9,7 @@ import '../../data/models/custom_field_definition.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/lookup_models.dart';
 import '../../data/models/project.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/org_modules_provider.dart';
@@ -133,8 +134,8 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       _loading = false;
       if (p == null) {
         _loadError = notFound
-            ? 'It may have been deleted, or you may not have access to it.'
-            : 'Check your connection and try again.';
+            ? context.l10n.projectsNotFoundBody
+            : context.l10n.projectsCheckConnection;
         return;
       }
       _loaded = p;
@@ -206,21 +207,23 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     final t = text.trim();
     if (t.isEmpty) return null;
     if (t.startsWith('-') && parseDecimalText(t.substring(1)) != null) {
-      return 'Enter 0 or more.';
+      return appL10n.projectsFormEnterZeroOrMore;
     }
-    if (parseDecimalText(t) == null) return 'Enter a number.';
+    if (parseDecimalText(t) == null) return appL10n.projectsAmountEnterNumber;
     return null;
   }
 
-  String? get _nameProblem =>
-      _tried && _name.text.trim().isEmpty ? 'A project needs a name.' : null;
+  String? get _nameProblem => _tried && _name.text.trim().isEmpty
+      ? context.l10n.projectsFormNameRequired
+      : null;
 
-  String? get _accountProblem =>
-      _tried && _accountId == null ? 'Pick the client account.' : null;
+  String? get _accountProblem => _tried && _accountId == null
+      ? context.l10n.projectsFormAccountRequired
+      : null;
 
   String? get _dateProblem =>
       _startDate != null && _dueDate != null && _dueDate!.isBefore(_startDate!)
-      ? 'The due date cannot be before the start date.'
+      ? context.l10n.projectsFormDueBeforeStart
       : null;
 
   /// A row with no person is an unused row and is dropped, as on the web;
@@ -238,8 +241,8 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     final typed = _decimalProblem(_retainerFee.text);
     if (typed != null) return typed;
     final fee = parseDecimalText(_retainerFee.text);
-    if (fee != null && fee < 0.01) return 'Enter at least 0.01.';
-    if (_tried && fee == null) return 'Set the monthly fee.';
+    if (fee != null && fee < 0.01) return context.l10n.projectsFormFeeMin;
+    if (_tried && fee == null) return context.l10n.projectsFormFeeRequired;
     return null;
   }
 
@@ -249,7 +252,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     if (_tried &&
         _retainerHours.text.trim().isNotEmpty &&
         _retainerOverage.text.trim().isEmpty) {
-      return 'Set the rate for hours over the allowance.';
+      return context.l10n.projectsFormOverageRequired;
     }
     return null;
   }
@@ -263,7 +266,9 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
 
   String? _rateProblem(_RateRow r) {
     if (r.profileId == null) return null;
-    if (r.rate.text.trim().isEmpty) return _tried ? 'Enter a rate.' : null;
+    if (r.rate.text.trim().isEmpty) {
+      return _tried ? context.l10n.projectsFormRateRequired : null;
+    }
     return _decimalProblem(r.rate.text);
   }
 
@@ -360,7 +365,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
   Future<void> _save() async {
     final defs = _defs;
     if (!_valid(defs)) {
-      setState(() => _error = 'Check the marked fields.');
+      setState(() => _error = context.l10n.projectsFormCheckFields);
       return;
     }
     setState(() {
@@ -380,7 +385,11 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(widget.isEdit ? 'Project saved' : 'Project created'),
+        content: Text(
+          widget.isEdit
+              ? context.l10n.projectsFormSaved
+              : context.l10n.projectsFormCreated,
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -401,7 +410,9 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.isEdit ? 'Edit project' : 'New project';
+    final title = widget.isEdit
+        ? context.l10n.projectsFormEditTitle
+        : context.l10n.projectsNew;
     if (_loading || _loadError != null) {
       return Scaffold(
         appBar: AppBar(title: Text(title)),
@@ -415,8 +426,8 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                     children: [
                       Text(
                         widget.isEdit
-                            ? 'Could not load this project'
-                            : 'Could not fill the form from that deal',
+                            ? context.l10n.projectsFormLoadFailed
+                            : context.l10n.projectsFormDraftFailed,
                         style: AppTypography.h3,
                         textAlign: TextAlign.center,
                       ),
@@ -431,7 +442,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: widget.isEdit ? _loadProject : _loadDraft,
-                        child: const Text('Try again'),
+                        child: Text(context.l10n.projectsTryAgain),
                       ),
                     ],
                   ),
@@ -455,7 +466,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
           scrolledUnderElevation: 1,
           leading: IconButton(
             icon: const Icon(LucideIcons.chevronLeft),
-            tooltip: 'Back',
+            tooltip: context.l10n.commonBack,
             onPressed: () => leaveForm(context, hasUnsavedChanges: _dirty),
           ),
         ),
@@ -487,7 +498,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                   if (ref.watch(isOrgAdminProvider)) _rateCard(),
                   _extras(),
                   if (defs.isNotEmpty)
-                    _card('Custom fields', [
+                    _card(context.l10n.projectsFormCustomFields, [
                       CustomFieldsSection(
                         heading: false,
                         definitions: defs,
@@ -515,13 +526,13 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     final deals = dealsOn
         ? ref.watch(opportunitiesLookupProvider).value ?? const []
         : const <EntityLookup>[];
-    return _card('Project', [
+    return _card(context.l10n.projectsFormProjectCard, [
       TextField(
         controller: _name,
         textCapitalization: TextCapitalization.sentences,
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
-          labelText: 'Name',
+          labelText: context.l10n.projectsFormName,
           errorText: _nameProblem,
           border: const OutlineInputBorder(),
         ),
@@ -529,8 +540,10 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       const SizedBox(height: 12),
       if (widget.isEdit && !ref.watch(isOrgAdminProvider))
         _readOnly(
-          'Account',
-          _accountRef?.name.isNotEmpty == true ? _accountRef!.name : 'Account',
+          context.l10n.projectsFormAccount,
+          _accountRef?.name.isNotEmpty == true
+              ? _accountRef!.name
+              : context.l10n.projectsFormAccount,
         )
       else
         DropdownButtonFormField<String>(
@@ -538,7 +551,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
           initialValue: _accountId,
           isExpanded: true,
           decoration: InputDecoration(
-            labelText: 'Account',
+            labelText: context.l10n.projectsFormAccount,
             errorText: _accountProblem,
             border: const OutlineInputBorder(),
           ),
@@ -556,7 +569,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                 child: Text(
                   _accountRef?.name.isNotEmpty == true
                       ? _accountRef!.name
-                      : 'Current account',
+                      : context.l10n.projectsFormCurrentAccount,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -569,12 +582,15 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
           key: ValueKey('deal-$_dealId-${deals.length}'),
           initialValue: _dealId,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Deal (optional)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.projectsFormDeal,
+            border: const OutlineInputBorder(),
           ),
           items: [
-            const DropdownMenuItem<String?>(value: null, child: Text('None')),
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text(context.l10n.projectsFormNone),
+            ),
             for (final d in deals)
               DropdownMenuItem<String?>(
                 value: d.id,
@@ -586,7 +602,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                 child: Text(
                   _dealRef?.name.isNotEmpty == true
                       ? _dealRef!.name
-                      : 'Current deal',
+                      : context.l10n.projectsFormCurrentDeal,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -598,13 +614,16 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       DropdownButtonFormField<String>(
         initialValue: _status,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Status',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.commonStatus,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final s in ProjectStatus.values)
-            DropdownMenuItem(value: s.value, child: Text(s.label)),
+            DropdownMenuItem(
+              value: s.value,
+              child: Text(projectStatusLabel(s)),
+            ),
           if (ProjectStatus.fromValue(_status) == null)
             DropdownMenuItem(value: _status, child: Text(_status)),
         ],
@@ -618,52 +637,58 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
   /// What a member sees of the money fields on an edit: the values, and no
   /// way to change them.
   Widget _moneyReadOnly(Project p) {
+    final l10n = context.l10n;
     String amount(String? text) {
       final n = decimalOrNull(text);
-      return n == null ? 'Not set' : projectMoney(p, n);
+      return n == null ? l10n.projectsNotSet : projectMoney(p, n);
     }
 
     final hours = decimalOrNull(p.budgetHours);
-    return _card('Billing and budget', [
+    return _card(l10n.projectsBillingAndBudget, [
       Text(
-        'Only an admin can change these.',
+        l10n.projectsFormAdminOnly,
         style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
       ),
       const SizedBox(height: 12),
-      _readOnly('Billing type', p.billingType.label),
+      _readOnly(l10n.projectsBillingType, billingTypeLabel(p.billingType)),
       const SizedBox(height: 12),
       if (p.isRetainer) ...[
-        _readOnly('Monthly fee', amount(p.retainerFee)),
+        _readOnly(l10n.projectsMonthlyFee, amount(p.retainerFee)),
         const SizedBox(height: 12),
         _readOnly(
-          'Hours included each month',
+          l10n.projectsHoursIncluded,
           p.retainerHoursValue == null
-              ? 'Not set'
-              : '${hoursLabel(p.retainerHoursValue!)}h',
+              ? l10n.projectsNotSet
+              : projectHours(p.retainerHoursValue!),
         ),
-        const SizedBox(height: 12),
-        _readOnly('Roll unused hours over', p.retainerRollover ? 'Yes' : 'No'),
         const SizedBox(height: 12),
         _readOnly(
-          'Rate for hours over the allowance',
-          amount(p.retainerOverageRate),
+          l10n.projectsRollover,
+          p.retainerRollover ? l10n.commonYes : l10n.commonNo,
         ),
+        const SizedBox(height: 12),
+        _readOnly(l10n.projectsOverageRate, amount(p.retainerOverageRate)),
         const SizedBox(height: 12),
       ],
-      _readOnly('Currency', p.currency.isEmpty ? 'Not set' : p.currency),
-      const SizedBox(height: 12),
       _readOnly(
-        'Budget hours',
-        hours == null ? 'Not set' : '${hoursLabel(hours)}h',
+        l10n.projectsCurrency,
+        p.currency.isEmpty ? l10n.projectsNotSet : p.currency,
       ),
       const SizedBox(height: 12),
-      _readOnly('Budget amount', amount(p.budgetAmount)),
+      _readOnly(
+        l10n.projectsBudgetHours,
+        hours == null ? l10n.projectsNotSet : projectHours(hours),
+      ),
       const SizedBox(height: 12),
-      _readOnly('Default hourly rate', amount(p.hourlyRate)),
+      _readOnly(l10n.projectsBudgetAmount, amount(p.budgetAmount)),
+      const SizedBox(height: 12),
+      _readOnly(l10n.projectsDefaultRate, amount(p.hourlyRate)),
       for (final r in p.rates) ...[
         const SizedBox(height: 12),
         _readOnly(
-          'Rate for ${r.name.isEmpty ? 'someone' : r.name}',
+          r.name.isEmpty
+              ? l10n.projectsRateForSomeone
+              : l10n.projectsRateFor(r.name),
           amount(r.hourlyRate),
         ),
       ],
@@ -680,18 +705,19 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
   );
 
   Widget _billing() {
+    final l10n = context.l10n;
     final codes = [for (final c in Currency.values) c.value];
-    return _card('Billing and budget', [
+    return _card(l10n.projectsBillingAndBudget, [
       DropdownButtonFormField<ProjectBillingType>(
         initialValue: _billingType,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Billing type',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: l10n.projectsBillingType,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final t in ProjectBillingType.values)
-            DropdownMenuItem(value: t, child: Text(t.label)),
+            DropdownMenuItem(value: t, child: Text(billingTypeLabel(t))),
         ],
         onChanged: (v) => setState(() => _billingType = v ?? _billingType),
       ),
@@ -699,9 +725,9 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       DropdownButtonFormField<String>(
         initialValue: _currency,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Currency',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: l10n.projectsCurrency,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final c in codes) DropdownMenuItem(value: c, child: Text(c)),
@@ -712,42 +738,45 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       ),
       const SizedBox(height: 12),
       if (_isRetainer) ..._retainerFields(),
-      _decimalField(_budgetHours, 'Budget hours', suffix: 'h'),
+      _decimalField(
+        _budgetHours,
+        l10n.projectsBudgetHours,
+        suffix: l10n.projectsHoursSuffix,
+      ),
       const SizedBox(height: 12),
       _decimalField(
         _budgetAmount,
         _billingType == ProjectBillingType.fixedFee
-            ? 'Fee (budget amount)'
-            : 'Budget amount',
+            ? l10n.projectsFeeBudgetAmount
+            : l10n.projectsBudgetAmount,
         prefix: Currency.symbolFor(_currency),
       ),
       const SizedBox(height: 12),
       _decimalField(
         _hourlyRate,
-        'Default hourly rate',
+        l10n.projectsDefaultRate,
         prefix: Currency.symbolFor(_currency),
-        helper:
-            'Time logged here takes the person\'s own rate below, else '
-            'this one.',
+        helper: l10n.projectsDefaultRateHelp,
       ),
     ]);
   }
 
   List<Widget> _retainerFields() {
+    final l10n = context.l10n;
     final symbol = Currency.symbolFor(_currency);
     return [
       _decimalField(
         _retainerFee,
-        'Monthly fee',
+        l10n.projectsMonthlyFee,
         prefix: symbol,
         error: _feeProblem,
       ),
       const SizedBox(height: 12),
       _decimalField(
         _retainerHours,
-        'Hours included each month',
-        suffix: 'h',
-        helper: 'Leave blank to bill the fee alone, with no hours over.',
+        l10n.projectsHoursIncluded,
+        suffix: l10n.projectsHoursSuffix,
+        helper: l10n.projectsHoursIncludedHelp,
       ),
       const SizedBox(height: 12),
       // The card paints its own background, so the tile needs a Material of
@@ -756,7 +785,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
         type: MaterialType.transparency,
         child: SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Roll unused hours over'),
+          title: Text(l10n.projectsRollover),
           value: _retainerRollover,
           onChanged: (v) => setState(() => _retainerRollover = v),
         ),
@@ -764,7 +793,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       const SizedBox(height: 4),
       _decimalField(
         _retainerOverage,
-        'Rate for hours over the allowance',
+        l10n.projectsOverageRate,
         prefix: symbol,
         error: _overageProblem,
       ),
@@ -772,9 +801,9 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
       if (widget.isEdit) ...[
         _decimalField(
           _retainerCarried,
-          'Carried hours',
-          suffix: 'h',
-          helper: 'Unused hours carried into the next invoice.',
+          l10n.projectsCarriedHours,
+          suffix: l10n.projectsHoursSuffix,
+          helper: l10n.projectsCarriedHoursHelp,
         ),
         const SizedBox(height: 12),
       ],
@@ -806,10 +835,11 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
   }
 
   Widget _dates() {
-    return _card('Dates', [
-      _dateField('Start date', _startDate, (d) => _startDate = d),
+    final l10n = context.l10n;
+    return _card(l10n.projectsDates, [
+      _dateField(l10n.projectsStartDate, _startDate, (d) => _startDate = d),
       const SizedBox(height: 12),
-      _dateField('Due date', _dueDate, (d) => _dueDate = d),
+      _dateField(l10n.projectsDueDate, _dueDate, (d) => _dueDate = d),
       if (_dateProblem != null) ...[
         const SizedBox(height: 6),
         Text(
@@ -842,13 +872,13 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
           suffixIcon: value == null
               ? null
               : IconButton(
-                  tooltip: 'Clear $label',
+                  tooltip: context.l10n.projectsClearField(label),
                   icon: const Icon(LucideIcons.x, size: 18),
                   onPressed: () => setState(() => assign(null)),
                 ),
         ),
         child: Text(
-          value == null ? 'Not set' : shortDate(value),
+          value == null ? context.l10n.projectsNotSet : shortDate(value),
           style: AppTypography.body.copyWith(
             color: value == null
                 ? AppColors.textSecondary
@@ -863,23 +893,26 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     for (final u in ref.read(usersProvider)) {
       if (u.id == id) return u.displayName;
     }
-    return 'Someone';
+    return context.l10n.projectsSomeone;
   }
 
   Widget _people() {
     final users = ref.watch(usersProvider);
     final names = [
       for (final id in _assignedTo)
-        users.where((u) => u.id == id).firstOrNull?.displayName ?? 'Someone',
+        users.where((u) => u.id == id).firstOrNull?.displayName ??
+            context.l10n.projectsSomeone,
     ];
-    return _card('People', [
+    return _card(context.l10n.projectsPeople, [
       _pickerTile(
         icon: LucideIcons.users,
-        text: names.isEmpty ? 'Nobody assigned' : names.join(', '),
+        text: names.isEmpty
+            ? context.l10n.projectsNobodyAssigned
+            : names.join(', '),
         onTap: () async {
           final picked = await MultiSelectSheet.show<UserLookup>(
             context: context,
-            title: 'Assign people',
+            title: context.l10n.projectsAssignPeople,
             items: users,
             initialSelection: [
               for (final u in users)
@@ -887,7 +920,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
             ],
             labelOf: (u) => u.displayName,
             searchText: (u) => '${u.displayName} ${u.email}',
-            emptyMessage: 'No active members',
+            emptyMessage: context.l10n.projectsNoMembers,
           );
           if (picked != null) {
             // Ids the lookup does not list (an inactive member) are kept.
@@ -907,10 +940,9 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
 
   Widget _rateCard() {
     final users = ref.watch(usersProvider);
-    return _card('Rates per person', [
+    return _card(context.l10n.projectsRatesPerPerson, [
       Text(
-        'A person\'s own hourly rate on this project. Leave someone out to '
-        'use the default rate.',
+        context.l10n.projectsRatesPerPersonHelp,
         style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
       ),
       for (final row in _rates) ...[
@@ -923,9 +955,9 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
               child: DropdownButtonFormField<String>(
                 initialValue: row.profileId,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Person',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.projectsPerson,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
                   for (final u in users)
@@ -958,7 +990,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                 ),
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  labelText: 'Rate',
+                  labelText: context.l10n.projectsRate,
                   prefixText: Currency.symbolFor(_currency),
                   errorText: row.profileId == null ? null : _rateProblem(row),
                   errorMaxLines: 2,
@@ -967,7 +999,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
               ),
             ),
             IconButton(
-              tooltip: 'Remove rate',
+              tooltip: context.l10n.projectsRemoveRate,
               icon: const Icon(LucideIcons.trash2, size: 18),
               onPressed: () {
                 setState(() => _rates.remove(row));
@@ -989,7 +1021,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
               ? null
               : () => setState(() => _rates.add(_RateRow())),
           icon: const Icon(LucideIcons.plus, size: 16),
-          label: const Text('Add a rate'),
+          label: Text(context.l10n.projectsAddRate),
         ),
       ),
     ]);
@@ -999,28 +1031,31 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
     final tags = ref.watch(tagsProvider);
     final tagNames = [
       for (final id in _tagIds)
-        tags.where((t) => t.id == id).firstOrNull?.name ?? 'Tag',
+        tags.where((t) => t.id == id).firstOrNull?.name ??
+            context.l10n.projectsTag,
     ];
-    return _card('Details', [
+    return _card(context.l10n.projectsDetails, [
       TextField(
         controller: _description,
         maxLines: 4,
         minLines: 2,
         textCapitalization: TextCapitalization.sentences,
         onChanged: (_) => setState(() {}),
-        decoration: const InputDecoration(
-          labelText: 'Description',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.commonDescription,
+          border: const OutlineInputBorder(),
         ),
       ),
       const SizedBox(height: 12),
       _pickerTile(
         icon: LucideIcons.tag,
-        text: tagNames.isEmpty ? 'No tags' : tagNames.join(', '),
+        text: tagNames.isEmpty
+            ? context.l10n.projectsNoTags
+            : tagNames.join(', '),
         onTap: () async {
           final picked = await MultiSelectSheet.show<TagLookup>(
             context: context,
-            title: 'Tags',
+            title: context.l10n.commonTags,
             items: tags,
             initialSelection: [
               for (final t in tags)
@@ -1028,7 +1063,7 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
             ],
             labelOf: (t) => t.name,
             searchText: (t) => t.name,
-            emptyMessage: 'No tags',
+            emptyMessage: context.l10n.projectsNoTags,
           );
           if (picked != null) {
             final listed = {for (final t in tags) t.id};
@@ -1096,7 +1131,11 @@ class _ProjectFormScreenState extends ConsumerState<ProjectFormScreen> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(widget.isEdit ? 'Save project' : 'Create project'),
+                : Text(
+                    widget.isEdit
+                        ? context.l10n.projectsFormSave
+                        : context.l10n.projectsFormCreate,
+                  ),
           ),
         ),
       ),

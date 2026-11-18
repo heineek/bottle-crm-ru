@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/invoice.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/invoices_provider.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
 import '../../widgets/common/custom_fields_display.dart';
 import 'invoice_fields_sheet.dart';
@@ -63,7 +64,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: Text(invoice?.invoiceNumber ?? 'Invoice'),
+        title: Text(
+          invoice?.invoiceNumber ?? context.l10n.invoicesDetailFallbackTitle,
+        ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -100,20 +103,23 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
             Icon(LucideIcons.alertCircle, size: 40, color: AppColors.danger500),
             const SizedBox(height: 12),
             Text(
-              'Could not load this invoice',
+              context.l10n.invoicesDetailLoadError,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 6),
             Text(
-              'It may have been deleted, or it may belong to someone else.',
+              context.l10n.invoicesDetailLoadErrorDetail,
               textAlign: TextAlign.center,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _load, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _load,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       ),
@@ -145,7 +151,12 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
               ),
               if (invoice.dueDate != null)
                 Text(
-                  'due ${DateFormat('d MMM yyyy').format(invoice.dueDate!)}',
+                  context.l10n.invoicesDueOn(
+                    localDateFormat(
+                      'd MMM yyyy',
+                      'yMMMd',
+                    ).format(invoice.dueDate!),
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -163,23 +174,26 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _field('Account', invoice.accountName),
+          _field(context.l10n.invoicesDetailAccount, invoice.accountName),
           _field(
-            'Bill to',
+            context.l10n.invoicesDetailBillTo,
             invoice.contactName ??
                 (invoice.clientName.isEmpty ? null : invoice.clientName),
           ),
           _field(
-            'Email',
+            context.l10n.invoicesDetailEmail,
             invoice.clientEmail.isEmpty ? null : invoice.clientEmail,
           ),
           _field(
-            'Issued',
+            context.l10n.invoicesDetailIssued,
             invoice.issueDate == null
                 ? null
-                : DateFormat('d MMM yyyy').format(invoice.issueDate!),
+                : localDateFormat(
+                    'd MMM yyyy',
+                    'yMMMd',
+                  ).format(invoice.issueDate!),
           ),
-          _field('PO number', invoice.poNumber),
+          _field(context.l10n.invoicesDetailPoNumber, invoice.poNumber),
         ],
       ),
     );
@@ -223,19 +237,37 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       child: Column(
         children: [
           // The web detail's breakdown: discount and shipping only when set.
-          _amountRow('Subtotal', money(invoice.subtotal, symbol)),
+          _amountRow(
+            context.l10n.invoicesSubtotal,
+            money(invoice.subtotal, symbol),
+          ),
           if (invoice.discountAmount > 0)
-            _amountRow('Discount', '-${money(invoice.discountAmount, symbol)}'),
-          _amountRow('Tax', money(invoice.taxAmount, symbol)),
+            _amountRow(
+              context.l10n.invoicesDiscount,
+              '-${money(invoice.discountAmount, symbol)}',
+            ),
+          _amountRow(
+            context.l10n.invoicesTax,
+            money(invoice.taxAmount, symbol),
+          ),
           if (invoice.shippingAmount > 0)
-            _amountRow('Shipping', money(invoice.shippingAmount, symbol)),
-          const Divider(height: 20),
-          _amountRow('Total', money(invoice.totalAmount, symbol)),
-          if (invoice.amountPaid > 0)
-            _amountRow('Paid', money(invoice.amountPaid, symbol)),
+            _amountRow(
+              context.l10n.invoicesShipping,
+              money(invoice.shippingAmount, symbol),
+            ),
           const Divider(height: 20),
           _amountRow(
-            'Due',
+            context.l10n.invoicesTotal,
+            money(invoice.totalAmount, symbol),
+          ),
+          if (invoice.amountPaid > 0)
+            _amountRow(
+              context.l10n.invoicesDetailPaid,
+              money(invoice.amountPaid, symbol),
+            ),
+          const Divider(height: 20),
+          _amountRow(
+            context.l10n.invoicesDetailDue,
             money(invoice.amountDue, symbol),
             emphasis: true,
             tone: invoice.amountDue > 0 && invoice.isLate
@@ -277,7 +309,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
   Widget _lineItems(Invoice invoice) {
     final symbol = invoice.currencyInfo.symbol;
-    return _section('What this is for', [
+    return _section(context.l10n.invoicesDetailLineItems, [
       for (final item in invoice.lineItems)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -289,7 +321,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.name.isEmpty ? 'Untitled line' : item.name,
+                      item.name.isEmpty
+                          ? context.l10n.invoicesDetailUntitledLine
+                          : item.name,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
@@ -298,9 +332,14 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     const SizedBox(height: 2),
                     Text(
                       [
-                        '${item.quantityLabel} x ${money(item.unitPrice, symbol)}',
+                        context.l10n.invoicesDetailLineQuantity(
+                          item.quantityLabel,
+                          money(item.unitPrice, symbol),
+                        ),
                         if (item.discountAmount > 0)
-                          'less ${money(item.discountAmount, symbol)}',
+                          context.l10n.invoicesDetailLineLess(
+                            money(item.discountAmount, symbol),
+                          ),
                       ].join(', '),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
@@ -324,7 +363,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
   Widget _payments(Invoice invoice) {
     final symbol = invoice.currencyInfo.symbol;
-    return _section('Payments', [
+    return _section(context.l10n.invoicesDetailPayments, [
       for (final payment in invoice.payments)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -345,7 +384,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     if (payment.paymentDate != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        DateFormat('d MMM yyyy').format(payment.paymentDate!),
+                        localDateFormat(
+                          'd MMM yyyy',
+                          'yMMMd',
+                        ).format(payment.paymentDate!),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -354,7 +396,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     if (payment.referenceNumber?.isNotEmpty == true) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'ref ${payment.referenceNumber}',
+                        context.l10n.invoicesDetailPaymentRef(
+                          payment.referenceNumber!,
+                        ),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -380,7 +424,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   /// Any viewer may edit these: the server lets whoever can open the invoice
   /// save its fields, and the issued lock covers lines, not fields.
   Widget _customFields(Invoice invoice) {
-    return _section('Custom fields', [
+    return _section(context.l10n.invoicesCustomFields, [
       CustomFieldsDisplay(
         definitions: invoice.customFieldDefinitions,
         values: invoice.customFields,
@@ -394,7 +438,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
           child: OutlinedButton.icon(
             onPressed: _busy ? null : () => _editFields(invoice),
             icon: const Icon(LucideIcons.pencil, size: 16),
-            label: const Text('Edit fields'),
+            label: Text(context.l10n.invoicesEditFields),
           ),
         ),
       ),
@@ -412,7 +456,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       () => ref
           .read(invoicesProvider.notifier)
           .updateCustomFields(invoice.id, values),
-      'Fields saved',
+      context.l10n.invoicesFieldsSaved,
     );
   }
 
@@ -447,23 +491,27 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     final buttons = <Widget>[
       if (invoice.canSend)
         _action(
-          invoice.status == InvoiceStatus.overdue ? 'Send a reminder' : 'Send',
+          invoice.status == InvoiceStatus.overdue
+              ? context.l10n.invoicesSendReminder
+              : context.l10n.invoicesSend,
           LucideIcons.send,
           () => _run(
             () => ref.read(invoicesProvider.notifier).send(invoice.id),
-            'Sent to ${invoice.clientEmail.isEmpty ? 'the client' : invoice.clientEmail}',
+            invoice.clientEmail.isEmpty
+                ? context.l10n.invoicesDetailSentToClient
+                : context.l10n.invoicesDetailSentTo(invoice.clientEmail),
           ),
         ),
       if (invoice.canRecordPayment)
         _action(
-          'Record a payment',
+          context.l10n.invoicesDetailRecordPayment,
           LucideIcons.banknote,
           () => _recordPayment(invoice),
           primary: true,
         ),
       if (invoice.canCancel)
         _action(
-          'Cancel invoice',
+          context.l10n.invoicesDetailCancelInvoice,
           LucideIcons.ban,
           () => _confirmCancel(invoice),
           destructive: true,
@@ -529,7 +577,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
             method: result.method,
             reference: result.reference,
           ),
-      'Payment recorded',
+      context.l10n.invoicesDetailPaymentRecorded,
     );
   }
 
@@ -537,21 +585,19 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel this invoice?'),
+        title: Text(context.l10n.invoicesDetailCancelTitle),
         content: Text(
-          'Invoice ${invoice.invoiceNumber} will be marked cancelled. '
-          'It cannot be sent or paid afterwards, and this cannot be undone '
-          'from the app.',
+          context.l10n.invoicesDetailCancelBody(invoice.invoiceNumber),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.invoicesKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Cancel invoice'),
+            child: Text(context.l10n.invoicesDetailCancelInvoice),
           ),
         ],
       ),
@@ -559,7 +605,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     if (confirmed != true || !mounted) return;
     await _run(
       () => ref.read(invoicesProvider.notifier).cancel(invoice.id),
-      'Invoice cancelled',
+      context.l10n.invoicesDetailCancelled,
     );
   }
 

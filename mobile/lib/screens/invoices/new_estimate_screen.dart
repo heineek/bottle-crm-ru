@@ -9,10 +9,13 @@ import '../../data/models/deal.dart' show Currency, Deal;
 import '../../data/models/custom_field_definition.dart';
 import '../../data/models/lookup_models.dart';
 import '../../data/models/project.dart' show ProjectBillingType;
+import '../../l10n/l10n.dart';
+import '../projects/project_parts.dart' show billingTypeLabel;
 import '../../providers/auth_provider.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/org_modules_provider.dart';
+import '../../services/app_language.dart';
 import '../../services/org_date.dart';
 import '../../widgets/forms/custom_fields_section.dart';
 import 'document_adjustments.dart';
@@ -90,7 +93,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
       _accountId = deal.accountId;
       _dealContactIds = deal.contactIds;
       _dealId = deal.id;
-      _title.text = 'Estimate for ${deal.title}';
+      _title.text = appL10n.invoicesEstimateNewDefaultTitle(deal.title);
       _items.addAll([
         for (final p in deal.products)
           if (p.name.trim().isNotEmpty && p.quantity > 0)
@@ -127,9 +130,9 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
     if (_deposit.text.trim().isEmpty) return null;
     final percent = _depositPercent;
     if (percent == null || percent <= 0) {
-      return 'A deposit must be more than 0%.';
+      return appL10n.invoicesDepositTooLow;
     }
-    return percent > 100 ? 'A deposit cannot be more than 100%.' : null;
+    return percent > 100 ? appL10n.invoicesDepositTooHigh : null;
   }
 
   bool get _datesBackwards =>
@@ -201,7 +204,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('New estimate'),
+        title: Text(context.l10n.invoicesEstimateNewTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -224,13 +227,13 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                       ),
                     ),
                   ),
-                _card('Who and when', [
+                _card(context.l10n.invoicesFormWhoAndWhen, [
                   DropdownButtonFormField<String>(
                     initialValue: accountId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Account',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesDetailAccount,
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
                       for (final a in accounts)
@@ -243,10 +246,10 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     initialValue: contactId,
                     isExpanded: true,
                     decoration: InputDecoration(
-                      labelText: 'Quote to',
+                      labelText: context.l10n.invoicesEstimateQuoteTo,
                       border: const OutlineInputBorder(),
                       helperText: accountId == null
-                          ? 'Pick an account first'
+                          ? context.l10n.invoicesFormPickAccountFirst
                           : null,
                     ),
                     items: [
@@ -273,12 +276,14 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: dealId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Deal (optional)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.invoicesEstimateDeal,
+                        border: const OutlineInputBorder(),
                       ),
                       items: [
-                        const DropdownMenuItem<String>(child: Text('No deal')),
+                        DropdownMenuItem<String>(
+                          child: Text(context.l10n.invoicesEstimateNoDeal),
+                        ),
                         for (final d in deals)
                           DropdownMenuItem(
                             value: d.id,
@@ -296,10 +301,10 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     controller: _title,
                     textCapitalization: TextCapitalization.sentences,
                     onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      labelText: 'What it is for',
-                      hintText: 'Website rebuild',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesFormWhatFor,
+                      hintText: context.l10n.invoicesEstimateTitleHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -308,7 +313,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     children: [
                       Expanded(
                         child: _dateField(
-                          label: 'Issued',
+                          label: context.l10n.invoicesDetailIssued,
                           value: _issueDate,
                           onPick: (d) => setState(() => _issueDate = d),
                         ),
@@ -316,34 +321,36 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _dateField(
-                          label: 'Valid until',
+                          label: context.l10n.invoicesEstimateValidUntil,
                           value: _expiryDate,
-                          error: _datesBackwards ? 'Before it is issued' : null,
+                          error: _datesBackwards
+                              ? context.l10n.invoicesEstimateBeforeIssued
+                              : null,
                           onPick: (d) => setState(() => _expiryDate = d),
                         ),
                       ),
                     ],
                   ),
                 ]),
-                _card('What you are quoting', [
+                _card(context.l10n.invoicesEstimateLinesCard, [
                   TextField(
                     controller: _introduction,
                     minLines: 3,
                     maxLines: 8,
                     textCapitalization: TextCapitalization.sentences,
                     inputFormatters: [LengthLimitingTextInputFormatter(5000)],
-                    decoration: const InputDecoration(
-                      labelText: 'Introduction (optional)',
-                      helperText: 'Shown to the client above the lines',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesEstimateIntroduction,
+                      helperText: context.l10n.invoicesEstimateIntroductionHelp,
                       alignLabelWithHint: true,
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   LineItemsSection(
                     items: _items,
                     symbol: _symbol,
-                    emptyHint: 'An estimate needs at least one line.',
+                    emptyHint: context.l10n.invoicesEstimateLinesEmpty,
                     onChanged: (items) => setState(() {
                       _items
                         ..clear()
@@ -351,7 +358,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     }),
                   ),
                 ]),
-                _card('Discount and tax', [
+                _card(context.l10n.invoicesFormAdjustments, [
                   AdjustmentsSection(
                     value: _adjustments,
                     subtotal: subtotal,
@@ -359,7 +366,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     onChanged: (value) => setState(() => _adjustments = value),
                   ),
                 ]),
-                _card('When the client accepts', [
+                _card(context.l10n.invoicesEstimateWhenAccepted, [
                   _depositField(subtotal),
                   if (offerProject) ...[
                     const SizedBox(height: 4),
@@ -370,16 +377,17 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                         contentPadding: EdgeInsets.zero,
                         value: _startProject,
                         onChanged: (v) => setState(() => _startProject = v),
-                        title: const Text('Start a project when accepted'),
+                        title: Text(context.l10n.invoicesEstimateStartProject),
                       ),
                     ),
                     if (_startProject)
                       DropdownButtonFormField<ProjectBillingType>(
                         initialValue: _billingType,
                         isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Project billing',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText:
+                              context.l10n.invoicesEstimateProjectBilling,
+                          border: const OutlineInputBorder(),
                         ),
                         items: [
                           for (final type in const [
@@ -389,7 +397,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                           ])
                             DropdownMenuItem(
                               value: type,
-                              child: Text(type.label),
+                              child: Text(billingTypeLabel(type)),
                             ),
                         ],
                         onChanged: (value) => setState(
@@ -398,13 +406,13 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                       ),
                   ],
                 ]),
-                _card('Anything else', [
+                _card(context.l10n.invoicesFormAnythingElse, [
                   DropdownButtonFormField<String>(
                     initialValue: _currency,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Currency',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesCurrency,
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
                       for (final c in Currency.values)
@@ -418,9 +426,9 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     controller: _notes,
                     maxLines: 3,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes for the client (optional)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesFormNotes,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -428,9 +436,9 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                     controller: _terms,
                     maxLines: 3,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Terms (optional)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.invoicesEstimateTermsField,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ]),
@@ -474,8 +482,8 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
             ],
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'Deposit on acceptance',
-              hintText: 'None',
+              labelText: context.l10n.invoicesDepositLabel,
+              hintText: context.l10n.invoicesDepositNone,
               suffixText: '%',
               errorText: _depositError,
               errorMaxLines: 2,
@@ -501,8 +509,8 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                       ),
                       Text(
                         _adjustments.taxRate == 0
-                            ? 'deposit invoice'
-                            : 'deposit invoice, with tax',
+                            ? context.l10n.invoicesDepositInvoice
+                            : context.l10n.invoicesDepositInvoiceWithTax,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -520,7 +528,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
         row,
         const SizedBox(height: 6),
         Text(
-          'Rounds to 0.00, so no deposit invoice is drafted.',
+          context.l10n.invoicesDepositRoundsToZero,
           style: AppTypography.caption.copyWith(color: AppColors.warning700),
         ),
       ],
@@ -551,8 +559,8 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
         ),
         child: Text(
           value == null
-              ? 'Pick a date'
-              : DateFormat('d MMM yyyy').format(value),
+              ? context.l10n.invoicesFormPickDate
+              : localDateFormat('d MMM yyyy', 'yMMMd').format(value),
           style: AppTypography.body.copyWith(
             color: value == null
                 ? AppColors.textSecondary
@@ -593,7 +601,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                   Text(
                     // The server's ladder, previewed: a deal's line discounts,
                     // then the estimate's own discount, then tax.
-                    'with discounts and tax',
+                    context.l10n.invoicesEstimateTotalCaption,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption.copyWith(
@@ -615,9 +623,9 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const FittedBox(
+                      : FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text('Create draft'),
+                          child: Text(context.l10n.invoicesFormCreateDraft),
                         ),
                 ),
               ),
@@ -682,9 +690,9 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
       setState(() => _error = error);
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Draft estimate created')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.invoicesEstimateCreated)),
+    );
     // Back to where it was started: the estimates list (which has just
     // refreshed and shows the draft with its Send button) or the deal.
     context.pop();
@@ -693,7 +701,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
   /// Shown only when the org has estimate fields. The server enforces
   /// required ones too; checking here keeps a refusal off the whole form.
   Widget _customFieldsCard(List<CustomFieldDefinition> definitions) {
-    return _card('Custom fields', [
+    return _card(context.l10n.invoicesCustomFields, [
       CustomFieldsSection(
         heading: false,
         definitions: definitions,
@@ -714,7 +722,7 @@ class _NewEstimateScreenState extends ConsumerState<NewEstimateScreen> {
     if (missing.isEmpty) return true;
     setState(() {
       _customFieldErrors = missing;
-      _error = 'Fill in the required custom fields.';
+      _error = context.l10n.invoicesCustomFieldsRequired;
     });
     return false;
   }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/api/schema.g.dart' as api;
+import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/deals_provider.dart';
 import '../../providers/leads_provider.dart';
@@ -12,6 +13,7 @@ import '../../providers/org_modules_provider.dart';
 import '../../providers/tasks_provider.dart';
 import '../../providers/tickets_provider.dart';
 import '../../config/api_config.dart';
+import '../../services/app_language.dart';
 import '../../services/attachment_upload.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/objects/related_objects_section.dart';
@@ -68,7 +70,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         _isLoading = false;
         _detail = detail;
         if (detail == null) {
-          _error = 'Failed to load task';
+          _error = context.l10n.tasksLoadFailed;
         }
       });
     }
@@ -104,16 +106,19 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             children: [
               Icon(LucideIcons.fileX, size: 48, color: AppColors.gray400),
               const SizedBox(height: 16),
-              Text('Task not found', style: AppTypography.h3),
+              Text(context.l10n.tasksDetailNotFound, style: AppTypography.h3),
               const SizedBox(height: 8),
               Text(
-                _error ?? 'This task may have been deleted',
+                _error ?? context.l10n.tasksDetailMayBeDeleted,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
-              TextButton(onPressed: _fetchTask, child: const Text('Retry')),
+              TextButton(
+                onPressed: _fetchTask,
+                child: Text(context.l10n.commonRetry),
+              ),
             ],
           ),
         ),
@@ -274,7 +279,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 )
               else
                 Text(
-                  'No due date',
+                  context.l10n.tasksDetailNoDueDate,
                   style: AppTypography.body.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -346,7 +351,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         children: [
           if (task.description != null && task.description!.isNotEmpty) ...[
             _buildCard(
-              title: 'Description',
+              title: context.l10n.commonDescription,
               icon: LucideIcons.fileText,
               child: Text(
                 task.description!,
@@ -368,7 +373,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
           if (task.assignedTo != null && task.assignedTo!.isNotEmpty) ...[
             _buildCard(
-              title: 'Assigned To',
+              title: context.l10n.commonAssignedTo,
               icon: LucideIcons.user,
               child: _buildAssigneesList(task.assignedTo!),
             ),
@@ -377,7 +382,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
           if (task.teamNames.isNotEmpty) ...[
             _buildCard(
-              title: 'Teams',
+              title: context.l10n.tasksDetailTeams,
               icon: LucideIcons.users,
               child: Wrap(
                 spacing: 8,
@@ -392,7 +397,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
           if (task.tags.isNotEmpty) ...[
             _buildCard(
-              title: 'Tags',
+              title: context.l10n.commonTags,
               icon: LucideIcons.tag,
               child: Wrap(
                 spacing: 8,
@@ -407,7 +412,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
           if (CustomFieldsDisplay.shows(defs)) ...[
             _buildCard(
-              title: 'Custom fields',
+              title: context.l10n.tasksCustomFields,
               icon: LucideIcons.listChecks,
               child: CustomFieldsDisplay(
                 definitions: defs,
@@ -424,7 +429,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
           // While the section only listed files, an empty one was noise; the
           // Attach button is the reason to render it.
           _buildCard(
-            title: 'Attachments',
+            title: context.l10n.tasksDetailAttachments,
             icon: LucideIcons.paperclip,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,7 +440,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 ],
                 if (attachments.isEmpty)
                   Text(
-                    'No files yet.',
+                    context.l10n.tasksDetailNoFiles,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -451,23 +456,27 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
           const SizedBox(height: 16),
 
           _buildCard(
-            title: 'Details',
+            title: context.l10n.tasksDetailDetails,
             icon: LucideIcons.info,
             child: Column(
               children: [
                 _buildInfoRow(
-                  'Created',
+                  context.l10n.tasksDetailCreated,
                   _formatDateTime(task.createdAt),
                   LucideIcons.plus,
                 ),
                 if (createdByLabel.isNotEmpty) ...[
                   const Divider(height: 20),
-                  _buildInfoRow('Created by', createdByLabel, LucideIcons.user),
+                  _buildInfoRow(
+                    context.l10n.tasksDetailCreatedBy,
+                    createdByLabel,
+                    LucideIcons.user,
+                  ),
                 ],
                 if (task.updatedAt != null) ...[
                   const Divider(height: 20),
                   _buildInfoRow(
-                    'Last Updated',
+                    context.l10n.tasksDetailLastUpdated,
                     _formatDateTime(task.updatedAt!),
                     LucideIcons.pencil,
                   ),
@@ -489,9 +498,10 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
   _RelatedRef? _resolveRelatedEntity() {
     final t = _task;
     if (t == null) return null;
+    final l10n = context.l10n;
 
     if (t.accountId != null) {
-      String label = 'Selected account';
+      String label = l10n.tasksDetailSelectedAccount;
       for (final a in ref.watch(accountOptionsProvider)) {
         if (a.id == t.accountId) {
           label = a.name;
@@ -501,14 +511,14 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       // No /accounts/:id route on mobile yet. Show the card, but don't fake
       // a chevron the user can't follow.
       return _RelatedRef(
-        typeLabel: 'Account',
+        typeLabel: l10n.tasksRelatedKindAccount,
         icon: LucideIcons.building,
         label: label,
         path: null,
       );
     }
     if (t.leadId != null) {
-      String label = 'Selected lead';
+      String label = l10n.tasksDetailSelectedLead;
       // Reading the list fetches it, so skip it while its module is off.
       for (final l
           in ref.watch(moduleOnProvider('leads'))
@@ -521,14 +531,14 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         }
       }
       return _RelatedRef(
-        typeLabel: 'Lead',
+        typeLabel: l10n.tasksRelatedKindLead,
         icon: LucideIcons.userPlus,
         label: label,
         path: '/leads/${t.leadId}',
       );
     }
     if (t.opportunityId != null) {
-      String label = 'Selected deal';
+      String label = l10n.tasksDetailSelectedDeal;
       // Reading the list fetches it, so skip it while its module is off.
       for (final d
           in ref.watch(moduleOnProvider('deals'))
@@ -540,14 +550,14 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         }
       }
       return _RelatedRef(
-        typeLabel: 'Opportunity',
+        typeLabel: l10n.tasksRelatedKindOpportunity,
         icon: LucideIcons.trendingUp,
         label: label,
         path: '/deals/${t.opportunityId}',
       );
     }
     if (t.caseId != null) {
-      String label = 'Selected ticket';
+      String label = l10n.tasksDetailSelectedTicket;
       // Reading the list fetches it, so skip it while its module is off.
       for (final c
           in ref.watch(moduleOnProvider('tickets'))
@@ -559,7 +569,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         }
       }
       return _RelatedRef(
-        typeLabel: 'Ticket',
+        typeLabel: l10n.tasksRelatedKindTicket,
         icon: LucideIcons.lifeBuoy,
         label: label,
         path: '/tickets/${t.caseId}',
@@ -567,7 +577,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     }
     if (t.projectId != null) {
       final projectsOn = ref.watch(moduleOnProvider('projects'));
-      String label = 'Selected project';
+      String label = l10n.tasksDetailSelectedProject;
       for (final p
           in projectsOn
               ? ref.watch(projectEntityOptionsProvider).value ?? const []
@@ -578,7 +588,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         }
       }
       return _RelatedRef(
-        typeLabel: 'Project',
+        typeLabel: l10n.tasksRelatedKindProject,
         icon: LucideIcons.folderKanban,
         label: label,
         path: projectsOn ? '/projects/${t.projectId}' : null,
@@ -589,7 +599,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
   Widget _buildRelatedCard(_RelatedRef r) {
     return _buildCard(
-      title: 'Related To',
+      title: context.l10n.tasksDetailRelatedTo,
       icon: LucideIcons.link2,
       child: InkWell(
         onTap: r.path == null ? null : () => context.push(r.path!),
@@ -666,7 +676,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     final name = details?.name?.trim();
     if (name != null && name.isNotEmpty) return name;
     if (email != null && email.isNotEmpty) return email.split('@').first;
-    return 'Unassigned';
+    return context.l10n.tasksDetailUnassigned;
   }
 
   Widget _buildCommentsCard(List<Comment> comments) {
@@ -674,7 +684,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     // putting it here too caused focus/keyboard issues when the sliver
     // viewport pushed it offscreen on tap.
     return _buildCard(
-      title: 'Comments',
+      title: context.l10n.tasksDetailComments,
       icon: LucideIcons.messageCircle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -683,7 +693,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                'No comments yet. Use the box below to add one.',
+                context.l10n.tasksDetailNoComments,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -772,7 +782,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
             decoration: InputDecoration(
-              hintText: 'Add a comment…',
+              hintText: context.l10n.tasksDetailCommentHint,
               hintStyle: AppTypography.body.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -958,13 +968,13 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                           )
                         : _task!.completed
                         ? SecondaryButton(
-                            label: 'Reopen',
+                            label: context.l10n.tasksDetailReopen,
                             icon: LucideIcons.rotateCcw,
                             onPressed: _toggleTaskStatus,
                             isFullWidth: true,
                           )
                         : PrimaryButton(
-                            label: 'Complete',
+                            label: context.l10n.tasksDetailComplete,
                             icon: LucideIcons.checkCircle2,
                             onPressed: _toggleTaskStatus,
                             isFullWidth: true,
@@ -998,8 +1008,8 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             SnackBar(
               content: Text(
                 _task!.completed
-                    ? 'Task marked as incomplete'
-                    : 'Task completed',
+                    ? context.l10n.tasksMarkedIncomplete
+                    : context.l10n.tasksCompleted,
               ),
               behavior: SnackBarBehavior.floating,
             ),
@@ -1008,7 +1018,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to update task'),
+            content: Text(response.message ?? context.l10n.tasksUpdateFailed),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -1039,7 +1049,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             ),
             ListTile(
               leading: const Icon(LucideIcons.pencil),
-              title: const Text('Edit Task'),
+              title: Text(context.l10n.tasksEditTask),
               onTap: () async {
                 Navigator.pop(context);
                 final result = await context.push(
@@ -1056,7 +1066,11 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                     ? LucideIcons.rotateCcw
                     : LucideIcons.checkCircle2,
               ),
-              title: Text(_task!.completed ? 'Reopen Task' : 'Complete Task'),
+              title: Text(
+                _task!.completed
+                    ? context.l10n.tasksDetailReopenTask
+                    : context.l10n.tasksDetailCompleteTask,
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _toggleTaskStatus();
@@ -1065,7 +1079,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             ListTile(
               leading: Icon(LucideIcons.trash2, color: AppColors.danger600),
               title: Text(
-                'Delete Task',
+                context.l10n.tasksDetailDeleteTask,
                 style: TextStyle(color: AppColors.danger600),
               ),
               onTap: () {
@@ -1084,21 +1098,22 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Task?'),
-        content: const Text(
-          'This action cannot be undone. Are you sure you want to delete this task?',
-        ),
+        title: Text(context.l10n.tasksDeleteTitle),
+        content: Text(context.l10n.tasksDetailDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
               await _deleteTask();
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1117,8 +1132,8 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
 
       if (response.success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Task deleted'),
+          SnackBar(
+            content: Text(context.l10n.tasksDeleted),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1126,7 +1141,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to delete task'),
+            content: Text(response.message ?? context.l10n.tasksDeleteFailed),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -1147,7 +1162,9 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       setState(() => _isPostingComment = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to add comment'),
+          content: Text(
+            response.message ?? context.l10n.tasksDetailCommentFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -1191,12 +1208,12 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete comment?'),
-        content: const Text('This cannot be undone.'),
+        title: Text(context.l10n.tasksDetailDeleteCommentTitle),
+        content: Text(context.l10n.tasksDetailCannotBeUndone),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -1218,14 +1235,19 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(response.message ?? 'Delete failed'),
+                    content: Text(
+                      response.message ?? context.l10n.tasksDetailDeleteFailed,
+                    ),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: AppColors.danger600,
                   ),
                 );
               }
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1236,12 +1258,12 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete attachment?'),
-        content: Text('Remove "${att.fileName}"?'),
+        title: Text(context.l10n.tasksDetailDeleteAttachmentTitle),
+        content: Text(context.l10n.tasksDetailRemoveFile(att.fileName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -1263,14 +1285,19 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(response.message ?? 'Delete failed'),
+                    content: Text(
+                      response.message ?? context.l10n.tasksDetailDeleteFailed,
+                    ),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: AppColors.danger600,
                   ),
                 );
               }
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1335,19 +1362,22 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     if (!mounted || result.success) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result.error ?? 'Could not download that file.'),
+        content: Text(result.error ?? context.l10n.tasksDetailDownloadFailed),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   String _formatTimeAgo(DateTime dt) {
+    final l10n = context.l10n;
     final diff = DateTime.now().difference(dt);
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
+    if (diff.inDays > 30) {
+      return l10n.tasksDetailMonthsAgo((diff.inDays / 30).floor());
+    }
+    if (diff.inDays > 0) return l10n.tasksDetailDaysAgo(diff.inDays);
+    if (diff.inHours > 0) return l10n.tasksDetailHoursAgo(diff.inHours);
+    if (diff.inMinutes > 0) return l10n.tasksDetailMinutesAgo(diff.inMinutes);
+    return l10n.tasksDetailJustNow;
   }
 
   String _formatDueDate(DateTime date) {
@@ -1357,51 +1387,24 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     final tomorrow = today.add(const Duration(days: 1));
     final yesterday = today.subtract(const Duration(days: 1));
 
+    final l10n = context.l10n;
     if (taskDate == today) {
-      return 'Due Today';
+      return l10n.tasksDetailDueToday;
     } else if (taskDate == tomorrow) {
-      return 'Due Tomorrow';
+      return l10n.tasksDetailDueTomorrow;
     } else if (taskDate == yesterday) {
-      return 'Due Yesterday';
+      return l10n.tasksDetailDueYesterday;
     } else if (taskDate.isBefore(today)) {
-      final days = today.difference(taskDate).inDays;
-      return '$days day${days > 1 ? 's' : ''} overdue';
+      return l10n.tasksDetailDaysOverdue(today.difference(taskDate).inDays);
     } else {
-      final months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return 'Due ${months[date.month - 1]} ${date.day}, ${date.year}';
+      return l10n.tasksDetailDueOn(
+        localDateFormat('MMM d, y', 'yMMMd').format(date),
+      );
     }
   }
 
-  String _formatDateTime(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
+  String _formatDateTime(DateTime date) =>
+      localDateFormat('MMM d, y', 'yMMMd').format(date);
 }
 
 /// Resolved parent-entity reference for the Related-To card. `path` is null

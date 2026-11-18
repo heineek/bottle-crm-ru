@@ -2,12 +2,14 @@ import 'package:bottle_crm/core/theme/theme.dart';
 import 'package:bottle_crm/data/models/auth_response.dart';
 import 'package:bottle_crm/data/models/deal_board.dart';
 import 'package:bottle_crm/data/models/models.dart';
+import 'package:bottle_crm/l10n/l10n.dart';
 import 'package:bottle_crm/providers/auth_provider.dart';
 import 'package:bottle_crm/providers/deal_pipelines_provider.dart';
 import 'package:bottle_crm/providers/deals_provider.dart';
 import 'package:bottle_crm/screens/deals/deals_list_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -406,7 +408,17 @@ Widget _testApp(
         () => _FakePipelines(pipelines ?? [_pipeline]),
       ),
     ],
-    child: MaterialApp(theme: AppTheme.light, home: const DealsListScreen()),
+    child: MaterialApp(
+      theme: AppTheme.light,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const DealsListScreen(),
+    ),
   );
 }
 

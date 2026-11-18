@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/invoice_report.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoice_extras_provider.dart';
 import 'invoice_format.dart';
@@ -39,7 +40,7 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Reports'),
+        title: Text(context.l10n.invoicesReportsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -49,13 +50,13 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
         error: (error, _) {
           if (error is ReportsForbidden) {
             return InvoiceErrorState(
-              message: 'Reports are for administrators',
+              message: context.l10n.invoicesReportsForbidden,
               detail: error.message,
               // No Retry: a 403 does not become a 200 by asking again.
             );
           }
           return InvoiceErrorState(
-            message: 'Could not load the reports',
+            message: context.l10n.invoicesReportsLoadError,
             onRetry: () => ref.invalidate(invoiceReportsProvider),
           );
         },
@@ -101,21 +102,21 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
                       ],
                     ),
                   ),
-                _card('Money', [
+                _card(context.l10n.invoicesReportsMoney, [
                   InvoiceFactRow(
-                    label: 'Invoiced, all time',
+                    label: context.l10n.invoicesReportsInvoicedAllTime,
                     value: money(m.totalInvoiced, symbol),
                   ),
                   InvoiceFactRow(
-                    label: 'Paid',
+                    label: context.l10n.invoicesReportsPaid,
                     value: money(m.totalPaid, symbol),
                   ),
                   InvoiceFactRow(
-                    label: 'Still owed',
+                    label: context.l10n.invoicesReportsStillOwed,
                     value: money(m.totalDue, symbol),
                   ),
                   InvoiceFactRow(
-                    label: 'Invoices raised',
+                    label: context.l10n.invoicesReportsInvoicesRaised,
                     value: '${d.invoiceCount}',
                   ),
                   // Hidden rather than shown as zero: an org that has never
@@ -123,32 +124,32 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
                   // instant payment.
                   if (d.averageDaysToPay > 0)
                     InvoiceFactRow(
-                      label: 'Average days to pay',
+                      label: context.l10n.invoicesReportsAverageDays,
                       value: '${d.averageDaysToPay}',
                     ),
                 ]),
                 if (m.overdueCount > 0)
-                  _card('Overdue', [
+                  _card(context.l10n.invoicesReportsOverdue, [
                     InvoiceFactRow(
-                      label: 'Invoices past due',
+                      label: context.l10n.invoicesReportsPastDue,
                       value: '${m.overdueCount}',
                     ),
                     InvoiceFactRow(
-                      label: 'Amount',
+                      label: context.l10n.invoicesReportsAmount,
                       value: money(m.overdueAmount, symbol),
                     ),
                   ], tone: AppColors.danger600),
-                _card('Last 30 days', [
+                _card(context.l10n.invoicesReportsLast30, [
                   InvoiceFactRow(
-                    label: 'Collected',
+                    label: context.l10n.invoicesReportsCollected,
                     value: money(m.revenue30d, symbol),
                   ),
                   InvoiceFactRow(
-                    label: 'Invoiced',
+                    label: context.l10n.invoicesReportsInvoiced,
                     value: money(m.invoiced30d, symbol),
                   ),
                 ]),
-                _card('Receivables ageing', [
+                _card(context.l10n.invoicesReportsAgeing, [
                   for (final bucket in aging.buckets)
                     InvoiceFactRow(
                       label: '${bucket.label} (${bucket.count})',
@@ -156,7 +157,7 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
                     ),
                   const Divider(height: 18),
                   InvoiceFactRow(
-                    label: 'Outstanding in total',
+                    label: context.l10n.invoicesReportsOutstandingTotal,
                     value: money(aging.total, symbol),
                   ),
                 ]),
@@ -164,17 +165,17 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
                         d.estimatesAccepted +
                         d.estimatesDeclined >
                     0)
-                  _card('Estimates', [
+                  _card(context.l10n.invoicesReportsEstimates, [
                     InvoiceFactRow(
-                      label: 'Waiting on the client',
+                      label: context.l10n.invoicesReportsWaiting,
                       value: '${d.estimatesPending}',
                     ),
                     InvoiceFactRow(
-                      label: 'Accepted',
+                      label: context.l10n.invoicesReportsAccepted,
                       value: '${d.estimatesAccepted}',
                     ),
                     InvoiceFactRow(
-                      label: 'Declined',
+                      label: context.l10n.invoicesReportsDeclined,
                       value: '${d.estimatesDeclined}',
                     ),
                   ]),
@@ -192,10 +193,8 @@ class _InvoiceReportsScreenState extends ConsumerState<InvoiceReportsScreen> {
                       Expanded(
                         child: Text(
                           currencies.length > 1
-                              ? 'Figures cover the whole organisation, one '
-                                    'currency at a time. There are no exchange '
-                                    'rates to combine them.'
-                              : 'Figures cover the whole organisation.',
+                              ? context.l10n.invoicesReportsScopeMulti
+                              : context.l10n.invoicesReportsScope,
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textTertiary,
                           ),

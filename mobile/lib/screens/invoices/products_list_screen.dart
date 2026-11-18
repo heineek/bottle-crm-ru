@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/product.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../providers/org_modules_provider.dart';
@@ -57,7 +58,10 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? (existing == null ? 'Product added' : 'Product saved'),
+          error ??
+              (existing == null
+                  ? context.l10n.invoicesProductAdded
+                  : context.l10n.invoicesProductSaved),
         ),
       ),
     );
@@ -67,28 +71,26 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${product.name}?'),
+        title: Text(context.l10n.invoicesProductDeleteTitle(product.name)),
         content: Text(
           !ref.read(moduleOnProvider('invoices'))
-              ? 'Deleting it cannot be undone.'
+              ? context.l10n.invoicesProductDeleteFinal
               : product.usedOn > 0
               // Line items denormalise their own name and price, and the FK is
               // SET_NULL, so history survives. Saying so stops a needless
               // hesitation, and deactivating is usually what was wanted.
-              ? 'It is on ${product.usedOn} invoice${product.usedOn == 1 ? '' : 's'}. '
-                    'Those keep the name and price they were billed at. '
-                    'Deactivating it instead keeps it out of new invoices.'
-              : 'It is not on any invoice yet.',
+              ? context.l10n.invoicesProductDeleteUsed(product.usedOn)
+              : context.l10n.invoicesProductDeleteUnused,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep it'),
+            child: Text(context.l10n.invoicesKeepIt),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -98,9 +100,9 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
         .read(productsProvider.notifier)
         .deleteProduct(product.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Product deleted')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.invoicesProductDeleted)),
+    );
   }
 
   @override
@@ -111,7 +113,7 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Products'),
+        title: Text(context.l10n.invoicesProductsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -119,7 +121,7 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New product',
+              tooltip: context.l10n.invoicesProductsNewTooltip,
               onPressed: () => _edit(null),
             ),
         ],
@@ -133,11 +135,11 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: 'Search the catalogue',
-                prefixIcon: Icon(LucideIcons.search, size: 18),
+              decoration: InputDecoration(
+                hintText: context.l10n.invoicesProductsSearchHint,
+                prefixIcon: const Icon(LucideIcons.search, size: 18),
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
@@ -145,7 +147,7 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => InvoiceErrorState(
-                message: 'Could not load the catalogue',
+                message: context.l10n.invoicesProductsLoadError,
                 onRetry: () => ref.read(productsProvider.notifier).refresh(),
               ),
               data: (products) {
@@ -153,11 +155,11 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
                   return InvoiceEmptyState(
                     icon: LucideIcons.package,
                     message: _searchController.text.isEmpty
-                        ? 'Nothing in the catalogue yet'
-                        : 'No products match that search',
+                        ? context.l10n.invoicesProductsEmpty
+                        : context.l10n.invoicesProductsEmptySearch,
                     detail: isAdmin || _searchController.text.isNotEmpty
                         ? null
-                        : 'An administrator adds these.',
+                        : context.l10n.invoicesProductsEmptyDetail,
                   );
                 }
                 return RefreshIndicator(
@@ -241,7 +243,10 @@ class _ProductRow extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (!product.isActive)
-                StatusBadge(label: 'Retired', color: AppColors.gray500),
+                StatusBadge(
+                  label: context.l10n.invoicesProductRetired,
+                  color: AppColors.gray500,
+                ),
               if (product.sku?.isNotEmpty == true)
                 Text(
                   product.sku!,
@@ -259,8 +264,8 @@ class _ProductRow extends StatelessWidget {
               if (showUsage)
                 Text(
                   product.usedOn == 0
-                      ? 'not billed yet'
-                      : 'on ${product.usedOn} invoice${product.usedOn == 1 ? '' : 's'}',
+                      ? context.l10n.invoicesProductNotBilled
+                      : context.l10n.invoicesProductUsedOn(product.usedOn),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -277,7 +282,7 @@ class _ProductRow extends StatelessWidget {
                   height: 40,
                   child: OutlinedButton(
                     onPressed: onEdit,
-                    child: const Text('Edit'),
+                    child: Text(context.l10n.commonEdit),
                   ),
                 ),
                 SizedBox(
@@ -287,7 +292,7 @@ class _ProductRow extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger600,
                     ),
-                    child: const Text('Delete'),
+                    child: Text(context.l10n.commonDelete),
                   ),
                 ),
               ],

@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/lookup_models.dart';
 import '../../data/models/project.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/projects_provider.dart';
 import '../../routes/app_routes.dart';
@@ -68,8 +69,8 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not load the accounts. Try again.'),
+        SnackBar(
+          content: Text(context.l10n.projectsAccountsLoadFailed),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -92,7 +93,10 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Filter by account', style: AppTypography.h3),
+              child: Text(
+                context.l10n.projectsFilterByAccount,
+                style: AppTypography.h3,
+              ),
             ),
             for (final a in accounts)
               ListTile(
@@ -120,14 +124,14 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Projects'),
+        title: Text(context.l10n.projectsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New project',
+            tooltip: context.l10n.projectsNew,
             onPressed: () => context.push(AppRoutes.projectNew),
           ),
         ],
@@ -140,9 +144,9 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => EmptyState(
                 icon: LucideIcons.circleAlert,
-                title: 'Could not load projects',
+                title: context.l10n.projectsLoadFailed,
                 description: '$error'.replaceFirst('Exception: ', ''),
-                actionLabel: 'Try again',
+                actionLabel: context.l10n.projectsTryAgain,
                 onAction: () => ref.read(projectsProvider.notifier).refresh(),
               ),
               data: _list,
@@ -164,10 +168,10 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
             controller: _search,
             onChanged: _onSearch,
             textInputAction: TextInputAction.search,
-            decoration: const InputDecoration(
-              hintText: 'Search projects',
-              prefixIcon: Icon(LucideIcons.search, size: 18),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: context.l10n.projectsSearchHint,
+              prefixIcon: const Icon(LucideIcons.search, size: 18),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 8),
@@ -175,11 +179,15 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _chip('All', filters.status == null, () {
-                  _setFilters(filters.copyWith(status: null));
-                }),
+                _chip(
+                  context.l10n.projectsFilterAll,
+                  filters.status == null,
+                  () {
+                    _setFilters(filters.copyWith(status: null));
+                  },
+                ),
                 for (final s in ProjectStatus.values)
-                  _chip(s.label, filters.status == s.value, () {
+                  _chip(projectStatusLabel(s), filters.status == s.value, () {
                     _setFilters(filters.copyWith(status: s.value));
                   }),
               ],
@@ -198,15 +206,16 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
                   icon: const Icon(LucideIcons.building2, size: 16),
                   label: Text(
                     filters.accountId == null
-                        ? 'Any account'
-                        : (filters.accountName ?? 'One account'),
+                        ? context.l10n.projectsAnyAccount
+                        : (filters.accountName ??
+                              context.l10n.projectsOneAccount),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
               if (filters.accountId != null)
                 IconButton(
-                  tooltip: 'Any account',
+                  tooltip: context.l10n.projectsAnyAccount,
                   icon: const Icon(LucideIcons.x, size: 18),
                   onPressed: () => _setFilters(
                     filters.copyWith(accountId: null, accountName: null),
@@ -252,13 +261,12 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
       return EmptyState(
         icon: LucideIcons.folderKanban,
         title: data.filters.isEmpty
-            ? 'No projects yet'
-            : 'No matching projects',
+            ? context.l10n.projectsEmptyTitle
+            : context.l10n.projectsEmptyFilteredTitle,
         description: data.filters.isEmpty
-            ? 'A project holds the tasks, time and invoices for one piece of '
-                  'client work. Start one here or from a won deal.'
-            : 'Clear a filter to see more.',
-        actionLabel: data.filters.isEmpty ? 'New project' : null,
+            ? context.l10n.projectsEmptyBody
+            : context.l10n.projectsEmptyFilteredBody,
+        actionLabel: data.filters.isEmpty ? context.l10n.projectsNew : null,
         onAction: data.filters.isEmpty
             ? () => context.push(AppRoutes.projectNew)
             : null,
@@ -296,10 +304,11 @@ class ProjectRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = project;
     final headline = p.burn.headline;
+    final l10n = context.l10n;
     final meta = [
-      p.billingType.label,
-      if (p.dueDate != null) 'due ${shortDate(p.dueDate!)}',
-      '${hoursLabel(p.burn.loggedHours)}h logged',
+      billingTypeLabel(p.billingType),
+      if (p.dueDate != null) l10n.projectsRowDue(shortDate(p.dueDate!)),
+      l10n.projectsRowLogged(projectHours(p.burn.loggedHours)),
     ].join(' · ');
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -352,12 +361,18 @@ class ProjectRow extends StatelessWidget {
               if (headline != null) ...[
                 const SizedBox(height: 8),
                 BurnBar(
-                  label: headline.kind == 'hours' ? 'Hours' : 'Amount',
+                  label: headline.kind == 'hours'
+                      ? l10n.projectsBurnHours
+                      : l10n.projectsBurnAmount,
                   used: headline.kind == 'hours'
-                      ? '${hoursLabel(p.burn.loggedHours)}h of '
-                            '${hoursLabel(p.budgetHoursValue ?? 0)}h'
-                      : '${projectMoney(p, p.burn.billableValue)} of '
-                            '${projectMoney(p, p.budgetAmountValue ?? 0)}',
+                      ? l10n.projectsBurnOf(
+                          projectHours(p.burn.loggedHours),
+                          projectHours(p.budgetHoursValue ?? 0),
+                        )
+                      : l10n.projectsBurnOf(
+                          projectMoney(p, p.burn.billableValue),
+                          projectMoney(p, p.budgetAmountValue ?? 0),
+                        ),
                   percent: headline.percent,
                 ),
               ],

@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/invoice_template.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../routes/app_router.dart';
@@ -41,7 +42,7 @@ class InvoiceTemplatesScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? '${template.name} is now the default for new invoices',
+          error ?? context.l10n.invoicesTemplatesDefaultSnack(template.name),
         ),
       ),
     );
@@ -55,7 +56,7 @@ class InvoiceTemplatesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Templates'),
+        title: Text(context.l10n.invoicesTemplatesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -63,7 +64,7 @@ class InvoiceTemplatesScreen extends ConsumerWidget {
           if (isAdmin)
             IconButton(
               icon: const Icon(LucideIcons.plus),
-              tooltip: 'New template',
+              tooltip: context.l10n.invoicesTemplatesNewTooltip,
               onPressed: () => context.push(AppRoutes.invoiceTemplateNew),
             ),
         ],
@@ -71,18 +72,17 @@ class InvoiceTemplatesScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => InvoiceErrorState(
-          message: 'Could not load templates',
+          message: context.l10n.invoicesTemplatesLoadError,
           onRetry: () => ref.read(invoiceTemplatesProvider.notifier).refresh(),
         ),
         data: (templates) {
           if (templates.isEmpty) {
             return InvoiceEmptyState(
               icon: LucideIcons.layoutTemplate,
-              message: 'No templates yet',
+              message: context.l10n.invoicesTemplatesEmpty,
               detail: isAdmin
-                  ? 'Invoices use the built-in layout until one is added.'
-                  : 'Invoices use the built-in layout. An administrator adds '
-                        'these.',
+                  ? context.l10n.invoicesTemplatesEmptyAdmin
+                  : context.l10n.invoicesTemplatesEmptyMember,
             );
           }
           return RefreshIndicator(
@@ -102,9 +102,7 @@ class InvoiceTemplatesScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Text(
-                    'A template\'s PDF layout is HTML and CSS, and it is '
-                    'edited on the web. The name, colours, logo and '
-                    'boilerplate are editable here.',
+                    context.l10n.invoicesTemplatesWebNote,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -170,7 +168,7 @@ class _TemplateCard extends StatelessWidget {
               if (canManage)
                 IconButton(
                   icon: const Icon(LucideIcons.pencil, size: 18),
-                  tooltip: 'Edit template',
+                  tooltip: context.l10n.invoicesTemplatesEditTooltip,
                   onPressed: onEdit,
                 ),
             ],
@@ -182,10 +180,13 @@ class _TemplateCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (template.isDefault)
-                StatusBadge(label: 'Default', color: AppColors.success600),
+                StatusBadge(
+                  label: context.l10n.invoicesTemplatesDefault,
+                  color: AppColors.success600,
+                ),
               if (template.hasLogo)
                 Text(
-                  'logo',
+                  context.l10n.invoicesTemplatesLogo,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -193,16 +194,17 @@ class _TemplateCard extends StatelessWidget {
               // Whether custom markup exists, never what it says.
               if (template.hasCustomHtml)
                 Text(
-                  'custom layout',
+                  context.l10n.invoicesTemplatesCustomLayout,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
               Text(
                 template.usedOnInvoices == 0
-                    ? 'unused'
-                    : 'on ${template.usedOnInvoices} invoice'
-                          '${template.usedOnInvoices == 1 ? '' : 's'}',
+                    ? context.l10n.invoicesTemplatesUnused
+                    : context.l10n.invoicesProductUsedOn(
+                        template.usedOnInvoices,
+                      ),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -219,7 +221,7 @@ class _TemplateCard extends StatelessWidget {
               height: 44,
               child: OutlinedButton(
                 onPressed: onSetDefault,
-                child: const Text('Use for new invoices'),
+                child: Text(context.l10n.invoicesTemplatesUseForNew),
               ),
             ),
           ],

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/estimate.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
 import 'invoice_format.dart';
 import 'invoice_shell.dart';
@@ -38,14 +39,14 @@ class EstimatesListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Estimates'),
+        title: Text(context.l10n.invoicesEstimatesTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New estimate',
+            tooltip: context.l10n.invoicesEstimatesNewTooltip,
             onPressed: () => context.push(AppRoutes.estimateNew),
           ),
         ],
@@ -53,7 +54,10 @@ class EstimatesListScreen extends ConsumerWidget {
       body: Column(
         children: [
           InvoiceFilterChips(
-            labels: [for (final s in _filters) s?.label ?? 'All'],
+            labels: [
+              for (final s in _filters)
+                s?.label ?? context.l10n.invoicesFilterAll,
+            ],
             selected: _filters.indexOf(active),
             onSelected: (index) => ref
                 .read(estimatesProvider.notifier)
@@ -63,14 +67,14 @@ class EstimatesListScreen extends ConsumerWidget {
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => InvoiceErrorState(
-                message: 'Could not load estimates',
+                message: context.l10n.invoicesEstimatesLoadError,
                 onRetry: () => ref.read(estimatesProvider.notifier).refresh(),
               ),
               data: (estimates) {
                 if (estimates.isEmpty) {
-                  return const InvoiceEmptyState(
+                  return InvoiceEmptyState(
                     icon: LucideIcons.fileText,
-                    message: 'No estimates here',
+                    message: context.l10n.invoicesEstimatesEmpty,
                   );
                 }
                 return RefreshIndicator(
@@ -124,9 +128,9 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
     // Converting exists to produce an invoice, so land on it rather than
     // leaving the user to find it in a list of hundreds.
     final id = result.invoiceId;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Invoice raised')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.invoicesEstimateInvoiceRaised)),
+    );
     if (id != null && id.isNotEmpty) {
       context.push('${AppRoutes.invoices}/$id');
     }
@@ -139,23 +143,22 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
       deposit.totalAmount,
       widget.estimate.currencyInfo.symbol,
     );
-    final which = 'Deposit invoice ${deposit.invoiceNumber}'.trim();
+    final which = context.l10n
+        .invoicesDepositInvoiceNumber(deposit.invoiceNumber)
+        .trim();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Raise the full invoice?'),
-        content: Text(
-          '$which for $amount is not taken off automatically. Edit the new '
-          'invoice before you send it.',
-        ),
+        title: Text(context.l10n.invoicesRaiseFullTitle),
+        content: Text(context.l10n.invoicesRaiseFullBody(which, amount)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Raise invoice'),
+            child: Text(context.l10n.invoicesRaiseInvoice),
           ),
         ],
       ),
@@ -170,9 +173,9 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
         .send(widget.estimate.id);
     if (!mounted) return;
     setState(() => _busy = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Estimate sent')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error ?? context.l10n.invoicesEstimateSent)),
+    );
   }
 
   @override
@@ -209,7 +212,7 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
                     Text(
                       estimate.accountName ??
                           (estimate.clientName.isEmpty
-                              ? 'No account'
+                              ? context.l10n.invoicesNoAccount
                               : estimate.clientName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -239,15 +242,23 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
               ),
               if (estimate.isConverted)
                 StatusBadge(
-                  label: 'billed ${estimate.convertedInvoiceNumber ?? ''}'
+                  label: context.l10n
+                      .invoicesEstimateBilled(
+                        estimate.convertedInvoiceNumber ?? '',
+                      )
                       .trim(),
                   color: AppColors.success600,
                 ),
               if (estimate.expiryDate != null && !estimate.isConverted)
                 Text(
                   estimate.isExpired
-                      ? 'expired'
-                      : 'expires ${DateFormat('d MMM').format(estimate.expiryDate!)}',
+                      ? context.l10n.invoicesEstimateExpired
+                      : context.l10n.invoicesEstimateExpires(
+                          localDateFormat(
+                            'd MMM',
+                            'MMMd',
+                          ).format(estimate.expiryDate!),
+                        ),
                   style: AppTypography.caption.copyWith(
                     color: estimate.isExpired
                         ? AppColors.danger600
@@ -260,8 +271,8 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
             _RowLink(
               icon: LucideIcons.folderKanban,
               label: project.name.isEmpty
-                  ? 'Project'
-                  : 'Project: ${project.name}',
+                  ? context.l10n.invoicesEstimateProject
+                  : context.l10n.invoicesEstimateProjectNamed(project.name),
               onTap: projectsOn
                   ? () => context.push(AppRoutes.projectFor(project.id))
                   : null,
@@ -270,7 +281,9 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
             _RowLink(
               icon: LucideIcons.receipt,
               label: [
-                'Deposit invoice ${deposit.invoiceNumber}'.trim(),
+                context.l10n
+                    .invoicesDepositInvoiceNumber(deposit.invoiceNumber)
+                    .trim(),
                 if (deposit.statusLabel.isNotEmpty) deposit.statusLabel,
               ].join(' · '),
               onTap: () => context.push('${AppRoutes.invoices}/${deposit.id}'),
@@ -288,8 +301,8 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
                       onPressed: _busy ? null : _send,
                       child: Text(
                         estimate.status == EstimateStatus.draft
-                            ? 'Send'
-                            : 'Send again',
+                            ? context.l10n.invoicesSend
+                            : context.l10n.invoicesSendAgain,
                       ),
                     ),
                   ),
@@ -298,7 +311,7 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
                     height: 40,
                     child: FilledButton(
                       onPressed: _busy ? null : _convert,
-                      child: const Text('Raise an invoice'),
+                      child: Text(context.l10n.invoicesEstimateRaiseInvoice),
                     ),
                   ),
               ],
@@ -312,7 +325,7 @@ class _EstimateCardState extends ConsumerState<_EstimateCard> {
                 onPressed: () => context.push(
                   '${AppRoutes.invoices}/${estimate.convertedInvoiceId}',
                 ),
-                child: const Text('Open the invoice'),
+                child: Text(context.l10n.invoicesEstimateOpenInvoice),
               ),
             ),
           ],

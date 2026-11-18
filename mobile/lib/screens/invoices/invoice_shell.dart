@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 
 /// The states and the filter strip the five smaller invoice screens share.
 ///
@@ -162,7 +163,10 @@ class InvoiceErrorState extends StatelessWidget {
             ],
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              FilledButton(onPressed: onRetry, child: const Text('Retry')),
+              FilledButton(
+                onPressed: onRetry,
+                child: Text(context.l10n.commonRetry),
+              ),
             ],
           ],
         ),

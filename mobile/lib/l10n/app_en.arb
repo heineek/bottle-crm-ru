@@ -3528,6 +3528,230 @@
   "dealsDetailNone": "None",
   "dealsFormSourceNone": "None",
   "dealsFormSourcesLoadFailed": "Could not load the lead sources. Try again.",
+  "documentsListTitle": "Documents",
+  "documentsListHideArchived": "Hide archived",
+  "documentsListShowArchived": "Show archived",
+  "documentsListUpload": "Upload",
+  "documentsStatActive": "active",
+  "documentsStatArchived": "archived",
+  "documentsStatUnshared": "shared with nobody",
+  "documentsListArchivedNote": "Archived documents are not shown or counted. Use the eye in the header to include them.",
+  "documentsDownloadFailed": "Could not download that file.",
+  "documentsArchivedBadge": "Archived",
+  "documentsUploadedBy": "Uploaded by {name}",
+  "@documentsUploadedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsManageTooltip": "Manage this document",
+  "documentsEmptyTitle": "No documents",
+  "documentsEmptyAll": "Nothing has been shared with you, and you have uploaded nothing yourself.",
+  "documentsEmptyActive": "Nothing active has been shared with you. There may be archived documents: use the eye in the header.",
+  "documentsLoadError": "Could not load the documents",
+  "documentsTryAgain": "Try again",
+  "documentsFormPickFile": "Pick a file to upload.",
+  "documentsFormSaveFailed": "Could not save this document.",
+  "documentsFormUpdated": "Document updated",
+  "documentsFormUploaded": "Document uploaded",
+  "documentsDeleteTitle": "Delete this document?",
+  "documentsDeleteBody": "The file and the record of it go for good, for everybody it was shared with. To take it out of the way without destroying it, archive it instead.",
+  "documentsKeepIt": "Keep it",
+  "documentsDeleteFailed": "Could not delete this document.",
+  "documentsDeleted": "Document deleted",
+  "documentsFormGone": "That document is not in your list any more. It may have been deleted, archived, or un-shared with you.",
+  "documentsFormForbidden": "Only the person who uploaded a document, or an administrator, can change it. Being able to open a document is not the same as being able to rewrite it for everybody else.",
+  "documentsFormEditTitle": "Edit document",
+  "documentsFormUploadTitle": "Upload document",
+  "documentsFormReplaceFile": "Replace the file",
+  "documentsFormChooseFile": "Choose a file",
+  "documentsFormKeepFileHint": "Leave this alone to keep the current file. Files must be 25 MB or smaller.",
+  "documentsFormSizeHint": "Files must be 25 MB or smaller.",
+  "documentsFormTitleLabel": "Title",
+  "documentsFormTitleHelper": "Must be unique within the organisation",
+  "documentsFormActive": "Active",
+  "documentsFormActiveHint": "Archiving hides a document from the default list. The file and everyone it is shared with stay exactly as they are.",
+  "documentsFormShareWith": "SHARE WITH",
+  "documentsFormShareHint": "Leave everything unticked to keep it to yourself. Administrators can open every document either way.",
+  "documentsFormTeams": "TEAMS",
+  "documentsFormTeamsHint": "A team share reaches whoever is in the team at the time, not whoever is in it today.",
+  "documentsFormListsMissing": "The people and teams list is not available, so sharing cannot be changed right now. Saving keeps everyone this document is shared with.",
+  "documentsFormInactiveShares": "{count, plural, =1{Also shared with one person no longer active. Saving keeps that share.} other{Also shared with {count} people no longer active. Saving keeps those shares.}}",
+  "@documentsFormInactiveShares": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsFormSaveChanges": "Save changes",
+  "documentsFormUpload": "Upload",
+  "documentsFormDelete": "Delete document",
+  "documentsFormFallbackTitle": "Document",
+  "goalsTitle": "Goals",
+  "goalsHistoryTooltip": "Goal history",
+  "goalsNewTooltip": "New goal",
+  "goalsSectionGoals": "GOALS",
+  "goalsSectionLeaderboard": "LEADERBOARD",
+  "goalsDealsCount": "{count, plural, =1{1 deal} other{{count} deals}}",
+  "@goalsDealsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsActivitiesCount": "{count, plural, =1{1 activity} other{{count} activities}}",
+  "@goalsActivitiesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsStatActive": "active",
+  "goalsStatTargeted": "targeted",
+  "goalsStatAchieved": "achieved",
+  "goalsStatBehind": "behind pace",
+  "goalsTotalsAll": "Totals cover every goal. Revenue is summed per currency; deal and activity goals are not in the money totals.",
+  "goalsTotalsActive": "{active, plural, =1{Totals cover the 1 active goal of {count}. Revenue is summed per currency.} other{Totals cover the {active} active goals of {count}. Revenue is summed per currency.}}",
+  "@goalsTotalsActive": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsRowProgress": "{achieved} of {target} · {label}",
+  "@goalsRowProgress": {
+    "placeholders": {
+      "achieved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "goalsAchievedOfTarget": "{achieved} of {target}",
+  "@goalsAchievedOfTarget": {
+    "placeholders": {
+      "achieved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "goalsRetired": "Retired",
+  "goalsWeighted": "Weighted ({count})",
+  "@goalsWeighted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsLeaderboardEmpty": "Nothing to rank yet. The board covers monthly goals running today, and shows the ones you can see: your own, and your teams'.",
+  "goalsLeaderboardNote": "Ranked on attainment against each person's own target, not on raw revenue. Otherwise the biggest patch wins every quarter regardless of who worked hardest.",
+  "goalsEmptyTitle": "No goals yet",
+  "goalsEmptyAdmin": "A goal is a target and a period. Progress is counted from the deals closed inside it, so nothing needs updating by hand.",
+  "goalsEmptyMember": "Nothing is assigned to you or your teams. An administrator sets these.",
+  "goalsLoadFailed": "Could not load the goals",
+  "goalsTryAgain": "Try again",
+  "goalsSearchHint": "Search goals by name",
+  "goalsClearSearch": "Clear search",
+  "goalsRunningToday": "Running today",
+  "goalsNotPaused": "Not paused",
+  "goalsNoMatchTitle": "No goals match this filter",
+  "goalsNoMatchBody": "Nothing here matches the search and period you picked. Clearing the filter shows everything you can see.",
+  "goalsClearFilter": "Clear filter",
+  "goalsHistoryTitle": "Goal history",
+  "goalsHistoryFootnote": "The twelve most recent periods you can see. Attainment is recomputed from the closed-won deals of each period, so it matches what the goals screen showed while the period was running.",
+  "goalsHistoryMet": "{attained} of {count, plural, =1{{count} goal} other{{count} goals}} met",
+  "@goalsHistoryMet": {
+    "placeholders": {
+      "attained": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsHistoryPercentOfTarget": "{percent}% of target",
+  "@goalsHistoryPercentOfTarget": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsHistoryMetBadge": "Met",
+  "goalsHistoryMissedBadge": "Missed",
+  "goalsHistoryEmptyTitle": "No finished periods yet",
+  "goalsHistoryEmptyBody": "Once a goal's period ends it moves here with what it attained. Goals still running are on the goals screen.",
+  "goalsHistoryLoadFailed": "Could not load goal history",
+  "goalsFormSaveFailed": "Could not save this goal.",
+  "goalsFormUpdated": "Goal updated",
+  "goalsFormCreated": "Goal created",
+  "goalsFormDeleted": "Goal deleted",
+  "goalsFormDeleteTitle": "Delete this goal?",
+  "goalsFormDeleteBody": "The goal and its record of the period go for good. Nothing that was closed against it changes: those deals stay exactly as they are. To stop tracking a goal without losing it, retire it instead.",
+  "goalsFormKeepIt": "Keep it",
+  "goalsFormDeleteFailed": "Could not delete this goal.",
+  "goalsFormEditTitle": "Edit goal",
+  "goalsFormNewTitle": "New goal",
+  "goalsFormName": "Goal name",
+  "goalsFormMeasuredIn": "Measured in",
+  "goalsFormCurrency": "Currency",
+  "goalsFormCurrencyHelper": "Only won deals in this currency count",
+  "goalsFormTarget": "Target",
+  "goalsFormTargetDeals": "How many deals must close in the period",
+  "goalsFormTargetActivities": "How many activities must be logged in the period",
+  "goalsFormTargetRevenue": "Total revenue that must close in the period",
+  "goalsFormWeightTitle": "Weight by deal type",
+  "goalsFormWeightOptional": "Optional",
+  "goalsFormWeightAdjusted": "{count} adjusted",
+  "@goalsFormWeightAdjusted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsFormWeightHint": "A multiplier on each closed-won deal of that type. Leave a box empty to count that type in full. At 0.5 a 20,000 renewal counts as 10,000; at 0 it does not count at all.",
+  "goalsFormPeriod": "Period",
+  "goalsFormPeriodHint": "The period type groups goals on the leaderboard. The dates below are what progress is counted against.",
+  "goalsFormStarts": "Starts",
+  "goalsFormEnds": "Ends",
+  "goalsFormGoalFor": "Goal for",
+  "goalsFormWholeOrg": "The whole organisation",
+  "goalsFormTeam": "{team} (team)",
+  "@goalsFormTeam": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "goalsFormActive": "Active",
+  "goalsFormActiveHint": "A retired goal stays on the list and stops counting towards the totals and the leaderboard.",
+  "goalsFormSaveChanges": "Save changes",
+  "goalsFormCreate": "Create goal",
+  "goalsFormDelete": "Delete goal",
+  "goalsFormPickDate": "Pick a date",
+  "goalsFormGoalTitle": "Goal",
+  "goalsFormAdminsOnly": "Only an administrator can add or change a goal. You can see the ones set for you and your teams on the goals list.",
   "interactionsCouldNotOpen": "Could not open {scheme}",
   "@interactionsCouldNotOpen": {
     "placeholders": {
@@ -3621,6 +3845,568 @@
       }
     }
   },
+  "invoicesCompactThousands": "{symbol}{amount}k",
+  "@invoicesCompactThousands": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesCompactMillions": "{symbol}{amount}M",
+  "@invoicesCompactMillions": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesAgeLate": "{days}d late",
+  "@invoicesAgeLate": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesAgeDueToday": "due today",
+  "invoicesAgeLeft": "{days}d left",
+  "@invoicesAgeLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesListTitle": "Invoices",
+  "invoicesListNewTooltip": "New invoice",
+  "invoicesListMoreTooltip": "More invoice pages",
+  "invoicesMenuEstimates": "Estimates",
+  "invoicesMenuRecurring": "Recurring",
+  "invoicesMenuProducts": "Products",
+  "invoicesMenuTemplates": "Templates",
+  "invoicesMenuReports": "Reports",
+  "invoicesListSearchHint": "Search invoices",
+  "invoicesFilterAll": "All",
+  "invoicesStatOutstanding": "Outstanding",
+  "invoicesStatOverdue": "Overdue",
+  "invoicesStatDraft": "Draft",
+  "invoicesListCurrencyNote": "Each currency is totalled on its own; there are no exchange rates to combine them.",
+  "invoicesListShownOf": "{shown} of {total} invoices",
+  "@invoicesListShownOf": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesListCount": "{count, plural, =1{1 invoice} other{{count} invoices}}",
+  "@invoicesListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesListSentSnack": "Invoice {number} sent to the client",
+  "@invoicesListSentSnack": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesListEmptySearch": "No invoices match that search",
+  "invoicesListEmptyStatus": "No {status} invoices",
+  "@invoicesListEmptyStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesListEmpty": "Nothing billed yet",
+  "invoicesListLoadError": "Could not load invoices",
+  "invoicesNoAccount": "No account",
+  "invoicesSendReminder": "Send a reminder",
+  "invoicesSend": "Send",
+  "invoicesSendAgain": "Send again",
+  "invoicesDueOn": "due {date}",
+  "@invoicesDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimatesTitle": "Estimates",
+  "invoicesEstimatesNewTooltip": "New estimate",
+  "invoicesEstimatesLoadError": "Could not load estimates",
+  "invoicesEstimatesEmpty": "No estimates here",
+  "invoicesEstimateInvoiceRaised": "Invoice raised",
+  "invoicesEstimateSent": "Estimate sent",
+  "invoicesEstimateBilled": "billed {number}",
+  "@invoicesEstimateBilled": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateExpired": "expired",
+  "invoicesEstimateExpires": "expires {date}",
+  "@invoicesEstimateExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateRaiseInvoice": "Raise an invoice",
+  "invoicesEstimateOpenInvoice": "Open the invoice",
+  "invoicesRecurringTitle": "Recurring",
+  "invoicesRecurringRunning": "Running",
+  "invoicesRecurringPaused": "Paused",
+  "invoicesRecurringNewTooltip": "New schedule",
+  "invoicesRecurringLoadError": "Could not load schedules",
+  "invoicesRecurringEmpty": "No recurring schedules",
+  "invoicesRecurringEmptyDetail": "Set one up on the web to bill the same client on a cadence.",
+  "invoicesRecurringPauseTitle": "Pause this schedule?",
+  "invoicesRecurringResumeTitle": "Resume this schedule?",
+  "invoicesRecurringPauseBody": "No invoice will be generated for {title} until it is resumed.",
+  "@invoicesRecurringPauseBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringResumeBody": "Invoices for {title} will start generating again on its cadence.",
+  "@invoicesRecurringResumeBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringLeaveIt": "Leave it",
+  "invoicesRecurringPause": "Pause",
+  "invoicesRecurringResume": "Resume",
+  "invoicesRecurringPausedSnack": "Schedule paused",
+  "invoicesRecurringResumedSnack": "Schedule resumed",
+  "invoicesRecurringNext": "next {date}",
+  "@invoicesRecurringNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringAutoSends": "auto-sends",
+  "invoicesProductsTitle": "Products",
+  "invoicesProductsNewTooltip": "New product",
+  "invoicesProductsSearchHint": "Search the catalogue",
+  "invoicesProductsLoadError": "Could not load the catalogue",
+  "invoicesProductsEmpty": "Nothing in the catalogue yet",
+  "invoicesProductsEmptySearch": "No products match that search",
+  "invoicesProductsEmptyDetail": "An administrator adds these.",
+  "invoicesProductAdded": "Product added",
+  "invoicesProductSaved": "Product saved",
+  "invoicesProductDeleted": "Product deleted",
+  "invoicesProductDeleteTitle": "Delete {name}?",
+  "@invoicesProductDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesProductDeleteFinal": "Deleting it cannot be undone.",
+  "invoicesProductDeleteUsed": "{count, plural, =1{It is on 1 invoice. Those keep the name and price they were billed at. Deactivating it instead keeps it out of new invoices.} other{It is on {count} invoices. Those keep the name and price they were billed at. Deactivating it instead keeps it out of new invoices.}}",
+  "@invoicesProductDeleteUsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesProductDeleteUnused": "It is not on any invoice yet.",
+  "invoicesKeepIt": "Keep it",
+  "invoicesProductRetired": "Retired",
+  "invoicesProductNotBilled": "not billed yet",
+  "invoicesProductUsedOn": "{count, plural, =1{on 1 invoice} other{on {count} invoices}}",
+  "@invoicesProductUsedOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesTemplatesTitle": "Templates",
+  "invoicesTemplatesDefaultSnack": "{name} is now the default for new invoices",
+  "@invoicesTemplatesDefaultSnack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesTemplatesNewTooltip": "New template",
+  "invoicesTemplatesLoadError": "Could not load templates",
+  "invoicesTemplatesEmpty": "No templates yet",
+  "invoicesTemplatesEmptyAdmin": "Invoices use the built-in layout until one is added.",
+  "invoicesTemplatesEmptyMember": "Invoices use the built-in layout. An administrator adds these.",
+  "invoicesTemplatesWebNote": "A template's PDF layout is HTML and CSS, and it is edited on the web. The name, colours, logo and boilerplate are editable here.",
+  "invoicesTemplatesEditTooltip": "Edit template",
+  "invoicesTemplatesDefault": "Default",
+  "invoicesTemplatesLogo": "logo",
+  "invoicesTemplatesCustomLayout": "custom layout",
+  "invoicesTemplatesUnused": "unused",
+  "invoicesTemplatesUseForNew": "Use for new invoices",
+  "invoicesReportsTitle": "Reports",
+  "invoicesReportsForbidden": "Reports are for administrators",
+  "invoicesReportsLoadError": "Could not load the reports",
+  "invoicesReportsMoney": "Money",
+  "invoicesReportsInvoicedAllTime": "Invoiced, all time",
+  "invoicesReportsPaid": "Paid",
+  "invoicesReportsStillOwed": "Still owed",
+  "invoicesReportsInvoicesRaised": "Invoices raised",
+  "invoicesReportsAverageDays": "Average days to pay",
+  "invoicesReportsOverdue": "Overdue",
+  "invoicesReportsPastDue": "Invoices past due",
+  "invoicesReportsAmount": "Amount",
+  "invoicesReportsLast30": "Last 30 days",
+  "invoicesReportsCollected": "Collected",
+  "invoicesReportsInvoiced": "Invoiced",
+  "invoicesReportsAgeing": "Receivables ageing",
+  "invoicesReportsOutstandingTotal": "Outstanding in total",
+  "invoicesReportsEstimates": "Estimates",
+  "invoicesReportsWaiting": "Waiting on the client",
+  "invoicesReportsAccepted": "Accepted",
+  "invoicesReportsDeclined": "Declined",
+  "invoicesReportsScopeMulti": "Figures cover the whole organisation, one currency at a time. There are no exchange rates to combine them.",
+  "invoicesReportsScope": "Figures cover the whole organisation.",
+  "invoicesDetailFallbackTitle": "Invoice",
+  "invoicesDetailLoadError": "Could not load this invoice",
+  "invoicesDetailLoadErrorDetail": "It may have been deleted, or it may belong to someone else.",
+  "invoicesDetailAccount": "Account",
+  "invoicesDetailBillTo": "Bill to",
+  "invoicesDetailEmail": "Email",
+  "invoicesDetailIssued": "Issued",
+  "invoicesDetailPoNumber": "PO number",
+  "invoicesSubtotal": "Subtotal",
+  "invoicesDiscount": "Discount",
+  "invoicesTax": "Tax",
+  "invoicesShipping": "Shipping",
+  "invoicesTotal": "Total",
+  "invoicesDetailPaid": "Paid",
+  "invoicesDetailDue": "Due",
+  "invoicesDetailLineItems": "What this is for",
+  "invoicesDetailUntitledLine": "Untitled line",
+  "invoicesDetailLineQuantity": "{quantity} x {price}",
+  "@invoicesDetailLineQuantity": {
+    "placeholders": {
+      "quantity": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailLineLess": "less {amount}",
+  "@invoicesDetailLineLess": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailPayments": "Payments",
+  "invoicesDetailPaymentRef": "ref {reference}",
+  "@invoicesDetailPaymentRef": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailSentTo": "Sent to {recipient}",
+  "@invoicesDetailSentTo": {
+    "placeholders": {
+      "recipient": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailSentToClient": "Sent to the client",
+  "invoicesDetailRecordPayment": "Record a payment",
+  "invoicesDetailCancelInvoice": "Cancel invoice",
+  "invoicesDetailPaymentRecorded": "Payment recorded",
+  "invoicesDetailCancelTitle": "Cancel this invoice?",
+  "invoicesDetailCancelBody": "Invoice {number} will be marked cancelled. It cannot be sent or paid afterwards, and this cannot be undone from the app.",
+  "@invoicesDetailCancelBody": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesDetailCancelled": "Invoice cancelled",
+  "invoicesPaymentEnterAmount": "Enter an amount",
+  "invoicesPaymentAmountPositive": "The amount has to be more than zero",
+  "invoicesPaymentAmountTooHigh": "That is more than the {amount} still owed",
+  "@invoicesPaymentAmountTooHigh": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesPaymentOutstandingOn": "{amount} outstanding on {number}",
+  "@invoicesPaymentOutstandingOn": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesPaymentAmount": "Amount",
+  "invoicesPaymentMethod": "How it was paid",
+  "invoicesPaymentReference": "Reference (optional)",
+  "invoicesPaymentSubmit": "Record payment",
+  "invoicesDiscountPercentMax": "A percentage discount cannot exceed 100.",
+  "invoicesDiscountOverSubtotal": "A discount cannot exceed the subtotal.",
+  "invoicesTaxRateMax": "Tax rate cannot exceed 100.",
+  "invoicesDiscountNone": "No discount",
+  "invoicesDiscountPercentage": "Percentage",
+  "invoicesDiscountFixed": "Fixed amount",
+  "invoicesPercentOff": "Percent off",
+  "invoicesAmountOff": "Amount off",
+  "invoicesTaxRate": "Tax rate",
+  "invoicesTaxHintShipping": "Tax applies to the subtotal after the discount. Shipping is added afterwards and is not taxed.",
+  "invoicesTaxHint": "Tax applies to the subtotal after the discount.",
+  "invoicesLineDiscountOverLine": "A discount cannot exceed the line's amount.",
+  "invoicesLineAddButton": "Add a line",
+  "invoicesLineRemoveTooltip": "Remove this line",
+  "invoicesLineNameRequired": "Every line needs a description",
+  "invoicesLineEnterQuantity": "Enter a quantity",
+  "invoicesLineQuantityPositive": "A quantity has to be more than zero",
+  "invoicesLineEditTitle": "Edit the line",
+  "invoicesLineFromCatalogue": "Start from the catalogue (optional)",
+  "invoicesLineDescription": "Description",
+  "invoicesLineQuantity": "Quantity",
+  "invoicesLineUnitPrice": "Unit price",
+  "invoicesLineTotal": "Line total {amount}",
+  "@invoicesLineTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesLineAddSubmit": "Add line",
+  "invoicesLineSaveSubmit": "Save line",
+  "invoicesLineLessPercent": "less {percent}%",
+  "@invoicesLineLessPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesProductNameRequired": "A product needs a name",
+  "invoicesProductEnterPrice": "Enter a price",
+  "invoicesProductPriceNegative": "A price cannot be negative",
+  "invoicesProductNewTitle": "New product",
+  "invoicesProductEditTitle": "Edit product",
+  "invoicesProductName": "Name",
+  "invoicesProductPrice": "Price",
+  "invoicesCurrency": "Currency",
+  "invoicesProductSku": "SKU (optional)",
+  "invoicesProductSkuHelper": "Has to be unique across the catalogue",
+  "invoicesProductCategory": "Category (optional)",
+  "invoicesProductAvailable": "Available for new invoices",
+  "invoicesProductAvailableHint": "Turning this off keeps it off new line items. Invoices already billed are untouched.",
+  "invoicesProductAddSubmit": "Add product",
+  "invoicesTermsDueOnReceipt": "Due on receipt",
+  "invoicesTermsNet": "Net {days}",
+  "@invoicesTermsNet": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesFormPickDate": "Pick a date",
+  "invoicesNewTitle": "New invoice",
+  "invoicesFormAdjustmentsShipping": "Discount, tax and shipping",
+  "invoicesFormWhoAndWhen": "Who and when",
+  "invoicesFormPickAccountFirst": "Pick an account first",
+  "invoicesFormWhatFor": "What it is for",
+  "invoicesNewTitleHint": "March retainer",
+  "invoicesFormTerms": "Terms",
+  "invoicesFormDue": "Due",
+  "invoicesNewLinesCard": "What you are billing",
+  "invoicesNewLinesEmpty": "An invoice needs at least one line.",
+  "invoicesFormAnythingElse": "Anything else",
+  "invoicesFormNotes": "Notes for the client (optional)",
+  "invoicesNewTotalCaption": "with discount, tax and shipping",
+  "invoicesFormCreateDraft": "Create draft",
+  "invoicesNewCreated": "Draft invoice created",
+  "invoicesEstimateNewDefaultTitle": "Estimate for {deal}",
+  "@invoicesEstimateNewDefaultTitle": {
+    "placeholders": {
+      "deal": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateNewTitle": "New estimate",
+  "invoicesEstimateQuoteTo": "Quote to",
+  "invoicesEstimateDeal": "Deal (optional)",
+  "invoicesEstimateNoDeal": "No deal",
+  "invoicesEstimateTitleHint": "Website rebuild",
+  "invoicesEstimateValidUntil": "Valid until",
+  "invoicesEstimateBeforeIssued": "Before it is issued",
+  "invoicesEstimateLinesCard": "What you are quoting",
+  "invoicesEstimateLinesEmpty": "An estimate needs at least one line.",
+  "invoicesFormAdjustments": "Discount and tax",
+  "invoicesEstimateTermsField": "Terms (optional)",
+  "invoicesEstimateTotalCaption": "with discounts and tax",
+  "invoicesEstimateCreated": "Draft estimate created",
+  "invoicesRecurringNewTitle": "New schedule",
+  "invoicesRecurringLinesCard": "What to bill each time",
+  "invoicesRecurringLinesEmpty": "Lines are optional unless each invoice is emailed automatically.",
+  "invoicesRecurringWhoCard": "Who to bill",
+  "invoicesRecurringTitleHint": "Managed hosting retainer",
+  "invoicesRecurringHowOften": "How often",
+  "invoicesRecurringFrequency": "Frequency",
+  "invoicesRecurringCustomDays": "Every how many days",
+  "invoicesRecurringCustomDaysError": "Enter a number of days, at least 1",
+  "invoicesRecurringFirstOn": "First invoice on",
+  "invoicesRecurringStopAfter": "Stop after (optional)",
+  "invoicesRecurringPaymentTerms": "Payment terms on each invoice",
+  "invoicesRecurringAutoSend": "Email each invoice automatically",
+  "invoicesRecurringAutoSendHint": "Off means each generated invoice waits as a draft for you to send.",
+  "invoicesRecurringNeedsLine": "Add at least one line before turning on auto-send.",
+  "invoicesClearTooltip": "Clear",
+  "invoicesRecurringTotalCustom": "every {days} days, with discounts and tax",
+  "@invoicesRecurringTotalCustom": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesRecurringTotalCaption": "{frequency}, with discounts and tax",
+  "@invoicesRecurringTotalCaption": {
+    "placeholders": {
+      "frequency": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRecurringStart": "Start schedule",
+  "invoicesRecurringCreated": "Schedule created",
+  "invoicesTemplateNameRequired": "Give the template a name",
+  "invoicesTemplateHexError": "Use a six digit hex colour, for example {example}",
+  "@invoicesTemplateHexError": {
+    "placeholders": {
+      "example": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesTemplateCheckFields": "Check the highlighted fields above.",
+  "invoicesTemplateSaved": "Template saved",
+  "invoicesTemplateCreated": "Template created",
+  "invoicesTemplateGone": "That template is no longer in the catalogue.",
+  "invoicesTemplateNameCard": "Name",
+  "invoicesTemplateNameField": "Template name",
+  "invoicesTemplateColours": "Brand colours",
+  "invoicesTemplatePrimary": "Primary",
+  "invoicesTemplateSecondary": "Secondary",
+  "invoicesTemplateLogo": "Logo",
+  "invoicesTemplateBoilerplate": "Boilerplate",
+  "invoicesTemplateDefaultNotes": "Default notes",
+  "invoicesTemplateNotesHint": "Thanks for your business.",
+  "invoicesTemplateDefaultTerms": "Default terms",
+  "invoicesTemplateTermsHint": "Payment due within 30 days.",
+  "invoicesTemplateFooter": "Footer text",
+  "invoicesTemplateBoilerplateNote": "New invoices start from these. Changing them here does not rewrite invoices already raised.",
+  "invoicesTemplateDefaultCard": "Default template",
+  "invoicesTemplateUseForNew": "Use this for new invoices",
+  "invoicesTemplateUseForNewHint": "Only one template can be the default. Turning this on replaces whichever holds it now.",
+  "invoicesTemplateLayout": "Layout",
+  "invoicesTemplateLayoutNote": "The PDF layout is HTML and CSS, and it is edited on the web. Saving here changes the fields above and leaves the layout as it is.",
+  "invoicesTemplateSaving": "Saving...",
+  "invoicesTemplateSave": "Save template",
+  "invoicesTemplateCreate": "Create template",
+  "invoicesTemplateEditTitle": "Edit template",
+  "invoicesTemplateNewTitle": "New template",
+  "invoicesTemplateLogoSet": "A logo is already set. Choosing one replaces it.",
+  "invoicesTemplateNoLogo": "No logo. Invoices print with the org name instead.",
+  "invoicesTemplateReplaceLogo": "Replace logo",
+  "invoicesTemplateAddLogo": "Add logo",
+  "invoicesCustomFields": "Custom fields",
+  "invoicesCustomFieldsRequired": "Fill in the required custom fields.",
+  "invoicesEditFields": "Edit fields",
+  "invoicesFieldsSaved": "Fields saved",
+  "invoicesDepositTooLow": "A deposit must be more than 0%.",
+  "invoicesDepositTooHigh": "A deposit cannot be more than 100%.",
+  "invoicesDepositLabel": "Deposit on acceptance",
+  "invoicesDepositNone": "None",
+  "invoicesDepositInvoice": "deposit invoice",
+  "invoicesDepositInvoiceWithTax": "deposit invoice, with tax",
+  "invoicesDepositRoundsToZero": "Rounds to 0.00, so no deposit invoice is drafted.",
+  "invoicesDepositInvoiceNumber": "Deposit invoice {number}",
+  "@invoicesDepositInvoiceNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRaiseFullTitle": "Raise the full invoice?",
+  "invoicesRaiseFullBody": "{which} for {amount} is not taken off automatically. Edit the new invoice before you send it.",
+  "@invoicesRaiseFullBody": {
+    "placeholders": {
+      "which": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesRaiseInvoice": "Raise invoice",
+  "invoicesEstimateProject": "Project",
+  "invoicesEstimateProjectNamed": "Project: {name}",
+  "@invoicesEstimateProjectNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invoicesEstimateWhenAccepted": "When the client accepts",
+  "invoicesEstimateStartProject": "Start a project when accepted",
+  "invoicesEstimateProjectBilling": "Project billing",
+  "invoicesEstimateIntroduction": "Introduction (optional)",
+  "invoicesEstimateIntroductionHelp": "Shown to the client above the lines",
   "leadsListTitle": "Leads",
   "leadsListBoardTooltip": "Pipeline board",
   "leadsListImportTooltip": "Import from a spreadsheet",
@@ -4289,6 +5075,423 @@
   "objectsListModeList": "List",
   "objectsListModeBoard": "Board",
   "objectsListImport": "Import from a spreadsheet",
+  "projectsHours": "{hours}h",
+  "@projectsHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBurnHours": "Hours",
+  "projectsBurnAmount": "Amount",
+  "projectsBurnOf": "{used} of {total}",
+  "@projectsBurnOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsStatusActive": "Active",
+  "projectsStatusOnHold": "On hold",
+  "projectsStatusCompleted": "Completed",
+  "projectsStatusCancelled": "Cancelled",
+  "projectsBillingTimeAndMaterials": "Time and materials",
+  "projectsBillingFixedFee": "Fixed fee",
+  "projectsBillingRetainer": "Retainer",
+  "projectsBillingNonBillable": "Non-billable",
+  "projectsTitle": "Projects",
+  "projectsNew": "New project",
+  "projectsAccountsLoadFailed": "Could not load the accounts. Try again.",
+  "projectsFilterByAccount": "Filter by account",
+  "projectsLoadFailed": "Could not load projects",
+  "projectsTryAgain": "Try again",
+  "projectsSearchHint": "Search projects",
+  "projectsFilterAll": "All",
+  "projectsAnyAccount": "Any account",
+  "projectsOneAccount": "One account",
+  "projectsEmptyTitle": "No projects yet",
+  "projectsEmptyFilteredTitle": "No matching projects",
+  "projectsEmptyBody": "A project holds the tasks, time and invoices for one piece of client work. Start one here or from a won deal.",
+  "projectsEmptyFilteredBody": "Clear a filter to see more.",
+  "projectsRowDue": "due {date}",
+  "@projectsRowDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRowLogged": "{hours} logged",
+  "@projectsRowLogged": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountEnterNumber": "Enter a number.",
+  "projectsAmountMoreThanZero": "Enter more than 0.",
+  "projectsAmountPercentMax": "A percent is at most 100.",
+  "projectsAmountOfFee": "{part} of the {fee} fee",
+  "@projectsAmountOfFee": {
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountTitle": "Invoice an amount",
+  "projectsAmountDraftsForClient": "Drafts a one-line invoice for the client.",
+  "projectsAmountDraftsFor": "Drafts a one-line invoice for {account}.",
+  "@projectsAmountDraftsFor": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountFee": "Fee {fee}.",
+  "@projectsAmountFee": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountFeeInvoiced": "Fee {fee}, invoiced so far {invoiced}.",
+  "@projectsAmountFeeInvoiced": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      },
+      "invoiced": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsAmountAmount": "Amount",
+  "projectsAmountPercentOfFee": "Percent of fee",
+  "projectsAmountPercent": "Percent",
+  "projectsAmountLineDescription": "Line description (optional)",
+  "projectsAmountLineHint": "{name}, fixed fee",
+  "@projectsAmountLineHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsNotFoundBody": "It may have been deleted, or you may not have access to it.",
+  "projectsCheckConnection": "Check your connection and try again.",
+  "projectsFormEnterZeroOrMore": "Enter 0 or more.",
+  "projectsFormNameRequired": "A project needs a name.",
+  "projectsFormAccountRequired": "Pick the client account.",
+  "projectsFormDueBeforeStart": "The due date cannot be before the start date.",
+  "projectsFormFeeMin": "Enter at least 0.01.",
+  "projectsFormFeeRequired": "Set the monthly fee.",
+  "projectsFormOverageRequired": "Set the rate for hours over the allowance.",
+  "projectsFormRateRequired": "Enter a rate.",
+  "projectsFormCheckFields": "Check the marked fields.",
+  "projectsFormSaved": "Project saved",
+  "projectsFormCreated": "Project created",
+  "projectsFormEditTitle": "Edit project",
+  "projectsFormLoadFailed": "Could not load this project",
+  "projectsFormDraftFailed": "Could not fill the form from that deal",
+  "projectsFormCustomFields": "Custom fields",
+  "projectsFormProjectCard": "Project",
+  "projectsFormName": "Name",
+  "projectsFormAccount": "Account",
+  "projectsFormCurrentAccount": "Current account",
+  "projectsFormDeal": "Deal (optional)",
+  "projectsFormNone": "None",
+  "projectsFormCurrentDeal": "Current deal",
+  "projectsNotSet": "Not set",
+  "projectsBillingAndBudget": "Billing and budget",
+  "projectsFormAdminOnly": "Only an admin can change these.",
+  "projectsBillingType": "Billing type",
+  "projectsMonthlyFee": "Monthly fee",
+  "projectsHoursIncluded": "Hours included each month",
+  "projectsRollover": "Roll unused hours over",
+  "projectsOverageRate": "Rate for hours over the allowance",
+  "projectsCurrency": "Currency",
+  "projectsBudgetHours": "Budget hours",
+  "projectsBudgetAmount": "Budget amount",
+  "projectsDefaultRate": "Default hourly rate",
+  "projectsRateForSomeone": "Rate for someone",
+  "projectsRateFor": "Rate for {name}",
+  "@projectsRateFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsHoursSuffix": "h",
+  "projectsFeeBudgetAmount": "Fee (budget amount)",
+  "projectsDefaultRateHelp": "Time logged here takes the person's own rate below, else this one.",
+  "projectsHoursIncludedHelp": "Leave blank to bill the fee alone, with no hours over.",
+  "projectsCarriedHours": "Carried hours",
+  "projectsCarriedHoursHelp": "Unused hours carried into the next invoice.",
+  "projectsDates": "Dates",
+  "projectsStartDate": "Start date",
+  "projectsDueDate": "Due date",
+  "projectsClearField": "Clear {field}",
+  "@projectsClearField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsSomeone": "Someone",
+  "projectsPeople": "People",
+  "projectsNobodyAssigned": "Nobody assigned",
+  "projectsAssignPeople": "Assign people",
+  "projectsNoMembers": "No active members",
+  "projectsRatesPerPerson": "Rates per person",
+  "projectsRatesPerPersonHelp": "A person's own hourly rate on this project. Leave someone out to use the default rate.",
+  "projectsPerson": "Person",
+  "projectsRate": "Rate",
+  "projectsRemoveRate": "Remove rate",
+  "projectsAddRate": "Add a rate",
+  "projectsTag": "Tag",
+  "projectsDetails": "Details",
+  "projectsNoTags": "No tags",
+  "projectsFormSave": "Save project",
+  "projectsFormCreate": "Create project",
+  "projectsNotFound": "Project not found",
+  "projectsTabOverview": "Overview",
+  "projectsTabTasks": "Tasks",
+  "projectsTabTime": "Time",
+  "projectsTabInvoices": "Invoices",
+  "projectsTabFiles": "Files",
+  "projectsTabFilesCount": "Files ({count})",
+  "@projectsTabFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsTabComments": "Comments",
+  "projectsTabCommentsCount": "Comments ({count})",
+  "@projectsTabCommentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsDelete": "Delete project",
+  "projectsFactAccount": "ACCOUNT",
+  "projectsDeal": "Deal",
+  "projectsFactFromDeal": "FROM THE DEAL",
+  "projectsFactFromEstimate": "FROM ESTIMATE",
+  "projectsBudget": "Budget",
+  "projectsFactStart": "START",
+  "projectsFactDue": "DUE",
+  "projectsRates": "Rates",
+  "projectsBillMonth": "Bill {month}",
+  "@projectsBillMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBillThisMonth": "Bill this month",
+  "projectsHoursCount": "{count, plural, one{{hours} hour} other{{hours} hours}}",
+  "@projectsHoursCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerNoFee": "No monthly fee set",
+  "projectsRetainerFee": "{amount} a month",
+  "@projectsRetainerFee": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerUsed": "{hours} in {month}",
+  "@projectsRetainerUsed": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerUsedOf": "{used} of {available} hours used in {month}",
+  "@projectsRetainerUsedOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerOverage": "{hours} over the allowance so far",
+  "@projectsRetainerOverage": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerOverageValue": "{hours} over the allowance so far, {amount}",
+  "@projectsRetainerOverageValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerCarried": "{hours} carried in from earlier months",
+  "@projectsRetainerCarried": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRetainerEnded": "Ended after {month}",
+  "@projectsRetainerEnded": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetLogged": "{logged} logged, {billable} billable",
+  "@projectsBudgetLogged": {
+    "placeholders": {
+      "logged": {
+        "type": "String"
+      },
+      "billable": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetUnbilled": "Not yet billed: {amount}",
+  "@projectsBudgetUnbilled": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetInvoicedOfFee": "Invoiced {invoiced} of the {fee} fee",
+  "@projectsBudgetInvoicedOfFee": {
+    "placeholders": {
+      "invoiced": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetInvoiced": "Invoiced: {amount}",
+  "@projectsBudgetInvoiced": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBudgetNone": "No budget set.",
+  "projectsRatesNoDefault": "No default rate",
+  "projectsRatesDefault": "Default: {amount} an hour",
+  "@projectsRatesDefault": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRateLineNone": "{name}: no rate",
+  "@projectsRateLineNone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsRateLine": "{name}: {amount} an hour",
+  "@projectsRateLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsNewTask": "New task",
+  "projectsNoTasks": "No tasks on this project yet.",
+  "projectsTaskUpdateFailed": "Could not update that task",
+  "projectsLogged": "Logged",
+  "projectsStartTimer": "Start timer",
+  "projectsLogTime": "Log time",
+  "projectsNoTime": "No time logged here yet.",
+  "projectsTimerOn": "Start the timer on",
+  "projectsTimerOnProject": "The project",
+  "projectsTimerAlreadyRunning": "You already have a timer running.",
+  "projectsTimerStartFailed": "Could not start the timer.",
+  "projectsView": "View",
+  "projectsTimerStopFailed": "Could not stop the timer.",
+  "projectsLogTimeFailed": "Could not log that time.",
+  "projectsBillThisMonthQuestion": "Bill this month?",
+  "projectsBillMonthQuestion": "Bill {month}?",
+  "@projectsBillMonthQuestion": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "projectsBillMonthBody": "This drafts an invoice for the monthly fee, plus any hours over the allowance, and marks the month's time as billed.",
+  "projectsBillMonthFailed": "Could not bill the month.",
+  "projectsNoInvoices": "No invoices for this project yet.",
+  "projectsInvoice": "Invoice",
+  "projectsNoFiles": "No files yet. Attach a brief, a contract or a deliverable.",
+  "projectsAttachmentNoFile": "That attachment has no file.",
+  "projectsDownloadFailed": "Could not download that file.",
+  "projectsNoComments": "No comments yet",
+  "projectsNoCommentsBody": "Add a comment to keep the team in the loop",
+  "projectsAddCommentHint": "Add a comment...",
+  "projectsAddComment": "Add comment",
+  "projectsDeleteTitle": "Delete this project?",
+  "projectsDeleteBody": "Its tasks, time entries and invoices are kept, without the link to this project. This cannot be undone.",
+  "projectsDeleted": "Project deleted",
   "settingsAutomationAdminOnly": "Only an organization admin can see automation rules.",
   "settingsAutomationTryAgain": "Try again",
   "settingsAutomationTryTitle": "Try it on a record",
@@ -7055,5 +8258,1522 @@
   "settingsObjectSettingsBoardOff": "Board turned off",
   "settingsObjectSettingsBoardSaved": "Board field saved",
   "settingsObjectSettingsBoardFailed": "Could not save the board field.",
-  "settingsObjectSettingsWhoSees": "Who sees records"
+  "settingsObjectSettingsWhoSees": "Who sees records",
+  "solutionsListTitle": "Solutions",
+  "solutionsListSearchHint": "Search the knowledge base…",
+  "solutionsListFilterAll": "All",
+  "solutionsListPublishedOnly": "Published only",
+  "solutionsListEmptyTitle": "No solutions yet",
+  "solutionsListEmptyBody": "Reusable answers for common issues live here.",
+  "solutionsListCreate": "Create solution",
+  "solutionsListPublishedBadge": "Published",
+  "solutionsListLinkedCount": "{count, plural, other{{count} linked}}",
+  "@solutionsListLinkedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "solutionsDetailTitleRequired": "Title is required",
+  "solutionsDetailCreated": "Solution created",
+  "solutionsDetailUpdated": "Solution updated",
+  "solutionsDetailSaveFailed": "Failed to save",
+  "solutionsDetailPublishFailed": "Failed",
+  "solutionsDetailDeleteTitle": "Delete solution?",
+  "solutionsDetailDeleteBody": "Permanently delete \"{title}\"?",
+  "@solutionsDetailDeleteBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "solutionsDetailDeleteFailed": "Delete failed",
+  "solutionsDetailNewTitle": "New solution",
+  "solutionsDetailTitle": "Solution",
+  "solutionsDetailTitleField": "Title",
+  "solutionsDetailStatusHeading": "STATUS",
+  "solutionsDetailTagsHeading": "TAGS",
+  "solutionsDetailTagsHelp": "Internal filing. Customers never see these names, but articles sharing one are shown to each other in the portal.",
+  "solutionsDetailPublished": "Published",
+  "solutionsDetailNotPublished": "Not published",
+  "solutionsDetailPublishedHint": "Live to customers, and suggested to agents.",
+  "solutionsDetailNotPublishedHint": "Only approved solutions can be published.",
+  "solutionsDetailUnpublish": "Unpublish",
+  "solutionsDetailPublish": "Publish",
+  "solutionsDetailSaveChanges": "Save changes",
+  "supportListTitle": "Help",
+  "supportListNewTicket": "New ticket",
+  "supportListMessageCount": "{count, plural, other{{count} messages}}",
+  "@supportListMessageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportListUpdated": "Updated {date}",
+  "@supportListUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "supportListEmptyTitle": "No support tickets",
+  "supportListEmptyBody": "Open a ticket when you need help with BottleCRM. Replies and status changes stay attached to it.",
+  "supportListCouldNotOpenUrl": "Could not open {url} on this device.",
+  "@supportListCouldNotOpenUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "supportListStartHere": "Start here",
+  "supportListKnowledgeBase": "Knowledge base",
+  "supportListKnowledgeBaseHint": "The answers your team has already written down",
+  "supportListYourTickets": "Your tickets",
+  "supportListYourTicketsHint": "Everything open, and who it is waiting on",
+  "supportListSettings": "Settings",
+  "supportListSettingsHint": "Routing, escalation, business hours and inbound email",
+  "supportListIfNotSolved": "If that did not do it",
+  "supportListReportBug": "Report a bug",
+  "supportListReportBugHint": "Public issue tracker, fastest route for anything reproducible",
+  "supportListEmailSupport": "Email support@bottlecrm.io",
+  "supportListEmailSupportHint": "For anything involving your data, billing or an account you cannot get into",
+  "supportListWhatToInclude": "What to include when you write",
+  "supportListWhatToIncludeIntro": "Two things turn a two-day exchange into one message.",
+  "supportListExpected": "What you expected",
+  "supportListExpectedHint": "The thing you were trying to do, in one sentence.",
+  "supportListHappened": "What happened instead",
+  "supportListHappenedHint": "The exact wording of any error. \"It did not work\" and \"Something went wrong\" are the same message to us.",
+  "supportListScreenshotWarning": "Please do not attach screenshots containing an invoice link, an API token or a survey URL. Each of those is a working credential for whoever ends up holding it.",
+  "supportTryAgain": "Try again",
+  "supportCreateTitle": "New support ticket",
+  "supportCreateSubject": "Subject",
+  "supportCreateSubjectHint": "A short summary of the problem",
+  "supportCreateSubjectRequired": "Add a subject.",
+  "supportCreateCategory": "Category",
+  "supportCreateCategoryRequired": "Choose a category.",
+  "supportCreateBody": "What do you need help with?",
+  "supportCreateBodyHint": "Include what you tried, what you expected, and the exact error you saw.",
+  "supportCreateBodyRequired": "Describe what happened.",
+  "supportCreateAttach": "Attach a file (optional)",
+  "supportCreateAttachHint": "Up to 25 MB. Remove secrets and personal data before uploading.",
+  "supportCreateOpening": "Opening…",
+  "supportCreateSubmit": "Open ticket",
+  "supportCreateFailed": "Could not open this ticket.",
+  "supportDetailTitle": "Support ticket",
+  "supportDetailAssigned": "A support agent is assigned.",
+  "supportDetailUnassigned": "Waiting for assignment.",
+  "supportDetailConversation": "CONVERSATION",
+  "supportDetailReply": "Reply",
+  "supportDetailReplyHint": "Add any details that will help us investigate.",
+  "supportDetailAttach": "Attach file",
+  "supportDetailSending": "Sending…",
+  "supportDetailSend": "Send reply",
+  "supportDetailClosed": "This ticket is closed. Open a new ticket if you still need help.",
+  "supportDetailReplyEmpty": "Write a reply or attach a file before sending.",
+  "supportDetailReplyFailed": "Could not send this reply.",
+  "supportDetailDownloadFailed": "Could not download that file.",
+  "tasksToday": "Today",
+  "tasksTomorrow": "Tomorrow",
+  "tasksYesterday": "Yesterday",
+  "tasksMarkedIncomplete": "Task marked as incomplete",
+  "tasksCompleted": "Task completed",
+  "tasksUpdateFailed": "Failed to update task",
+  "tasksDeleteTitle": "Delete Task?",
+  "tasksDeleted": "Task deleted",
+  "tasksDeleteFailed": "Failed to delete task",
+  "tasksLoadFailed": "Failed to load task",
+  "tasksEditTask": "Edit Task",
+  "tasksCustomFields": "Custom Fields",
+  "tasksBoards": "Boards",
+  "tasksRelatedKindAccount": "Account",
+  "tasksRelatedKindLead": "Lead",
+  "tasksRelatedKindOpportunity": "Opportunity",
+  "tasksRelatedKindTicket": "Ticket",
+  "tasksListTitle": "Tasks",
+  "tasksListLoadFailed": "Failed to load tasks",
+  "tasksListSearchHint": "Search task title",
+  "tasksListOverdue": "Overdue",
+  "tasksListDueToday": "Due today",
+  "tasksListAnyone": "Anyone",
+  "tasksListStatusCount": "{count, plural, other{{count} statuses}}",
+  "@tasksListStatusCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListClear": "Clear",
+  "tasksListSummaryOverdue": "{count} overdue",
+  "@tasksListSummaryOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListSummaryToday": "{count} today",
+  "@tasksListSummaryToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListSummaryUpcoming": "{count} upcoming",
+  "@tasksListSummaryUpcoming": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListSummaryTotal": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@tasksListSummaryTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksListGroupUpcoming": "Upcoming",
+  "tasksListGroupNoDueDate": "No Due Date",
+  "tasksListGroupCompleted": "Completed",
+  "tasksListNoTasksForDate": "No tasks for this date",
+  "tasksListAddATask": "Add a task",
+  "tasksListNoMatching": "No matching tasks",
+  "tasksListAllCaughtUp": "All caught up!",
+  "tasksListNoMatchingHint": "Try adjusting your search or filters.",
+  "tasksListAllCaughtUpHint": "No pending tasks. Create a new task to get started.",
+  "tasksListClearFilters": "Clear filters",
+  "tasksListAddTask": "Add Task",
+  "tasksListDeleteConfirm": "Are you sure you want to delete \"{title}\"?",
+  "@tasksListDeleteConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksListFilterByOwner": "Filter by Owner",
+  "tasksListMyTasks": "My tasks",
+  "tasksListMe": "Me",
+  "tasksListFilterByStatus": "Filter by Status",
+  "tasksListAllStatuses": "All statuses",
+  "tasksListFilterByPriority": "Filter by Priority",
+  "tasksListAllPriorities": "All priorities",
+  "tasksFormUpdated": "Task updated successfully",
+  "tasksFormCreated": "Task created successfully",
+  "tasksFormSaveFailed": "Failed to save task",
+  "tasksFormNewTitle": "New Task",
+  "tasksFormSectionDetails": "Task Details",
+  "tasksFormSectionStatusPriority": "Status & Priority",
+  "tasksFormDueDate": "Due Date",
+  "tasksFormSectionPeople": "People",
+  "tasksFormSectionLinkedRecord": "Linked Record",
+  "tasksFormNotesHint": "Add any additional details about this task...",
+  "tasksFormUpdateButton": "Update Task",
+  "tasksFormCreateButton": "Create Task",
+  "tasksFormTitleLabel": "Task Title",
+  "tasksFormTitleHint": "What needs to be done?",
+  "tasksFormTitleRequired": "Task title is required",
+  "tasksFormAddDueDate": "Add Due Date",
+  "tasksFormNoOneAssigned": "No one assigned",
+  "tasksFormNoUsersFound": "No users found",
+  "tasksFormSelected": "Selected",
+  "tasksFormLinkedRecord": "Linked record",
+  "tasksFormNotLinked": "Not linked",
+  "tasksFormLinkTo": "Link to…",
+  "tasksFormSelectKind": "{kind, select, account{Select Account} lead{Select Lead} opportunity{Select Opportunity} ticket{Select Ticket} other{Select a record}}",
+  "@tasksFormSelectKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksFormKindLoadFailed": "{kind, select, account{Could not load accounts} lead{Could not load leads} opportunity{Could not load opportunitys} ticket{Could not load tickets} other{Could not load records}}",
+  "@tasksFormKindLoadFailed": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksFormKindLoadFailedHint": "Close this and try again once you are back online.",
+  "tasksFormKindEmpty": "{kind, select, account{No accounts yet} lead{No leads yet} opportunity{No opportunitys yet} ticket{No tickets yet} other{No records yet}}",
+  "@tasksFormKindEmpty": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksFormKindEmptyHint": "Create one first, then link this task to it.",
+  "tasksDetailNotFound": "Task not found",
+  "tasksDetailMayBeDeleted": "This task may have been deleted",
+  "tasksDetailNoDueDate": "No due date",
+  "tasksDetailTeams": "Teams",
+  "tasksDetailAttachments": "Attachments",
+  "tasksDetailNoFiles": "No files yet.",
+  "tasksDetailDetails": "Details",
+  "tasksDetailCreated": "Created",
+  "tasksDetailCreatedBy": "Created by",
+  "tasksDetailLastUpdated": "Last Updated",
+  "tasksDetailSelectedAccount": "Selected account",
+  "tasksDetailSelectedLead": "Selected lead",
+  "tasksDetailSelectedDeal": "Selected deal",
+  "tasksDetailSelectedTicket": "Selected ticket",
+  "tasksDetailRelatedTo": "Related To",
+  "tasksDetailUnassigned": "Unassigned",
+  "tasksDetailComments": "Comments",
+  "tasksDetailNoComments": "No comments yet. Use the box below to add one.",
+  "tasksDetailCommentHint": "Add a comment…",
+  "tasksDetailReopen": "Reopen",
+  "tasksDetailComplete": "Complete",
+  "tasksDetailReopenTask": "Reopen Task",
+  "tasksDetailCompleteTask": "Complete Task",
+  "tasksDetailDeleteTask": "Delete Task",
+  "tasksDetailDeleteBody": "This action cannot be undone. Are you sure you want to delete this task?",
+  "tasksDetailCommentFailed": "Failed to add comment",
+  "tasksDetailDeleteCommentTitle": "Delete comment?",
+  "tasksDetailCannotBeUndone": "This cannot be undone.",
+  "tasksDetailDeleteFailed": "Delete failed",
+  "tasksDetailDeleteAttachmentTitle": "Delete attachment?",
+  "tasksDetailRemoveFile": "Remove \"{name}\"?",
+  "@tasksDetailRemoveFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksDetailDownloadFailed": "Could not download that file.",
+  "tasksDetailMonthsAgo": "{count}mo ago",
+  "@tasksDetailMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailDaysAgo": "{count}d ago",
+  "@tasksDetailDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailHoursAgo": "{count}h ago",
+  "@tasksDetailHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailMinutesAgo": "{count}m ago",
+  "@tasksDetailMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailJustNow": "Just now",
+  "tasksDetailDueToday": "Due Today",
+  "tasksDetailDueTomorrow": "Due Tomorrow",
+  "tasksDetailDueYesterday": "Due Yesterday",
+  "tasksDetailDaysOverdue": "{count, plural, =1{1 day overdue} other{{count} days overdue}}",
+  "@tasksDetailDaysOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksDetailDueOn": "Due {date}",
+  "@tasksDetailDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardCardFab": "Card",
+  "tasksBoardDefaultTitle": "Board",
+  "tasksBoardNoBoards": "No boards yet",
+  "tasksBoardNoBoardsHint": "A board is a set of lanes you move cards through. You will own the one you create, and it starts with To Do, In Progress and Done.",
+  "tasksBoardCreateABoard": "Create a board",
+  "tasksBoardNoLanes": "This board has no lanes",
+  "tasksBoardNoLanesManage": "Add one and cards have somewhere to go.",
+  "tasksBoardNoLanesAsk": "Ask the board owner to add one. Cards need a lane to live in.",
+  "tasksBoardAddALane": "Add a lane",
+  "tasksBoardLaneChip": "Lane",
+  "tasksBoardLaneEmpty": "Nothing in {name}.",
+  "@tasksBoardLaneEmpty": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardMoveFailed": "Could not move that card.",
+  "tasksBoardMoveTo": "Move to",
+  "tasksBoardDeleteCard": "Delete card",
+  "tasksBoardMovedTo": "Moved to {name}.",
+  "@tasksBoardMovedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardDeleteCardTitle": "Delete card?",
+  "tasksBoardDeleteCardBody": "\"{title}\" will be removed from this board.",
+  "@tasksBoardDeleteCardBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardCardDeleted": "Card deleted.",
+  "tasksBoardDeleteCardFailed": "Could not delete that card.",
+  "tasksBoardCardCount": "{count, plural, =1{1 card} other{{count} cards}}",
+  "@tasksBoardCardCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksBoardNewBoard": "New board",
+  "tasksBoardNewBoardHint": "Product launch",
+  "tasksBoardCreateBoard": "Create board",
+  "tasksBoardBoardCreated": "Board created.",
+  "tasksBoardCreateBoardFailed": "Could not create that board.",
+  "tasksBoardNewLane": "New lane",
+  "tasksBoardNewLaneHint": "In Review",
+  "tasksBoardAddLane": "Add lane",
+  "tasksBoardLaneAdded": "Lane added.",
+  "tasksBoardAddLaneFailed": "Could not add that lane.",
+  "tasksBoardNameRequired": "Give it a name first.",
+  "tasksBoardNewCardIn": "New card in {lane}",
+  "@tasksBoardNewCardIn": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardCardTitle": "Title",
+  "tasksBoardCardTitleRequired": "A card needs a title.",
+  "tasksBoardCardAdded": "Card added to {lane}.",
+  "@tasksBoardCardAdded": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksBoardAddCardFailed": "Could not add that card.",
+  "tasksBoardAddCard": "Add card",
+  "tasksBoardTryAgain": "Try again",
+  "tasksRelatedKindProject": "Project",
+  "tasksDetailSelectedProject": "Selected project",
+  "ticketsBoardRefresh": "Refresh",
+  "ticketsBoardLoadError": "Could not load the board",
+  "ticketsBoardTryAgain": "Try again",
+  "ticketsBoardNoStagesTitle": "No stages yet",
+  "ticketsBoardNoStagesBody": "This pipeline has no stages, so there is nowhere to show a ticket.",
+  "ticketsBoardTitle": "Ticket board",
+  "ticketsBoardLaneEmpty": "Nothing in {lane}.",
+  "@ticketsBoardLaneEmpty": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsBoardLaneTruncated": "Showing the first {shown} of {total}.",
+  "@ticketsBoardLaneTruncated": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsBoardSlaBreached": "SLA breached",
+  "ticketsBoardSlaAtRisk": "SLA at risk",
+  "ticketsBoardUnassigned": "Unassigned",
+  "ticketsBoardOpenTicket": "Open ticket",
+  "ticketsBoardMoveTo": "Move to",
+  "ticketsBoardMoveFailed": "Could not move that ticket.",
+  "ticketsBoardMoved": "Moved to {lane}.",
+  "@ticketsBoardMoved": {
+    "placeholders": {
+      "lane": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsBoardPickerTitle": "Board",
+  "ticketsBoardByStatus": "By status",
+  "ticketsDetailNotFound": "Ticket not found",
+  "ticketsDetailLoadFailed": "Could not load this ticket",
+  "ticketsDetailNotFoundBody": "It does not exist, or you do not have access to it.",
+  "ticketsDetailWatch": "Watch",
+  "ticketsDetailUnwatch": "Unwatch",
+  "ticketsDetailMore": "More",
+  "ticketsDetailTabOverview": "Overview",
+  "ticketsDetailTabComments": "Comments",
+  "ticketsDetailTabFiles": "Files",
+  "ticketsDetailTabActivity": "Activity",
+  "ticketsDetailSlaBreached": "SLA breached",
+  "ticketsDetailInfoTitle": "Ticket Information",
+  "ticketsDetailInfoName": "NAME",
+  "ticketsDetailInfoAccount": "ACCOUNT",
+  "ticketsDetailInfoNoAccount": "No account linked",
+  "ticketsDetailInfoCreated": "CREATED",
+  "ticketsDetailInfoClosed": "CLOSED",
+  "ticketsDetailAssignedTo": "Assigned To",
+  "ticketsDetailReportedBy": "Reported by",
+  "ticketsDetailPeopleCount": "{count, plural, other{{count} people on this ticket}}",
+  "@ticketsDetailPeopleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAlsoOpenOn": "Also open on {account}",
+  "@ticketsDetailAlsoOpenOn": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailAlsoOpenOnThisAccount": "Also open on this account",
+  "ticketsDetailThreadPublic": "Public",
+  "ticketsDetailThreadInternal": "Internal",
+  "ticketsDetailThreadEmails": "Emails",
+  "ticketsDetailNoInternalNotes": "No internal notes",
+  "ticketsDetailNoComments": "No comments yet",
+  "ticketsDetailInternalNotesHint": "Internal notes are visible only to your team.",
+  "ticketsDetailFirstCommentHint": "Add the first comment to get started.",
+  "ticketsDetailNoEmails": "No emails",
+  "ticketsDetailNoEmailsHint": "Inbound and outbound emails for this ticket will appear here.",
+  "ticketsDetailAlsoOnSend": "Also on send",
+  "ticketsDetailMention": "Mention",
+  "ticketsDetailSavedReply": "Saved reply",
+  "ticketsDetailHintInternalNote": "Add an internal note…",
+  "ticketsDetailHintEmailCustomer": "Email the customer…",
+  "ticketsDetailAddCommentFailed": "Failed to add comment",
+  "ticketsDetailNoFiles": "No files attached",
+  "ticketsDetailAttachHint": "Attach a screenshot, a log, or a document.",
+  "ticketsDetailNothingAttached": "Nothing has been attached to this ticket.",
+  "ticketsDetailAttachmentNoFile": "That attachment has no file.",
+  "ticketsDetailDownloadFailed": "Could not download that file.",
+  "ticketsDetailNoActivity": "No activity yet",
+  "ticketsDetailNoActivityHint": "Status changes and assignments will appear here",
+  "ticketsDetailMentionSomeone": "Mention someone",
+  "ticketsDetailMacroNotApplied": "Reply posted, but the macro's actions were not applied: {error}",
+  "@ticketsDetailMacroNotApplied": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailWatchFailed": "Failed to watch",
+  "ticketsDetailUnwatchFailed": "Failed to unwatch",
+  "ticketsDetailActionReassign": "Reassign",
+  "ticketsDetailActionChangeStatus": "Change status",
+  "ticketsDetailActionChangePriority": "Change priority",
+  "ticketsDetailActionClose": "Close ticket",
+  "ticketsDetailActionMerge": "Merge into another ticket",
+  "ticketsDetailActionLinkParent": "Link to parent ticket",
+  "ticketsDetailActionChangeParent": "Change / detach parent",
+  "ticketsDetailActionCloseWithChildren": "Close with children",
+  "ticketsDetailActionDelete": "Delete ticket",
+  "ticketsDetailReassignTitle": "Reassign ticket",
+  "ticketsDetailReassigned": "Reassigned",
+  "ticketsDetailStatusUpdated": "Status updated",
+  "ticketsDetailPriorityUpdated": "Priority updated",
+  "ticketsDetailCloseConfirmTitle": "Close ticket?",
+  "ticketsDetailCloseConfirmBody": "The ticket will be marked Closed with today's date as the closed-on date.",
+  "ticketsDetailTicketClosed": "Ticket closed",
+  "ticketsDetailMergeIntoTitle": "Merge into…",
+  "ticketsDetailMergeConfirmTitle": "Merge ticket?",
+  "ticketsDetailMergeConfirmBody": "\"{source}\" will be marked Duplicate and its comments, attachments, and emails will move into \"{target}\". You can undo this from the target ticket.",
+  "@ticketsDetailMergeConfirmBody": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailMergeButton": "Merge",
+  "ticketsDetailMergedInto": "Merged into \"{target}\"",
+  "@ticketsDetailMergedInto": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailMergeFailed": "Failed to merge",
+  "ticketsDetailUnmergeConfirmTitle": "Unmerge ticket?",
+  "ticketsDetailUnmergeConfirmBody": "\"{source}\" will be restored and its comments, attachments, and emails moved back out of this ticket.",
+  "@ticketsDetailUnmergeConfirmBody": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailUnmergeButton": "Unmerge",
+  "ticketsDetailUnmerged": "Unmerged \"{source}\"",
+  "@ticketsDetailUnmerged": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailUnmergeFailed": "Failed to unmerge",
+  "ticketsDetailDeleteConfirmTitle": "Delete ticket?",
+  "ticketsDetailDeleteConfirmBody": "This will soft-delete \"{name}\". You can restore it from the web admin.",
+  "@ticketsDetailDeleteConfirmBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailTicketDeleted": "Ticket deleted",
+  "ticketsDetailDeleteFailed": "Failed to delete ticket",
+  "ticketsDetailUpdateFailed": "Failed to update ticket",
+  "ticketsDetailLinkedTickets": "LINKED TICKETS",
+  "ticketsDetailProblem": "PROBLEM",
+  "ticketsDetailParent": "Parent",
+  "ticketsDetailTreeTruncated": "Tree truncated (max depth reached)",
+  "ticketsDetailLinkedCount": "{count, plural, =1{1 linked ticket} other{{count} linked tickets}}",
+  "@ticketsDetailLinkedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailParentTicket": "Parent ticket",
+  "ticketsDetailPickDifferentParent": "Pick a different parent",
+  "ticketsDetailDetachFromParentTicket": "Detach from parent ticket",
+  "ticketsDetailDetachFrom": "Detach from \"{name}\"",
+  "@ticketsDetailDetachFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailDetachedFromParent": "Detached from parent",
+  "ticketsDetailNoLinkCandidates": "No other tickets to link to. Load more from the list first.",
+  "ticketsDetailLinkToParentTitle": "Link to parent…",
+  "ticketsDetailLinkedTo": "Linked to \"{name}\"",
+  "@ticketsDetailLinkedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailLinkFailed": "Failed to link parent",
+  "ticketsDetailCloseFailed": "Failed to close",
+  "ticketsDetailMergedFrom": "MERGED FROM",
+  "ticketsDetailCommentInternal": "Internal",
+  "ticketsDetailAgoMonths": "{n}mo ago",
+  "@ticketsDetailAgoMonths": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAgoDays": "{n}d ago",
+  "@ticketsDetailAgoDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAgoHours": "{n}h ago",
+  "@ticketsDetailAgoHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailAgoMinutes": "{n}m ago",
+  "@ticketsDetailAgoMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailJustNow": "Just now",
+  "ticketsDetailNoMatchingTickets": "No matching tickets",
+  "ticketsDetailSearchTicketsHint": "Search tickets…",
+  "ticketsDetailEmailInbound": "Inbound",
+  "ticketsDetailEmailOutbound": "Outbound",
+  "ticketsDetailEmailFrom": "From: {address}",
+  "@ticketsDetailEmailFrom": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailEmailTo": "To: {addresses}",
+  "@ticketsDetailEmailTo": {
+    "placeholders": {
+      "addresses": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailActCreated": "Created the ticket",
+  "ticketsDetailActUpdatedFields": "Updated {fields}",
+  "@ticketsDetailActUpdatedFields": {
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsDetailActUpdated": "Updated the ticket",
+  "ticketsDetailActStatusChanged": "Status changed",
+  "ticketsDetailActPriorityChanged": "Priority changed",
+  "ticketsDetailActComment": "Added a comment",
+  "ticketsDetailActAssign": "Updated assignees",
+  "ticketsDetailActLinkedSolution": "Linked a solution",
+  "ticketsDetailActUnlinkedSolution": "Unlinked a solution",
+  "ticketsDetailActLinkedParent": "Linked to a parent ticket",
+  "ticketsDetailActWatched": "Started watching",
+  "ticketsDetailActUnwatched": "Stopped watching",
+  "ticketsDetailActMentioned": "Mentioned a user",
+  "ticketsDetailActApprovalRequested": "Requested approval",
+  "ticketsDetailActApproved": "Approval granted",
+  "ticketsDetailActRejected": "Approval rejected",
+  "ticketsDetailActApprovalCancelled": "Approval cancelled",
+  "ticketsDetailActEscalated": "Escalated",
+  "ticketsDetailActReopened": "Reopened",
+  "ticketsDetailActMerged": "Merged into another ticket",
+  "ticketsDetailActMergeTarget": "Received a merge",
+  "ticketsDetailActUnmerged": "Unmerged",
+  "ticketsDetailActRouted": "Routed by auto-assignment",
+  "ticketsDetailActTimeLoggedMinutes": "Logged {minutes}m",
+  "@ticketsDetailActTimeLoggedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailActTimeLogged": "Logged time",
+  "ticketsDetailActParentCascade": "Closed via parent cascade",
+  "ticketsDetailDoNotApply": "Do not apply this",
+  "ticketsAnalyticsTitle": "Analytics",
+  "ticketsAnalyticsRange": "{start} to {end}",
+  "@ticketsAnalyticsRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsAllPriorities": "All priorities",
+  "ticketsAnalyticsFirstResponse": "First Response",
+  "ticketsAnalyticsNextResponse": "Next Response",
+  "ticketsAnalyticsResolution": "Resolution",
+  "ticketsAnalyticsBacklog": "Backlog (today)",
+  "ticketsAnalyticsSlaBreachRate": "SLA breach rate",
+  "ticketsAnalyticsFrtSubtitle": "{count, plural, other{p90 {p90} · {count} tickets}}",
+  "@ticketsAnalyticsFrtSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "p90": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsNrtSubtitle": "p90 {p90} · {count} answered",
+  "@ticketsAnalyticsNrtSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "p90": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsMttrSubtitle": "p90 {p90} · {count} resolved",
+  "@ticketsAnalyticsMttrSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "p90": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsBreached": "{count} breached",
+  "@ticketsAnalyticsBreached": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsAnalyticsBacklogPeak": "Peak urgent {count} in window",
+  "@ticketsAnalyticsBacklogPeak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsAnalyticsSlaSubtitle": "First response above · Resolution {resolution} · Next response {next}",
+  "@ticketsAnalyticsSlaSubtitle": {
+    "placeholders": {
+      "resolution": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsMinutes": "{value}m",
+  "@ticketsAnalyticsMinutes": {
+    "description": "A duration in minutes, short form.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsHours": "{value}h",
+  "@ticketsAnalyticsHours": {
+    "description": "A duration in hours, short form.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsAnalyticsCsatHeading": "CUSTOMER SATISFACTION",
+  "ticketsAnalyticsCsatEmpty": "No ratings in this window. Scores appear once customers answer the satisfaction survey sent when a ticket closes.",
+  "ticketsAnalyticsCsatOutOf5": "{count, plural, =1{out of 5 · 1 rating} other{out of 5 · {count} ratings}}",
+  "@ticketsAnalyticsCsatOutOf5": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsAnalyticsAgentsHeading": "PER-AGENT",
+  "ticketsAnalyticsAgentCases": "cases",
+  "ticketsAnalyticsAgentFrt": "FRT",
+  "ticketsAnalyticsAgentBreach": "breach",
+  "ticketsInboxApproveFailed": "Failed to approve",
+  "ticketsInboxRejectTitle": "Reject approval",
+  "ticketsInboxRejectReason": "Reason (required)",
+  "ticketsInboxReject": "Reject",
+  "ticketsInboxRejectFailed": "Failed to reject",
+  "ticketsInboxCancelTitle": "Cancel approval request?",
+  "ticketsInboxCancelBody": "This will withdraw the approval request.",
+  "ticketsInboxKeep": "Keep",
+  "ticketsInboxCancelRequest": "Cancel request",
+  "ticketsInboxCancelFailed": "Failed to cancel",
+  "ticketsInboxTitle": "Approvals",
+  "ticketsInboxTabMine": "Mine",
+  "ticketsInboxTabAll": "All",
+  "ticketsInboxStateAll": "All",
+  "ticketsInboxEmptyTitle": "No approvals",
+  "ticketsInboxEmptyMine": "You don't have any pending approvals to act on.",
+  "ticketsInboxEmptyFiltered": "No approvals match the current filter.",
+  "ticketsInboxTicketFallback": "Ticket",
+  "ticketsInboxRule": "Rule: {name}",
+  "@ticketsInboxRule": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxRejection": "Rejection: {reason}",
+  "@ticketsInboxRejection": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxRequestedBy": "Requested by {email}",
+  "@ticketsInboxRequestedBy": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxApprover": "Approver {email}",
+  "@ticketsInboxApprover": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsInboxApprove": "Approve",
+  "ticketsInboxWithdraw": "Withdraw request",
+  "ticketsMacroTitle": "Saved replies",
+  "ticketsMacroSearchHint": "Search saved replies",
+  "ticketsMacroLoadError": "Could not load the saved replies",
+  "ticketsMacroEmpty": "No saved replies yet. You can write one under More, Organization settings.",
+  "ticketsMacroNoMatch": "No saved reply matches that search",
+  "ticketsMacroApply": "Apply",
+  "ticketsCloseChildrenTitle": "Close ticket",
+  "ticketsCloseChildrenPrompt": "Close \"{name}\"?",
+  "@ticketsCloseChildrenPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsCloseChildrenAlso": "Close these as well",
+  "ticketsCloseChildrenWhy": "Why (optional)",
+  "ticketsCloseChildrenWhyHelper": "Recorded against every ticket closed with this one",
+  "ticketsCloseChildrenCloseAll": "Close all of them",
+  "ticketsPanelPropsHeading": "PROPERTIES",
+  "ticketsPanelPropsFirstResponse": "First response",
+  "ticketsPanelPropsResolution": "Resolution",
+  "ticketsPanelPropsEscalated": "Escalated",
+  "ticketsPanelPropsEscalationCount": "{count}x",
+  "@ticketsPanelPropsEscalationCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelPropsWatching": "You are watching",
+  "ticketsPanelPropsWatchers": "Watchers",
+  "ticketsPanelPropsMet": "Met",
+  "ticketsPanelPropsBreached": "Breached",
+  "ticketsPanelPropsOverdue": "Overdue",
+  "ticketsPanelPropsPaused": "Paused",
+  "ticketsPanelPropsIn": "in {duration}",
+  "@ticketsPanelPropsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelPropsNotSet": "Not set",
+  "ticketsPanelPropsReplied": "Replied {date}",
+  "@ticketsPanelPropsReplied": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelPropsDue": "Due {date}",
+  "@ticketsPanelPropsDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelPropsNoSla": "No SLA configured",
+  "ticketsPanelPropsDaysHours": "{days}d {hours}h",
+  "@ticketsPanelPropsDaysHours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelPropsHoursMinutes": "{hours}h {minutes}m",
+  "@ticketsPanelPropsHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelPropsMinutes": "{minutes}m",
+  "@ticketsPanelPropsMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelSolutionsLinkFailed": "Failed to link solution",
+  "ticketsPanelSolutionsUnlinkFailed": "Failed to unlink solution",
+  "ticketsPanelSolutionsHeading": "SOLUTIONS",
+  "ticketsPanelSolutionsLinkTooltip": "Link a solution",
+  "ticketsPanelSolutionsEmpty": "No solutions linked yet.",
+  "ticketsPanelSolutionsSuggested": "Suggested",
+  "ticketsPanelSolutionsUnlink": "Unlink",
+  "ticketsPanelSolutionsLink": "Link",
+  "ticketsPanelSolutionsPickerTitle": "Link solution",
+  "ticketsPanelSolutionsPickerSearch": "Search solutions…",
+  "ticketsPanelSolutionsPickerEmpty": "No matching solutions",
+  "ticketsPanelTimeOtherRunning": "You already have a running timer on another ticket.",
+  "ticketsPanelTimeView": "View",
+  "ticketsPanelTimeStartFailed": "Failed to start timer",
+  "ticketsPanelTimeStopFailed": "Failed to stop timer",
+  "ticketsPanelTimeAddFailed": "Failed to add entry",
+  "ticketsPanelTimeHeading": "TIME TRACKING",
+  "ticketsPanelTimeAddTooltip": "Add manual entry",
+  "ticketsPanelTimeTotal": "Total",
+  "ticketsPanelTimeBillable": "Billable",
+  "ticketsPanelTimeStart": "Start timer",
+  "ticketsPanelTimeMore": "+ {count} more",
+  "@ticketsPanelTimeMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsPanelApprovalRequestTitle": "Request approval",
+  "ticketsPanelApprovalRequestHint": "Optional note for the approver",
+  "ticketsPanelApprovalSendRequest": "Send request",
+  "ticketsPanelApprovalRequestFailed": "Failed to request approval",
+  "ticketsPanelApprovalApproveFailed": "Failed to approve",
+  "ticketsPanelApprovalRejectTitle": "Reject approval",
+  "ticketsPanelApprovalRejectHint": "Reason (required)",
+  "ticketsPanelApprovalReject": "Reject",
+  "ticketsPanelApprovalRejectFailed": "Failed to reject",
+  "ticketsPanelApprovalCancelTitle": "Cancel approval request?",
+  "ticketsPanelApprovalCancelBody": "The approval request will be cancelled. You can request a new one later.",
+  "ticketsPanelApprovalKeep": "Keep",
+  "ticketsPanelApprovalCancelRequest": "Cancel request",
+  "ticketsPanelApprovalCancelFailed": "Failed to cancel",
+  "ticketsPanelApprovalRuleNeeded": "Closing this ticket needs approval under {rule}.",
+  "@ticketsPanelApprovalRuleNeeded": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalLoadFailed": "The approval requests could not be loaded. Nothing else on this ticket is affected.",
+  "ticketsPanelApprovalNone": "No approval requested yet.",
+  "ticketsPanelApprovalRequestedBy": "Requested by {email}",
+  "@ticketsPanelApprovalRequestedBy": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalDecidedBy": "{state} by {email}",
+  "@ticketsPanelApprovalDecidedBy": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalRule": "Rule: {name}",
+  "@ticketsPanelApprovalRule": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsPanelApprovalRejectionReason": "Rejection reason",
+  "ticketsPanelApprovalOwnRequest": "You asked for this, so another approver must decide it.",
+  "ticketsPanelApprovalApprove": "Approve",
+  "ticketsPanelApprovalWithdraw": "Withdraw request",
+  "ticketsPanelApprovalRequestAgain": "Request again",
+  "ticketsPanelApprovalHeading": "APPROVAL",
+  "ticketsFormLoadFailed": "Failed to load ticket",
+  "ticketsFormSelectAccountError": "Please select an account.",
+  "ticketsFormUpdated": "Ticket updated successfully",
+  "ticketsFormCreated": "Ticket created successfully",
+  "ticketsFormSaveFailed": "Failed to save ticket",
+  "ticketsFormEditTitle": "Edit Ticket",
+  "ticketsFormNewTitle": "New Ticket",
+  "ticketsFormSectionBasic": "Basic Information",
+  "ticketsFormNameLabel": "Ticket name",
+  "ticketsFormNameHint": "e.g. Login fails on Safari",
+  "ticketsFormNameRequired": "Ticket name is required",
+  "ticketsFormSectionClassification": "Classification",
+  "ticketsFormTypeLabel": "Type",
+  "ticketsFormClosedOnLabel": "Closed on (optional)",
+  "ticketsFormClosedOnToday": "Today",
+  "ticketsFormClosedOnChangeHint": "Pick a date to change when it was closed.",
+  "ticketsFormClosedOnEmptyHint": "Left empty, the close is dated today in your organization's timezone.",
+  "ticketsFormClear": "Clear",
+  "ticketsFormSectionPeople": "People",
+  "ticketsFormNoAssignee": "No one assigned",
+  "ticketsFormNoTags": "No tags",
+  "ticketsFormContactsLabel": "Contacts",
+  "ticketsFormNoContacts": "Nobody linked",
+  "ticketsFormDescriptionHint": "What is happening? Include reproduction steps if known.",
+  "ticketsFormUpdateButton": "Update Ticket",
+  "ticketsFormCreateButton": "Create Ticket",
+  "ticketsFormSectionCustomFields": "Custom Fields",
+  "ticketsFormAccountLocked": "Account (cannot change)",
+  "ticketsFormAccountLabel": "Account",
+  "ticketsFormSelectAccount": "Select an account",
+  "ticketsFormPickStatus": "Select Status",
+  "ticketsFormPickPriority": "Select Priority",
+  "ticketsFormPickType": "Select Type",
+  "ticketsFormNoContactsFound": "No contacts found",
+  "ticketsFormNoUsersFound": "No users found",
+  "ticketsFormNoTagsFound": "No tags found",
+  "ticketsFormPickAccount": "Select Account",
+  "ticketsFormNoAccounts": "No accounts",
+  "ticketsFormNoAccountsBody": "Create an account on the web to link tickets to it.",
+  "ticketsListBulkReassign": "Reassign",
+  "ticketsListBulkSetPriority": "Set priority",
+  "ticketsListBulkSetStatus": "Set status",
+  "ticketsListBulkSetType": "Set type",
+  "ticketsListBulkAddTags": "Add tags",
+  "ticketsListTitle": "Tickets",
+  "ticketsListCancelSelection": "Cancel selection",
+  "ticketsListSelect": "Select tickets",
+  "ticketsListMorePages": "More ticket pages",
+  "ticketsListMenuBoard": "Board",
+  "ticketsListMenuAnalytics": "Analytics",
+  "ticketsListMenuApprovals": "Approvals",
+  "ticketsListMenuKnowledgeBase": "Knowledge base",
+  "ticketsListImportCsv": "Import from CSV",
+  "ticketsListNewTicket": "New ticket",
+  "ticketsListQuickAll": "All",
+  "ticketsListQuickOpen": "Open",
+  "ticketsListQuickClosed": "Closed",
+  "ticketsListLoadFailed": "Failed to load tickets",
+  "ticketsListSelectedCount": "{count} selected",
+  "@ticketsListSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListClear": "Clear",
+  "ticketsListActions": "Actions",
+  "ticketsListClosedOnTitle": "Closed on",
+  "ticketsListClosedOnToday": "Today, in your organization's timezone",
+  "ticketsListClosedOnPick": "Pick a date",
+  "ticketsListReassignTo": "Reassign to",
+  "ticketsListDeleteTitle": "Delete tickets?",
+  "ticketsListDeleteBody": "{count, plural, =1{Permanently delete 1 ticket. This cannot be undone.} other{Permanently delete {count} tickets. This cannot be undone.}}",
+  "@ticketsListDeleteBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkDeleteFailed": "Bulk delete failed",
+  "ticketsListBulkUpdateFailed": "Bulk update failed",
+  "ticketsListBulkDeleted": "{count} deleted",
+  "@ticketsListBulkDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkUpdated": "{count} updated",
+  "@ticketsListBulkUpdated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkNoAccess": "{count} skipped (no access)",
+  "@ticketsListBulkNoAccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkNeedApproval": "{count} need approval",
+  "@ticketsListBulkNeedApproval": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkMerged": "{count} merged (unmerge first)",
+  "@ticketsListBulkMerged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListBulkInvalid": "{count} invalid",
+  "@ticketsListBulkInvalid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListSearchHint": "Search tickets...",
+  "ticketsListFilterType": "Type",
+  "ticketsListFilterAccount": "Account",
+  "ticketsListFilterAssignees": "Assignees",
+  "ticketsListFilterAssigneesCount": "Assignees · {count}",
+  "@ticketsListFilterAssigneesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListFilterTagsCount": "Tags · {count}",
+  "@ticketsListFilterTagsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListFilterWatching": "Watching",
+  "ticketsListFilterBreaching": "Breaching SLA",
+  "ticketsListFilterDate": "Date",
+  "ticketsListFilterAfter": "After {date}",
+  "@ticketsListFilterAfter": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsListFilterBefore": "Before {date}",
+  "@ticketsListFilterBefore": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsListLoading": "Loading",
+  "ticketsListCountOf": "{total, plural, =1{{loaded} of 1 ticket} other{{loaded} of {total} tickets}}",
+  "@ticketsListCountOf": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListCount": "{count, plural, =1{1 ticket} other{{count} tickets}}",
+  "@ticketsListCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsListCountFiltered": "{text} (filtered)",
+  "@ticketsListCountFiltered": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketsListEmptyFilteredTitle": "No results found",
+  "ticketsListEmptyTitle": "No tickets yet",
+  "ticketsListEmptyFilteredBody": "Try adjusting your filters",
+  "ticketsListEmptyBody": "Customer-reported issues will appear here",
+  "ticketsListClearFilters": "Clear filters",
+  "ticketsListCreateTicket": "Create ticket",
+  "ticketsListFilterByType": "Filter by Type",
+  "ticketsListAllTypes": "All Types",
+  "ticketsListFilterByPriority": "Filter by Priority",
+  "ticketsListAllPriorities": "All Priorities",
+  "ticketsListFilterByAccount": "Filter by Account",
+  "ticketsListAllAccounts": "All Accounts",
+  "ticketsListFilterByAssignee": "Filter by Assignee",
+  "ticketsListFilterByTag": "Filter by Tag",
+  "ticketsPanelTimeProjectRunning": "You already have a running timer on a project.",
+  "ticketsPanelTimeInvoiceCreated": "Draft invoice created",
+  "ticketsPanelTimeLinkAccount": "Link this ticket to an account to bill its time.",
+  "ticketsPanelTimeBill": "{count, plural, one{Bill time ({count} entry)} other{Bill time ({count} entries)}}",
+  "@ticketsPanelTimeBill": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ticketsDetailCustomFields": "Custom fields",
+  "timesheetDurationHm": "{hours}h {minutes}m",
+  "@timesheetDurationHm": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetDurationM": "{minutes}m",
+  "@timesheetDurationM": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetDateRange": "{start} - {end}",
+  "@timesheetDateRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetTitle": "Timesheet",
+  "timesheetReportTooltip": "Time report",
+  "timesheetPrevWeek": "Previous week",
+  "timesheetNextWeek": "Next week",
+  "timesheetBackToThisWeek": "Back to this week",
+  "timesheetFooterNote": "Time is logged against a ticket, so every hour here is attached to something a customer can be shown. Start and stop a timer on the ticket itself. Rates are saved on each entry when it is logged, so changing your rate does not rewrite what past weeks were worth.",
+  "timesheetLoggedThisWeek": "logged this week",
+  "timesheetLoggedThisWeekBy": "logged this week by {name}",
+  "@timesheetLoggedThisWeekBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetBillableShare": "billable ({percent}%)",
+  "@timesheetBillableShare": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetAtSavedRates": "at the saved rates",
+  "timesheetNotInvoiced": "not invoiced",
+  "timesheetTimerRunning": "Timer running",
+  "timesheetStopTimer": "Stop timer",
+  "timesheetNothingLogged": "Nothing logged",
+  "timesheetTagRunning": "running",
+  "timesheetTagInternal": "internal",
+  "timesheetTagBilled": "billed",
+  "timesheetTagBilledNumber": "billed {number}",
+  "@timesheetTagBilledNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetTimerStopped": "Timer stopped.",
+  "timesheetStopFailed": "Could not stop that timer.",
+  "timesheetTryAgain": "Try again",
+  "timesheetReportTitle": "Time report",
+  "timesheetGroupAgent": "Agent",
+  "timesheetGroupTicket": "Ticket",
+  "timesheetGroupAccount": "Account",
+  "timesheetFilterAllTime": "All time",
+  "timesheetFilterBillable": "Billable",
+  "timesheetFilterNonBillable": "Non-billable",
+  "timesheetReportEmpty": "No time logged in this window. Widen the dates, or clear the billable filter.",
+  "timesheetReportFooter": "Value is what the billable time is worth at the rate saved on each entry, so changing a rate does not rewrite what past months were worth. To export these entries as a spreadsheet, open the report on the web.",
+  "timesheetReportLoggedByAgent": "logged, by agent",
+  "timesheetReportLoggedByTicket": "logged, by ticket",
+  "timesheetReportLoggedByAccount": "logged, by account",
+  "timesheetReportLoggedBy": "logged, by {group}",
+  "@timesheetReportLoggedBy": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "timesheetMixedCurrencies": "mixed currencies",
+  "timesheetEntries": "{count, plural, other{entries}}",
+  "@timesheetEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetBillable": "billable",
+  "timesheetWorth": "worth",
+  "timeEntryZero": "0m",
+  "timeEntryHours": "{hours}h",
+  "@timeEntryHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "timeEntryRunning": "Running",
+  "timeEntryStop": "Stop",
+  "timeEntryFallback": "Time entry",
+  "timeEntrySheetTitle": "Add time entry",
+  "timeEntryDuration": "Duration",
+  "timeEntryDescriptionHint": "What did you work on?",
+  "timeEntryTaskOptional": "Task (optional)",
+  "timeEntryNoTask": "No task",
+  "timeEntryBillable": "Billable",
+  "timeEntryAdd": "Add entry",
+  "billTimeCouldNotDraft": "Could not draft the invoice.",
+  "billTimeTitle": "Bill time",
+  "billTimeIntro": "Turns unbilled billable time into a draft invoice and marks the entries billed. Cancelling the invoice frees them again.",
+  "billTimeUpTo": "Bill up to {date}",
+  "@billTimeUpTo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeGroupLines": "Group lines",
+  "billTimeGroupSingle": "One line for everything",
+  "billTimeGroupPerson": "One line per person",
+  "billTimeGroupTask": "One line per task",
+  "billTimeGroupEntry": "One line per entry",
+  "billTimeCreateDraft": "Create draft invoice",
+  "billTimeUnrated": "{count, plural, one{{count} entry has no rate and will be billed at 0.} other{{count} of these entries have no rate and will be billed at 0.}}",
+  "@billTimeUnrated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billTimeCounting": "Counting unbilled time...",
+  "billTimePreviewFailed": "The preview could not be loaded. The invoice still takes every billable entry not yet billed up to this date.",
+  "billTimeNothingUpTo": "Nothing unbilled up to this date.",
+  "billTimeSummary": "{entries}, {hours}h, worth {amount}",
+  "@billTimeSummary": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeNothing": "Nothing unbilled.",
+  "billTimeMixed": "{entries} in {currencies}. One invoice takes one currency, so these cannot be billed together.",
+  "@billTimeMixed": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "currencies": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeAnd": " and ",
+  "billTimeSummaryAbout": "{entries}, {hours}h, worth about {amount}",
+  "@billTimeSummaryAbout": {
+    "placeholders": {
+      "entries": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billTimeEntries": "{count, plural, one{{count} entry} other{{count} entries}}",
+  "@billTimeEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billTimeLines": "{count, plural, one{{count} line} other{{count} lines}}",
+  "@billTimeLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timesheetGroupProject": "Project",
+  "timesheetBillableShareLabel": "billable share",
+  "timesheetNoSource": "No ticket or project"
 }

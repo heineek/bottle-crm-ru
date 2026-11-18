@@ -6,7 +6,9 @@ import '../../data/models/deal.dart' show Currency;
 import '../../data/models/project.dart';
 import '../../data/models/time_billing.dart';
 import '../../data/models/time_entry.dart';
+import '../../l10n/l10n.dart';
 import '../../screens/invoices/invoice_format.dart';
+import '../../services/app_language.dart';
 import '../../services/org_date.dart';
 
 /// The preview a project's sheet reads for a chosen up-to date.
@@ -144,7 +146,7 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
     if (result.error != null || result.invoiceId == null) {
       setState(() {
         _billing = false;
-        _error = result.error ?? 'Could not draft the invoice.';
+        _error = result.error ?? context.l10n.billTimeCouldNotDraft;
       });
       return;
     }
@@ -173,11 +175,10 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Bill time', style: AppTypography.h3),
+          Text(context.l10n.billTimeTitle, style: AppTypography.h3),
           const SizedBox(height: 4),
           Text(
-            'Turns unbilled billable time into a draft invoice and marks the '
-            'entries billed. Cancelling the invoice frees them again.',
+            context.l10n.billTimeIntro,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -189,7 +190,9 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
               child: OutlinedButton(
                 onPressed: _billing ? null : _pickDate,
                 child: Text(
-                  'Bill up to ${DateFormat('d MMM yyyy').format(_upTo)}',
+                  context.l10n.billTimeUpTo(
+                    localDateFormat('d MMM yyyy', 'yMMMd').format(_upTo),
+                  ),
                 ),
               ),
             ),
@@ -198,7 +201,7 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
           _preview(),
           const SizedBox(height: 16),
           Text(
-            'Group lines',
+            context.l10n.billTimeGroupLines,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
@@ -215,7 +218,7 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
                   RadioListTile<BillGrouping>(
                     value: g,
                     contentPadding: EdgeInsets.zero,
-                    title: Text(g.label),
+                    title: Text(billGroupingLabel(g)),
                     subtitle: widget.entries == null
                         ? null
                         : Text(_lines(billLineCount(widget.entries!, g))),
@@ -241,7 +244,7 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Create draft invoice'),
+                  : Text(context.l10n.billTimeCreateDraft),
             ),
           ),
         ],
@@ -280,34 +283,46 @@ class _BillTimeSheetState extends State<BillTimeSheet> {
     if (_isProject && (_loading || _unbilled == null)) return null;
     final n = _isProject ? _unbilled!.unratedCount : _summary!.unratedCount;
     if (n <= 0) return null;
-    return n == 1
-        ? '1 entry has no rate and will be billed at 0.'
-        : '$n of these entries have no rate and will be billed at 0.';
+    return appL10n.billTimeUnrated(n);
   }
 
   String _previewText() {
+    final l10n = context.l10n;
     if (_isProject) {
-      if (_loading) return 'Counting unbilled time...';
-      if (_unbilled == null) {
-        return 'The preview could not be loaded. The invoice still takes '
-            'every billable entry not yet billed up to this date.';
-      }
+      if (_loading) return l10n.billTimeCounting;
+      if (_unbilled == null) return l10n.billTimePreviewFailed;
       final u = _unbilled!;
-      if (u.entryCount == 0) return 'Nothing unbilled up to this date.';
-      return '${_entries(u.entryCount)}, ${hoursLabel(u.hours)}h, worth '
-          '${money(u.value, Currency.symbolFor(u.currency ?? ''))}';
+      if (u.entryCount == 0) return l10n.billTimeNothingUpTo;
+      return l10n.billTimeSummary(
+        l10n.billTimeEntries(u.entryCount),
+        hoursLabel(u.hours),
+        money(u.value, Currency.symbolFor(u.currency ?? '')),
+      );
     }
     final s = _summary!;
-    if (s.entryCount == 0) return 'Nothing unbilled.';
+    if (s.entryCount == 0) return l10n.billTimeNothing;
     if (s.isMixedCurrency) {
-      return '${_entries(s.entryCount)} in ${s.currencies.join(' and ')}. '
-          'One invoice takes one currency, so these cannot be billed together.';
+      return l10n.billTimeMixed(
+        l10n.billTimeEntries(s.entryCount),
+        s.currencies.join(l10n.billTimeAnd),
+      );
     }
-    return '${_entries(s.entryCount)}, ${hoursLabel(s.hours)}h, worth about '
-        '${money(s.value, Currency.symbolFor(s.currency ?? ''))}';
+    return l10n.billTimeSummaryAbout(
+      l10n.billTimeEntries(s.entryCount),
+      hoursLabel(s.hours),
+      money(s.value, Currency.symbolFor(s.currency ?? '')),
+    );
   }
 
-  static String _entries(int n) => n == 1 ? '1 entry' : '$n entries';
+  String _lines(int n) => context.l10n.billTimeLines(n);
+}
 
-  static String _lines(int n) => n == 1 ? '1 line' : '$n lines';
+String billGroupingLabel(BillGrouping grouping) {
+  final l10n = appL10n;
+  return switch (grouping) {
+    BillGrouping.single => l10n.billTimeGroupSingle,
+    BillGrouping.person => l10n.billTimeGroupPerson,
+    BillGrouping.task => l10n.billTimeGroupTask,
+    BillGrouping.entry => l10n.billTimeGroupEntry,
+  };
 }

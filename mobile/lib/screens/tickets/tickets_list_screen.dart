@@ -24,6 +24,7 @@ import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/saved_views_button.dart';
 import '../../widgets/forms/csv_import_sheet.dart';
 import '../../widgets/forms/multi_select_sheet.dart';
+import '../../l10n/l10n.dart';
 
 const String _filtersPrefsKey = 'tickets_filters_v1';
 
@@ -52,13 +53,13 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
   // Same keys and order as the web bulk bar's ACTIONS in
   // frontend/src/lib/v2/components/BulkActionBar.svelte, so a screenshot from
   // either client describes the same menu.
-  static const List<(String key, String label)> _bulkActionOptions = [
-    ('assigned_to', 'Reassign'),
-    ('priority', 'Set priority'),
-    ('status', 'Set status'),
-    ('case_type', 'Set type'),
-    ('tags', 'Add tags'),
-    ('delete', 'Delete'),
+  List<(String key, String label)> get _bulkActionOptions => [
+    ('assigned_to', context.l10n.ticketsListBulkReassign),
+    ('priority', context.l10n.ticketsListBulkSetPriority),
+    ('status', context.l10n.ticketsListBulkSetStatus),
+    ('case_type', context.l10n.ticketsListBulkSetType),
+    ('tags', context.l10n.ticketsListBulkAddTags),
+    ('delete', context.l10n.commonDelete),
   ];
 
   @override
@@ -169,21 +170,21 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Tickets'),
+        title: Text(context.l10n.ticketsListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         actions: _selectMode
             ? [
                 IconButton(
-                  tooltip: 'Cancel selection',
+                  tooltip: context.l10n.ticketsListCancelSelection,
                   icon: const Icon(LucideIcons.x),
                   onPressed: _exitSelectMode,
                 ),
               ]
             : [
                 IconButton(
-                  tooltip: 'Select tickets',
+                  tooltip: context.l10n.ticketsListSelect,
                   icon: const Icon(LucideIcons.checkSquare),
                   onPressed: _enterSelectMode,
                 ),
@@ -192,32 +193,32 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
                 // invoices list.
                 PopupMenuButton<String>(
                   icon: const Icon(LucideIcons.ellipsisVertical),
-                  tooltip: 'More ticket pages',
+                  tooltip: context.l10n.ticketsListMorePages,
                   onSelected: (route) => context.push(route),
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: AppRoutes.ticketBoard,
-                      child: Text('Board'),
+                      child: Text(context.l10n.ticketsListMenuBoard),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: AppRoutes.ticketAnalytics,
-                      child: Text('Analytics'),
+                      child: Text(context.l10n.ticketsListMenuAnalytics),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: AppRoutes.approvalsInbox,
-                      child: Text('Approvals'),
+                      child: Text(context.l10n.ticketsListMenuApprovals),
                     ),
                     if (ref.read(moduleOnProvider('knowledge_base')))
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: AppRoutes.solutions,
-                        child: Text('Knowledge base'),
+                        child: Text(context.l10n.ticketsListMenuKnowledgeBase),
                       ),
                   ],
                 ),
                 // Offered to every member, as on the web; the import views
                 // answer 403 for anyone without admin or sales access.
                 IconButton(
-                  tooltip: 'Import from CSV',
+                  tooltip: context.l10n.ticketsListImportCsv,
                   icon: const Icon(LucideIcons.upload),
                   onPressed: () => showCsvImportSheet(
                     context,
@@ -243,7 +244,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
                     query: () async => ticketListQuery(_filters),
                   ),
                 IconButton(
-                  tooltip: 'New ticket',
+                  tooltip: context.l10n.ticketsListNewTicket,
                   icon: const Icon(LucideIcons.plus),
                   onPressed: () => context.push(AppRoutes.ticketCreate),
                 ),
@@ -293,7 +294,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
       child: Row(
         children: [
           _quickChip(
-            label: 'All',
+            label: context.l10n.ticketsListQuickAll,
             isActive: mode == 'all',
             onTap: () => _applyFilters(
               _filters.copyWith(clearStatus: true, clearStatusList: true),
@@ -301,7 +302,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
           ),
           const SizedBox(width: 6),
           _quickChip(
-            label: 'Open',
+            label: context.l10n.ticketsListQuickOpen,
             isActive: mode == 'open',
             onTap: () => _applyFilters(
               _filters.copyWith(clearStatus: true, statusList: _openStatuses),
@@ -309,7 +310,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
           ),
           const SizedBox(width: 6),
           _quickChip(
-            label: 'Closed',
+            label: context.l10n.ticketsListQuickClosed,
             isActive: mode == 'closed',
             onTap: () => _applyFilters(
               _filters.copyWith(
@@ -364,7 +365,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             Icon(LucideIcons.alertCircle, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Failed to load tickets',
+              context.l10n.ticketsListLoadFailed,
               style: AppTypography.label.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
@@ -377,7 +378,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             TextButton(
               onPressed: () =>
                   ref.read(ticketsProvider.notifier).refresh(filters: _filters),
-              child: const Text('Retry'),
+              child: Text(context.l10n.commonRetry),
             ),
           ],
         ),
@@ -491,7 +492,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             children: [
               Expanded(
                 child: Text(
-                  '${_selected.length} selected',
+                  context.l10n.ticketsListSelectedCount(_selected.length),
                   style: AppTypography.label,
                 ),
               ),
@@ -504,7 +505,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
                   minimumSize: AppLayout.buttonMinSizeInRow,
                 ),
                 onPressed: () => setState(_selected.clear),
-                child: const Text('Clear'),
+                child: Text(context.l10n.ticketsListClear),
               ),
               const SizedBox(width: 4),
               FilledButton(
@@ -512,7 +513,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
                   minimumSize: AppLayout.buttonMinSizeInRow,
                 ),
                 onPressed: _openActionsSheet,
-                child: const Text('Actions'),
+                child: Text(context.l10n.ticketsListActions),
               ),
             ],
           ),
@@ -550,7 +551,10 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text('Actions', style: AppTypography.label),
+                child: Text(
+                  context.l10n.ticketsListActions,
+                  style: AppTypography.label,
+                ),
               ),
               for (final option in _bulkActionOptions)
                 InkWell(
@@ -589,7 +593,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         await _bulkReassign();
       case 'priority':
         await _bulkPickAndApply<TicketPriority>(
-          'Set priority',
+          context.l10n.ticketsListBulkSetPriority,
           TicketPriority.values,
           (p) => p.value,
           (p) => p.label,
@@ -600,7 +604,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         await _bulkSetStatus();
       case 'case_type':
         await _bulkPickAndApply<TicketType>(
-          'Set type',
+          context.l10n.ticketsListBulkSetType,
           TicketType.values,
           (t) => t.value,
           (t) => t.label,
@@ -660,7 +664,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _SimpleFilterSheet(
-        title: 'Set status',
+        title: context.l10n.ticketsListBulkSetStatus,
         rows: [
           for (final status in TicketStatus.settable)
             _FilterRow(
@@ -684,15 +688,15 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _SimpleFilterSheet(
-        title: 'Closed on',
+        title: context.l10n.ticketsListClosedOnTitle,
         rows: [
           _FilterRow(
-            label: "Today, in your organization's timezone",
+            label: context.l10n.ticketsListClosedOnToday,
             isSelected: false,
             onTap: () => Navigator.pop(context, false),
           ),
           _FilterRow(
-            label: 'Pick a date',
+            label: context.l10n.ticketsListClosedOnPick,
             isSelected: false,
             onTap: () => Navigator.pop(context, true),
           ),
@@ -751,7 +755,10 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Reassign to', style: AppTypography.h3),
+              child: Text(
+                context.l10n.ticketsListReassignTo,
+                style: AppTypography.h3,
+              ),
             ),
             Expanded(
               child: ListView.builder(
@@ -787,7 +794,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
     final tags = ref.read(tagsProvider);
     final result = await MultiSelectSheet.show<TagLookup>(
       context: context,
-      title: 'Add tags',
+      title: context.l10n.ticketsListBulkAddTags,
       items: tags,
       initialSelection: const [],
       labelOf: (t) => t.name,
@@ -802,19 +809,19 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete tickets?'),
-        content: Text(
-          'Permanently delete ${ids.length} '
-          'ticket${ids.length == 1 ? '' : 's'}. This cannot be undone.',
-        ),
+        title: Text(context.l10n.ticketsListDeleteTitle),
+        content: Text(context.l10n.ticketsListDeleteBody(ids.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -844,7 +851,10 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         : api.BulkUpdateCasesResponse.fromJson(body).results;
     final text = response.success
         ? _bulkSummary(results ?? const [], isDelete: isDelete)
-        : (response.message ?? 'Bulk ${isDelete ? 'delete' : 'update'} failed');
+        : (response.message ??
+              (isDelete
+                  ? context.l10n.ticketsListBulkDeleteFailed
+                  : context.l10n.ticketsListBulkUpdateFailed));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
     setState(() {
       _selected.clear();
@@ -884,11 +894,18 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
           invalid++;
       }
     }
-    final parts = <String>[isDelete ? '$deleted deleted' : '$updated updated'];
-    if (noAccess > 0) parts.add('$noAccess skipped (no access)');
-    if (approvalRequired > 0) parts.add('$approvalRequired need approval');
-    if (merged > 0) parts.add('$merged merged (unmerge first)');
-    if (invalid > 0) parts.add('$invalid invalid');
+    final l10n = context.l10n;
+    final parts = <String>[
+      isDelete
+          ? l10n.ticketsListBulkDeleted(deleted)
+          : l10n.ticketsListBulkUpdated(updated),
+    ];
+    if (noAccess > 0) parts.add(l10n.ticketsListBulkNoAccess(noAccess));
+    if (approvalRequired > 0) {
+      parts.add(l10n.ticketsListBulkNeedApproval(approvalRequired));
+    }
+    if (merged > 0) parts.add(l10n.ticketsListBulkMerged(merged));
+    if (invalid > 0) parts.add(l10n.ticketsListBulkInvalid(invalid));
     return parts.join(' · ');
   }
 
@@ -901,7 +918,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         onChanged: _onSearchChanged,
         style: AppTypography.body,
         decoration: InputDecoration(
-          hintText: 'Search tickets...',
+          hintText: context.l10n.ticketsListSearchHint,
           hintStyle: AppTypography.body.copyWith(color: AppColors.textTertiary),
           prefixIcon: Icon(
             LucideIcons.search,
@@ -971,7 +988,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             _FilterChip(
               label: _filters.priority != null
                   ? TicketPriority.fromString(_filters.priority).label
-                  : 'Priority',
+                  : context.l10n.commonPriority,
               isActive: _filters.priority != null,
               onTap: _pickPriority,
             ),
@@ -979,27 +996,33 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             _FilterChip(
               label: _filters.caseType != null
                   ? TicketType.fromString(_filters.caseType).label
-                  : 'Type',
+                  : context.l10n.ticketsListFilterType,
               isActive: _filters.caseType != null,
               onTap: _pickCaseType,
             ),
             const SizedBox(width: 6),
             _FilterChip(
-              label: selectedAccount?.name ?? 'Account',
+              label:
+                  selectedAccount?.name ??
+                  context.l10n.ticketsListFilterAccount,
               isActive: _filters.accountId != null,
               onTap: () => _pickAccount(accounts),
             ),
             const SizedBox(width: 6),
             _FilterChip(
               label: assigneeLabels.isEmpty
-                  ? 'Assignees'
-                  : 'Assignees · ${assigneeLabels.length}',
+                  ? context.l10n.ticketsListFilterAssignees
+                  : context.l10n.ticketsListFilterAssigneesCount(
+                      assigneeLabels.length,
+                    ),
               isActive: assigneeLabels.isNotEmpty,
               onTap: () => _pickAssignees(users),
             ),
             const SizedBox(width: 6),
             _FilterChip(
-              label: tagLabels.isEmpty ? 'Tags' : 'Tags · ${tagLabels.length}',
+              label: tagLabels.isEmpty
+                  ? context.l10n.commonTags
+                  : context.l10n.ticketsListFilterTagsCount(tagLabels.length),
               isActive: tagLabels.isNotEmpty,
               onTap: () => _pickTags(tags),
             ),
@@ -1013,7 +1036,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             ),
             const SizedBox(width: 6),
             _ToggleChip(
-              label: 'Watching',
+              label: context.l10n.ticketsListFilterWatching,
               icon: LucideIcons.eye,
               isActive: _filters.watchingOnly,
               onTap: () => _applyFilters(
@@ -1022,7 +1045,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             ),
             const SizedBox(width: 6),
             _ToggleChip(
-              label: 'Breaching SLA',
+              label: context.l10n.ticketsListFilterBreaching,
               icon: LucideIcons.alertTriangle,
               isActive: _filters.slaBreached,
               onTap: () => _applyFilters(
@@ -1048,7 +1071,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
                       Icon(LucideIcons.x, size: 12, color: AppColors.danger600),
                       const SizedBox(width: 3),
                       Text(
-                        'Clear',
+                        context.l10n.ticketsListClear,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.danger600,
                           fontWeight: FontWeight.w600,
@@ -1068,14 +1091,16 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
   String _formatDateRange() {
     final after = _filters.createdAfter;
     final before = _filters.createdBefore;
-    if (after == null && before == null) return 'Date';
+    if (after == null && before == null) {
+      return context.l10n.ticketsListFilterDate;
+    }
     String fmt(DateTime d) =>
         '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
     if (after != null && before != null) {
       return '${fmt(after)} → ${fmt(before)}';
     }
-    if (after != null) return 'After ${fmt(after)}';
-    return 'Before ${fmt(before!)}';
+    if (after != null) return context.l10n.ticketsListFilterAfter(fmt(after));
+    return context.l10n.ticketsListFilterBefore(fmt(before!));
   }
 
   Widget _buildResultsCount(
@@ -1087,13 +1112,14 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
     // "0 tickets" over a spinner reads as an empty org, which is what made a
     // failed load take a minute to tell apart from an empty list.
     if (async.value == null) {
-      return _countStrip(async.hasError ? '' : 'Loading');
+      return _countStrip(async.hasError ? '' : context.l10n.ticketsListLoading);
     }
-    final unit = totalCount == 1 ? 'ticket' : 'tickets';
     final text = totalCount > 0 && loadedCount < totalCount
-        ? '$loadedCount of $totalCount $unit'
-        : '$totalCount $unit';
-    return _countStrip(_filters.hasAny ? '$text (filtered)' : text);
+        ? context.l10n.ticketsListCountOf(loadedCount, totalCount)
+        : context.l10n.ticketsListCount(totalCount);
+    return _countStrip(
+      _filters.hasAny ? context.l10n.ticketsListCountFiltered(text) : text,
+    );
   }
 
   Widget _countStrip(String label) {
@@ -1111,11 +1137,15 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
   Widget _buildEmptyState() {
     return EmptyState(
       icon: _filters.hasAny ? LucideIcons.search : LucideIcons.ticket,
-      title: _filters.hasAny ? 'No results found' : 'No tickets yet',
+      title: _filters.hasAny
+          ? context.l10n.ticketsListEmptyFilteredTitle
+          : context.l10n.ticketsListEmptyTitle,
       description: _filters.hasAny
-          ? 'Try adjusting your filters'
-          : 'Customer-reported issues will appear here',
-      actionLabel: _filters.hasAny ? 'Clear filters' : 'Create ticket',
+          ? context.l10n.ticketsListEmptyFilteredBody
+          : context.l10n.ticketsListEmptyBody,
+      actionLabel: _filters.hasAny
+          ? context.l10n.ticketsListClearFilters
+          : context.l10n.ticketsListCreateTicket,
       onAction: _filters.hasAny
           ? _clearFilters
           : () => context.push(AppRoutes.ticketCreate),
@@ -1130,10 +1160,10 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _SimpleFilterSheet(
-        title: 'Filter by Type',
+        title: context.l10n.ticketsListFilterByType,
         rows: [
           _FilterRow(
-            label: 'All Types',
+            label: context.l10n.ticketsListAllTypes,
             isSelected: _filters.caseType == null,
             onTap: () {
               Navigator.pop(context);
@@ -1163,10 +1193,10 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _SimpleFilterSheet(
-        title: 'Filter by Priority',
+        title: context.l10n.ticketsListFilterByPriority,
         rows: [
           _FilterRow(
-            label: 'All Priorities',
+            label: context.l10n.ticketsListAllPriorities,
             isSelected: _filters.priority == null,
             onTap: () {
               Navigator.pop(context);
@@ -1215,10 +1245,13 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Filter by Account', style: AppTypography.h3),
+              child: Text(
+                context.l10n.ticketsListFilterByAccount,
+                style: AppTypography.h3,
+              ),
             ),
             _FilterRow(
-              label: 'All Accounts',
+              label: context.l10n.ticketsListAllAccounts,
               isSelected: _filters.accountId == null,
               onTap: () {
                 Navigator.pop(context);
@@ -1254,7 +1287,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
         .toList();
     final result = await MultiSelectSheet.show<UserLookup>(
       context: context,
-      title: 'Filter by Assignee',
+      title: context.l10n.ticketsListFilterByAssignee,
       items: users,
       initialSelection: initial,
       labelOf: (u) => u.displayName,
@@ -1272,7 +1305,7 @@ class _TicketsListScreenState extends ConsumerState<TicketsListScreen> {
     final initial = tags.where((t) => _filters.tagIds.contains(t.id)).toList();
     final result = await MultiSelectSheet.show<TagLookup>(
       context: context,
-      title: 'Filter by Tag',
+      title: context.l10n.ticketsListFilterByTag,
       items: tags,
       initialSelection: initial,
       labelOf: (t) => t.name,

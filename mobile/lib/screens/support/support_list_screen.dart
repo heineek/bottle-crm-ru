@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/support_ticket.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/support_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/menu_row.dart';
 
 /// Help, in two tiers. See the web page at `routes/(app)/help/+page.svelte`.
@@ -28,7 +29,7 @@ class SupportListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Help'),
+        title: Text(context.l10n.supportListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -43,7 +44,7 @@ class SupportListScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(LucideIcons.plus),
-              label: const Text('New ticket'),
+              label: Text(context.l10n.supportListNewTicket),
             ),
       body: tickets.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -135,13 +136,18 @@ class _TicketRow extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${ticket.messageCount} messages',
+                      context.l10n.supportListMessageCount(ticket.messageCount),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
                     Text(
-                      'Updated ${DateFormat('d MMM').format(ticket.lastActivityAt.toLocal())}',
+                      context.l10n.supportListUpdated(
+                        localDateFormat(
+                          'd MMM',
+                          'MMMd',
+                        ).format(ticket.lastActivityAt.toLocal()),
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -188,13 +194,13 @@ class _EmptyState extends StatelessWidget {
       Icon(LucideIcons.lifeBuoy, size: 40, color: AppColors.textTertiary),
       const SizedBox(height: 14),
       Text(
-        'No support tickets',
+        context.l10n.supportListEmptyTitle,
         textAlign: TextAlign.center,
         style: AppTypography.h3,
       ),
       const SizedBox(height: 7),
       Text(
-        'Open a ticket when you need help with BottleCRM. Replies and status changes stay attached to it.',
+        context.l10n.supportListEmptyBody,
         textAlign: TextAlign.center,
         style: AppTypography.body.copyWith(color: AppColors.textSecondary),
       ),
@@ -211,13 +217,14 @@ class _SelfServeHelp extends ConsumerWidget {
 
   Future<void> _open(BuildContext context, String url) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final opened = await launchUrl(
       Uri.parse(url),
       mode: LaunchMode.externalApplication,
     );
     if (!opened) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not open $url on this device.')),
+        SnackBar(content: Text(l10n.supportListCouldNotOpenUrl(url))),
       );
     }
   }
@@ -229,47 +236,42 @@ class _SelfServeHelp extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.only(bottom: 32),
       children: [
-        if (kbOn || ticketsOn) _header('Start here'),
+        if (kbOn || ticketsOn) _header(context.l10n.supportListStartHere),
         if (kbOn)
           MenuRow(
             icon: LucideIcons.bookOpen,
-            label: 'Knowledge base',
-            description: 'The answers your team has already written down',
+            label: context.l10n.supportListKnowledgeBase,
+            description: context.l10n.supportListKnowledgeBaseHint,
             onTap: () => context.push(AppRoutes.solutions),
           ),
         if (ticketsOn)
           MenuRow(
             icon: LucideIcons.lifeBuoy,
-            label: 'Your tickets',
-            description: 'Everything open, and who it is waiting on',
+            label: context.l10n.supportListYourTickets,
+            description: context.l10n.supportListYourTicketsHint,
             onTap: () => context.push(AppRoutes.tickets),
           ),
         if (ticketsOn)
           MenuRow(
             icon: LucideIcons.clipboardList,
-            label: 'Settings',
-            description:
-                'Routing, escalation, business hours and inbound email',
+            label: context.l10n.supportListSettings,
+            description: context.l10n.supportListSettingsHint,
             onTap: () => context.push(AppRoutes.settings),
           ),
-        _header('If that did not do it'),
+        _header(context.l10n.supportListIfNotSolved),
         MenuRow(
           icon: LucideIcons.bug,
-          label: 'Report a bug',
-          description:
-              'Public issue tracker, fastest route for anything '
-              'reproducible',
+          label: context.l10n.supportListReportBug,
+          description: context.l10n.supportListReportBugHint,
           onTap: () => _open(context, _issues),
         ),
         MenuRow(
           icon: LucideIcons.mail,
-          label: 'Email support@bottlecrm.io',
-          description:
-              'For anything involving your data, billing or an account '
-              'you cannot get into',
+          label: context.l10n.supportListEmailSupport,
+          description: context.l10n.supportListEmailSupportHint,
           onTap: () => _open(context, _email),
         ),
-        _header('What to include when you write'),
+        _header(context.l10n.supportListWhatToInclude),
         Container(
           color: AppColors.surface,
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
@@ -277,27 +279,24 @@ class _SelfServeHelp extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Two things turn a two-day exchange into one message.',
+                context.l10n.supportListWhatToIncludeIntro,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 12),
               _fact(
-                'What you expected',
-                'The thing you were trying to do, in one sentence.',
+                context.l10n.supportListExpected,
+                context.l10n.supportListExpectedHint,
               ),
               const SizedBox(height: 10),
               _fact(
-                'What happened instead',
-                'The exact wording of any error. "It did not work" and '
-                    '"Something went wrong" are the same message to us.',
+                context.l10n.supportListHappened,
+                context.l10n.supportListHappenedHint,
               ),
               const SizedBox(height: 14),
               Text(
-                'Please do not attach screenshots containing an invoice link, an '
-                'API token or a survey URL. Each of those is a working '
-                'credential for whoever ends up holding it.',
+                context.l10n.supportListScreenshotWarning,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -357,7 +356,10 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          OutlinedButton(
+            onPressed: onRetry,
+            child: Text(context.l10n.supportTryAgain),
+          ),
         ],
       ),
     ),

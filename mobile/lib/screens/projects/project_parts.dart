@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/project.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
 import '../invoices/invoice_format.dart';
 
@@ -15,7 +15,47 @@ String projectMoneyIn(String currency, double value) =>
 String projectMoney(Project p, double value) =>
     projectMoneyIn(p.currency, value);
 
-String shortDate(DateTime d) => DateFormat('d MMM yyyy').format(d);
+String shortDate(DateTime d) =>
+    localDateFormat('d MMM yyyy', 'yMMMd').format(d);
+
+/// Hours as "12.5h".
+String projectHours(double hours) => appL10n.projectsHours(hoursLabel(hours));
+
+String projectStatusLabel(ProjectStatus status) {
+  final l10n = appL10n;
+  return switch (status) {
+    ProjectStatus.active => l10n.projectsStatusActive,
+    ProjectStatus.onHold => l10n.projectsStatusOnHold,
+    ProjectStatus.completed => l10n.projectsStatusCompleted,
+    ProjectStatus.cancelled => l10n.projectsStatusCancelled,
+  };
+}
+
+/// The project's status, or the raw value the app does not know.
+String projectStatusText(Project p) =>
+    p.status == null ? p.statusLabel : projectStatusLabel(p.status!);
+
+String billingTypeLabel(ProjectBillingType type) {
+  final l10n = appL10n;
+  return switch (type) {
+    ProjectBillingType.timeAndMaterials => l10n.projectsBillingTimeAndMaterials,
+    ProjectBillingType.fixedFee => l10n.projectsBillingFixedFee,
+    ProjectBillingType.retainer => l10n.projectsBillingRetainer,
+    ProjectBillingType.nonBillable => l10n.projectsBillingNonBillable,
+  };
+}
+
+/// A `YYYY-MM` month as "November 2026", in the app's language.
+String? projectMonth(String? raw) {
+  final m = RegExp(r'^(\d{4})-(\d{2})(?:-\d{2})?$').firstMatch(raw ?? '');
+  if (m == null) return null;
+  final month = int.parse(m.group(2)!);
+  if (month < 1 || month > 12) return null;
+  return localDateFormat(
+    'MMMM y',
+    'yMMMM',
+  ).format(DateTime(int.parse(m.group(1)!), month));
+}
 
 class ProjectStatusPill extends StatelessWidget {
   const ProjectStatusPill({super.key, required this.project});
@@ -23,8 +63,10 @@ class ProjectStatusPill extends StatelessWidget {
   final Project project;
 
   @override
-  Widget build(BuildContext context) =>
-      StatusBadge(label: project.statusLabel, color: project.statusColor);
+  Widget build(BuildContext context) => StatusBadge(
+    label: projectStatusText(project),
+    color: project.statusColor,
+  );
 }
 
 /// One budget's burn: what is used against what was budgeted, and a bar
@@ -95,17 +137,21 @@ List<Widget> burnBars(Project p) {
   return [
     if (hours != null)
       BurnBar(
-        label: 'Hours',
-        used: '${hoursLabel(p.burn.loggedHours)}h of ${hoursLabel(hours)}h',
+        label: appL10n.projectsBurnHours,
+        used: appL10n.projectsBurnOf(
+          projectHours(p.burn.loggedHours),
+          projectHours(hours),
+        ),
         percent: p.burn.hoursPercent,
       ),
     if (hours != null && amount != null) const SizedBox(height: 10),
     if (amount != null)
       BurnBar(
-        label: 'Amount',
-        used:
-            '${projectMoney(p, p.burn.billableValue)} of '
-            '${projectMoney(p, amount)}',
+        label: appL10n.projectsBurnAmount,
+        used: appL10n.projectsBurnOf(
+          projectMoney(p, p.burn.billableValue),
+          projectMoney(p, amount),
+        ),
         percent: p.burn.amountPercent,
       ),
   ];

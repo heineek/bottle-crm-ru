@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/project.dart';
+import '../../l10n/l10n.dart';
 import '../invoices/invoice_format.dart';
 
 /// An amount as sent: two decimal places, as the web sends it.
@@ -88,9 +89,10 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
     final text = _value.text.trim();
     if (text.isEmpty) return null;
     final n = parseDecimalText(text);
-    if (n == null) return 'Enter a number.';
-    if (n <= 0) return 'Enter more than 0.';
-    if (_byPercent && n > 100) return 'A percent is at most 100.';
+    final l10n = context.l10n;
+    if (n == null) return l10n.projectsAmountEnterNumber;
+    if (n <= 0) return l10n.projectsAmountMoreThanZero;
+    if (_byPercent && n > 100) return l10n.projectsAmountPercentMax;
     return null;
   }
 
@@ -104,8 +106,10 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
     if (!_byPercent || n == null || fee == null || _problem != null) {
       return null;
     }
-    return '${money(fee * n / 100, _symbol)} of the '
-        '${money(fee, _symbol)} fee';
+    return context.l10n.projectsAmountOfFee(
+      money(fee * n / 100, _symbol),
+      money(fee, _symbol),
+    );
   }
 
   Future<void> _submit() async {
@@ -123,7 +127,7 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
     if (result.error != null || result.id == null) {
       setState(() {
         _saving = false;
-        _error = result.error ?? 'Could not draft the invoice.';
+        _error = result.error ?? context.l10n.billTimeCouldNotDraft;
       });
       return;
     }
@@ -151,16 +155,22 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Invoice an amount', style: AppTypography.h3),
+            Text(context.l10n.projectsAmountTitle, style: AppTypography.h3),
             const SizedBox(height: 4),
             Text(
               switch ((fee, _p.burn.invoicedAmount)) {
                 (null, _) =>
-                  'Drafts a one-line invoice for ${_p.account?.name ?? 'the client'}.',
-                (final fee?, null) => 'Fee ${money(fee, _symbol)}.',
+                  _p.account == null
+                      ? context.l10n.projectsAmountDraftsForClient
+                      : context.l10n.projectsAmountDraftsFor(_p.account!.name),
+                (final fee?, null) => context.l10n.projectsAmountFee(
+                  money(fee, _symbol),
+                ),
                 (final fee?, final invoiced?) =>
-                  'Fee ${money(fee, _symbol)}, invoiced so far '
-                      '${money(invoiced, _symbol)}.',
+                  context.l10n.projectsAmountFeeInvoiced(
+                    money(fee, _symbol),
+                    money(invoiced, _symbol),
+                  ),
               },
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
@@ -172,11 +182,14 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
                 tapTargetSize: MaterialTapTargetSize.padded,
               ),
               segments: [
-                const ButtonSegment(value: false, label: Text('Amount')),
+                ButtonSegment(
+                  value: false,
+                  label: Text(context.l10n.projectsAmountAmount),
+                ),
                 ButtonSegment(
                   value: true,
                   enabled: _hasFee,
-                  label: const Text('Percent of fee'),
+                  label: Text(context.l10n.projectsAmountPercentOfFee),
                 ),
               ],
               selected: {_byPercent},
@@ -191,7 +204,9 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
               ),
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: _byPercent ? 'Percent' : 'Amount',
+                labelText: _byPercent
+                    ? context.l10n.projectsAmountPercent
+                    : context.l10n.projectsAmountAmount,
                 prefixText: _byPercent ? null : _symbol,
                 suffixText: _byPercent ? '%' : null,
                 errorText: _problem,
@@ -204,8 +219,8 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
               controller: _description,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                labelText: 'Line description (optional)',
-                hintText: '${_p.name}, fixed fee',
+                labelText: context.l10n.projectsAmountLineDescription,
+                hintText: context.l10n.projectsAmountLineHint(_p.name),
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -229,7 +244,7 @@ class _InvoiceAmountSheetState extends State<InvoiceAmountSheet> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Create draft invoice'),
+                    : Text(context.l10n.billTimeCreateDraft),
               ),
             ),
           ],

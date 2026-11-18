@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/invoice.dart';
+import '../../l10n/l10n.dart';
 import 'invoice_format.dart';
 
 /// What the sheet collected.
@@ -90,19 +91,18 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
 
     final value = double.tryParse(_amount.text.trim());
     if (value == null) {
-      setState(() => _error = 'Enter an amount');
+      setState(() => _error = context.l10n.invoicesPaymentEnterAmount);
       return;
     }
     if (value <= 0) {
-      setState(() => _error = 'The amount has to be more than zero');
+      setState(() => _error = context.l10n.invoicesPaymentAmountPositive);
       return;
     }
     if (value > widget.invoice.amountDue) {
       setState(() {
-        _error =
-            'That is more than the '
-            '${money(widget.invoice.amountDue, widget.invoice.currencyInfo.symbol)} '
-            'still owed';
+        _error = context.l10n.invoicesPaymentAmountTooHigh(
+          money(widget.invoice.amountDue, widget.invoice.currencyInfo.symbol),
+        );
       });
       return;
     }
@@ -127,13 +127,15 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Record a payment',
+            context.l10n.invoicesDetailRecordPayment,
             style: AppTypography.h3.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
-            '${money(widget.invoice.amountDue, symbol)} outstanding on '
-            '${widget.invoice.invoiceNumber}',
+            context.l10n.invoicesPaymentOutstandingOn(
+              money(widget.invoice.amountDue, symbol),
+              widget.invoice.invoiceNumber,
+            ),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -146,7 +148,7 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
             ],
             decoration: InputDecoration(
-              labelText: 'Amount',
+              labelText: context.l10n.invoicesPaymentAmount,
               prefixText: symbol,
               border: const OutlineInputBorder(),
               errorText: _error,
@@ -156,9 +158,9 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
           DropdownButtonFormField<String>(
             initialValue: _method,
             isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'How it was paid',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: context.l10n.invoicesPaymentMethod,
+              border: const OutlineInputBorder(),
             ),
             items: [
               for (final entry in paymentMethods.entries)
@@ -169,9 +171,9 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
           const SizedBox(height: 12),
           TextField(
             controller: _reference,
-            decoration: const InputDecoration(
-              labelText: 'Reference (optional)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: context.l10n.invoicesPaymentReference,
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 16),
@@ -180,7 +182,7 @@ class _RecordPaymentSheetState extends State<_RecordPaymentSheet> {
             height: 46,
             child: FilledButton(
               onPressed: _submit,
-              child: const Text('Record payment'),
+              child: Text(context.l10n.invoicesPaymentSubmit),
             ),
           ),
           const SizedBox(height: 8),

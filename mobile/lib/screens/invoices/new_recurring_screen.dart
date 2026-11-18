@@ -9,10 +9,12 @@ import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/custom_field_definition.dart';
 import '../../data/models/lookup_models.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/recurring_invoice.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoice_extras_provider.dart';
 import '../../providers/lookup_provider.dart';
+import '../../services/app_language.dart';
 import '../../services/org_date.dart';
 import '../../widgets/forms/custom_fields_section.dart';
 import 'document_adjustments.dart';
@@ -62,14 +64,6 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
   Map<String, String> _customFieldErrors = const {};
   bool _saving = false;
   String? _error;
-
-  static const _terms = {
-    'DUE_ON_RECEIPT': 'Due on receipt',
-    'NET_15': 'Net 15',
-    'NET_30': 'Net 30',
-    'NET_45': 'Net 45',
-    'NET_60': 'Net 60',
-  };
 
   @override
   void initState() {
@@ -126,7 +120,7 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('New schedule'),
+        title: Text(context.l10n.invoicesRecurringNewTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -151,13 +145,11 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
                   ),
                 _who(accounts, contacts),
                 _cadence(),
-                _card('What to bill each time', [
+                _card(context.l10n.invoicesRecurringLinesCard, [
                   LineItemsSection(
                     items: _items,
                     symbol: _symbol,
-                    emptyHint:
-                        'Lines are optional unless each invoice is emailed '
-                        'automatically.',
+                    emptyHint: context.l10n.invoicesRecurringLinesEmpty,
                     onChanged: (items) => setState(() {
                       _items
                         ..clear()
@@ -165,7 +157,7 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
                     }),
                   ),
                 ]),
-                _card('Discount and tax', [
+                _card(context.l10n.invoicesFormAdjustments, [
                   AdjustmentsSection(
                     value: _adjustments,
                     subtotal: _subtotal,
@@ -192,13 +184,13 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
         ? const <ContactLookup>[]
         : all.where((c) => c.billableFor(_accountId)).toList();
 
-    return _card('Who to bill', [
+    return _card(context.l10n.invoicesRecurringWhoCard, [
       DropdownButtonFormField<String>(
         initialValue: _accountId,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Account',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesDetailAccount,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final a in accounts.value ?? const <AccountLookup>[])
@@ -217,9 +209,11 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
         initialValue: _contactId,
         isExpanded: true,
         decoration: InputDecoration(
-          labelText: 'Bill to',
+          labelText: context.l10n.invoicesDetailBillTo,
           border: const OutlineInputBorder(),
-          helperText: _accountId == null ? 'Pick an account first' : null,
+          helperText: _accountId == null
+              ? context.l10n.invoicesFormPickAccountFirst
+              : null,
         ),
         items: [
           for (final c in options)
@@ -242,23 +236,23 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
         controller: _title,
         textCapitalization: TextCapitalization.sentences,
         onChanged: (_) => setState(() {}),
-        decoration: const InputDecoration(
-          labelText: 'What it is for',
-          hintText: 'Managed hosting retainer',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesFormWhatFor,
+          hintText: context.l10n.invoicesRecurringTitleHint,
+          border: const OutlineInputBorder(),
         ),
       ),
     ]);
   }
 
   Widget _cadence() {
-    return _card('How often', [
+    return _card(context.l10n.invoicesRecurringHowOften, [
       DropdownButtonFormField<String>(
         initialValue: _frequency,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Frequency',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesRecurringFrequency,
+          border: const OutlineInputBorder(),
         ),
         items: [
           for (final entry in recurringFrequencies.entries)
@@ -274,7 +268,7 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: 'Every how many days',
+            labelText: context.l10n.invoicesRecurringCustomDays,
             border: const OutlineInputBorder(),
             // Not merely a hint. Without an interval the server used to accept
             // the schedule and bill monthly; it now refuses, and either way
@@ -282,20 +276,20 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
             errorText: _customDays.text.trim().isEmpty
                 ? null
                 : _customDaysValue == null
-                ? 'Enter a number of days, at least 1'
+                ? context.l10n.invoicesRecurringCustomDaysError
                 : null,
           ),
         ),
       ],
       const SizedBox(height: 12),
       _dateField(
-        label: 'First invoice on',
+        label: context.l10n.invoicesRecurringFirstOn,
         value: _startDate,
         onPick: (d) => setState(() => _startDate = d),
       ),
       const SizedBox(height: 12),
       _dateField(
-        label: 'Stop after (optional)',
+        label: context.l10n.invoicesRecurringStopAfter,
         value: _endDate,
         onPick: (d) => setState(() => _endDate = d),
         onClear: _endDate == null
@@ -306,12 +300,12 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
       DropdownButtonFormField<String>(
         initialValue: _paymentTerms,
         isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: 'Payment terms on each invoice',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.invoicesRecurringPaymentTerms,
+          border: const OutlineInputBorder(),
         ),
         items: [
-          for (final entry in _terms.entries)
+          for (final entry in paymentTermLabels().entries)
             DropdownMenuItem(value: entry.key, child: Text(entry.value)),
         ],
         onChanged: (value) =>
@@ -326,15 +320,13 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
           contentPadding: EdgeInsets.zero,
           value: _autoSend,
           onChanged: (v) => setState(() => _autoSend = v),
-          title: const Text('Email each invoice automatically'),
-          subtitle: const Text(
-            'Off means each generated invoice waits as a draft for you to send.',
-          ),
+          title: Text(context.l10n.invoicesRecurringAutoSend),
+          subtitle: Text(context.l10n.invoicesRecurringAutoSendHint),
         ),
       ),
       if (_needsLine)
         Text(
-          'Add at least one line before turning on auto-send.',
+          context.l10n.invoicesRecurringNeedsLine,
           style: AppTypography.caption.copyWith(color: AppColors.danger600),
         ),
     ]);
@@ -364,14 +356,14 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
               ? null
               : IconButton(
                   icon: const Icon(LucideIcons.x, size: 16),
-                  tooltip: 'Clear',
+                  tooltip: context.l10n.invoicesClearTooltip,
                   onPressed: onClear,
                 ),
         ),
         child: Text(
           value == null
-              ? 'Pick a date'
-              : DateFormat('d MMM yyyy').format(value),
+              ? context.l10n.invoicesFormPickDate
+              : localDateFormat('d MMM yyyy', 'yMMMd').format(value),
           style: AppTypography.body.copyWith(
             color: value == null
                 ? AppColors.textSecondary
@@ -411,8 +403,13 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
                   ),
                   Text(
                     _frequency == 'CUSTOM' && _customDaysValue != null
-                        ? 'every $_customDaysValue days, with discounts and tax'
-                        : '${(recurringFrequencies[_frequency] ?? '').toLowerCase()}, with discounts and tax',
+                        ? context.l10n.invoicesRecurringTotalCustom(
+                            _customDaysValue!,
+                          )
+                        : context.l10n.invoicesRecurringTotalCaption(
+                            (recurringFrequencies[_frequency] ?? '')
+                                .toLowerCase(),
+                          ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption.copyWith(
@@ -434,9 +431,9 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const FittedBox(
+                      : FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text('Start schedule'),
+                          child: Text(context.l10n.invoicesRecurringStart),
                         ),
                 ),
               ),
@@ -493,16 +490,16 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
       setState(() => _error = error);
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Schedule created')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.invoicesRecurringCreated)),
+    );
     context.pop();
   }
 
   /// Shown only when the org has recurring invoice fields. The server enforces
   /// required ones too; checking here keeps a refusal off the whole form.
   Widget _customFieldsCard(List<CustomFieldDefinition> definitions) {
-    return _card('Custom fields', [
+    return _card(context.l10n.invoicesCustomFields, [
       CustomFieldsSection(
         heading: false,
         definitions: definitions,
@@ -523,7 +520,7 @@ class _NewRecurringScreenState extends ConsumerState<NewRecurringScreen> {
     if (missing.isEmpty) return true;
     setState(() {
       _customFieldErrors = missing;
-      _error = 'Fill in the required custom fields.';
+      _error = context.l10n.invoicesCustomFieldsRequired;
     });
     return false;
   }

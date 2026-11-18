@@ -32,6 +32,8 @@ import '../../widgets/tickets/ticket_properties_card.dart';
 import '../../widgets/tickets/ticket_solutions_panel.dart';
 import '../../widgets/tickets/ticket_time_panel.dart';
 import '../../widgets/objects/related_objects_section.dart';
+import '../../l10n/l10n.dart';
+import '../../services/app_language.dart';
 
 /// Ticket Detail Screen, Overview / Comments / Activity tabs.
 class TicketDetailScreen extends ConsumerStatefulWidget {
@@ -177,14 +179,15 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  notFound ? 'Ticket not found' : 'Could not load this ticket',
+                  notFound
+                      ? context.l10n.ticketsDetailNotFound
+                      : context.l10n.ticketsDetailLoadFailed,
                   style: AppTypography.h3,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _error ??
-                      'It does not exist, or you do not have access to it.',
+                  _error ?? context.l10n.ticketsDetailNotFoundBody,
                   style: AppTypography.body.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -197,7 +200,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                     style: TextButton.styleFrom(
                       minimumSize: const Size(44, 44),
                     ),
-                    child: const Text('Retry'),
+                    child: Text(context.l10n.commonRetry),
                   ),
                 ],
               ],
@@ -228,8 +231,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         actions: [
           IconButton(
             tooltip: (_watchers?.isCurrentUserWatching ?? false)
-                ? 'Unwatch'
-                : 'Watch',
+                ? context.l10n.ticketsDetailUnwatch
+                : context.l10n.ticketsDetailWatch,
             icon: Icon(
               (_watchers?.isCurrentUserWatching ?? false)
                   ? LucideIcons.eye
@@ -245,7 +248,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           // offered an edit the API would answer 403.
           if (_canWrite)
             IconButton(
-              tooltip: 'Edit',
+              tooltip: context.l10n.commonEdit,
               icon: const Icon(LucideIcons.pencil),
               onPressed: () async {
                 final result = await context.push(
@@ -255,7 +258,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
               },
             ),
           IconButton(
-            tooltip: 'More',
+            tooltip: context.l10n.ticketsDetailMore,
             icon: const Icon(LucideIcons.moreVertical),
             onPressed: _openActionSheet,
           ),
@@ -267,11 +270,11 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           indicatorColor: AppColors.primary600,
           indicatorWeight: 2,
           labelStyle: AppTypography.label,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Comments'),
-            Tab(text: 'Files'),
-            Tab(text: 'Activity'),
+          tabs: [
+            Tab(text: context.l10n.ticketsDetailTabOverview),
+            Tab(text: context.l10n.ticketsDetailTabComments),
+            Tab(text: context.l10n.ticketsDetailTabFiles),
+            Tab(text: context.l10n.ticketsDetailTabActivity),
           ],
         ),
       ),
@@ -381,7 +384,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'SLA breached',
+                    context.l10n.ticketsDetailSlaBreached,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.danger600,
                       fontWeight: FontWeight.w600,
@@ -440,31 +443,32 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           ),
           const SizedBox(height: 16),
           _card(
-            title: 'Ticket Information',
+            title: context.l10n.ticketsDetailInfoTitle,
             child: Column(
               children: [
                 _InfoRow(
                   icon: LucideIcons.fileText,
-                  label: 'NAME',
+                  label: context.l10n.ticketsDetailInfoName,
                   value: c.name,
                 ),
                 const Divider(height: 24),
                 _InfoRow(
                   icon: LucideIcons.building2,
-                  label: 'ACCOUNT',
-                  value: c.accountName ?? 'No account linked',
+                  label: context.l10n.ticketsDetailInfoAccount,
+                  value:
+                      c.accountName ?? context.l10n.ticketsDetailInfoNoAccount,
                 ),
                 const Divider(height: 24),
                 _InfoRow(
                   icon: LucideIcons.calendar,
-                  label: 'CREATED',
+                  label: context.l10n.ticketsDetailInfoCreated,
                   value: _formatDate(c.createdAt),
                 ),
                 if (c.closedOn != null) ...[
                   const Divider(height: 24),
                   _InfoRow(
                     icon: LucideIcons.checkCircle,
-                    label: 'CLOSED',
+                    label: context.l10n.ticketsDetailInfoClosed,
                     value: _formatDate(c.closedOn!),
                   ),
                 ],
@@ -473,7 +477,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           ),
           const SizedBox(height: 16),
           _card(
-            title: 'Assigned To',
+            title: context.l10n.ticketsDetailAssignedTo,
             child: Row(
               children: [
                 UserAvatar(name: c.assignedToName, size: AvatarSize.md),
@@ -488,8 +492,10 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
             const SizedBox(height: 16),
             _card(
               title: c.contactNames.length == 1
-                  ? 'Reported by'
-                  : '${c.contactNames.length} people on this ticket',
+                  ? context.l10n.ticketsDetailReportedBy
+                  : context.l10n.ticketsDetailPeopleCount(
+                      c.contactNames.length,
+                    ),
               child: Column(
                 children: [
                   for (final name in c.contactNames)
@@ -512,7 +518,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           if (CustomFieldsDisplay.shows(customFieldDefinitions)) ...[
             const SizedBox(height: 16),
             _card(
-              title: 'Custom fields',
+              title: context.l10n.ticketsDetailCustomFields,
               child: CustomFieldsDisplay(
                 definitions: customFieldDefinitions,
                 values: c.customFields,
@@ -522,7 +528,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           if (c.description != null && c.description!.isNotEmpty) ...[
             const SizedBox(height: 16),
             _card(
-              title: 'Description',
+              title: context.l10n.commonDescription,
               child: Text(
                 c.description!,
                 style: AppTypography.body.copyWith(
@@ -538,7 +544,9 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           if (_alsoOpen.isNotEmpty) ...[
             const SizedBox(height: 16),
             _card(
-              title: 'Also open on ${c.accountName ?? 'this account'}',
+              title: c.accountName == null
+                  ? context.l10n.ticketsDetailAlsoOpenOnThisAccount
+                  : context.l10n.ticketsDetailAlsoOpenOn(c.accountName!),
               child: Column(
                 children: [
                   for (final sibling in _alsoOpen)
@@ -672,17 +680,22 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         children: [
           chip(
             _ThreadSegment.public,
-            'Public',
+            context.l10n.ticketsDetailThreadPublic,
             LucideIcons.messageSquare,
             publicCount,
           ),
           chip(
             _ThreadSegment.internal,
-            'Internal',
+            context.l10n.ticketsDetailThreadInternal,
             LucideIcons.lock,
             internalCount,
           ),
-          chip(_ThreadSegment.emails, 'Emails', LucideIcons.mail, emailsCount),
+          chip(
+            _ThreadSegment.emails,
+            context.l10n.ticketsDetailThreadEmails,
+            LucideIcons.mail,
+            emailsCount,
+          ),
         ],
       ),
     );
@@ -695,11 +708,11 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
             ? LucideIcons.lock
             : LucideIcons.messageSquare,
         title: _segment == _ThreadSegment.internal
-            ? 'No internal notes'
-            : 'No comments yet',
+            ? context.l10n.ticketsDetailNoInternalNotes
+            : context.l10n.ticketsDetailNoComments,
         description: _segment == _ThreadSegment.internal
-            ? 'Internal notes are visible only to your team.'
-            : 'Add the first comment to get started.',
+            ? context.l10n.ticketsDetailInternalNotesHint
+            : context.l10n.ticketsDetailFirstCommentHint,
       );
     }
     final handles = mentionHandles(ref.watch(usersProvider));
@@ -719,11 +732,10 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
 
   Widget _buildEmailsList(List<EmailMessage> emails) {
     if (emails.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: LucideIcons.mail,
-        title: 'No emails',
-        description:
-            'Inbound and outbound emails for this ticket will appear here.',
+        title: context.l10n.ticketsDetailNoEmails,
+        description: context.l10n.ticketsDetailNoEmailsHint,
       );
     }
     return ListView.builder(
@@ -756,7 +768,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
               // The macro's actions, applied right after this reply posts.
               // Each can be taken off; what is left is what applies.
               Text(
-                'Also on send',
+                context.l10n.ticketsDetailAlsoOnSend,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -793,13 +805,13 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     return Row(
       children: [
         IconButton(
-          tooltip: 'Mention',
+          tooltip: context.l10n.ticketsDetailMention,
           icon: const Icon(LucideIcons.atSign, size: 20),
           color: AppColors.textSecondary,
           onPressed: _isAddingComment ? null : _pickMention,
         ),
         IconButton(
-          tooltip: 'Saved reply',
+          tooltip: context.l10n.ticketsDetailSavedReply,
           icon: const Icon(LucideIcons.messageSquareQuote, size: 20),
           color: AppColors.textSecondary,
           onPressed: _isAddingComment ? null : _pickMacro,
@@ -810,8 +822,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
             enabled: !_isAddingComment,
             decoration: InputDecoration(
               hintText: isInternal
-                  ? 'Add an internal note…'
-                  : 'Email the customer…',
+                  ? context.l10n.ticketsDetailHintInternalNote
+                  : context.l10n.ticketsDetailHintEmailCustomer,
               hintStyle: AppTypography.body.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -869,7 +881,9 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
       setState(() => _isAddingComment = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to add comment'),
+          content: Text(
+            response.message ?? context.l10n.ticketsDetailAddCommentFailed,
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger600,
         ),
@@ -967,12 +981,15 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                     color: AppColors.gray400,
                   ),
                   const SizedBox(height: 16),
-                  Text('No files attached', style: AppTypography.h3),
+                  Text(
+                    context.l10n.ticketsDetailNoFiles,
+                    style: AppTypography.h3,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     _canWrite
-                        ? 'Attach a screenshot, a log, or a document.'
-                        : 'Nothing has been attached to this ticket.',
+                        ? context.l10n.ticketsDetailAttachHint
+                        : context.l10n.ticketsDetailNothingAttached,
                     style: AppTypography.body.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -1018,7 +1035,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
   /// note on `Attachment.filePath` for why the stored path is not a URL.
   Future<void> _openAttachment(Attachment attachment) async {
     if (!attachment.hasFile) {
-      _snack('That attachment has no file.');
+      _snack(context.l10n.ticketsDetailAttachmentNoFile);
       return;
     }
     final result = await downloadAttachment(
@@ -1026,7 +1043,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
       fileName: attachment.fileName,
     );
     if (!mounted || result.success) return;
-    _snack(result.error ?? 'Could not download that file.');
+    _snack(result.error ?? context.l10n.ticketsDetailDownloadFailed);
   }
 
   /// Attach a file to this ticket.
@@ -1074,11 +1091,11 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
   Widget _buildActivityTab() {
     final activities = _detail?.activities ?? [];
     if (activities.isEmpty) {
-      return const Center(
+      return Center(
         child: EmptyState(
           icon: LucideIcons.clock,
-          title: 'No activity yet',
-          description: 'Status changes and assignments will appear here',
+          title: context.l10n.ticketsDetailNoActivity,
+          description: context.l10n.ticketsDetailNoActivityHint,
         ),
       );
     }
@@ -1119,7 +1136,10 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Mention someone', style: AppTypography.h3),
+              child: Text(
+                context.l10n.ticketsDetailMentionSomeone,
+                style: AppTypography.h3,
+              ),
             ),
             Expanded(
               child: ListView.builder(
@@ -1243,8 +1263,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         content: Text(
           result.error == null
               ? result.summary!
-              : "Reply posted, but the macro's actions were not applied: "
-                    '${result.error}',
+              : context.l10n.ticketsDetailMacroNotApplied('${result.error}'),
         ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: result.error == null ? null : AppColors.danger600,
@@ -1269,7 +1288,11 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(current ? 'Failed to unwatch' : 'Failed to watch'),
+          content: Text(
+            current
+                ? context.l10n.ticketsDetailUnwatchFailed
+                : context.l10n.ticketsDetailWatchFailed,
+          ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1295,102 +1318,106 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: BorderRadius.circular(2),
+        // Scrolls so an admin's full set of rows, with labels wrapping under
+        // large text, never overflows the sheet's height cap.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.gray300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            if (_canWrite)
-              _actionRow(
-                icon: LucideIcons.users,
-                label: 'Reassign',
-                onTap: () {
-                  Navigator.pop(context);
-                  _reassign(c);
-                },
-              ),
-            if (_canWrite)
-              _actionRow(
-                icon: LucideIcons.circleDot,
-                label: 'Change status',
-                onTap: () {
-                  Navigator.pop(context);
-                  _changeStatus(c);
-                },
-              ),
-            if (_canWrite)
-              _actionRow(
-                icon: LucideIcons.flag,
-                label: 'Change priority',
-                onTap: () {
-                  Navigator.pop(context);
-                  _changePriority(c);
-                },
-              ),
-            if (_canWrite && c.status != TicketStatus.closed)
-              _actionRow(
-                icon: LucideIcons.checkCircle,
-                iconColor: AppColors.success600,
-                label: 'Close ticket',
-                onTap: () {
-                  Navigator.pop(context);
-                  _closeTicket(c);
-                },
-              ),
-            // The server answers `can_merge` (admin or the ticket's creator)
-            // and refuses the merge itself for anyone else.
-            if (_detail?.canMerge == true)
-              _actionRow(
-                icon: LucideIcons.gitMerge,
-                label: 'Merge into another ticket',
-                onTap: () {
-                  Navigator.pop(context);
-                  _mergeInto(c);
-                },
-              ),
-            if (_canWrite)
-              _actionRow(
-                icon: LucideIcons.link,
-                label: c.parentSummary == null
-                    ? 'Link to parent ticket'
-                    : 'Change / detach parent',
-                onTap: () {
-                  Navigator.pop(context);
-                  _linkParent(c);
-                },
-              ),
-            if (_canWrite &&
-                c.childCount > 0 &&
-                c.status != TicketStatus.closed)
-              _actionRow(
-                icon: LucideIcons.checkCheck,
-                iconColor: AppColors.success600,
-                label: 'Close with children',
-                onTap: () {
-                  Navigator.pop(context);
-                  _closeWithChildren(c);
-                },
-              ),
-            if (_isAdmin)
-              _actionRow(
-                icon: LucideIcons.trash2,
-                iconColor: AppColors.danger600,
-                label: 'Delete ticket',
-                labelColor: AppColors.danger600,
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteTicket(c);
-                },
-              ),
-            const SizedBox(height: 8),
-          ],
+              if (_canWrite)
+                _actionRow(
+                  icon: LucideIcons.users,
+                  label: context.l10n.ticketsDetailActionReassign,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _reassign(c);
+                  },
+                ),
+              if (_canWrite)
+                _actionRow(
+                  icon: LucideIcons.circleDot,
+                  label: context.l10n.ticketsDetailActionChangeStatus,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _changeStatus(c);
+                  },
+                ),
+              if (_canWrite)
+                _actionRow(
+                  icon: LucideIcons.flag,
+                  label: context.l10n.ticketsDetailActionChangePriority,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _changePriority(c);
+                  },
+                ),
+              if (_canWrite && c.status != TicketStatus.closed)
+                _actionRow(
+                  icon: LucideIcons.checkCircle,
+                  iconColor: AppColors.success600,
+                  label: context.l10n.ticketsDetailActionClose,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _closeTicket(c);
+                  },
+                ),
+              // The server answers `can_merge` (admin or the ticket's creator)
+              // and refuses the merge itself for anyone else.
+              if (_detail?.canMerge == true)
+                _actionRow(
+                  icon: LucideIcons.gitMerge,
+                  label: context.l10n.ticketsDetailActionMerge,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _mergeInto(c);
+                  },
+                ),
+              if (_canWrite)
+                _actionRow(
+                  icon: LucideIcons.link,
+                  label: c.parentSummary == null
+                      ? context.l10n.ticketsDetailActionLinkParent
+                      : context.l10n.ticketsDetailActionChangeParent,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _linkParent(c);
+                  },
+                ),
+              if (_canWrite &&
+                  c.childCount > 0 &&
+                  c.status != TicketStatus.closed)
+                _actionRow(
+                  icon: LucideIcons.checkCheck,
+                  iconColor: AppColors.success600,
+                  label: context.l10n.ticketsDetailActionCloseWithChildren,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _closeWithChildren(c);
+                  },
+                ),
+              if (_isAdmin)
+                _actionRow(
+                  icon: LucideIcons.trash2,
+                  iconColor: AppColors.danger600,
+                  label: context.l10n.ticketsDetailActionDelete,
+                  labelColor: AppColors.danger600,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _deleteTicket(c);
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
@@ -1434,68 +1461,72 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     final initial = users.where((u) => c.assignedToIds.contains(u.id)).toList();
     final result = await MultiSelectSheet.show<UserLookup>(
       context: context,
-      title: 'Reassign ticket',
+      title: context.l10n.ticketsDetailReassignTitle,
       items: users,
       initialSelection: initial,
       labelOf: (u) => u.displayName,
       searchText: (u) => '${u.email} ${u.displayName}',
       leadingOf: (u) => UserAvatar(name: u.displayName, size: AvatarSize.xs),
     );
-    if (result == null) return;
+    if (result == null || !mounted) return;
     await _applyUpdate({
       'assigned_to': result.map((u) => u.id).toList(),
-    }, 'Reassigned');
+    }, context.l10n.ticketsDetailReassigned);
   }
 
   Future<void> _changeStatus(Ticket c) async {
     final picked = await _showEnumPicker<TicketStatus>(
-      title: 'Change status',
+      title: context.l10n.ticketsDetailActionChangeStatus,
       options: TicketStatus.settable,
       current: c.status,
       labelOf: (s) => s.label,
       colorOf: (s) => s.color,
     );
-    if (picked == null || picked == c.status) return;
+    if (picked == null || picked == c.status || !mounted) return;
 
     // A close sends no `closed_on`: the server dates it today in the org's
     // timezone.
-    await _applyUpdate({'status': picked.value}, 'Status updated');
+    await _applyUpdate({
+      'status': picked.value,
+    }, context.l10n.ticketsDetailStatusUpdated);
   }
 
   Future<void> _changePriority(Ticket c) async {
     final picked = await _showEnumPicker<TicketPriority>(
-      title: 'Change priority',
+      title: context.l10n.ticketsDetailActionChangePriority,
       options: TicketPriority.values,
       current: c.priority,
       labelOf: (p) => p.label,
       colorOf: (p) => p.color,
     );
-    if (picked == null || picked == c.priority) return;
-    await _applyUpdate({'priority': picked.value}, 'Priority updated');
+    if (picked == null || picked == c.priority || !mounted) return;
+    await _applyUpdate({
+      'priority': picked.value,
+    }, context.l10n.ticketsDetailPriorityUpdated);
   }
 
   Future<void> _closeTicket(Ticket c) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Close ticket?'),
-        content: const Text(
-          'The ticket will be marked Closed with today\'s date as the closed-on date.',
-        ),
+        title: Text(context.l10n.ticketsDetailCloseConfirmTitle),
+        content: Text(context.l10n.ticketsDetailCloseConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Close ticket'),
+            child: Text(context.l10n.ticketsDetailActionClose),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
-    await _applyUpdate({'status': TicketStatus.closed.value}, 'Ticket closed');
+    if (confirmed != true || !mounted) return;
+    await _applyUpdate({
+      'status': TicketStatus.closed.value,
+    }, context.l10n.ticketsDetailTicketClosed);
   }
 
   Future<void> _mergeInto(Ticket c) async {
@@ -1516,7 +1547,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         maxChildSize: 0.95,
         expand: false,
         builder: (ctx, controller) => _TicketPickerSheet(
-          title: 'Merge into…',
+          title: context.l10n.ticketsDetailMergeIntoTitle,
           controller: controller,
           search: (query) => tickets.mergeTargets(c.id, search: query),
         ),
@@ -1528,20 +1559,18 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Merge ticket?'),
+        title: Text(context.l10n.ticketsDetailMergeConfirmTitle),
         content: Text(
-          '"${c.name}" will be marked Duplicate and its comments, '
-          'attachments, and emails will move into "${target.name}". '
-          'You can undo this from the target ticket.',
+          context.l10n.ticketsDetailMergeConfirmBody(c.name, target.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Merge'),
+            child: Text(context.l10n.ticketsDetailMergeButton),
           ),
         ],
       ),
@@ -1555,7 +1584,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     if (res.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Merged into "${target.name}"'),
+          content: Text(context.l10n.ticketsDetailMergedInto(target.name)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1565,7 +1594,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to merge'),
+          content: Text(res.message ?? context.l10n.ticketsDetailMergeFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1577,19 +1606,16 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unmerge ticket?'),
-        content: Text(
-          '"${src.name}" will be restored and its comments, attachments, '
-          'and emails moved back out of this ticket.',
-        ),
+        title: Text(context.l10n.ticketsDetailUnmergeConfirmTitle),
+        content: Text(context.l10n.ticketsDetailUnmergeConfirmBody(src.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Unmerge'),
+            child: Text(context.l10n.ticketsDetailUnmergeButton),
           ),
         ],
       ),
@@ -1603,7 +1629,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unmerged "${src.name}"'),
+            content: Text(context.l10n.ticketsDetailUnmerged(src.name)),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1611,7 +1637,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to unmerge'),
+          content: Text(res.message ?? context.l10n.ticketsDetailUnmergeFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1623,19 +1649,17 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete ticket?'),
-        content: Text(
-          'This will soft-delete "${c.name}". You can restore it from the web admin.',
-        ),
+        title: Text(context.l10n.ticketsDetailDeleteConfirmTitle),
+        content: Text(context.l10n.ticketsDetailDeleteConfirmBody(c.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger600),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -1647,8 +1671,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     if (!mounted) return;
     if (response.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ticket deleted'),
+        SnackBar(
+          content: Text(context.l10n.ticketsDetailTicketDeleted),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1656,7 +1680,9 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to delete ticket'),
+          content: Text(
+            response.message ?? context.l10n.ticketsDetailDeleteFailed,
+          ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1685,7 +1711,9 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Failed to update ticket'),
+          content: Text(
+            response.message ?? context.l10n.ticketsDetailUpdateFailed,
+          ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1798,7 +1826,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
               Icon(LucideIcons.gitBranch, size: 16, color: AppColors.gray600),
               const SizedBox(width: 8),
               Text(
-                'LINKED TICKETS',
+                context.l10n.ticketsDetailLinkedTickets,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -1815,7 +1843,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'PROBLEM',
+                    context.l10n.ticketsDetailProblem,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.danger700,
                       fontWeight: FontWeight.w700,
@@ -1848,7 +1876,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Parent',
+                            context.l10n.ticketsDetailParent,
                             style: AppTypography.caption.copyWith(
                               color: AppColors.textTertiary,
                             ),
@@ -1885,7 +1913,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'Tree truncated (max depth reached)',
+                  context.l10n.ticketsDetailTreeTruncated,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -1895,7 +1923,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                '${c.childCount} linked ticket${c.childCount == 1 ? '' : 's'}',
+                context.l10n.ticketsDetailLinkedCount(c.childCount),
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -1985,11 +2013,14 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Parent ticket', style: AppTypography.h3),
+                child: Text(
+                  context.l10n.ticketsDetailParentTicket,
+                  style: AppTypography.h3,
+                ),
               ),
               _actionRow(
                 icon: LucideIcons.replace,
-                label: 'Pick a different parent',
+                label: context.l10n.ticketsDetailPickDifferentParent,
                 onTap: () => Navigator.pop(context, 'pick'),
               ),
               _actionRow(
@@ -1998,8 +2029,10 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                 // Unlinking needs write on this ticket only, so a hidden
                 // parent can still be left; it just is not named.
                 label: c.parentSummary!.restricted
-                    ? 'Detach from parent ticket'
-                    : 'Detach from "${c.parentSummary!.name}"',
+                    ? context.l10n.ticketsDetailDetachFromParentTicket
+                    : context.l10n.ticketsDetailDetachFrom(
+                        c.parentSummary!.name,
+                      ),
                 labelColor: AppColors.danger600,
                 onTap: () => Navigator.pop(context, 'detach'),
               ),
@@ -2008,8 +2041,13 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
           ),
         ),
       );
+      if (!mounted) return;
       if (picked == 'detach') {
-        await _applyLink(c.id, null, 'Detached from parent');
+        await _applyLink(
+          c.id,
+          null,
+          context.l10n.ticketsDetailDetachedFromParent,
+        );
         return;
       }
       if (picked != 'pick') return;
@@ -2027,10 +2065,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         .toList();
     if (candidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No other tickets to link to. Load more from the list first.',
-          ),
+        SnackBar(
+          content: Text(context.l10n.ticketsDetailNoLinkCandidates),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -2049,7 +2085,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
         maxChildSize: 0.95,
         expand: false,
         builder: (ctx, controller) => _TicketPickerSheet(
-          title: 'Link to parent…',
+          title: context.l10n.ticketsDetailLinkToParentTitle,
           tickets: candidates,
           controller: controller,
         ),
@@ -2057,7 +2093,11 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     );
     if (parent == null) return;
     if (!mounted) return;
-    await _applyLink(c.id, parent.id, 'Linked to "${parent.name}"');
+    await _applyLink(
+      c.id,
+      parent.id,
+      context.l10n.ticketsDetailLinkedTo(parent.name),
+    );
   }
 
   Future<void> _applyLink(
@@ -2082,7 +2122,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to link parent'),
+          content: Text(res.message ?? context.l10n.ticketsDetailLinkFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -2150,7 +2190,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to close'),
+          content: Text(res.message ?? context.l10n.ticketsDetailCloseFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -2175,7 +2215,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
               Icon(LucideIcons.gitMerge, size: 16, color: AppColors.gray600),
               const SizedBox(width: 8),
               Text(
-                'MERGED FROM',
+                context.l10n.ticketsDetailMergedFrom,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -2208,7 +2248,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
                         minimumSize: AppLayout.buttonMinSizeInRow,
                       ),
                       onPressed: () => _unmergeSource(src),
-                      child: const Text('Unmerge'),
+                      child: Text(context.l10n.ticketsDetailUnmergeButton),
                     ),
                 ],
               ),
@@ -2244,23 +2284,8 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen>
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
+  String _formatDate(DateTime date) =>
+      localDateFormat('MMM d, y', 'yMMMd').format(date);
 }
 
 class _InfoRow extends StatelessWidget {
@@ -2340,7 +2365,7 @@ class _CommentTile extends StatelessWidget {
                   Icon(LucideIcons.lock, size: 11, color: AppColors.warning700),
                   const SizedBox(width: 3),
                   Text(
-                    'Internal',
+                    context.l10n.ticketsDetailCommentInternal,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.warning700,
                       fontWeight: FontWeight.w600,
@@ -2373,7 +2398,7 @@ class _CommentTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                _formatTimeAgo(comment.commentedOn),
+                _timeAgo(context, comment.commentedOn),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textTertiary,
                 ),
@@ -2384,22 +2409,18 @@ class _CommentTile extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-    if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}mo ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
+String _timeAgo(BuildContext context, DateTime t) {
+  final l = context.l10n;
+  final diff = DateTime.now().difference(t);
+  if (diff.inDays > 30) {
+    return l.ticketsDetailAgoMonths((diff.inDays / 30).floor());
   }
+  if (diff.inDays > 0) return l.ticketsDetailAgoDays(diff.inDays);
+  if (diff.inHours > 0) return l.ticketsDetailAgoHours(diff.inHours);
+  if (diff.inMinutes > 0) return l.ticketsDetailAgoMinutes(diff.inMinutes);
+  return l.ticketsDetailJustNow;
 }
 
 enum _ThreadSegment { public, internal, emails }
@@ -2497,7 +2518,7 @@ class _TicketPickerSheetState extends State<_TicketPickerSheet> {
         : Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              _searchError ?? 'No matching tickets',
+              _searchError ?? context.l10n.ticketsDetailNoMatchingTickets,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
@@ -2524,7 +2545,7 @@ class _TicketPickerSheetState extends State<_TicketPickerSheet> {
           child: TextField(
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Search tickets…',
+              hintText: context.l10n.ticketsDetailSearchTicketsHint,
               prefixIcon: const Icon(LucideIcons.search, size: 18),
               filled: true,
               fillColor: AppColors.gray50,
@@ -2639,7 +2660,9 @@ class _EmailTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      isInbound ? 'Inbound' : 'Outbound',
+                      isInbound
+                          ? context.l10n.ticketsDetailEmailInbound
+                          : context.l10n.ticketsDetailEmailOutbound,
                       style: AppTypography.caption.copyWith(
                         color: isInbound
                             ? AppColors.primary700
@@ -2654,7 +2677,7 @@ class _EmailTile extends StatelessWidget {
               const Spacer(),
               if (timestamp != null)
                 Text(
-                  _formatTimeAgo(timestamp),
+                  _timeAgo(context, timestamp),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -2671,14 +2694,14 @@ class _EmailTile extends StatelessWidget {
           ],
           if (email.fromAddress != null && email.fromAddress!.isNotEmpty)
             Text(
-              'From: ${email.fromAddress}',
+              context.l10n.ticketsDetailEmailFrom(email.fromAddress!),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
           if (email.toAddresses.isNotEmpty)
             Text(
-              'To: ${email.toAddresses.join(', ')}',
+              context.l10n.ticketsDetailEmailTo(email.toAddresses.join(', ')),
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -2698,15 +2721,6 @@ class _EmailTile extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final diff = DateTime.now().difference(dateTime);
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
   }
 }
 
@@ -2740,7 +2754,13 @@ class _ActivityTile extends StatelessWidget {
     DateTime? timestamp;
     if (timestampRaw is String) timestamp = DateTime.tryParse(timestampRaw);
 
-    final detail = _describe(action, actionDisplay, metadata, freeText);
+    final detail = _describe(
+      context.l10n,
+      action,
+      actionDisplay,
+      metadata,
+      freeText,
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -2779,7 +2799,7 @@ class _ActivityTile extends StatelessWidget {
                     if (humanized != null && humanized.isNotEmpty)
                       humanized
                     else if (timestamp != null)
-                      _format(timestamp),
+                      _timeAgo(context, timestamp),
                   ].join(' · '),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
@@ -2796,6 +2816,7 @@ class _ActivityTile extends StatelessWidget {
   /// Build a human-readable line for the activity. Falls back to the
   /// backend's `action_display` for verbs we don't render specially.
   String _describe(
+    AppLocalizations l,
     String action,
     String actionDisplay,
     Map<String, dynamic> meta,
@@ -2812,65 +2833,67 @@ class _ActivityTile extends StatelessWidget {
 
     switch (action) {
       case 'CREATE':
-        return 'Created the ticket';
+        return l.ticketsDetailActCreated;
       case 'UPDATE':
         final changes = meta['changes'];
         if (changes is Map<String, dynamic> && changes.isNotEmpty) {
           final fields = changes.keys
               .map((k) => k.replaceAll('_', ' '))
               .join(', ');
-          return 'Updated $fields';
+          return l.ticketsDetailActUpdatedFields(fields);
         }
-        return 'Updated the ticket';
+        return l.ticketsDetailActUpdated;
       case 'STATUS_CHANGED':
-        return beforeAfter('Status changed');
+        return beforeAfter(l.ticketsDetailActStatusChanged);
       case 'PRIORITY_CHANGED':
-        return beforeAfter('Priority changed');
+        return beforeAfter(l.ticketsDetailActPriorityChanged);
       case 'COMMENT':
-        return 'Added a comment';
+        return l.ticketsDetailActComment;
       case 'ASSIGN':
-        return 'Updated assignees';
+        return l.ticketsDetailActAssign;
       case 'LINKED_SOLUTION':
-        return 'Linked a solution';
+        return l.ticketsDetailActLinkedSolution;
       case 'UNLINKED_SOLUTION':
-        return 'Unlinked a solution';
+        return l.ticketsDetailActUnlinkedSolution;
       case 'LINKED_PARENT':
-        return 'Linked to a parent ticket';
+        return l.ticketsDetailActLinkedParent;
       case 'UNLINKED_PARENT':
-        return 'Detached from parent';
+        return l.ticketsDetailDetachedFromParent;
       case 'WATCHED':
-        return 'Started watching';
+        return l.ticketsDetailActWatched;
       case 'UNWATCHED':
-        return 'Stopped watching';
+        return l.ticketsDetailActUnwatched;
       case 'MENTIONED':
-        return 'Mentioned a user';
+        return l.ticketsDetailActMentioned;
       case 'APPROVAL_REQUESTED':
-        return 'Requested approval';
+        return l.ticketsDetailActApprovalRequested;
       case 'APPROVED':
-        return 'Approval granted';
+        return l.ticketsDetailActApproved;
       case 'REJECTED':
-        return 'Approval rejected';
+        return l.ticketsDetailActRejected;
       case 'APPROVAL_CANCELLED':
-        return 'Approval cancelled';
+        return l.ticketsDetailActApprovalCancelled;
       case 'ESCALATED':
-        return 'Escalated';
+        return l.ticketsDetailActEscalated;
       case 'REOPENED':
-        return 'Reopened';
+        return l.ticketsDetailActReopened;
       case 'MERGED':
-        return 'Merged into another ticket';
+        return l.ticketsDetailActMerged;
       case 'MERGE_TARGET':
-        return 'Received a merge';
+        return l.ticketsDetailActMergeTarget;
       case 'UNMERGED':
       case 'UNMERGE_TARGET':
-        return 'Unmerged';
+        return l.ticketsDetailActUnmerged;
       case 'ROUTED':
-        return 'Routed by auto-assignment';
+        return l.ticketsDetailActRouted;
       case 'TIME_LOGGED':
         final minutes = meta['minutes'];
-        if (minutes is num) return 'Logged ${minutes.round()}m';
-        return 'Logged time';
+        if (minutes is num) {
+          return l.ticketsDetailActTimeLoggedMinutes(minutes.round());
+        }
+        return l.ticketsDetailActTimeLogged;
       case 'PARENT_CLOSED_CASCADE':
-        return 'Closed via parent cascade';
+        return l.ticketsDetailActParentCascade;
       default:
         if (freeText.isNotEmpty) return freeText;
         return actionDisplay.isNotEmpty ? actionDisplay : action;
@@ -2955,16 +2978,6 @@ class _ActivityTile extends StatelessWidget {
       default:
         return AppColors.primary50;
     }
-  }
-
-  String _format(DateTime t) {
-    final now = DateTime.now();
-    final diff = now.difference(t);
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
   }
 }
 
@@ -3055,7 +3068,7 @@ class _MacroActionChip extends StatelessWidget {
           Flexible(child: Text(label, style: AppTypography.labelSmall)),
           IconButton(
             onPressed: onRemove,
-            tooltip: 'Do not apply this',
+            tooltip: context.l10n.ticketsDetailDoNotApply,
             icon: const Icon(LucideIcons.x, size: 16),
           ),
         ],

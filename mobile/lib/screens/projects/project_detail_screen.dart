@@ -13,6 +13,7 @@ import '../../data/models/comment.dart';
 import '../../data/models/project.dart';
 import '../../data/models/task.dart';
 import '../../data/models/time_entry.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoices_provider.dart';
 import '../../providers/lookup_provider.dart';
@@ -136,13 +137,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             : EmptyState(
                 icon: LucideIcons.folderKanban,
                 title: _notFound
-                    ? 'Project not found'
-                    : 'Could not load this project',
+                    ? context.l10n.projectsNotFound
+                    : context.l10n.projectsFormLoadFailed,
                 description: _notFound
-                    ? 'It may have been deleted, or you may not have access '
-                          'to it.'
-                    : 'Check your connection and try again.',
-                actionLabel: 'Try again',
+                    ? context.l10n.projectsNotFoundBody
+                    : context.l10n.projectsCheckConnection,
+                actionLabel: context.l10n.projectsTryAgain,
                 onAction: () {
                   setState(() => _loading = true);
                   _load();
@@ -154,17 +154,22 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final tasksOn = ref.watch(moduleOnProvider('tasks'));
     final timeOn = ref.watch(moduleOnProvider('timesheet'));
     final invoicesOn = ref.watch(moduleOnProvider('invoices'));
+    final l10n = context.l10n;
     final tabs = <(String, Widget Function())>[
-      ('Overview', () => _overview(p)),
-      if (tasksOn) ('Tasks', () => _tasksTab(p)),
-      if (timeOn) ('Time', () => _timeTab(p)),
-      if (invoicesOn) ('Invoices', () => _invoicesTab(p)),
+      (l10n.projectsTabOverview, () => _overview(p)),
+      if (tasksOn) (l10n.projectsTabTasks, () => _tasksTab(p)),
+      if (timeOn) (l10n.projectsTabTime, () => _timeTab(p)),
+      if (invoicesOn) (l10n.projectsTabInvoices, () => _invoicesTab(p)),
       (
-        p.attachments.isEmpty ? 'Files' : 'Files (${p.attachments.length})',
+        p.attachments.isEmpty
+            ? l10n.projectsTabFiles
+            : l10n.projectsTabFilesCount(p.attachments.length),
         () => _filesTab(p),
       ),
       (
-        p.comments.isEmpty ? 'Comments' : 'Comments (${p.comments.length})',
+        p.comments.isEmpty
+            ? l10n.projectsTabComments
+            : l10n.projectsTabCommentsCount(p.comments.length),
         () => _notesTab(p),
       ),
     ];
@@ -181,7 +186,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           scrolledUnderElevation: 1,
           leading: IconButton(
             icon: const Icon(LucideIcons.chevronLeft),
-            tooltip: 'Back',
+            tooltip: l10n.commonBack,
             onPressed: () => context.pop(),
           ),
           title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -189,13 +194,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             if (p.canEdit)
               IconButton(
                 icon: const Icon(LucideIcons.pencil, size: 20),
-                tooltip: 'Edit project',
+                tooltip: l10n.projectsFormEditTitle,
                 onPressed: _edit,
               ),
             if (p.canDelete)
               IconButton(
                 icon: const Icon(LucideIcons.trash2, size: 20),
-                tooltip: 'Delete project',
+                tooltip: l10n.projectsDelete,
                 onPressed: _confirmDelete,
               ),
           ],
@@ -239,6 +244,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       !_project!.isRetainer;
 
   Widget _overview(Project p) {
+    final l10n = context.l10n;
     final dealsOn = ref.watch(moduleOnProvider('deals'));
     final defs =
         ref.watch(customFieldDefinitionsProvider('Project')).value ?? const [];
@@ -251,15 +257,20 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           ProjectStatusPill(project: p),
-          StatusBadge(label: p.billingType.label, color: AppColors.gray600),
+          StatusBadge(
+            label: billingTypeLabel(p.billingType),
+            color: AppColors.gray600,
+          ),
         ],
       ),
       const SizedBox(height: 8),
       if (p.account != null)
         ProjectFact(
           icon: LucideIcons.building2,
-          label: 'ACCOUNT',
-          value: p.account!.name.isEmpty ? 'Account' : p.account!.name,
+          label: l10n.projectsFactAccount,
+          value: p.account!.name.isEmpty
+              ? l10n.projectsFormAccount
+              : p.account!.name,
           onTap: () => context.push(
             AppRoutes.accountDetail.replaceFirst(':id', p.account!.id),
           ),
@@ -267,43 +278,48 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       if (p.deal != null)
         ProjectFact(
           icon: LucideIcons.briefcase,
-          label: 'FROM THE DEAL',
-          value: p.deal!.name.isEmpty ? 'Deal' : p.deal!.name,
+          label: l10n.projectsFactFromDeal,
+          value: p.deal!.name.isEmpty ? l10n.projectsDeal : p.deal!.name,
           onTap: dealsOn ? () => context.push('/deals/${p.deal!.id}') : null,
         ),
       // Text only: neither client has an estimate page to open.
       if (p.estimateNumber != null)
         ProjectFact(
           icon: LucideIcons.fileCheck,
-          label: 'FROM ESTIMATE',
+          label: l10n.projectsFactFromEstimate,
           value: p.estimateNumber!,
         ),
       const SizedBox(height: 12),
       ..._billingActions(p),
-      if (p.isRetainer) ProjectCard(title: 'Retainer', child: _retainer(p)),
-      ProjectCard(title: 'Budget', child: _budget(p)),
+      if (p.isRetainer)
+        ProjectCard(title: l10n.projectsBillingRetainer, child: _retainer(p)),
+      ProjectCard(title: l10n.projectsBudget, child: _budget(p)),
       ProjectCard(
-        title: 'Dates',
+        title: l10n.projectsDates,
         child: Column(
           children: [
             ProjectFact(
               icon: LucideIcons.calendar,
-              label: 'START',
-              value: p.startDate == null ? 'Not set' : shortDate(p.startDate!),
+              label: l10n.projectsFactStart,
+              value: p.startDate == null
+                  ? l10n.projectsNotSet
+                  : shortDate(p.startDate!),
             ),
             ProjectFact(
               icon: LucideIcons.calendarClock,
-              label: 'DUE',
-              value: p.dueDate == null ? 'Not set' : shortDate(p.dueDate!),
+              label: l10n.projectsFactDue,
+              value: p.dueDate == null
+                  ? l10n.projectsNotSet
+                  : shortDate(p.dueDate!),
             ),
           ],
         ),
       ),
       ProjectCard(
-        title: 'People',
+        title: l10n.projectsPeople,
         child: p.assignedTo.isEmpty
             ? Text(
-                'Nobody assigned',
+                l10n.projectsNobodyAssigned,
                 style: AppTypography.body.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -318,10 +334,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 ],
               ),
       ),
-      ProjectCard(title: 'Rates', child: _ratesList(p)),
+      ProjectCard(title: l10n.projectsRates, child: _ratesList(p)),
       if (p.description.trim().isNotEmpty)
         ProjectCard(
-          title: 'Description',
+          title: l10n.commonDescription,
           child: Text(
             p.description,
             style: AppTypography.body.copyWith(height: 1.5),
@@ -329,7 +345,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         ),
       if (p.tagNames.isNotEmpty)
         ProjectCard(
-          title: 'Tags',
+          title: l10n.commonTags,
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -338,7 +354,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         ),
       if (CustomFieldsDisplay.shows(defs))
         ProjectCard(
-          title: 'Custom fields',
+          title: l10n.projectsFormCustomFields,
           child: CustomFieldsDisplay(definitions: defs, values: p.customFields),
         ),
     ]);
@@ -358,7 +374,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           child: FilledButton.icon(
             onPressed: _billRetainer,
             icon: const Icon(LucideIcons.receipt, size: 18),
-            label: Text('Bill ${usage!.monthText ?? 'this month'}'),
+            label: Text(switch (projectMonth(usage!.month)) {
+              final month? => context.l10n.projectsBillMonth(month),
+              null => context.l10n.projectsBillThisMonth,
+            }),
           ),
         ),
         const SizedBox(height: 16),
@@ -373,7 +392,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           child: FilledButton.icon(
             onPressed: _billTime,
             icon: const Icon(LucideIcons.receipt, size: 18),
-            label: const Text('Bill time'),
+            label: Text(context.l10n.billTimeTitle),
           ),
         ),
       if (billTime && p.isFixedFee) const SizedBox(height: 8),
@@ -384,7 +403,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           child: OutlinedButton.icon(
             onPressed: _invoiceAmount,
             icon: const Icon(LucideIcons.handCoins, size: 18),
-            label: const Text('Invoice an amount'),
+            label: Text(context.l10n.projectsAmountTitle),
           ),
         ),
       const SizedBox(height: 16),
@@ -394,26 +413,40 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   /// The fee, the month so far, the carried hours and when it ended. The
   /// usage block is null for an API that predates retainers.
   Widget _retainer(Project p) {
+    final l10n = context.l10n;
     final usage = p.retainerUsage;
     final fee = decimalOrNull(p.retainerFee);
-    final month = usage?.monthText;
+    final month = projectMonth(usage?.month);
     String hours(double n) =>
-        '${hoursLabel(n)} ${hoursLabel(n) == '1' ? 'hour' : 'hours'}';
+        l10n.projectsHoursCount(double.parse(hoursLabel(n)), hoursLabel(n));
     final rate = decimalOrNull(p.retainerOverageRate);
     final lines = <String>[
-      fee == null ? 'No monthly fee set' : '${projectMoney(p, fee)} a month',
+      fee == null
+          ? l10n.projectsRetainerNoFee
+          : l10n.projectsRetainerFee(projectMoney(p, fee)),
       if (usage != null && month != null)
         if (usage.availableHours == null)
-          '${hours(usage.usedHours)} in $month'
+          l10n.projectsRetainerUsed(hours(usage.usedHours), month)
         else
-          '${hoursLabel(usage.usedHours)} of '
-              '${hoursLabel(usage.availableHours!)} hours used in $month',
+          l10n.projectsRetainerUsedOf(
+            hoursLabel(usage.usedHours),
+            hoursLabel(usage.availableHours!),
+            month,
+          ),
       if (usage != null && usage.overageHours > 0)
-        '${hours(usage.overageHours)} over the allowance so far'
-            '${rate == null ? '' : ', ${projectMoney(p, (usage.overageHours * rate * 100).round() / 100)}'}',
+        rate == null
+            ? l10n.projectsRetainerOverage(hours(usage.overageHours))
+            : l10n.projectsRetainerOverageValue(
+                hours(usage.overageHours),
+                projectMoney(
+                  p,
+                  (usage.overageHours * rate * 100).round() / 100,
+                ),
+              ),
       if (p.retainerCarriedValue > 0)
-        '${hours(p.retainerCarriedValue)} carried in from earlier months',
-      if (monthLabel(p.retainerLastMonth) case final last?) 'Ended after $last',
+        l10n.projectsRetainerCarried(hours(p.retainerCarriedValue)),
+      if (projectMonth(p.retainerLastMonth) case final last?)
+        l10n.projectsRetainerEnded(last),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,23 +465,28 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final fee = p.budgetAmountValue;
     // Null for a member and while Invoices is off: then there is no line.
     final invoiced = p.burn.invoicedAmount;
+    final l10n = context.l10n;
     final lines = <String>[
-      '${hoursLabel(p.burn.loggedHours)}h logged, '
-          '${hoursLabel(p.burn.billableHours)}h billable',
-      'Not yet billed: ${projectMoney(p, p.burn.unbilledValue)}',
+      l10n.projectsBudgetLogged(
+        projectHours(p.burn.loggedHours),
+        projectHours(p.burn.billableHours),
+      ),
+      l10n.projectsBudgetUnbilled(projectMoney(p, p.burn.unbilledValue)),
       if (invoiced != null)
         if (p.isFixedFee && fee != null)
-          'Invoiced ${projectMoney(p, invoiced)} of the '
-              '${projectMoney(p, fee)} fee'
+          l10n.projectsBudgetInvoicedOfFee(
+            projectMoney(p, invoiced),
+            projectMoney(p, fee),
+          )
         else
-          'Invoiced: ${projectMoney(p, invoiced)}',
+          l10n.projectsBudgetInvoiced(projectMoney(p, invoiced)),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (bars.isEmpty)
           Text(
-            'No budget set.',
+            l10n.projectsBudgetNone,
             style: AppTypography.body.copyWith(color: AppColors.textSecondary),
           )
         else
@@ -464,22 +502,29 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   Widget _ratesList(Project p) {
+    final l10n = context.l10n;
     final rate = p.hourlyRateValue;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           rate == null
-              ? 'No default rate'
-              : 'Default: ${projectMoney(p, rate)} an hour',
+              ? l10n.projectsRatesNoDefault
+              : l10n.projectsRatesDefault(projectMoney(p, rate)),
           style: AppTypography.body,
         ),
         for (final r in p.rates)
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              '${r.name.isEmpty ? 'Someone' : r.name}: '
-              '${r.value == null ? 'no rate' : '${projectMoney(p, r.value!)} an hour'}',
+              r.value == null
+                  ? l10n.projectsRateLineNone(
+                      r.name.isEmpty ? l10n.projectsSomeone : r.name,
+                    )
+                  : l10n.projectsRateLine(
+                      r.name.isEmpty ? l10n.projectsSomeone : r.name,
+                      projectMoney(p, r.value!),
+                    ),
               style: AppTypography.body,
             ),
           ),
@@ -503,7 +548,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             if (mounted) _loadTasks();
           },
           icon: const Icon(LucideIcons.plus, size: 16),
-          label: const Text('New task'),
+          label: Text(context.l10n.projectsNewTask),
         ),
       ),
       const SizedBox(height: 12),
@@ -514,7 +559,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         )
       else if (tasks.isEmpty)
         Text(
-          'No tasks on this project yet.',
+          context.l10n.projectsNoTasks,
           style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         )
       else
@@ -545,7 +590,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                   if (!mounted) return;
                   if (!res.success) {
                     _snack(
-                      res.message ?? 'Could not update that task',
+                      res.message ?? context.l10n.projectsTaskUpdateFailed,
                       danger: true,
                     );
                   }
@@ -595,9 +640,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     return _scroll([
       Row(
         children: [
-          _stat('Logged', '${hoursLabel(p.burn.loggedHours)}h'),
+          _stat(context.l10n.projectsLogged, projectHours(p.burn.loggedHours)),
           const SizedBox(width: 12),
-          _stat('Billable', '${hoursLabel(p.burn.billableHours)}h'),
+          _stat(
+            context.l10n.timeEntryBillable,
+            projectHours(p.burn.billableHours),
+          ),
         ],
       ),
       const SizedBox(height: 12),
@@ -615,7 +663,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           child: OutlinedButton.icon(
             onPressed: _timeBusy ? null : _startTimer,
             icon: const Icon(LucideIcons.play, size: 16),
-            label: const Text('Start timer'),
+            label: Text(context.l10n.projectsStartTimer),
           ),
         ),
       if (p.canEdit) ...[
@@ -626,7 +674,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           child: OutlinedButton.icon(
             onPressed: _timeBusy ? null : _logTime,
             icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Log time'),
+            label: Text(context.l10n.projectsLogTime),
           ),
         ),
       ],
@@ -638,7 +686,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           child: OutlinedButton.icon(
             onPressed: _billTime,
             icon: const Icon(LucideIcons.receipt, size: 16),
-            label: const Text('Bill time'),
+            label: Text(context.l10n.billTimeTitle),
           ),
         ),
       ],
@@ -647,7 +695,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         const Center(child: CircularProgressIndicator())
       else if (done.isEmpty)
         Text(
-          'No time logged here yet.',
+          context.l10n.projectsNoTime,
           style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         )
       else
@@ -697,12 +745,15 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('Start the timer on', style: AppTypography.h3),
+                  child: Text(
+                    context.l10n.projectsTimerOn,
+                    style: AppTypography.h3,
+                  ),
                 ),
                 ListTile(
                   minTileHeight: 48,
                   leading: const Icon(LucideIcons.folderKanban),
-                  title: const Text('The project'),
+                  title: Text(context.l10n.projectsTimerOnProject),
                   onTap: () => Navigator.pop(ctx, (id: null)),
                 ),
                 for (final t in choices)
@@ -737,15 +788,15 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       SnackBar(
         content: Text(
           res.statusCode == 409
-              ? 'You already have a timer running.'
-              : (res.message ?? 'Could not start the timer.'),
+              ? context.l10n.projectsTimerAlreadyRunning
+              : (res.message ?? context.l10n.projectsTimerStartFailed),
         ),
         backgroundColor: AppColors.danger600,
         behavior: SnackBarBehavior.floating,
         action: running == null
             ? null
             : SnackBarAction(
-                label: 'View',
+                label: context.l10n.projectsView,
                 textColor: Colors.white,
                 onPressed: () => context.push(running),
               ),
@@ -759,7 +810,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     if (!mounted) return;
     setState(() => _timeBusy = false);
     if (!res.success) {
-      _snack(res.message ?? 'Could not stop the timer.', danger: true);
+      _snack(res.message ?? context.l10n.projectsTimerStopFailed, danger: true);
       return;
     }
     await _load();
@@ -788,7 +839,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     if (!mounted) return;
     setState(() => _timeBusy = false);
     if (!res.success) {
-      _snack(res.message ?? 'Could not log that time.', danger: true);
+      _snack(res.message ?? context.l10n.projectsLogTimeFailed, danger: true);
       return;
     }
     await _load();
@@ -814,23 +865,29 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   Future<void> _billRetainer() async {
-    final month = _project!.retainerUsage?.monthText ?? 'this month';
+    final l10n = context.l10n;
+    final month = projectMonth(_project!.retainerUsage?.month);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Bill $month?'),
-        content: const Text(
-          'This drafts an invoice for the monthly fee, plus any hours over '
-          "the allowance, and marks the month's time as billed.",
+        title: Text(
+          month == null
+              ? l10n.projectsBillThisMonthQuestion
+              : l10n.projectsBillMonthQuestion(month),
         ),
+        content: Text(l10n.projectsBillMonthBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Bill $month'),
+            child: Text(
+              month == null
+                  ? l10n.projectsBillThisMonth
+                  : l10n.projectsBillMonth(month),
+            ),
           ),
         ],
       ),
@@ -842,7 +899,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
     if (!mounted) return;
     if (result.error != null || result.id == null) {
-      _snack(result.error ?? 'Could not bill the month.');
+      _snack(result.error ?? context.l10n.projectsBillMonthFailed);
       unawaited(_load());
       return;
     }
@@ -866,7 +923,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
   Future<void> _afterInvoice(String? invoiceId) async {
     if (invoiceId == null || !mounted) return;
-    _snack('Draft invoice created');
+    _snack(context.l10n.ticketsPanelTimeInvoiceCreated);
     unawaited(_load());
     context.push('${AppRoutes.invoices}/$invoiceId');
   }
@@ -882,15 +939,17 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ..._billingActions(p),
       if (p.isFixedFee && fee != null && invoiced != null) ...[
         Text(
-          'Invoiced ${projectMoney(p, invoiced)} of the '
-          '${projectMoney(p, fee)} fee',
+          context.l10n.projectsBudgetInvoicedOfFee(
+            projectMoney(p, invoiced),
+            projectMoney(p, fee),
+          ),
           style: AppTypography.body,
         ),
         const SizedBox(height: 12),
       ],
       if (p.invoices.isEmpty)
         Text(
-          'No invoices for this project yet.',
+          context.l10n.projectsNoInvoices,
           style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         )
       else
@@ -922,7 +981,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      inv.invoiceNumber.isEmpty ? 'Invoice' : inv.invoiceNumber,
+                      inv.invoiceNumber.isEmpty
+                          ? context.l10n.projectsInvoice
+                          : inv.invoiceNumber,
                       style: AppTypography.label,
                     ),
                     Text(
@@ -957,7 +1018,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     return _scroll([
       if (p.attachments.isEmpty)
         Text(
-          'No files yet. Attach a brief, a contract or a deliverable.',
+          context.l10n.projectsNoFiles,
           style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         )
       else
@@ -1015,7 +1076,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
   Future<void> _openFile(Attachment a) async {
     if (!a.hasFile) {
-      _snack('That attachment has no file.');
+      _snack(context.l10n.projectsAttachmentNoFile);
       return;
     }
     final result = await downloadAttachment(
@@ -1023,7 +1084,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       fileName: a.fileName,
     );
     if (!mounted || result.success) return;
-    _snack(result.error ?? 'Could not download that file.');
+    _snack(result.error ?? context.l10n.projectsDownloadFailed);
   }
 
   Widget _notesTab(Project p) {
@@ -1031,10 +1092,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       children: [
         Expanded(
           child: p.comments.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.fileText,
-                  title: 'No comments yet',
-                  description: 'Add a comment to keep the team in the loop',
+                  title: context.l10n.projectsNoComments,
+                  description: context.l10n.projectsNoCommentsBody,
                 )
               : ListView(
                   padding: const EdgeInsets.all(16),
@@ -1065,7 +1126,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                     minLines: 1,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Add a comment...',
+                      hintText: context.l10n.projectsAddCommentHint,
                       filled: true,
                       fillColor: AppColors.gray100,
                       contentPadding: const EdgeInsets.symmetric(
@@ -1081,7 +1142,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  tooltip: 'Add comment',
+                  tooltip: context.l10n.projectsAddComment,
                   onPressed: _addingNote ? null : _addNote,
                   icon: const Icon(LucideIcons.send, size: 20),
                 ),
@@ -1123,19 +1184,19 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete this project?'),
-        content: const Text(
-          'Its tasks, time entries and invoices are kept, without the link '
-          'to this project. This cannot be undone.',
-        ),
+        title: Text(context.l10n.projectsDeleteTitle),
+        content: Text(context.l10n.projectsDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.danger600)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: TextStyle(color: AppColors.danger600),
+            ),
           ),
         ],
       ),
@@ -1147,7 +1208,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       _snack(error, danger: true);
       return;
     }
-    _snack('Project deleted');
+    _snack(context.l10n.projectsDeleted);
     context.pop();
   }
 }

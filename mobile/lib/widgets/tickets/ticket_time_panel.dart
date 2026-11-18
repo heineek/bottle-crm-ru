@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/time_billing.dart';
 import '../../data/models/time_entry.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/invoices_provider.dart';
 import '../../providers/org_modules_provider.dart';
@@ -107,14 +108,14 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
         SnackBar(
           content: Text(
             running.startsWith('/projects/')
-                ? 'You already have a running timer on a project.'
-                : 'You already have a running timer on another ticket.',
+                ? context.l10n.ticketsPanelTimeProjectRunning
+                : context.l10n.ticketsPanelTimeOtherRunning,
           ),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 6),
           action: SnackBarAction(
-            label: 'View',
+            label: context.l10n.ticketsPanelTimeView,
             textColor: Colors.white,
             onPressed: () => context.push(running),
           ),
@@ -124,7 +125,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(res.message ?? 'Failed to start timer'),
+        content: Text(res.message ?? context.l10n.ticketsPanelTimeStartFailed),
         backgroundColor: AppColors.danger600,
         behavior: SnackBarBehavior.floating,
       ),
@@ -141,7 +142,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to stop timer'),
+          content: Text(res.message ?? context.l10n.ticketsPanelTimeStopFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -169,7 +170,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Failed to add entry'),
+          content: Text(res.message ?? context.l10n.ticketsPanelTimeAddFailed),
           backgroundColor: AppColors.danger600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -194,8 +195,8 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
     );
     if (invoiceId == null || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Draft invoice created'),
+      SnackBar(
+        content: Text(context.l10n.ticketsPanelTimeInvoiceCreated),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -227,7 +228,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
               Icon(LucideIcons.clock, size: 16, color: AppColors.gray600),
               const SizedBox(width: 8),
               Text(
-                'TIME TRACKING',
+                context.l10n.ticketsPanelTimeHeading,
                 style: AppTypography.overline.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -235,7 +236,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
               const Spacer(),
               if (widget.canLogTime)
                 IconButton(
-                  tooltip: 'Add manual entry',
+                  tooltip: context.l10n.ticketsPanelTimeAddTooltip,
                   icon: const Icon(LucideIcons.plus, size: 18),
                   onPressed: _isBusy ? null : _addManual,
                 ),
@@ -246,12 +247,12 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
             Row(
               children: [
                 _StatTile(
-                  label: 'Total',
+                  label: context.l10n.ticketsPanelTimeTotal,
                   value: formatMinutes(_summary!.totalMinutes),
                 ),
                 const SizedBox(width: 12),
                 _StatTile(
-                  label: 'Billable',
+                  label: context.l10n.ticketsPanelTimeBillable,
                   value: formatMinutes(_summary!.billableMinutes),
                   color: AppColors.success600,
                 ),
@@ -271,7 +272,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
               child: OutlinedButton.icon(
                 onPressed: _isBusy ? null : _startTimer,
                 icon: const Icon(LucideIcons.play, size: 16),
-                label: const Text('Start timer'),
+                label: Text(context.l10n.ticketsPanelTimeStart),
               ),
             ),
           if (_entries.isNotEmpty) ...[
@@ -284,7 +285,9 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '+ ${_entries.where((e) => !e.isRunning).length - 5} more',
+                  context.l10n.ticketsPanelTimeMore(
+                    _entries.where((e) => !e.isRunning).length - 5,
+                  ),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -295,7 +298,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
             const SizedBox(height: 12),
             if (widget.accountId == null)
               Text(
-                'Link this ticket to an account to bill its time.',
+                context.l10n.ticketsPanelTimeLinkAccount,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -308,8 +311,7 @@ class _TicketTimePanelState extends ConsumerState<TicketTimePanel> {
                   onPressed: _isBusy ? null : () => _billTime(unbilled),
                   icon: const Icon(LucideIcons.receipt, size: 16),
                   label: Text(
-                    'Bill time (${unbilled.length} '
-                    '${unbilled.length == 1 ? 'entry' : 'entries'})',
+                    context.l10n.ticketsPanelTimeBill(unbilled.length),
                   ),
                 ),
               ),

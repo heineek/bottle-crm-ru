@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/ticket.dart';
+import '../../l10n/l10n.dart';
 
 /// Confirm closing a parent ticket, with an explicit choice about its children.
 ///
@@ -42,13 +43,13 @@ Future<({bool cascade, String comment})?> showCloseWithChildrenDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setLocal) => AlertDialog(
-        title: const Text('Close ticket'),
+        title: Text(ctx.l10n.ticketsCloseChildrenTitle),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Close "$ticketName"?'),
+              Text(ctx.l10n.ticketsCloseChildrenPrompt(ticketName)),
               const SizedBox(height: 10),
               Text(
                 cascadeSummary(count: openNames.length, truncated: truncated),
@@ -86,7 +87,7 @@ Future<({bool cascade, String comment})?> showCloseWithChildrenDialog(
                       value: cascade,
                       onChanged: (v) => setLocal(() => cascade = v ?? cascade),
                     ),
-                    const Expanded(child: Text('Close these as well')),
+                    Expanded(child: Text(ctx.l10n.ticketsCloseChildrenAlso)),
                   ],
                 ),
                 TextField(
@@ -94,12 +95,11 @@ Future<({bool cascade, String comment})?> showCloseWithChildrenDialog(
                   maxLines: 2,
                   maxLength: 1000,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Why (optional)',
-                    helperText:
-                        'Recorded against every ticket closed with this one',
+                  decoration: InputDecoration(
+                    labelText: ctx.l10n.ticketsCloseChildrenWhy,
+                    helperText: ctx.l10n.ticketsCloseChildrenWhyHelper,
                     helperMaxLines: 2,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     counterText: '',
                   ),
                 ),
@@ -110,11 +110,15 @@ Future<({bool cascade, String comment})?> showCloseWithChildrenDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(cascade ? 'Close all of them' : 'Close ticket'),
+            child: Text(
+              cascade
+                  ? ctx.l10n.ticketsCloseChildrenCloseAll
+                  : ctx.l10n.ticketsCloseChildrenTitle,
+            ),
           ),
         ],
       ),

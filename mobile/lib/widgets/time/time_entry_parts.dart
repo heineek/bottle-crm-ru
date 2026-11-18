@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/time_entry.dart';
+import '../../l10n/l10n.dart';
 
 /// Where the timer a 409 names is running: its ticket or its project, from
 /// `running_case_id` or `running_project_id`. Null when the body names
@@ -26,12 +27,13 @@ String? runningTimerPath(Map<String, dynamic>? body) {
 
 /// Minutes as "1h 30m", "45m" or "2h".
 String formatMinutes(int minutes) {
-  if (minutes <= 0) return '0m';
+  final l10n = appL10n;
+  if (minutes <= 0) return l10n.timeEntryZero;
   final h = minutes ~/ 60;
   final m = minutes % 60;
-  if (h == 0) return '${m}m';
-  if (m == 0) return '${h}h';
-  return '${h}h ${m}m';
+  if (h == 0) return l10n.timesheetDurationM(m);
+  if (m == 0) return l10n.timeEntryHours(h);
+  return l10n.timesheetDurationHm(h, m);
 }
 
 class RunningTimerCard extends StatelessWidget {
@@ -81,7 +83,7 @@ class RunningTimerCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Running',
+                  context.l10n.timeEntryRunning,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.primary700,
                     fontWeight: FontWeight.w600,
@@ -109,7 +111,7 @@ class RunningTimerCard extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: isBusy ? null : onStop,
             icon: const Icon(LucideIcons.square, size: 14),
-            label: const Text('Stop'),
+            label: Text(context.l10n.timeEntryStop),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.danger600,
               side: BorderSide(color: AppColors.danger300),
@@ -143,8 +145,8 @@ class TimeEntryRow extends StatelessWidget {
       ?detail,
       if (entry.isBilled)
         entry.invoiceNumber == null
-            ? 'billed'
-            : 'billed ${entry.invoiceNumber}',
+            ? context.l10n.timesheetTagBilled
+            : context.l10n.timesheetTagBilledNumber(entry.invoiceNumber!),
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -162,7 +164,7 @@ class TimeEntryRow extends StatelessWidget {
                 Text(
                   hasDescription
                       ? entry.description!
-                      : (entry.profileName ?? 'Time entry'),
+                      : (entry.profileName ?? context.l10n.timeEntryFallback),
                   style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
@@ -282,10 +284,10 @@ class _ManualEntrySheetState extends State<ManualEntrySheet> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Add time entry', style: AppTypography.h3),
+            Text(context.l10n.timeEntrySheetTitle, style: AppTypography.h3),
             const SizedBox(height: 16),
             Text(
-              'Duration',
+              context.l10n.timeEntryDuration,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -310,7 +312,7 @@ class _ManualEntrySheetState extends State<ManualEntrySheet> {
               maxLines: 2,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'What did you work on?',
+                hintText: context.l10n.timeEntryDescriptionHint,
                 filled: true,
                 fillColor: AppColors.gray50,
                 border: OutlineInputBorder(
@@ -324,14 +326,14 @@ class _ManualEntrySheetState extends State<ManualEntrySheet> {
               DropdownButtonFormField<String?>(
                 initialValue: _taskId,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Task (optional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.timeEntryTaskOptional,
+                  border: const OutlineInputBorder(),
                 ),
                 items: [
-                  const DropdownMenuItem<String?>(
+                  DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('No task'),
+                    child: Text(context.l10n.timeEntryNoTask),
                   ),
                   for (final t in widget.tasks)
                     DropdownMenuItem<String?>(
@@ -348,7 +350,7 @@ class _ManualEntrySheetState extends State<ManualEntrySheet> {
                 value: _billable,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                title: const Text('Billable'),
+                title: Text(context.l10n.timeEntryBillable),
                 onChanged: (v) => setState(() => _billable = v ?? false),
               ),
             const SizedBox(height: 8),
@@ -357,7 +359,7 @@ class _ManualEntrySheetState extends State<ManualEntrySheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: Text(context.l10n.commonCancel),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -384,7 +386,7 @@ class _ManualEntrySheetState extends State<ManualEntrySheet> {
                               ),
                             );
                           },
-                    child: const Text('Add entry'),
+                    child: Text(context.l10n.timeEntryAdd),
                   ),
                 ),
               ],

@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/crm_document.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/documents_provider.dart';
 import '../../routes/app_router.dart';
@@ -43,14 +44,16 @@ class DocumentsListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Documents'),
+        title: Text(context.l10n.documentsListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         actions: [
           IconButton(
             icon: Icon(includeArchived ? LucideIcons.eyeOff : LucideIcons.eye),
-            tooltip: includeArchived ? 'Hide archived' : 'Show archived',
+            tooltip: includeArchived
+                ? context.l10n.documentsListHideArchived
+                : context.l10n.documentsListShowArchived,
             onPressed: () =>
                 ref.read(documentsArchivedProvider.notifier).toggle(),
           ),
@@ -60,7 +63,7 @@ class DocumentsListScreen extends ConsumerWidget {
           // enforce.
           IconButton(
             icon: const Icon(LucideIcons.upload),
-            tooltip: 'Upload',
+            tooltip: context.l10n.documentsListUpload,
             onPressed: () => context.push(AppRoutes.documentNew),
           ),
         ],
@@ -135,10 +138,19 @@ class _Summary extends StatelessWidget {
             spacing: 20,
             runSpacing: 10,
             children: [
-              _Stat(value: '${totals.active}', label: 'active'),
+              _Stat(
+                value: '${totals.active}',
+                label: context.l10n.documentsStatActive,
+              ),
               if (includeArchived)
-                _Stat(value: '${totals.archived}', label: 'archived'),
-              _Stat(value: '${totals.unshared}', label: 'shared with nobody'),
+                _Stat(
+                  value: '${totals.archived}',
+                  label: context.l10n.documentsStatArchived,
+                ),
+              _Stat(
+                value: '${totals.unshared}',
+                label: context.l10n.documentsStatUnshared,
+              ),
             ],
           ),
           if (!includeArchived) ...[
@@ -146,8 +158,7 @@ class _Summary extends StatelessWidget {
             Text(
               // The archived ones are excluded from the request, not filtered
               // out here, so the counts above genuinely do not cover them.
-              'Archived documents are not shown or counted. Use the eye in the '
-              'header to include them.',
+              context.l10n.documentsListArchivedNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -220,7 +231,7 @@ class _DocumentRowState extends State<_DocumentRow> {
     if (result.success) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result.error ?? 'Could not download that file.'),
+        content: Text(result.error ?? context.l10n.documentsDownloadFailed),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -289,11 +300,11 @@ class _DocumentRowState extends State<_DocumentRow> {
                     children: [
                       if (doc.isArchived)
                         StatusBadge(
-                          label: 'Archived',
+                          label: context.l10n.documentsArchivedBadge,
                           color: AppColors.gray500,
                         ),
                       Text(
-                        'Uploaded by ${doc.uploaderName}',
+                        context.l10n.documentsUploadedBy(doc.uploaderName),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -328,7 +339,7 @@ class _DocumentRowState extends State<_DocumentRow> {
                 onPressed: widget.onEdit,
                 icon: const Icon(LucideIcons.pencil, size: 18),
                 color: AppColors.textTertiary,
-                tooltip: 'Manage this document',
+                tooltip: context.l10n.documentsManageTooltip,
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               ),
           ],
@@ -353,17 +364,15 @@ class _EmptyState extends StatelessWidget {
           children: [
             Icon(LucideIcons.folder, size: 40, color: AppColors.textTertiary),
             const SizedBox(height: 16),
-            Text('No documents', style: AppTypography.h3),
+            Text(context.l10n.documentsEmptyTitle, style: AppTypography.h3),
             const SizedBox(height: 8),
             Text(
               // The list is narrowed to what this person may open, so "there
               // are none" would be a claim about the org that this screen
               // cannot make.
               includeArchived
-                  ? 'Nothing has been shared with you, and you have uploaded '
-                        'nothing yourself.'
-                  : 'Nothing active has been shared with you. There may be '
-                        'archived documents: use the eye in the header.',
+                  ? context.l10n.documentsEmptyAll
+                  : context.l10n.documentsEmptyActive,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -395,9 +404,12 @@ class _ErrorState extends StatelessWidget {
               color: AppColors.textTertiary,
             ),
             const SizedBox(height: 16),
-            Text('Could not load the documents', style: AppTypography.body),
+            Text(context.l10n.documentsLoadError, style: AppTypography.body),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.documentsTryAgain),
+            ),
           ],
         ),
       ),

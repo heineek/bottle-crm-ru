@@ -3,16 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../config/api_config.dart';
 import '../../core/theme/theme.dart';
 import '../../data/models/deal.dart' show Currency;
 import '../../data/models/invoice.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/invoices_provider.dart';
 import '../../providers/saved_views_provider.dart';
 import '../../routes/app_router.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/badge.dart';
 import '../../widgets/common/export_csv_button.dart';
 import '../../widgets/common/saved_views_button.dart';
@@ -98,7 +99,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Invoices'),
+        title: Text(context.l10n.invoicesListTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -117,32 +118,35 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
           ),
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            tooltip: 'New invoice',
+            tooltip: context.l10n.invoicesListNewTooltip,
             onPressed: () => context.push(AppRoutes.invoiceNew),
           ),
           // The web reaches its sibling pages through a tab strip. Six tabs do
           // not fit at 390px, so they live behind one menu instead.
           PopupMenuButton<String>(
             icon: const Icon(LucideIcons.ellipsisVertical),
-            tooltip: 'More invoice pages',
+            tooltip: context.l10n.invoicesListMoreTooltip,
             onSelected: (route) => context.push(route),
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: AppRoutes.estimates,
-                child: Text('Estimates'),
+                child: Text(context.l10n.invoicesMenuEstimates),
               ),
               PopupMenuItem(
                 value: AppRoutes.recurring,
-                child: Text('Recurring'),
+                child: Text(context.l10n.invoicesMenuRecurring),
               ),
-              PopupMenuItem(value: AppRoutes.products, child: Text('Products')),
+              PopupMenuItem(
+                value: AppRoutes.products,
+                child: Text(context.l10n.invoicesMenuProducts),
+              ),
               PopupMenuItem(
                 value: AppRoutes.invoiceTemplates,
-                child: Text('Templates'),
+                child: Text(context.l10n.invoicesMenuTemplates),
               ),
               PopupMenuItem(
                 value: AppRoutes.invoiceReports,
-                child: Text('Reports'),
+                child: Text(context.l10n.invoicesMenuReports),
               ),
             ],
           ),
@@ -167,7 +171,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
         onChanged: _onSearchChanged,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search invoices',
+          hintText: context.l10n.invoicesListSearchHint,
           prefixIcon: const Icon(LucideIcons.search, size: 18),
           isDense: true,
           border: const OutlineInputBorder(),
@@ -195,7 +199,11 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
         child: Row(
           children: [
             for (final status in _filters) ...[
-              _chip(status?.label ?? 'All', active == status, status),
+              _chip(
+                status?.label ?? context.l10n.invoicesFilterAll,
+                active == status,
+                status,
+              ),
               const SizedBox(width: 8),
             ],
           ],
@@ -289,23 +297,26 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
                 runSpacing: 8,
                 children: [
                   _stat(
-                    'Outstanding',
+                    context.l10n.invoicesStatOutstanding,
                     compactMoney(m.outstanding, _symbol(code, data)),
                   ),
                   if (m.overdue > 0)
                     _stat(
-                      'Overdue',
+                      context.l10n.invoicesStatOverdue,
                       compactMoney(m.overdue, _symbol(code, data)),
                       tone: AppColors.danger600,
                     ),
-                  _stat('Draft', compactMoney(m.draft, _symbol(code, data))),
+                  _stat(
+                    context.l10n.invoicesStatDraft,
+                    compactMoney(m.draft, _symbol(code, data)),
+                  ),
                 ],
               ),
             ),
           if (money.length > 1) ...[
             const SizedBox(height: 4),
             Text(
-              'Each currency is totalled on its own; there are no exchange rates to combine them.',
+              context.l10n.invoicesListCurrencyNote,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -314,8 +325,11 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
           const SizedBox(height: 4),
           Text(
             data.invoices.length < totals.count
-                ? '${data.invoices.length} of ${totals.count} invoices'
-                : '${totals.count} ${totals.count == 1 ? 'invoice' : 'invoices'}',
+                ? context.l10n.invoicesListShownOf(
+                    data.invoices.length,
+                    totals.count,
+                  )
+                : context.l10n.invoicesListCount(totals.count),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -362,7 +376,7 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          error ?? 'Invoice ${invoice.invoiceNumber} sent to the client',
+          error ?? context.l10n.invoicesListSentSnack(invoice.invoiceNumber),
         ),
       ),
     );
@@ -371,11 +385,13 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
   Widget _emptyState(InvoicesListData data) {
     final String message;
     if (_searchController.text.isNotEmpty) {
-      message = 'No invoices match that search';
+      message = context.l10n.invoicesListEmptySearch;
     } else if (data.status != null) {
-      message = 'No ${data.status!.label.toLowerCase()} invoices';
+      message = context.l10n.invoicesListEmptyStatus(
+        data.status!.label.toLowerCase(),
+      );
     } else {
-      message = 'Nothing billed yet';
+      message = context.l10n.invoicesListEmpty;
     }
     return Center(
       child: Padding(
@@ -408,13 +424,13 @@ class _InvoicesListScreenState extends ConsumerState<InvoicesListScreen> {
             Icon(LucideIcons.alertCircle, size: 40, color: AppColors.danger500),
             const SizedBox(height: 12),
             Text(
-              'Could not load invoices',
+              context.l10n.invoicesListLoadError,
               style: AppTypography.body.copyWith(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => ref.read(invoicesProvider.notifier).refresh(),
-              child: const Text('Retry'),
+              child: Text(context.l10n.commonRetry),
             ),
           ],
         ),
@@ -466,7 +482,7 @@ class _InvoiceCard extends StatelessWidget {
                           invoice.accountName ??
                               (invoice.clientName.isNotEmpty
                                   ? invoice.clientName
-                                  : 'No account'),
+                                  : context.l10n.invoicesNoAccount),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.caption.copyWith(
@@ -499,7 +515,12 @@ class _InvoiceCard extends StatelessWidget {
                   ),
                   if (invoice.dueDate != null)
                     Text(
-                      'due ${DateFormat('d MMM').format(invoice.dueDate!)}',
+                      context.l10n.invoicesDueOn(
+                        localDateFormat(
+                          'd MMM',
+                          'MMMd',
+                        ).format(invoice.dueDate!),
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -524,8 +545,8 @@ class _InvoiceCard extends StatelessWidget {
                     onPressed: onSend,
                     child: Text(
                       invoice.status == InvoiceStatus.overdue
-                          ? 'Send a reminder'
-                          : 'Send',
+                          ? context.l10n.invoicesSendReminder
+                          : context.l10n.invoicesSend,
                     ),
                   ),
                 ),

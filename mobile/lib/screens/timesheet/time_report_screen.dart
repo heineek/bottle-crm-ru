@@ -6,8 +6,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/time_report.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/time_report_provider.dart';
+import '../../services/app_language.dart';
 import '../../services/org_date.dart';
 
 /// Where the time went: totals by agent, ticket, account or project over a
@@ -23,17 +25,17 @@ import '../../services/org_date.dart';
 class TimeReportScreen extends ConsumerWidget {
   const TimeReportScreen({super.key});
 
-  static const _groups = [
-    ('agent', 'Agent'),
-    ('ticket', 'Ticket'),
-    ('account', 'Account'),
-    ('project', 'Project'),
+  static List<(String, String)> _groups(BuildContext context) => [
+    ('agent', context.l10n.timesheetGroupAgent),
+    ('ticket', context.l10n.timesheetGroupTicket),
+    ('account', context.l10n.timesheetGroupAccount),
+    ('project', context.l10n.timesheetGroupProject),
   ];
 
-  static const _billableFilters = [
-    (null, 'All time'),
-    ('true', 'Billable'),
-    ('false', 'Non-billable'),
+  static List<(String?, String)> _billableFilters(BuildContext context) => [
+    (null, context.l10n.timesheetFilterAllTime),
+    ('true', context.l10n.timesheetFilterBillable),
+    ('false', context.l10n.timesheetFilterNonBillable),
   ];
 
   @override
@@ -44,13 +46,13 @@ class TimeReportScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
       appBar: AppBar(
-        title: const Text('Time report'),
+        title: Text(context.l10n.timesheetReportTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),
-          tooltip: 'Back',
+          tooltip: context.l10n.commonBack,
           onPressed: () => context.pop(),
         ),
       ),
@@ -104,9 +106,11 @@ class _FilterBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label =
-        '${DateFormat('d MMM').format(filters.start)} - '
-        '${DateFormat('d MMM').format(filters.end)}';
+    final day = localDateFormat('d MMM', 'MMMd');
+    final label = context.l10n.timesheetDateRange(
+      day.format(filters.start),
+      day.format(filters.end),
+    );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
@@ -131,7 +135,7 @@ class _FilterBar extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                for (final (value, label) in TimeReportScreen._groups)
+                for (final (value, label) in TimeReportScreen._groups(context))
                   if (value != 'project' ||
                       ref.watch(moduleOnProvider('projects')))
                     Padding(
@@ -150,7 +154,9 @@ class _FilterBar extends ConsumerWidget {
                   margin: const EdgeInsets.only(right: 8),
                   color: AppColors.border,
                 ),
-                for (final (value, label) in TimeReportScreen._billableFilters)
+                for (final (value, label) in TimeReportScreen._billableFilters(
+                  context,
+                ))
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
@@ -182,13 +188,12 @@ class _Body extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 96),
       children: [
-        _summary(),
+        _summary(context),
         if (report.isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
             child: Text(
-              'No time logged in this window. Widen the dates, or clear the '
-              'billable filter.',
+              context.l10n.timesheetReportEmpty,
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -199,10 +204,7 @@ class _Body extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
           child: Text(
-            'Value is what the billable time is worth at the rate saved on '
-            'each entry, so changing a rate does not rewrite what past months '
-            'were worth. To export these entries as a spreadsheet, open the '
-            'report on the web.',
+            context.l10n.timesheetReportFooter,
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
               height: 1.5,
@@ -213,7 +215,14 @@ class _Body extends StatelessWidget {
     );
   }
 
-  Widget _summary() {
+  String _loggedBy(BuildContext context) => switch (report.groupBy) {
+    'agent' => context.l10n.timesheetReportLoggedByAgent,
+    'ticket' => context.l10n.timesheetReportLoggedByTicket,
+    'account' => context.l10n.timesheetReportLoggedByAccount,
+    final other => context.l10n.timesheetReportLoggedBy(other),
+  };
+
+  Widget _summary(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       padding: const EdgeInsets.all(14),
@@ -231,7 +240,7 @@ class _Body extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'logged, by ${report.groupBy}',
+            _loggedBy(context),
             style: AppTypography.caption.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -243,20 +252,27 @@ class _Body extends StatelessWidget {
             children: [
               _stat(
                 _hm(report.billableMinutes),
-                'billable (${report.billableShare}%)',
+                context.l10n.timesheetBillableShare(report.billableShare),
               ),
               // One symbol cannot label a sum of two currencies, so a mixed
               // window says which ones it holds instead of picking one.
               if (report.isMixedCurrency)
-                _stat(report.currencies.join(', '), 'mixed currencies')
+                _stat(
+                  report.currencies.join(', '),
+                  context.l10n.timesheetMixedCurrencies,
+                )
               else if (report.billableValue > 0)
                 _stat(
                   NumberFormat.simpleCurrency(
+                    locale: currentLanguage,
                     name: report.currency,
                   ).format(report.billableValue),
-                  'at the saved rates',
+                  context.l10n.timesheetAtSavedRates,
                 ),
-              _stat('${report.entryCount}', 'entries'),
+              _stat(
+                '${report.entryCount}',
+                context.l10n.timesheetEntries(report.entryCount),
+              ),
             ],
           ),
         ],
@@ -320,19 +336,29 @@ class _Body extends StatelessWidget {
                 spacing: 14,
                 runSpacing: 4,
                 children: [
-                  _stat('${row.entryCount}', 'entries'),
+                  _stat(
+                    '${row.entryCount}',
+                    context.l10n.timesheetEntries(row.entryCount),
+                  ),
                   if (row.billableMinutes > 0)
-                    _stat(_hm(row.billableMinutes), 'billable'),
+                    _stat(
+                      _hm(row.billableMinutes),
+                      context.l10n.timesheetBillable,
+                    ),
                   // Grouped by agent: billable over logged, the utilisation
                   // figure. Absent from an older API and on other groupings.
                   if (row.billableSharePercent != null)
-                    _stat('${row.billableSharePercent}%', 'billable share'),
+                    _stat(
+                      '${row.billableSharePercent}%',
+                      context.l10n.timesheetBillableShareLabel,
+                    ),
                   if (row.billableValue > 0 && !report.isMixedCurrency)
                     _stat(
                       NumberFormat.simpleCurrency(
+                        locale: currentLanguage,
                         name: report.currency,
                       ).format(row.billableValue),
-                      'worth',
+                      context.l10n.timesheetWorth,
                     ),
                 ],
               ),
@@ -358,7 +384,9 @@ class _Body extends StatelessWidget {
 String _hm(int minutes) {
   final m = minutes < 0 ? 0 : minutes;
   final h = m ~/ 60;
-  return h > 0 ? '${h}h ${m % 60}m' : '${m}m';
+  return h > 0
+      ? appL10n.timesheetDurationHm(h, m % 60)
+      : appL10n.timesheetDurationM(m);
 }
 
 class _ErrorState extends StatelessWidget {
@@ -389,7 +417,10 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.timesheetTryAgain),
+            ),
           ],
         ),
       ),

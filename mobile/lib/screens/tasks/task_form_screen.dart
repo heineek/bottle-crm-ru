@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../data/models/models.dart';
 import '../../providers/lookup_provider.dart';
 import '../../providers/org_modules_provider.dart';
 import '../../providers/tasks_provider.dart';
+import '../../services/app_language.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/forms/unsaved_changes.dart';
 import '../../widgets/forms/custom_fields_form.dart';
@@ -15,16 +17,23 @@ import '../../widgets/forms/multi_select_sheet.dart';
 /// One of the five parent entities a task can be linked to. The backend's
 /// `Task.clean()` invariant enforces at most one is set.
 enum _RelatedKind {
-  account('account', 'Account', LucideIcons.building2),
-  lead('lead', 'Lead', LucideIcons.user),
-  opportunity('opportunity', 'Opportunity', LucideIcons.trendingUp),
-  ticket('case', 'Ticket', LucideIcons.lifeBuoy),
-  project('project', 'Project', LucideIcons.folderKanban);
+  account('account', LucideIcons.building2),
+  lead('lead', LucideIcons.user),
+  opportunity('opportunity', LucideIcons.trendingUp),
+  ticket('case', LucideIcons.lifeBuoy),
+  project('project', LucideIcons.folderKanban);
 
   final String apiValue;
-  final String label;
   final IconData icon;
-  const _RelatedKind(this.apiValue, this.label, this.icon);
+  const _RelatedKind(this.apiValue, this.icon);
+
+  String label(AppLocalizations l10n) => switch (this) {
+    account => l10n.tasksRelatedKindAccount,
+    lead => l10n.tasksRelatedKindLead,
+    opportunity => l10n.tasksRelatedKindOpportunity,
+    ticket => l10n.tasksRelatedKindTicket,
+    project => l10n.tasksRelatedKindProject,
+  };
 
   /// The module that serves this parent; accounts are always on.
   String? get module => switch (this) {
@@ -121,7 +130,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           _populateFromTask(task);
           _baseline = _snapshot();
         } else {
-          _fetchError = 'Failed to load task';
+          _fetchError = context.l10n.tasksLoadFailed;
         }
       });
     }
@@ -212,7 +221,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           ? null
           : _descriptionController.text.trim(),
       'status': _status.value,
-      'priority': _priority.label,
+      // The API's spelling, not the label, which follows the interface language.
+      'priority':
+          '${_priority.name[0].toUpperCase()}${_priority.name.substring(1)}',
       'due_date': _dueDate?.toIso8601String().split('T').first,
       'assigned_to': _assigneeIds,
       'custom_fields': _customFields,
@@ -246,8 +257,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           SnackBar(
             content: Text(
               widget.isEditMode
-                  ? 'Task updated successfully'
-                  : 'Task created successfully',
+                  ? context.l10n.tasksFormUpdated
+                  : context.l10n.tasksFormCreated,
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -256,7 +267,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to save task'),
+            content: Text(response.message ?? context.l10n.tasksFormSaveFailed),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.danger600,
           ),
@@ -273,7 +284,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text(widget.isEditMode ? 'Edit Task' : 'New Task'),
+          title: Text(
+            widget.isEditMode
+                ? context.l10n.tasksEditTask
+                : context.l10n.tasksFormNewTitle,
+          ),
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 1,
@@ -309,7 +324,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TextButton(onPressed: _fetchTask, child: const Text('Retry')),
+            TextButton(
+              onPressed: _fetchTask,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       );
@@ -323,14 +341,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Task Title Section
-            _buildSectionTitle('Task Details'),
+            _buildSectionTitle(context.l10n.tasksFormSectionDetails),
             const SizedBox(height: 16),
             _buildTitleField(),
 
             const SizedBox(height: 24),
 
             // Status & Priority Section
-            _buildSectionTitle('Status & Priority'),
+            _buildSectionTitle(context.l10n.tasksFormSectionStatusPriority),
             const SizedBox(height: 16),
             _buildStatusSelector(),
             const SizedBox(height: 20),
@@ -339,21 +357,21 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             const SizedBox(height: 24),
 
             // Due Date Section
-            _buildSectionTitle('Due Date'),
+            _buildSectionTitle(context.l10n.tasksFormDueDate),
             const SizedBox(height: 16),
             _buildDueDatePicker(),
 
             const SizedBox(height: 24),
 
             // People Section
-            _buildSectionTitle('People'),
+            _buildSectionTitle(context.l10n.tasksFormSectionPeople),
             const SizedBox(height: 16),
             _buildAssigneesField(),
 
             const SizedBox(height: 24),
 
             // Linked Record Section
-            _buildSectionTitle('Linked Record'),
+            _buildSectionTitle(context.l10n.tasksFormSectionLinkedRecord),
             const SizedBox(height: 16),
             _buildRelatedField(),
 
@@ -363,11 +381,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             _buildCustomFieldsSection(),
 
             // Description Section
-            _buildSectionTitle('Description'),
+            _buildSectionTitle(context.l10n.commonDescription),
             const SizedBox(height: 16),
             TextAreaField(
-              label: 'Notes',
-              hint: 'Add any additional details about this task...',
+              label: context.l10n.commonNotes,
+              hint: context.l10n.tasksFormNotesHint,
               controller: _descriptionController,
               maxLines: 5,
             ),
@@ -376,7 +394,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
             // Submit Button
             PrimaryButton(
-              label: widget.isEditMode ? 'Update Task' : 'Create Task',
+              label: widget.isEditMode
+                  ? context.l10n.tasksFormUpdateButton
+                  : context.l10n.tasksFormCreateButton,
               onPressed: _isLoading ? null : _handleSubmit,
               isLoading: _isLoading,
               icon: widget.isEditMode ? LucideIcons.save : LucideIcons.plus,
@@ -390,7 +410,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 onTap: () =>
                     leaveForm(context, hasUnsavedChanges: _hasUnsavedChanges),
                 child: Text(
-                  'Cancel',
+                  context.l10n.commonCancel,
                   style: AppTypography.label.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -417,8 +437,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
   Widget _buildTitleField() {
     return FloatingLabelInput(
-      label: 'Task Title',
-      hint: 'What needs to be done?',
+      label: context.l10n.tasksFormTitleLabel,
+      hint: context.l10n.tasksFormTitleHint,
       controller: _titleController,
       prefixIcon: LucideIcons.checkSquare,
       textInputAction: TextInputAction.next,
@@ -426,7 +446,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       maxLength: 200,
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Task title is required';
+          return context.l10n.tasksFormTitleRequired;
         }
         return null;
       },
@@ -438,7 +458,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Status',
+          context.l10n.commonStatus,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 10),
@@ -514,7 +534,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Priority',
+          context.l10n.commonPriority,
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 10),
@@ -617,7 +637,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _dueDate != null ? 'Due Date' : 'Add Due Date',
+                    _dueDate != null
+                        ? context.l10n.tasksFormDueDate
+                        : context.l10n.tasksFormAddDueDate,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -697,25 +719,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final tomorrow = today.add(const Duration(days: 1));
 
     if (taskDate == today) {
-      return 'Today';
+      return context.l10n.tasksToday;
     } else if (taskDate == tomorrow) {
-      return 'Tomorrow';
+      return context.l10n.tasksTomorrow;
     } else {
-      final months = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
-      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+      return localDateFormat('MMMM d, y', 'yMMMMd').format(date);
     }
   }
 
@@ -723,9 +731,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final users = ref.watch(usersProvider);
     final selected = users.where((u) => _assigneeIds.contains(u.id)).toList();
     return _PickerRow(
-      label: 'Assigned to',
+      label: context.l10n.commonAssignedTo,
       icon: LucideIcons.users,
-      placeholder: 'No one assigned',
+      placeholder: context.l10n.tasksFormNoOneAssigned,
       onTap: () => _pickAssignees(users),
       child: selected.isEmpty
           ? null
@@ -743,13 +751,13 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final initial = users.where((u) => _assigneeIds.contains(u.id)).toList();
     final result = await MultiSelectSheet.show<UserLookup>(
       context: context,
-      title: 'Assigned to',
+      title: context.l10n.commonAssignedTo,
       items: users,
       initialSelection: initial,
       labelOf: (u) => u.displayName,
       searchText: (u) => '${u.email} ${u.displayName}',
       leadingOf: (u) => UserAvatar(name: u.displayName, size: AvatarSize.xs),
-      emptyMessage: 'No users found',
+      emptyMessage: context.l10n.tasksFormNoUsersFound,
     );
     if (result != null) {
       setState(() => _assigneeIds = result.map((u) => u.id).toList());
@@ -760,11 +768,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final label = _resolveRelatedLabel();
     final displayValue = _relatedKind == null
         ? null
-        : '${_relatedKind!.label}: ${label ?? "Selected"}';
+        : '${_relatedKind!.label(context.l10n)}: '
+              '${label ?? context.l10n.tasksFormSelected}';
     return _PickerRow(
-      label: 'Linked record',
+      label: context.l10n.tasksFormLinkedRecord,
       icon: _relatedKind?.icon ?? LucideIcons.link2,
-      placeholder: 'Not linked',
+      placeholder: context.l10n.tasksFormNotLinked,
       onTap: _pickRelated,
       onClear: _relatedKind == null
           ? null
@@ -812,7 +821,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Link to…', style: AppTypography.h3),
+                child: Text(
+                  context.l10n.tasksFormLinkTo,
+                  style: AppTypography.h3,
+                ),
               ),
               for (final k in kinds)
                 InkWell(
@@ -826,7 +838,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       children: [
                         Icon(k.icon, size: 20, color: AppColors.textSecondary),
                         const SizedBox(width: 14),
-                        Text(k.label, style: AppTypography.body),
+                        Text(k.label(context.l10n), style: AppTypography.body),
                       ],
                     ),
                   ),
@@ -881,7 +893,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Select ${kind.label}', style: AppTypography.h3),
+              child: Text(
+                context.l10n.tasksFormSelectKind(kind.name),
+                style: AppTypography.h3,
+              ),
             ),
             Expanded(
               child: Consumer(
@@ -893,18 +908,21 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       error: (_, _) => Center(
                         child: EmptyState(
                           icon: LucideIcons.alertCircle,
-                          title: 'Could not load ${kind.label.toLowerCase()}s',
-                          description:
-                              'Close this and try again once you are back online.',
+                          title: context.l10n.tasksFormKindLoadFailed(
+                            kind.name,
+                          ),
+                          description: context.l10n.tasksFormKindLoadFailedHint,
                         ),
                       ),
                       data: (items) => items.isEmpty
                           ? Center(
                               child: EmptyState(
                                 icon: LucideIcons.inbox,
-                                title: 'No ${kind.label.toLowerCase()}s yet',
+                                title: context.l10n.tasksFormKindEmpty(
+                                  kind.name,
+                                ),
                                 description:
-                                    'Create one first, then link this task to it.',
+                                    context.l10n.tasksFormKindEmptyHint,
                               ),
                             )
                           : ListView.builder(
@@ -954,7 +972,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Custom fields'),
+            _buildSectionTitle(context.l10n.tasksCustomFields),
             const SizedBox(height: 16),
             CustomFieldsForm(
               targetModel: 'Task',

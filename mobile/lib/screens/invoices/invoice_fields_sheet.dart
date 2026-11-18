@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
 import '../../data/models/custom_field_definition.dart';
+import '../../l10n/l10n.dart';
 import '../../widgets/forms/custom_fields_section.dart';
 
 /// Edits an invoice's custom fields on their own, the twin of the web detail
@@ -63,7 +64,10 @@ class _InvoiceFieldsSheetState extends State<_InvoiceFieldsSheet> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text('Edit fields', style: AppTypography.h3),
+                child: Text(
+                  context.l10n.invoicesEditFields,
+                  style: AppTypography.h3,
+                ),
               ),
               Flexible(
                 child: SingleChildScrollView(
@@ -89,7 +93,7 @@ class _InvoiceFieldsSheetState extends State<_InvoiceFieldsSheet> {
                         height: 46,
                         child: OutlinedButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancel'),
+                          child: Text(context.l10n.commonCancel),
                         ),
                       ),
                     ),
@@ -99,7 +103,7 @@ class _InvoiceFieldsSheetState extends State<_InvoiceFieldsSheet> {
                         height: 46,
                         child: FilledButton(
                           onPressed: _save,
-                          child: const Text('Save'),
+                          child: Text(context.l10n.commonSave),
                         ),
                       ),
                     ),
