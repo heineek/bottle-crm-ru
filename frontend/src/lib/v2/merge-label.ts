@@ -1,3 +1,5 @@
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * How the merge page names one of its two records.
  *
@@ -14,5 +16,5 @@ export function mergeSideLabel(
   other: { id: string; name: string }
 ) {
   if (current.name !== other.name) return side.name;
-  return side.id === current.id ? 'this record' : 'the other record';
+  return side.id === current.id ? m.app_side_label_this_record() : m.app_side_label_other_record();
 }

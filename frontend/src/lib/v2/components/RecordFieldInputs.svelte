@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * The inputs below a record's name, shared by the new and edit pages: one
    * per custom field, one picker per link field, and the assignees (only when
@@ -86,7 +87,8 @@
       </label>
     {:else}
       <label for="cf-{f.key}"
-        >{f.label}{#if f.is_required}<span class="ri-req">required</span>{/if}</label
+        >{f.label}{#if f.is_required}<span class="ri-req">{m.app_record_fields_required()}</span
+          >{/if}</label
       >
       {#if f.field_type === 'textarea'}
         <textarea
@@ -108,7 +110,7 @@
           required={f.is_required}
           aria-invalid={problem ? 'true' : undefined}
         >
-          <option value="">None</option>
+          <option value="">{m.app_record_fields_none()}</option>
           {#each f.options as o (o.value)}
             <option value={o.value}>{o.label}</option>
           {/each}
@@ -138,7 +140,9 @@
     {#if l.readOnly}
       <p>
         {l.records.map((r) => r.name).join(', ')}{#if l.hidden > 0}
-          {l.records.length > 0 ? ' and ' : ''}{l.hidden} you can't open{/if}
+          {l.records.length > 0
+            ? m.app_record_fields_and_hidden({ count: l.hidden })
+            : m.app_record_fields_hidden({ count: l.hidden })}{/if}
       </p>
     {:else}
       <input
@@ -154,7 +158,7 @@
         label={l.label}
       />
       {#if l.many && l.hidden > 0}
-        <p class="v2-hint">and {l.hidden} you can't open</p>
+        <p class="v2-hint">{m.app_record_fields_and_hidden({ count: l.hidden })}</p>
       {/if}
     {/if}
   </div>
@@ -162,7 +166,7 @@
 
 {#if tags}
   <fieldset class="v2-field ri-people">
-    <legend class="ri-label">Tags</legend>
+    <legend class="ri-label">{m.common_tags()}</legend>
     <input type="hidden" name="tags__was" value={edit ? tagsWas : ''} form={formId} />
     <div class="ri-tags">
       {#each staleTags as t (t.id)}
@@ -185,14 +189,14 @@
       {/each}
     </div>
     {#if tags.length === 0 && staleTags.length === 0}
-      <p class="v2-hint">No tags yet.</p>
+      <p class="v2-hint">{m.app_record_fields_no_tags()}</p>
     {/if}
   </fieldset>
 {/if}
 
 {#if people}
   <fieldset class="v2-field ri-people">
-    <legend class="ri-label">Assigned to</legend>
+    <legend class="ri-label">{m.common_assigned_to()}</legend>
     {#if edit}<input type="hidden" name="assigned_to__was" value={was} />{/if}
     {#each stale as s (s.id)}
       <label class="ri-person">
@@ -207,7 +211,7 @@
       </label>
     {/each}
     {#if people.length === 0 && stale.length === 0}
-      <p class="v2-hint">No one to assign.</p>
+      <p class="v2-hint">{m.app_record_fields_no_one()}</p>
     {/if}
   </fieldset>
 {/if}

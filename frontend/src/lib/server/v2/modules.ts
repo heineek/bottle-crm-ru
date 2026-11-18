@@ -10,6 +10,7 @@ import { error, type Cookies } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { refusalFor, requirementFor, type ModuleRow } from '#lib/v2/modules.js';
 import type { components } from '#lib/api-schema.js';
 
@@ -127,7 +128,7 @@ export function moduleErrors(err: unknown): string[] {
     const text = body?.errors ?? body?.detail;
     if (typeof text === 'string' && text.trim()) return [text];
   }
-  return [readableError(err, 'Could not save the modules.')];
+  return [readableError(err, m.app_srv_modules_save_failed())];
 }
 
 /**

@@ -1,4 +1,5 @@
 import { search } from '#lib/server/v2/search.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -12,6 +13,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     return Response.json(await search({ cookies }, q));
   } catch (err) {
     const message = (err as { message?: unknown } | null | undefined)?.message;
-    return Response.json({ results: [], error: message || 'Search failed' }, { status: 400 });
+    return Response.json(
+      { results: [], error: message || m.app_api_search_failed() },
+      { status: 400 }
+    );
   }
 };

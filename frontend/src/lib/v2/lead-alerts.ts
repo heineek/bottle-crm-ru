@@ -1,9 +1,10 @@
+import { m } from '#lib/paraglide/messages.js';
 import { missingOptions } from '#lib/v2/pickers.js';
 
 export const REMINDER_CHOICES = [5, 15, 30, 60];
 
 export function reminderLabel(minutes: number | null | undefined): string {
-  return minutes ? `${minutes} minutes` : 'Off';
+  return minutes ? m.profile_lead_alert_minutes({ count: minutes }) : m.profile_lead_alert_off();
 }
 
 /**
@@ -24,11 +25,31 @@ export const DOCS_WEBHOOKS = 'https://django-crm.readthedocs.io/en/latest/integr
 export const WEBHOOK_FORMATS: { value: string; label: string; short: string }[] = [
   {
     value: 'json',
-    label: 'Signed JSON (Zapier, n8n, your own code)',
-    short: 'Signed JSON message'
+    get label() {
+      return m.profile_webhook_format_json();
+    },
+    get short() {
+      return m.profile_webhook_format_json_short();
+    }
   },
-  { value: 'slack', label: 'Slack message (incoming webhook URL)', short: 'Slack message' },
-  { value: 'teams', label: 'Teams message (Workflows webhook URL)', short: 'Teams message' }
+  {
+    value: 'slack',
+    get label() {
+      return m.profile_webhook_format_slack();
+    },
+    get short() {
+      return m.profile_webhook_format_slack_short();
+    }
+  },
+  {
+    value: 'teams',
+    get label() {
+      return m.profile_webhook_format_teams();
+    },
+    get short() {
+      return m.profile_webhook_format_teams_short();
+    }
+  }
 ];
 
 export function webhookFormatName(format: string): string {

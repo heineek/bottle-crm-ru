@@ -11,6 +11,8 @@
  *   header row and one example row. The headers are the importer's own field
  *   names, so a filled-in template matches itself.
  */
+import { m } from '#lib/paraglide/messages.js';
+
 export type ImportConfig = {
   singular: string;
   plural: string;
@@ -24,8 +26,12 @@ export type ImportConfig = {
 
 export const IMPORT_ENTITIES = {
   contacts: {
-    singular: 'contact',
-    plural: 'contacts',
+    get singular() {
+      return m.app_import_noun_contact();
+    },
+    get plural() {
+      return m.app_import_noun_contacts();
+    },
     actionPath: '/contacts',
     listHref: '/contacts',
     templateHeaders: [
@@ -72,8 +78,12 @@ export const IMPORT_ENTITIES = {
     ]
   },
   leads: {
-    singular: 'lead',
-    plural: 'leads',
+    get singular() {
+      return m.app_import_noun_lead();
+    },
+    get plural() {
+      return m.app_import_noun_leads();
+    },
     actionPath: '/leads',
     listHref: '/leads',
     templateHeaders: [

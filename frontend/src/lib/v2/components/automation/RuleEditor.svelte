@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import { tick, untrack } from 'svelte';
   import { enhance, type SubmitFunction } from '$app/forms';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
@@ -89,7 +90,7 @@
   };
 </script>
 
-<PageHeader title={rule?.name || 'New rule'}>
+<PageHeader title={rule?.name || m.app_automation_new_rule()}>
   {#snippet crumb()}<AutomationCrumb />{/snippet}
 </PageHeader>
 
@@ -101,28 +102,31 @@
           <Pill tone={status.tone} dot>{status.label}</Pill>
           {#if rule.owner}
             <span class="v2-sub">
-              {ownerName ? `Switched on by ${ownerName}` : 'Switched on'}
+              {ownerName
+                ? m.app_automation_switched_on_by({ name: ownerName })
+                : m.app_automation_switched_on()}
             </span>
           {/if}
           <a
             class="v2-sub au-runs"
             href={resolve(asInternalPath(`/settings/automation/${rule.id}/runs`))}
           >
-            Run history
+            {m.app_automation_run_history()}
           </a>
           {#if rule.is_active}
             <form method="POST" action="?/switchOff" use:enhance={turnOff} class="au-off">
-              <button type="submit" class="v2-btn v2-btn-sm">Switch off</button>
+              <button type="submit" class="v2-btn v2-btn-sm">{m.app_automation_switch_off()}</button
+              >
             </form>
           {/if}
         </div>
         {#if held}
           <div class="au-held">
             <NextAction
-              label="Paused"
+              label={m.app_automation_paused()}
               tone="rust"
               text={modulePausedNote({ name: rule.name, status_text: row?.status_text })}
-              action="Open Modules"
+              action={m.app_automation_open_modules()}
               href="/settings/apps"
             />
           </div>
@@ -138,7 +142,7 @@
     <form method="POST" action="?/save" use:enhance={save}>
       <fieldset class="au-fields" disabled={held}>
         <div class="v2-field">
-          <label for="rule-name">Name</label>
+          <label for="rule-name">{m.common_name()}</label>
           <input
             id="rule-name"
             class="v2-input"
@@ -152,7 +156,7 @@
         </div>
 
         <section class="v2-card au-sec" aria-labelledby="au-when">
-          <h2 class="v2-label" id="au-when">When</h2>
+          <h2 class="v2-label" id="au-when">{m.app_automation_when()}</h2>
           <TriggerSection
             {catalogue}
             bind:draft
@@ -162,7 +166,7 @@
         </section>
 
         <section class="v2-card au-sec" aria-labelledby="au-if">
-          <h2 class="v2-label" id="au-if">Only if</h2>
+          <h2 class="v2-label" id="au-if">{m.app_automation_only_if()}</h2>
           <ConditionRows
             {catalogue}
             {object}
@@ -178,7 +182,7 @@
         </section>
 
         <section class="v2-card au-sec" aria-labelledby="au-then">
-          <h2 class="v2-label" id="au-then">Then</h2>
+          <h2 class="v2-label" id="au-then">{m.app_automation_then()}</h2>
           <ActionRows
             {catalogue}
             {object}
@@ -193,10 +197,10 @@
       {#if errors.general}
         <div class="au-general">
           <NextAction
-            label="Not saved"
+            label={m.app_automation_not_saved()}
             text={errors.general}
             tone="rust"
-            action={form?.save?.plan && plansHref ? 'See plans' : undefined}
+            action={form?.save?.plan && plansHref ? m.app_automation_see_plans() : undefined}
             href={form?.save?.plan ? plansHref : null}
           />
         </div>
@@ -209,7 +213,7 @@
             class={switchTo ? 'v2-btn' : 'v2-btn v2-btn-primary'}
             disabled={busy}
           >
-            Save
+            {m.common_save()}
           </button>
           {#if switchTo}
             <button
@@ -222,7 +226,7 @@
               {switchTo}
             </button>
           {/if}
-          {#if saved}<span class="v2-sub" role="status">Saved.</span>{/if}
+          {#if saved}<span class="v2-sub" role="status">{m.app_automation_saved()}</span>{/if}
         </div>
       {/if}
     </form>
@@ -235,13 +239,13 @@
         {/if}
         <ConfirmAction
           action="?/remove"
-          label="Delete rule"
-          confirmLabel="Delete permanently"
-          explain="Its run history goes too."
+          label={m.app_automation_delete_rule()}
+          confirmLabel={m.app_automation_delete_permanently()}
+          explain={m.app_automation_delete_explain()}
         />
       </div>
     {:else}
-      <p class="v2-hint au-try-new">Save the rule to try it on a record.</p>
+      <p class="v2-hint au-try-new">{m.app_automation_save_to_try()}</p>
     {/if}
   </div>
 </div>

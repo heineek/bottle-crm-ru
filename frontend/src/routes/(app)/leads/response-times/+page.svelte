@@ -7,33 +7,37 @@
   import { spanText } from '#lib/v2/interactions.js';
   import { t } from '#lib/terminology.js';
   import { ChevronRight, Timer, Trophy } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
 
-  let plural = $derived(t(data.org?.terminology, 'lead.plural', 'Leads'));
+  let plural = $derived(t(data.org?.terminology, 'lead.plural', m.leads_term_plural()));
 
   const share = (row: { answered: number }, n: number) => (row.answered ? `${n}%` : '—');
 </script>
 
-<PageHeader title="Response time">
+<PageHeader title={m.leads_response_time_title()}>
   {#snippet crumb()}
     <a href={resolve('leads')}>{plural}</a>
     <ChevronRight size={12} />
-    <span>Response time</span>
+    <span>{m.leads_response_time_title()}</span>
   {/snippet}
   {#snippet sub()}
-    How fast {plural.toLowerCase()} got a first reply, per person{data.since
-      ? `, since ${shortDate(data.since)}`
-      : ''}.
+    {data.since
+      ? m.leads_response_sub_since({
+          plural: plural.toLowerCase(),
+          date: shortDate(data.since)
+        })
+      : m.leads_response_sub({ plural: plural.toLowerCase() })}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('leads/outcomes')}><Trophy />Outcomes</a>
-    <nav class="periods" aria-label="Period">
+    <a class="v2-btn" href={resolve('leads/outcomes')}><Trophy />{m.leads_outcomes_title()}</a>
+    <nav class="periods" aria-label={m.leads_period()}>
       {#each data.periods as n (n)}
         <a
           href={resolve(asInternalPath(`/leads/response-times?days=${n}`))}
-          aria-current={n === data.days ? 'page' : undefined}>{n} days</a
+          aria-current={n === data.days ? 'page' : undefined}>{m.leads_period_days({ count: n })}</a
         >
       {/each}
     </nav>
@@ -42,10 +46,7 @@
 
 <div class="v2-scroll">
   {#if data.rows.length === 0}
-    <EmptyState
-      title="Nothing to measure yet"
-      body="Response times appear once someone logs a first call, message, email or meeting on a lead."
-    >
+    <EmptyState title={m.leads_response_empty_title()} body={m.leads_response_empty_body()}>
       {#snippet icon()}<Timer size={21} />{/snippet}
     </EmptyState>
   {:else}
@@ -53,25 +54,29 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Person</th>
-            <th class="v2-r">Answered</th>
-            <th class="v2-r">Median</th>
-            <th class="v2-r">Within 5 min</th>
-            <th class="v2-r">Within an hour</th>
-            <th class="v2-r">Waiting now</th>
+            <th>{m.leads_col_person()}</th>
+            <th class="v2-r">{m.leads_response_col_answered()}</th>
+            <th class="v2-r">{m.leads_response_col_median()}</th>
+            <th class="v2-r">{m.leads_response_col_5min()}</th>
+            <th class="v2-r">{m.leads_response_col_hour()}</th>
+            <th class="v2-r">{m.leads_response_col_waiting()}</th>
           </tr>
         </thead>
         <tbody>
           {#each data.rows as row (row.profile || row.name)}
             <tr>
               <td><div class="v2-table-primary">{row.name}</div></td>
-              <td class="v2-r v2-num" data-l="Answered">{row.answered}</td>
-              <td class="v2-r v2-num" data-l="Median">
+              <td class="v2-r v2-num" data-l={m.leads_response_col_answered()}>{row.answered}</td>
+              <td class="v2-r v2-num" data-l={m.leads_response_col_median()}>
                 {row.median_seconds === null ? '—' : spanText(row.median_seconds)}
               </td>
-              <td class="v2-r v2-num" data-l="Within 5 min">{share(row, row.within_5_minutes)}</td>
-              <td class="v2-r v2-num" data-l="Within an hour">{share(row, row.within_1_hour)}</td>
-              <td class="v2-r v2-num" data-l="Waiting now">
+              <td class="v2-r v2-num" data-l={m.leads_response_col_5min()}
+                >{share(row, row.within_5_minutes)}</td
+              >
+              <td class="v2-r v2-num" data-l={m.leads_response_col_hour()}
+                >{share(row, row.within_1_hour)}</td
+              >
+              <td class="v2-r v2-num" data-l={m.leads_response_col_waiting()}>
                 {#if row.unanswered_now && row.profile}
                   <a
                     class="waiting"
@@ -94,13 +99,11 @@
 
   <div class="v2-pad notes">
     <p>
-      A lead's response time runs from when it was created to the first outgoing call, meeting,
-      email, WhatsApp or text logged on it, and counts for whoever logged that. A call nobody
-      answered still counts. Times run on the clock, nights and weekends included.
+      {m.leads_response_notes()}
     </p>
     <p>
-      Waiting now is the {plural.toLowerCase()} assigned to them that are still waiting for a first reply.
-      {data.isAdmin ? '' : 'You see your own row; an admin sees everyone’s.'}
+      {m.leads_response_notes_waiting({ plural: plural.toLowerCase() })}
+      {data.isAdmin ? '' : m.leads_own_row_only()}
     </p>
   </div>
 </div>

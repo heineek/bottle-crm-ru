@@ -30,6 +30,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.negotiation import BaseContentNegotiation
@@ -42,6 +44,7 @@ from rest_framework.views import APIView
 from common.audit_log import audit_log
 from common.calendar_feed import FEED_PATH_PREFIX, render_calendar
 from common.links import api_url, frontend_url
+from common.locale import language_for_user
 from common.models import CalendarFeedToken, Profile
 from common.modules import module_is_available
 from common.org_time import activate_org_timezone
@@ -68,7 +71,7 @@ TOUCH_INTERVAL = timedelta(hours=1)
 # disabled one, one whose member, user or org is no longer active, and one in
 # an org with Tasks switched off. Telling any two apart would tell a stranger
 # holding an old URL something about the account behind it.
-NOT_FOUND = {"error": "Not found"}
+NOT_FOUND = {"error": _("Not found")}
 
 
 def _state(feed):
@@ -266,26 +269,29 @@ class PublicCalendarFeedView(FirstRefusalThrottleMixin, APIView):
         )
         tasks = upcoming + overdue
         events = []
-        for task in tasks:
-            link = frontend_url(f"/tasks/{task.id}")
-            events.append(
-                {
-                    "uid": f"task-{task.id}@bottlecrm",
-                    "stamp": task.updated_at,
-                    "date": task.due_date,
-                    "summary": task.title,
-                    "description": f"Priority: {task.priority}\n{link}",
-                    "url": link,
+        with language_for_user(profile.user, org):
+            for task in tasks:
+                link = frontend_url(f"/tasks/{task.id}")
+                priority = gettext("Priority: %(priority)s") % {
+                    "priority": task.get_priority_display()
                 }
-            )
+                events.append(
+                    {
+                        "uid": f"task-{task.id}@bottlecrm",
+                        "stamp": task.updated_at,
+                        "date": task.due_date,
+                        "summary": task.title,
+                        "description": f"{priority}\n{link}",
+                        "url": link,
+                    }
+                )
+            body = render_calendar(events)
 
         now = timezone.now()
         if feed.last_used_at is None or now - feed.last_used_at >= TOUCH_INTERVAL:
             CalendarFeedToken.objects.filter(pk=feed.pk).update(last_used_at=now)
 
-        response = HttpResponse(
-            render_calendar(events), content_type="text/calendar; charset=utf-8"
-        )
+        response = HttpResponse(body, content_type="text/calendar; charset=utf-8")
         response["Cache-Control"] = "private, max-age=300"
         response["X-Robots-Tag"] = "noindex"
         return response

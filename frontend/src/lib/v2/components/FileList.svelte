@@ -3,6 +3,7 @@
   import { asInternalPath } from '#lib/utils/paths.js';
   import { relativeTime } from '#lib/v2/format.js';
   import { Paperclip } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * A record's files, newest first, each opening through the download proxy
@@ -11,7 +12,7 @@
    */
   let {
     files = [],
-    empty = 'No files yet.'
+    empty = m.app_files_empty()
   }: {
     files: { id: string; name: string; at: string | null; href: string | null }[];
     empty?: string;

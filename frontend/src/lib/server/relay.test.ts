@@ -68,4 +68,12 @@ describe('relayHeaders', () => {
     setRelaySecret(SECRET);
     expect(relayHeaders(event(() => ''))).toEqual({});
   });
+
+  it("relays the visitor's languages, with or without an address", () => {
+    const headers = { 'user-agent': BROWSER, 'accept-language': 'fr-CA,fr;q=0.9' };
+    expect(relayHeaders(event(() => '198.51.100.7', headers))['Accept-Language']).toBe(
+      'fr-CA,fr;q=0.9'
+    );
+    expect(relayHeaders(event(() => '', headers))).toEqual({ 'Accept-Language': 'fr-CA,fr;q=0.9' });
+  });
 });

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   /**
    * The way back up from a settings page.
@@ -14,7 +15,7 @@
   import { ChevronLeft } from '@lucide/svelte';
 </script>
 
-<a href={resolve('settings')}><ChevronLeft size={13} />Settings</a>
+<a href={resolve('settings')}><ChevronLeft size={13} />{m.common_settings()}</a>
 
 <style>
   a {

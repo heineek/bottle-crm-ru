@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import type { ReadonlyURL } from '$app/state';
 
   /**
@@ -32,7 +33,7 @@
         <input type="hidden" name={key} {value} />
       {/if}
     {/each}
-    <label class="v2-label" for="pipeline-switch">Pipeline</label>
+    <label class="v2-label" for="pipeline-switch">{m.app_pipeline_switcher_label()}</label>
     <select
       id="pipeline-switch"
       name="pipeline"
@@ -45,7 +46,9 @@
         <option value={p.id}>{p.name}</option>
       {/each}
     </select>
-    <noscript><button class="v2-btn" type="submit">Show</button></noscript>
+    <noscript
+      ><button class="v2-btn" type="submit">{m.app_pipeline_switcher_show()}</button></noscript
+    >
   </form>
 {/if}
 

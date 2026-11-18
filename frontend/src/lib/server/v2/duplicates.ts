@@ -16,6 +16,7 @@ import { error, fail, redirect, type Cookies } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -35,7 +36,7 @@ export const DUPLICATE_MODULES: Record<
     singular: string;
     record: string;
     query: (keyof Schemas['DuplicateQueryRequest'])[];
-    compare: Array<[string, (o: MergeRecord) => string | undefined]>;
+    compare: Array<[() => string, (o: MergeRecord) => string | undefined]>;
   }
 > = {
   leads: {
@@ -43,13 +44,13 @@ export const DUPLICATE_MODULES: Record<
     record: 'lead_obj',
     query: ['email', 'phone', 'first_name', 'last_name', 'company_name'],
     compare: [
-      ['Name', (o) => personName(o)],
-      ['Company', (o) => text(o.company_name)],
-      ['Email', (o) => text(o.email)],
-      ['Phone', (o) => text(o.phone)],
-      ['Website', (o) => text(o.website)],
-      ['Status', (o) => text(o.status)],
-      ['Created', (o) => text(o.created_at)?.slice(0, 10)]
+      [m.common_name, (o) => personName(o)],
+      [m.app_srv_dup_company, (o) => text(o.company_name)],
+      [m.common_email, (o) => text(o.email)],
+      [m.common_phone, (o) => text(o.phone)],
+      [m.app_srv_dup_website, (o) => text(o.website)],
+      [m.common_status, (o) => text(o.status)],
+      [m.common_created, (o) => text(o.created_at)?.slice(0, 10)]
     ]
   },
   contacts: {
@@ -57,13 +58,13 @@ export const DUPLICATE_MODULES: Record<
     record: 'contact_obj',
     query: ['email', 'phone', 'first_name', 'last_name'],
     compare: [
-      ['Name', (o) => personName(o)],
-      ['Job title', (o) => text(o.title)],
-      ['Company', (o) => text(o.organization)],
-      ['Email', (o) => text(o.email)],
-      ['Phone', (o) => text(o.phone)],
-      ['City', (o) => text(o.city)],
-      ['Created', (o) => text(o.created_at)?.slice(0, 10)]
+      [m.common_name, (o) => personName(o)],
+      [m.app_srv_dup_job_title, (o) => text(o.title)],
+      [m.app_srv_dup_company, (o) => text(o.organization)],
+      [m.common_email, (o) => text(o.email)],
+      [m.common_phone, (o) => text(o.phone)],
+      [m.app_srv_dup_city, (o) => text(o.city)],
+      [m.common_created, (o) => text(o.created_at)?.slice(0, 10)]
     ]
   },
   accounts: {
@@ -71,15 +72,27 @@ export const DUPLICATE_MODULES: Record<
     record: 'account_obj',
     query: ['name', 'email', 'phone', 'website'],
     compare: [
-      ['Name', (o) => text(o.name)],
-      ['Website', (o) => text(o.website)],
-      ['Email', (o) => text(o.email)],
-      ['Phone', (o) => text(o.phone)],
-      ['Industry', (o) => text(o.industry)],
-      ['City', (o) => text(o.city)],
-      ['Created', (o) => text(o.created_at)?.slice(0, 10)]
+      [m.common_name, (o) => text(o.name)],
+      [m.app_srv_dup_website, (o) => text(o.website)],
+      [m.common_email, (o) => text(o.email)],
+      [m.common_phone, (o) => text(o.phone)],
+      [m.app_srv_dup_industry, (o) => text(o.industry)],
+      [m.app_srv_dup_city, (o) => text(o.city)],
+      [m.common_created, (o) => text(o.created_at)?.slice(0, 10)]
     ]
   }
+};
+
+const PICK_OTHER: Record<string, () => string> = {
+  lead: m.app_srv_dup_pick_lead,
+  contact: m.app_srv_dup_pick_contact,
+  account: m.app_srv_dup_pick_account
+};
+
+const NO_ACCESS: Record<string, () => string> = {
+  lead: m.app_srv_dup_no_access_lead,
+  contact: m.app_srv_dup_no_access_contact,
+  account: m.app_srv_dup_no_access_account
 };
 
 function personName(o: MergeRecord) {
@@ -90,7 +103,7 @@ type MergeModule = 'leads' | 'contacts' | 'accounts';
 
 function spec(module: string) {
   // `Object.hasOwn`, so `__proto__` or `constructor` is not a module.
-  if (!Object.hasOwn(DUPLICATE_MODULES, module)) error(404, 'Not found');
+  if (!Object.hasOwn(DUPLICATE_MODULES, module)) error(404, m.app_srv_dup_not_found());
   return DUPLICATE_MODULES[module];
 }
 
@@ -104,7 +117,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * any API route the caller's token reaches, so only a UUID gets through.
  */
 function recordId(value: unknown): string {
-  if (typeof value !== 'string' || !UUID.test(value)) error(404, 'Not found');
+  if (typeof value !== 'string' || !UUID.test(value)) error(404, m.app_srv_dup_not_found());
   return value;
 }
 
@@ -196,7 +209,7 @@ export async function getMergePair(
 ) {
   const { singular, record, compare } = spec(module);
   recordId(id);
-  if (!otherId || otherId === id) error(404, `Pick the ${singular} to compare this one with.`);
+  if (!otherId || otherId === id) error(404, PICK_OTHER[singular]());
   recordId(otherId);
 
   const load = async (pk: string) => {
@@ -225,11 +238,11 @@ export async function getMergePair(
             ? (obj.name as string)
             : personName(obj) || text(obj.email) || singular,
         can_delete: Boolean(dups?.can_delete),
-        fields: compare.map(([label, read]) => ({ label, value: read(obj) || '' }))
+        fields: compare.map(([label, read]) => ({ label: label(), value: read(obj) || '' }))
       };
     } catch (err) {
       if (apiStatus(err) === 404) {
-        error(404, `That ${singular} does not exist, or you do not have access to it.`);
+        error(404, NO_ACCESS[singular]());
       }
       throw err;
     }
@@ -296,13 +309,13 @@ export function mergeRoute(module: MergeModule) {
         const keep = form.get('keep')?.toString() ?? '';
         const pair = [params.id, other];
         if (!UUID.test(params.id) || !UUID.test(other) || other === params.id) {
-          return fail(404, { error: 'Not found' });
+          return fail(404, { error: m.app_srv_dup_not_found() });
         }
         if (!pair.includes(keep)) {
-          return fail(400, { error: 'Choose which record to keep.' });
+          return fail(400, { error: m.app_srv_dup_choose_keeper() });
         }
         if (form.get('confirm') !== 'on') {
-          return fail(400, { error: 'Tick the box to confirm the other record will be deleted.' });
+          return fail(400, { error: m.app_srv_dup_confirm_delete() });
         }
         const loser = keep === params.id ? other : params.id;
         try {
@@ -310,7 +323,7 @@ export function mergeRoute(module: MergeModule) {
         } catch (err) {
           const status = apiStatus(err);
           return fail(status === 404 || status === 403 ? status : 400, {
-            error: readableError(err, 'Could not merge these records.')
+            error: readableError(err, m.app_srv_dup_merge_failed())
           });
         }
         redirect(303, `/${module}/${keep}`);

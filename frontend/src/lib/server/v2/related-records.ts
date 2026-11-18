@@ -14,9 +14,10 @@ import {
   type RelatedRecords
 } from '#lib/server/v2/custom-objects.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 
-const REFUSED = 'No such record, or you cannot open it.';
+const REFUSED = () => m.app_srv_related_refused();
 
 /**
  * @param to A built-in registry key, or `obj:<object key>`.
@@ -56,16 +57,16 @@ function readLink(form: FormData): { record: string; field: string } | null {
 function writer(
   to: RelatedTarget,
   call: (event: RequestEvent, link: Parameters<typeof addRelated>[1]) => Promise<unknown>,
-  fallback: string,
+  fallback: () => string,
   needsRecord = false
 ) {
   return async (event: RequestEvent) => {
     const form = await event.request.formData();
     if (needsRecord && !form.get('record')?.toString()) {
-      return fail(400, { related: { error: 'Choose a record to add.' } });
+      return fail(400, { related: { error: m.app_srv_related_choose() } });
     }
     const link = readLink(form);
-    if (!link) return fail(400, { related: { error: REFUSED } });
+    if (!link) return fail(400, { related: { error: REFUSED() } });
     try {
       await call(event, {
         to: typeof to === 'function' ? to(event) : to,
@@ -75,7 +76,7 @@ function writer(
     } catch (err) {
       const status = apiStatus(err);
       const code = status !== undefined && [400, 403, 404].includes(status) ? status : 400;
-      return fail(code, { related: { error: readableError(err, fallback) } });
+      return fail(code, { related: { error: readableError(err, fallback()) } });
     }
     return { related: { done: true } };
   };
@@ -89,7 +90,7 @@ type RelatedTarget = string | ((event: RequestEvent) => string);
  */
 export function relatedActions(to: RelatedTarget): { relatedAdd: Action; relatedRemove: Action } {
   return {
-    relatedAdd: writer(to, addRelated, 'Could not add this record.', true),
-    relatedRemove: writer(to, removeRelated, 'Could not remove this record.')
+    relatedAdd: writer(to, addRelated, m.app_srv_related_add_failed, true),
+    relatedRemove: writer(to, removeRelated, m.app_srv_related_remove_failed)
   };
 }

@@ -16,6 +16,7 @@
     CornerDownLeft
   } from '@lucide/svelte';
   import { paletteActions, searchPlaceholder, noHitsText } from '#lib/v2/nav.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { ModuleRow } from '#lib/v2/modules.js';
   import type { SearchHit } from '#lib/server/v2/search.js';
 
@@ -50,6 +51,18 @@
     Invoices: Receipt,
     'Knowledge base': BookOpen,
     Actions: Plus
+  };
+
+  /** `kind` is the code the icons key on; this is its heading. */
+  const KIND_LABEL: Record<string, () => string> = {
+    Deals: () => m.app_palette_kind_deals(),
+    Accounts: () => m.app_palette_kind_accounts(),
+    Contacts: () => m.app_palette_kind_contacts(),
+    Leads: () => m.app_palette_kind_leads(),
+    Tickets: () => m.app_palette_kind_tickets(),
+    Invoices: () => m.app_palette_kind_invoices(),
+    'Knowledge base': () => m.app_palette_kind_knowledge_base(),
+    Actions: () => m.app_palette_kind_actions()
   };
 
   let query = $state('');
@@ -144,7 +157,7 @@
       class="v2-palette"
       role="dialog"
       aria-modal="true"
-      aria-label="Search"
+      aria-label={m.common_search()}
       tabindex="-1"
       {onkeydown}
     >
@@ -155,7 +168,7 @@
           bind:value={query}
           type="text"
           placeholder={searchPlaceholder(modules)}
-          aria-label="Search"
+          aria-label={m.common_search()}
           aria-autocomplete="list"
           autocomplete="off"
           spellcheck="false"
@@ -163,9 +176,9 @@
         <kbd class="v2-kbd">esc</kbd>
       </div>
 
-      <div class="v2-palette-list" role="listbox" aria-label="Results">
+      <div class="v2-palette-list" role="listbox" aria-label={m.app_palette_results_aria()}>
         {#each groups as group (group.kind)}
-          <div class="v2-palette-group v2-label">{group.kind}</div>
+          <div class="v2-palette-group v2-label">{KIND_LABEL[group.kind]?.() ?? group.kind}</div>
           {#each group.rows as row (row.id)}
             {@const i = rows.indexOf(row)}
             {@const Icon =
@@ -193,11 +206,18 @@
       </div>
 
       <div class="v2-palette-foot">
-        <span><kbd class="v2-kbd">↑</kbd> <kbd class="v2-kbd">↓</kbd> move</span>
-        <span><CornerDownLeft size={11} style="vertical-align:-1px" /> open</span>
-        <span><kbd class="v2-kbd">esc</kbd> close</span>
+        <span
+          ><kbd class="v2-kbd">↑</kbd> <kbd class="v2-kbd">↓</kbd> {m.app_palette_hint_move()}</span
+        >
+        <span
+          ><CornerDownLeft size={11} style="vertical-align:-1px" />
+          {m.app_palette_hint_open()}</span
+        >
+        <span><kbd class="v2-kbd">esc</kbd> {m.app_palette_hint_close()}</span>
         {#if query.trim()}
-          <span style="margin-left:auto" class="v2-num">{hits.length} found</span>
+          <span style="margin-left:auto" class="v2-num"
+            >{m.app_palette_found({ count: hits.length })}</span
+          >
         {/if}
       </div>
     </div>

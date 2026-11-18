@@ -1,7 +1,10 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, type Cookies } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { getProfile } from '#lib/server/v2/profile.js';
+import { relayHeaders } from '#lib/server/relay.js';
+import { m } from '#lib/paraglide/messages.js';
+import { locales } from '#lib/paraglide/runtime.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 import type { components } from '#lib/api-schema.js';
@@ -14,6 +17,25 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export const load: PageServerLoad = async ({ cookies }) => {
   return await getProfile({ cookies });
 };
+
+/** Store a freshly issued token pair the way hooks.server.ts reads it. */
+function setTokens(cookies: Cookies, access: string, refresh: string) {
+  const secure = process.env.NODE_ENV === 'production';
+  cookies.set('jwt_access', access, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure,
+    maxAge: 60 * 60 * 24
+  });
+  cookies.set('jwt_refresh', refresh, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure,
+    maxAge: 60 * 60 * 24 * 365
+  });
+}
 
 export const actions: Actions = {
   /**
@@ -34,11 +56,52 @@ export const actions: Actions = {
     } catch (err) {
       return fail(apiStatus(err) === 400 ? 400 : 500, {
         values: body,
-        message: readableError(err, 'Could not save your profile.')
+        message: readableError(err, m.profile_page_save_failed())
       });
     }
 
     return { saved: true };
+  },
+
+  /**
+   * Choose the interface language, or "" to let the browser and then the org
+   * decide. The page reads the language from the JWT (hooks.server.ts), so the
+   * token is refreshed to carry the new claim. The form posts without enhance:
+   * the reload is what renders the whole document, <html lang> included, anew.
+   */
+  language: async (event) => {
+    const { cookies, request } = event;
+    const form = await request.formData();
+    const language = form.get('language')?.toString() ?? '';
+    if (language && !(locales as readonly string[]).includes(language)) {
+      return fail(400, { scope: 'language', message: m.profile_language_invalid() });
+    }
+
+    try {
+      const body = { language: language as '' | (typeof locales)[number] };
+      await apiRequest('/profile/', { method: 'PATCH', body }, { cookies });
+    } catch (err) {
+      return fail(apiStatus(err) === 400 ? 400 : 500, {
+        scope: 'language',
+        message: readableError(err, m.profile_language_save_failed())
+      });
+    }
+
+    const refresh = cookies.get('jwt_refresh');
+    if (refresh) {
+      try {
+        const tokens: Schemas['OrgAwareTokenRefreshResponse'] = await apiRequest(
+          '/auth/refresh-token/',
+          { method: 'POST', body: { refresh }, headers: relayHeaders(event) },
+          { cookies }
+        );
+        setTokens(cookies, tokens.access, tokens.refresh);
+      } catch {
+        // Saved; this token keeps the old claim until its next refresh.
+      }
+    }
+
+    throw redirect(303, '/profile');
   },
 
   /**
@@ -57,7 +120,7 @@ export const actions: Actions = {
     } catch (err) {
       return fail(apiStatus(err) === 400 ? 400 : 500, {
         scope: 'alerts',
-        message: readableError(err, 'Could not save your alert settings.')
+        message: readableError(err, m.profile_alerts_save_failed())
       });
     }
 
@@ -76,7 +139,7 @@ export const actions: Actions = {
     const orgId = form.get('org_id')?.toString() ?? '';
 
     if (!UUID_RE.test(orgId)) {
-      return fail(400, { scope: 'switch', message: 'Invalid organisation.' });
+      return fail(400, { scope: 'switch', message: m.profile_page_invalid_org() });
     }
 
     // Sent so the backend retires the token we are replacing; it belongs to the
@@ -97,26 +160,12 @@ export const actions: Actions = {
       // 403 is the honest one: you asked for an org you are not a member of.
       const message =
         apiStatus(err) === 403
-          ? 'You are not a member of that organisation.'
-          : readableError(err, 'Could not switch organisation.');
+          ? m.profile_page_not_member()
+          : readableError(err, m.profile_page_switch_failed());
       return fail(apiStatus(err) === 403 ? 403 : 500, { scope: 'switch', message });
     }
 
-    const secure = process.env.NODE_ENV === 'production';
-    cookies.set('jwt_access', result.access_token, {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure,
-      maxAge: 60 * 60 * 24
-    });
-    cookies.set('jwt_refresh', result.refresh_token, {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure,
-      maxAge: 60 * 60 * 24 * 365
-    });
+    setTokens(cookies, result.access_token, result.refresh_token);
     cookies.set('org', orgId, {
       path: '/',
       sameSite: 'strict',

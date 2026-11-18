@@ -1,3 +1,5 @@
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * Keeping a stored target that the picker list cannot offer.
  *
@@ -64,7 +66,7 @@ export function missingOption<T extends { id?: string | null }>(
  * there because the record already points at them.
  */
 export function inactiveOptionLabel(name: string | null | undefined): string {
-  return `${name || 'Unnamed'} (no longer active)`;
+  return m.app_pickers_inactive_option({ name: name || m.app_pickers_unnamed() });
 }
 
 /**

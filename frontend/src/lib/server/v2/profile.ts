@@ -10,7 +10,7 @@
  *   - `GET /profile/tokens/`  the caller's personal access tokens, counted here
  *                             into the "active" number the page shows.
  *
- * The one field the page lets you change is name + phone, over
+ * The fields the page lets you change are name, phone and language, over
  * `PATCH /profile/`. Role, org and the access flags are shown but never posted:
  * they decide permissions and are an admin's to set (the endpoint refuses them
  * regardless. See ProfileSelfUpdateSerializer). Switching org is a real action
@@ -18,6 +18,7 @@
  * `switchOrg` action, not here.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -28,6 +29,7 @@ type OwnProfile = {
   user_details: { first_name: string; last_name: string; email: string };
   role: Role;
   phone: string;
+  language: string;
   teams: string[];
   joined_at: string | null;
   last_login: string | null;
@@ -42,7 +44,7 @@ type OwnProfile = {
 function splitName(name: string, email: string) {
   const trimmed = (name || '').trim();
   if (!trimmed) {
-    const local = (email || '').split('@')[0] || 'You';
+    const local = (email || '').split('@')[0] || m.profile_page_you_fallback();
     return { first_name: local, last_name: '' };
   }
   const sp = trimmed.indexOf(' ');
@@ -105,6 +107,8 @@ export async function getProfile({
       },
       role: u.role,
       phone: u.phone || '',
+      // Blank means not chosen: the browser, then the org default, decide.
+      language: u.language || '',
       teams: u.teams || [],
       joined_at: u.date_of_joining || u.created_at || null,
       last_login: ud.last_login || null,

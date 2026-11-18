@@ -129,7 +129,10 @@ def test_every_guarded_model_is_checked_when_deleted():
 
 
 def test_the_entry_point_check_can_fail():
-    stray = {**DELETE_GUARDS, "contacts.Contact": (Guard("x.Y", "contact", "y", "ys"),)}
+    stray = {
+        **DELETE_GUARDS,
+        "contacts.Contact": (Guard("x.Y", "contact", "%(count)d y"),),
+    }
     assert _unreached(stray, ENTRY_POINTS) == ["contacts.Contact"]
     assert _unreached(DELETE_GUARDS, ENTRY_POINTS - {"common.Profile"}) == [
         "common.Profile"

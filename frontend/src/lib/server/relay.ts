@@ -32,15 +32,22 @@ export function relayHeaders(event: {
   getClientAddress: () => string;
   request: Request;
 }): Record<string, string> {
+  // The visitor's languages, so API errors match the page. Unsigned: it only
+  // picks a translation (see backend/common/locale.py).
+  const acceptLanguage = event.request.headers.get('accept-language');
+  const language: Record<string, string> = acceptLanguage
+    ? { 'Accept-Language': acceptLanguage }
+    : {};
   let address;
   try {
     address = event.getClientAddress();
   } catch {
-    return {};
+    return language;
   }
-  if (!address) return {};
+  if (!address) return language;
   const secret = env.RELAY_SECRET;
   return {
+    ...language,
     'X-Forwarded-For': address,
     ...(secret
       ? {

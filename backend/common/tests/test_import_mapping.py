@@ -246,3 +246,51 @@ def test_read_mapped_upload_raises_unchanged():
     assert (
         str(exc.value) == "The column choices include a field that cannot be imported."
     )
+
+
+def _label(by_language):
+    """A choice label that reads like a catalog entry in each language."""
+    from django.utils import translation
+    from django.utils.functional import lazy
+
+    return lazy(lambda: by_language[translation.get_language()], str)()
+
+
+class TestChoiceLookup:
+    """An export writes labels in the exporter's language; it must import back."""
+
+    @pytest.fixture(autouse=True)
+    def two_languages(self, settings):
+        settings.LANGUAGES = [("en", "English"), ("fr", "Français")]
+
+    def test_value_and_label(self):
+        from common.import_mapping import choice_lookup
+        from common.utils import LEAD_STATUS, STATUS_CHOICE
+
+        leads = choice_lookup(LEAD_STATUS)
+        assert leads["in process"] == "in process"
+        tickets = choice_lookup(STATUS_CHOICE)
+        assert tickets["closed"] == "Closed"
+
+    def test_label_in_every_language(self):
+        from common.import_mapping import choice_lookup
+
+        choices = (("open", _label({"en": "Open now", "fr": "Ouvert"})),)
+
+        lookup = choice_lookup(choices)
+
+        assert lookup["open now"] == "open"
+        assert lookup["ouvert"] == "open"
+
+    def test_same_answer_whatever_language_is_active(self):
+        from django.utils import translation
+
+        from common.import_mapping import choice_lookup
+
+        choices = (("won", _label({"en": "Won", "fr": "Gagné"})),)
+        with translation.override("fr"):
+            fr = dict(choice_lookup(choices))
+        choice_lookup.cache_clear()
+        with translation.override("en"):
+            en = dict(choice_lookup(choices))
+        assert fr == en == {"won": "won", "gagné": "won"}

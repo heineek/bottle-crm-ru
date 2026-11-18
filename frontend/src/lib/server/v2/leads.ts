@@ -30,6 +30,7 @@ import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
 import { recordDuplicates } from '#lib/server/v2/duplicates.js';
 import { fieldsForDetail, fieldsForEdit } from '#lib/server/v2/record-custom-fields.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -172,7 +173,7 @@ export async function getResponseTimes({ cookies }: { cookies: Cookies }, days: 
     );
   } catch (err) {
     rethrowModuleOff(err);
-    if (apiStatus(err) === 404) error(404, 'Response times are not available here.');
+    if (apiStatus(err) === 404) error(404, m.leads_response_times_unavailable());
     throw err;
   }
   const int = (n: number | null | undefined) =>
@@ -181,7 +182,7 @@ export async function getResponseTimes({ cookies }: { cookies: Cookies }, days: 
     since: typeof resp?.since === 'string' ? resp.since : null,
     rows: (Array.isArray(resp?.rows) ? resp.rows : []).map((r) => ({
       profile: typeof r?.profile === 'string' ? r.profile : '',
-      name: typeof r?.name === 'string' && r.name ? r.name : 'Unknown',
+      name: typeof r?.name === 'string' && r.name ? r.name : m.leads_owner_unknown(),
       answered: int(r?.answered),
       median_seconds:
         typeof r?.median_seconds === 'number' && Number.isFinite(r.median_seconds)
@@ -209,7 +210,7 @@ export async function getOutcomes({ cookies }: { cookies: Cookies }, days: numbe
     );
   } catch (err) {
     rethrowModuleOff(err);
-    if (apiStatus(err) === 404) error(404, 'Outcomes are not available here.');
+    if (apiStatus(err) === 404) error(404, m.leads_outcomes_unavailable());
     throw err;
   }
   const int = (n: number | null | undefined) =>
@@ -228,7 +229,7 @@ export async function getOutcomes({ cookies }: { cookies: Cookies }, days: numbe
     measured_since: typeof resp?.measured_since === 'string' ? resp.measured_since : null,
     rows: (Array.isArray(resp?.rows) ? resp.rows : []).map((r) => ({
       profile: typeof r?.profile === 'string' ? r.profile : '',
-      name: typeof r?.name === 'string' && r.name ? r.name : 'Unknown',
+      name: typeof r?.name === 'string' && r.name ? r.name : m.leads_owner_unknown(),
       ...figures(r)
     })),
     totals: resp?.totals ? figures(resp.totals) : null
@@ -330,7 +331,7 @@ function buildActivity(response: Schemas['LeadDetailResponse']) {
       type: 'file',
       at: a.created_at,
       by: null,
-      body: a.file_name || 'Attachment',
+      body: a.file_name || m.leads_activity_attachment(),
       href: attachmentHref(a.id)
     });
   }
@@ -340,7 +341,7 @@ function buildActivity(response: Schemas['LeadDetailResponse']) {
     type: 'status',
     at: response.lead_obj.created_at,
     by: response.lead_obj.created_by?.email ?? null,
-    body: 'Lead created'
+    body: m.leads_activity_created()
   });
 
   return events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -396,7 +397,7 @@ async function listOwners(cookies: Cookies) {
     );
     return (response.profiles ?? []).map((p) => ({
       id: p.id,
-      name: p.user_details?.email || 'Unknown'
+      name: p.user_details?.email || m.leads_owner_unknown()
     }));
   } catch {
     return [];
@@ -541,7 +542,7 @@ async function fetchDetail(cookies: Cookies, id: string): Promise<Schemas['LeadD
     // and Django's message for a missing lead is "No Lead matches the given
     // query.", so opening a deleted lead answered 500. See `api-helpers.js`.
     if (apiStatus(err) === 404) {
-      error(404, 'That lead does not exist, or you do not have access to it.');
+      error(404, m.leads_not_found());
     }
     throw err;
   }

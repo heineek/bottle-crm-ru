@@ -5,6 +5,7 @@
   import { Button } from '#lib/components/ui/button/index.js';
   import * as Dialog from '#lib/components/ui/dialog/index.js';
   import ImportFlow from '#lib/components/import/ImportFlow.svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { ImportConfig } from '#lib/import/entities.js';
 
   /**
@@ -16,8 +17,8 @@
   let {
     open = $bindable(false),
     onOpenChange,
-    singular = 'lead',
-    plural = 'leads',
+    singular,
+    plural,
     config
   }: {
     open: boolean;
@@ -26,6 +27,7 @@
     plural?: string;
     config?: ImportConfig;
   } = $props();
+  let pluralWord = $derived(plural ?? m.app_import_noun_leads());
 
   let done = $state(false);
   /** Bumped on each opening, so every opening starts again at choosing a file. */
@@ -46,11 +48,10 @@
     <Dialog.Header>
       <Dialog.Title class="flex items-center gap-2">
         <Upload class="h-4 w-4" />
-        Import {plural}
+        {m.app_import_leads_title({ plural: pluralWord })}
       </Dialog.Title>
       <Dialog.Description>
-        Bring in a spreadsheet of {plural}. You'll check how its columns match, and nothing is
-        written until you choose Import.
+        {m.app_import_leads_description({ plural: pluralWord })}
       </Dialog.Description>
     </Dialog.Header>
 
@@ -69,7 +70,7 @@
 
     <Dialog.Footer>
       <Button class="max-md:h-11" type="button" variant="outline" onclick={() => (open = false)}>
-        {done ? 'Close' : 'Cancel'}
+        {done ? m.common_close() : m.common_cancel()}
       </Button>
     </Dialog.Footer>
   </Dialog.Content>

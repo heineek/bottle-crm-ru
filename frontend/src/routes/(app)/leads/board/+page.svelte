@@ -11,6 +11,9 @@
   import { refreshAll } from '$app/navigation';
   import { deserialize } from '$app/forms';
   import { t } from '#lib/terminology.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { RATING_LABEL } from '#lib/v2/enums.js';
   import { holdLockedCard } from '#lib/v2/board-drag.js';
   import type { PageData, PageProps } from './$types';
 
@@ -31,7 +34,7 @@
 
   /* A vertical pack renames the module ("Enquiries"), and the list page
      already follows it; a board headed "Leads" beside it reads as a bug. */
-  let plural = $derived(t(data.org?.terminology, 'lead.plural', 'Leads'));
+  let plural = $derived(t(data.org?.terminology, 'lead.plural', m.leads_term_plural()));
 
   /* `dndzone` reorders the array it is handed, so the board renders from a
      local copy that is rebuilt whenever the server sends new lanes. That
@@ -105,10 +108,9 @@
         return true;
       }
       const refusal = result.type === 'failure' ? result.data?.error : undefined;
-      moveError =
-        (typeof refusal === 'string' && refusal) || 'Could not move the lead, so it went back.';
+      moveError = (typeof refusal === 'string' && refusal) || m.leads_board_move_failed();
     } catch {
-      moveError = 'Could not move the lead, so it went back.';
+      moveError = m.leads_board_move_failed();
     }
     await refreshAll();
     return false;
@@ -131,13 +133,15 @@
   }
 </script>
 
-<PageHeader title={data.pipeline ? data.pipeline.name : `${plural} board`}>
+<PageHeader title={data.pipeline ? data.pipeline.name : m.leads_board_title({ plural })}>
   {#snippet sub()}
     {#if data.pipeline}
-      <span class="v2-num">{count(inPipeline)}</span> in this pipeline ·
-      <span class="v2-num">{count(unstagedCount)}</span> in no stage
+      <span class="v2-num">{count(inPipeline)}</span>
+      {m.leads_board_in_pipeline()} ·
+      <span class="v2-num">{count(unstagedCount)}</span>
+      {m.leads_board_in_no_stage()}
     {:else}
-      {plural} by pipeline stage
+      {m.leads_board_by_stage({ plural })}
     {/if}
   {/snippet}
   {#snippet actions()}
@@ -148,7 +152,7 @@
         <select
           name="pipeline"
           class="v2-btn lb-picker"
-          aria-label="Pipeline"
+          aria-label={m.leads_board_pipeline()}
           value={data.pipeline?.id}
           onchange={(e) => e.currentTarget.form?.requestSubmit()}
         >
@@ -158,8 +162,8 @@
         </select>
       </form>
     {/if}
-    <a class="v2-btn v2-btn-quiet" href={resolve('leads')}><List />List</a>
-    <span class="v2-btn" aria-current="true"><Columns3 />Board</span>
+    <a class="v2-btn v2-btn-quiet" href={resolve('leads')}><List />{m.leads_view_list()}</a>
+    <span class="v2-btn" aria-current="true"><Columns3 />{m.leads_view_board()}</span>
   {/snippet}
 </PageHeader>
 
@@ -175,23 +179,24 @@
 {#if !data.pipeline}
   <div class="v2-scroll">
     <EmptyState
-      title="No pipelines yet"
-      body="A pipeline sorts {plural.toLowerCase()} into stages you move them through. An admin can create one under lead pipelines in settings, or by applying an industry pack."
+      title={m.leads_board_empty_title()}
+      body={m.leads_board_empty_body({ plural: plural.toLowerCase() })}
     >
       {#snippet icon()}<Columns3 size={21} />{/snippet}
       {#snippet actions()}
-        <a class="v2-btn" href={resolve('settings/lead-pipelines')}>Lead pipelines</a>
-        <a class="v2-btn" href={resolve('leads')}>Back to the list</a>
+        <a class="v2-btn" href={resolve('settings/lead-pipelines')}
+          >{m.leads_board_lead_pipelines()}</a
+        >
+        <a class="v2-btn" href={resolve('leads')}>{m.leads_board_back_to_list()}</a>
       {/snippet}
     </EmptyState>
   </div>
 {:else}
   <p class="v2-sub v2-pad" style="font-size:11.5px;margin:10px 0 0;flex:none">
     {#if stages.length === 0}
-      This pipeline has no stages yet, so there is nowhere to move a lead.
+      {m.leads_board_no_stages()}
     {:else}
-      Drag a card, or use "Move to" on it, to change its stage. A lead in no stage joins this
-      pipeline when you move it into one, and leaves it when you move it back to No stage.
+      {m.leads_board_hint()}
     {/if}
   </p>
   <div class="v2-board" style="padding-top:12px">
@@ -206,7 +211,9 @@
         </div>
         {#if lane.truncated}
           <p class="v2-sub" style="padding:0 2px 6px;font-size:11.5px">
-            Showing the first <span class="v2-num">{lane.rows.length}</span>.
+            {#each messageParts(m.leads_board_showing_first( { count: slot('count') } )) as p, i (i)}{#if p.key === 'count'}<span
+                  class="v2-num">{lane.rows.length}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
         <div
@@ -240,18 +247,20 @@
               <div class="v2-deal-card-foot">
                 {#if lead.owner}<Avatar name={lead.owner} size={21} />{/if}
                 {#if lead.rating}
-                  <Pill tone={RATING_TONE[lead.rating] ?? 'slate'}>{lead.rating}</Pill>
+                  <Pill tone={RATING_TONE[lead.rating] ?? 'slate'}
+                    >{RATING_LABEL[lead.rating] ?? lead.rating}</Pill
+                  >
                 {/if}
-                {#if lead.overdue}<Pill tone="rust" dot>Follow-up due</Pill>{/if}
+                {#if lead.overdue}<Pill tone="rust" dot>{m.leads_board_follow_up_due()}</Pill>{/if}
               </div>
               {#if stages.length > 0 && lead.canMove}
                 <select
                   class="v2-input lb-move"
-                  aria-label="Move {lead.name} to stage"
+                  aria-label={m.leads_board_move_aria({ name: lead.name })}
                   disabled={busy}
                   onchange={(e) => moveBySelect(lead.id, e)}
                 >
-                  <option value="">Move to…</option>
+                  <option value="">{m.leads_board_move_to()}</option>
                   {#each stages as stage (stage.id)}
                     {#if stage.id !== lane.id}
                       <option value={stage.id}>{stage.name}</option>
@@ -264,7 +273,9 @@
               {/if}
             </div>
           {:else}
-            <p class="v2-sub" style="padding:10px 2px;font-size:12px">Nothing in this stage.</p>
+            <p class="v2-sub" style="padding:10px 2px;font-size:12px">
+              {m.leads_board_empty_lane()}
+            </p>
           {/each}
         </div>
       </section>

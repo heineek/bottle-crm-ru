@@ -3,6 +3,7 @@
  * fixed per module; an object's filters come from its own fields, so the
  * descriptor is built per request. Client-safe, like `filters.ts`.
  */
+import { m } from '#lib/paraglide/messages.js';
 import type { Descriptor, Field } from '#lib/v2/filters.js';
 import type { Spec } from '#lib/v2/saved-views.js';
 
@@ -46,12 +47,12 @@ export function objectDescriptor(fields: FieldDef[] | null | undefined): Descrip
   }
   return {
     presets: [
-      { key: 'mine', label: 'Mine', params: { assigned_to: '@me' } },
-      { key: 'all', label: 'All', params: {} }
+      { key: 'mine', label: m.app_list_filters_mine(), params: { assigned_to: '@me' } },
+      { key: 'all', label: m.app_filter_all(), params: {} }
     ],
     fields: [
-      { key: 'assigned_to', label: 'Assigned to', type: 'person', multi: true },
-      { key: 'tags', label: 'Tag', type: 'tag', multi: true },
+      { key: 'assigned_to', label: m.common_assigned_to(), type: 'person', multi: true },
+      { key: 'tags', label: m.app_list_filters_tag(), type: 'tag', multi: true },
       ...custom
     ]
   };

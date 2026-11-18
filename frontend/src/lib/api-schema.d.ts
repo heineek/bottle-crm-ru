@@ -4300,6 +4300,34 @@ export interface paths {
         patch: operations["help_center_settings_update"];
         trace?: never;
     };
+    "/api/org/locales/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Languages, countries and currencies, named in the caller's language.
+         *
+         *     Served for the same reason as ``TimezoneListView``: both clients read one
+         *     list, so a stored code always has an option, and a country is named the
+         *     same way on the web and on a phone. Org-free for the same reason too: the
+         *     first caller may be creating their first org.
+         *
+         *     Languages carry their own names ("Deutsch"), not translated ones, so a
+         *     reader can find theirs whatever the interface is in. Countries are sorted
+         *     by their translated name, which is how a reader scans for theirs.
+         */
+        get: operations["org_locales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/org/modules/": {
         parameters: {
             query?: never;
@@ -9036,6 +9064,10 @@ export interface components {
          * @enum {string}
          */
         CountryEnum: "GB" | "AF" | "AX" | "AL" | "DZ" | "AS" | "AD" | "AO" | "AI" | "AQ" | "AG" | "AR" | "AM" | "AW" | "AU" | "AT" | "AZ" | "BS" | "BH" | "BD" | "BB" | "BY" | "BE" | "BZ" | "BJ" | "BM" | "BT" | "BO" | "BA" | "BW" | "BV" | "BR" | "IO" | "BN" | "BG" | "BF" | "BI" | "KH" | "CM" | "CA" | "CV" | "KY" | "CF" | "TD" | "CL" | "CN" | "CX" | "CC" | "CO" | "KM" | "CG" | "CD" | "CK" | "CR" | "CI" | "HR" | "CU" | "CY" | "CZ" | "DK" | "DJ" | "DM" | "DO" | "EC" | "EG" | "SV" | "GQ" | "ER" | "EE" | "ET" | "FK" | "FO" | "FJ" | "FI" | "FR" | "GF" | "PF" | "TF" | "GA" | "GM" | "GE" | "DE" | "GH" | "GI" | "GR" | "GL" | "GD" | "GP" | "GU" | "GT" | "GG" | "GN" | "GW" | "GY" | "HT" | "HM" | "VA" | "HN" | "HK" | "HU" | "IS" | "IN" | "ID" | "IR" | "IQ" | "IE" | "IM" | "IL" | "IT" | "JM" | "JP" | "JE" | "JO" | "KZ" | "KE" | "KI" | "KP" | "KR" | "KW" | "KG" | "LA" | "LV" | "LB" | "LS" | "LR" | "LY" | "LI" | "LT" | "LU" | "MO" | "MK" | "MG" | "MW" | "MY" | "MV" | "ML" | "MT" | "MH" | "MQ" | "MR" | "MU" | "YT" | "MX" | "FM" | "MD" | "MC" | "MN" | "ME" | "MS" | "MA" | "MZ" | "MM" | "NA" | "NR" | "NP" | "NL" | "AN" | "NC" | "NZ" | "NI" | "NE" | "NG" | "NU" | "NF" | "MP" | "NO" | "OM" | "PK" | "PW" | "PS" | "PA" | "PG" | "PY" | "PE" | "PH" | "PN" | "PL" | "PT" | "PR" | "QA" | "RE" | "RO" | "RU" | "RW" | "BL" | "SH" | "KN" | "LC" | "MF" | "PM" | "VC" | "WS" | "SM" | "ST" | "SA" | "SN" | "RS" | "SC" | "SL" | "SG" | "SK" | "SI" | "SB" | "SO" | "ZA" | "GS" | "ES" | "LK" | "SD" | "SR" | "SJ" | "SZ" | "SE" | "CH" | "SY" | "TW" | "TJ" | "TZ" | "TH" | "TL" | "TG" | "TK" | "TO" | "TT" | "TN" | "TR" | "TM" | "TC" | "TV" | "UG" | "UA" | "AE" | "US" | "UM" | "UY" | "UZ" | "VU" | "VE" | "VN" | "VG" | "VI" | "WF" | "EH" | "YE" | "ZM" | "ZW";
+        CountryOption: {
+            code: string;
+            name: string;
+        };
         CreateLeadFromSiteResponse: {
             error: boolean;
             message: string;
@@ -9087,6 +9119,11 @@ export interface components {
          * @enum {string}
          */
         CurrencyEnum: "USD" | "EUR" | "GBP" | "INR" | "CAD" | "AUD" | "JPY" | "CNY" | "CHF" | "SGD" | "AED" | "BRL" | "MXN" | "ZAR";
+        CurrencyOption: {
+            code: string;
+            name: string;
+            symbol: string;
+        };
         /**
          * @description Per-org custom-field definition. key/target_model/field_type are immutable
          *     after creation. Admins must create a new definition to change shape.
@@ -11136,6 +11173,15 @@ export interface components {
          * @enum {string}
          */
         KindD56Enum: "call" | "meeting" | "email" | "whatsapp" | "sms" | "enquiry";
+        /**
+         * @description * `en` - English
+         * @enum {string}
+         */
+        LanguageEnum: "en";
+        LanguageOption: {
+            code: string;
+            name: string;
+        };
         Lead: {
             /** Format: uuid */
             readonly id: string;
@@ -12662,6 +12708,11 @@ export interface components {
             status: number;
             profile_org_list: components["schemas"]["ShowOrganizationList"][];
         };
+        OrgLocalesResponse: {
+            languages: components["schemas"]["LanguageOption"][];
+            countries: components["schemas"]["CountryOption"][];
+            currencies: components["schemas"]["CurrencyOption"][];
+        };
         OrgModuleRow: {
             key: string;
             label: string;
@@ -12736,6 +12787,7 @@ export interface components {
             readonly currency_symbol: string;
             /** @description IANA timezone (e.g. America/New_York). Sets the org's day. */
             timezone: string;
+            default_language: string;
             csat_enabled: boolean;
             auto_close_children_on_parent_close: boolean;
             invoice_number_prefix: string;
@@ -12821,7 +12873,7 @@ export interface components {
         OutcomeEnum: "connected" | "no_answer" | "voicemail" | "busy" | "wrong_number";
         /**
          * @description Response-only: `ProfileView`'s profile, which also names the caller's
-         *     teams and their lead alert switches.
+         *     teams, language and lead alert switches.
          *
          *     The teams are not on the shared `ProfileSerializer` (nested into many
          *     records), which keeps the extra query and the wider output on this one
@@ -12843,6 +12895,7 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             readonly teams: string[];
+            readonly language: string;
             readonly lead_alerts_email: boolean;
             readonly lead_alerts_push: boolean;
         };
@@ -13699,6 +13752,7 @@ export interface components {
             default_country?: (components["schemas"]["DefaultCountryEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             /** @description IANA timezone (e.g. America/New_York). Sets the org's day. */
             timezone?: string;
+            default_language?: string;
             csat_enabled?: boolean;
             auto_close_children_on_parent_close?: boolean;
             invoice_number_prefix?: string;
@@ -13753,8 +13807,8 @@ export interface components {
          * @description The fields a user may change on their OWN profile via PATCH /api/profile/.
          *
          *     Deliberately just ``phone`` and the two lead alert switches (on Profile)
-         *     and ``name`` (on User). Role, org and the ``has_*_access`` flags are NOT
-         *     here:
+         *     and ``name`` and ``language`` (on User). Role, org and the ``has_*_access``
+         *     flags are NOT here:
          *     those decide permissions and are an admin's to set. Leaving them out is what
          *     keeps this self-edit endpoint from becoming the same self-serve privilege
          *     escalation ``CreateProfileSerializer`` once was. A field the serializer does
@@ -13768,6 +13822,7 @@ export interface components {
         PatchedProfileSelfUpdateRequest: {
             name?: string;
             phone?: string;
+            language?: components["schemas"]["LanguageEnum"] | components["schemas"]["BlankEnum"];
             lead_alerts_email?: boolean;
             lead_alerts_push?: boolean;
         };
@@ -16848,6 +16903,7 @@ export interface components {
             /** Email address */
             email: string;
             profile_pic: string | null;
+            language: string;
             is_active: boolean;
             readonly organizations: components["schemas"]["UserOrganization"][];
         };
@@ -25759,6 +25815,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HelpCenterSettingsRead"];
+                };
+            };
+        };
+    };
+    org_locales: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgLocalesResponse"];
                 };
             };
         };

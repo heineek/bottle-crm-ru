@@ -228,6 +228,15 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
+# English is the source language and the fallback for any missing translation.
+# Adding a language is a row here plus `makemessages -l <code>` in each app; the
+# clients read this list from `GET /api/org/locales/`. See common/locale.py for
+# which language a request or an email is answered in.
+LANGUAGE_CODE = "en"
+LANGUAGES = [
+    ("en", "English"),
+]
+
 USE_TZ = True
 
 

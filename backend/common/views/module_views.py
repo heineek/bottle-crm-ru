@@ -1,3 +1,4 @@
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -53,7 +54,10 @@ class OrgModulesView(APIView):
         profile = request.profile
         if not may_configure(profile):
             return Response(
-                {"error": True, "errors": "Only admins can switch modules on or off."},
+                {
+                    "error": True,
+                    "errors": _("Only admins can switch modules on or off."),
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
         errors = change_modules(profile.org, profile, request.data, request=request)

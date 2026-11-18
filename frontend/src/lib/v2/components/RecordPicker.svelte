@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * Picks records to link to. Chosen records are chips, each carrying a hidden
    * input named `name`; the search asks the pick proxy, which lists only what
@@ -40,7 +41,7 @@
     picked = chosen.length;
   });
 
-  let offered = $derived(matches.filter((m) => !chosen.some((c) => c.id === m.id)));
+  let offered = $derived(matches.filter((r) => !chosen.some((c) => c.id === r.id)));
 
   async function search(q: string) {
     const mine = ++ticket;
@@ -89,7 +90,11 @@
       {#each chosen as record (record.id)}
         <li class="v2-chip rp-chip">
           <b>{record.name}</b>
-          <button type="button" aria-label="Remove {record.name}" onclick={() => remove(record.id)}>
+          <button
+            type="button"
+            aria-label={m.app_picker_remove({ name: record.name })}
+            onclick={() => remove(record.id)}
+          >
             <X size={14} />
           </button>
           <input type="hidden" {name} value={record.id} />
@@ -104,8 +109,8 @@
       class="v2-input"
       type="search"
       autocomplete="off"
-      placeholder={placeholder ?? `Search ${label.toLowerCase()}`}
-      aria-label="Search {label}"
+      placeholder={placeholder ?? m.app_picker_search({ label: label.toLowerCase() })}
+      aria-label={m.app_picker_search({ label })}
       value={text}
       oninput={typed}
       onkeydown={(e) => {
@@ -113,17 +118,17 @@
       }}
     />
   {:else}
-    <p class="v2-hint">Remove it to pick a different one.</p>
+    <p class="v2-hint">{m.app_picker_remove_to_change()}</p>
   {/if}
 
   {#if failed}
-    <p class="v2-error">Could not search.</p>
+    <p class="v2-error">{m.app_picker_failed()}</p>
   {:else if searched && offered.length === 0}
-    <p class="v2-hint">No matches.</p>
+    <p class="v2-hint">{m.app_picker_no_matches()}</p>
   {:else if offered.length > 0}
     <ul class="rp-results">
-      {#each offered as m (m.id)}
-        <li><button type="button" class="rp-pick" onclick={() => add(m)}>{m.name}</button></li>
+      {#each offered as r (r.id)}
+        <li><button type="button" class="rp-pick" onclick={() => add(r)}>{r.name}</button></li>
       {/each}
     </ul>
   {/if}

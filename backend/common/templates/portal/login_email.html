@@ -1,14 +1,14 @@
-<!doctype html>
-<html>
+{% load i18n %}<!doctype html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
   <body style="font-family: Arial, Helvetica, sans-serif; color: #1f2933; line-height: 1.5">
-    <p>Hello {{ contact_name }},</p>
+    <p>{% blocktranslate trimmed %}Hello {{ contact_name }},{% endblocktranslate %}</p>
 
-    <p>Your sign-in code for {{ org_name }} support is:</p>
+    <p>{% blocktranslate trimmed %}Your sign-in code for {{ org_name }} support is:{% endblocktranslate %}</p>
     <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px">{{ code }}</p>
-    <p>It expires in 10 minutes and can be used once.</p>
+    <p>{% translate "It expires in 10 minutes and can be used once." %}</p>
 
     <p style="color: #6b7280; font-size: 13px">
-      If you did not ask to sign in, you can ignore this email and nothing will happen.
+      {% translate "If you did not ask to sign in, you can ignore this email and nothing will happen." %}
     </p>
   </body>
 </html>

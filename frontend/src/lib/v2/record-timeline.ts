@@ -3,6 +3,7 @@
  * first. Browser-safe, so the page and vitest can both use it.
  */
 import { authorText } from '#lib/v2/author.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/enterprise-api-schema.js';
 
 type Record = components['schemas']['CustomRecordDetail'];
@@ -40,7 +41,9 @@ export function buildRecordTimeline(
   const created: RecordTimelineEvent = {
     id: `created-${record.id}`,
     type: 'created',
-    body: `${record.object.label || 'Record'} created`,
+    body: record.object.label
+      ? m.app_record_timeline_created({ label: record.object.label })
+      : m.app_record_timeline_created_plain(),
     at: record.created_at,
     by: record.created_by?.email || record.created_by?.name || null
   };

@@ -3,80 +3,109 @@
  * @module lib/constants/filters
  */
 
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { intlLocale } from '#lib/i18n/locale.js';
+import {
+  CASE_STATUS_LABEL,
+  CASE_TYPE_LABEL,
+  LEAD_STATUS_LABEL,
+  OPPORTUNITY_TYPE_LABEL,
+  TASK_PRIORITY_LABEL,
+  TASK_STATUS_LABEL
+} from '#lib/v2/enums.js';
+
 type Option = { value: string; label: string };
 
+/** One option whose label is read per access, so it follows the request's locale. */
+const option = (value: string, label: () => string): Option => ({
+  value,
+  get label() {
+    return label();
+  }
+});
+
 export const LEAD_STATUSES: Option[] = [
-  { value: 'ALL', label: 'All Statuses' },
-  { value: 'ASSIGNED', label: 'Assigned' },
-  { value: 'IN_PROCESS', label: 'In Process' },
-  { value: 'CONVERTED', label: 'Converted' },
-  { value: 'RECYCLED', label: 'Recycled' },
-  { value: 'CLOSED', label: 'Closed' }
+  option('ALL', () => m.app_enum_filter_all_statuses()),
+  option('ASSIGNED', () => LEAD_STATUS_LABEL.assigned),
+  option('IN_PROCESS', () => m.app_enum_filter_in_process()),
+  option('CONVERTED', () => LEAD_STATUS_LABEL.converted),
+  option('RECYCLED', () => LEAD_STATUS_LABEL.recycled),
+  option('CLOSED', () => LEAD_STATUS_LABEL.closed)
 ];
 
 export const LEAD_RATINGS: Option[] = [
-  { value: 'ALL', label: 'All Ratings' },
-  { value: 'HOT', label: 'Hot' },
-  { value: 'WARM', label: 'Warm' },
-  { value: 'COLD', label: 'Cold' }
+  option('ALL', () => m.app_enum_filter_all_ratings()),
+  option('HOT', () => m.app_enum_rating_hot()),
+  option('WARM', () => m.app_enum_rating_warm()),
+  option('COLD', () => m.app_enum_rating_cold())
 ];
 
 export const CASE_STATUSES: Option[] = [
-  { value: 'ALL', label: 'All Statuses' },
-  { value: 'New', label: 'New' },
-  { value: 'Assigned', label: 'Assigned' },
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Closed', label: 'Closed' },
-  { value: 'Rejected', label: 'Rejected' },
-  { value: 'Duplicate', label: 'Duplicate' }
+  option('ALL', () => m.app_enum_filter_all_statuses()),
+  ...Object.keys(CASE_STATUS_LABEL).map((value) =>
+    option(value, () => CASE_STATUS_LABEL[value as keyof typeof CASE_STATUS_LABEL])
+  )
 ];
 
 export const CASE_TYPES: Option[] = [
-  { value: '', label: 'Select Type' },
-  { value: 'Question', label: 'Question' },
-  { value: 'Incident', label: 'Incident' },
-  { value: 'Problem', label: 'Problem' }
+  option('', () => m.app_enum_filter_select_type()),
+  ...Object.keys(CASE_TYPE_LABEL).map((value) =>
+    option(value, () => CASE_TYPE_LABEL[value as keyof typeof CASE_TYPE_LABEL])
+  )
 ];
 
 export const PRIORITIES: Option[] = [
-  { value: 'ALL', label: 'All Priorities' },
-  { value: 'High', label: 'High' },
-  { value: 'Medium', label: 'Medium' },
-  { value: 'Low', label: 'Low' }
+  option('ALL', () => m.app_enum_filter_all_priorities()),
+  option('High', () => TASK_PRIORITY_LABEL.High),
+  option('Medium', () => TASK_PRIORITY_LABEL.Medium),
+  option('Low', () => TASK_PRIORITY_LABEL.Low)
 ];
 
 export const TASK_STATUSES: Option[] = [
-  { value: 'ALL', label: 'All Statuses' },
-  { value: 'New', label: 'New' },
-  { value: 'In Progress', label: 'In Progress' },
-  { value: 'Completed', label: 'Completed' }
+  option('ALL', () => m.app_enum_filter_all_statuses()),
+  ...Object.keys(TASK_STATUS_LABEL).map((value) =>
+    option(value, () => TASK_STATUS_LABEL[value as keyof typeof TASK_STATUS_LABEL])
+  )
 ];
 
 export const OPPORTUNITY_TYPES: Option[] = [
-  { value: '', label: 'Select Type' },
-  { value: 'NEW_BUSINESS', label: 'New Business' },
-  { value: 'EXISTING_BUSINESS', label: 'Existing Business' },
-  { value: 'RENEWAL', label: 'Renewal' },
-  { value: 'UPSELL', label: 'Upsell' },
-  { value: 'CROSS_SELL', label: 'Cross-sell' }
+  option('', () => m.app_enum_filter_select_type()),
+  ...Object.keys(OPPORTUNITY_TYPE_LABEL).map((value) =>
+    option(value, () => OPPORTUNITY_TYPE_LABEL[value as keyof typeof OPPORTUNITY_TYPE_LABEL])
+  )
 ];
 
+/** The English names the list has always shown; other locales ask `Intl`. */
+const CURRENCY_NAMES: Record<string, string> = {
+  USD: 'Dollar',
+  EUR: 'Euro',
+  GBP: 'Pound',
+  INR: 'Rupee',
+  CAD: 'Dollar',
+  AUD: 'Dollar',
+  JPY: 'Yen',
+  CNY: 'Yuan',
+  CHF: 'Franc',
+  SGD: 'Dollar',
+  AED: 'Dirham',
+  BRL: 'Real',
+  MXN: 'Peso',
+  ZAR: 'Rand'
+};
+
+function currencyName(code: string, english: string) {
+  const locale = getLocale();
+  if (locale === 'en') return english;
+  const name = new Intl.DisplayNames([intlLocale(locale, 'number')], { type: 'currency' }).of(code);
+  return name && name !== code ? name : english;
+}
+
 export const CURRENCY_CODES: Option[] = [
-  { value: '', label: 'Select Currency' },
-  { value: 'USD', label: 'USD - Dollar' },
-  { value: 'EUR', label: 'EUR - Euro' },
-  { value: 'GBP', label: 'GBP - Pound' },
-  { value: 'INR', label: 'INR - Rupee' },
-  { value: 'CAD', label: 'CAD - Dollar' },
-  { value: 'AUD', label: 'AUD - Dollar' },
-  { value: 'JPY', label: 'JPY - Yen' },
-  { value: 'CNY', label: 'CNY - Yuan' },
-  { value: 'CHF', label: 'CHF - Franc' },
-  { value: 'SGD', label: 'SGD - Dollar' },
-  { value: 'AED', label: 'AED - Dirham' },
-  { value: 'BRL', label: 'BRL - Real' },
-  { value: 'MXN', label: 'MXN - Peso' },
-  { value: 'ZAR', label: 'ZAR - Rand' }
+  option('', () => m.app_enum_filter_select_currency()),
+  ...Object.entries(CURRENCY_NAMES).map(([code, english]) =>
+    option(code, () => `${code} - ${currencyName(code, english)}`)
+  )
 ];
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {

@@ -1,6 +1,14 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import { enhance } from '$app/forms';
-  import { CASE_STATUSES, CASE_PRIORITIES, CASE_TYPES } from '#lib/v2/enums.js';
+  import {
+    CASE_STATUSES,
+    CASE_PRIORITIES,
+    CASE_TYPES,
+    CASE_STATUS_LABEL,
+    CASE_PRIORITY_LABEL,
+    CASE_TYPE_LABEL
+  } from '#lib/v2/enums.js';
 
   let {
     ids,
@@ -29,14 +37,21 @@
   // Duplicate is reached only by merging; the bulk endpoint refuses it.
   const SETTABLE_STATUSES = CASE_STATUSES.filter((v) => v !== 'Duplicate');
 
-  const ACTIONS = [
-    { key: 'assigned_to', label: 'Reassign' },
-    { key: 'priority', label: 'Set priority' },
-    { key: 'status', label: 'Set status' },
-    { key: 'case_type', label: 'Set type' },
-    { key: 'tags', label: 'Add tags' },
-    { key: 'delete', label: 'Delete' }
-  ];
+  let ACTIONS = $derived([
+    { key: 'assigned_to', label: m.app_bulk_reassign() },
+    { key: 'priority', label: m.app_bulk_set_priority() },
+    { key: 'status', label: m.app_bulk_set_status() },
+    { key: 'case_type', label: m.app_bulk_set_type() },
+    { key: 'tags', label: m.app_bulk_add_tags() },
+    { key: 'delete', label: m.common_delete() }
+  ]);
+
+  const OPTION_LABEL: Record<string, string> = {
+    ...CASE_STATUS_LABEL,
+    ...CASE_PRIORITY_LABEL,
+    ...CASE_TYPE_LABEL
+  };
+  const optionLabel = (v: string) => OPTION_LABEL[v] ?? v;
 
   function reset() {
     action = '';
@@ -45,13 +60,13 @@
   }
 </script>
 
-<div class="v2-bulkbar" role="region" aria-label="Bulk actions">
-  <span class="v2-num">{ids.length} selected</span>
-  <button type="button" class="v2-btn" onclick={onclear}>Clear</button>
+<div class="v2-bulkbar" role="region" aria-label={m.app_bulk_region()}>
+  <span class="v2-num">{m.app_bulk_selected({ count: ids.length })}</span>
+  <button type="button" class="v2-btn" onclick={onclear}>{m.app_bulk_clear()}</button>
 
   {#if action === ''}
-    <select class="v2-input" bind:value={action} aria-label="Choose a bulk action">
-      <option value="">Actions</option>
+    <select class="v2-input" bind:value={action} aria-label={m.app_bulk_choose_action()}>
+      <option value="">{m.common_actions()}</option>
       {#each ACTIONS as a (a.key)}
         <option value={a.key}>{a.label}</option>
       {/each}
@@ -69,14 +84,16 @@
       {#each ids as id (id)}<input type="hidden" name="ids" value={id} />{/each}
       {#if !armed}
         <button type="button" class="v2-btn" onclick={() => (armed = true)}>
-          Delete {ids.length}
+          {m.app_bulk_delete_count({ count: ids.length })}
         </button>
       {:else}
-        <button type="submit" class="v2-btn v2-btn-primary">Confirm</button>
-        <button type="button" class="v2-btn" onclick={() => (armed = false)}>Cancel</button>
+        <button type="submit" class="v2-btn v2-btn-primary">{m.common_confirm()}</button>
+        <button type="button" class="v2-btn" onclick={() => (armed = false)}
+          >{m.common_cancel()}</button
+        >
       {/if}
       <button type="button" class="v2-btn" onclick={() => ((action = ''), (armed = false))}>
-        Back
+        {m.common_back()}
       </button>
     </form>
   {:else}
@@ -94,7 +111,7 @@
 
       {#if action === 'assigned_to'}
         <select class="v2-input" name="value" required>
-          <option value="">Choose a person</option>
+          <option value="">{m.app_bulk_choose_person()}</option>
           {#each people as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
         </select>
       {:else if action === 'tags'}
@@ -103,18 +120,18 @@
         </select>
       {:else if action === 'priority'}
         <select class="v2-input" name="value" required>
-          <option value="">Choose a priority</option>
-          {#each CASE_PRIORITIES as v (v)}<option value={v}>{v}</option>{/each}
+          <option value="">{m.app_bulk_choose_priority()}</option>
+          {#each CASE_PRIORITIES as v (v)}<option value={v}>{optionLabel(v)}</option>{/each}
         </select>
       {:else if action === 'case_type'}
         <select class="v2-input" name="value" required>
-          <option value="">Choose a type</option>
-          {#each CASE_TYPES as v (v)}<option value={v}>{v}</option>{/each}
+          <option value="">{m.app_bulk_choose_type()}</option>
+          {#each CASE_TYPES as v (v)}<option value={v}>{optionLabel(v)}</option>{/each}
         </select>
       {:else if action === 'status'}
         <select class="v2-input" name="value" bind:value={statusValue} required>
-          <option value="">Choose a status</option>
-          {#each SETTABLE_STATUSES as v (v)}<option value={v}>{v}</option>{/each}
+          <option value="">{m.app_bulk_choose_status()}</option>
+          {#each SETTABLE_STATUSES as v (v)}<option value={v}>{optionLabel(v)}</option>{/each}
         </select>
         {#if statusValue === 'Closed'}
           <!-- Optional. Left empty, nothing is sent and the API dates each
@@ -123,15 +140,15 @@
             class="v2-input"
             type="date"
             name="closed_on"
-            aria-label="Closed on (optional)"
+            aria-label={m.app_bulk_closed_on()}
             aria-describedby="bulk-closed-hint"
           />
-          <span class="v2-hint" id="bulk-closed-hint">Empty: dated today in the org timezone.</span>
+          <span class="v2-hint" id="bulk-closed-hint">{m.app_bulk_closed_hint()}</span>
         {/if}
       {/if}
 
-      <button type="submit" class="v2-btn v2-btn-primary">Apply</button>
-      <button type="button" class="v2-btn" onclick={() => (action = '')}>Back</button>
+      <button type="submit" class="v2-btn v2-btn-primary">{m.common_apply()}</button>
+      <button type="button" class="v2-btn" onclick={() => (action = '')}>{m.common_back()}</button>
     </form>
   {/if}
 </div>

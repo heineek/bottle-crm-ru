@@ -16,6 +16,7 @@ Matching stays on the server; the whole record set never reaches the browser.
 """
 
 from django.db.models import Q
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
@@ -56,7 +57,7 @@ def search_leads(profile, q, limit):
             {
                 "type": "lead",
                 "id": str(lead.id),
-                "title": name or lead.email or "Untitled lead",
+                "title": name or lead.email or _("Untitled lead"),
                 "subtitle": lead.company_name or lead.email or "",
             }
         )
@@ -124,7 +125,7 @@ def search_contacts(profile, q, limit):
             {
                 "type": "contact",
                 "id": str(contact.id),
-                "title": name or contact.email or "Unnamed contact",
+                "title": name or contact.email or _("Unnamed contact"),
                 "subtitle": contact.organization or contact.email or "",
             }
         )
@@ -169,7 +170,7 @@ def search_invoices(profile, q, limit):
         {
             "type": "invoice",
             "id": str(invoice.id),
-            "title": invoice.invoice_number or invoice.invoice_title or "Invoice",
+            "title": invoice.invoice_number or invoice.invoice_title or _("Invoice"),
             "subtitle": invoice.client_name
             or (invoice.account.name if invoice.account_id else "")
             or invoice.status

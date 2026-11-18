@@ -21,6 +21,7 @@ import {
   interactionTitle,
   OUTCOME_LABEL
 } from '#lib/v2/interactions.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 /** The record kinds an interaction links to, by the API's own field names. */
@@ -150,10 +151,10 @@ export function interactionBody(
   { timeZone = 'UTC', now = new Date() }: { timeZone?: string; now?: Date } = {}
 ) {
   if (!isHome(home) || typeof id !== 'string' || !UUID.test(id)) {
-    throw new Error('That record does not exist.');
+    throw new Error(m.leads_ix_err_no_record());
   }
   const kind = String(values.kind ?? '');
-  if (!LOGGABLE_KINDS.includes(kind)) throw new Error('Choose what you are logging.');
+  if (!LOGGABLE_KINDS.includes(kind)) throw new Error(m.leads_ix_err_kind());
 
   const body: FormBody<Schemas['InteractionWriteRequest']> = {
     kind,
@@ -164,34 +165,34 @@ export function interactionBody(
 
   const outcome = String(values.outcome ?? '');
   if (kind === 'call' && outcome) {
-    if (!CALL_OUTCOMES.includes(outcome)) throw new Error('Choose how the call went.');
+    if (!CALL_OUTCOMES.includes(outcome)) throw new Error(m.leads_ix_err_outcome());
     body.outcome = outcome;
   }
 
   const minutes = String(values.duration_minutes ?? '').trim();
   if (minutes && (kind === 'call' || kind === 'meeting')) {
     const n = Number(minutes);
-    if (!Number.isInteger(n) || n < 0) throw new Error('Duration is a whole number of minutes.');
+    if (!Number.isInteger(n) || n < 0) throw new Error(m.leads_ix_err_duration());
     body.duration_seconds = n * 60;
     body.duration_estimated = false;
   }
 
   const subject = String(values.subject ?? '').trim();
   if (subject && (kind === 'email' || kind === 'meeting')) {
-    if (subject.length > 200) throw new Error('The subject is longer than 200 characters.');
+    if (subject.length > 200) throw new Error(m.leads_ix_err_subject_long());
     body.subject = subject;
   }
 
   const note = String(values.body ?? '').trim();
-  if (note.length > 10000) throw new Error('The note is longer than 10,000 characters.');
+  if (note.length > 10000) throw new Error(m.leads_ix_err_note_long());
   if (note) body.body = note;
 
   const when = String(values.occurred_at ?? '').trim();
   if (when) {
     const iso = wallTimeToIso(when, timeZone);
-    if (!iso) throw new Error('That date and time could not be read.');
+    if (!iso) throw new Error(m.leads_ix_err_when());
     if (new Date(iso).getTime() > now.getTime() + FUTURE_SLACK_MS) {
-      throw new Error('That time is in the future.');
+      throw new Error(m.leads_ix_err_future());
     }
     body.occurred_at = iso;
   }
@@ -207,7 +208,7 @@ export async function logInteraction(
 
 export async function deleteInteraction({ cookies }: Event, id: string) {
   if (typeof id !== 'string' || !UUID.test(id)) {
-    throw Object.assign(new Error('That activity does not exist.'), { status: 404 });
+    throw Object.assign(new Error(m.leads_ix_err_no_activity()), { status: 404 });
   }
   return await apiRequest(`/interactions/${id}/`, { method: 'DELETE' }, { cookies });
 }
@@ -250,7 +251,7 @@ export function interactionActions(home: string): { logActivity: Action; deleteA
         await logInteraction(event, body);
       } catch (err) {
         return fail(refusalCode(err), {
-          activity: { error: readableError(err, 'Could not log that.') }
+          activity: { error: readableError(err, m.leads_ix_err_log_failed()) }
         });
       }
       return { activity: { logged: true } };
@@ -261,7 +262,7 @@ export function interactionActions(home: string): { logActivity: Action; deleteA
         await deleteInteraction(event, form.get('interaction')?.toString() ?? '');
       } catch (err) {
         return fail(refusalCode(err), {
-          activity: { deleteError: readableError(err, 'Could not delete that activity.') }
+          activity: { deleteError: readableError(err, m.leads_ix_err_delete_failed()) }
         });
       }
       return { activity: { deleted: true } };

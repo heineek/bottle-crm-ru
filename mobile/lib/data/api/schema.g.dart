@@ -1600,6 +1600,7 @@ const Map<String, Map<String, Set<String>?>> apiOperations = {
     'GET': <String>{},
     'PATCH': <String>{'help_center_enabled', 'help_center_slug'},
   },
+  '/api/org/locales/': {'GET': <String>{}},
   '/api/org/modules/': {'GET': <String>{}, 'PUT': null},
   '/api/org/settings/': {
     'GET': <String>{},
@@ -1612,6 +1613,7 @@ const Map<String, Map<String, Set<String>?>> apiOperations = {
       'csat_enabled',
       'default_country',
       'default_currency',
+      'default_language',
       'email',
       'estimate_number_prefix',
       'invoice_number_prefix',
@@ -1659,7 +1661,13 @@ const Map<String, Map<String, Set<String>?>> apiOperations = {
   },
   '/api/profile/': {
     'GET': <String>{},
-    'PATCH': <String>{'lead_alerts_email', 'lead_alerts_push', 'name', 'phone'},
+    'PATCH': <String>{
+      'language',
+      'lead_alerts_email',
+      'lead_alerts_push',
+      'name',
+      'phone',
+    },
   },
   '/api/profile/calendar-feed/': {
     'GET': <String>{},
@@ -7859,6 +7867,21 @@ class ContactUpdateResponse {
   final String? message;
 }
 
+class CountryOption {
+  const CountryOption(this.json, {this.code, this.name});
+
+  factory CountryOption.fromJson(Map<String, dynamic> json) => CountryOption(
+    json,
+    code: _string(json['code']),
+    name: _string(json['name']),
+  );
+
+  /// The object as received, for handing it to its own model.
+  final Map<String, dynamic> json;
+  final String? code;
+  final String? name;
+}
+
 class CreateLeadFromSiteResponse {
   const CreateLeadFromSiteResponse(this.json, {this.error, this.message});
 
@@ -7925,6 +7948,23 @@ class CsatDistribution {
   final int? v3;
   final int? v4;
   final int? v5;
+}
+
+class CurrencyOption {
+  const CurrencyOption(this.json, {this.code, this.name, this.symbol});
+
+  factory CurrencyOption.fromJson(Map<String, dynamic> json) => CurrencyOption(
+    json,
+    code: _string(json['code']),
+    name: _string(json['name']),
+    symbol: _string(json['symbol']),
+  );
+
+  /// The object as received, for handing it to its own model.
+  final Map<String, dynamic> json;
+  final String? code;
+  final String? name;
+  final String? symbol;
 }
 
 class CustomFieldDefinition {
@@ -11167,6 +11207,21 @@ class KanbanRelatedEntity {
   final String? id;
   final String? name;
   final String? type;
+}
+
+class LanguageOption {
+  const LanguageOption(this.json, {this.code, this.name});
+
+  factory LanguageOption.fromJson(Map<String, dynamic> json) => LanguageOption(
+    json,
+    code: _string(json['code']),
+    name: _string(json['name']),
+  );
+
+  /// The object as received, for handing it to its own model.
+  final Map<String, dynamic> json;
+  final String? code;
+  final String? name;
 }
 
 class Lead {
@@ -14587,6 +14642,38 @@ class OrgListResponse {
   final List<ShowOrganizationList>? profileOrgList;
 }
 
+class OrgLocalesResponse {
+  const OrgLocalesResponse(
+    this.json, {
+    this.languages,
+    this.countries,
+    this.currencies,
+  });
+
+  factory OrgLocalesResponse.fromJson(Map<String, dynamic> json) =>
+      OrgLocalesResponse(
+        json,
+        languages: _list(
+          json['languages'],
+          (v) => _object(v, LanguageOption.fromJson),
+        ),
+        countries: _list(
+          json['countries'],
+          (v) => _object(v, CountryOption.fromJson),
+        ),
+        currencies: _list(
+          json['currencies'],
+          (v) => _object(v, CurrencyOption.fromJson),
+        ),
+      );
+
+  /// The object as received, for handing it to its own model.
+  final Map<String, dynamic> json;
+  final List<LanguageOption>? languages;
+  final List<CountryOption>? countries;
+  final List<CurrencyOption>? currencies;
+}
+
 class OrgModuleRow {
   const OrgModuleRow(
     this.json, {
@@ -14680,6 +14767,7 @@ class OrgSettings {
     this.defaultCountry,
     this.currencySymbol,
     this.timezone,
+    this.defaultLanguage,
     this.csatEnabled,
     this.autoCloseChildrenOnParentClose,
     this.invoiceNumberPrefix,
@@ -14714,6 +14802,7 @@ class OrgSettings {
     defaultCountry: _string(json['default_country']),
     currencySymbol: _string(json['currency_symbol']),
     timezone: _string(json['timezone']),
+    defaultLanguage: _string(json['default_language']),
     csatEnabled: _bool(json['csat_enabled']),
     autoCloseChildrenOnParentClose: _bool(
       json['auto_close_children_on_parent_close'],
@@ -14750,6 +14839,7 @@ class OrgSettings {
   final String? defaultCountry;
   final String? currencySymbol;
   final String? timezone;
+  final String? defaultLanguage;
   final bool? csatEnabled;
   final bool? autoCloseChildrenOnParentClose;
   final String? invoiceNumberPrefix;
@@ -14857,6 +14947,7 @@ class OwnProfile {
     this.isActive,
     this.createdAt,
     this.teams,
+    this.language,
     this.leadAlertsEmail,
     this.leadAlertsPush,
   });
@@ -14874,6 +14965,7 @@ class OwnProfile {
     isActive: _bool(json['is_active']),
     createdAt: _string(json['created_at']),
     teams: _list(json['teams'], _string),
+    language: _string(json['language']),
     leadAlertsEmail: _bool(json['lead_alerts_email']),
     leadAlertsPush: _bool(json['lead_alerts_push']),
   );
@@ -14891,6 +14983,7 @@ class OwnProfile {
   final bool? isActive;
   final String? createdAt;
   final List<String>? teams;
+  final String? language;
   final bool? leadAlertsEmail;
   final bool? leadAlertsPush;
 }
@@ -20219,6 +20312,7 @@ class UserDetail {
     this.id,
     this.email,
     this.profilePic,
+    this.language,
     this.isActive,
     this.organizations,
   });
@@ -20228,6 +20322,7 @@ class UserDetail {
     id: _string(json['id']),
     email: _string(json['email']),
     profilePic: _string(json['profile_pic']),
+    language: _string(json['language']),
     isActive: _bool(json['is_active']),
     organizations: _list(
       json['organizations'],
@@ -20240,6 +20335,7 @@ class UserDetail {
   final String? id;
   final String? email;
   final String? profilePic;
+  final String? language;
   final bool? isActive;
   final List<UserOrganization>? organizations;
 }

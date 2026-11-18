@@ -5,6 +5,9 @@
  */
 import { longDate } from '#lib/v2/format.js';
 import { sameIds } from '#lib/v2/pickers.js';
+import { intlLocale } from '#lib/i18n/locale.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+import { m } from '#lib/paraglide/messages.js';
 
 type FieldOption = { value: string; label: string };
 
@@ -38,13 +41,15 @@ export function displayValue(definition: FieldDefinition, value: unknown): strin
 
   switch (definition.field_type) {
     case 'checkbox':
-      return value ? 'Yes' : 'No';
+      return value ? m.common_yes() : m.common_no();
     case 'date': {
       const text = longDate(value as string);
       return text === '—' ? String(value) : text;
     }
     case 'number':
-      return typeof value === 'number' ? value.toLocaleString() : String(value);
+      return typeof value === 'number'
+        ? value.toLocaleString(intlLocale(getLocale(), 'number'))
+        : String(value);
     case 'dropdown': {
       const match = optionsOf(definition).find((o) => o.value === value);
       return match?.label ?? String(value);

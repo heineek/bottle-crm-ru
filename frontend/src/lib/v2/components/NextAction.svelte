@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   /**
@@ -11,7 +12,7 @@
    * sandbox, not fine once the record it names is real and one click away.
    */
   let {
-    label = 'Next action',
+    label = m.app_next_action_label(),
     text,
     action = null,
     href = null,

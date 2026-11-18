@@ -16,6 +16,7 @@ from django.db.models.functions import Lower, Now
 from django.utils import timezone
 from django.utils.timesince import timesince
 from django.utils.timezone import now as timezone_now
+from django.utils.translation import gettext, pgettext_lazy
 from django.utils.translation import gettext_lazy as _
 
 from common.base import BaseModel, BaseOrgModel
@@ -37,6 +38,7 @@ from common.validators import (
     number_prefix_validator,
     validate_help_center_slug,
     validate_iana_timezone,
+    validate_language_code,
 )
 
 from .manager import UserManager
@@ -53,6 +55,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     key_expires = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(_("staff status"), default=False)
+    # The interface language this person chose, shared by all their orgs.
+    # Blank means "not chosen": see common.locale for what applies then.
+    language = models.CharField(
+        max_length=10, blank=True, default="", validators=[validate_language_code]
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -139,6 +146,11 @@ class Org(BaseModel):
     default_country = models.CharField(
         max_length=2, choices=COUNTRIES, blank=True, null=True
     )
+    # The language for members who chose none and for mail to customers
+    # (contacts have no User to carry a choice). See common.locale.
+    default_language = models.CharField(
+        max_length=10, default="en", validators=[validate_language_code]
+    )
     # The org's calendar day. Every "today", "overdue" and "this month" in the
     # app is resolved against this, because a day boundary is a fact about the
     # people using the org, not about the server. `GetProfileAndOrg` activates
@@ -202,10 +214,10 @@ class Org(BaseModel):
     # Remind a waiting lead's assignees after this many minutes
     # (`leads.tasks.remind_waiting_leads`); null is off.
     LEAD_REMINDER_CHOICES = (
-        (5, "5 minutes"),
-        (15, "15 minutes"),
-        (30, "30 minutes"),
-        (60, "60 minutes"),
+        (5, _("5 minutes")),
+        (15, _("15 minutes")),
+        (30, _("30 minutes")),
+        (60, _("60 minutes")),
     )
     lead_reminder_minutes = models.PositiveSmallIntegerField(
         null=True, blank=True, choices=LEAD_REMINDER_CHOICES
@@ -383,17 +395,19 @@ class Tags(BaseModel):
         name_max = cls._meta.get_field("name").max_length
         slug_max = cls._meta.get_field("slug").max_length
         if len(name) > name_max:
-            return f"A tag name can be at most {name_max} characters."
+            return gettext("A tag name can be at most %(max)d characters.") % {
+                "max": name_max
+            }
         slug = cls.slug_for(name)
         if not slug:
-            return "A tag name needs at least one letter or digit."
+            return gettext("A tag name needs at least one letter or digit.")
         if len(slug) > slug_max:
             # NFKC expands some characters ("ﬀ" is two letters), so a name
             # within its own limit can still produce a slug past the column's.
-            return (
-                f"A tag name is too long once normalised: it becomes "
-                f"{len(slug)} characters and the limit is {slug_max}."
-            )
+            return gettext(
+                "A tag name is too long once normalised: it becomes "
+                "%(length)d characters and the limit is %(max)d."
+            ) % {"length": len(slug), "max": slug_max}
         return None
 
     @classmethod
@@ -409,7 +423,10 @@ class Tags(BaseModel):
         if not slugs:
             return {}
         return {
-            slug: f"Tag '{name}' is archived; an admin can restore it in Settings > Tags"
+            slug: gettext(
+                "Tag '%(name)s' is archived; an admin can restore it in Settings > Tags"
+            )
+            % {"name": name}
             for slug, name in cls.objects.filter(
                 org=org, is_active=False, slug__in=slugs
             ).values_list("slug", "name")
@@ -905,38 +922,41 @@ class Activity(BaseModel):
     """Track user activities across all CRM entities"""
 
     ACTION_CHOICES = (
-        ("CREATE", "Created"),
-        ("UPDATE", "Updated"),
-        ("DELETE", "Deleted"),
-        ("VIEW", "Viewed"),
-        ("COMMENT", "Commented"),
-        ("ASSIGN", "Assigned"),
+        ("CREATE", pgettext_lazy("activity action", "Created")),
+        ("UPDATE", pgettext_lazy("activity action", "Updated")),
+        ("DELETE", pgettext_lazy("activity action", "Deleted")),
+        ("VIEW", pgettext_lazy("activity action", "Viewed")),
+        ("COMMENT", pgettext_lazy("activity action", "Commented")),
+        ("ASSIGN", pgettext_lazy("activity action", "Assigned")),
         # Cases roadmap verb registry: see docs/cases/COORDINATION_DECISIONS.md D1.
-        ("STATUS_CHANGED", "Status Changed"),
-        ("PRIORITY_CHANGED", "Priority Changed"),
-        ("ROUTED", "Routed"),
-        ("ESCALATED", "Escalated"),
-        ("REOPENED", "Reopened"),
-        ("MERGED", "Merged"),
-        ("MERGE_TARGET", "Merge Target"),
-        ("UNMERGED", "Unmerged"),
-        ("UNMERGE_TARGET", "Unmerge Target"),
-        ("LINKED_SOLUTION", "Linked Solution"),
-        ("UNLINKED_SOLUTION", "Unlinked Solution"),
-        ("WATCHED", "Watched"),
-        ("UNWATCHED", "Unwatched"),
-        ("MENTIONED", "Mentioned"),
-        ("APPROVAL_REQUESTED", "Approval Requested"),
-        ("APPROVED", "Approved"),
-        ("REJECTED", "Rejected"),
-        ("APPROVAL_CANCELLED", "Approval Cancelled"),
-        ("LINKED_ASSET", "Linked Asset"),
-        ("UNLINKED_ASSET", "Unlinked Asset"),
-        ("LINKED_JIRA", "Linked Jira"),
-        ("LINKED_PARENT", "Linked Parent"),
-        ("UNLINKED_PARENT", "Unlinked Parent"),
-        ("PARENT_CLOSED_CASCADE", "Parent Closed Cascade"),
-        ("TIME_LOGGED", "Time Logged"),
+        ("STATUS_CHANGED", pgettext_lazy("activity action", "Status Changed")),
+        ("PRIORITY_CHANGED", pgettext_lazy("activity action", "Priority Changed")),
+        ("ROUTED", pgettext_lazy("activity action", "Routed")),
+        ("ESCALATED", pgettext_lazy("activity action", "Escalated")),
+        ("REOPENED", pgettext_lazy("activity action", "Reopened")),
+        ("MERGED", pgettext_lazy("activity action", "Merged")),
+        ("MERGE_TARGET", pgettext_lazy("activity action", "Merge Target")),
+        ("UNMERGED", pgettext_lazy("activity action", "Unmerged")),
+        ("UNMERGE_TARGET", pgettext_lazy("activity action", "Unmerge Target")),
+        ("LINKED_SOLUTION", pgettext_lazy("activity action", "Linked Solution")),
+        ("UNLINKED_SOLUTION", pgettext_lazy("activity action", "Unlinked Solution")),
+        ("WATCHED", pgettext_lazy("activity action", "Watched")),
+        ("UNWATCHED", pgettext_lazy("activity action", "Unwatched")),
+        ("MENTIONED", pgettext_lazy("activity action", "Mentioned")),
+        ("APPROVAL_REQUESTED", pgettext_lazy("activity action", "Approval Requested")),
+        ("APPROVED", pgettext_lazy("activity action", "Approved")),
+        ("REJECTED", pgettext_lazy("activity action", "Rejected")),
+        ("APPROVAL_CANCELLED", pgettext_lazy("activity action", "Approval Cancelled")),
+        ("LINKED_ASSET", pgettext_lazy("activity action", "Linked Asset")),
+        ("UNLINKED_ASSET", pgettext_lazy("activity action", "Unlinked Asset")),
+        ("LINKED_JIRA", pgettext_lazy("activity action", "Linked Jira")),
+        ("LINKED_PARENT", pgettext_lazy("activity action", "Linked Parent")),
+        ("UNLINKED_PARENT", pgettext_lazy("activity action", "Unlinked Parent")),
+        (
+            "PARENT_CLOSED_CASCADE",
+            pgettext_lazy("activity action", "Parent Closed Cascade"),
+        ),
+        ("TIME_LOGGED", pgettext_lazy("activity action", "Time Logged")),
     )
 
     ENTITY_TYPE_CHOICES = (
@@ -988,7 +1008,7 @@ class Activity(BaseModel):
 
     @property
     def created_on_arrow(self):
-        return timesince(self.created_at) + " ago"
+        return _("%(time)s ago") % {"time": timesince(self.created_at)}
 
 
 class Notification(BaseModel):
@@ -1436,7 +1456,10 @@ class InstalledApp(BaseOrgModel):
 
     INSTALLED = "installed"
     REMOVED = "removed"
-    STATUS_CHOICES = ((INSTALLED, "Installed"), (REMOVED, "Removed"))
+    STATUS_CHOICES = (
+        (INSTALLED, pgettext_lazy("app status", "Installed")),
+        (REMOVED, pgettext_lazy("app status", "Removed")),
+    )
 
     app_id = models.CharField(max_length=64)
     installed_version = models.PositiveIntegerField()

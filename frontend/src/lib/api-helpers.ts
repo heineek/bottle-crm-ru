@@ -7,6 +7,7 @@
 
 import type { Cookies } from '@sveltejs/kit';
 import * as env from '$app/env/public';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import { apiErrorBody, apiStatus, type ApiError, type ApiErrorBody } from '#lib/api-errors.js';
 
 const API_BASE_URL = `${env.PUBLIC_DJANGO_API_URL}/api`;
@@ -71,9 +72,11 @@ export async function apiRequest<T = unknown>(
   // existing caller is unaffected.
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
-  // Build request headers
+  // Build request headers. The page's locale goes along, so API errors read
+  // in the same language as the page around them.
   const requestHeaders: Record<string, string> = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    'Accept-Language': getLocale(),
     ...headers
   };
 

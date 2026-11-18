@@ -15,6 +15,7 @@
  */
 import * as env from '$app/env/public';
 import { moduleOffDetail } from '#lib/server/v2/modules.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 
 const API_BASE_URL = `${env.PUBLIC_DJANGO_API_URL}/api`;
@@ -54,7 +55,7 @@ export async function streamDownload(
   path: string
 ) {
   const accessToken = cookies.get('jwt_access');
-  if (!accessToken) return new Response('Unauthorized', { status: 401 });
+  if (!accessToken) return new Response(m.app_api_unauthorized(), { status: 401 });
 
   const upstream = await fetch(`${API_BASE_URL}${path}`, {
     method: 'GET',
@@ -63,7 +64,7 @@ export async function streamDownload(
   });
 
   if (!upstream.ok || !upstream.body) {
-    return new Response((await moduleOffDetail(upstream)) ?? 'Could not download that file.', {
+    return new Response((await moduleOffDetail(upstream)) ?? m.app_files_download_failed(), {
       status: upstream.status || 502
     });
   }

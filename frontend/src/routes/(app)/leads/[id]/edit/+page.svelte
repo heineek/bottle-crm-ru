@@ -64,6 +64,7 @@
   import { money, longDate } from '#lib/v2/format.js';
   import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { ChevronRight, TriangleAlert, Lock } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form: result }: PageProps = $props();
@@ -86,7 +87,8 @@
   /** The API's own refusal, when it disagrees with the checks below. */
   let serverMessage = $derived(result?.message ?? '');
 
-  const displayName = `${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim() || 'Lead';
+  const displayName =
+    `${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim() || m.leads_detail_fallback_name();
 
   /* Mirrors `LeadCreateSerializer.validate_status`: converted is the one
      status you can neither re-enter nor leave. Everything else can change. */
@@ -100,16 +102,13 @@
 
   let errors = $derived.by(() => {
     const e: Record<string, string> = {};
-    if (!form.first_name.trim() && !form.last_name.trim())
-      e.last_name = 'A lead needs a name to be findable. First or last will do.';
+    if (!form.first_name.trim() && !form.last_name.trim()) e.last_name = m.leads_error_name();
 
     const email = form.email.trim().toLowerCase();
-    if (emailRequired && !email)
-      e.email = 'Converting creates a Contact, and a contact without an email cannot be reached.';
+    if (emailRequired && !email) e.email = m.leads_edit_email_required();
     else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      e.email = 'That does not look like an email address.';
-    else if (email && server.taken_emails.includes(email))
-      e.email = 'Another lead in this org already uses that address.';
+      e.email = m.leads_error_email_invalid();
+    else if (email && server.taken_emails.includes(email)) e.email = m.leads_edit_email_taken();
 
     /* Mirrors `flexible_phone_validator` in common/validators.py exactly.
        The check here used to be a length test, which passes plenty of values
@@ -119,15 +118,15 @@
     if (form.phone && !/^[\d\s\-()+.]{7,25}$/.test(form.phone)) {
       e.phone =
         form.phone.length > 25
-          ? `Phone is stored in 25 characters; this is ${form.phone.length}.`
-          : 'Digits and separators only. The API rejects letters, so "x123" extensions have to go in the notes.';
+          ? m.leads_edit_phone_too_long({ count: form.phone.length })
+          : m.leads_edit_phone_invalid();
     }
 
     const amount = form.opportunity_amount;
     if (amount !== '' && amount !== null) {
       const n = Number(amount);
-      if (!Number.isFinite(n)) e.opportunity_amount = 'Estimated value has to be a number.';
-      else if (n < 0) e.opportunity_amount = 'Estimated value cannot be negative.';
+      if (!Number.isFinite(n)) e.opportunity_amount = m.leads_error_amount_nan();
+      else if (n < 0) e.opportunity_amount = m.leads_error_amount_negative();
     }
 
     return e;
@@ -158,17 +157,16 @@
   };
 </script>
 
-<PageHeader title="Edit {displayName}" center>
+<PageHeader title={m.leads_edit_title({ name: displayName })} center>
   {#snippet crumb()}
-    <a href={resolve('leads')}>Leads</a>
+    <a href={resolve('leads')}>{m.leads_term_plural()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`leads/${lead.id}`)}>{displayName}</a>
   {/snippet}
   {#snippet sub()}
-    Currently <Pill tone={LEAD_STATUS_TONE[originalStatus]}
-      >{LEAD_STATUS_LABEL[originalStatus]}</Pill
-    >
-    · created {longDate(lead.created_at)}
+    {m.leads_edit_currently()}
+    <Pill tone={LEAD_STATUS_TONE[originalStatus]}>{LEAD_STATUS_LABEL[originalStatus]}</Pill>
+    · {m.leads_edit_created({ date: longDate(lead.created_at) })}
   {/snippet}
 </PageHeader>
 
@@ -178,30 +176,35 @@
       <div class="v2-next" style="margin-bottom:18px" role="status">
         <div class="v2-next-body">
           {#if result?.account_id}
-            <div class="v2-next-text">Converted.</div>
+            <div class="v2-next-text">{m.leads_edit_converted()}</div>
             <div class="v2-sub" style="margin-top:3px">
-              Every edit on this form was saved to the lead first, and the lead was then converted
-              from it. Open what the conversion made below.
+              {m.leads_edit_converted_body()}
             </div>
           {:else}
-            <div class="v2-next-text">Saved.</div>
+            <div class="v2-next-text">{m.leads_edit_saved()}</div>
             <div class="v2-sub" style="margin-top:3px">
-              Changes to “{displayName}” are on the record.
+              {m.leads_edit_saved_body({ name: displayName })}
             </div>
           {/if}
           {#if result?.account_id}
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-              <a class="v2-btn" href={resolve(`accounts/${result.account_id}`)}>View account</a>
+              <a class="v2-btn" href={resolve(`accounts/${result.account_id}`)}
+                >{m.leads_view_account()}</a
+              >
               {#if result.contact_id}
-                <a class="v2-btn" href={resolve(`contacts/${result.contact_id}`)}>View contact</a>
+                <a class="v2-btn" href={resolve(`contacts/${result.contact_id}`)}
+                  >{m.leads_view_contact()}</a
+                >
               {/if}
               {#if result.opportunity_id}
-                <a class="v2-btn" href={resolve(`pipeline/${result.opportunity_id}`)}>View deal</a>
+                <a class="v2-btn" href={resolve(`pipeline/${result.opportunity_id}`)}
+                  >{m.leads_view_deal()}</a
+                >
               {/if}
             </div>
           {/if}
         </div>
-        <a class="v2-btn" href={resolve(`leads/${lead.id}`)}>Back to the lead</a>
+        <a class="v2-btn" href={resolve(`leads/${lead.id}`)}>{m.leads_edit_back()}</a>
       </div>
     {/if}
 
@@ -213,7 +216,7 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this change</div>
+          <div style="font-weight:600">{m.leads_form_server_refused_change()}</div>
           <div class="v2-sub" style="margin-top:2px">{serverMessage}</div>
         </div>
       </div>
@@ -228,26 +231,22 @@
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
           <div style="font-weight:600">
-            {Object.keys(errors).length} field{Object.keys(errors).length === 1 ? '' : 's'} still need{Object.keys(
-              errors
-            ).length === 1
-              ? 's'
-              : ''} you
+            {m.leads_form_fields_need_you({ count: Object.keys(errors).length })}
           </div>
-          <div class="v2-sub" style="margin-top:2px">Nothing has been saved.</div>
+          <div class="v2-sub" style="margin-top:2px">{m.leads_form_nothing_saved()}</div>
         </div>
       </div>
     {/if}
 
-    <div class="v2-section-label v2-label">Person</div>
+    <div class="v2-section-label v2-label">{m.leads_edit_section_person()}</div>
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-first">First name</label>
+        <label for="f-first">{m.leads_field_first_name()}</label>
         <input id="f-first" name="first_name" class="v2-input" bind:value={form.first_name} />
       </div>
       <div class="v2-field">
-        <label for="f-last">Last name</label>
+        <label for="f-last">{m.leads_field_last_name()}</label>
         <input
           id="f-last"
           name="last_name"
@@ -262,8 +261,8 @@
 
     <div class="v2-field">
       <label for="f-email">
-        Email
-        {#if emailRequired}<span class="req">required to convert</span>{/if}
+        {m.common_email()}
+        {#if emailRequired}<span class="req">{m.leads_edit_required_to_convert()}</span>{/if}
       </label>
       <input
         id="f-email"
@@ -279,15 +278,14 @@
         <p class="v2-error" id="e-email">{errors.email}</p>
       {:else}
         <p class="v2-hint" id="h-email">
-          One lead per address per org, ignoring case. The database enforces it, so a duplicate
-          comes back as a rejected save rather than a second record.
+          {m.leads_edit_email_hint()}
         </p>
       {/if}
     </div>
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-phone">Phone</label>
+        <label for="f-phone">{m.common_phone()}</label>
         <input
           id="f-phone"
           name="phone"
@@ -299,22 +297,22 @@
         {#if show('phone')}<p class="v2-error">{errors.phone}</p>{/if}
       </div>
       <div class="v2-field">
-        <label for="f-jobtitle">Job title</label>
+        <label for="f-jobtitle">{m.leads_field_job_title()}</label>
         <input id="f-jobtitle" name="job_title" class="v2-input" bind:value={form.job_title} />
       </div>
     </div>
 
-    <div class="v2-section-label v2-label">Company</div>
+    <div class="v2-section-label v2-label">{m.leads_edit_section_company()}</div>
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-company">Company</label>
+        <label for="f-company">{m.leads_field_company()}</label>
         <input id="f-company" name="company_name" class="v2-input" bind:value={form.company_name} />
       </div>
       <div class="v2-field">
-        <label for="f-industry">Industry</label>
+        <label for="f-industry">{m.leads_field_industry()}</label>
         <select id="f-industry" name="industry" class="v2-input" bind:value={form.industry}>
-          <option value="">Not specified</option>
+          <option value="">{m.leads_field_not_specified()}</option>
           {#each INDUSTRIES as ind (ind)}
             <option value={ind}>{industryLabel(ind)}</option>
           {/each}
@@ -323,17 +321,18 @@
     </div>
 
     <div class="v2-field">
-      <label for="f-website">Website</label>
+      <label for="f-website">{m.leads_field_website()}</label>
       <input id="f-website" name="website" class="v2-input" bind:value={form.website} />
     </div>
 
-    <div class="v2-section-label v2-label">Pipeline</div>
+    <div class="v2-section-label v2-label">{m.leads_edit_section_pipeline()}</div>
 
     <div class="pair">
       <div class="v2-field">
         <label for="f-status">
-          Status
-          {#if isConverted}<span class="locked"><Lock size={10} />Settled</span>{/if}
+          {m.common_status()}
+          {#if isConverted}<span class="locked"><Lock size={10} />{m.leads_edit_settled()}</span
+            >{/if}
         </label>
         <!--
           Disabled rather than absent once the lead is converted. Removing the
@@ -367,11 +366,11 @@
         -->
       </div>
       <div class="v2-field">
-        <label for="f-source">Source</label>
+        <label for="f-source">{m.leads_field_source()}</label>
         <!-- Offered against the value the lead opened with, so a retired
              source stays selectable for the record that still carries it. -->
         <select id="f-source" name="source" class="v2-input" bind:value={form.source}>
-          <option value="">Not specified</option>
+          <option value="">{m.leads_field_not_specified()}</option>
           {#each sourceOptions(data.sources, data.form.source) as s (s.key)}
             <option value={s.key}>{s.label}</option>
           {/each}
@@ -381,24 +380,24 @@
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-source-detail">Sub-source</label>
+        <label for="f-source-detail">{m.leads_field_source_detail()}</label>
         <input
           id="f-source-detail"
           name="source_detail"
           class="v2-input"
           maxlength="100"
-          placeholder="e.g. Zillow, Spring open day"
+          placeholder={m.leads_field_source_detail_placeholder()}
           bind:value={form.source_detail}
         />
       </div>
       <div class="v2-field">
-        <label for="f-source-ref">Reference</label>
+        <label for="f-source-ref">{m.leads_field_source_ref()}</label>
         <input
           id="f-source-ref"
           name="source_ref"
           class="v2-input"
           maxlength="255"
-          placeholder="An ad, listing or campaign id"
+          placeholder={m.leads_field_source_ref_placeholder()}
           bind:value={form.source_ref}
         />
       </div>
@@ -410,42 +409,36 @@
     -->
     {#if isConverted}
       <div class="consequence" style="--edge:var(--v2-moss)" id="status-locked">
-        <div style="font-weight:600">This lead has already been converted</div>
+        <div style="font-weight:600">{m.leads_edit_converted_title()}</div>
         <p>
-          Its account, contact and opportunity exist and carry the work now. The status stays where
-          it is: reopening the lead would not remove any of them, and converting it again would
-          build a second opportunity against the same account. The API refuses both.
+          {m.leads_edit_converted_p1()}
         </p>
         <p style="margin-top:6px">
-          Everything else on this form is still editable. A converted lead is a record, not a
-          read-only one.
+          {m.leads_edit_converted_p2()}
         </p>
       </div>
     {:else if enteringConverted}
       <div class="consequence" style="--edge:var(--v2-clay)">
-        <div style="font-weight:600">Converting creates three records</div>
+        <div style="font-weight:600">{m.leads_edit_entering_title()}</div>
         <p>
-          An Account, a Contact and an Opportunity, with this lead's comments and attachments moved
-          across. The lead stays as a converted record, and this is the last time you can change its
-          status. There is no endpoint that undoes any of it.
+          {m.leads_edit_entering_p1()}
         </p>
         <p style="margin-top:6px">
-          Any other change on this form, aside from custom fields, is dropped when it saves
-          alongside a conversion. Reopen the lead afterwards to redo it.
+          {m.leads_edit_entering_p2()}
         </p>
       </div>
     {:else if statusChanged}
       <p class="v2-hint" style="margin:-6px 0 4px">
         {LEAD_STATUS_LABEL[originalStatus]} → {LEAD_STATUS_LABEL[form.status]}
         {#if form.status === 'closed'}
-          · reversible, nothing is created
+          {m.leads_edit_reversible()}
         {/if}
       </p>
     {/if}
 
     <div class="pair">
       <div class="v2-field">
-        <label for="f-amount">Estimated value</label>
+        <label for="f-amount">{m.leads_field_estimated_value()}</label>
         <input
           id="f-amount"
           name="opportunity_amount"
@@ -462,12 +455,12 @@
           <p class="v2-hint">
             {Number(form.opportunity_amount) > 0
               ? money(Number(form.opportunity_amount), lead.currency)
-              : 'What the deal would be worth if it lands.'}
+              : m.leads_field_value_hint()}
           </p>
         {/if}
       </div>
       <div class="v2-field">
-        <label for="f-owner">Owner</label>
+        <label for="f-owner">{m.common_owner()}</label>
         <!-- Bound to the Profile id. The mock bound this to a display name,
              which reads identically on screen and cannot be saved. -->
         <!-- What the select was rendered with. The action compares against it
@@ -476,7 +469,7 @@
              cut a two-person lead down to one on every save. -->
         <input type="hidden" name="assigned_to_original" value={data.form.assigned_to} />
         <select id="f-owner" name="assigned_to" class="v2-input" bind:value={form.assigned_to}>
-          <option value="">Nobody</option>
+          <option value="">{m.leads_owner_nobody()}</option>
           {#each data.owners as o (o.id)}
             <option value={o.id}>{o.name}</option>
           {/each}
@@ -485,7 +478,7 @@
     </div>
 
     <div class="v2-field">
-      <label for="f-notes">Notes</label>
+      <label for="f-notes">{m.common_notes()}</label>
       <textarea
         id="f-notes"
         name="description"
@@ -498,14 +491,14 @@
       fields={data.customFields ?? []}
       typed={result?.values?.custom_fields}
       errors={result?.fieldErrors}
-      heading="Details"
+      heading={m.common_details()}
     />
 
     <div class="actions">
       <button class="v2-btn v2-btn-primary" type="submit" disabled={saving}>
-        {saving ? 'Saving…' : 'Save changes'}
+        {saving ? m.leads_saving() : m.leads_edit_save()}
       </button>
-      <a class="v2-btn" href={resolve(`leads/${lead.id}`)}>Cancel</a>
+      <a class="v2-btn" href={resolve(`leads/${lead.id}`)}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>

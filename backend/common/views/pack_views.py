@@ -6,6 +6,7 @@ one or clear sample data. The org is always request.profile.org, never a
 body field. Org.vertical is descriptive and is never read here for access control.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -54,7 +55,7 @@ def _require_admin(request):
     """Return a 403 Response if the caller is not an org admin, else None."""
     if not may_configure(getattr(request, "profile", None)):
         return Response(
-            {"error": True, "errors": "Only an organization admin can do this."},
+            {"error": True, "errors": _("Only an organization admin can do this.")},
             status=status.HTTP_403_FORBIDDEN,
         )
     return None
@@ -124,7 +125,7 @@ class PackApplyView(APIView):
         # Registry lookup only. pack_id is a dict key, never a path segment.
         if get_pack(pack_id) is None:
             return Response(
-                {"error": True, "errors": "Unknown pack."},
+                {"error": True, "errors": _("Unknown pack.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         org = request.profile.org

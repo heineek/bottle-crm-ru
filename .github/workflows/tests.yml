@@ -74,6 +74,23 @@ jobs:
           ADMIN_EMAIL: admin@test.com
         run: uv run python manage.py makemigrations --check --dry-run
 
+      # A wrapped string with no catalog entry ships untranslated, silently.
+      # Regenerating every app's catalogs must change nothing but the date;
+      # common/tests/test_translations.py checks each entry is translated.
+      - name: Check message catalogs are up to date
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: crm.test_settings
+          SECRET_KEY: test-secret-key-for-ci
+          ADMIN_EMAIL: admin@test.com
+        run: |
+          sudo apt-get install -y gettext
+          uv run python manage.py update_messages
+          git diff -I '^"POT-Creation-Date' --exit-code -- '*.po' || {
+            echo "::error::Message catalogs are stale. Run 'manage.py update_messages', translate the new entries, then 'manage.py update_messages --compile'."
+            exit 1
+          }
+
       - name: Run tests with coverage
         working-directory: backend
         env:

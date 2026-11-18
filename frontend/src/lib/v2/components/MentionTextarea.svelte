@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import { mentionAt, insertMention, matchPeople, type MentionPerson } from '#lib/v2/mentions.js';
   import type { HTMLTextareaAttributes } from 'svelte/elements';
 
@@ -75,7 +76,7 @@
     {onkeydown}
     {onkeyup}></textarea>
   {#if open}
-    <ul id={listId} class="mention-list" role="listbox" aria-label="People to mention">
+    <ul id={listId} class="mention-list" role="listbox" aria-label={m.app_mention_textarea_label()}>
       {#each matches as person, i (person.username)}
         <li
           id={`${listId}-${i}`}

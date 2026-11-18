@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * The frame for an org's public help center.
    *
@@ -21,8 +22,8 @@
 <div class="v2-root hc">
   <header class="hc-top">
     <a class="hc-brand" href={resolve(`help-center/${slug}`)}>
-      {name || 'Help center'}
-      <span class="hc-kind">Help center</span>
+      {name || m.app_help_center_shell_kind()}
+      <span class="hc-kind">{m.app_help_center_shell_kind()}</span>
     </a>
   </header>
   <main class="hc-main">

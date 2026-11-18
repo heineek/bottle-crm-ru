@@ -51,6 +51,8 @@ THE DENY-LIST IS NOT A SCOPE
 
 import re
 
+from django.utils.translation import gettext as _
+
 # Every first path segment under `api/` that the project serves. Hand-maintained
 # so a change to what a token can reach shows up in a diff, and guarded by
 # `test_api_resources_covers_the_live_urlconf`, which walks the real URLconf.
@@ -241,19 +243,27 @@ def normalize_scope(raw):
     """
     candidate = (raw or "").strip().lower()
     if not candidate:
-        raise ValueError("A scope cannot be empty.")
+        raise ValueError(_("A scope cannot be empty."))
     parts = candidate.split(":")
     if len(parts) != 2:
-        raise ValueError(f"Scope {raw!r} is not in <resource>:<action> form.")
+        raise ValueError(
+            _("Scope %(scope)s is not in <resource>:<action> form.")
+            % {"scope": repr(raw)}
+        )
     resource, action = parts
     if (
         resource != WILDCARD
         and resource not in API_RESOURCES
         and resource not in _registered_resources
     ):
-        raise ValueError(f"Unknown scope resource {resource!r}.")
+        raise ValueError(
+            _("Unknown scope resource %(resource)s.") % {"resource": repr(resource)}
+        )
     if action not in SCOPE_ACTIONS:
-        raise ValueError(f"Unknown scope action {action!r}. Use 'read' or 'write'.")
+        raise ValueError(
+            _("Unknown scope action %(action)s. Use 'read' or 'write'.")
+            % {"action": repr(action)}
+        )
     return f"{resource}:{action}"
 
 
@@ -339,7 +349,7 @@ def credential_path_denial(path):
     """Return a denial reason when ``path`` manages credentials, else ``None``."""
     prefixes = (*CREDENTIAL_PATHS, *_registered_credential_paths)
     if any(path.startswith(prefix) for prefix in prefixes):
-        return (
+        return _(
             "API tokens and organization API keys cannot read or manage other "
             "credentials. Sign in to manage them."
         )
@@ -358,13 +368,15 @@ def check_request(scopes, method, path):
         needed = required_scopes(method, path)
         if needed is None:
             action = action_for(method, path)
-            return f"This token is not scoped for {action} access to this endpoint."
+            return _(
+                "This token is not scoped for %(action)s access to this endpoint."
+            ) % {"action": action}
         # `scopes_allow` refused, so some needed scope is missing, or every
         # stored scope was unparseable and the first one needed is named.
         scope = _first_missing(_parsed(scopes), needed)
         resource, action = scope.split(":")
-        return (
-            f"This token is not scoped for {action} access to {resource}. "
-            f"It needs the {scope} scope."
-        )
+        return _(
+            "This token is not scoped for %(action)s access to %(resource)s. "
+            "It needs the %(scope)s scope."
+        ) % {"action": action, "resource": resource, "scope": scope}
     return None

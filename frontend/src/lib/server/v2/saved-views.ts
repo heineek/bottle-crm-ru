@@ -27,6 +27,7 @@ import { FILTER_FIELDS as DEAL_FIELDS, BOARD_FIELDS } from './deals.js';
 import { FILTER_FIELDS as TICKET_FIELDS, OPEN_STATUSES } from './tickets.js';
 import { FILTER_FIELDS as INVOICE_FIELDS } from './invoices.js';
 import { FILTERS } from '#lib/v2/filters.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
 type Schemas = components['schemas'];
@@ -163,7 +164,7 @@ export function savedViewActions(list: keyof typeof SAVED_VIEW_KEYS | CustomList
       return fail(status === 404 ? 404 : 400, {
         savedViewError:
           status === 404
-            ? 'That view no longer exists.'
+            ? m.app_srv_saved_views_gone()
             : (firstSentence(apiErrorBody(err)) ?? readableError(err, fallback))
       });
     }
@@ -181,7 +182,7 @@ export function savedViewActions(list: keyof typeof SAVED_VIEW_KEYS | CustomList
         event,
         async (form, cookies) => {
           const name = String(form.get('name') ?? '').trim();
-          if (!name) return 'Give the view a name.';
+          if (!name) return m.app_srv_saved_views_name_required();
           const query = new URLSearchParams(String(form.get('query') ?? ''));
           const { module, spec } =
             typeof list === 'function'
@@ -197,7 +198,7 @@ export function savedViewActions(list: keyof typeof SAVED_VIEW_KEYS | CustomList
             { cookies }
           );
         },
-        'Could not save the view.'
+        m.app_srv_saved_views_save_failed()
       ),
 
     renameView: (event: RequestEvent) =>
@@ -206,15 +207,15 @@ export function savedViewActions(list: keyof typeof SAVED_VIEW_KEYS | CustomList
         (form, cookies) => {
           const id = viewId(form);
           const name = String(form.get('name') ?? '').trim();
-          if (!id) return 'Which view?';
-          if (!name) return 'Give the view a name.';
+          if (!id) return m.app_srv_saved_views_which();
+          if (!name) return m.app_srv_saved_views_name_required();
           return apiRequest<Schemas['SavedView']>(
             `/saved-views/${id}/`,
             { method: 'PATCH', body: { name } satisfies Schemas['PatchedSavedViewRequest'] },
             { cookies }
           );
         },
-        'Could not rename the view.'
+        m.app_srv_saved_views_rename_failed()
       ),
 
     deleteView: (event: RequestEvent) =>
@@ -222,10 +223,10 @@ export function savedViewActions(list: keyof typeof SAVED_VIEW_KEYS | CustomList
         event,
         (form, cookies) => {
           const id = viewId(form);
-          if (!id) return 'Which view?';
+          if (!id) return m.app_srv_saved_views_which();
           return apiRequest(`/saved-views/${id}/`, { method: 'DELETE' }, { cookies });
         },
-        'Could not delete the view.'
+        m.app_srv_saved_views_delete_failed()
       )
   };
 }

@@ -10,7 +10,11 @@ import re
 from collections import Counter
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
+from functools import cache
 
+from django.conf import settings
+from django.utils import translation
+from django.utils.translation import gettext, gettext_lazy
 from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
@@ -20,9 +24,9 @@ from common.utils import split_full_name
 FULL_NAME = "full_name"
 MULTI_VALUE_SEPARATOR = " ::: "
 
-_UNREADABLE = "The column choices could not be read."
-_BAD_INDEX = "The column choices name a column the file does not have."
-_BAD_FIELD = "The column choices include a field that cannot be imported."
+_UNREADABLE = gettext_lazy("The column choices could not be read.")
+_BAD_INDEX = gettext_lazy("The column choices name a column the file does not have.")
+_BAD_FIELD = gettext_lazy("The column choices include a field that cannot be imported.")
 _SEPARATORS = re.compile(r"[-_./()\s]+")
 _MAX_INDEX_DIGITS = 6
 
@@ -102,7 +106,10 @@ def resolve_mapping(
         if value is None:
             continue
         if value in seen:
-            raise MappingError(f"Two columns are set to {value}; choose one.")
+            raise MappingError(
+                gettext("Two columns are set to %(field)s; choose one.")
+                % {"field": value}
+            )
         seen.add(value)
     return result
 
@@ -230,6 +237,25 @@ class MappedPreview:
                 "skipped": len(self.skipped),
             },
         }
+
+
+@cache
+def choice_lookup(choices) -> dict:
+    """A cell's lowercased text to the stored choice value.
+
+    Matches the value itself or its label in any of ``settings.LANGUAGES``:
+    an export writes labels in the exporter's language, and a file exported in
+    any of them has to import back. A value always wins over a label that happens
+    to spell another value. ``choices`` must be hashable (the module tuples).
+    """
+    lookup = {}
+    for code, _name in settings.LANGUAGES:
+        with translation.override(code):
+            for value, label in choices:
+                lookup.setdefault(str(label).strip().lower(), value)
+    for value, _label in choices:
+        lookup[str(value).lower()] = value
+    return lookup
 
 
 class ImportColumnSerializer(serializers.Serializer):

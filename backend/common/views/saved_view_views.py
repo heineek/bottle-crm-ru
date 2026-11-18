@@ -15,6 +15,7 @@ checked in ``common/saved_views.py``.
 
 from django.db.models.functions import Lower
 from django.http import Http404
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -60,7 +61,12 @@ class SavedViewListView(APIView):
             # A built-in list whose module is off answers an empty list.
             if module not in lists and not is_built_in_list(module):
                 return Response(
-                    {"module": [f"Choose one of: {', '.join(sorted(lists))}."]},
+                    {
+                        "module": [
+                            _("Choose one of: %(lists)s.")
+                            % {"lists": ", ".join(sorted(lists))}
+                        ]
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             views = views.filter(module=module)
@@ -94,7 +100,7 @@ class SavedViewDetailView(APIView):
             SavedView, pk, request.profile.org, profile=request.profile
         )
         if view.module not in saved_lists(request.profile.org):
-            raise Http404("No such saved view.")
+            raise Http404(_("No such saved view."))
         return view
 
     @extend_schema(tags=["Saved views"], responses=SavedViewSerializer)

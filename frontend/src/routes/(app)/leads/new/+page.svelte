@@ -23,6 +23,7 @@
   import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { money } from '#lib/v2/format.js';
   import { TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps, SubmitFunction } from './$types';
 
   let { data, form: result }: PageProps = $props();
@@ -68,25 +69,24 @@
     // itself (Lead.first_name/last_name are both nullable), so this is a UX
     // floor, not the boundary; an empty lead would otherwise save silently
     // and be unfindable in the list a moment later.
-    if (!form.first_name.trim() && !form.last_name.trim())
-      e.last_name = 'A lead needs a name to be findable. First or last will do.';
+    if (!form.first_name.trim() && !form.last_name.trim()) e.last_name = m.leads_error_name();
 
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      e.email = 'That does not look like an email address.';
+      e.email = m.leads_error_email_invalid();
 
     // The exact regex from `flexible_phone_validator`. Extensions like "x123"
     // are rejected by the model, so they are caught here rather than as an
     // opaque whole-form refusal after the save.
     if (form.phone && !/^[\d\s\-()+.]{7,25}$/.test(form.phone))
-      e.phone = '7 to 25 characters: digits, spaces, brackets, dots, dashes. No extensions.';
+      e.phone = m.leads_error_phone_format();
 
     // `createLead` runs `Number(amount)` and the body is JSON-encoded, and
     // `JSON.stringify` turns `NaN` into `null`. Without this check, typing
     // "abc" would not error, it would silently save as no value at all.
     if (form.opportunity_amount !== '') {
       const n = Number(form.opportunity_amount);
-      if (!Number.isFinite(n)) e.opportunity_amount = 'Estimated value has to be a number.';
-      else if (n < 0) e.opportunity_amount = 'Estimated value cannot be negative.';
+      if (!Number.isFinite(n)) e.opportunity_amount = m.leads_error_amount_nan();
+      else if (n < 0) e.opportunity_amount = m.leads_error_amount_negative();
     }
 
     return e;
@@ -120,12 +120,12 @@
   };
 </script>
 
-<PageHeader title="New lead" center>
+<PageHeader title={m.leads_new_title()} center>
   {#snippet crumb()}
-    <a href={resolve('leads')}>Leads</a> ›
+    <a href={resolve('leads')}>{m.leads_term_plural()}</a> ›
   {/snippet}
   {#snippet sub()}
-    A name and a company is enough to start. The rest can wait.
+    {m.leads_new_sub()}
   {/snippet}
 </PageHeader>
 
@@ -139,7 +139,7 @@
       >
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">The server refused this lead</div>
+          <div style="font-weight:600">{m.leads_form_server_refused_lead()}</div>
           <div class="v2-sub" style="margin-top:2px">{result.error}</div>
         </div>
       </div>
@@ -154,19 +154,15 @@
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
           <div style="font-weight:600">
-            {Object.keys(errors).length} field{Object.keys(errors).length === 1 ? '' : 's'} still need{Object.keys(
-              errors
-            ).length === 1
-              ? 's'
-              : ''} you
+            {m.leads_form_fields_need_you({ count: Object.keys(errors).length })}
           </div>
-          <div class="v2-sub" style="margin-top:2px">Nothing has been saved.</div>
+          <div class="v2-sub" style="margin-top:2px">{m.leads_form_nothing_saved()}</div>
         </div>
       </div>
     {/if}
 
     <div class="v2-field">
-      <label for="f-first">First name</label>
+      <label for="f-first">{m.leads_field_first_name()}</label>
       <input
         id="f-first"
         name="first_name"
@@ -176,7 +172,7 @@
       />
     </div>
     <div class="v2-field">
-      <label for="f-last">Last name</label>
+      <label for="f-last">{m.leads_field_last_name()}</label>
       <input
         id="f-last"
         name="last_name"
@@ -189,11 +185,11 @@
       {#if show('last_name')}<p class="v2-error" id="e-last">{errors.last_name}</p>{/if}
     </div>
     <div class="v2-field">
-      <label for="f-company">Company</label>
+      <label for="f-company">{m.leads_field_company()}</label>
       <input id="f-company" name="company_name" class="v2-input" bind:value={form.company_name} />
     </div>
     <div class="v2-field">
-      <label for="f-email">Email</label>
+      <label for="f-email">{m.common_email()}</label>
       <input
         id="f-email"
         name="email"
@@ -207,20 +203,20 @@
       {#if show('email')}<p class="v2-error" id="e-email">{errors.email}</p>{/if}
     </div>
     <div class="v2-field">
-      <label for="f-owner">Owner</label>
+      <label for="f-owner">{m.common_owner()}</label>
       <select id="f-owner" name="assigned_to" class="v2-input" bind:value={form.assigned_to}>
-        <option value="">Unassigned</option>
+        <option value="">{m.leads_field_unassigned()}</option>
         {#each data.owners as o (o.id)}
           <option value={o.id}>{o.name}</option>
         {/each}
       </select>
     </div>
     <div class="v2-field">
-      <label for="f-jobtitle">Job title</label>
+      <label for="f-jobtitle">{m.leads_field_job_title()}</label>
       <input id="f-jobtitle" name="job_title" class="v2-input" bind:value={form.job_title} />
     </div>
     <div class="v2-field">
-      <label for="f-phone">Phone</label>
+      <label for="f-phone">{m.common_phone()}</label>
       <input
         id="f-phone"
         name="phone"
@@ -233,45 +229,42 @@
       {#if show('phone')}<p class="v2-error" id="e-phone">{errors.phone}</p>{/if}
     </div>
     <div class="v2-field">
-      <label for="f-website">Website</label>
+      <label for="f-website">{m.leads_field_website()}</label>
       <input id="f-website" name="website" class="v2-input" bind:value={form.website} />
     </div>
     <div class="v2-field">
-      <label for="f-status">Status</label>
+      <label for="f-status">{m.common_status()}</label>
       <select id="f-status" name="status" class="v2-input" bind:value={form.status}>
         {#each LEAD_STATUSES.filter((s) => s !== 'converted') as s (s)}
           <option value={s}>{LEAD_STATUS_LABEL[s]}</option>
         {/each}
       </select>
       <p class="v2-hint">
-        Converting is a significant, largely irreversible step: it creates an Account, a Contact and
-        an Opportunity that nothing undoes if the status changes back, and it requires an email
-        address that nothing else here does. Set the status here to something else, and convert once
-        the lead is real.
+        {m.leads_new_status_hint()}
       </p>
     </div>
     <div class="v2-field">
-      <label for="f-source">Source</label>
+      <label for="f-source">{m.leads_field_source()}</label>
       <select id="f-source" name="source" class="v2-input" bind:value={form.source}>
-        <option value="">Not specified</option>
+        <option value="">{m.leads_field_not_specified()}</option>
         {#each sourceOptions(data.sources, form.source) as s (s.key)}
           <option value={s.key}>{s.label}</option>
         {/each}
       </select>
     </div>
     <div class="v2-field">
-      <label for="f-source-detail">Sub-source</label>
+      <label for="f-source-detail">{m.leads_field_source_detail()}</label>
       <input
         id="f-source-detail"
         name="source_detail"
         class="v2-input"
         maxlength="100"
-        placeholder="e.g. Zillow, Spring open day"
+        placeholder={m.leads_field_source_detail_placeholder()}
         bind:value={form.source_detail}
       />
     </div>
     <div class="v2-field">
-      <label for="f-source-ref">Reference</label>
+      <label for="f-source-ref">{m.leads_field_source_ref()}</label>
       <input
         id="f-source-ref"
         name="source_ref"
@@ -279,19 +272,19 @@
         maxlength="255"
         bind:value={form.source_ref}
       />
-      <p class="v2-hint">An ad, listing or campaign id, if the lead came with one.</p>
+      <p class="v2-hint">{m.leads_field_source_ref_hint()}</p>
     </div>
     <div class="v2-field">
-      <label for="f-industry">Industry</label>
+      <label for="f-industry">{m.leads_field_industry()}</label>
       <select id="f-industry" name="industry" class="v2-input" bind:value={form.industry}>
-        <option value="">Not specified</option>
+        <option value="">{m.leads_field_not_specified()}</option>
         {#each INDUSTRIES as ind (ind)}
           <option value={ind}>{industryLabel(ind)}</option>
         {/each}
       </select>
     </div>
     <div class="v2-field">
-      <label for="f-amount">Estimated value</label>
+      <label for="f-amount">{m.leads_field_estimated_value()}</label>
       <input
         id="f-amount"
         name="opportunity_amount"
@@ -309,12 +302,12 @@
         <p class="v2-hint" id="h-amount">
           {Number(form.opportunity_amount) > 0
             ? money(Number(form.opportunity_amount), data.org.currency)
-            : 'What the deal would be worth if it lands.'}
+            : m.leads_field_value_hint()}
         </p>
       {/if}
     </div>
     <div class="v2-field">
-      <label for="f-notes">Notes</label>
+      <label for="f-notes">{m.common_notes()}</label>
       <textarea
         id="f-notes"
         name="description"
@@ -342,8 +335,10 @@
     />
 
     <div class="actions">
-      <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>Create lead</button>
-      <a class="v2-btn" href={resolve('leads')}>Cancel</a>
+      <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}
+        >{m.leads_new_submit()}</button
+      >
+      <a class="v2-btn" href={resolve('leads')}>{m.common_cancel()}</a>
     </div>
   </form>
 </div>

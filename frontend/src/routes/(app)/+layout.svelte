@@ -22,6 +22,7 @@
     Menu
   } from '@lucide/svelte';
   import { tabBar, fabAction } from '#lib/v2/nav.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { LayoutProps } from './$types';
 
   let { data, children }: LayoutProps = $props();
@@ -95,7 +96,7 @@
         class="v2-btn v2-btn-quiet"
         type="button"
         onclick={() => (menuOpen = true)}
-        aria-label="Open menu"
+        aria-label={m.app_layout_open_menu()}
         aria-expanded={menuOpen}
       >
         <Menu />
@@ -107,7 +108,7 @@
         type="button"
         style="margin-left:auto"
         onclick={() => (paletteOpen = true)}
-        aria-label="Search"
+        aria-label={m.common_search()}
       >
         <Search />
       </button>
@@ -116,13 +117,13 @@
     {#if billingNotice}
       <div class="billing-notice" role="status">
         <span>{billingNotice}</span>
-        <a href={resolve(asInternalPath(BILLING_HREF))}>Open Billing</a>
+        <a href={resolve(asInternalPath(BILLING_HREF))}>{m.app_layout_open_billing()}</a>
       </div>
     {/if}
 
     {@render children()}
 
-    <nav class="v2-tabbar" aria-label="Sections">
+    <nav class="v2-tabbar" aria-label={m.app_layout_sections_aria()}>
       {#each tabs as tab (tab.href)}
         <a
           href={resolve(asInternalPath(tab.href))}
@@ -158,7 +159,7 @@
         class="v2-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation"
+        aria-label={m.app_layout_navigation_aria()}
         tabindex="-1"
         use:autofocus
         onkeydown={(e) => {

@@ -6,6 +6,7 @@ import {
   type LeadFormValues
 } from '#lib/server/v2/leads.js';
 import { getLeadSources } from '#lib/server/v2/lead-sources.js';
+import { m } from '#lib/paraglide/messages.js';
 import {
   fieldsForNew,
   readCustomFields,
@@ -41,7 +42,7 @@ export const actions: Actions = {
       // Values go back so a rejected form is not a blank form.
       return fail(400, {
         values,
-        ...saveRefusal(err, custom.definitions, 'Could not create the lead.')
+        ...saveRefusal(err, custom.definitions, m.leads_new_failed())
       });
     }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * The line-item table and the totals ladder, shared by the invoice and
    * estimate portal pages.
@@ -61,17 +62,19 @@
    * take on faith. When the server says PERCENTAGE, say the percentage.
    */
   let discountLabel = $derived(
-    discountType === 'PERCENTAGE' ? `Discount (${discountValue}%)` : 'Discount'
+    discountType === 'PERCENTAGE'
+      ? m.app_portal_line_items_discount_pct({ value: discountValue ?? 0 })
+      : m.app_portal_line_items_discount()
   );
 </script>
 
 <table class="v2-doc-items">
   <thead>
     <tr>
-      <th>Item</th>
-      <th class="v2-r">Qty</th>
-      <th class="v2-r">Unit price</th>
-      <th class="v2-r">Amount</th>
+      <th>{m.app_portal_line_items_item()}</th>
+      <th class="v2-r">{m.app_line_items_editor_qty()}</th>
+      <th class="v2-r">{m.app_line_items_editor_unit_price()}</th>
+      <th class="v2-r">{m.app_portal_line_items_amount()}</th>
     </tr>
   </thead>
   <tbody>
@@ -98,7 +101,7 @@
        through the middle, which reads as a mistake because it is one. -->
   <dl>
     <div>
-      <dt>Subtotal</dt>
+      <dt>{m.app_portal_line_items_subtotal()}</dt>
       <dd class="v2-num">{money(subtotal, currency)}</dd>
     </div>
 
@@ -111,20 +114,20 @@
 
     {#if Number(taxAmount)}
       <div>
-        <dt>Tax ({taxRate}%)</dt>
+        <dt>{m.app_portal_line_items_tax({ rate: taxRate ?? 0 })}</dt>
         <dd class="v2-num">{money(taxAmount, currency)}</dd>
       </div>
     {/if}
 
     {#if Number(shippingAmount)}
       <div>
-        <dt>Shipping</dt>
+        <dt>{m.app_portal_line_items_shipping()}</dt>
         <dd class="v2-num">{money(shippingAmount, currency)}</dd>
       </div>
     {/if}
 
     <div class="v2-doc-total-row">
-      <dt>Total</dt>
+      <dt>{m.app_portal_line_items_total()}</dt>
       <dd class="v2-num">{money(total, currency)}</dd>
     </div>
   </dl>

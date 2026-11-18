@@ -6,6 +6,7 @@ can drive their per-entity schemas through one API.
 See docs/cases/tier1/custom-fields.md.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -30,7 +31,7 @@ def _built_in_definitions(org, **filters):
 
 def _admin_required():
     return Response(
-        {"error": True, "errors": "Admin access required"},
+        {"error": True, "errors": _("Admin access required")},
         status=status.HTTP_403_FORBIDDEN,
     )
 
@@ -188,7 +189,7 @@ class CustomFieldDefinitionDetailView(APIView):
         obj = self._get_object(pk, request.profile.org)
         if not obj:
             return Response(
-                {"error": True, "errors": "Custom field not found"},
+                {"error": True, "errors": _("Custom field not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(CustomFieldDefinitionSerializer(obj).data)
@@ -204,7 +205,7 @@ class CustomFieldDefinitionDetailView(APIView):
         obj = self._get_object(pk, request.profile.org)
         if not obj:
             return Response(
-                {"error": True, "errors": "Custom field not found"},
+                {"error": True, "errors": _("Custom field not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         serializer = CustomFieldDefinitionSerializer(
@@ -239,7 +240,7 @@ class CustomFieldDefinitionDetailView(APIView):
         obj = self._get_object(pk, request.profile.org)
         if not obj:
             return Response(
-                {"error": True, "errors": "Custom field not found"},
+                {"error": True, "errors": _("Custom field not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         # Soft delete: historical values on entities stay readable; the field
@@ -247,6 +248,6 @@ class CustomFieldDefinitionDetailView(APIView):
         obj.is_active = False
         obj.save(update_fields=["is_active", "updated_at"])
         return Response(
-            {"error": False, "message": "Custom field deactivated"},
+            {"error": False, "message": _("Custom field deactivated")},
             status=status.HTTP_200_OK,
         )

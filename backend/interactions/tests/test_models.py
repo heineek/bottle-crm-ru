@@ -248,11 +248,15 @@ def test_an_existing_org_is_stamped_when_the_column_is_added():
     """Not at its creation: that would put years of its open leads in the
     unanswered list on the first day."""
 
+    # Our language migration sits on a sibling branch of the graph, so it
+    # stays applied; keep it in the target state so its NOT NULL column fills.
+    language = ("common", "0056_user_language_org_default_language")
+
     def migrate(target):
         executor = MigrationExecutor(connection)
         executor.loader.build_graph()
-        executor.migrate([target])
-        return executor.loader.project_state(target).apps
+        executor.migrate([target, language])
+        return executor.loader.project_state([target, language]).apps
 
     old = migrate(("common", "0058_saved_view_lead_source_keys"))
     try:

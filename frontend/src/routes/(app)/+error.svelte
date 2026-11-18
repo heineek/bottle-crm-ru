@@ -6,6 +6,7 @@
   import { labelOf } from '#lib/v2/modules.js';
   import { asInternalPath } from '#lib/utils/paths.js';
   import { FileQuestion, Lock, ToggleLeft, TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * Every failed load in /v2 lands here. Four cases, four different things
@@ -27,29 +28,27 @@
     moduleOff
       ? {
           icon: ToggleLeft,
-          title: moduleLabel ? `${moduleLabel} is switched off` : 'This is switched off',
+          title: moduleLabel
+            ? m.app_error_module_off({ module: moduleLabel })
+            : m.app_error_module_off_generic(),
           body: page.error?.message ?? ''
         }
       : status === 404
         ? {
             icon: FileQuestion,
-            title: 'That record is not here',
-            body:
-              page.error?.message ||
-              'It may have been deleted, or it belongs to a team you are not part of.'
+            title: m.app_error_not_found_title(),
+            body: page.error?.message || m.app_error_not_found_body()
           }
         : status === 403
           ? {
               icon: Lock,
-              title: 'You do not have access to this',
-              body: 'Ask an admin in your organisation to give you access, or head back to Today.'
+              title: m.app_error_forbidden_title(),
+              body: m.app_error_forbidden_body()
             }
           : {
               icon: TriangleAlert,
-              title: 'That did not load',
-              body:
-                page.error?.message ||
-                'The server did not answer. Nothing you did caused this, and nothing was saved or lost.'
+              title: m.app_error_server_title(),
+              body: page.error?.message || m.app_error_server_body()
             }
   );
 </script>
@@ -61,11 +60,15 @@
     {/snippet}
     {#snippet actions()}
       {#if status >= 500 && !moduleOff}
-        <button class="v2-btn v2-btn-primary" onclick={() => location.reload()}>Try again</button>
+        <button class="v2-btn v2-btn-primary" onclick={() => location.reload()}
+          >{m.common_try_again()}</button
+        >
       {/if}
-      <a class="v2-btn" href={resolve('')}>Back to Today</a>
+      <a class="v2-btn" href={resolve('')}>{m.app_error_back_today()}</a>
       {#if moduleOff && isOrgAdmin(page.data)}
-        <a class="v2-btn" href={resolve(asInternalPath('/settings/apps'))}>Open Settings › Apps</a>
+        <a class="v2-btn" href={resolve(asInternalPath('/settings/apps'))}
+          >{m.app_error_open_apps()}</a
+        >
       {/if}
     {/snippet}
   </EmptyState>

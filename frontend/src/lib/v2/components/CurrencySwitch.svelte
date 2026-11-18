@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * Which currency a page's money is shown in. There are no exchange rates,
    * so figures in different currencies are never combined: a page with more
@@ -12,7 +13,7 @@
 </script>
 
 {#if currencies.length > 1}
-  <div class="cur-switch" role="group" aria-label="Currency">
+  <div class="cur-switch" role="group" aria-label={m.app_currency_switch_label()}>
     {#each currencies as code (code)}
       <button
         type="button"
@@ -21,9 +22,7 @@
         onclick={() => onpick(code)}>{code}</button
       >
     {/each}
-    <span class="v2-sub"
-      >Each currency on its own; there are no exchange rates to combine them.</span
-    >
+    <span class="v2-sub">{m.app_currency_switch_hint()}</span>
   </div>
 {/if}
 

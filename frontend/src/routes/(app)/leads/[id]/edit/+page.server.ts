@@ -7,6 +7,7 @@ import {
 } from '#lib/server/v2/leads.js';
 import { readCustomFields, saveRefusal } from '#lib/server/v2/record-custom-fields.js';
 import { getLeadSources } from '#lib/server/v2/lead-sources.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ cookies, params }) => {
@@ -62,7 +63,7 @@ export const actions: Actions = {
     if (!values.first_name && !values.last_name) {
       return fail(400, {
         values,
-        errors: { last_name: 'A lead needs a name to be findable. First or last will do.' }
+        errors: { last_name: m.leads_error_name() }
       });
     }
 
@@ -70,11 +71,7 @@ export const actions: Actions = {
     try {
       result = await updateLead({ cookies }, params.id, values);
     } catch (err) {
-      const { error, fieldErrors } = saveRefusal(
-        err,
-        custom.definitions,
-        'Could not save this lead.'
-      );
+      const { error, fieldErrors } = saveRefusal(err, custom.definitions, m.leads_edit_failed());
       return fail(400, { values, message: error, fieldErrors });
     }
 

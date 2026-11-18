@@ -18,6 +18,7 @@
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
+import { m } from '#lib/paraglide/messages.js';
 
 type Schemas = components['schemas'];
 
@@ -25,7 +26,7 @@ type Schemas = components['schemas'];
  *  display name under `user_details`; fall back to the email, then a label. */
 function assignee(p: Schemas['Profile']) {
   const d = p.user_details;
-  return { id: p.id, name: d?.name || d?.email || 'Unknown' };
+  return { id: p.id, name: d?.name || d?.email || m.app_board_unknown() };
 }
 
 /** One nested BoardTask → the flat card shape the board renders. */

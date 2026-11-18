@@ -3,33 +3,54 @@
  * record, plus the enquiries lead intake writes. Labels and formatting only,
  * safe in a component; the API calls are `#lib/server/v2/interactions.js`.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 /** What a person may log. `enquiry` is written by lead intake, never a form. */
 export const LOGGABLE_KINDS = ['call', 'meeting', 'email', 'whatsapp', 'sms'];
 
 export const KIND_LABEL: Record<string, string> = {
-  call: 'Call',
-  meeting: 'Meeting',
-  email: 'Email',
+  get call() {
+    return m.leads_interaction_kind_call();
+  },
+  get meeting() {
+    return m.leads_interaction_kind_meeting();
+  },
+  get email() {
+    return m.leads_interaction_kind_email();
+  },
   whatsapp: 'WhatsApp',
-  sms: 'Text',
-  enquiry: 'Enquiry'
+  get sms() {
+    return m.leads_interaction_kind_sms();
+  },
+  get enquiry() {
+    return m.leads_interaction_kind_enquiry();
+  }
 };
 
 export const CALL_OUTCOMES = ['connected', 'no_answer', 'voicemail', 'busy', 'wrong_number'];
 
 export const OUTCOME_LABEL: Record<string, string> = {
-  connected: 'Connected',
-  no_answer: 'No answer',
-  voicemail: 'Voicemail',
-  busy: 'Busy',
-  wrong_number: 'Wrong number'
+  get connected() {
+    return m.leads_interaction_outcome_connected();
+  },
+  get no_answer() {
+    return m.leads_interaction_outcome_no_answer();
+  },
+  get voicemail() {
+    return m.leads_interaction_outcome_voicemail();
+  },
+  get busy() {
+    return m.leads_interaction_outcome_busy();
+  },
+  get wrong_number() {
+    return m.leads_interaction_outcome_wrong_number();
+  }
 };
 
-const ENQUIRY_VIA: Record<string, string> = {
-  webform: 'web form',
-  intake: 'lead webhook',
-  email: 'email'
+const ENQUIRY_VIA: Record<string, () => string> = {
+  webform: () => m.leads_interaction_via_webform(),
+  intake: () => m.leads_interaction_via_intake(),
+  email: () => m.leads_interaction_via_email()
 };
 
 /**
@@ -44,35 +65,46 @@ export function interactionTitle({
   kind: string;
   direction?: string;
   origin?: string;
-}) {
+}): string {
   const inbound = direction === 'inbound';
-  if (kind === 'call') return inbound ? 'Incoming call' : 'Outgoing call';
-  if (kind === 'meeting') return 'Meeting';
-  if (kind === 'email') return inbound ? 'Email received' : 'Email sent';
-  if (kind === 'whatsapp') return inbound ? 'WhatsApp received' : 'WhatsApp sent';
-  if (kind === 'sms') return inbound ? 'Text received' : 'Text sent';
+  if (kind === 'call')
+    return inbound ? m.leads_interaction_call_inbound() : m.leads_interaction_call_outbound();
+  if (kind === 'meeting') return m.leads_interaction_kind_meeting();
+  if (kind === 'email')
+    return inbound ? m.leads_interaction_email_inbound() : m.leads_interaction_email_outbound();
+  if (kind === 'whatsapp')
+    return inbound
+      ? m.leads_interaction_whatsapp_inbound()
+      : m.leads_interaction_whatsapp_outbound();
+  if (kind === 'sms')
+    return inbound ? m.leads_interaction_sms_inbound() : m.leads_interaction_sms_outbound();
   if (kind === 'enquiry') {
-    const via = origin && origin !== 'manual' ? (ENQUIRY_VIA[origin] ?? origin) : '';
-    return via ? `Enquiry via ${via}` : 'Enquiry';
+    const via = origin && origin !== 'manual' ? (ENQUIRY_VIA[origin]?.() ?? origin) : '';
+    return via ? m.leads_interaction_enquiry_via({ via }) : m.leads_interaction_kind_enquiry();
   }
-  return 'Activity';
+  return m.leads_interaction_activity();
 }
 
 /**
  * A span of time for a person: "under a minute", "14 min", "2 h 14 min",
  * "3 d 4 h". Empty for a value that is not a number; negative reads as zero.
  */
-export function spanText(seconds: number | null | undefined) {
+export function spanText(seconds: number | null | undefined): string {
   if (seconds === null || seconds === undefined) return '';
   const s = Number(seconds);
   if (!Number.isFinite(s)) return '';
   const mins = Math.floor(Math.max(0, s) / 60);
-  if (mins < 1) return 'under a minute';
-  if (mins < 60) return `${mins} min`;
+  if (mins < 1) return m.leads_span_under_minute();
+  if (mins < 60) return m.leads_span_minutes({ minutes: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return mins % 60 ? `${hours} h ${mins % 60} min` : `${hours} h`;
+  if (hours < 24)
+    return mins % 60
+      ? m.leads_span_hours_minutes({ hours, minutes: mins % 60 })
+      : m.leads_span_hours({ hours });
   const days = Math.floor(hours / 24);
-  return hours % 24 ? `${days} d ${hours % 24} h` : `${days} d`;
+  return hours % 24
+    ? m.leads_span_days_hours({ days, hours: hours % 24 })
+    : m.leads_span_days({ days });
 }
 
 /** Seconds from `iso` to `now`, or null when `iso` is not a date. */
@@ -85,7 +117,7 @@ export function secondsSince(iso: string | null | undefined, now: Date = new Dat
 /** A call's length, "about 4 min" when the phone estimated it. */
 export function durationText(seconds: number | null | undefined, estimated = false) {
   const text = spanText(seconds);
-  return text && estimated ? `about ${text}` : text;
+  return text && estimated ? m.leads_span_about({ span: text }) : text;
 }
 
 /**

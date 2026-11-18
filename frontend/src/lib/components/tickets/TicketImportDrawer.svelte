@@ -5,6 +5,9 @@
   import { Button } from '#lib/components/ui/button/index.js';
   import * as Dialog from '#lib/components/ui/dialog/index.js';
   import { downloadImportErrors } from '#lib/utils/csv.js';
+  import { intlLocale } from '#lib/i18n/locale.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { getLocale } from '#lib/paraglide/runtime.js';
   import type { components } from '#lib/api-schema.js';
 
   /**
@@ -73,6 +76,14 @@
     ''
   ];
 
+  function kilobytes(bytes: number) {
+    return new Intl.NumberFormat(intlLocale(getLocale(), 'number'), {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+      useGrouping: false
+    }).format(bytes / 1024);
+  }
+
   function reset() {
     step = 'select';
     file = null;
@@ -122,7 +133,7 @@
     if (res.status === 413) {
       return {
         type: 'failure',
-        data: { importError: 'This file is too large to upload. Split it into smaller files.' }
+        data: { importError: m.app_import_too_large() }
       };
     }
     return deserialize(await res.text()) as ImportAnswer;
@@ -139,7 +150,7 @@
       const res = await fetch('?/importPreview', { method: 'POST', body: fd });
       const result = await readResult(res);
       if (result.type === 'failure') {
-        formError = String(result.data?.importError || 'Preview failed');
+        formError = String(result.data?.importError || m.app_import_tickets_preview_failed());
         return;
       }
       if (result.type === 'success' && result.data?.importPreview) {
@@ -150,10 +161,10 @@
         }
         step = 'preview';
       } else {
-        formError = 'Unexpected response from server';
+        formError = m.app_import_tickets_unexpected();
       }
     } catch (err) {
-      formError = err instanceof Error ? err.message : 'Preview failed';
+      formError = err instanceof Error ? err.message : m.app_import_tickets_preview_failed();
     } finally {
       busy = false;
     }
@@ -169,7 +180,7 @@
       const res = await fetch('?/importCommit', { method: 'POST', body: fd });
       const result = await readResult(res);
       if (result.type === 'failure') {
-        formError = String(result.data?.importError || 'Import failed');
+        formError = String(result.data?.importError || m.app_csv_import_failed());
         const errs = result.data?.importErrors;
         if (Array.isArray(errs) && errs.length) {
           commitErrors = errs;
@@ -182,7 +193,7 @@
         await refreshAll();
       }
     } catch (err) {
-      formError = err instanceof Error ? err.message : 'Import failed';
+      formError = err instanceof Error ? err.message : m.app_csv_import_failed();
     } finally {
       busy = false;
     }
@@ -194,11 +205,10 @@
     <Dialog.Header>
       <Dialog.Title class="flex items-center gap-2">
         <Upload class="h-4 w-4" />
-        Import tickets from CSV
+        {m.app_import_tickets_title()}
       </Dialog.Title>
       <Dialog.Description>
-        Upload a CSV of tickets. We'll validate every row before writing anything. References
-        (account, contacts, assignees) must already exist in your org.
+        {m.app_import_tickets_description()}
       </Dialog.Description>
     </Dialog.Header>
 
@@ -223,11 +233,11 @@
               {#if file}
                 <p class="truncate text-sm font-medium">{file.name}</p>
                 <p class="text-xs text-[var(--text-secondary)]">
-                  {(file.size / 1024).toFixed(1)} KB · click to replace or drop another file
+                  {m.app_import_tickets_file_meta({ size: kilobytes(file.size) })}
                 </p>
               {:else}
-                <p class="text-sm font-medium">Drop a CSV file here, or click to choose</p>
-                <p class="text-xs text-[var(--text-secondary)]">.csv only, up to 5 MB</p>
+                <p class="text-sm font-medium">{m.app_import_tickets_drop()}</p>
+                <p class="text-xs text-[var(--text-secondary)]">{m.app_import_tickets_limits()}</p>
               {/if}
             </div>
           </div>
@@ -243,20 +253,19 @@
         <div
           class="rounded-lg border border-[var(--border-default)] bg-[var(--surface-muted)] p-3 text-xs"
         >
-          <p class="font-medium">CSV format</p>
+          <p class="font-medium">{m.app_import_tickets_format()}</p>
           <p class="mt-1 text-[var(--text-secondary)]">
-            Required headers: <code class="rounded bg-[var(--surface-default)] px-1">name</code>,
+            {m.app_import_tickets_required()}
+            <code class="rounded bg-[var(--surface-default)] px-1">name</code>,
             <code class="rounded bg-[var(--surface-default)] px-1">status</code>,
-            <code class="rounded bg-[var(--surface-default)] px-1">priority</code>. Optional:
-            description, case_type, account_name, contact_emails, assigned_emails, team_names, tags
-            (semicolon-separated), closed_on (YYYY-MM-DD).
+            <code class="rounded bg-[var(--surface-default)] px-1">priority</code>. {m.app_import_tickets_optional()}
           </p>
           <button
             type="button"
             class="mt-2 inline-flex items-center gap-1 text-[var(--color-primary-default)] hover:underline max-md:min-h-11"
             onclick={downloadTemplate}
           >
-            <Download class="h-3.5 w-3.5" />Download CSV template
+            <Download class="h-3.5 w-3.5" />{m.app_import_tickets_download_template()}
           </button>
         </div>
 
@@ -272,11 +281,11 @@
 
       <Dialog.Footer>
         <Button class="max-md:h-11" type="button" variant="outline" onclick={() => (open = false)}
-          >Cancel</Button
+          >{m.common_cancel()}</Button
         >
         <Button class="max-md:h-11" type="button" disabled={!file || busy} onclick={submitPreview}>
           {#if busy}<Loader2 class="mr-1 h-3.5 w-3.5 animate-spin" />{/if}
-          Preview
+          {m.app_import_tickets_preview()}
         </Button>
       </Dialog.Footer>
     {:else if step === 'preview' && preview}
@@ -286,18 +295,22 @@
           <span
             class="inline-flex items-center gap-1 rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-medium"
           >
-            Total: {preview.summary.total}
+            {m.app_import_tickets_total({ count: preview.summary.total })}
           </span>
           <span
             class="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
           >
-            <CheckCircle2 class="h-3.5 w-3.5" />Valid: {preview.summary.valid}
+            <CheckCircle2 class="h-3.5 w-3.5" />{m.app_import_tickets_valid({
+              count: preview.summary.valid
+            })}
           </span>
           {#if preview.summary.invalid > 0}
             <span
               class="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-800"
             >
-              <AlertCircle class="h-3.5 w-3.5" />Invalid: {preview.summary.invalid}
+              <AlertCircle class="h-3.5 w-3.5" />{m.app_import_tickets_invalid({
+                count: preview.summary.invalid
+              })}
             </span>
           {/if}
         </div>
@@ -308,10 +321,12 @@
               <thead class="sticky top-0 bg-[var(--surface-muted)]">
                 <tr>
                   <th class="px-2 py-1 text-left font-medium">#</th>
-                  <th class="px-2 py-1 text-left font-medium">Name</th>
-                  <th class="px-2 py-1 text-left font-medium">Status</th>
-                  <th class="px-2 py-1 text-left font-medium">Priority</th>
-                  <th class="px-2 py-1 text-left font-medium">Account</th>
+                  <th class="px-2 py-1 text-left font-medium">{m.common_name()}</th>
+                  <th class="px-2 py-1 text-left font-medium">{m.common_status()}</th>
+                  <th class="px-2 py-1 text-left font-medium">{m.common_priority()}</th>
+                  <th class="px-2 py-1 text-left font-medium"
+                    >{m.app_import_tickets_col_account()}</th
+                  >
                 </tr>
               </thead>
               <tbody>
@@ -332,7 +347,7 @@
               <div
                 class="border-t border-[var(--border-default)] bg-[var(--surface-muted)] px-2 py-1 text-center text-[10px] text-[var(--text-secondary)]"
               >
-                Showing first 20 of {preview.valid.length} valid rows
+                {m.app_import_tickets_showing_first({ count: preview.valid.length })}
               </div>
             {/if}
           </div>
@@ -342,24 +357,28 @@
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <p class="text-sm font-medium text-red-800">
-                {preview.errors.length} error{preview.errors.length === 1 ? '' : 's'}, fix the CSV
-                before importing
+                {m.app_import_tickets_errors({ count: preview.errors.length })}
               </p>
               <button
                 type="button"
                 class="inline-flex items-center gap-1 text-xs text-[var(--color-primary-default)] hover:underline max-md:min-h-11"
                 onclick={() => downloadImportErrors(preview?.errors ?? [], 'tickets')}
               >
-                <Download class="h-3 w-3" />Download errors
+                <Download class="h-3 w-3" />{m.app_import_tickets_download_errors()}
               </button>
             </div>
             <div class="max-h-40 overflow-auto rounded-md border border-red-200 bg-red-50">
               <table class="w-full text-xs">
                 <thead class="sticky top-0 bg-red-100">
                   <tr>
-                    <th class="px-2 py-1 text-left font-medium">Row</th>
-                    <th class="px-2 py-1 text-left font-medium">Field</th>
-                    <th class="px-2 py-1 text-left font-medium">Problem</th>
+                    <th class="px-2 py-1 text-left font-medium">{m.app_import_tickets_col_row()}</th
+                    >
+                    <th class="px-2 py-1 text-left font-medium"
+                      >{m.app_import_tickets_col_field()}</th
+                    >
+                    <th class="px-2 py-1 text-left font-medium"
+                      >{m.app_import_tickets_col_problem()}</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
@@ -380,24 +399,28 @@
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <p class="text-sm font-medium text-red-800">
-                Server rejected {commitErrors.length} row{commitErrors.length === 1 ? '' : 's'} during
-                import. The file may have changed since preview
+                {m.app_import_tickets_rejected({ count: commitErrors.length })}
               </p>
               <button
                 type="button"
                 class="inline-flex items-center gap-1 text-xs text-[var(--color-primary-default)] hover:underline max-md:min-h-11"
                 onclick={() => downloadImportErrors(commitErrors, 'tickets')}
               >
-                <Download class="h-3 w-3" />Download errors
+                <Download class="h-3 w-3" />{m.app_import_tickets_download_errors()}
               </button>
             </div>
             <div class="max-h-40 overflow-auto rounded-md border border-red-200 bg-red-50">
               <table class="w-full text-xs">
                 <thead class="sticky top-0 bg-red-100">
                   <tr>
-                    <th class="px-2 py-1 text-left font-medium">Row</th>
-                    <th class="px-2 py-1 text-left font-medium">Field</th>
-                    <th class="px-2 py-1 text-left font-medium">Problem</th>
+                    <th class="px-2 py-1 text-left font-medium">{m.app_import_tickets_col_row()}</th
+                    >
+                    <th class="px-2 py-1 text-left font-medium"
+                      >{m.app_import_tickets_col_field()}</th
+                    >
+                    <th class="px-2 py-1 text-left font-medium"
+                      >{m.app_import_tickets_col_problem()}</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
@@ -426,7 +449,7 @@
 
       <Dialog.Footer>
         <Button class="max-md:h-11" type="button" variant="outline" onclick={() => reset()}
-          >Back</Button
+          >{m.common_back()}</Button
         >
         <Button
           class="max-md:h-11"
@@ -435,7 +458,7 @@
           onclick={submitCommit}
         >
           {#if busy}<Loader2 class="mr-1 h-3.5 w-3.5 animate-spin" />{/if}
-          Import {preview.summary.valid} ticket{preview.summary.valid === 1 ? '' : 's'}
+          {m.app_import_tickets_button({ count: preview.summary.valid })}
         </Button>
       </Dialog.Footer>
     {:else if step === 'done' && commitResult}
@@ -444,14 +467,16 @@
           <CheckCircle2 class="h-6 w-6 text-green-700" />
           <div>
             <p class="text-sm font-medium text-green-900">
-              Imported {commitResult.created} ticket{commitResult.created === 1 ? '' : 's'}
+              {m.app_import_tickets_done({ count: commitResult.created })}
             </p>
-            <p class="text-xs text-green-800">The tickets list has been refreshed.</p>
+            <p class="text-xs text-green-800">{m.app_import_tickets_refreshed()}</p>
           </div>
         </div>
       </div>
       <Dialog.Footer>
-        <Button class="max-md:h-11" type="button" onclick={() => (open = false)}>Close</Button>
+        <Button class="max-md:h-11" type="button" onclick={() => (open = false)}
+          >{m.common_close()}</Button
+        >
       </Dialog.Footer>
     {/if}
   </Dialog.Content>

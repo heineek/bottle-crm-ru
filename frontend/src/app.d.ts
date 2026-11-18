@@ -14,11 +14,14 @@ declare global {
       user?: { id?: string; name: string; email: string; profilePhoto: string };
       org?: { id: string; name: string };
       org_name?: string;
+      /** Decided once per request in hooks.server.ts (#lib/i18n/locale.ts). */
+      locale?: string;
       org_settings?: {
         default_currency?: string;
         currency_symbol?: string;
         default_country?: string | null;
         timezone?: string;
+        default_language?: string;
       };
       profile?: {
         org?: { id: string; name: string };

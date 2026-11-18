@@ -6,6 +6,7 @@ The token stays on the server: neither method answers with it.
 
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
@@ -22,7 +23,7 @@ from common.push import DEVICES_PER_MEMBER
 # this many characters are as many bytes, and the unique (org, token) index
 # entry always fits a Postgres B-tree page (2,704 bytes).
 TOKEN_MAX = 2048
-FCM_TOKEN = RegexValidator(r"\A[A-Za-z0-9_:\-]+\Z", "This is not a push token.")
+FCM_TOKEN = RegexValidator(r"\A[A-Za-z0-9_:\-]+\Z", _("This is not a push token."))
 
 
 class DeviceTokenDeleteSerializer(serializers.Serializer):

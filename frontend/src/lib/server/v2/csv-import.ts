@@ -12,6 +12,7 @@
  */
 import { fail, type Cookies } from '@sveltejs/kit';
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import type { components } from '#lib/api-schema.js';
 import type { components as Enterprise } from '#lib/enterprise-api-schema.js';
@@ -49,7 +50,7 @@ export async function forwardCsvImport<
   const form = await request.formData();
   const file = form.get('file');
   if (!(file instanceof File) || file.size === 0) {
-    return fail(400, { importError: 'Choose a file.' });
+    return fail(400, { importError: m.app_csv_choose_file() });
   }
   const body = new FormData();
   body.set('file', file, file.name || 'upload.csv');
@@ -72,11 +73,11 @@ export async function forwardCsvImport<
       importError:
         status === 403
           ? path.startsWith('/objects/')
-            ? String(data.detail || data.message || 'You cannot import these records.')
-            : 'Importing needs an admin, or a member with sales access.'
+            ? String(data.detail || data.message || m.app_csv_import_records_forbidden())
+            : m.app_csv_import_forbidden()
           : status === 429
-            ? 'Too many tries in a minute. Wait a moment, then try again.'
-            : String(data.message || data.header_error || 'Import failed'),
+            ? m.app_csv_import_throttled()
+            : String(data.message || data.header_error || m.app_csv_import_failed()),
       importErrors: (Array.isArray(data.errors) ? data.errors : []) as RowError[],
       // A mapped commit with nothing importable answers 400 with the rows it
       // skipped, so the client can still say why.

@@ -23,6 +23,7 @@ edit it), so readability covers the keeper; the delete rule is narrower
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -206,7 +207,9 @@ class MergeView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": {"merge_id": ["A record cannot be merged into itself."]},
+                    "errors": {
+                        "merge_id": [_("A record cannot be merged into itself.")]
+                    },
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -242,8 +245,10 @@ class MergeView(APIView):
                 return Response(
                     {
                         "error": True,
-                        "errors": "You may not delete the record being merged "
-                        "away, so you cannot merge it.",
+                        "errors": _(
+                            "You may not delete the record being merged "
+                            "away, so you cannot merge it."
+                        ),
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
@@ -269,7 +274,8 @@ class MergeView(APIView):
         return Response(
             {
                 "error": False,
-                "message": f"Merged {merged['name']} into {spec.display_name(keeper)}.",
+                "message": _("Merged %(merged)s into %(keeper)s.")
+                % {"merged": merged["name"], "keeper": spec.display_name(keeper)},
                 "id": kept["id"],
             }
         )

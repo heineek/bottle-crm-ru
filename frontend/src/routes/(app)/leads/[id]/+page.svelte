@@ -32,6 +32,7 @@
   import { LEAD_STATUS_TONE, LEAD_STATUS_LABEL, industryLabel } from '#lib/v2/enums.js';
   import { sourceLabel } from '#lib/v2/lead-sources.js';
   import { t } from '#lib/terminology.js';
+  import { m } from '#lib/paraglide/messages.js';
   import { enhance } from '$app/forms';
   import {
     ChevronRight,
@@ -58,8 +59,20 @@
 
   let { lead, activity, duplicates, customFields } = $derived(data);
   let isConverted = $derived(lead.status === 'converted');
-  let firstName = $derived(lead.first_name || 'this lead');
-  let fullName = $derived(`${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim() || 'Lead');
+  let firstName = $derived(lead.first_name || m.leads_detail_this_lead());
+  let fullName = $derived(
+    `${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim() || m.leads_detail_fallback_name()
+  );
+
+  let convertExplain = $derived(
+    !dealsOn
+      ? m.leads_detail_convert_explain()
+      : lead.opportunity_amount
+        ? m.leads_detail_convert_explain_deals_worth({
+            amount: money(lead.opportunity_amount, lead.currency)
+          })
+        : m.leads_detail_convert_explain_deals()
+  );
 
   let note = $state('');
   let saving = $state(false);
@@ -111,7 +124,7 @@
    */
   function metaFor(e: { type: string; by: string | null; at: string | null }) {
     const parts = [];
-    if (e.type === 'file') parts.push('Attached');
+    if (e.type === 'file') parts.push(m.leads_detail_attached());
     if (e.by) parts.push(e.by);
     parts.push(relativeTime(e.at));
     return parts.join(' · ');
@@ -119,8 +132,8 @@
 
   function dayGroup(iso: string | null) {
     const n = daysSince(iso);
-    if (n === 0) return 'Today';
-    if (n === 1) return 'Yesterday';
+    if (n === 0) return m.leads_detail_today();
+    if (n === 1) return m.leads_detail_yesterday();
     return shortDate(iso);
   }
 
@@ -159,34 +172,36 @@
     if (!lead.email && !lead.phone) {
       return {
         tone: 'rust',
-        label: 'Cannot reach',
-        text: `No email and no phone on this lead, so there is no way to contact ${firstName}. Add one before you can work it.`,
-        action: 'Add contact details'
+        label: m.leads_detail_cannot_reach(),
+        text: m.leads_detail_cannot_reach_text({ name: firstName }),
+        action: m.leads_detail_add_contact_details()
       };
     }
     if (!lead.assigned_to) {
       return {
         tone: 'ember',
-        label: 'Needs an owner',
+        label: m.leads_detail_needs_owner(),
         text: lead.opportunity_amount
-          ? `Worth ${money(lead.opportunity_amount, lead.currency)} and nobody owns it. Assign an owner before it goes cold.`
-          : 'Nobody owns this lead. Assign an owner so it does not sit unworked.',
-        action: 'Assign owner'
+          ? m.leads_detail_needs_owner_worth({
+              amount: money(lead.opportunity_amount, lead.currency)
+            })
+          : m.leads_detail_needs_owner_text(),
+        action: m.leads_detail_assign_owner()
       };
     }
     if (waited) {
       return {
         tone: 'ember',
-        label: 'Waiting for a reply',
-        text: `Waiting ${waited} for a first reply. Call or message ${firstName}, then log it here.`,
+        label: m.leads_detail_waiting_label(),
+        text: m.leads_detail_waiting_text({ span: waited, name: firstName }),
         action: null
       };
     }
     if (!lead.last_contacted && (daysSince(lead.created_at) ?? 0) > 7) {
       return {
         tone: 'ember',
-        label: 'Never contacted',
-        text: `Created ${relativeDays(lead.created_at)} and still never contacted. Reach out, or recycle it.`,
+        label: m.leads_detail_never_contacted(),
+        text: m.leads_detail_never_contacted_text({ when: relativeDays(lead.created_at) }),
         action: null
       };
     }
@@ -211,22 +226,24 @@
     <Avatar name={fullName} size={42} />
   {/snippet}
   {#snippet crumb()}
-    <a href={resolve('leads')}>{t(data.org?.terminology, 'lead.plural', 'Leads')}</a>
+    <a href={resolve('leads')}>{t(data.org?.terminology, 'lead.plural', m.leads_term_plural())}</a>
     <ChevronRight size={12} />
-    <span>{lead.company_name || 'No company'}</span>
+    <span>{lead.company_name || m.leads_detail_no_company()}</span>
   {/snippet}
   {#snippet sub()}
-    {lead.job_title || 'No title recorded'} ·
+    {lead.job_title || m.leads_detail_no_title()} ·
     {lead.last_contacted
-      ? `last contacted ${relativeDays(lead.last_contacted)}`
-      : 'never contacted'}
+      ? m.leads_detail_last_contacted_ago({ when: relativeDays(lead.last_contacted) })
+      : m.leads_detail_never_contacted_lower()}
   {/snippet}
   {#snippet actions()}
     {#if lead.email}
-      <a class="v2-btn" href="mailto:{lead.email}"><Mail />Email</a>
+      <a class="v2-btn" href="mailto:{lead.email}"><Mail />{m.leads_detail_email_action()}</a>
     {/if}
     {#if lead.phone}
-      <a class="v2-btn" href="tel:{lead.phone}" onclick={() => startLog('call')}><Phone />Call</a>
+      <a class="v2-btn" href="tel:{lead.phone}" onclick={() => startLog('call')}
+        ><Phone />{m.leads_detail_call()}</a
+      >
     {/if}
     {#if whatsapp}
       <a
@@ -237,15 +254,15 @@
         onclick={() => startLog('whatsapp')}><MessageCircle />WhatsApp</a
       >
     {/if}
-    <a class="v2-btn" href={resolve(`leads/${lead.id}/edit`)}><Pencil />Edit</a>
+    <a class="v2-btn" href={resolve(`leads/${lead.id}/edit`)}><Pencil />{m.common_edit()}</a>
     {#if data.canDelete}
       <!-- Offered only when the API's delete rule admits this caller; the
            DELETE asks the same rule again. -->
       <ConfirmAction
         action="?/delete"
-        label="Delete"
-        confirmLabel="Delete for good"
-        explain="Deletes {fullName} permanently. This cannot be undone."
+        label={m.common_delete()}
+        confirmLabel={m.leads_detail_delete_confirm()}
+        explain={m.leads_detail_delete_explain({ name: fullName })}
       />
     {/if}
   {/snippet}
@@ -279,31 +296,27 @@
 
         <div class="v2-card" style="padding:15px 16px">
           {#if isConverted}
-            <div class="v2-label" style="margin-bottom:8px">Already converted</div>
+            <div class="v2-label" style="margin-bottom:8px">
+              {m.leads_detail_already_converted()}
+            </div>
             <p class="v2-sub" style="margin:0;font-size:12.5px;line-height:1.55">
               {#if dealsOn}
-                The account, contact and deal this lead became carry the work now. Converting again
-                would build a second deal against the same account, and the API refuses it.
+                {m.leads_detail_converted_body_deals()}
               {:else}
-                The account and contact this lead became carry the work now.
+                {m.leads_detail_converted_body()}
               {/if}
             </p>
           {:else}
             <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
               <div style="flex:1;min-width:210px">
-                <div class="v2-label" style="margin-bottom:6px">Convert</div>
+                <div class="v2-label" style="margin-bottom:6px">
+                  {m.leads_detail_convert_label()}
+                </div>
                 <p class="v2-sub" style="margin:0;font-size:12.5px;line-height:1.55">
-                  {#if dealsOn}
-                    Creates an <b style="color:var(--v2-ink)">account</b>, a
-                    <b style="color:var(--v2-ink)">contact</b> and one
-                    <b style="color:var(--v2-ink)">deal</b>{lead.opportunity_amount
-                      ? ` worth ${money(lead.opportunity_amount, lead.currency)}`
-                      : ''}. The lead stays linked, and there is no endpoint that undoes it.
-                  {:else}
-                    Creates an <b style="color:var(--v2-ink)">account</b> and a
-                    <b style="color:var(--v2-ink)">contact</b>. The lead stays linked, and there is
-                    no endpoint that undoes it.
-                  {/if}
+                  <!-- The message marks its bold words with "*". -->
+                  {#each convertExplain.split('*') as part, i (i)}
+                    {#if i % 2}<b style="color:var(--v2-ink)">{part}</b>{:else}{part}{/if}
+                  {/each}
                 </p>
               </div>
               <form method="POST" action="?/convert" use:enhance>
@@ -320,15 +333,15 @@
                   disabled={!lead.email}
                   title={lead.email
                     ? dealsOn
-                      ? 'Creates an account, a contact and an opportunity from this lead'
-                      : 'Creates an account and a contact from this lead'
-                    : 'Add an email address to this lead first. The contact record is created from it.'}
+                      ? m.leads_detail_convert_title_deals()
+                      : m.leads_detail_convert_title()
+                    : m.leads_detail_convert_needs_email_title()}
                 >
-                  Convert lead
+                  {m.leads_detail_convert_button()}
                 </button>
                 {#if !lead.email}
                   <p class="v2-sub" style="margin:4px 0 0;font-size:11.5px">
-                    Add an email address first. The contact record is created from it.
+                    {m.leads_detail_convert_needs_email()}
                   </p>
                 {/if}
               </form>
@@ -338,19 +351,23 @@
 
         {#if form?.converted}
           <div class="v2-card" role="status" style="margin-top:12px;padding:15px 16px">
-            <div class="v2-label" style="margin-bottom:6px">Converted</div>
+            <div class="v2-label" style="margin-bottom:6px">{m.leads_detail_converted()}</div>
             <p class="v2-sub" style="margin:0 0 8px;font-size:12.5px;line-height:1.55">
-              {dealsOn
-                ? 'The account, contact and deal are ready.'
-                : 'The account and contact are ready.'}
+              {dealsOn ? m.leads_detail_converted_ready_deals() : m.leads_detail_converted_ready()}
             </p>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <a class="v2-btn" href={resolve(`accounts/${form.account_id}`)}>View account</a>
+              <a class="v2-btn" href={resolve(`accounts/${form.account_id}`)}
+                >{m.leads_view_account()}</a
+              >
               {#if form.contact_id}
-                <a class="v2-btn" href={resolve(`contacts/${form.contact_id}`)}>View contact</a>
+                <a class="v2-btn" href={resolve(`contacts/${form.contact_id}`)}
+                  >{m.leads_view_contact()}</a
+                >
               {/if}
               {#if form.opportunity_id}
-                <a class="v2-btn" href={resolve(`pipeline/${form.opportunity_id}`)}>View deal</a>
+                <a class="v2-btn" href={resolve(`pipeline/${form.opportunity_id}`)}
+                  >{m.leads_view_deal()}</a
+                >
               {/if}
             </div>
           </div>
@@ -359,7 +376,7 @@
         {/if}
 
         {#if lead.description}
-          <div class="v2-label" style="margin:22px 0 10px">About</div>
+          <div class="v2-label" style="margin:22px 0 10px">{m.leads_detail_about()}</div>
           <div class="v2-card about">{lead.description}</div>
         {/if}
 
@@ -368,24 +385,27 @@
         <RelatedRecords {related} error={form?.related?.error} />
 
         <div class="act-head">
-          <div class="v2-label">Activity</div>
+          <div class="v2-label">{m.leads_detail_activity()}</div>
           {#if kinds.length > 1}
-            <div class="seg" role="group" aria-label="Filter activity">
-              <button aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}>All</button>
+            <div class="seg" role="group" aria-label={m.leads_detail_filter_activity()}>
+              <button aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}
+                >{m.leads_detail_filter_all()}</button
+              >
               {#if kinds.includes('interaction')}
                 <button
                   aria-pressed={filter === 'interaction'}
-                  onclick={() => (filter = 'interaction')}>Conversations</button
+                  onclick={() => (filter = 'interaction')}
+                  >{m.leads_detail_filter_conversations()}</button
                 >
               {/if}
               {#if kinds.includes('note')}
                 <button aria-pressed={filter === 'note'} onclick={() => (filter = 'note')}
-                  >Notes</button
+                  >{m.leads_detail_filter_notes()}</button
                 >
               {/if}
               {#if kinds.includes('file')}
                 <button aria-pressed={filter === 'file'} onclick={() => (filter = 'file')}
-                  >Files</button
+                  >{m.leads_detail_filter_files()}</button
                 >
               {/if}
             </div>
@@ -394,12 +414,16 @@
 
         <div class="composer" bind:this={composerEl}>
           {#if logLive}
-            <div class="seg composer-switch" role="group" aria-label="Add to the timeline">
+            <div
+              class="seg composer-switch"
+              role="group"
+              aria-label={m.leads_detail_composer_switch()}
+            >
               <button aria-pressed={composer === 'note'} onclick={() => (composer = 'note')}
-                >Note</button
+                >{m.leads_detail_composer_note()}</button
               >
               <button aria-pressed={composer === 'log'} onclick={() => (composer = 'log')}
-                >Log activity</button
+                >{m.leads_detail_composer_log()}</button
               >
             </div>
           {/if}
@@ -438,19 +462,20 @@
                 rows="2"
                 bind:value={note}
                 class="note-input"
-                placeholder={logLive ? 'Write a note…' : 'Log a call, a reply, what they said…'}
-              ></textarea>
+                placeholder={logLive
+                  ? m.leads_detail_note_placeholder_short()
+                  : m.leads_detail_note_placeholder()}></textarea>
               <div class="note-actions">
                 <button
                   class="v2-btn v2-btn-primary"
                   type="submit"
                   disabled={saving || !note.trim()}
                 >
-                  {saving ? 'Saving…' : 'Add note'}
+                  {saving ? m.leads_saving() : m.leads_detail_add_note()}
                 </button>
                 <label class="v2-btn" class:has-file={fileName}>
                   <Paperclip size={14} />
-                  <span class="attach-label">{fileName || 'Attach file'}</span>
+                  <span class="attach-label">{fileName || m.leads_detail_attach_file()}</span>
                   <input
                     bind:this={fileInput}
                     type="file"
@@ -464,7 +489,7 @@
                     type="button"
                     class="v2-btn-quiet clear-file"
                     onclick={clearFile}
-                    title="Remove file"
+                    title={m.leads_detail_remove_file()}
                   >
                     <X size={13} />
                   </button>
@@ -479,7 +504,7 @@
 
         {#if data.interactions.failed}
           <p class="note-err" style="margin:0 0 12px">
-            Calls and messages could not be loaded, so they are missing below.
+            {m.leads_detail_interactions_failed()}
           </p>
         {/if}
         {#if form?.activity?.deleteError}
@@ -524,9 +549,9 @@
                       <ConfirmAction
                         action="?/deleteActivity"
                         hidden={{ interaction: e.interaction }}
-                        label="Delete"
-                        confirmLabel="Delete for good"
-                        explain="Removes it from every timeline it is on."
+                        label={m.leads_detail_activity_delete()}
+                        confirmLabel={m.leads_detail_activity_delete_confirm()}
+                        explain={m.leads_detail_activity_delete_explain()}
                       />
                     </div>
                   {/if}
@@ -536,7 +561,7 @@
           {/each}
           {#if data.interactions.more}
             <p class="v2-sub" style="font-size:12px">
-              Showing the latest calls and messages; {data.interactions.more} older ones are not shown.
+              {m.leads_detail_interactions_more({ count: data.interactions.more })}
             </p>
           {/if}
         </div>
@@ -547,19 +572,19 @@
   <aside class="v2-rail">
     <!-- An em dash where a field is empty. A blank list reads as a page that
          failed to load; "—" reads as a fact nobody has filled in. -->
-    <div class="v2-label v2-rail-head">Reach</div>
+    <div class="v2-label v2-rail-head">{m.leads_detail_reach()}</div>
     <dl class="v2-kv">
-      <dt>Email</dt>
+      <dt>{m.common_email()}</dt>
       <dd style="font-size:12px">
         {#if lead.email}<a href="mailto:{lead.email}" style="color:inherit">{lead.email}</a>{:else},
         {/if}
       </dd>
-      <dt>Phone</dt>
+      <dt>{m.common_phone()}</dt>
       <dd class="v2-num" style="font-size:12px">
         {#if lead.phone}<a href="tel:{lead.phone}" style="color:inherit">{lead.phone}</a>{:else},
         {/if}
       </dd>
-      <dt>Website</dt>
+      <dt>{m.leads_detail_website()}</dt>
       <dd style="font-size:12px">
         {#if lead.website && webHref(lead.website)}<a
             href={webHref(lead.website)}
@@ -570,11 +595,11 @@
       </dd>
     </dl>
 
-    <div class="v2-label v2-rail-head">Lead</div>
+    <div class="v2-label v2-rail-head">{m.leads_detail_rail_lead()}</div>
     <dl class="v2-kv">
-      <dt>Status</dt>
+      <dt>{m.common_status()}</dt>
       <dd><Pill tone={LEAD_STATUS_TONE[lead.status]}>{LEAD_STATUS_LABEL[lead.status]}</Pill></dd>
-      <dt>Stage</dt>
+      <dt>{m.leads_detail_stage()}</dt>
       <dd>
         {#if data.stage}
           <a
@@ -583,48 +608,55 @@
             )}
             style="color:inherit">{data.stage.name}</a
           >
-          <span class="v2-sub">in {data.stage.pipeline.name}</span>
+          <span class="v2-sub"
+            >{m.leads_detail_in_pipeline({ pipeline: data.stage.pipeline.name })}</span
+          >
         {:else}—{/if}
       </dd>
-      <dt>Owner</dt>
-      <dd>{lead.assigned_to || 'Nobody'}</dd>
-      <dt>Source</dt>
-      <dd>{sourceLabel(data.sources, lead.source) || 'Not recorded'}</dd>
+      <dt>{m.common_owner()}</dt>
+      <dd>{lead.assigned_to || m.leads_owner_nobody()}</dd>
+      <dt>{m.leads_detail_source()}</dt>
+      <dd>{sourceLabel(data.sources, lead.source) || m.leads_detail_not_recorded()}</dd>
       {#if lead.source_detail}
-        <dt>Sub-source</dt>
+        <dt>{m.leads_field_source_detail()}</dt>
         <dd>{lead.source_detail}</dd>
       {/if}
       {#if lead.source_ref}
-        <dt>Reference</dt>
+        <dt>{m.leads_field_source_ref()}</dt>
         <dd class="v2-num" style="font-size:12px;overflow-wrap:anywhere">{lead.source_ref}</dd>
       {/if}
-      <dt>Industry</dt>
+      <dt>{m.leads_detail_industry()}</dt>
       <dd>{industryLabel(lead.industry) || '—'}</dd>
-      <dt>Est. value</dt>
+      <dt>{m.leads_detail_est_value()}</dt>
       <dd class="v2-num">
         {lead.opportunity_amount ? money(lead.opportunity_amount, lead.currency) : '—'}
       </dd>
     </dl>
 
-    <div class="v2-label v2-rail-head">Timeline</div>
+    <div class="v2-label v2-rail-head">{m.leads_detail_timeline()}</div>
     <dl class="v2-kv">
-      <dt>Last contacted</dt>
-      <dd>{lead.last_contacted ? relativeDays(lead.last_contacted) : 'Never'}</dd>
+      <dt>{m.leads_detail_last_contacted()}</dt>
+      <dd>{lead.last_contacted ? relativeDays(lead.last_contacted) : m.leads_detail_never()}</dd>
       {#if waited}
-        <dt>Waiting</dt>
+        <dt>{m.leads_detail_waiting()}</dt>
         <dd class="waiting">{waited}</dd>
       {/if}
       {#if lead.first_response_at}
-        <dt>First reply</dt>
+        <dt>{m.leads_detail_first_reply()}</dt>
         <dd>
-          {responseTimeText(lead)}{lead.first_response_by ? ` by ${lead.first_response_by}` : ''}
+          {lead.first_response_by
+            ? m.leads_detail_first_reply_by({
+                span: responseTimeText(lead),
+                name: lead.first_response_by
+              })
+            : responseTimeText(lead)}
         </dd>
       {/if}
       {#if lead.last_enquiry_at}
-        <dt>Last enquiry</dt>
+        <dt>{m.leads_detail_last_enquiry()}</dt>
         <dd>{relativeDays(lead.last_enquiry_at)}</dd>
       {/if}
-      <dt>Created</dt>
+      <dt>{m.common_created()}</dt>
       <dd>{relativeDays(lead.created_at)}</dd>
     </dl>
   </aside>

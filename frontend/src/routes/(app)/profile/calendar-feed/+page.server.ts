@@ -5,6 +5,7 @@ import {
   disableCalendarFeed
 } from '#lib/server/v2/calendar-feed.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -21,7 +22,7 @@ export const actions: Actions = {
     try {
       return { url: await issueCalendarFeed({ cookies }) };
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not create the calendar feed.') });
+      return fail(400, { error: readableError(err, m.profile_feed_err_issue()) });
     }
   },
 
@@ -30,7 +31,7 @@ export const actions: Actions = {
     try {
       await disableCalendarFeed({ cookies });
     } catch (err) {
-      return fail(400, { error: readableError(err, 'Could not turn the calendar feed off.') });
+      return fail(400, { error: readableError(err, m.profile_feed_err_disable()) });
     }
     return { disabled: true };
   }

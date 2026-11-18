@@ -12,3 +12,6 @@ bun.lockb
 openapi.json
 src/lib/api-schema.d.ts
 src/lib/enterprise-api-schema.d.ts
+
+# Inlang keeps its cache and metadata here; only settings.json is source.
+project.inlang/

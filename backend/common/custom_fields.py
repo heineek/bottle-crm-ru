@@ -16,6 +16,8 @@ from typing import Any
 
 from django.db.models import JSONField, Q, Value
 from django.db.models.fields.json import KeyTransform
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from rest_framework import serializers as drf_serializers
 
 from common.object_registry import BUILT_IN
@@ -32,14 +34,16 @@ def validate_definition_options(field_type: str, options: Any) -> None:
     if field_type != "dropdown":
         if options not in (None, [], {}):
             raise drf_serializers.ValidationError(
-                {"options": "options is only valid for dropdown fields"}
+                {"options": _("options is only valid for dropdown fields")}
             )
         return
 
     if not isinstance(options, list) or not options:
         raise drf_serializers.ValidationError(
             {
-                "options": "Dropdown fields require a non-empty list of {value, label} pairs"
+                "options": _(
+                    "Dropdown fields require a non-empty list of {value, label} pairs"
+                )
             }
         )
 
@@ -47,27 +51,41 @@ def validate_definition_options(field_type: str, options: Any) -> None:
     for idx, entry in enumerate(options):
         if not isinstance(entry, dict):
             raise drf_serializers.ValidationError(
-                {"options": f"Entry {idx} must be an object with value and label"}
+                {
+                    "options": _(
+                        "Entry %(index)d must be an object with value and label"
+                    )
+                    % {"index": idx}
+                }
             )
         value = entry.get("value")
         label = entry.get("label")
         if not isinstance(value, str) or not value:
             raise drf_serializers.ValidationError(
-                {"options": f"Entry {idx} is missing a non-empty string value"}
+                {
+                    "options": _("Entry %(index)d is missing a non-empty string value")
+                    % {"index": idx}
+                }
             )
         if not isinstance(label, str) or not label:
             raise drf_serializers.ValidationError(
-                {"options": f"Entry {idx} is missing a non-empty string label"}
+                {
+                    "options": _("Entry %(index)d is missing a non-empty string label")
+                    % {"index": idx}
+                }
             )
         if value in seen:
             raise drf_serializers.ValidationError(
-                {"options": f"Duplicate dropdown value: {value!r}"}
+                {
+                    "options": _("Duplicate dropdown value: %(value)s")
+                    % {"value": repr(value)}
+                }
             )
         seen.add(value)
 
 
 # PostgreSQL jsonb refuses U+0000, so a value carrying one would be a 500.
-_NUL_ERROR = "must not contain null characters"
+_NUL_ERROR = gettext_lazy("must not contain null characters")
 
 
 def _coerce_value(field_type: str, raw: Any):
@@ -78,7 +96,7 @@ def _coerce_value(field_type: str, raw: Any):
     if field_type in ("text", "textarea"):
         text = str(raw)
         if "\x00" in text:
-            return None, _NUL_ERROR
+            return None, str(_NUL_ERROR)
         return text, None
 
     if field_type == "number":
@@ -87,10 +105,10 @@ def _coerce_value(field_type: str, raw: Any):
                 raise ValueError
             number = float(raw) if isinstance(raw, (int, float)) else float(str(raw))
         except (OverflowError, TypeError, ValueError):
-            return None, "must be a number"
+            return None, _("must be a number")
         # NaN and infinity are not JSON, so neither a stored value nor a filter.
         if not math.isfinite(number):
-            return None, "must be a number"
+            return None, _("must be a number")
         return number, None
 
     if field_type == "checkbox":
@@ -102,7 +120,7 @@ def _coerce_value(field_type: str, raw: Any):
                 return True, None
             if lowered in ("false", "0", "no", "off"):
                 return False, None
-        return None, "must be a boolean"
+        return None, _("must be a boolean")
 
     if field_type == "date":
         if isinstance(raw, date):
@@ -111,16 +129,16 @@ def _coerce_value(field_type: str, raw: Any):
             try:
                 return date.fromisoformat(raw).isoformat(), None
             except ValueError:
-                return None, "must be a YYYY-MM-DD date"
-        return None, "must be a YYYY-MM-DD date"
+                return None, _("must be a YYYY-MM-DD date")
+        return None, _("must be a YYYY-MM-DD date")
 
     if field_type == "dropdown":
         text = str(raw)
         if "\x00" in text:
-            return None, _NUL_ERROR
+            return None, str(_NUL_ERROR)
         return text, None
 
-    return None, f"unsupported field_type {field_type!r}"
+    return None, _("unsupported field_type %(type)s") % {"type": repr(field_type)}
 
 
 def validate_payload(
@@ -158,7 +176,7 @@ def validate_payload(
     if value_dict is None:
         value_dict = {}
     if not isinstance(value_dict, dict):
-        return {}, {"custom_fields": "must be an object"}
+        return {}, {"custom_fields": _("must be an object")}
 
     existing = existing or {}
 
@@ -203,7 +221,9 @@ def validate_payload(
         if defn.field_type == "dropdown":
             allowed = {opt.get("value") for opt in (defn.options or [])}
             if coerced not in allowed:
-                errors[key] = f"must be one of {sorted(allowed)}"
+                errors[key] = _("must be one of %(choices)s") % {
+                    "choices": sorted(allowed)
+                }
                 continue
         cleaned[key] = coerced
 
@@ -213,7 +233,7 @@ def validate_payload(
             continue
         present = cleaned.get(defn.key) not in (None, "")
         if not present:
-            errors.setdefault(defn.key, "is required")
+            errors.setdefault(defn.key, _("is required"))
 
     return cleaned, errors
 

@@ -20,6 +20,7 @@
   import { resolve } from '$app/paths';
   import { enhance } from '$app/forms';
   import { CalendarDays, Copy, Check, ShieldAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -40,13 +41,13 @@
   }
 </script>
 
-<PageHeader title="Calendar feed">
-  {#snippet crumb()}<a href={resolve('profile')}>Profile</a> ›{/snippet}
+<PageHeader title={m.profile_feed_title()}>
+  {#snippet crumb()}<a href={resolve('profile')}>{m.profile_tokens_crumb()}</a> ›{/snippet}
   {#snippet sub()}
     {#if feed.enabled}
-      On, URL created {shortDate(feed.created_at)}
+      {m.profile_feed_sub_on({ date: shortDate(feed.created_at) })}
     {:else}
-      Off
+      {m.profile_feed_sub_off()}
     {/if}
   {/snippet}
 </PageHeader>
@@ -59,10 +60,9 @@
         class="v2-card"
         style="padding:15px 16px;margin-bottom:18px;border-color:color-mix(in srgb, var(--v2-moss) 40%, var(--v2-line))"
       >
-        <div style="font-weight:650;font-size:13px">Your feed URL, copy it now</div>
+        <div style="font-weight:650;font-size:13px">{m.profile_feed_url_title()}</div>
         <p class="v2-sub" style="font-size:12px;margin:4px 0 10px">
-          This is the only time it is shown. Paste it into your calendar app below. If you lose it,
-          regenerate it.
+          {m.profile_feed_url_body()}
         </p>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <code
@@ -72,7 +72,9 @@
             {form.url}
           </code>
           <button class="v2-btn" type="button" onclick={() => copyUrl(form.url)}>
-            {#if copied}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+            {#if copied}<Check size={13} />{m.profile_tokens_copied()}{:else}<Copy
+                size={13}
+              />{m.profile_tokens_copy()}{/if}
           </button>
         </div>
       </div>
@@ -80,7 +82,7 @@
 
     {#if form?.error}
       <div style="margin-bottom:16px">
-        <NextAction label="That did not work" text={form.error} tone="rust" />
+        <NextAction label={m.profile_tokens_error_label()} text={form.error} tone="rust" />
       </div>
     {/if}
 
@@ -88,50 +90,48 @@
       <div class="v2-setting">
         <CalendarDays size={16} style="color:var(--v2-slate);flex:none" />
         <div class="v2-setting-body">
-          <b>Your open tasks, in your calendar</b>
+          <b>{m.profile_feed_intro_title()}</b>
           <span class="v2-sub" style="font-size:11.5px">
-            Tasks that are New or In progress and have a due date, from 90 days ago to a year ahead,
-            as all-day events. Each shows the title, the priority and a link back here.
+            {m.profile_feed_intro_body()}
           </span>
         </div>
         {#if feed.enabled}
-          <Pill tone="moss" dot>On</Pill>
+          <Pill tone="moss" dot>{m.profile_feed_on()}</Pill>
         {:else}
-          <Pill>Off</Pill>
+          <Pill>{m.profile_feed_off()}</Pill>
         {/if}
       </div>
       {#if feed.enabled}
         <div class="v2-setting">
           <div class="v2-setting-body">
-            <b>Last fetched</b>
+            <b>{m.profile_feed_last_fetched()}</b>
             <span class="v2-sub" style="font-size:11.5px">
               {#if feed.last_used_at}
-                A calendar app read the feed {relativeDays(feed.last_used_at)}.
+                {m.profile_feed_read_at({ when: relativeDays(feed.last_used_at) })}
               {:else}
-                No calendar app has read it yet.
+                {m.profile_feed_never_read()}
               {/if}
             </span>
           </div>
         </div>
         <div class="v2-setting feed-actions">
           <div class="v2-setting-body">
-            <b>Regenerate or turn off</b>
+            <b>{m.profile_feed_regen_title()}</b>
             <span class="v2-sub" style="font-size:11.5px">
-              Either one stops the current URL at once, and calendars subscribed to it stop
-              updating.
+              {m.profile_feed_regen_body()}
             </span>
           </div>
           <ConfirmAction
             action="?/issue"
-            label="Regenerate URL"
-            confirmLabel="Regenerate"
-            explain="The old URL stops working. Subscribe again with the new one."
+            label={m.profile_feed_regen_label()}
+            confirmLabel={m.profile_feed_regen_confirm()}
+            explain={m.profile_feed_regen_explain()}
           />
           <ConfirmAction
             action="?/disable"
-            label="Turn off"
-            confirmLabel="Turn off"
-            explain="The URL stops working and subscribed calendars stop updating."
+            label={m.profile_feed_off_label()}
+            confirmLabel={m.profile_feed_off_label()}
+            explain={m.profile_feed_off_explain()}
           />
         </div>
       {:else}
@@ -148,44 +148,41 @@
           }}
         >
           <div class="v2-setting-body">
-            <b>Turn on</b>
+            <b>{m.profile_feed_on_title()}</b>
             <span class="v2-sub" style="font-size:11.5px">
-              Creates your private feed URL and shows it once.
+              {m.profile_feed_on_body()}
             </span>
           </div>
           <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>
-            Turn on calendar feed
+            {m.profile_feed_on_button()}
           </button>
         </form>
       {/if}
     </div>
 
-    <div class="v2-label" style="margin-bottom:10px">Subscribe to it</div>
+    <div class="v2-label" style="margin-bottom:10px">{m.profile_feed_subscribe()}</div>
     <div class="v2-card" style="overflow:hidden;margin-bottom:20px">
       <div class="v2-setting">
         <div class="v2-setting-body">
-          <b>Google Calendar</b>
+          <b>{m.profile_feed_google()}</b>
           <span class="v2-sub" style="font-size:11.5px">
-            On a computer, open Google Calendar. Beside Other calendars choose +, then From URL,
-            paste the feed URL and choose Add calendar. Google refreshes it every few hours, so
-            changes take a while to appear.
+            {m.profile_feed_google_body()}
           </span>
         </div>
       </div>
       <div class="v2-setting">
         <div class="v2-setting-body">
-          <b>Outlook</b>
+          <b>{m.profile_feed_outlook()}</b>
           <span class="v2-sub" style="font-size:11.5px">
-            In Outlook on the web choose Add calendar, then Subscribe from web, paste the feed URL
-            and choose Import.
+            {m.profile_feed_outlook_body()}
           </span>
         </div>
       </div>
       <div class="v2-setting">
         <div class="v2-setting-body">
-          <b>Apple Calendar</b>
+          <b>{m.profile_feed_apple()}</b>
           <span class="v2-sub" style="font-size:11.5px">
-            Choose File, then New Calendar Subscription, and paste the feed URL.
+            {m.profile_feed_apple_body()}
           </span>
         </div>
       </div>
@@ -196,11 +193,9 @@
     >
       <ShieldAlert size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
       <div>
-        <div style="font-weight:600;font-size:13px">The URL is the key</div>
+        <div style="font-weight:600;font-size:13px">{m.profile_feed_key_title()}</div>
         <p class="v2-sub" style="font-size:12px;margin:4px 0 0">
-          Anyone who has it can see the titles and priorities of your open tasks, without signing
-          in. Share it with nobody but your calendar app, and regenerate it if it leaks. It stops
-          working on its own if you leave the organisation or your account is deactivated.
+          {m.profile_feed_key_body()}
         </p>
       </div>
     </div>

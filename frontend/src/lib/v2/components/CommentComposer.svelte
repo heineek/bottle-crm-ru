@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { Paperclip, X } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * Add a comment, a file, or both, to the record on this page through its
@@ -9,7 +10,7 @@
    */
   let {
     error = null,
-    placeholder = 'Write a comment…',
+    placeholder = m.app_comment_placeholder(),
     files = true,
     maxlength = undefined
   }: {
@@ -58,12 +59,12 @@
       type="submit"
       disabled={saving || (!text.trim() && !fileName)}
     >
-      {saving ? 'Saving…' : 'Add'}
+      {saving ? m.app_saving() : m.common_add()}
     </button>
     {#if files}
       <label class="v2-btn cc-attach" class:has-file={fileName}>
         <Paperclip size={14} />
-        <span class="cc-file">{fileName || 'Attach file'}</span>
+        <span class="cc-file">{fileName || m.app_comment_attach_file()}</span>
         <input bind:this={fileInput} type="file" name="attachment" onchange={pickFile} hidden />
       </label>
       {#if fileName}
@@ -71,8 +72,8 @@
           type="button"
           class="v2-btn-quiet cc-clear"
           onclick={clearFile}
-          title="Remove file"
-          aria-label="Remove file"
+          title={m.app_comment_remove_file()}
+          aria-label={m.app_comment_remove_file()}
         >
           <X size={13} />
         </button>

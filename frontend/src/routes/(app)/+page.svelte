@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
@@ -40,8 +41,6 @@
           ? 'var(--v2-clay)'
           : 'var(--v2-slate)';
 
-  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
   // The queue shows the most urgent 8. Everything past that is real work with
   // nowhere on this page to go, so name it and link each source to its own
   // list. "That's everything" is only true when nothing was left out.
@@ -52,14 +51,13 @@
   // nothing is waiting while it shows.
   let waiting = $derived((data.unanswered?.count ?? 0) > 0 ? data.unanswered : null);
   let terms = $derived(data.org?.terminology);
-  let waitingTitle = $derived(
-    waiting
-      ? `${waiting.count} ${(waiting.count === 1
-          ? t(terms, 'lead.singular', 'lead')
-          : t(terms, 'lead.plural', 'Leads')
-        ).toLowerCase()} waiting for a first reply`
-      : ''
-  );
+  let waitingTitle = $derived.by(() => {
+    if (!waiting) return '';
+    const noun = t(terms, waiting.count === 1 ? 'lead.singular' : 'lead.plural', '');
+    return noun
+      ? m.app_today_waiting_title_term({ count: waiting.count, noun: noun.toLowerCase() })
+      : m.app_today_waiting_title({ count: waiting.count });
+  });
   let oldestWait = $derived(waiting ? spanText(secondsSince(waiting.oldest_since)) : '');
 
   // Built as one string rather than conditional markup: the "quiet deals"
@@ -74,20 +72,21 @@
   // card only on the condition that renders it.
   let subText = $derived(
     layout.importCard
-      ? 'Your workspace is new. Start by bringing in your people.'
+      ? m.app_today_sub_new()
       : summary.count === 0
         ? waiting
-          ? 'Nothing else is due today.'
-          : 'Nothing needs you right now: you’re all clear for today.'
+          ? m.app_today_sub_clear_else()
+          : m.app_today_sub_clear()
         : summary.quiet_deals === 0
-          ? `${plural(summary.count, 'thing wants', 'things want')} you today.`
-          : `${plural(summary.count, 'thing wants', 'things want')} you today. ` +
-            `${plural(summary.quiet_deals, 'deal', 'deals')} worth ${money(summary.quiet_value, data.org.currency)} ` +
-            `${summary.quiet_deals === 1 ? 'has' : 'have'} gone quiet.`
+          ? m.app_today_sub_count({ count: summary.count })
+          : `${m.app_today_sub_count({ count: summary.count })} ${m.app_today_sub_quiet({
+              count: summary.quiet_deals,
+              value: money(summary.quiet_value, data.org.currency)
+            })}`
   );
 </script>
 
-<PageHeader title="Today">
+<PageHeader title={m.app_today_title()}>
   {#snippet sub()}{subText}{/snippet}
 </PageHeader>
 
@@ -96,12 +95,12 @@
     {#if layout.importCard}
       <div class="v2-card" style="margin-bottom:8px">
         <div class="v2-pad" style="padding:20px;text-align:center">
-          <div style="font-weight:640;letter-spacing:-0.012em">Bring in your contacts</div>
+          <div style="font-weight:640;letter-spacing:-0.012em">{m.app_today_import_title()}</div>
           <div class="v2-sub" style="margin:3px 0 14px">
-            Upload a spreadsheet and your workspace fills up in a minute.
+            {m.app_today_import_body()}
           </div>
           <a class="v2-btn v2-btn-primary" href={resolve('welcome')} style="min-height:44px"
-            >Import a spreadsheet</a
+            >{m.app_today_import_action()}</a
           >
         </div>
       </div>
@@ -125,15 +124,16 @@
               <div style="font-weight:640;letter-spacing:-0.012em">{waitingTitle}</div>
             </a>
             <div class="v2-sub" style="margin-top:2px">
-              Longest wait first. A call or message logged on a lead answers it.
+              {m.app_today_waiting_hint()}
             </div>
           </div>
           <div class="v2-queue-actions">
-            {#if oldestWait}<Pill tone="rust">Waiting {oldestWait}</Pill>{/if}
+            {#if oldestWait}<Pill tone="rust">{m.app_today_waiting_for({ span: oldestWait })}</Pill
+              >{/if}
             <a
               class="v2-btn"
               class:v2-btn-primary={!layout.importCard}
-              href={resolve(asInternalPath('/leads?unanswered=true'))}>Answer</a
+              href={resolve(asInternalPath('/leads?unanswered=true'))}>{m.app_today_answer()}</a
             >
           </div>
         </div>
@@ -165,11 +165,11 @@
     {/each}
 
     {#if layout.tail === 'everything'}
-      <p class="v2-sub" style="margin:15px 0 21px;font-size:12.5px">That’s everything due today.</p>
+      <p class="v2-sub" style="margin:15px 0 21px;font-size:12.5px">{m.app_today_everything()}</p>
     {:else if layout.tail === 'more'}
       <p class="v2-sub" style="margin:15px 0 21px;font-size:12.5px">
         <span class="v2-num">{layout.hidden}</span>
-        {layout.hidden === 1 ? 'more is' : 'more are'} waiting:
+        {m.app_today_more_waiting({ count: layout.hidden })}
         {#each summary.sources as source, i (source.href)}<a
             href={resolve(asInternalPath(source.href))}
             style="color:inherit">{source.count} {source.label}</a
@@ -178,9 +178,9 @@
     {:else if layout.tail === 'clear' && !waiting}
       <div class="v2-card" style="margin-bottom:8px">
         <div class="v2-pad" style="padding:20px;text-align:center">
-          <div style="font-weight:640;letter-spacing:-0.012em">Inbox zero for today</div>
+          <div style="font-weight:640;letter-spacing:-0.012em">{m.app_today_inbox_zero()}</div>
           <div class="v2-sub" style="margin-top:3px">
-            {todayClearText(data.modules)}{later.length ? ' Anything coming up is below.' : ''}
+            {todayClearText(data.modules)}{later.length ? ` ${m.app_today_coming_up()}` : ''}
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@
     {#if goals.length}
       <div class="v2-label" style="margin:6px 0 9px">
         <Target size={12} style="vertical-align:-1px;margin-right:4px" />
-        Where you stand
+        {m.app_today_goals_title()}
       </div>
       <div class="goals">
         {#each goals as g (g.id)}
@@ -213,7 +213,10 @@
               <i style="width:{g.progress_percent}%;background:{goalColor(g)}"></i>
             </div>
             <div class="v2-sub" style="font-size:11.5px;margin-top:6px">
-              {goalValue(g, g.progress_value)} of {goalValue(g, g.target_value)}
+              {m.app_today_goal_progress({
+                done: goalValue(g, g.progress_value),
+                target: goalValue(g, g.target_value)
+              })}
             </div>
           </a>
         {/each}
@@ -221,7 +224,7 @@
     {/if}
 
     {#if later.length}
-      <div class="v2-label" style="margin:6px 0 9px">Later this week</div>
+      <div class="v2-label" style="margin:6px 0 9px">{m.app_today_later()}</div>
       {#each later as row (row.id)}
         <div
           style="display:flex;gap:13px;align-items:baseline;padding:9px 3px;border-bottom:1px solid var(--v2-line-soft)"
@@ -238,7 +241,7 @@
 
     {#if summary.cleared_yesterday > 0}
       <p class="v2-sub" style="margin-top:20px;font-size:12px">
-        Yesterday you cleared <span class="v2-num">{summary.cleared_yesterday}</span>.
+        {m.app_today_cleared_yesterday()} <span class="v2-num">{summary.cleared_yesterday}</span>.
       </p>
     {/if}
   </div>

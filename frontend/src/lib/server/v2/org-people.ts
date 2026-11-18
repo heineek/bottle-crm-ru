@@ -34,13 +34,14 @@
 import { apiRequest } from '#lib/api-helpers.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
+import { m } from '#lib/paraglide/messages.js';
 
 type Schemas = components['schemas'];
 
 /** A profile as the pickers label it. */
 function personName(profile: Schemas['Profile']) {
   const d = profile?.user_details;
-  return d?.name || d?.email || 'Unnamed';
+  return d?.name || d?.email || m.app_pickers_unnamed();
 }
 
 export async function getOrgPeopleAndTeams(cookies: Cookies): Promise<{

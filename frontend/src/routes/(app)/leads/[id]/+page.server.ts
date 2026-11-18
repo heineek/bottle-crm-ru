@@ -10,6 +10,7 @@ import {
   withInteractions
 } from '#lib/server/v2/interactions.js';
 import type { Actions, PageServerLoad } from './$types';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ cookies, params }) => {
   const [lead, related, { sources }, logged] = await Promise.all([
@@ -55,9 +56,7 @@ export const actions: Actions = {
     // here turns a silent no-op into a message somebody can act on.
     if (!comment) {
       return fail(400, {
-        message: file
-          ? 'Add a note to save alongside the file.'
-          : 'Write something before you save the note.'
+        message: file ? m.leads_note_needs_text_with_file() : m.leads_note_needs_text()
       });
     }
 
@@ -65,7 +64,7 @@ export const actions: Actions = {
       await addLeadNote({ cookies }, params.id, comment, file);
     } catch (err) {
       const message = (err as { message?: unknown } | null | undefined)?.message;
-      return fail(400, { message: String(message ?? 'Could not save that note.') });
+      return fail(400, { message: String(message ?? m.leads_note_failed()) });
     }
 
     return { noted: true };
@@ -88,7 +87,7 @@ export const actions: Actions = {
     } catch (err) {
       // A lead this profile may not open is a 404, the same as a missing one.
       return fail(apiStatus(err) === 404 ? 404 : 400, {
-        error: readableError(err, 'Could not convert this lead.')
+        error: readableError(err, m.leads_convert_failed())
       });
     }
   },
@@ -103,7 +102,7 @@ export const actions: Actions = {
     } catch (err) {
       const status = apiStatus(err);
       const code = status !== undefined && status >= 400 && status < 500 ? status : 400;
-      return fail(code, { deleteError: readableError(err, 'Could not delete this lead.') });
+      return fail(code, { deleteError: readableError(err, m.leads_delete_failed()) });
     }
     redirect(303, '/leads');
   }

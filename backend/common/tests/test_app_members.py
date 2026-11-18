@@ -351,8 +351,8 @@ def test_app_member_cannot_sign_in(app_member, unauthenticated_client):
 
     cache.clear()
 
-    def send_now(token_id, raw_code=None):
-        send_magic_link_email(token_id, raw_code=raw_code)
+    def send_now(token_id, raw_code=None, language=None):
+        send_magic_link_email(token_id, raw_code=raw_code, language=language)
 
     with patch("common.tasks.send_magic_link_email.delay", side_effect=send_now):
         for email in (user.email, "person@example.com"):

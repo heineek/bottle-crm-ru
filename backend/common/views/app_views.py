@@ -5,6 +5,7 @@ removes one. The org is always ``request.profile.org``, and an app id is a key
 of the pack registry, never a path, so an unknown one is a 404.
 """
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -32,13 +33,13 @@ def _refusal(message, code):
 def _admin_only(request):
     if not may_admin(request):
         return _refusal(
-            "Only an organization admin can do this.", status.HTTP_403_FORBIDDEN
+            _("Only an organization admin can do this."), status.HTTP_403_FORBIDDEN
         )
     return None
 
 
 def _unknown():
-    return _refusal("Unknown app.", status.HTTP_404_NOT_FOUND)
+    return _refusal(_("Unknown app."), status.HTTP_404_NOT_FOUND)
 
 
 class AppInstalledBySerializer(serializers.Serializer):
@@ -119,7 +120,7 @@ class AppPreviewView(APIView):
         action = request.query_params.get("action")
         if action not in ACTIONS:
             return _refusal(
-                "Send action=install, upgrade or remove.",
+                _("Send action=install, upgrade or remove."),
                 status.HTTP_400_BAD_REQUEST,
             )
         try:

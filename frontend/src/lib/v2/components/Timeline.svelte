@@ -2,6 +2,7 @@
   import { relativeTime } from '#lib/v2/format.js';
   import { enhance } from '$app/forms';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   /**
    * Newest first. The filled dot marks the latest event only. Everything
@@ -63,14 +64,14 @@
             <p class="v2-error" role="alert">{failure.message}</p>
           {/if}
           <div class="row">
-            <button class="v2-btn v2-btn-primary" type="submit">Save</button>
+            <button class="v2-btn v2-btn-primary" type="submit">{m.common_save()}</button>
             <button
               class="v2-btn"
               type="button"
               onclick={() => {
                 editing = null;
                 dismissed = noteFailure;
-              }}>Cancel</button
+              }}>{m.common_cancel()}</button
             >
           </div>
         </form>
@@ -88,16 +89,16 @@
             <button
               class="v2-btn v2-btn-quiet"
               type="button"
-              onclick={() => (editing = e.note?.id ?? null)}>Edit</button
+              onclick={() => (editing = e.note?.id ?? null)}>{m.common_edit()}</button
             >
           {/if}
           {#if e.note.canDelete}
             <ConfirmAction
               action="?/deleteNote"
               hidden={{ note: e.note.id }}
-              label="Delete"
-              confirmLabel="Delete"
-              explain="Deletes this note for good."
+              label={m.common_delete()}
+              confirmLabel={m.common_delete()}
+              explain={m.app_timeline_note_delete_explain()}
             />
           {/if}
         </div>
@@ -107,9 +108,9 @@
           <ConfirmAction
             action="?/deleteActivity"
             hidden={{ interaction: e.interaction }}
-            label="Delete"
-            confirmLabel="Delete for good"
-            explain="Removes it from every timeline it is on."
+            label={m.common_delete()}
+            confirmLabel={m.app_timeline_delete_for_good()}
+            explain={m.app_timeline_activity_delete_explain()}
           />
         </div>
       {/if}

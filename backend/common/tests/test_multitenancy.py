@@ -10,6 +10,7 @@ Run with: pytest common/tests/test_multitenancy.py -v
 from unittest.mock import MagicMock
 
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from rest_framework.test import APIClient
 
@@ -93,7 +94,7 @@ class TestMiddlewareOrgValidation(MultiTenancyBaseTestCase):
             HTTP_ORG=str(self.org_b.id),  # Attempt to spoof org
         )
 
-        middleware = GetProfileAndOrg(lambda r: r)
+        middleware = GetProfileAndOrg(lambda r: HttpResponse())
         middleware(request)
 
         # Should use org from JWT (org_a), not header (org_b)
@@ -114,7 +115,7 @@ class TestMiddlewareOrgValidation(MultiTenancyBaseTestCase):
             "/api/leads/", HTTP_AUTHORIZATION=f"Bearer {token.access_token}"
         )
 
-        middleware = GetProfileAndOrg(lambda r: r)
+        middleware = GetProfileAndOrg(lambda r: HttpResponse())
         middleware(request)
 
         # Middleware should not set profile when membership is revoked
@@ -124,7 +125,7 @@ class TestMiddlewareOrgValidation(MultiTenancyBaseTestCase):
         """API key authentication should be scoped to specific org"""
         request = self.factory.get("/api/leads/", HTTP_TOKEN=self.org_a.api_key)
 
-        middleware = GetProfileAndOrg(lambda r: r)
+        middleware = GetProfileAndOrg(lambda r: HttpResponse())
         middleware(request)
 
         self.assertEqual(request.org, self.org_a)

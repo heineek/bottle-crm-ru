@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * One segment per open stage of the deal's own pipeline. A closed deal (a
    * won or lost stage, whatever an admin named it) leaves the meter entirely
@@ -28,7 +29,7 @@
 </script>
 
 {#if !closed}
-  <div class="v2-meter" role="img" aria-label="Stage: {name}">
+  <div class="v2-meter" role="img" aria-label={m.app_stage_meter_label({ name })}>
     {#each steps as step, i (step.code)}
       <i class={i <= index ? 'on' : ''}></i>
     {/each}

@@ -5,6 +5,7 @@ These permission classes enforce organization context and access control
 across all API endpoints.
 """
 
+from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions
 
 
@@ -107,7 +108,7 @@ class HasOrgContext(permissions.BasePermission):
             permission_classes = [IsAuthenticated, HasOrgContext]
     """
 
-    message = "Organization context is required. Please login again."
+    message = _("Organization context is required. Please login again.")
 
     def has_permission(self, request, view):
         # Must have profile set by middleware
@@ -136,7 +137,7 @@ class IsOrgAdmin(permissions.BasePermission):
             permission_classes = [IsAuthenticated, HasOrgContext, IsOrgAdmin]
     """
 
-    message = "You must be an organization administrator to perform this action."
+    message = _("You must be an organization administrator to perform this action.")
 
     def has_permission(self, request, view):
         return may_admin(request)
@@ -156,7 +157,7 @@ class IsSuperAdmin(permissions.BasePermission):
     audited path, not by handing out an email address.
     """
 
-    message = "Super admin access required."
+    message = _("Super admin access required.")
 
     def has_permission(self, request, view):
         user = getattr(request, "user", None)

@@ -7,6 +7,7 @@
    * form already set.
    */
   import { enhance } from '$app/forms';
+  import { m } from '#lib/paraglide/messages.js';
   import {
     CALL_OUTCOMES,
     KIND_LABEL,
@@ -40,9 +41,14 @@
 
   let hasLength = $derived(kind === 'call' || kind === 'meeting');
   let hasSubject = $derived(kind === 'email' || kind === 'meeting');
-  let submitLabel = $derived(
-    `Log ${kind === 'whatsapp' ? 'WhatsApp' : (KIND_LABEL[kind] ?? 'activity').toLowerCase()}`
-  );
+  const SUBMIT_LABEL: Record<string, () => string> = {
+    call: () => m.app_log_activity_submit_call(),
+    meeting: () => m.app_log_activity_submit_meeting(),
+    email: () => m.app_log_activity_submit_email(),
+    whatsapp: () => m.app_log_activity_submit_whatsapp(),
+    sms: () => m.app_log_activity_submit_sms()
+  };
+  let submitLabel = $derived((SUBMIT_LABEL[kind] ?? m.app_log_activity_submit)());
 
   function clear() {
     direction = 'outbound';
@@ -68,7 +74,7 @@
     };
   }}
 >
-  <div class="chips" role="radiogroup" aria-label="What happened">
+  <div class="chips" role="radiogroup" aria-label={m.app_log_activity_what()}>
     {#each LOGGABLE_KINDS as k (k)}
       <label class="chip" class:on={kind === k}>
         <input type="radio" name="kind" value={k} bind:group={kind} />{KIND_LABEL[k]}
@@ -77,18 +83,28 @@
   </div>
 
   {#if kind !== 'meeting'}
-    <div class="chips" role="radiogroup" aria-label="Direction">
+    <div class="chips" role="radiogroup" aria-label={m.app_log_activity_direction()}>
       <label class="chip" class:on={direction === 'outbound'}>
-        <input type="radio" name="direction" value="outbound" bind:group={direction} />Outgoing
+        <input
+          type="radio"
+          name="direction"
+          value="outbound"
+          bind:group={direction}
+        />{m.app_log_activity_outgoing()}
       </label>
       <label class="chip" class:on={direction === 'inbound'}>
-        <input type="radio" name="direction" value="inbound" bind:group={direction} />Incoming
+        <input
+          type="radio"
+          name="direction"
+          value="inbound"
+          bind:group={direction}
+        />{m.app_log_activity_incoming()}
       </label>
     </div>
   {/if}
 
   {#if kind === 'call'}
-    <div class="chips" role="radiogroup" aria-label="How it went">
+    <div class="chips" role="radiogroup" aria-label={m.app_log_activity_outcome()}>
       {#each CALL_OUTCOMES as o (o)}
         <label class="chip" class:on={outcome === o}>
           <input type="radio" name="outcome" value={o} bind:group={outcome} />{OUTCOME_LABEL[o]}
@@ -100,7 +116,7 @@
   <div class="row">
     {#if hasLength}
       <div class="v2-field">
-        <label for="{uid}-min">Minutes</label>
+        <label for="{uid}-min">{m.app_log_activity_minutes()}</label>
         <input
           id="{uid}-min"
           class="v2-input"
@@ -114,7 +130,7 @@
       </div>
     {/if}
     <div class="v2-field">
-      <label for="{uid}-when">When</label>
+      <label for="{uid}-when">{m.app_log_activity_when()}</label>
       <input
         id="{uid}-when"
         class="v2-input"
@@ -122,13 +138,13 @@
         name="occurred_at"
         bind:value={when}
       />
-      <div class="v2-hint">Leave empty for now. Read as {timeZone} time.</div>
+      <div class="v2-hint">{m.app_log_activity_when_hint({ timeZone })}</div>
     </div>
   </div>
 
   {#if hasSubject}
     <div class="v2-field">
-      <label for="{uid}-subject">Subject</label>
+      <label for="{uid}-subject">{m.app_log_activity_subject()}</label>
       <input
         id="{uid}-subject"
         class="v2-input"
@@ -140,14 +156,14 @@
   {/if}
 
   <div class="v2-field">
-    <label for="{uid}-note">Note</label>
+    <label for="{uid}-note">{m.app_log_activity_note()}</label>
     <textarea
       id="{uid}-note"
       class="v2-input"
       name="body"
       rows="2"
       maxlength="10000"
-      placeholder="What was said, what happens next"
+      placeholder={m.app_log_activity_note_placeholder()}
       bind:value={note}></textarea>
   </div>
 
@@ -157,10 +173,12 @@
 
   <div class="actions">
     <button class="v2-btn v2-btn-primary" type="submit" disabled={saving}>
-      {saving ? 'Saving…' : submitLabel}
+      {saving ? m.app_saving() : submitLabel}
     </button>
     {#if oncancel}
-      <button class="v2-btn" type="button" disabled={saving} onclick={oncancel}>Cancel</button>
+      <button class="v2-btn" type="button" disabled={saving} onclick={oncancel}
+        >{m.common_cancel()}</button
+      >
     {/if}
   </div>
 </form>

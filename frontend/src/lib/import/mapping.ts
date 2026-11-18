@@ -9,6 +9,7 @@
  * record is already in the org, or earlier in the file) or `row` (the row
  * cannot become a record). The helpers read `kind`; `message` is for people.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { csvCell } from '#lib/utils/csv.js';
 
 export type Column = { index: number; header?: string; field: string | null; samples?: string[] };
@@ -59,14 +60,8 @@ export function droppedLines(dropped: { field: string; count: number }[], fields
   const labels = new Map(fields.map((f) => [f.name, f.label]));
   return dropped.map(({ field, count }) => {
     const label = labels.get(field) ?? field;
-    return count === 1
-      ? `${label}: 1 value we couldn't use was left blank.`
-      : `${label}: ${count} values we couldn't use were left blank.`;
+    return m.app_import_dropped({ label, count });
   });
-}
-
-function rows(n: number) {
-  return `${n} ${n === 1 ? 'row' : 'rows'}`;
 }
 
 /**
@@ -82,17 +77,16 @@ export function summaryLine(
   const duplicates =
     preview.skipped.length > 0 && preview.skipped.every((s) => s.kind === 'duplicate');
   if (valid === 0) {
-    if (total === 0) return 'This file has no rows to import.';
+    if (total === 0) return m.app_import_summary_empty();
     // With nothing importable there is no earlier row to duplicate, so every
     // duplicate here is a record already in the org.
-    if (duplicates) return 'Everything in this file is already in BottleCRM.';
-    return 'Nothing in this file can be imported.';
+    if (duplicates) return m.app_import_summary_all_duplicates();
+    return m.app_import_summary_nothing();
   }
-  const head = `${valid} ${valid === 1 ? nouns.singular : nouns.plural} will be imported`;
-  if (skipped === 0) return `${head}.`;
-  if (duplicates)
-    return `${head}, and ${skipped} duplicate ${skipped === 1 ? 'row' : 'rows'} will be skipped.`;
-  return `${head}, and ${rows(skipped)} will be skipped.`;
+  const noun = valid === 1 ? nouns.singular : nouns.plural;
+  if (skipped === 0) return m.app_import_summary_valid({ count: valid, noun });
+  if (duplicates) return m.app_import_summary_valid_duplicates({ count: valid, noun, skipped });
+  return m.app_import_summary_valid_skipped({ count: valid, noun, skipped });
 }
 
 /**
@@ -117,7 +111,10 @@ export function suggestLeads(entityKey: string, skipped: Skipped[]) {
 export function skippedRowsCsv(headers: string[], skipped: Skipped[]) {
   const width = skipped.reduce((w, s) => Math.max(w, s.cells.length), headers.length);
   const pad = (cells: string[]) => Array.from({ length: width }, (_, i) => cells[i] ?? '');
-  return [[...pad(headers), 'Reason'], ...skipped.map((s) => [...pad(s.cells), s.message])]
+  return [
+    [...pad(headers), m.app_import_reason_column()],
+    ...skipped.map((s) => [...pad(s.cells), s.message])
+  ]
     .map((cells) => cells.map(csvCell).join(','))
     .join('\n');
 }

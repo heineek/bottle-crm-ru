@@ -30,6 +30,7 @@
  * view, exactly as before.
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
@@ -47,13 +48,13 @@ const WINDOW_MONTHS = 12;
 /** The overdue buckets, in the order the page draws them. */
 const BUCKETS: {
   key: string;
-  label: string;
+  label: () => string;
   field: '1_30_days' | '31_60_days' | '61_90_days' | 'over_90_days';
 }[] = [
-  { key: '1_30', label: '1-30 days', field: '1_30_days' },
-  { key: '31_60', label: '31-60 days', field: '31_60_days' },
-  { key: '61_90', label: '61-90 days', field: '61_90_days' },
-  { key: '90_plus', label: 'Over 90 days', field: 'over_90_days' }
+  { key: '1_30', label: () => m.app_srv_reports_bucket_1_30(), field: '1_30_days' },
+  { key: '31_60', label: () => m.app_srv_reports_bucket_31_60(), field: '31_60_days' },
+  { key: '61_90', label: () => m.app_srv_reports_bucket_61_90(), field: '61_90_days' },
+  { key: '90_plus', label: () => m.app_srv_reports_bucket_90_plus(), field: 'over_90_days' }
 ];
 
 /**
@@ -102,7 +103,7 @@ function view(
       },
       buckets: BUCKETS.map(({ key, label, field }) => ({
         key,
-        label,
+        label: label(),
         amount: num(entry(aging?.[field], code).amount),
         count: entry(aging?.[field], code).count ?? 0
       })),

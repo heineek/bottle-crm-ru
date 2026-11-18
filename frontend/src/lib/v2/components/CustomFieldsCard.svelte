@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
+
   /**
    * A record's custom fields on its detail page, every active one filled or
    * not, from `fieldsForDetail` (`#lib/server/v2/record-custom-fields.js`).
@@ -8,7 +10,7 @@
 
   let {
     fields,
-    label = 'Details',
+    label = m.common_details(),
     flush = false
   }: {
     fields: { key: string; label: string; value: string; filled: boolean }[];
@@ -23,7 +25,9 @@
     {#each fields as f (f.key)}
       <div class="cf-row">
         <span class="cf-label">{f.label}</span>
-        <span class="cf-value" class:v2-muted={!f.filled}>{f.filled ? f.value : 'Not set'}</span>
+        <span class="cf-value" class:v2-muted={!f.filled}
+          >{f.filled ? f.value : m.app_not_set()}</span
+        >
       </div>
     {/each}
   </div>

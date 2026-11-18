@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
+  count,
+  money,
   shortDate,
   longDate,
   daysSince,

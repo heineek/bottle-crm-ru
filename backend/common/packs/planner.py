@@ -12,6 +12,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from django.utils.translation import gettext, gettext_lazy
+
 from accounts.models import Account
 from common.models import CustomFieldDefinition, InstalledApp, Tags
 from common.modules import KEYS, model_module, module_is_available
@@ -53,13 +55,29 @@ TYPE_ORDER = (
 )
 NO_SAMPLE = {"offered": False, "default_on": False, "records": 0}
 
-# How each renamable record type reads before any app renames it.
+# How each renamable record type reads before any app renames it, as the
+# preview row that names its new word.
 _WORDS = {
-    "lead": ("Lead", "Leads"),
-    "opportunity": ("Deal", "Deals"),
-    "contact": ("Contact", "Contacts"),
-    "account": ("Account", "Accounts"),
-    "invoice": ("Invoice", "Invoices"),
+    "lead": (
+        gettext_lazy("Lead called %(value)s"),
+        gettext_lazy("Leads called %(value)s"),
+    ),
+    "opportunity": (
+        gettext_lazy("Deal called %(value)s"),
+        gettext_lazy("Deals called %(value)s"),
+    ),
+    "contact": (
+        gettext_lazy("Contact called %(value)s"),
+        gettext_lazy("Contacts called %(value)s"),
+    ),
+    "account": (
+        gettext_lazy("Account called %(value)s"),
+        gettext_lazy("Accounts called %(value)s"),
+    ),
+    "invoice": (
+        gettext_lazy("Invoice called %(value)s"),
+        gettext_lazy("Invoices called %(value)s"),
+    ),
 }
 
 # Removal switches these off and a later install back on; the rest stay as they are.
@@ -188,7 +206,7 @@ def wording_label(key: str, value: str) -> str:
     words = _WORDS.get(entity)
     if words is None or form not in ("singular", "plural"):
         return f"{key}: {value}"
-    return f"{words[form == 'plural']} called {value}"
+    return str(words[form == "plural"]) % {"value": value}
 
 
 def app_items(pack: dict) -> list[Item]:
@@ -541,14 +559,14 @@ def build_plan(
     installed = row is not None and row.status == InstalledApp.INSTALLED
     if action == "install":
         if installed:
-            raise AppConflict("This app is already installed.")
+            raise AppConflict(gettext("This app is already installed."))
         return _plan_install(org, pack, row)
     if not installed:
-        raise AppConflict("This app is not installed.")
+        raise AppConflict(gettext("This app is not installed."))
     if action == "upgrade":
         plan = _plan_upgrade(org, pack, row)
         if not _adds(plan) and not _extension_pending(org, extension):
-            raise AppConflict("This app has no update.")
+            raise AppConflict(gettext("This app has no update."))
         return plan
     return _plan_remove(org, pack, row, others)
 

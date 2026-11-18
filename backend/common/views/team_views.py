@@ -1,5 +1,6 @@
 import uuid
 
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -43,14 +44,19 @@ def _member_profiles(data, org):
         )
         if not ids and not emptied:
             raise ValidationError(
-                {key: ["Send member ids, or an empty list to remove every member."]}
+                {key: [_("Send member ids, or an empty list to remove every member.")]}
             )
         profiles = list(Profile.objects.filter(id__in=ids, org=org))
         found = {profile.id for profile in profiles}
         unknown = [i for i in dict.fromkeys(ids) if uuid.UUID(str(i)) not in found]
         if unknown:
             raise ValidationError(
-                {key: [f"'{i}' is not a member of this organization." for i in unknown]}
+                {
+                    key: [
+                        _("'%(id)s' is not a member of this organization.") % {"id": i}
+                        for i in unknown
+                    ]
+                }
             )
         return profiles
     return None
@@ -135,7 +141,7 @@ class TeamsListView(APIView, CappedLimitOffsetPagination):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have permission to perform this action.",
+                    "errors": _("You don't have permission to perform this action."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -162,7 +168,7 @@ class TeamsListView(APIView, CappedLimitOffsetPagination):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have permission to perform this action.",
+                    "errors": _("You don't have permission to perform this action."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -174,7 +180,7 @@ class TeamsListView(APIView, CappedLimitOffsetPagination):
             if members:
                 team_obj.users.add(*members)
             return Response(
-                {"error": False, "message": "Team Created Successfully"},
+                {"error": False, "message": _("Team Created Successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -205,7 +211,7 @@ class TeamsDetailView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have permission to perform this action.",
+                    "errors": _("You don't have permission to perform this action."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -234,7 +240,7 @@ class TeamsDetailView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have permission to perform this action.",
+                    "errors": _("You don't have permission to perform this action."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -249,7 +255,7 @@ class TeamsDetailView(APIView):
             if members is not None:
                 _set_members(team_obj, members, request.profile.org)
             return Response(
-                {"error": False, "message": "Team Updated Successfully"},
+                {"error": False, "message": _("Team Updated Successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -278,7 +284,7 @@ class TeamsDetailView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have permission to perform this action.",
+                    "errors": _("You don't have permission to perform this action."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -293,7 +299,7 @@ class TeamsDetailView(APIView):
             if members is not None:
                 _set_members(team_obj, members, request.profile.org)
             return Response(
-                {"error": False, "message": "Team Updated Successfully"},
+                {"error": False, "message": _("Team Updated Successfully")},
                 status=status.HTTP_200_OK,
             )
         return Response(
@@ -320,13 +326,13 @@ class TeamsDetailView(APIView):
             return Response(
                 {
                     "error": True,
-                    "errors": "You don't have permission to perform this action.",
+                    "errors": _("You don't have permission to perform this action."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
         self.team_obj = self.get_object(pk)
         self.team_obj.delete()
         return Response(
-            {"error": False, "message": "Team Deleted Successfully"},
+            {"error": False, "message": _("Team Deleted Successfully")},
             status=status.HTTP_200_OK,
         )

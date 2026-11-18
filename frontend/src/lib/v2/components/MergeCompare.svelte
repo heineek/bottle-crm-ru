@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   /**
    * Two leads, contacts or accounts side by side, to pick which one to keep.
    *
@@ -40,7 +42,7 @@
     form: { error?: string } | null | undefined;
   } = $props();
 
-  let { module, singular, current, other } = $derived(data);
+  let { module, current, other } = $derived(data);
 
   let keep = $state(
     untrack(() =>
@@ -56,6 +58,32 @@
   let possible = $derived(keepable(current) || keepable(other));
   /** How the copy names a record; see `mergeSideLabel`. */
   const label = (side: Side) => mergeSideLabel(side, current, other);
+  const TEXT: Record<
+    string,
+    { title: () => string; crumb: () => string; which: () => string; impossible: () => string }
+  > = {
+    leads: {
+      title: m.app_merge_title_leads,
+      crumb: m.app_merge_crumb_leads,
+      which: m.app_merge_which_leads,
+      impossible: m.app_merge_impossible_leads
+    },
+    contacts: {
+      title: m.app_merge_title_contacts,
+      crumb: m.app_merge_crumb_contacts,
+      which: m.app_merge_which_contacts,
+      impossible: m.app_merge_impossible_contacts
+    },
+    accounts: {
+      title: m.app_merge_title_accounts,
+      crumb: m.app_merge_crumb_accounts,
+      which: m.app_merge_which_accounts,
+      impossible: m.app_merge_impossible_accounts
+    }
+  };
+  let text = $derived(TEXT[module]);
+  // Split on a marker so the translated sentence stays whole around the bold name.
+  let confirmParts = $derived(messageParts(m.app_merge_confirm({ label: slot('label') })));
   let result = $derived(
     kept.fields.map((field, i) => ({
       label: field.label,
@@ -65,16 +93,16 @@
   );
 </script>
 
-<PageHeader title="Merge {singular}s" center width="820px">
+<PageHeader title={text.title()} center width="820px">
   {#snippet crumb()}
-    <a href={resolve(`${module}`)}>{module[0].toUpperCase() + module.slice(1)}</a>
+    <a href={resolve(`${module}`)}>{text.crumb()}</a>
     <ChevronRight size={12} />
     <a href={resolve(`${module}/${current.id}`)}>{current.name}</a>
     <ChevronRight size={12} />
-    <span>Merge</span>
+    <span>{m.app_merge_crumb()}</span>
   {/snippet}
   {#snippet sub()}
-    Pick the one to keep. The other is deleted once everything linked to it has moved over.
+    {m.app_merge_sub()}
   {/snippet}
 </PageHeader>
 
@@ -97,14 +125,14 @@
       <div class="v2-next refusal" role="alert">
         <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
         <div class="v2-next-body">
-          <div style="font-weight:600">Nothing was merged</div>
+          <div style="font-weight:600">{m.app_merge_nothing_merged()}</div>
           <div class="v2-sub" style="margin-top:2px">{form.error}</div>
         </div>
       </div>
     {/if}
 
     <fieldset class="sides">
-      <legend class="v2-sr-only">Which {singular} to keep</legend>
+      <legend class="v2-sr-only">{text.which()}</legend>
       {#each [current, other] as side (side.id)}
         <label class="v2-card side" class:chosen={keep === side.id} class:off={!keepable(side)}>
           <span class="pick">
@@ -115,11 +143,11 @@
               bind:group={keep}
               disabled={!keepable(side)}
             />
-            <span style="font-weight:600">Keep {label(side)}</span>
+            <span style="font-weight:600">{m.app_merge_keep({ label: label(side) })}</span>
           </span>
           {#if !keepable(side)}
             <span class="v2-sub" style="font-size:11.5px">
-              Keeping this one would delete the other, which only an admin or its creator may do.
+              {m.app_merge_not_keepable()}
             </span>
           {/if}
           <dl>
@@ -134,42 +162,43 @@
 
     {#if possible}
       <section class="v2-card after" aria-labelledby="after-title">
-        <div id="after-title" class="v2-label" style="margin-bottom:6px">After the merge</div>
+        <div id="after-title" class="v2-label" style="margin-bottom:6px">{m.app_merge_after()}</div>
         <dl>
           {#each result as field (field.label)}
             <dt>{field.label}</dt>
             <dd>
               {field.value || '—'}
-              {#if field.filled}<span class="v2-sub"> (from {label(dropped)})</span>{/if}
+              {#if field.filled}<span class="v2-sub">
+                  {m.app_merge_from({ label: label(dropped) })}</span
+                >{/if}
             </dd>
           {/each}
         </dl>
         <p class="v2-sub" style="margin:8px 0 0;font-size:12px;line-height:1.55">
-          Notes, files, activity and every link to {label(dropped)} move to {label(kept)}. Tags are
-          combined; owners stay {label(kept)}'s unless it has none.
+          {m.app_merge_moves({ dropped: label(dropped), kept: label(kept) })}
         </p>
       </section>
 
       <label class="confirm">
         <input type="checkbox" name="confirm" bind:checked={confirmed} />
         <span>
-          Delete <strong>{label(dropped)}</strong> for good once it is merged. This cannot be undone.
+          {#each confirmParts as p, i (i)}{#if p.key === 'label'}<strong>{label(dropped)}</strong
+              >{:else}{p.text}{/if}{/each}
         </span>
       </label>
 
       <div class="actions">
         <button class="v2-btn v2-btn-primary" type="submit" disabled={!confirmed || busy}>
-          Merge into {label(kept)}
+          {m.app_merge_into({ label: label(kept) })}
         </button>
-        <a class="v2-btn" href={resolve(`${module}/${current.id}`)}>Cancel</a>
+        <a class="v2-btn" href={resolve(`${module}/${current.id}`)}>{m.common_cancel()}</a>
       </div>
     {:else}
       <p class="v2-sub" style="font-size:12.5px">
-        You cannot merge these two: keeping either would delete the other, and only an admin or the
-        person who created a {singular} may delete it.
+        {text.impossible()}
       </p>
       <div class="actions">
-        <a class="v2-btn" href={resolve(`${module}/${current.id}`)}>Back</a>
+        <a class="v2-btn" href={resolve(`${module}/${current.id}`)}>{m.common_back()}</a>
       </div>
     {/if}
   </form>

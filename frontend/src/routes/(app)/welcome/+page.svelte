@@ -7,6 +7,7 @@
   import { asInternalPath } from '#lib/utils/paths.js';
   import PageHeader from '#lib/v2/components/PageHeader.svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -20,34 +21,36 @@
   let destroyed = false;
   onDestroy(() => (destroyed = true));
 
-  const CHOICES = [
+  let CHOICES = $derived([
     {
       entity: 'contacts' as const,
-      title: 'Customers and people you work with',
-      line: 'Import them as contacts.'
+      title: m.app_welcome_contacts_title(),
+      line: m.app_welcome_contacts_line()
     },
     {
       entity: 'leads' as const,
-      title: 'People you’re trying to sell to',
-      line: 'Import them as leads to follow up.'
+      title: m.app_welcome_leads_title(),
+      line: m.app_welcome_leads_line()
     }
-  ];
+  ]);
 </script>
 
 <svelte:head>
-  <title>Bring in your contacts · BottleCRM</title>
+  <title>{m.app_welcome_head_title()}</title>
 </svelte:head>
 
-<PageHeader title="Bring in your contacts" center width="720px">
-  {#snippet sub()}Upload a spreadsheet and we will match its columns for you.{/snippet}
+<PageHeader title={m.app_welcome_title()} center width="720px">
+  {#snippet sub()}{m.app_welcome_sub()}{/snippet}
   {#snippet actions()}
-    <a class="v2-btn v2-btn-quiet" href={resolve('')} style="min-height:44px">Skip for now</a>
+    <a class="v2-btn v2-btn-quiet" href={resolve('')} style="min-height:44px"
+      >{m.app_welcome_skip()}</a
+    >
   {/snippet}
 </PageHeader>
 
 <div class="v2-scroll">
   <div class="v2-pad" style="max-width:720px;margin:0 auto;padding-top:14px;padding-bottom:26px">
-    <div class="welcome-choices" role="group" aria-label="What are you importing?">
+    <div class="welcome-choices" role="group" aria-label={m.app_welcome_choices_aria()}>
       {#each leadsOn ? CHOICES : CHOICES.filter((c) => c.entity !== 'leads') as c (c.entity)}
         <button
           type="button"

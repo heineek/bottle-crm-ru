@@ -1,11 +1,32 @@
 /** Formatting helpers for v2. Every number rendered goes through one of these. */
 
+import { intlLocale } from '#lib/i18n/locale.js';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
+
+// Read per call, not once: on the server the locale is the request's.
+const numberLocale = () => intlLocale(getLocale(), 'number');
+const dateLocale = () => intlLocale(getLocale(), 'date');
+
+function relative(n: number, unit: 'day' | 'hour' | 'minute') {
+  return new Intl.RelativeTimeFormat(numberLocale(), { numeric: 'auto' }).format(n, unit);
+}
+
+/** "1h", "48m", "12d" in English; other locales get their narrow units from Intl. */
+function unit(n: number, name: 'day' | 'hour' | 'minute') {
+  return new Intl.NumberFormat(numberLocale(), {
+    style: 'unit',
+    unit: name,
+    unitDisplay: 'narrow'
+  }).format(n);
+}
+
 type IsoInput = string | Date | null | undefined;
 
 export function money(n: number | string | null | undefined, currency = 'USD') {
   const v = Number(n ?? 0);
   if (!Number.isFinite(v)) return '—';
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(numberLocale(), {
     style: 'currency',
     currency,
     maximumFractionDigits: v % 1 === 0 ? 0 : 2
@@ -42,7 +63,7 @@ export function sumByCurrency(
 
 export function count(n: number | string | null | undefined) {
   const v = Number(n ?? 0);
-  return Number.isFinite(v) ? v.toLocaleString('en-US') : '—';
+  return Number.isFinite(v) ? v.toLocaleString(numberLocale()) : '—';
 }
 
 export function initials(name: string | null | undefined) {
@@ -84,7 +105,7 @@ export function shortDate(iso: IsoInput, now = new Date()) {
   const d = parseIso(iso);
   if (!d) return '—';
   const sameYear = d.getFullYear() === now.getFullYear();
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(dateLocale(), {
     day: 'numeric',
     month: 'short',
     ...(sameYear ? {} : { year: 'numeric' })
@@ -95,7 +116,7 @@ export function shortDate(iso: IsoInput, now = new Date()) {
 export function longDate(iso: IsoInput) {
   const d = parseIso(iso);
   if (!d) return '—';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(dateLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
@@ -113,11 +134,7 @@ export function daysSince(iso: IsoInput, now = new Date()) {
 export function relativeDays(iso: IsoInput, now = new Date()) {
   const n = daysSince(iso, now);
   if (n === null) return '—';
-  if (n === 0) return 'today';
-  if (n === 1) return 'yesterday';
-  if (n > 1) return `${n} days ago`;
-  if (n === -1) return 'tomorrow';
-  return `in ${Math.abs(n)} days`;
+  return relative(-n, 'day');
 }
 
 /**
@@ -134,10 +151,10 @@ export function relativeTime(iso: IsoInput, now = new Date()) {
   if (!d) return '—';
   const mins = Math.floor((now.getTime() - d.getTime()) / 60000);
   if (mins < 0) return relativeDays(iso, now);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+  if (mins < 1) return m.time_just_now();
+  if (mins < 60) return relative(-mins, 'minute');
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  if (hrs < 24) return relative(-hrs, 'hour');
   return relativeDays(iso, now);
 }
 
@@ -150,10 +167,10 @@ export function relativeTime(iso: IsoInput, now = new Date()) {
  */
 export function hoursMinutes(mins: number | string | null | undefined) {
   const v = Number(mins ?? 0);
-  if (!Number.isFinite(v)) return '0m';
-  const m = Math.max(0, Math.round(v));
-  const h = Math.floor(m / 60);
-  return h ? `${h}h ${m % 60}m` : `${m}m`;
+  if (!Number.isFinite(v)) return unit(0, 'minute');
+  const total = Math.max(0, Math.round(v));
+  const h = Math.floor(total / 60);
+  return h ? `${unit(h, 'hour')} ${unit(total % 60, 'minute')}` : unit(total, 'minute');
 }
 
 /** Compact age for a table cell: "12d", "3h". */
@@ -161,12 +178,13 @@ export function shortAge(iso: IsoInput, now = new Date()) {
   const d = parseIso(iso);
   if (!d) return '—';
   const mins = Math.max(0, Math.floor((now.getTime() - d.getTime()) / 60000));
-  if (mins < 60) return `${mins}m`;
+  if (mins < 60) return unit(mins, 'minute');
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
+  if (hrs < 24) return unit(hrs, 'hour');
+  return unit(Math.floor(hrs / 24), 'day');
 }
 
+// English only: en-GB's short September is "Sept", and run times always said "Sep".
 const RUN_MONTHS = [
   'Jan',
   'Feb',
@@ -225,7 +243,10 @@ export function runTime(iso: string | null | undefined, timeZone: string, now: D
       day: Number(out.day),
       year: Number(out.year),
       monthIndex,
-      month: RUN_MONTHS[monthIndex]
+      month:
+        getLocale() === 'en'
+          ? RUN_MONTHS[monthIndex]
+          : new Intl.DateTimeFormat(dateLocale(), { timeZone: zone, month: 'short' }).format(date)
     };
   };
   const at = parts(d);
@@ -234,8 +255,8 @@ export function runTime(iso: string | null | undefined, timeZone: string, now: D
     Date.UTC(p.year, p.monthIndex, p.day) / 86400000;
   const clock = `${at.hour}:${at.minute}`;
   const gap = dayNumber(today) - dayNumber(at);
-  if (gap === 0) return `Today ${clock}`;
-  if (gap === 1) return `Yesterday ${clock}`;
+  if (gap === 0) return m.time_today_at({ time: clock });
+  if (gap === 1) return m.time_yesterday_at({ time: clock });
   const date = `${at.day} ${at.month}`;
   return at.year === today.year ? `${date} ${clock}` : `${date} ${at.year} ${clock}`;
 }

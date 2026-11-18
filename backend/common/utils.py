@@ -1,43 +1,50 @@
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
+
+# Choice labels carry a context: one English word ("Closed") can be a different
+# word per entity in a language where statuses agree with their noun.
 
 INDCHOICES = (
-    ("ADVERTISING", "ADVERTISING"),
-    ("AGRICULTURE", "AGRICULTURE"),
-    ("APPAREL & ACCESSORIES", "APPAREL & ACCESSORIES"),
-    ("AUTOMOTIVE", "AUTOMOTIVE"),
-    ("BANKING", "BANKING"),
-    ("BIOTECHNOLOGY", "BIOTECHNOLOGY"),
-    ("BUILDING MATERIALS & EQUIPMENT", "BUILDING MATERIALS & EQUIPMENT"),
-    ("CHEMICAL", "CHEMICAL"),
-    ("COMPUTER", "COMPUTER"),
-    ("EDUCATION", "EDUCATION"),
-    ("ELECTRONICS", "ELECTRONICS"),
-    ("ENERGY", "ENERGY"),
-    ("ENTERTAINMENT & LEISURE", "ENTERTAINMENT & LEISURE"),
-    ("FINANCE", "FINANCE"),
-    ("FOOD & BEVERAGE", "FOOD & BEVERAGE"),
-    ("GROCERY", "GROCERY"),
-    ("HEALTHCARE", "HEALTHCARE"),
-    ("INSURANCE", "INSURANCE"),
-    ("LEGAL", "LEGAL"),
-    ("MANUFACTURING", "MANUFACTURING"),
-    ("PUBLISHING", "PUBLISHING"),
-    ("REAL ESTATE", "REAL ESTATE"),
-    ("SERVICE", "SERVICE"),
-    ("SOFTWARE", "SOFTWARE"),
-    ("SPORTS", "SPORTS"),
-    ("TECHNOLOGY", "TECHNOLOGY"),
-    ("TELECOMMUNICATIONS", "TELECOMMUNICATIONS"),
-    ("TELEVISION", "TELEVISION"),
-    ("TRANSPORTATION", "TRANSPORTATION"),
-    ("VENTURE CAPITAL", "VENTURE CAPITAL"),
+    ("ADVERTISING", pgettext_lazy("industry", "ADVERTISING")),
+    ("AGRICULTURE", pgettext_lazy("industry", "AGRICULTURE")),
+    ("APPAREL & ACCESSORIES", pgettext_lazy("industry", "APPAREL & ACCESSORIES")),
+    ("AUTOMOTIVE", pgettext_lazy("industry", "AUTOMOTIVE")),
+    ("BANKING", pgettext_lazy("industry", "BANKING")),
+    ("BIOTECHNOLOGY", pgettext_lazy("industry", "BIOTECHNOLOGY")),
+    (
+        "BUILDING MATERIALS & EQUIPMENT",
+        pgettext_lazy("industry", "BUILDING MATERIALS & EQUIPMENT"),
+    ),
+    ("CHEMICAL", pgettext_lazy("industry", "CHEMICAL")),
+    ("COMPUTER", pgettext_lazy("industry", "COMPUTER")),
+    ("EDUCATION", pgettext_lazy("industry", "EDUCATION")),
+    ("ELECTRONICS", pgettext_lazy("industry", "ELECTRONICS")),
+    ("ENERGY", pgettext_lazy("industry", "ENERGY")),
+    ("ENTERTAINMENT & LEISURE", pgettext_lazy("industry", "ENTERTAINMENT & LEISURE")),
+    ("FINANCE", pgettext_lazy("industry", "FINANCE")),
+    ("FOOD & BEVERAGE", pgettext_lazy("industry", "FOOD & BEVERAGE")),
+    ("GROCERY", pgettext_lazy("industry", "GROCERY")),
+    ("HEALTHCARE", pgettext_lazy("industry", "HEALTHCARE")),
+    ("INSURANCE", pgettext_lazy("industry", "INSURANCE")),
+    ("LEGAL", pgettext_lazy("industry", "LEGAL")),
+    ("MANUFACTURING", pgettext_lazy("industry", "MANUFACTURING")),
+    ("PUBLISHING", pgettext_lazy("industry", "PUBLISHING")),
+    ("REAL ESTATE", pgettext_lazy("industry", "REAL ESTATE")),
+    ("SERVICE", pgettext_lazy("industry", "SERVICE")),
+    ("SOFTWARE", pgettext_lazy("industry", "SOFTWARE")),
+    ("SPORTS", pgettext_lazy("industry", "SPORTS")),
+    ("TECHNOLOGY", pgettext_lazy("industry", "TECHNOLOGY")),
+    ("TELECOMMUNICATIONS", pgettext_lazy("industry", "TELECOMMUNICATIONS")),
+    ("TELEVISION", pgettext_lazy("industry", "TELEVISION")),
+    ("TRANSPORTATION", pgettext_lazy("industry", "TRANSPORTATION")),
+    ("VENTURE CAPITAL", pgettext_lazy("industry", "VENTURE CAPITAL")),
 )
 
 TYPECHOICES = (
-    ("CUSTOMER", "CUSTOMER"),
-    ("INVESTOR", "INVESTOR"),
-    ("PARTNER", "PARTNER"),
-    ("RESELLER", "RESELLER"),
+    ("CUSTOMER", pgettext_lazy("account type", "CUSTOMER")),
+    ("INVESTOR", pgettext_lazy("account type", "INVESTOR")),
+    ("PARTNER", pgettext_lazy("account type", "PARTNER")),
+    ("RESELLER", pgettext_lazy("account type", "RESELLER")),
 )
 
 ROLES = (
@@ -46,11 +53,11 @@ ROLES = (
 )
 
 LEAD_STATUS = (
-    ("assigned", "Assigned"),
-    ("in process", "In Process"),
-    ("converted", "Converted"),
-    ("recycled", "Recycled"),
-    ("closed", "Closed"),
+    ("assigned", pgettext_lazy("lead status", "Assigned")),
+    ("in process", pgettext_lazy("lead status", "In Process")),
+    ("converted", pgettext_lazy("lead status", "Converted")),
+    ("recycled", pgettext_lazy("lead status", "Recycled")),
+    ("closed", pgettext_lazy("lead status", "Closed")),
 )
 
 
@@ -58,32 +65,36 @@ LEAD_STATUS = (
 # leads.sources). These two are the old fixed lists, moved into that key space
 # for the code that still imports them.
 LEAD_SOURCE = (
-    ("call", "Call"),
-    ("email", "Email"),
-    ("existing customer", "Existing Customer"),
-    ("partner", "Partner"),
-    ("public relations", "Public Relations"),
-    ("campaign", "Campaign"),
-    ("other", "Other"),
+    ("call", pgettext_lazy("lead source", "Call")),
+    ("email", pgettext_lazy("lead source", "Email")),
+    ("existing customer", pgettext_lazy("lead source", "Existing Customer")),
+    ("partner", pgettext_lazy("lead source", "Partner")),
+    ("public relations", pgettext_lazy("lead source", "Public Relations")),
+    ("campaign", pgettext_lazy("lead source", "Campaign")),
+    ("other", pgettext_lazy("lead source", "Other")),
 )
 
 STATUS_CHOICE = (
-    ("New", "New"),
-    ("Assigned", "Assigned"),
-    ("Pending", "Pending"),
-    ("Closed", "Closed"),
-    ("Rejected", "Rejected"),
-    ("Duplicate", "Duplicate"),
+    ("New", pgettext_lazy("ticket status", "New")),
+    ("Assigned", pgettext_lazy("ticket status", "Assigned")),
+    ("Pending", pgettext_lazy("ticket status", "Pending")),
+    ("Closed", pgettext_lazy("ticket status", "Closed")),
+    ("Rejected", pgettext_lazy("ticket status", "Rejected")),
+    ("Duplicate", pgettext_lazy("ticket status", "Duplicate")),
 )
 
 PRIORITY_CHOICE = (
-    ("Low", "Low"),
-    ("Normal", "Normal"),
-    ("High", "High"),
-    ("Urgent", "Urgent"),
+    ("Low", pgettext_lazy("priority", "Low")),
+    ("Normal", pgettext_lazy("priority", "Normal")),
+    ("High", pgettext_lazy("priority", "High")),
+    ("Urgent", pgettext_lazy("priority", "Urgent")),
 )
 
-CASE_TYPE = (("Question", "Question"), ("Incident", "Incident"), ("Problem", "Problem"))
+CASE_TYPE = (
+    ("Question", pgettext_lazy("ticket type", "Question")),
+    ("Incident", pgettext_lazy("ticket type", "Incident")),
+    ("Problem", pgettext_lazy("ticket type", "Problem")),
+)
 
 STAGES = (
     ("PROSPECTING", "Prospecting"),
@@ -95,35 +106,35 @@ STAGES = (
 )
 
 OPPORTUNITY_TYPES = (
-    ("NEW_BUSINESS", "New Business"),
-    ("EXISTING_BUSINESS", "Existing Business"),
-    ("RENEWAL", "Renewal"),
-    ("UPSELL", "Upsell"),
-    ("CROSS_SELL", "Cross-sell"),
+    ("NEW_BUSINESS", pgettext_lazy("deal type", "New Business")),
+    ("EXISTING_BUSINESS", pgettext_lazy("deal type", "Existing Business")),
+    ("RENEWAL", pgettext_lazy("deal type", "Renewal")),
+    ("UPSELL", pgettext_lazy("deal type", "Upsell")),
+    ("CROSS_SELL", pgettext_lazy("deal type", "Cross-sell")),
 )
 
 SOURCES = (
-    ("call", "Call"),
-    ("email", "Email"),
-    ("existing customer", "Existing customer"),
-    ("partner", "Partner"),
-    ("public relations", "Public relations"),
-    ("campaign", "Campaign"),
-    ("web form", "Web form"),
-    ("other", "Other"),
+    ("call", pgettext_lazy("lead source", "Call")),
+    ("email", pgettext_lazy("lead source", "Email")),
+    ("existing customer", pgettext_lazy("lead source", "Existing customer")),
+    ("partner", pgettext_lazy("lead source", "Partner")),
+    ("public relations", pgettext_lazy("lead source", "Public relations")),
+    ("campaign", pgettext_lazy("lead source", "Campaign")),
+    ("web form", pgettext_lazy("lead source", "Web form")),
+    ("other", pgettext_lazy("lead source", "Other")),
 )
 
 EVENT_PARENT_TYPE = ((10, "Account"), (13, "Lead"), (14, "Opportunity"), (11, "Case"))
 
 EVENT_STATUS = (
-    ("Planned", "Planned"),
-    ("Held", "Held"),
-    ("Not Held", "Not Held"),
-    ("Not Started", "Not Started"),
-    ("Started", "Started"),
-    ("Completed", "Completed"),
-    ("Canceled", "Canceled"),
-    ("Deferred", "Deferred"),
+    ("Planned", pgettext_lazy("event status", "Planned")),
+    ("Held", pgettext_lazy("event status", "Held")),
+    ("Not Held", pgettext_lazy("event status", "Not Held")),
+    ("Not Started", pgettext_lazy("event status", "Not Started")),
+    ("Started", pgettext_lazy("event status", "Started")),
+    ("Completed", pgettext_lazy("event status", "Completed")),
+    ("Canceled", pgettext_lazy("event status", "Canceled")),
+    ("Deferred", pgettext_lazy("event status", "Deferred")),
 )
 
 
@@ -377,16 +388,16 @@ COUNTRIES = (
 )
 
 GOAL_TYPES = (
-    ("REVENUE", "Revenue"),
-    ("DEALS_CLOSED", "Deals Closed"),
-    ("ACTIVITIES", "Activities"),
+    ("REVENUE", pgettext_lazy("goal type", "Revenue")),
+    ("DEALS_CLOSED", pgettext_lazy("goal type", "Deals Closed")),
+    ("ACTIVITIES", pgettext_lazy("goal type", "Activities")),
 )
 
 PERIOD_TYPES = (
-    ("MONTHLY", "Monthly"),
-    ("QUARTERLY", "Quarterly"),
-    ("YEARLY", "Yearly"),
-    ("CUSTOM", "Custom"),
+    ("MONTHLY", pgettext_lazy("goal period", "Monthly")),
+    ("QUARTERLY", pgettext_lazy("goal period", "Quarterly")),
+    ("YEARLY", pgettext_lazy("goal period", "Yearly")),
+    ("CUSTOM", pgettext_lazy("goal period", "Custom")),
 )
 
 CURRENCY_CODES = (

@@ -7,12 +7,13 @@
   import { spanText } from '#lib/v2/interactions.js';
   import { t } from '#lib/terminology.js';
   import { ChevronRight, Timer, Trophy } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
 
-  let singular = $derived(t(data.org?.terminology, 'lead.singular', 'Lead'));
-  let plural = $derived(t(data.org?.terminology, 'lead.plural', 'Leads'));
+  let singular = $derived(t(data.org?.terminology, 'lead.singular', m.leads_term_singular()));
+  let plural = $derived(t(data.org?.terminology, 'lead.plural', m.leads_term_plural()));
   let empty = $derived(data.rows.every((r) => !r.won && !r.lost && !r.new_leads));
   let measuringLater = $derived(
     !!data.since && !!data.measured_since && data.measured_since > data.since
@@ -22,27 +23,34 @@
   const span = (n: number | null) => (n === null ? '—' : spanText(n));
 </script>
 
-<PageHeader title="Outcomes">
+<PageHeader title={m.leads_outcomes_title()}>
   {#snippet crumb()}
     <a href={resolve('leads')}>{plural}</a>
     <ChevronRight size={12} />
-    <span>Outcomes</span>
+    <span>{m.leads_outcomes_title()}</span>
   {/snippet}
   {#snippet sub()}
-    Who turns {plural.toLowerCase()} into wins, and how long it takes, per person{data.since
-      ? `, since ${shortDate(data.since)}`
-      : ''}.
+    {data.since
+      ? m.leads_outcomes_sub_since({
+          plural: plural.toLowerCase(),
+          date: shortDate(data.since)
+        })
+      : m.leads_outcomes_sub({ plural: plural.toLowerCase() })}
     {#if measuringLater}
-      <span class="measuring">Measuring since {shortDate(data.measured_since)}</span>
+      <span class="measuring"
+        >{m.leads_measuring_since({ date: shortDate(data.measured_since) })}</span
+      >
     {/if}
   {/snippet}
   {#snippet actions()}
-    <a class="v2-btn" href={resolve('leads/response-times')}><Timer />Response time</a>
-    <nav class="periods" aria-label="Period">
+    <a class="v2-btn" href={resolve('leads/response-times')}
+      ><Timer />{m.leads_response_time_title()}</a
+    >
+    <nav class="periods" aria-label={m.leads_period()}>
       {#each data.periods as n (n)}
         <a
           href={resolve(asInternalPath(`/leads/outcomes?days=${n}`))}
-          aria-current={n === data.days ? 'page' : undefined}>{n} days</a
+          aria-current={n === data.days ? 'page' : undefined}>{m.leads_period_days({ count: n })}</a
         >
       {/each}
     </nav>
@@ -51,10 +59,7 @@
 
 <div class="v2-scroll">
   {#if empty}
-    <EmptyState
-      title="No outcomes yet"
-      body="Outcomes appear once a lead is won or lost, or a new one arrives, in this period."
-    >
+    <EmptyState title={m.leads_outcomes_empty_title()} body={m.leads_outcomes_empty_body()}>
       {#snippet icon()}<Trophy size={21} />{/snippet}
     </EmptyState>
   {:else}
@@ -62,37 +67,41 @@
       <table class="v2-table">
         <thead>
           <tr>
-            <th>Person</th>
-            <th class="v2-r">Won</th>
-            <th class="v2-r">Lost</th>
-            <th class="v2-r">Win rate</th>
-            <th class="v2-r">Median time to win</th>
-            <th class="v2-r">New leads</th>
+            <th>{m.leads_col_person()}</th>
+            <th class="v2-r">{m.leads_outcomes_col_won()}</th>
+            <th class="v2-r">{m.leads_outcomes_col_lost()}</th>
+            <th class="v2-r">{m.leads_outcomes_col_win_rate()}</th>
+            <th class="v2-r">{m.leads_outcomes_col_median_win()}</th>
+            <th class="v2-r">{m.leads_col_new_leads()}</th>
           </tr>
         </thead>
         <tbody>
           {#each data.rows as row (row.profile || row.name)}
             <tr>
               <td><div class="v2-table-primary">{row.name}</div></td>
-              <td class="v2-r v2-num" data-l="Won">{row.won}</td>
-              <td class="v2-r v2-num" data-l="Lost">{row.lost}</td>
-              <td class="v2-r v2-num" data-l="Win rate">{rate(row.win_rate)}</td>
-              <td class="v2-r v2-num" data-l="Median time to win">
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_won()}>{row.won}</td>
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_lost()}>{row.lost}</td>
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_win_rate()}
+                >{rate(row.win_rate)}</td
+              >
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_median_win()}>
                 {span(row.median_seconds_to_win)}
               </td>
-              <td class="v2-r v2-num" data-l="New leads">{row.new_leads}</td>
+              <td class="v2-r v2-num" data-l={m.leads_col_new_leads()}>{row.new_leads}</td>
             </tr>
           {/each}
           {#if data.totals}
             <tr class="totals">
-              <td><div class="v2-table-primary">Everyone</div></td>
-              <td class="v2-r v2-num" data-l="Won">{data.totals.won}</td>
-              <td class="v2-r v2-num" data-l="Lost">{data.totals.lost}</td>
-              <td class="v2-r v2-num" data-l="Win rate">{rate(data.totals.win_rate)}</td>
-              <td class="v2-r v2-num" data-l="Median time to win">
+              <td><div class="v2-table-primary">{m.leads_row_everyone()}</div></td>
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_won()}>{data.totals.won}</td>
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_lost()}>{data.totals.lost}</td>
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_win_rate()}
+                >{rate(data.totals.win_rate)}</td
+              >
+              <td class="v2-r v2-num" data-l={m.leads_outcomes_col_median_win()}>
                 {span(data.totals.median_seconds_to_win)}
               </td>
-              <td class="v2-r v2-num" data-l="New leads">{data.totals.new_leads}</td>
+              <td class="v2-r v2-num" data-l={m.leads_col_new_leads()}>{data.totals.new_leads}</td>
             </tr>
           {/if}
         </tbody>
@@ -102,10 +111,8 @@
 
   <div class="v2-pad notes">
     <p>
-      Wins and losses count for whoever the {singular.toLowerCase()} is assigned to now, and one with
-      two owners counts for both. Time to win runs from when the {singular.toLowerCase()} arrived to when
-      it was won. Win rate is wins out of wins and losses.
-      {data.isAdmin ? '' : 'You see your own row; an admin sees everyone’s.'}
+      {m.leads_outcomes_notes({ singular: singular.toLowerCase() })}
+      {data.isAdmin ? '' : m.leads_own_row_only()}
     </p>
   </div>
 </div>

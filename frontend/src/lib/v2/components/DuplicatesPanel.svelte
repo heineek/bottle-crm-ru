@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from '#lib/paraglide/messages.js';
   /**
    * "Possible duplicates" on a lead, contact or account page, shown only when
    * there are some. A warning that is always on is one people learn to scroll
@@ -26,30 +27,45 @@
 
   // Said once under the list, and only when no row can be merged: repeated
   // beside every row it reads as a wall of refusals. The phone does the same.
+  const FIELD: Record<string, () => string> = {
+    email: m.app_dup_field_email,
+    phone: m.app_dup_field_phone,
+    name: m.app_dup_field_name,
+    company: m.app_dup_field_company,
+    website: m.app_dup_field_website
+  };
+  /** The API's `matched_on` reasons as words. */
+  const same = (reasons: string | string[]) =>
+    m.app_dup_same({
+      fields: (Array.isArray(reasons) ? reasons : [reasons])
+        .map((r) => FIELD[r]?.() ?? r)
+        .join(m.app_dup_separator())
+    });
+
   let noneMergeable = $derived(!canDelete && duplicates.every((d) => !d.can_delete));
 </script>
 
 {#if duplicates.length}
   <section class="dup" aria-labelledby="dup-title">
     <div id="dup-title" class="v2-label" style="color:var(--v2-clay);margin-bottom:4px">
-      Possible duplicate{duplicates.length === 1 ? '' : 's'}
+      {m.app_dup_title({ count: duplicates.length })}
     </div>
     {#each duplicates as d (d.id)}
       <div class="row">
         <div style="flex:1;min-width:0">
           <a href={resolve(`${module}/${d.id}`)}>{d.name}</a>
-          <span class="v2-sub"> · same {d.matched_on}</span>
+          <span class="v2-sub"> · {same(d.matched_on)}</span>
         </div>
         {#if canDelete || d.can_delete}
           <a class="v2-btn v2-btn-sm merge" href={resolve(`${module}/${id}/merge?with=${d.id}`)}>
-            Compare
+            {m.app_dup_compare()}
           </a>
         {/if}
       </div>
     {/each}
     {#if noneMergeable}
       <p class="v2-sub" style="font-size:11.5px;margin:4px 0 0">
-        Only an admin or whoever created one of them can merge these.
+        {m.app_dup_none_mergeable()}
       </p>
     {/if}
   </section>
