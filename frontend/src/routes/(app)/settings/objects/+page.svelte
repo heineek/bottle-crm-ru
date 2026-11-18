@@ -15,6 +15,8 @@
   import { billingHref } from '#lib/v2/billing.js';
   import { count } from '#lib/v2/format.js';
   import { Plus } from '@lucide/svelte';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -30,6 +32,8 @@
   let canAdd = $derived(data.can_edit && data.answer.has_custom_objects);
   let plansHref = $derived(billingHref(data));
 
+  let subParts = $derived(messageParts(m.settings_objects_sub({ count: slot('count') })));
+
   function openCreate() {
     label = '';
     key = '';
@@ -43,27 +47,35 @@
   }
 </script>
 
-<PageHeader title="Custom objects">
+<PageHeader title={m.settings_objects_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(objects.length - archived)}</span> in use
+    {#each subParts as p, i (i)}{#if p.key}<span class="v2-num"
+          >{count(objects.length - archived)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if canAdd && !creating}
-      <button class="v2-btn v2-btn-primary" onclick={openCreate}><Plus />New object</button>
+      <button class="v2-btn v2-btn-primary" onclick={openCreate}
+        ><Plus />{m.settings_objects_new_button()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
-    <StatCard label="Active objects" value={count(objects.length - archived)} tone="ink" />
-    <StatCard label="Archived" value={count(archived)} tone="slate" />
     <StatCard
-      label="Objects used"
+      label={m.settings_objects_stat_active()}
+      value={count(objects.length - archived)}
+      tone="ink"
+    />
+    <StatCard label={m.settings_objects_stat_archived()} value={count(archived)} tone="slate" />
+    <StatCard
+      label={m.settings_objects_stat_used()}
       value={count(objects.length)}
       tone="slate"
-      detail={`of ${limit} objects`}
+      detail={m.settings_objects_stat_used_detail({ limit })}
     />
   </div>
 </div>
@@ -72,50 +84,49 @@
   <div class="v2-pad" style="padding-bottom:32px">
     {#if data.can_edit && !data.answer.has_custom_objects}
       <p class="v2-sub" style="font-size:12.5px;margin:0 0 16px;max-width:66ch">
-        Custom objects are not included in this organization's plan. Existing objects stay readable,
-        and can be archived, restored or deleted.
+        {m.settings_objects_no_plan()}
         {#if plansHref}
-          <a href={resolve(asInternalPath(plansHref))}>See plans</a>
+          <a href={resolve(asInternalPath(plansHref))}>{m.settings_objects_see_plans()}</a>
         {/if}
       </p>
     {/if}
 
     {#if creating && canAdd}
       <SettingsFormPanel
-        title="New custom object"
+        title={m.settings_objects_new_title()}
         action="?/create"
         error={form?.create?.error}
-        submitLabel="Add object"
+        submitLabel={m.settings_objects_add_button()}
         oncancel={() => (creating = false)}
         ondone={() => (creating = false)}
       >
         {#snippet fields()}
           <div class="v2-field">
-            <label for="o-label">Name (singular)</label>
+            <label for="o-label">{m.settings_objects_label_singular()}</label>
             <input
               id="o-label"
               class="v2-input"
               name="label"
               maxlength="64"
               required
-              placeholder="Property"
+              placeholder={m.settings_objects_label_placeholder()}
               value={label}
               oninput={onLabel}
             />
           </div>
           <div class="v2-field">
-            <label for="o-plural">Name (plural)</label>
+            <label for="o-plural">{m.settings_objects_label_plural()}</label>
             <input
               id="o-plural"
               class="v2-input"
               name="label_plural"
               maxlength="64"
               required
-              placeholder="Properties"
+              placeholder={m.settings_objects_plural_placeholder()}
             />
           </div>
           <div class="v2-field">
-            <label for="o-key">Key</label>
+            <label for="o-key">{m.settings_objects_key_label()}</label>
             <input
               id="o-key"
               class="v2-input"
@@ -128,33 +139,32 @@
               oninput={() => (keyEdited = true)}
             />
             <p class="v2-hint">
-              Lowercase letters, numbers and underscores, starting with a letter. Cannot be changed
-              later.
+              {m.settings_objects_key_hint()}
             </p>
           </div>
           <div class="v2-field">
-            <label for="o-name-label">What each record's name is called</label>
+            <label for="o-name-label">{m.settings_objects_name_label_label()}</label>
             <input
               id="o-name-label"
               class="v2-input"
               name="name_label"
               maxlength="64"
-              placeholder="Name"
+              placeholder={m.settings_objects_name()}
             />
           </div>
           <div class="v2-field v2-sfp-wide">
-            <label for="o-desc">Description</label>
+            <label for="o-desc">{m.settings_objects_description_label()}</label>
             <textarea id="o-desc" class="v2-input" name="description" rows="2"></textarea>
           </div>
           <fieldset class="v2-field v2-sfp-wide" style="border:0;padding:0;margin:0">
-            <legend class="v2-label" style="padding:0">Who can see its records</legend>
+            <legend class="v2-label" style="padding:0">{m.settings_objects_access_legend()}</legend>
             <label class="o-choice">
               <input type="radio" name="record_access" value="own" checked />
-              Only the people involved
+              {m.settings_objects_access_own()}
             </label>
             <label class="o-choice">
               <input type="radio" name="record_access" value="everyone" />
-              Everyone in this organization
+              {m.settings_objects_access_everyone()}
             </label>
           </fieldset>
         {/snippet}
@@ -162,19 +172,16 @@
     {/if}
 
     {#if !objects.length}
-      <EmptyState
-        title="No custom objects yet"
-        body="A custom object is a record type of your own, such as properties, vehicles or projects, with the fields you choose."
-      />
+      <EmptyState title={m.settings_objects_empty_title()} body={m.settings_objects_empty_body()} />
     {:else}
       <div class="v2-table-wrap" style="margin-left:0;margin-right:0">
         <table class="v2-table">
           <thead>
             <tr>
-              <th>Object</th>
-              <th>Status</th>
-              <th>Records visible to</th>
-              <th>Key</th>
+              <th>{m.settings_objects_col_object()}</th>
+              <th>{m.settings_objects_col_status()}</th>
+              <th>{m.settings_objects_col_visible()}</th>
+              <th>{m.settings_objects_col_key()}</th>
             </tr>
           </thead>
           <tbody>
@@ -192,10 +199,13 @@
                   </a>
                 </td>
                 <td data-m="tag">
-                  {#if !o.is_active}<Pill tone="slate">Archived</Pill>{/if}
+                  {#if !o.is_active}<Pill tone="slate">{m.settings_objects_stat_archived()}</Pill
+                    >{/if}
                 </td>
                 <td data-m="meta"
-                  >{o.record_access === 'everyone' ? 'Everyone' : 'People involved'}</td
+                  >{o.record_access === 'everyone'
+                    ? m.settings_objects_visible_everyone()
+                    : m.settings_objects_visible_involved()}</td
                 >
                 <td data-m="meta"><code class="o-key">{o.key}</code></td>
               </tr>

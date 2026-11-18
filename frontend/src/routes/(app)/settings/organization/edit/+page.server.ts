@@ -7,6 +7,7 @@ import {
   listTimezones
 } from '#lib/server/v2/organization.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 import type { FormBody } from '#lib/api-helpers.js';
@@ -58,12 +59,12 @@ export const actions: Actions = {
       if (apiStatus(err) === 403) {
         return fail(403, {
           values: body,
-          error: 'Only an admin can change organization settings.'
+          error: m.settings_org_edit_forbidden_save()
         });
       }
       return fail(400, {
         values: body,
-        error: readableError(err, 'Could not save these settings.')
+        error: readableError(err, m.settings_org_edit_save_failed())
       });
     }
 

@@ -44,8 +44,9 @@
  * already carries, so a deactivated assignee is shown rather than silently
  * dropped by a select with no matching option.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
-import { CASE_STATUSES } from '#lib/v2/enums.js';
+import { CASE_STATUSES, CASE_STATUS_LABEL, CASE_PRIORITY_LABEL } from '#lib/v2/enums.js';
 import { viewerIsAdmin } from './organization.js';
 import { myProfileId } from './leads.js';
 import { getOrgPeopleAndTeams } from './org-people.js';
@@ -62,22 +63,22 @@ export const MACRO_STATUSES = CASE_STATUSES.filter((s) => s !== 'Duplicate');
 export const MACRO_ACTION_KEYS = ['status', 'priority', 'assignees', 'tags'];
 
 function personLabel(p: { id?: string; name?: string; email?: string; is_active?: boolean }) {
-  const name = p.name || p.email || 'Unknown';
-  return p.is_active === false ? `${name} (deactivated)` : name;
+  const name = p.name || p.email || m.settings_macros_unknown_person();
+  return p.is_active === false ? m.settings_macros_person_deactivated({ name }) : name;
 }
 
 function tagLabel(t: { id?: string; name?: string; is_active?: boolean }) {
-  const name = t.name || 'Unnamed';
-  return t.is_active === false ? `${name} (archived)` : name;
+  const name = t.name || m.settings_macros_unnamed_tag();
+  return t.is_active === false ? m.settings_macros_tag_archived({ name }) : name;
 }
 
 /**
  * One chip per action a macro carries, in `MACRO_ACTION_KEYS` order.
  *
- * @param m a macro row from the API
+ * @param macro a macro row from the API
  */
 export function macroActionChips(
-  m:
+  macro:
     | {
         set_status?: string | null;
         set_priority?: string | null;
@@ -93,14 +94,26 @@ export function macroActionChips(
     | undefined
 ): { key: string; label: string }[] {
   const chips: { key: string; label: string }[] = [];
-  if (m?.set_status) chips.push({ key: 'status', label: `Status: ${m.set_status}` });
-  if (m?.set_priority) chips.push({ key: 'priority', label: `Priority: ${m.set_priority}` });
-  const people = m?.set_assignees_details ?? [];
-  if (people.length) {
-    chips.push({ key: 'assignees', label: `Assign: ${people.map(personLabel).join(', ')}` });
+  if (macro?.set_status) {
+    const status = CASE_STATUS_LABEL[macro.set_status] ?? macro.set_status;
+    chips.push({ key: 'status', label: m.settings_macros_chip_status({ status }) });
   }
-  const tags = m?.add_tags_details ?? [];
-  if (tags.length) chips.push({ key: 'tags', label: `Tag: ${tags.map(tagLabel).join(', ')}` });
+  if (macro?.set_priority) {
+    const priority = CASE_PRIORITY_LABEL[macro.set_priority] ?? macro.set_priority;
+    chips.push({ key: 'priority', label: m.settings_macros_chip_priority({ priority }) });
+  }
+  const people = macro?.set_assignees_details ?? [];
+  if (people.length) {
+    const label = m.settings_macros_chip_assign({ people: people.map(personLabel).join(', ') });
+    chips.push({ key: 'assignees', label });
+  }
+  const tags = macro?.add_tags_details ?? [];
+  if (tags.length) {
+    chips.push({
+      key: 'tags',
+      label: m.settings_macros_chip_tag({ tags: tags.map(tagLabel).join(', ') })
+    });
+  }
   return chips;
 }
 
@@ -133,6 +146,15 @@ export function keptActions(form: FormData) {
   return MACRO_ACTION_KEYS.filter((key) => kept.includes(key));
 }
 
+/** An action name from the API (`MACRO_ACTION_KEYS`) in the reader's words. */
+function actionName(key: string) {
+  if (key === 'status') return m.settings_macros_action_status();
+  if (key === 'priority') return m.settings_macros_action_priority();
+  if (key === 'assignees') return m.settings_macros_action_assignees();
+  if (key === 'tags') return m.settings_macros_action_tags();
+  return key;
+}
+
 /** A sentence for what applying did, from the API's `applied` and `skipped`. */
 export function applySummary(resp: {
   applied?: string[];
@@ -141,8 +163,8 @@ export function applySummary(resp: {
   const applied = resp?.applied ?? [];
   const skipped = resp?.skipped ?? [];
   const head = applied.length
-    ? `Macro applied: ${applied.join(', ')}.`
-    : 'The macro changed nothing on this ticket.';
+    ? m.settings_macros_applied({ actions: applied.map(actionName).join(', ') })
+    : m.settings_macros_applied_nothing();
   return [head, ...skipped.map((s) => s.reason)].join(' ');
 }
 
@@ -169,13 +191,13 @@ export async function getMacros({ cookies }: { cookies: Cookies }) {
     listActiveTags(cookies)
   ]);
   const activePeople = people.people.map((p) => ({ id: p.id, name: p.name }));
-  const results = (resp.results ?? []).map((m) => ({
-    ...m,
-    owner: m.owner ? { id: m.owner, name: m.owner_name || m.owner } : null,
-    chips: macroActionChips(m),
+  const results = (resp.results ?? []).map((row) => ({
+    ...row,
+    owner: row.owner ? { id: row.owner, name: row.owner_name || row.owner } : null,
+    chips: macroActionChips(row),
     // The edit form's picker options for this row: active rows plus its own.
-    assignee_options: optionsWithStored(activePeople, m.set_assignees_details, personLabel),
-    tag_options: optionsWithStored(tags, m.add_tags_details, tagLabel)
+    assignee_options: optionsWithStored(activePeople, row.set_assignees_details, personLabel),
+    tag_options: optionsWithStored(tags, row.add_tags_details, tagLabel)
   }));
   return {
     // Active members and active tags, the new-macro form's picker options.
@@ -243,10 +265,10 @@ function buildBody(values: MacroValues) {
   const acts = Boolean(
     body.set_status || body.set_priority || listed(body.set_assignees) || listed(body.add_tags)
   );
-  if (!body.title) throw new Error('A macro needs a title.');
-  if (!body.body && !acts) throw new Error('A macro needs a body, an action, or both.');
+  if (!body.title) throw new Error(m.settings_macros_error_title());
+  if (!body.body && !acts) throw new Error(m.settings_macros_error_body());
   if (body.scope !== 'org' && body.scope !== 'personal') {
-    throw new Error("scope must be 'org' or 'personal'.");
+    throw new Error(m.settings_macros_error_scope());
   }
   if (body.is_active !== undefined) body.is_active = Boolean(body.is_active);
 
@@ -272,7 +294,7 @@ export async function updateMacro(
   id: string,
   values: MacroValues
 ): Promise<Schemas['Macro']> {
-  if (!id) throw new Error('Which macro? No macro id was given.');
+  if (!id) throw new Error(m.settings_macros_error_which());
   const body = buildBody(values);
   return await apiRequest(`/macros/${id}/`, { method: 'PATCH', body }, { cookies });
 }
@@ -284,7 +306,7 @@ export async function updateMacro(
  * own scope server-side, not by anything sent here.
  */
 export async function deleteMacro({ cookies }: { cookies: Cookies }, id: string): Promise<null> {
-  if (!id) throw new Error('Which macro? No macro id was given.');
+  if (!id) throw new Error(m.settings_macros_error_which());
   return await apiRequest(`/macros/${id}/`, { method: 'DELETE' }, { cookies });
 }
 
@@ -304,7 +326,7 @@ export async function activateMacro(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['Macro']> {
-  if (!id) throw new Error('Which macro? No macro id was given.');
+  if (!id) throw new Error(m.settings_macros_error_which());
   return await apiRequest(
     `/macros/${id}/`,
     { method: 'PATCH', body: { is_active: true } },

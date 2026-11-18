@@ -104,6 +104,10 @@ describe('scopeSummary', () => {
     expect(scopeSummary(token({ owner: undefined }))).toBe('Everything its owner can');
   });
 
+  it('speaks to the reader about their own token', () => {
+    expect(scopeSummary(token({ owner: undefined }), { own: true })).toBe('Everything you can');
+  });
+
   it('calls an all-read list read only', () => {
     expect(scopeSummary(token({ scopes: ['*:read'] }))).toBe('Read only');
     expect(scopeSummary(token({ scopes: ['leads:read', 'cases:read'] }))).toBe('Read only');

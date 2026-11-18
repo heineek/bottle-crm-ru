@@ -8,13 +8,14 @@ import { apiErrorBody, apiStatus, firstMessage } from '#lib/api-errors.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { checkId } from '#lib/server/v2/custom-objects.js';
 import { isPlanRefusal } from '#lib/server/v2/billing.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
-export const RULE_GONE = 'That rule does not exist, or you do not have access to it.';
+export const ruleGone = () => m.settings_automation_rule_gone();
 // The hosted web app can run ahead of its API during a release, so an API
 // without these routes reads as "not offered", as custom objects do.
-export const NOT_AVAILABLE = 'Automation rules are not available here.';
-const UNREADABLE = 'Could not read the rule.';
+export const notAvailable = () => m.settings_automation_not_available();
+const unreadable = () => m.settings_automation_unreadable();
 
 /** Runs per page on a rule's history. */
 export const RUN_PAGE = 20;
@@ -32,7 +33,7 @@ export async function getCatalogue({
       { cookies }
     );
   } catch (err) {
-    if (apiStatus(err) === 404) error(404, NOT_AVAILABLE);
+    if (apiStatus(err) === 404) error(404, notAvailable());
     throw err;
   }
 }
@@ -52,7 +53,7 @@ export async function listRules({
     return { summary: resp?.summary ?? null, rules: resp?.results ?? [] };
   } catch (err) {
     if (apiStatus(err) === 403) return { forbidden: true };
-    if (apiStatus(err) === 404) error(404, NOT_AVAILABLE);
+    if (apiStatus(err) === 404) error(404, notAvailable());
     throw err;
   }
 }
@@ -66,7 +67,7 @@ export async function getRule({ cookies }: Event, id: string): Promise<Schemas['
       { cookies }
     );
   } catch (err) {
-    if (apiStatus(err) === 404) error(404, RULE_GONE);
+    if (apiStatus(err) === 404) error(404, ruleGone());
     throw err;
   }
 }
@@ -165,7 +166,7 @@ export async function automationSummary({
 /** Parsed JSON as an object, or the unreadable-rule error. */
 function record(source: unknown): Record<string, unknown> {
   if (source === null || typeof source !== 'object' || Array.isArray(source)) {
-    throw new Error(UNREADABLE);
+    throw new Error(unreadable());
   }
   return source as Record<string, unknown>;
 }
@@ -178,7 +179,7 @@ function pick<K extends string>(source: unknown, keys: K[]) {
 }
 
 function list(value: unknown): unknown[] {
-  if (!Array.isArray(value)) throw new Error(UNREADABLE);
+  if (!Array.isArray(value)) throw new Error(unreadable());
   return value;
 }
 
@@ -227,7 +228,7 @@ export function ruleFromForm(form: FormData, options: { create: boolean }) {
   try {
     parsed = JSON.parse(typeof raw === 'string' ? raw : '');
   } catch {
-    throw new Error(UNREADABLE);
+    throw new Error(unreadable());
   }
   return ruleBody(parsed, options);
 }
@@ -251,8 +252,8 @@ export function moveRule(ids: string[], id: string, direction: string): string[]
 }
 
 function rowKey(path: string) {
-  const m = /^(conditions|actions)\[(\d+)\]/.exec(path);
-  if (m) return `${m[1]}.${m[2]}`;
+  const at = /^(conditions|actions)\[(\d+)\]/.exec(path);
+  if (at) return `${at[1]}.${at[2]}`;
   if (path === 'trigger' || path.startsWith('trigger.')) return 'trigger';
   return path;
 }
@@ -281,5 +282,5 @@ export function ruleErrors(err: unknown): {
   if (apiStatus(err) === 403 && typeof body?.detail === 'string') {
     return { general: body.detail, rows, plan: isPlanRefusal(err) };
   }
-  return { general: readableError(err, 'Could not save the rule.'), rows };
+  return { general: readableError(err, m.settings_automation_save_failed()), rows };
 }

@@ -21,6 +21,8 @@
   import { deliveryLabel, deliveryState, deliveryTone } from '../inbound-email/delivery.js';
   import { Plus, ShieldAlert } from '@lucide/svelte';
   import KeyOnce from './KeyOnce.svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps, SubmitFunction } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -48,15 +50,15 @@
   };
 </script>
 
-<PageHeader title="Lead capture">
+<PageHeader title={m.settings_lead_capture_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    Every way a lead reaches this organization: webhooks, web forms and lead addresses.
+    {m.settings_lead_capture_sub()}
   {/snippet}
   {#snippet actions()}
     {#if canAddIntake}
       <button class="v2-btn v2-btn-primary" onclick={() => (creating = !creating)}>
-        <Plus />New webhook
+        <Plus />{m.settings_lead_capture_new()}
       </button>
     {/if}
   {/snippet}
@@ -66,39 +68,39 @@
   <div class="v2-pad" style="padding-top:16px;padding-bottom:32px">
     {#if form?.created?.key}
       <KeyOnce
-        title="Webhook added. Copy its URL and key now"
+        title={m.settings_lead_capture_added_title()}
         url={form.created.url}
         secret={form.created.key}
       />
       <p class="v2-sub" style="font-size:12.5px;margin:-6px 0 18px">
-        Next, check which fields of a post fill which lead fields:
-        <a
-          href={resolve(asInternalPath(`/settings/lead-capture/${form.created.id}`))}
-          style="color:inherit">set up {form.created.name}</a
-        >.
+        {#each messageParts(m.settings_lead_capture_next_step( { link: slot('link') } )) as p, i (i)}{#if p.key === 'link'}<a
+              href={resolve(asInternalPath(`/settings/lead-capture/${form.created.id}`))}
+              style="color:inherit"
+              >{m.settings_lead_capture_next_step_link({ name: form.created.name })}</a
+            >{:else}{p.text}{/if}{/each}
       </p>
     {/if}
 
     {#if data.intakesState !== 'absent'}
       <section class="lc-section">
-        <h2 class="v2-section">Webhooks</h2>
-        <p class="v2-sub lc-lede">
-          A URL to paste into Google Ads lead forms, Tally, Gravity Forms, a property portal or any
-          tool that posts to a URL. Each post becomes a lead; someone who enquires again lands on
-          the lead they already have.
-        </p>
+        <h2 class="v2-section">{m.settings_lead_capture_webhooks()}</h2>
+        <p class="v2-sub lc-lede">{m.settings_lead_capture_webhooks_lede()}</p>
 
         {#if data.intakesState === 'forbidden'}
           <NextAction
-            label="Admins only"
-            text="Each webhook holds a key that creates leads in this organization, so only admins can see or change them."
+            label={m.settings_lead_capture_admins_only()}
+            text={m.settings_lead_capture_admins_only_text()}
           />
         {:else if data.intakesState === 'failed'}
-          <p class="v2-error">Webhooks could not be loaded. Reload the page to try again.</p>
+          <p class="v2-error">{m.settings_lead_capture_webhooks_failed()}</p>
         {:else}
           {#if form?.create?.error && !creating}
             <div style="margin-bottom:14px">
-              <NextAction label="That did not work" text={form.create.error} tone="rust" />
+              <NextAction
+                label={m.settings_lead_capture_did_not_work()}
+                text={form.create.error}
+                tone="rust"
+              />
             </div>
           {/if}
 
@@ -110,19 +112,19 @@
               class="v2-card lc-create"
             >
               <div class="v2-field lc-wide">
-                <label for="lc-name">Name</label>
+                <label for="lc-name">{m.common_name()}</label>
                 <input
                   id="lc-name"
                   name="name"
                   class="v2-input"
                   required
                   maxlength="100"
-                  placeholder="e.g. Google Ads spring campaign"
+                  placeholder={m.settings_lead_capture_name_placeholder()}
                   value={form?.create?.values?.name ?? ''}
                 />
               </div>
               <div class="v2-field">
-                <label for="lc-preset">Leads come from</label>
+                <label for="lc-preset">{m.settings_lead_capture_preset_label()}</label>
                 <select id="lc-preset" name="preset" class="v2-input" bind:value={createPreset}>
                   {#each INTAKE_PRESETS as p (p.value)}
                     <option value={p.value}>{p.label}</option>
@@ -130,7 +132,7 @@
                 </select>
               </div>
               <div class="v2-field">
-                <label for="lc-source">Record the source as</label>
+                <label for="lc-source">{m.settings_lead_capture_source_label()}</label>
                 <select
                   id="lc-source"
                   name="default_source"
@@ -138,7 +140,7 @@
                   value={createSource}
                   onchange={(e) => (pickedSource = e.currentTarget.value)}
                 >
-                  <option value="">Decide later</option>
+                  <option value="">{m.settings_lead_capture_source_later()}</option>
                   {#each sourceOptions(data.sources) as s (s.key)}
                     <option value={s.key}>{s.label}</option>
                   {/each}
@@ -148,14 +150,16 @@
                 <p class="v2-error lc-wide" style="margin:0">{form.create.error}</p>
               {/if}
               <div class="lc-wide lc-actions">
-                <button class="v2-btn v2-btn-primary lc-tap" disabled={busy}>Add webhook</button>
+                <button class="v2-btn v2-btn-primary lc-tap" disabled={busy}
+                  >{m.settings_lead_capture_add()}</button
+                >
                 <button
                   type="button"
                   class="v2-btn lc-tap"
                   disabled={busy}
                   onclick={() => (creating = false)}
                 >
-                  Cancel
+                  {m.common_cancel()}
                 </button>
               </div>
             </form>
@@ -166,10 +170,10 @@
               <table class="v2-table">
                 <thead>
                   <tr>
-                    <th>Webhook</th>
-                    <th>State</th>
-                    <th>Last post</th>
-                    <th data-m="hide">Added</th>
+                    <th>{m.settings_lead_capture_col_webhook()}</th>
+                    <th>{m.settings_lead_capture_col_state()}</th>
+                    <th>{m.settings_lead_capture_col_last_post()}</th>
+                    <th data-m="hide">{m.settings_lead_capture_col_added()}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -188,7 +192,7 @@
                               · {sourceLabel(data.sources, i.default_source)}{/if}
                             {#if i.last_error}
                               <span style="color:var(--v2-clay);font-weight:600">
-                                · last post refused</span
+                                · {m.settings_lead_capture_last_refused()}</span
                               >
                             {/if}
                           </div>
@@ -197,10 +201,14 @@
                       <td data-m="tag"><Pill tone={s.tone}>{s.label}</Pill></td>
                       <td
                         data-m="meta"
-                        data-l={i.last_received_at ? 'Last post' : undefined}
+                        data-l={i.last_received_at
+                          ? m.settings_lead_capture_col_last_post()
+                          : undefined}
                         class="v2-muted"
                       >
-                        {i.last_received_at ? relativeTime(i.last_received_at) : 'No posts yet'}
+                        {i.last_received_at
+                          ? relativeTime(i.last_received_at)
+                          : m.settings_lead_capture_no_posts()}
                       </td>
                       <td data-m="hide" class="v2-muted">
                         {i.created_at ? shortDate(i.created_at) : ''}
@@ -212,9 +220,9 @@
             </div>
           {:else if !creating}
             <div class="v2-card lc-empty">
-              <p class="v2-sub" style="margin:0">No webhooks yet.</p>
+              <p class="v2-sub" style="margin:0">{m.settings_lead_capture_none()}</p>
               <button class="v2-btn v2-btn-primary lc-tap" onclick={() => (creating = true)}>
-                <Plus />New webhook
+                <Plus />{m.settings_lead_capture_new()}
               </button>
             </div>
           {/if}
@@ -223,58 +231,61 @@
     {/if}
 
     <section class="lc-section">
-      <h2 class="v2-section">Web forms</h2>
-      <p class="v2-sub lc-lede">Forms embedded on your own site. Each submission becomes a lead.</p>
+      <h2 class="v2-section">{m.settings_lead_capture_web_forms()}</h2>
+      <p class="v2-sub lc-lede">{m.settings_lead_capture_web_forms_lede()}</p>
       {#if data.webForms === null}
-        <p class="v2-error">Web forms could not be loaded. Reload the page to try again.</p>
+        <p class="v2-error">{m.settings_lead_capture_web_forms_failed()}</p>
       {:else if data.webForms.length}
         <div class="v2-card" style="overflow:hidden">
           {#each data.webForms as f (f.id)}
             <a class="lc-row" href={resolve(asInternalPath(`/settings/web-forms/${f.id}`))}>
               <span class="lc-row-name">{f.name}</span>
               <span class="v2-sub lc-row-meta">
-                <span class="v2-num">{count(f.submission_count)}</span>
-                {f.submission_count === 1 ? 'submission' : 'submissions'}
+                {#each messageParts(m.settings_lead_capture_submissions( { count: f.submission_count, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                      class="v2-num">{count(f.submission_count)}</span
+                    >{:else}{p.text}{/if}{/each}
               </span>
               <Pill tone={f.is_published ? 'moss' : 'slate'}>
-                {f.is_published ? 'Published' : 'Draft'}
+                {f.is_published
+                  ? m.settings_lead_capture_form_published()
+                  : m.settings_lead_capture_form_draft()}
               </Pill>
             </a>
           {/each}
         </div>
         {#if data.webFormsTruncated}
           <p class="v2-sub" style="font-size:12px;margin:8px 0 0">
-            The most recent ones. The rest are in Web forms.
+            {m.settings_lead_capture_web_forms_truncated()}
           </p>
         {/if}
       {:else}
-        <p class="v2-sub" style="font-size:12.5px">No lead forms yet.</p>
+        <p class="v2-sub" style="font-size:12.5px">{m.settings_lead_capture_web_forms_none()}</p>
       {/if}
-      <a class="v2-btn lc-tap lc-more" href={resolve('settings/web-forms')}>Open web forms</a>
+      <a class="v2-btn lc-tap lc-more" href={resolve('settings/web-forms')}
+        >{m.settings_lead_capture_open_web_forms()}</a
+      >
     </section>
 
     <section class="lc-section">
-      <h2 class="v2-section">Lead addresses</h2>
-      <p class="v2-sub lc-lede">
-        Forward an enquiry to one of these, or point a portal's notification email at it, and it
-        becomes a lead with the sender's name, email and phone.
-      </p>
+      <h2 class="v2-section">{m.settings_lead_capture_addresses()}</h2>
+      <p class="v2-sub lc-lede">{m.settings_lead_capture_addresses_lede()}</p>
       {#if data.leadAddresses === null}
-        <p class="v2-error">Lead addresses could not be loaded. Reload the page to try again.</p>
+        <p class="v2-error">{m.settings_lead_capture_addresses_failed()}</p>
       {:else if !data.leadAddressesOffered}
         <p class="v2-sub" style="font-size:12.5px">
-          This server does not turn email into leads yet. Inbound email makes tickets only.
+          {m.settings_lead_capture_addresses_unsupported()}
         </p>
       {:else}
         {#if data.leadAddresses.length}
           <div class="v2-card" style="overflow:hidden">
-            {#each data.leadAddresses as m (m.id)}
-              {@const state = deliveryState(m)}
+            {#each data.leadAddresses as box (box.id)}
+              {@const state = deliveryState(box)}
               <div class="lc-row">
-                <span class="lc-row-name" style="overflow-wrap:anywhere">{m.address}</span>
+                <span class="lc-row-name" style="overflow-wrap:anywhere">{box.address}</span>
                 <span class="v2-sub lc-row-meta">
-                  {sourceLabel(data.sources, m.lead_source) || 'Email'}{m.lead_source_detail
-                    ? ` · ${m.lead_source_detail}`
+                  {sourceLabel(data.sources, box.lead_source) ||
+                    m.settings_lead_sources_legacy_email()}{box.lead_source_detail
+                    ? ` · ${box.lead_source_detail}`
                     : ''}
                 </span>
                 <Pill tone={deliveryTone(state)}>{deliveryLabel(state, 'leads')}</Pill>
@@ -282,10 +293,10 @@
             {/each}
           </div>
         {:else}
-          <p class="v2-sub" style="font-size:12.5px">No lead addresses yet.</p>
+          <p class="v2-sub" style="font-size:12.5px">{m.settings_lead_capture_addresses_none()}</p>
         {/if}
         <a class="v2-btn lc-tap lc-more" href={resolve('settings/inbound-email')}>
-          Open inbound email
+          {m.settings_lead_capture_open_inbound()}
         </a>
       {/if}
     </section>
@@ -294,14 +305,14 @@
       <div class="lc-note">
         <ShieldAlert size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
         <div>
-          <div style="font-weight:600;font-size:13px">A webhook key can only create leads</div>
+          <div style="font-weight:600;font-size:13px">
+            {m.settings_lead_capture_key_note_title()}
+          </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0;line-height:1.5">
-            It reads nothing and reaches no other record. Send it in the
-            <code class="lc-code">Authorization: Bearer</code> header where the tool allows; a tool
-            that only takes a URL can add <code class="lc-code">?key=</code>, but proxies and logs
-            keep query strings, so the header is safer. Replacing a key keeps the old one working
-            for 7 days. Each webhook's page lists its newest 50 posts, accepted or refused, and
-            posts are kept for 30 days.
+            {#each messageParts(m.settings_lead_capture_key_note( { header: slot('header'), query: slot('query') } )) as p, i (i)}{#if p.key === 'header'}<code
+                  class="lc-code">Authorization: Bearer</code
+                >{:else if p.key === 'query'}<code class="lc-code">?key=</code
+                >{:else}{p.text}{/if}{/each}
           </p>
         </div>
       </div>

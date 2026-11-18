@@ -12,6 +12,7 @@ import { getTags } from '#lib/server/v2/tags.js';
 import { fieldDefinitions } from '#lib/server/v2/record-custom-fields.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { apiStatus } from '#lib/api-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -59,10 +60,10 @@ function readMapping(form: FormData): unknown[] | undefined {
 /** Turn an API refusal into the sentence the page shows, under `key`. */
 function refused(key: string, err: unknown, fallback: string) {
   if (apiStatus(err) === 403) {
-    return fail(403, { [key]: { error: 'Only an admin can change webhooks.' } });
+    return fail(403, { [key]: { error: m.settings_lead_capture_change_admin_only() } });
   }
   if (apiStatus(err) === 404)
-    return fail(404, { [key]: { error: 'That webhook no longer exists.' } });
+    return fail(404, { [key]: { error: m.settings_lead_capture_gone_now() } });
   return fail(400, { [key]: { error: readableError(err, fallback) } });
 }
 
@@ -86,11 +87,12 @@ export const actions: Actions = {
     };
     const mapping = readMapping(form);
     if (mapping !== undefined) values.mapping = mapping;
-    if (!values.name.trim()) return fail(400, { save: { error: 'A webhook needs a name.' } });
+    if (!values.name.trim())
+      return fail(400, { save: { error: m.settings_lead_capture_needs_name() } });
     try {
       await updateIntake(event, event.params.id, values);
     } catch (err) {
-      return refused('save', err, 'Could not save the webhook.');
+      return refused('save', err, m.settings_lead_capture_save_failed());
     }
     return { saved: true };
   },
@@ -101,7 +103,7 @@ export const actions: Actions = {
     try {
       await updateIntake(event, event.params.id, { is_active: form.get('is_active') === 'true' });
     } catch (err) {
-      return refused('toggle', err, 'Could not change the webhook.');
+      return refused('toggle', err, m.settings_lead_capture_change_failed());
     }
     return { toggled: true };
   },
@@ -110,7 +112,7 @@ export const actions: Actions = {
     try {
       await testIntake(event, event.params.id);
     } catch (err) {
-      return refused('test', err, 'Could not send a test.');
+      return refused('test', err, m.settings_lead_capture_test_failed());
     }
     return { tested: true };
   },
@@ -120,7 +122,7 @@ export const actions: Actions = {
       const { key } = await replaceIntakeKey(event, event.params.id);
       return { replaced: { key } };
     } catch (err) {
-      return refused('key', err, 'Could not replace the key.');
+      return refused('key', err, m.settings_lead_capture_key_failed());
     }
   },
 
@@ -128,7 +130,7 @@ export const actions: Actions = {
     try {
       await deleteIntake(event, event.params.id);
     } catch (err) {
-      return refused('remove', err, 'Could not delete the webhook.');
+      return refused('remove', err, m.settings_lead_capture_delete_failed());
     }
     redirect(303, '/settings/lead-capture');
   }

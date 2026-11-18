@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   disconnectSentence,
-  KEY_NOTICE,
+  keyNotice,
   kindLabel,
   lastUsedLabel,
   replaceSentence,
@@ -31,7 +31,7 @@ describe('kindLabel', () => {
 
 describe('the page copy', () => {
   it('says each sentence as the brief words it', () => {
-    expect(KEY_NOTICE).toBe('Copy this key now. It will not be shown again.');
+    expect(keyNotice()).toBe('Copy this key now. It will not be shown again.');
     expect(disconnectSentence('Example app')).toBe(
       'Disconnect Example app? Its key stops working and its subscriptions are deleted. Records it created stay.'
     );

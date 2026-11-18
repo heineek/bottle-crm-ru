@@ -11,12 +11,17 @@
   import Pill from '#lib/v2/components/Pill.svelte';
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import { count } from '#lib/v2/format.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps, SubmitFunction } from './$types';
 
   let { data, form }: PageProps = $props();
 
   let sources = $derived(data.sources);
   let active = $derived(sources.filter((s) => s.is_active).length);
+  let subParts = $derived(
+    messageParts(m.settings_lead_sources_sub({ active: slot('active'), total: slot('total') }))
+  );
   let renaming = $state<string | null>(null);
   let busy = $state(false);
 
@@ -33,11 +38,12 @@
   };
 </script>
 
-<PageHeader title="Lead sources">
+<PageHeader title={m.settings_lead_sources_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(active)}</span> in use of
-    <span class="v2-num">{count(sources.length)}</span>
+    {#each subParts as p, i (i)}{#if p.key === 'active'}<span class="v2-num">{count(active)}</span
+        >{:else if p.key === 'total'}<span class="v2-num">{count(sources.length)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
 </PageHeader>
 
@@ -51,18 +57,20 @@
         class="v2-card ls-add"
       >
         <div class="ls-add-field">
-          <label class="v2-label" for="ls-label">New source</label>
+          <label class="v2-label" for="ls-label">{m.settings_lead_sources_new()}</label>
           <input
             id="ls-label"
             name="label"
             class="v2-input"
             maxlength="64"
             required
-            placeholder="e.g. Spring fair"
+            placeholder={m.settings_lead_sources_new_placeholder()}
             value={form?.add && 'label' in form.add ? form.add.label : ''}
           />
         </div>
-        <button class="v2-btn v2-btn-primary ls-tap" disabled={busy}><Plus />Add</button>
+        <button class="v2-btn v2-btn-primary ls-tap" disabled={busy}
+          ><Plus />{m.common_add()}</button
+        >
       </form>
       {#if form?.add?.error}
         <p class="v2-error" style="margin:-8px 0 14px">{form.add.error}</p>
@@ -70,8 +78,8 @@
     {:else}
       <div style="margin-bottom:16px">
         <NextAction
-          label="Admins change this list"
-          text="Every member picks from these sources. Ask an admin to add one, rename one or retire one."
+          label={m.settings_lead_sources_members_label()}
+          text={m.settings_lead_sources_members_text()}
         />
       </div>
     {/if}
@@ -86,7 +94,7 @@
           {#if renaming === s.id}
             <form method="POST" action="?/rename" use:enhance={() => working()} class="ls-rename">
               <input type="hidden" name="id" value={s.id} />
-              <label class="v2-label" for="ls-rename-{s.id}">Name</label>
+              <label class="v2-label" for="ls-rename-{s.id}">{m.common_name()}</label>
               <input
                 id="ls-rename-{s.id}"
                 name="label"
@@ -96,14 +104,16 @@
                 value={s.label}
               />
               <div class="ls-actions">
-                <button class="v2-btn v2-btn-primary v2-btn-sm ls-tap" disabled={busy}>Save</button>
+                <button class="v2-btn v2-btn-primary v2-btn-sm ls-tap" disabled={busy}
+                  >{m.common_save()}</button
+                >
                 <button
                   type="button"
                   class="v2-btn v2-btn-sm ls-tap"
                   disabled={busy}
                   onclick={() => (renaming = null)}
                 >
-                  Cancel
+                  {m.common_cancel()}
                 </button>
               </div>
             </form>
@@ -111,7 +121,8 @@
             <div class="ls-body">
               <div class="ls-title">
                 <b>{s.label}</b>
-                {#if !s.is_active}<Pill tone="slate">Retired</Pill>{/if}
+                {#if !s.is_active}<Pill tone="slate">{m.settings_lead_sources_retired_pill()}</Pill
+                  >{/if}
               </div>
               <span class="v2-sub ls-key">{s.key}</span>
             </div>
@@ -123,13 +134,15 @@
                   disabled={busy}
                   onclick={() => (renaming = s.id)}
                 >
-                  Rename
+                  {m.settings_lead_sources_rename()}
                 </button>
                 <form method="POST" action="?/retire" use:enhance={() => working()}>
                   <input type="hidden" name="id" value={s.id} />
                   <input type="hidden" name="is_active" value={s.is_active ? 'false' : 'true'} />
                   <button class="v2-btn v2-btn-sm ls-tap" disabled={busy}>
-                    {s.is_active ? 'Retire' : 'Bring back'}
+                    {s.is_active
+                      ? m.settings_lead_sources_retire()
+                      : m.settings_lead_sources_restore()}
                   </button>
                 </form>
                 <div class="ls-order">
@@ -139,7 +152,9 @@
                       <input type="hidden" name="direction" value={direction} />
                       <button
                         class="v2-btn v2-btn-sm ls-icon"
-                        aria-label="Move {s.label} {direction}"
+                        aria-label={direction === 'up'
+                          ? m.settings_lead_sources_move_up({ label: s.label })
+                          : m.settings_lead_sources_move_down({ label: s.label })}
                         disabled={busy || (direction === 'up' ? i === 0 : i === sources.length - 1)}
                       >
                         {#if direction === 'up'}<ArrowUp size={14} />{:else}<ArrowDown
@@ -157,14 +172,12 @@
           {/if}
         </div>
       {:else}
-        <p class="v2-sub" style="padding:14px 16px;margin:0">No sources yet.</p>
+        <p class="v2-sub" style="padding:14px 16px;margin:0">{m.settings_lead_sources_empty()}</p>
       {/each}
     </div>
 
     <p class="v2-sub" style="font-size:12px;margin:16px 0 0;max-width:68ch;line-height:1.5">
-      A retired source stays on every lead, contact and deal that has it, and can no longer be
-      picked for new ones. Spreadsheet imports match a source by its name or by the key under it,
-      and lead webhooks and lead addresses record one of these.
+      {m.settings_lead_sources_footnote()}
     </p>
   </div>
 </div>

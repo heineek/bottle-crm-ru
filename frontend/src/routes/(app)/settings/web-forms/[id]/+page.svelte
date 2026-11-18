@@ -47,7 +47,12 @@
   import NextAction from '#lib/v2/components/NextAction.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count, relativeTime, shortDate } from '#lib/v2/format.js';
-  import { CASE_PRIORITIES, CASE_TYPES } from '#lib/v2/enums.js';
+  import {
+    CASE_PRIORITIES,
+    CASE_TYPES,
+    CASE_PRIORITY_LABEL,
+    CASE_TYPE_LABEL
+  } from '#lib/v2/enums.js';
   import { sourceOptions } from '#lib/v2/lead-sources.js';
   import { inactiveOptionLabel } from '#lib/v2/pickers.js';
   import {
@@ -59,6 +64,8 @@
     builtinFieldLabel
   } from '#lib/v2/webform-fields.js';
   import { ChevronUp, ChevronDown, GripVertical, Plus, Trash2, Copy, Check } from '@lucide/svelte';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps, SubmitFunction } from './$types';
   import type { components } from '#lib/api-schema.js';
 
@@ -81,7 +88,6 @@
   let isTicket = $derived(wf.target === 'ticket');
   /** The built-in field vocabulary for this form's target. */
   let builtin = $derived(builtinFor(wf.target));
-  let recordNoun = $derived(isTicket ? 'ticket' : 'lead');
 
   /**
    * The editable field list, seeded from the server ONCE and owned by the
@@ -147,15 +153,15 @@
    * URL typed but not yet saved would not be there when the server looked.
    */
   let publishBlocker = $derived.by(() => {
-    if (!fields.length) return 'Add at least one field first.';
+    if (!fields.length) return m.settings_webforms_blocker_no_fields();
     if (!hasRequiredField(fields, wf.target)) {
       return isTicket
-        ? 'Add an email field before publishing. It is how each ticket finds its contact, or creates one.'
-        : 'Add an email field before publishing. It is what lets a repeat submission update the existing lead instead of failing.';
+        ? m.settings_webforms_blocker_email_ticket()
+        : m.settings_webforms_blocker_email_lead();
     }
-    if (!complete) return 'Every field needs a label and something to write into.';
+    if (!complete) return m.settings_webforms_blocker_incomplete();
     if (wf.success_mode === 'redirect' && !wf.redirect_url) {
-      return 'This form redirects on success but has no redirect URL set.';
+      return m.settings_webforms_blocker_redirect();
     }
     return null;
   });
@@ -257,6 +263,11 @@
       null
   );
 
+  // The emphasised clause is its own message, slotted into the sentence that explains it.
+  let originsScript = $derived(
+    messageParts(m.settings_webforms_origins_hint_script({ emphasis: slot('emphasis') }))
+  );
+
   let submissions = $derived(data.submissions ?? []);
   let totals = $derived(data.analytics?.totals ?? null);
 
@@ -265,27 +276,31 @@
 
   const statusLabel = (status: string) =>
     ({
-      accepted: isTicket ? 'Ticket opened' : 'Lead created',
-      accepted_duplicate: 'Merged into an existing lead',
-      rejected_spam: 'Rejected as spam',
-      rejected_invalid: 'Rejected, invalid',
-      rejected_captcha: 'Rejected, captcha'
+      accepted: isTicket
+        ? m.settings_webforms_status_ticket_opened()
+        : m.settings_webforms_status_lead_created(),
+      accepted_duplicate: m.settings_webforms_status_merged(),
+      rejected_spam: m.settings_webforms_status_rejected_spam(),
+      rejected_invalid: m.settings_webforms_status_rejected_invalid(),
+      rejected_captcha: m.settings_webforms_status_rejected_captcha()
     })[status] ?? status;
 </script>
 
 <PageHeader title={wf.name} record>
   {#snippet crumb()}
-    <a href={resolve('settings/web-forms')}>Web forms</a>
+    <a href={resolve('settings/web-forms')}>{m.settings_webforms_title()}</a>
   {/snippet}
   {#snippet sub()}
     <Pill tone={wf.is_published ? 'moss' : 'slate'}>
-      {wf.is_published ? 'Published' : 'Draft'}
+      {wf.is_published ? m.settings_webforms_pill_published() : m.settings_webforms_pill_draft()}
     </Pill>
     <span style="margin-left:8px">
-      Creates {recordNoun}s.
+      {isTicket
+        ? m.settings_webforms_sub_creates_tickets()
+        : m.settings_webforms_sub_creates_leads()}
       {wf.is_published
-        ? 'Accepting submissions from anyone with the embed.'
-        : 'Collecting nothing until it is published.'}
+        ? m.settings_webforms_sub_accepting()
+        : m.settings_webforms_sub_collecting_nothing()}
     </span>
   {/snippet}
   {#snippet actions()}
@@ -293,14 +308,14 @@
       {#if wf.is_published}
         <ConfirmAction
           action="?/unpublish"
-          label="Unpublish"
-          confirmLabel="Unpublish it"
-          explain="The embed stays on the site and starts refusing people."
+          label={m.settings_webforms_unpublish()}
+          confirmLabel={m.settings_webforms_unpublish_confirm()}
+          explain={m.settings_webforms_unpublish_explain_detail()}
         />
       {:else}
         <form method="POST" action="?/publish" use:enhance={working}>
           <button class="v2-btn v2-btn-primary" disabled={busy || Boolean(publishBlocker)}>
-            Publish
+            {m.settings_webforms_publish()}
           </button>
         </form>
       {/if}
@@ -312,15 +327,15 @@
   <div class="v2-pad wf-body">
     {#if actionError}
       <div style="margin-bottom:18px">
-        <NextAction label="That did not work" text={actionError} tone="rust" />
+        <NextAction label={m.settings_webforms_error_label()} text={actionError} tone="rust" />
       </div>
     {:else if form?.saved}
-      <p class="v2-sub wf-ok">Saved.</p>
+      <p class="v2-sub wf-ok">{m.settings_webforms_saved()}</p>
     {/if}
 
     {#if !wf.is_published && publishBlocker && canManage}
       <div style="margin-bottom:18px">
-        <NextAction label="Before you can publish" text={publishBlocker} />
+        <NextAction label={m.settings_webforms_before_publish()} text={publishBlocker} />
       </div>
     {/if}
 
@@ -333,15 +348,14 @@
       <!-- ============ Fields ============ -->
       <section class="wf-section">
         <div class="wf-section-head">
-          <h2 class="v2-section">Fields</h2>
+          <h2 class="v2-section">{m.settings_webforms_fields_title()}</h2>
           <p class="v2-sub wf-section-sub">
-            What a visitor is asked, in the order they are asked it. An email field is required
-            before the form can be published.
+            {m.settings_webforms_fields_sub()}
           </p>
         </div>
 
         {#if !fields.length}
-          <p class="v2-sub wf-empty">No fields yet. A form with no fields collects nothing.</p>
+          <p class="v2-sub wf-empty">{m.settings_webforms_fields_empty()}</p>
         {/if}
 
         <ul class="wf-fields">
@@ -364,7 +378,9 @@
 
               <div class="wf-row-body">
                 <div class="wf-row-line">
-                  <label class="wf-sr" for="src-{field.key}">Field type</label>
+                  <label class="wf-sr" for="src-{field.key}"
+                    >{m.settings_webforms_field_type()}</label
+                  >
                   <select
                     id="src-{field.key}"
                     class="v2-input wf-narrow"
@@ -378,15 +394,21 @@
                     }}
                   >
                     <option value={builtin.source}
-                      >{isTicket ? 'Ticket field' : 'Lead field'}</option
+                      >{isTicket
+                        ? m.settings_webforms_field_type_ticket()
+                        : m.settings_webforms_field_type_lead()}</option
                     >
                     <option value="custom" disabled={!data.customFields.length}>
-                      Custom field{data.customFields.length ? '' : ' (none defined)'}
+                      {data.customFields.length
+                        ? m.settings_webforms_field_type_custom()
+                        : m.settings_webforms_field_type_custom_none()}
                     </option>
                   </select>
 
                   {#if field.source === 'custom'}
-                    <label class="wf-sr" for="tgt-{field.key}">Custom field</label>
+                    <label class="wf-sr" for="tgt-{field.key}"
+                      >{m.settings_webforms_field_type_custom()}</label
+                    >
                     <select
                       id="tgt-{field.key}"
                       class="v2-input wf-narrow"
@@ -394,14 +416,16 @@
                       value={field.custom_field ?? ''}
                       onchange={(e) => pickCustomField(i, e.currentTarget.value)}
                     >
-                      <option value="">Choose one…</option>
+                      <option value="">{m.settings_webforms_choose_one()}</option>
                       {#each data.customFields as c (c.id)}
                         <option value={c.id}>{c.label}</option>
                       {/each}
                     </select>
                   {:else}
                     <label class="wf-sr" for="tgt-{field.key}"
-                      >{isTicket ? 'Ticket field' : 'Lead field'}</label
+                      >{isTicket
+                        ? m.settings_webforms_field_type_ticket()
+                        : m.settings_webforms_field_type_lead()}</label
                     >
                     <select
                       id="tgt-{field.key}"
@@ -410,7 +434,7 @@
                       value={isTicket ? field.ticket_field : field.lead_field}
                       onchange={(e) => pickBuiltinField(i, e.currentTarget.value)}
                     >
-                      <option value="">Choose one…</option>
+                      <option value="">{m.settings_webforms_choose_one()}</option>
                       {#each builtin.choices as f (f.value)}
                         <option value={f.value}>{f.label}</option>
                       {/each}
@@ -419,29 +443,33 @@
                 </div>
 
                 <div class="wf-row-line">
-                  <label class="wf-sr" for="lbl-{field.key}">Label</label>
+                  <label class="wf-sr" for="lbl-{field.key}"
+                    >{m.settings_webforms_label_label()}</label
+                  >
                   <input
                     id="lbl-{field.key}"
                     class="v2-input"
                     disabled={!canManage}
                     maxlength="255"
-                    placeholder="Label the visitor sees"
+                    placeholder={m.settings_webforms_label_placeholder()}
                     bind:value={field.label}
                   />
-                  <label class="wf-sr" for="ph-{field.key}">Placeholder</label>
+                  <label class="wf-sr" for="ph-{field.key}"
+                    >{m.settings_webforms_placeholder_label()}</label
+                  >
                   <input
                     id="ph-{field.key}"
                     class="v2-input"
                     disabled={!canManage}
                     maxlength="255"
-                    placeholder="Placeholder (optional)"
+                    placeholder={m.settings_webforms_placeholder_placeholder()}
                     bind:value={field.placeholder}
                   />
                 </div>
 
                 <label class="wf-check">
                   <input type="checkbox" disabled={!canManage} bind:checked={field.is_required} />
-                  Required
+                  {m.common_required()}
                 </label>
               </div>
 
@@ -454,7 +482,9 @@
                       type="button"
                       class="wf-move-btn"
                       disabled={i === 0}
-                      aria-label="Move {field.label || 'this field'} up"
+                      aria-label={field.label
+                        ? m.settings_webforms_move_up({ name: field.label })
+                        : m.settings_webforms_move_up_unnamed()}
                       onclick={() => (fields = moveField(fields, i, -1))}
                     >
                       <ChevronUp size={16} />
@@ -463,7 +493,9 @@
                       type="button"
                       class="wf-move-btn"
                       disabled={i === fields.length - 1}
-                      aria-label="Move {field.label || 'this field'} down"
+                      aria-label={field.label
+                        ? m.settings_webforms_move_down({ name: field.label })
+                        : m.settings_webforms_move_down_unnamed()}
                       onclick={() => (fields = moveField(fields, i, 1))}
                     >
                       <ChevronDown size={16} />
@@ -472,7 +504,9 @@
                   <button
                     type="button"
                     class="wf-move-btn"
-                    aria-label="Remove {field.label || 'this field'}"
+                    aria-label={field.label
+                      ? m.settings_webforms_remove_field({ name: field.label })
+                      : m.settings_webforms_remove_field_unnamed()}
                     onclick={() => removeField(i)}
                   >
                     <Trash2 size={15} />
@@ -485,7 +519,7 @@
 
         {#if canManage}
           <button type="button" class="v2-btn v2-btn-sm wf-add" onclick={addField}>
-            <Plus size={13} />Add a field
+            <Plus size={13} />{m.settings_webforms_add_field()}
           </button>
         {/if}
       </section>
@@ -493,15 +527,17 @@
       <!-- ============ Behaviour ============ -->
       <section class="wf-section">
         <div class="wf-section-head">
-          <h2 class="v2-section">Behaviour</h2>
+          <h2 class="v2-section">{m.settings_webforms_behaviour_title()}</h2>
           <p class="v2-sub wf-section-sub">
-            What the visitor sees after they submit, and where the {recordNoun} lands.
+            {isTicket
+              ? m.settings_webforms_behaviour_sub_ticket()
+              : m.settings_webforms_behaviour_sub_lead()}
           </p>
         </div>
 
         <div class="wf-grid">
           <div class="v2-field">
-            <label for="name">Name</label>
+            <label for="name">{m.common_name()}</label>
             <input
               id="name"
               name="name"
@@ -511,11 +547,11 @@
               disabled={!canManage}
               value={wf.name}
             />
-            <p class="v2-hint">Internal only. The visitor never sees it.</p>
+            <p class="v2-hint">{m.settings_webforms_name_hint()}</p>
           </div>
 
           <div class="v2-field">
-            <label for="submit_button_label">Submit button</label>
+            <label for="submit_button_label">{m.settings_webforms_submit_button()}</label>
             <input
               id="submit_button_label"
               name="submit_button_label"
@@ -527,7 +563,7 @@
           </div>
 
           <div class="v2-field">
-            <label for="success_mode">After a successful submission</label>
+            <label for="success_mode">{m.settings_webforms_success_mode_label()}</label>
             <select
               id="success_mode"
               name="success_mode"
@@ -535,14 +571,14 @@
               disabled={!canManage}
               bind:value={successMode}
             >
-              <option value="message">Show a message</option>
-              <option value="redirect">Redirect to a URL</option>
+              <option value="message">{m.settings_webforms_success_mode_message()}</option>
+              <option value="redirect">{m.settings_webforms_success_mode_redirect()}</option>
             </select>
           </div>
 
           {#if successMode === 'redirect'}
             <div class="v2-field">
-              <label for="redirect_url">Redirect URL</label>
+              <label for="redirect_url">{m.settings_webforms_redirect_url_label()}</label>
               <input
                 id="redirect_url"
                 name="redirect_url"
@@ -554,13 +590,12 @@
                 placeholder="https://example.com/thanks"
               />
               <p class="v2-hint">
-                http or https only. The embed navigates the visitor's browser here, so any other
-                scheme would be a script running on your own site.
+                {m.settings_webforms_redirect_hint()}
               </p>
             </div>
           {:else}
             <div class="v2-field wf-wide">
-              <label for="success_message">Success message</label>
+              <label for="success_message">{m.settings_webforms_success_message_label()}</label>
               <textarea
                 id="success_message"
                 name="success_message"
@@ -573,7 +608,7 @@
 
           {#if !isTicket}
             <div class="v2-field">
-              <label for="assignment_mode">Assign new leads</label>
+              <label for="assignment_mode">{m.settings_webforms_assignment_mode_label()}</label>
               <select
                 id="assignment_mode"
                 name="assignment_mode"
@@ -581,12 +616,11 @@
                 disabled={!canManage}
                 bind:value={assignmentMode}
               >
-                <option value="person">To one person</option>
-                <option value="rotation">Rotate between members</option>
+                <option value="person">{m.settings_webforms_mode_person()}</option>
+                <option value="rotation">{m.settings_webforms_mode_rotation()}</option>
               </select>
               <p class="v2-hint">
-                A repeat submission from the same email updates the existing lead and keeps its
-                owner.
+                {m.settings_webforms_assignment_hint()}
               </p>
             </div>
           {/if}
@@ -594,7 +628,11 @@
           <!-- Hidden rather than removed in rotation mode, so the stored person
                still travels with every save and switching back restores them. -->
           <div class="v2-field" hidden={!isTicket && assignmentMode === 'rotation'}>
-            <label for="assign_to">Assign new {recordNoun}s to</label>
+            <label for="assign_to"
+              >{isTicket
+                ? m.settings_webforms_assign_to_ticket()
+                : m.settings_webforms_assign_to_lead()}</label
+            >
             <select
               id="assign_to"
               name="assign_to"
@@ -602,7 +640,7 @@
               disabled={!canManage}
               value={wf.assign_to ?? ''}
             >
-              <option value="">Nobody</option>
+              <option value="">{m.settings_webforms_nobody()}</option>
               {#if data.missingAssignee}
                 <!-- The stored assignee, deactivated since, so absent from the
                      people list. Without this option the select matches nothing
@@ -619,10 +657,9 @@
             </select>
             {#if data.missingAssignee?.is_active === false}
               <p class="v2-hint">
-                Deactivated users are not assigned.
                 {isTicket
-                  ? 'New tickets from this form are left to your routing rules'
-                  : 'New leads from this form stay unassigned'} until you choose someone else.
+                  ? m.settings_webforms_deactivated_hint_ticket()
+                  : m.settings_webforms_deactivated_hint_lead()}
               </p>
             {/if}
           </div>
@@ -631,7 +668,7 @@
             <!-- Hidden rather than removed in person mode, for the same reason
                  as the person select above. -->
             <div class="v2-field" hidden={assignmentMode !== 'rotation'}>
-              <label for="rotation_members">Rotate between</label>
+              <label for="rotation_members">{m.settings_webforms_rotate_between()}</label>
               <select
                 id="rotation_members"
                 name="rotation_members"
@@ -640,11 +677,11 @@
                 size="4"
                 disabled={!canManage}
               >
-                {#each data.missingRotationMembers ?? [] as m (m.id)}
+                {#each data.missingRotationMembers ?? [] as member (member.id)}
                   <!-- A stored member the people list cannot offer. Without it
                        the next save would drop them from the rotation. -->
-                  <option value={m.id} selected>
-                    {m.is_active === false ? inactiveOptionLabel(m.name) : m.name}
+                  <option value={member.id} selected>
+                    {member.is_active === false ? inactiveOptionLabel(member.name) : member.name}
                   </option>
                 {/each}
                 {#each data.profiles as p (p.id)}
@@ -654,18 +691,21 @@
                 {/each}
               </select>
               <p class="v2-hint">
-                Each new lead goes to the next member in turn. Deactivated members are skipped.
+                {m.settings_webforms_rotation_hint()}
                 {#if wf.assignment_mode === 'rotation'}
-                  Last assigned: {wf.rotation_last_assigned_details
-                    ? wf.rotation_last_assigned_details.name ||
-                      wf.rotation_last_assigned_details.email
-                    : 'nobody yet'}.
+                  {wf.rotation_last_assigned_details
+                    ? m.settings_webforms_rotation_last({
+                        name:
+                          wf.rotation_last_assigned_details.name ||
+                          wf.rotation_last_assigned_details.email
+                      })
+                    : m.settings_webforms_rotation_last_nobody()}
                 {/if}
               </p>
             </div>
 
             <div class="v2-field" hidden={assignmentMode !== 'rotation'}>
-              <label for="rotation_cap">Most open leads per member</label>
+              <label for="rotation_cap">{m.settings_webforms_rotation_cap_label()}</label>
               <input
                 id="rotation_cap"
                 name="rotation_cap"
@@ -674,20 +714,19 @@
                 min="1"
                 step="1"
                 inputmode="numeric"
-                placeholder="No limit"
+                placeholder={m.settings_webforms_rotation_cap_placeholder()}
                 disabled={!canManage}
                 value={wf.rotation_cap ?? ''}
               />
               <p class="v2-hint">
-                Optional. A member holding this many open leads is passed over until one is
-                converted or closed. When everyone is passed over, the lead stays unassigned.
+                {m.settings_webforms_rotation_cap_hint()}
               </p>
             </div>
           {/if}
 
           {#if isTicket}
             <div class="v2-field">
-              <label for="ticket_priority">Ticket priority</label>
+              <label for="ticket_priority">{m.settings_webforms_ticket_priority_label()}</label>
               <select
                 id="ticket_priority"
                 name="ticket_priority"
@@ -696,14 +735,14 @@
                 value={wf.ticket_priority}
               >
                 {#each CASE_PRIORITIES as p (p)}
-                  <option value={p}>{p}</option>
+                  <option value={p}>{CASE_PRIORITY_LABEL[p] ?? p}</option>
                 {/each}
               </select>
-              <p class="v2-hint">Set by the form, never by the visitor.</p>
+              <p class="v2-hint">{m.settings_webforms_priority_hint()}</p>
             </div>
 
             <div class="v2-field">
-              <label for="ticket_type">Ticket type</label>
+              <label for="ticket_type">{m.settings_webforms_ticket_type_label()}</label>
               <select
                 id="ticket_type"
                 name="ticket_type"
@@ -711,15 +750,15 @@
                 disabled={!canManage}
                 value={wf.ticket_type ?? ''}
               >
-                <option value="">No type</option>
+                <option value="">{m.settings_webforms_no_type()}</option>
                 {#each CASE_TYPES as t (t)}
-                  <option value={t}>{t}</option>
+                  <option value={t}>{CASE_TYPE_LABEL[t] ?? t}</option>
                 {/each}
               </select>
             </div>
           {:else}
             <div class="v2-field">
-              <label for="lead_source">Record the source as</label>
+              <label for="lead_source">{m.settings_webforms_lead_source_label()}</label>
               <select
                 id="lead_source"
                 name="lead_source"
@@ -732,13 +771,17 @@
                 {/each}
               </select>
               <p class="v2-hint">
-                Which form a lead came from is recorded separately, so this can stay broad.
+                {m.settings_webforms_lead_source_hint()}
               </p>
             </div>
           {/if}
 
           <div class="v2-field">
-            <label for="notify_profiles">Email these people on each {recordNoun}</label>
+            <label for="notify_profiles"
+              >{isTicket
+                ? m.settings_webforms_notify_label_ticket()
+                : m.settings_webforms_notify_label_lead()}</label
+            >
             <select
               id="notify_profiles"
               name="notify_profiles"
@@ -753,13 +796,17 @@
             </select>
             <p class="v2-hint">
               {isTicket
-                ? 'The assignee above is emailed as well.'
-                : 'Whoever each lead is assigned to is emailed as well.'}
+                ? m.settings_webforms_notify_hint_ticket()
+                : m.settings_webforms_notify_hint_lead()}
             </p>
           </div>
 
           <div class="v2-field">
-            <label for="tags">Tag every {recordNoun} with</label>
+            <label for="tags"
+              >{isTicket
+                ? m.settings_webforms_tag_label_ticket()
+                : m.settings_webforms_tag_label_lead()}</label
+            >
             <select
               id="tags"
               name="tags"
@@ -779,16 +826,15 @@
       <!-- ============ Spam ============ -->
       <section class="wf-section">
         <div class="wf-section-head">
-          <h2 class="v2-section">Spam</h2>
+          <h2 class="v2-section">{m.settings_webforms_spam_title()}</h2>
           <p class="v2-sub wf-section-sub">
-            A hidden honeypot field, a per-address rate limit and a per-form one are always on and
-            are not configurable. These are the parts you choose.
+            {m.settings_webforms_spam_sub()}
           </p>
         </div>
 
         <div class="wf-grid">
           <div class="v2-field wf-wide">
-            <label for="allowed_origins">Allowed origins</label>
+            <label for="allowed_origins">{m.settings_webforms_origins_label()}</label>
             <textarea
               id="allowed_origins"
               name="allowed_origins"
@@ -798,10 +844,10 @@
               placeholder="https://example.com">{(wf.allowed_origins ?? []).join('\n')}</textarea
             >
             <p class="v2-hint">
-              One per line, scheme and host only, no path. Leave empty and the iframe embed works
-              anywhere. <strong>The script embed needs the site's origin listed here</strong>: the
-              browser refuses a cross-origin POST that we have not permitted, and a form with no
-              listed origins permits none.
+              {m.settings_webforms_origins_hint()}
+              {#each originsScript as p, i (i)}{#if p.key}<strong
+                    >{m.settings_webforms_origins_hint_script_strong()}</strong
+                  >{:else}{p.text}{/if}{/each}
             </p>
           </div>
 
@@ -813,12 +859,12 @@
                 disabled={!canManage}
                 checked={wf.reject_disposable_email}
               />
-              Reject throwaway email addresses
+              {m.settings_webforms_reject_disposable()}
             </label>
           </div>
 
           <div class="v2-field">
-            <label for="captcha_provider">Challenge</label>
+            <label for="captcha_provider">{m.settings_webforms_challenge_label()}</label>
             <select
               id="captcha_provider"
               name="captcha_provider"
@@ -826,14 +872,14 @@
               disabled={!canManage}
               bind:value={captchaProvider}
             >
-              <option value="">None</option>
+              <option value="">{m.settings_webforms_none()}</option>
               <option value="turnstile">Cloudflare Turnstile</option>
             </select>
           </div>
 
           {#if captchaProvider === 'turnstile'}
             <div class="v2-field">
-              <label for="captcha_site_key">Turnstile site key</label>
+              <label for="captcha_site_key">{m.settings_webforms_turnstile_site_key()}</label>
               <input
                 id="captcha_site_key"
                 name="captcha_site_key"
@@ -845,7 +891,7 @@
             </div>
 
             <div class="v2-field wf-wide">
-              <label for="captcha_secret">Turnstile secret</label>
+              <label for="captcha_secret">{m.settings_webforms_turnstile_secret()}</label>
               <input
                 id="captcha_secret"
                 name="captcha_secret"
@@ -855,16 +901,14 @@
                 maxlength="255"
                 disabled={!canManage}
                 placeholder={wf.has_captcha_secret
-                  ? 'Stored. Leave blank to keep it.'
-                  : 'Paste the secret from Cloudflare'}
+                  ? m.settings_webforms_secret_stored_placeholder()
+                  : m.settings_webforms_secret_paste_placeholder()}
               />
               <p class="v2-hint">
-                Never shown again once saved; we only send it to Cloudflare. Leaving this blank
-                keeps whatever is stored rather than clearing it.
+                {m.settings_webforms_secret_hint()}
                 {#if !wf.has_captcha_secret}
                   <strong>
-                    No secret is stored yet. Verification fails closed, so publishing with Turnstile
-                    on and no secret would refuse every submission.
+                    {m.settings_webforms_secret_missing()}
                   </strong>
                 {/if}
               </p>
@@ -875,7 +919,9 @@
 
       {#if canManage}
         <div class="wf-save">
-          <button class="v2-btn v2-btn-primary" disabled={busy}>Save changes</button>
+          <button class="v2-btn v2-btn-primary" disabled={busy}
+            >{m.settings_webforms_save_changes()}</button
+          >
         </div>
       {/if}
     </form>
@@ -883,23 +929,24 @@
     <!-- ============ Embed ============ -->
     <section class="wf-section">
       <div class="wf-section-head">
-        <h2 class="v2-section">Embed</h2>
+        <h2 class="v2-section">{m.settings_webforms_embed_title()}</h2>
         <p class="v2-sub wf-section-sub">
-          Paste one of these into your own site. Both are built by the server, because they need
-          this API's address and a browser only knows your site's.
+          {m.settings_webforms_embed_sub()}
         </p>
       </div>
 
       <div class="wf-snippet">
         <div class="wf-snippet-head">
           <b>iframe</b>
-          <span class="v2-sub">Works anywhere, no origin list needed.</span>
+          <span class="v2-sub">{m.settings_webforms_iframe_hint()}</span>
           <button
             type="button"
             class="v2-btn v2-btn-sm"
             onclick={() => copy(wf.embed_html, 'html')}
           >
-            {#if copied === 'html'}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+            {#if copied === 'html'}<Check size={13} />{m.settings_webforms_copied()}{:else}<Copy
+                size={13}
+              />{m.settings_webforms_copy()}{/if}
           </button>
         </div>
         <pre>{wf.embed_html}</pre>
@@ -908,16 +955,17 @@
       <div class="wf-snippet">
         <div class="wf-snippet-head">
           <b>script</b>
-          <span class="v2-sub">Inherits your site's styling.</span>
+          <span class="v2-sub">{m.settings_webforms_script_hint()}</span>
           <button type="button" class="v2-btn v2-btn-sm" onclick={() => copy(wf.embed_js, 'js')}>
-            {#if copied === 'js'}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+            {#if copied === 'js'}<Check size={13} />{m.settings_webforms_copied()}{:else}<Copy
+                size={13}
+              />{m.settings_webforms_copy()}{/if}
           </button>
         </div>
         <pre>{wf.embed_js}</pre>
         {#if !(wf.allowed_origins ?? []).length}
           <p class="v2-hint wf-warn">
-            This one will not work yet. Add the site's origin under Spam first: the browser blocks a
-            cross-origin POST unless we permit that origin, and this form permits none.
+            {m.settings_webforms_script_warn()}
           </p>
         {/if}
       </div>
@@ -926,50 +974,60 @@
     <!-- ============ Activity ============ -->
     <section class="wf-section">
       <div class="wf-section-head">
-        <h2 class="v2-section">Activity</h2>
+        <h2 class="v2-section">{m.settings_webforms_activity_title()}</h2>
         <p class="v2-sub wf-section-sub">
-          The last 30 days. A view is counted when the embed loads, whether or not anyone fills it
-          in.
+          {m.settings_webforms_activity_sub()}
         </p>
       </div>
 
       {#if totals}
         <div class="v2-stats" style="margin-bottom:16px">
-          <StatCard label="Views" value={count(totals.views)} tone="slate" />
           <StatCard
-            label={isTicket ? 'Tickets' : 'Leads'}
+            label={m.settings_webforms_stat_views()}
+            value={count(totals.views)}
+            tone="slate"
+          />
+          <StatCard
+            label={isTicket ? m.settings_webforms_stat_tickets() : m.settings_webforms_stat_leads()}
             value={count(totals.submissions)}
             tone="ink"
           />
           <StatCard
-            label="Conversion"
+            label={m.settings_webforms_stat_conversion()}
             value={totals.views ? `${Math.round(totals.conversion_rate * 100)}%` : '-'}
             tone="slate"
-            detail={totals.views ? null : 'No views yet'}
+            detail={totals.views ? null : m.settings_webforms_no_views()}
           />
           <StatCard
-            label="Spam blocked"
+            label={m.settings_webforms_stat_spam()}
             value={count(totals.spam)}
             tone="slate"
-            detail={totals.spam ? `Never reached a ${recordNoun}` : 'None'}
+            detail={totals.spam
+              ? isTicket
+                ? m.settings_webforms_spam_detail_ticket()
+                : m.settings_webforms_spam_detail_lead()
+              : m.settings_webforms_none()}
           />
         </div>
       {/if}
 
       {#if !submissions.length}
         <p class="v2-sub wf-empty">
-          Nothing submitted yet. Rejected attempts would be listed here too, so an empty list means
-          nobody has reached the form at all.
+          {m.settings_webforms_activity_empty()}
         </p>
       {:else}
         <div class="v2-table-wrap">
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Submitted</th>
-                <th>Outcome</th>
-                <th data-m="hide">{isTicket ? 'Ticket' : 'Lead'}</th>
-                <th data-m="hide">From</th>
+                <th>{m.settings_webforms_col_submitted()}</th>
+                <th>{m.settings_webforms_col_outcome()}</th>
+                <th data-m="hide"
+                  >{isTicket
+                    ? m.settings_webforms_col_ticket()
+                    : m.settings_webforms_col_lead()}</th
+                >
+                <th data-m="hide">{m.settings_webforms_col_from()}</th>
               </tr>
             </thead>
             <tbody>
@@ -988,7 +1046,11 @@
                     {:else if s.lead}
                       <a href={resolve(`leads/${s.lead}`)}>{s.lead_name}</a>
                     {:else}
-                      <span class="v2-muted">No {recordNoun}</span>
+                      <span class="v2-muted"
+                        >{isTicket
+                          ? m.settings_webforms_no_ticket()
+                          : m.settings_webforms_no_lead()}</span
+                      >
                     {/if}
                   </td>
                   <td data-m="hide" class="v2-muted">{s.referer || s.submitted_ip || '—'}</td>
@@ -999,8 +1061,9 @@
         </div>
         {#if data.count > submissions.length}
           <p class="v2-sub" style="margin-top:10px;font-size:12px">
-            Showing the {submissions.length} most recent of
-            <span class="v2-num">{count(data.count)}</span>.
+            {#each messageParts(m.settings_webforms_showing_recent( { shown: submissions.length, total: slot('total') } )) as p, i (i)}{#if p.key}<span
+                  class="v2-num">{count(data.count)}</span
+                >{:else}{p.text}{/if}{/each}
           </p>
         {/if}
       {/if}
@@ -1009,17 +1072,18 @@
     {#if canManage}
       <section class="wf-section wf-danger">
         <div>
-          <b>Delete this form</b>
+          <b>{m.settings_webforms_delete_title()}</b>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0;max-width:60ch">
-            Removes the form and its submission history. The {recordNoun}s it already created stay
-            where they are. Any embed still on your site will stop working.
+            {isTicket
+              ? m.settings_webforms_delete_body_ticket()
+              : m.settings_webforms_delete_body_lead()}
           </p>
         </div>
         <ConfirmAction
           action="?/delete"
-          label="Delete"
-          confirmLabel="Delete permanently"
-          explain="This cannot be undone."
+          label={m.common_delete()}
+          confirmLabel={m.settings_webforms_delete_confirm()}
+          explain={m.settings_webforms_delete_explain_detail()}
         />
       </section>
     {/if}

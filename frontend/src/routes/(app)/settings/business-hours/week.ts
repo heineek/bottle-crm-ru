@@ -9,6 +9,37 @@
  *
  * `mobile/lib/data/models/business_calendar.dart` carries the same rules.
  */
+import { m } from '#lib/paraglide/messages.js';
+
+/** The API's English weekday names, Sunday first to match `Date.getDay()`. */
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** The weekday name the API uses for `date`, for matching against `calendar.days`. */
+export function weekdayName(date = new Date()) {
+  return DAY_NAMES[date.getDay()];
+}
+
+/** A weekday's label in the reader's language; the API sends the English name. */
+export function dayLabel(day: string) {
+  switch (day) {
+    case 'Monday':
+      return m.settings_hours_day_monday();
+    case 'Tuesday':
+      return m.settings_hours_day_tuesday();
+    case 'Wednesday':
+      return m.settings_hours_day_wednesday();
+    case 'Thursday':
+      return m.settings_hours_day_thursday();
+    case 'Friday':
+      return m.settings_hours_day_friday();
+    case 'Saturday':
+      return m.settings_hours_day_saturday();
+    case 'Sunday':
+      return m.settings_hours_day_sunday();
+    default:
+      return day;
+  }
+}
 
 /**
  * Hours a day is open, or 0.

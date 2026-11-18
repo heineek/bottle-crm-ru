@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { getTags, createTag, archiveTag, restoreTag, mergeTags } from '#lib/server/v2/tags.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -23,10 +24,10 @@ export const actions: Actions = {
       await createTag(event, { name });
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { create: { name, error: 'Only an admin can create tags.' } });
+        return fail(403, { create: { name, error: m.settings_tags_error_create_admin() } });
       }
       return fail(400, {
-        create: { name, error: readableError(err, 'Could not create the tag.') }
+        create: { name, error: readableError(err, m.settings_tags_error_create()) }
       });
     }
 
@@ -44,16 +45,16 @@ export const actions: Actions = {
   async archive(event) {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
-    if (!id) return fail(400, { archive: { error: 'That tag could not be identified.' } });
+    if (!id) return fail(400, { archive: { error: m.settings_tags_error_unidentified() } });
 
     try {
       await archiveTag(event, id);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { archive: { error: 'Only an admin can turn a tag off.' } });
+        return fail(403, { archive: { error: m.settings_tags_error_off_admin() } });
       }
       return fail(400, {
-        archive: { error: readableError(err, 'Could not turn that tag off.') }
+        archive: { error: readableError(err, m.settings_tags_error_off()) }
       });
     }
     return { archived: true };
@@ -63,16 +64,16 @@ export const actions: Actions = {
   async restore(event) {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
-    if (!id) return fail(400, { restore: { error: 'That tag could not be identified.' } });
+    if (!id) return fail(400, { restore: { error: m.settings_tags_error_unidentified() } });
 
     try {
       await restoreTag(event, id);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { restore: { error: 'Only an admin can turn a tag back on.' } });
+        return fail(403, { restore: { error: m.settings_tags_error_on_admin() } });
       }
       return fail(400, {
-        restore: { error: readableError(err, 'Could not turn that tag back on.') }
+        restore: { error: readableError(err, m.settings_tags_error_on()) }
       });
     }
     return { restored: true };
@@ -90,7 +91,7 @@ export const actions: Actions = {
     const id = form.get('id')?.toString() ?? '';
     const into = form.get('into')?.toString() ?? '';
     if (!id || !into) {
-      return fail(400, { merge: { error: 'Those tags could not be identified.' } });
+      return fail(400, { merge: { error: m.settings_tags_error_pair_unidentified() } });
     }
 
     let result;
@@ -98,10 +99,10 @@ export const actions: Actions = {
       result = await mergeTags(event, id, into);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { merge: { error: 'Only an admin can merge tags.' } });
+        return fail(403, { merge: { error: m.settings_tags_error_merge_admin() } });
       }
       return fail(400, {
-        merge: { error: readableError(err, 'Could not merge those tags.') }
+        merge: { error: readableError(err, m.settings_tags_error_merge()) }
       });
     }
 

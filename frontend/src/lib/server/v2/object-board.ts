@@ -4,7 +4,8 @@ import { apiRequest } from '#lib/api-helpers.js';
 import type { components } from '#lib/enterprise-api-schema.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
-import { checkKey, OBJECT_GONE } from '#lib/server/v2/custom-objects.js';
+import { m } from '#lib/paraglide/messages.js';
+import { checkKey, objectGone } from '#lib/server/v2/custom-objects.js';
 import { UUID } from '#lib/v2/custom-objects.js';
 
 type Event = { cookies: Cookies };
@@ -36,7 +37,7 @@ export async function getBoard(
       { cookies }
     );
   } catch (err) {
-    if (apiStatus(err) === 404) error(404, OBJECT_GONE);
+    if (apiStatus(err) === 404) error(404, objectGone());
     throw err;
   }
 }
@@ -68,13 +69,13 @@ export async function setBoardField(
 export function readMove(form: FormData): { body: MoveBody } | { error: string } {
   const record = String(form.get('record') ?? '');
   const kind = String(form.get('kind') ?? '');
-  if (!UUID.test(record)) return { error: 'Missing record.' };
+  if (!UUID.test(record)) return { error: m.objects_board_missing_record() };
   let value: string | null;
   if (kind === 'none') value = null;
   else if (kind === 'option') {
     value = String(form.get('value') ?? '');
-    if (!value) return { error: 'Missing column.' };
-  } else return { error: 'Cards cannot be moved into that column.' };
+    if (!value) return { error: m.objects_board_missing_column() };
+  } else return { error: m.objects_board_bad_column() };
   const neighbour = (name: string) => {
     const id = String(form.get(name) ?? '');
     return UUID.test(id) ? id : null;
@@ -101,10 +102,10 @@ export async function moveAction(event: Event & { request: Request; params: { ke
     const moved = await moveBoardCard(event, key, read.body);
     return { success: true, record: moved.record };
   } catch (err) {
-    if (apiStatus(err) === 404) return fail(404, { error: 'That record is not one you can move.' });
+    if (apiStatus(err) === 404) return fail(404, { error: m.objects_board_not_movable() });
     const status = apiStatus(err);
     const code = status !== undefined && status >= 400 && status < 500 ? status : 400;
-    const message = readableError(err, 'Could not move the record.');
+    const message = readableError(err, m.objects_board_move_failed());
     return fail(code, { error: code === 400 ? withoutFieldKey(message) : message });
   }
 }

@@ -7,17 +7,30 @@
  * the lists here only decide what the editor offers.
  */
 import { WEBFORM_LEAD_FIELDS } from '#lib/v2/webform-fields.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /** `LeadIntake.preset` choices, in the order the create panel offers them. */
-export const INTAKE_PRESETS = [
-  { value: 'generic', label: 'Any tool that posts JSON or a form' },
-  { value: 'google_ads', label: 'Google Ads lead form' },
+export const INTAKE_PRESETS: { value: string; readonly label: string }[] = [
+  {
+    value: 'generic',
+    get label() {
+      return m.settings_lead_capture_preset_generic();
+    }
+  },
+  {
+    value: 'google_ads',
+    get label() {
+      return m.settings_lead_capture_preset_google_ads();
+    }
+  },
   { value: 'tally', label: 'Tally' },
   { value: 'gravity_forms', label: 'Gravity Forms' }
 ];
 
 export function presetLabel(preset: string | null | undefined) {
-  return INTAKE_PRESETS.find((p) => p.value === preset)?.label ?? 'Any tool';
+  return (
+    INTAKE_PRESETS.find((p) => p.value === preset)?.label ?? m.settings_lead_capture_preset_any()
+  );
 }
 
 /** The source a new webhook starts with, by preset, when the org has it. */
@@ -93,23 +106,27 @@ export function cleanMapping(rows: unknown): { from: string; to: string }[] {
 type Tone = 'moss' | 'ink' | 'slate' | 'rust' | 'clay';
 
 const RESULTS = {
-  created: { label: 'Created', tone: 'moss' },
-  merged: { label: 'Merged', tone: 'ink' },
-  duplicate: { label: 'Duplicate', tone: 'slate' },
-  test: { label: 'Test', tone: 'slate' },
-  rejected: { label: 'Rejected', tone: 'rust' }
-} as Record<string, { label: string; tone: Tone }>;
+  created: { label: () => m.settings_lead_capture_result_created(), tone: 'moss' },
+  merged: { label: () => m.settings_lead_capture_result_merged(), tone: 'ink' },
+  duplicate: { label: () => m.settings_lead_capture_result_duplicate(), tone: 'slate' },
+  test: { label: () => m.settings_lead_capture_result_test(), tone: 'slate' },
+  rejected: { label: () => m.settings_lead_capture_result_rejected(), tone: 'rust' }
+} as Record<string, { label: () => string; tone: Tone }>;
 
 /** @param result a delivery's `result` */
 export function deliveryResult(result: string): { label: string; tone: Tone } {
-  return RESULTS[result] ?? { label: result || 'Unknown', tone: 'slate' };
+  const known = Object.hasOwn(RESULTS, result) ? RESULTS[result] : null;
+  if (known) return { label: known.label(), tone: known.tone };
+  return { label: result || m.settings_lead_capture_result_unknown(), tone: 'slate' };
 }
 
 export function intakeState(intake: { is_active?: boolean; last_received_at?: string | null }): {
   label: string;
   tone: 'moss' | 'slate';
 } {
-  if (!intake?.is_active) return { label: 'Off', tone: 'slate' };
-  if (!intake.last_received_at) return { label: 'Waiting', tone: 'slate' };
-  return { label: 'Receiving', tone: 'moss' };
+  if (!intake?.is_active) return { label: m.settings_lead_capture_state_off(), tone: 'slate' };
+  if (!intake.last_received_at) {
+    return { label: m.settings_lead_capture_state_waiting(), tone: 'slate' };
+  }
+  return { label: m.settings_lead_capture_state_receiving(), tone: 'moss' };
 }

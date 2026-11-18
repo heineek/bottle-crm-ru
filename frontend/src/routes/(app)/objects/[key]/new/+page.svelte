@@ -6,6 +6,7 @@
   import RecordFieldInputs from '#lib/v2/components/RecordFieldInputs.svelte';
   import { billingHref } from '#lib/v2/billing.js';
   import { TriangleAlert } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import { canWriteObject } from '#lib/v2/custom-objects.js';
   import type { PageProps } from './$types';
 
@@ -38,7 +39,7 @@
   );
 </script>
 
-<PageHeader title="New {def.label}" center>
+<PageHeader title={m.app_objects_new({ label: def.label })} center>
   {#snippet crumb()}
     <a href={resolve(asInternalPath(`/objects/${def.key}`))}>{def.label_plural}</a> ›
   {/snippet}
@@ -48,16 +49,14 @@
   {#if !plan}
     <div class="v2-form">
       <p>
-        {data.customObjects
-          ? "This organization's plan does not include creating custom object records."
-          : 'Custom objects could not be loaded. Try again.'}
+        {data.customObjects ? m.app_objects_plan_missing() : m.app_objects_load_failed()}
       </p>
       <p class="o-plan-actions">
         <a class="v2-btn" href={resolve(asInternalPath(`/objects/${def.key}`))}
-          >Back to {def.label_plural}</a
+          >{m.app_objects_back_to({ plural: def.label_plural })}</a
         >
         {#if data.customObjects && plansHref}
-          <a class="v2-btn" href={resolve(asInternalPath(plansHref))}>See plans</a>
+          <a class="v2-btn" href={resolve(asInternalPath(plansHref))}>{m.objects_see_plans()}</a>
         {/if}
       </p>
     </div>
@@ -82,7 +81,7 @@
         >
           <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
           <div class="v2-next-body">
-            <div style="font-weight:600">The server refused this record</div>
+            <div style="font-weight:600">{m.app_objects_refused()}</div>
             <div class="v2-sub" style="margin-top:2px;white-space:pre-line">{result.error}</div>
           </div>
         </div>
@@ -111,9 +110,11 @@
 
       <div class="actions">
         <button class="v2-btn v2-btn-primary" type="submit" disabled={busy}>
-          Create {def.label}
+          {m.app_objects_create({ label: def.label })}
         </button>
-        <a class="v2-btn" href={resolve(asInternalPath(`/objects/${def.key}`))}>Cancel</a>
+        <a class="v2-btn" href={resolve(asInternalPath(`/objects/${def.key}`))}
+          >{m.common_cancel()}</a
+        >
       </div>
     </form>
   {/if}

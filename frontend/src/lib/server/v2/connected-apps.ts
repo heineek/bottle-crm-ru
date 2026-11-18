@@ -12,6 +12,7 @@ import { apiStatus } from '#lib/api-errors.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import type { components } from '#lib/enterprise-api-schema.js';
 import { MAX_APP_NAME } from '#lib/v2/connected-apps.js';
+import { m } from '#lib/paraglide/messages.js';
 
 type Event = { cookies: Cookies };
 type Schemas = components['schemas'];
@@ -21,7 +22,7 @@ export type ConnectedApp = Schemas['ConnectedApp'];
 export type KeyResponse = Schemas['ConnectedAppKeyResponse'];
 
 const ABSENT_FOR_MS = 5 * 60 * 1000;
-const NOT_OFFERED = 'Connected apps are not available here.';
+const notOffered = () => m.settings_connected_apps_not_available();
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** Set when the API answers 404, so a self-hosted install is asked once per 5 minutes. */
@@ -44,7 +45,7 @@ export function isAppId(id: unknown): id is string {
 export async function readConnectedApps({
   cookies
 }: Event): Promise<({ forbidden: false } & ConnectedApps) | { forbidden: true }> {
-  if (absent()) error(404, NOT_OFFERED);
+  if (absent()) error(404, notOffered());
   try {
     const body: ConnectedApps = await apiRequest(
       '/connected-apps/',
@@ -62,7 +63,7 @@ export async function readConnectedApps({
     if (apiStatus(err) === 403) return { forbidden: true };
     if (apiStatus(err) === 404) {
       absentUntil = Date.now() + ABSENT_FOR_MS;
-      error(404, NOT_OFFERED);
+      error(404, notOffered());
     }
     throw err;
   }

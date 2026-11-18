@@ -8,6 +8,7 @@ import { readableError } from '#lib/server/v2/form-errors.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { mailboxesOn } from '#lib/v2/modules.js';
 import { INTAKE_PRESETS } from '#lib/v2/lead-intakes.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -31,7 +32,7 @@ export const load: PageServerLoad = async (event) => {
     sources,
     webForms: forms ? forms.forms.filter((f) => f.target !== 'ticket') : null,
     webFormsTruncated: forms?.truncated ?? false,
-    leadAddresses: mailboxes ? mailboxes.mailboxes.filter((m) => m.creates === 'leads') : null,
+    leadAddresses: mailboxes ? mailboxes.mailboxes.filter((b) => b.creates === 'leads') : null,
     leadAddressesOffered: mailboxes?.can_create_leads ?? false
   };
 };
@@ -50,18 +51,19 @@ export const actions: Actions = {
     // None chosen leaves the server's default in place.
     const source = form.get('default_source')?.toString() ?? '';
     if (source) values.default_source = source;
-    if (!values.name) return fail(400, { create: { error: 'Give the webhook a name.', values } });
+    if (!values.name)
+      return fail(400, { create: { error: m.settings_lead_capture_give_name(), values } });
     if (!INTAKE_PRESETS.some((p) => p.value === values.preset)) {
-      return fail(400, { create: { error: 'Choose what will send the leads.', values } });
+      return fail(400, { create: { error: m.settings_lead_capture_choose_preset(), values } });
     }
     try {
       return { created: await createIntake(event, values) };
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { create: { error: 'Only an admin can add webhooks.', values } });
+        return fail(403, { create: { error: m.settings_lead_capture_add_admin_only(), values } });
       }
       return fail(400, {
-        create: { error: readableError(err, 'Could not add the webhook.'), values }
+        create: { error: readableError(err, m.settings_lead_capture_add_failed()), values }
       });
     }
   }

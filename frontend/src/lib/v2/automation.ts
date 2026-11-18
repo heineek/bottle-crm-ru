@@ -3,6 +3,7 @@
  * render from these helpers, and the catalogue is the only source of labels.
  */
 import { runTime } from '#lib/v2/format.js';
+import { m } from '#lib/paraglide/messages.js';
 import { isOn, OBJECT_MODULES, type ModuleRow } from '#lib/v2/modules.js';
 import { budgetNotificationText, retainerInvoiceNotificationText } from '#lib/v2/projects.js';
 import { estimateNotificationText } from '#lib/v2/estimates.js';
@@ -121,30 +122,30 @@ export function operatorsFor(
   return [...base];
 }
 
-const OPERATOR_LABELS: Record<string, string> = {
-  eq: 'is',
-  neq: 'is not',
-  contains: 'contains',
-  not_contains: 'does not contain',
-  gt: 'is more than',
-  lt: 'is less than',
-  in: 'is any of',
-  not_in: 'is none of',
-  true: 'is true',
-  false: 'is false',
-  includes: 'includes',
-  excludes: 'does not include',
-  empty: 'is empty',
-  not_empty: 'is not empty',
-  was: 'was',
-  was_not: 'was not'
+const OPERATOR_LABELS: Record<string, () => string> = {
+  eq: () => m.settings_automation_op_eq(),
+  neq: () => m.settings_automation_op_neq(),
+  contains: () => m.settings_automation_op_contains(),
+  not_contains: () => m.settings_automation_op_not_contains(),
+  gt: () => m.settings_automation_op_gt(),
+  lt: () => m.settings_automation_op_lt(),
+  in: () => m.settings_automation_op_in(),
+  not_in: () => m.settings_automation_op_not_in(),
+  true: () => m.settings_automation_op_true(),
+  false: () => m.settings_automation_op_false(),
+  includes: () => m.settings_automation_op_includes(),
+  excludes: () => m.settings_automation_op_excludes(),
+  empty: () => m.settings_automation_op_empty(),
+  not_empty: () => m.settings_automation_op_not_empty(),
+  was: () => m.settings_automation_op_was(),
+  was_not: () => m.settings_automation_op_was_not()
 };
 
 export function operatorLabel(op: string, fieldType?: string) {
-  if (fieldType === 'date' && op === 'gt') return 'is after';
-  if (fieldType === 'date' && op === 'lt') return 'is before';
-  if (fieldType === 'people' && op === 'eq') return 'is exactly';
-  return OPERATOR_LABELS[op] ?? op;
+  if (fieldType === 'date' && op === 'gt') return m.settings_automation_op_date_after();
+  if (fieldType === 'date' && op === 'lt') return m.settings_automation_op_date_before();
+  if (fieldType === 'people' && op === 'eq') return m.settings_automation_op_people_exactly();
+  return Object.hasOwn(OPERATOR_LABELS, op) ? OPERATOR_LABELS[op]() : op;
 }
 
 /**
@@ -207,12 +208,16 @@ export function targetsFor(
 ): { value: string; label: string; object: TargetObject }[] {
   if (!object) return [];
   const out: { value: string; label: string; object: TargetObject }[] = [
-    { value: 'record', label: `This ${object.label.toLowerCase()}`, object }
+    {
+      value: 'record',
+      label: m.settings_automation_target_record({ object: object.label.toLowerCase() }),
+      object
+    }
   ];
   if (object.parent) {
     out.push({
       value: 'parent',
-      label: `Its ${object.parent.label.toLowerCase()}`,
+      label: m.settings_automation_target_parent({ object: object.parent.label.toLowerCase() }),
       object: objectOf(catalogue, object.parent.key) ?? {
         key: object.parent.key,
         label: object.parent.label,
@@ -241,15 +246,18 @@ export function targetsFor(
 export function recipientsFor(
   object: CatalogueObject | null | undefined
 ): { value: string; label: string }[] {
-  const out = [
-    { value: 'record_assignees', label: 'Its assignees' },
-    { value: 'record_creator', label: 'Who created it' }
+  const out: { value: string; label: string }[] = [
+    { value: 'record_assignees', label: m.settings_automation_recipient_assignees() },
+    { value: 'record_creator', label: m.settings_automation_recipient_creator() }
   ];
   const parent = parentAssignees(object);
   if (parent) out.push({ value: 'parent_assignees', label: parent });
-  out.push({ value: 'admins', label: 'All admins' });
+  out.push({ value: 'admins', label: m.settings_automation_recipient_admins() });
   for (const link of object?.links ?? []) {
-    out.push({ value: `linked:${link.id}`, label: `Assignees of ${link.label}` });
+    out.push({
+      value: `linked:${link.id}`,
+      label: m.settings_automation_recipient_linked({ link: link.label })
+    });
   }
   return out;
 }
@@ -267,50 +275,56 @@ export function parentAssignees(
   object: { key: string; parent: Schemas['AutomationCatalogueParent'] | null } | null | undefined
 ): string | null {
   if (!object || !offersParent(object)) return null;
-  if (object.key === 'task') return "Its parent's assignees";
-  return object.parent ? `The ${object.parent.label.toLowerCase()}'s assignees` : null;
+  if (object.key === 'task') return m.settings_automation_recipient_parent_task();
+  return object.parent
+    ? m.settings_automation_recipient_parent_named({ object: object.parent.label.toLowerCase() })
+    : null;
 }
 
 /** Who a created task can be for. */
 export function taskAudience(
   object: CatalogueObject | null | undefined
 ): { value: string; label: string }[] {
-  const out = [{ value: 'record', label: 'Its assignees' }];
+  const out: { value: string; label: string }[] = [
+    { value: 'record', label: m.settings_automation_recipient_assignees() }
+  ];
   const parent = parentAssignees(object);
   if (parent) out.push({ value: 'parent', label: parent });
   out.push(
-    { value: 'owner', label: "The rule's owner" },
-    { value: 'person', label: 'A chosen person' }
+    { value: 'owner', label: m.settings_automation_recipient_owner() },
+    { value: 'person', label: m.settings_automation_recipient_person() }
   );
   return out;
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  set_field: 'Set a field',
-  assign: 'Assign',
-  create_task: 'Create a task',
-  notify: 'Notify',
-  webhook: 'Send to an endpoint'
+const ACTION_LABELS: Record<string, () => string> = {
+  set_field: () => m.settings_automation_action_set_field(),
+  assign: () => m.settings_automation_action_assign(),
+  create_task: () => m.settings_automation_action_create_task(),
+  notify: () => m.settings_automation_action_notify(),
+  webhook: () => m.settings_automation_action_webhook()
 };
 
 export function actionLabel(type: string) {
-  return ACTION_LABELS[type] ?? type;
+  return Object.hasOwn(ACTION_LABELS, type) ? ACTION_LABELS[type]() : type;
 }
 
 /** How a recipient or task audience the object no longer offers reads. */
 export function recipientLabel(value: string) {
-  if (value.startsWith('linked:')) return 'Assignees of a removed link';
+  if (value.startsWith('linked:')) return m.settings_automation_recipient_removed_link();
   const usual: Record<string, string> = {
-    record_assignees: 'Its assignees',
-    record_creator: 'Who created it',
-    parent_assignees: "Its parent's assignees (no longer available)",
-    parent: "Its parent's assignees (no longer available)",
-    admins: 'All admins',
-    record: 'Its assignees',
-    owner: "The rule's owner",
-    person: 'A chosen person'
+    record_assignees: m.settings_automation_recipient_assignees(),
+    record_creator: m.settings_automation_recipient_creator(),
+    parent_assignees: m.settings_automation_recipient_parent_gone(),
+    parent: m.settings_automation_recipient_parent_gone(),
+    admins: m.settings_automation_recipient_admins(),
+    record: m.settings_automation_recipient_assignees(),
+    owner: m.settings_automation_recipient_owner(),
+    person: m.settings_automation_recipient_person()
   };
-  return usual[value] ?? `${value} (no longer available)`;
+  return Object.hasOwn(usual, value)
+    ? usual[value]
+    : m.settings_automation_no_longer_available({ value });
 }
 
 /** The action types to offer, plus the stored one the catalogue lost. */
@@ -321,7 +335,7 @@ export function actionOptions(
 ) {
   const offered = actionTypes(catalogue, object).map((t) => ({ value: t, label: actionLabel(t) }));
   return withStored(offered, stored, {
-    label: (type) => `${actionLabel(type)} (no longer available)`
+    label: (type) => m.settings_automation_no_longer_available({ value: actionLabel(type) })
   });
 }
 
@@ -407,7 +421,10 @@ export function withStored(
     out.push({
       value,
       label:
-        label?.(value) ?? (person ? 'Someone no longer active' : `${value} (no longer available)`),
+        label?.(value) ??
+        (person
+          ? m.settings_automation_someone_inactive()
+          : m.settings_automation_no_longer_available({ value })),
       group: '',
       settable: false,
       gone: true
@@ -431,39 +448,56 @@ export function triggerSentence(
   catalogue: Catalogue | null | undefined
 ) {
   const trigger = asObject(rule?.trigger) ?? {};
-  if (trigger.event === 'created') return 'Created';
-  if (!trigger.field) return 'Updated';
+  if (trigger.event === 'created') return m.settings_automation_trigger_created();
+  if (!trigger.field) return m.settings_automation_trigger_updated();
   const field =
     typeof trigger.field === 'string'
       ? fieldOf(objectOf(catalogue, rule?.object_key ?? ''), trigger.field)
       : null;
-  if (!field) return 'A field that is no longer available changes';
-  const base = `${field.label} changes`;
+  if (!field) return m.settings_automation_trigger_field_gone();
   const to = trigger.to;
-  if (to === undefined || to === null) return base;
-  if (field.type === 'boolean') return `${base} to ${to === true || to === 'true' ? 'Yes' : 'No'}`;
-  if (field.type === 'choice') {
-    const option = field.choices.find((c) => c.value === String(to));
-    return `${base} to ${option ? option.label : String(to)}`;
+  if (to === undefined || to === null) {
+    return m.settings_automation_trigger_changes({ field: field.label });
   }
-  return `${base} to ${String(to)}`;
+  let value = String(to);
+  if (field.type === 'boolean') {
+    value = to === true || to === 'true' ? m.common_yes() : m.common_no();
+  } else if (field.type === 'choice') {
+    const option = field.choices.find((c) => c.value === String(to));
+    value = option ? option.label : String(to);
+  }
+  return m.settings_automation_trigger_changes_to({ field: field.label, value });
 }
 
 export function runsLabel(row: { runs_7d?: number; failures_7d?: number }) {
   const runs = row?.runs_7d ?? 0;
-  if (!runs) return 'No runs';
-  const text = `${runs} ${runs === 1 ? 'run' : 'runs'}`;
-  return row.failures_7d ? `${text}, ${row.failures_7d} failed` : text;
+  if (!runs) return m.settings_automation_runs_none();
+  const text = m.settings_automation_runs_count({ count: runs });
+  return row.failures_7d
+    ? m.settings_automation_runs_failed({ runs: text, failed: row.failures_7d })
+    : text;
 }
 
 /** Names for a rule's object when the catalogue no longer lists it. */
 export const OBJECT_LABELS = {
-  lead: 'Lead',
-  contact: 'Contact',
-  account: 'Account',
-  deal: 'Deal',
-  ticket: 'Ticket',
-  task: 'Task'
+  get lead() {
+    return m.settings_automation_object_lead();
+  },
+  get contact() {
+    return m.settings_automation_object_contact();
+  },
+  get account() {
+    return m.settings_automation_object_account();
+  },
+  get deal() {
+    return m.settings_automation_object_deal();
+  },
+  get ticket() {
+    return m.settings_automation_object_ticket();
+  },
+  get task() {
+    return m.settings_automation_object_task();
+  }
 } as Record<string, string>;
 
 /**
@@ -480,15 +514,43 @@ export function pausedByModule(
 
 /** The note for a rule paused by its module. */
 export function modulePausedNote(row: { name?: string; status_text?: string }): string {
-  return `"${row.name}": ${row.status_text}. It runs again once that module is switched back on.`;
+  return m.settings_automation_module_paused_note({
+    name: row.name ?? '',
+    status: row.status_text ?? ''
+  });
 }
 
-export const STATUS: Record<string, { label: string; tone: Tone }> = {
-  on: { label: 'On', tone: 'moss' },
-  off: { label: 'Off', tone: 'slate' },
-  paused: { label: 'Paused', tone: 'clay' },
-  over_limit: { label: 'Not running', tone: 'clay' },
-  needs_attention: { label: 'Needs attention', tone: 'rust' }
+export const STATUS: Record<string, { readonly label: string; tone: Tone }> = {
+  on: {
+    get label() {
+      return m.settings_automation_status_on();
+    },
+    tone: 'moss'
+  },
+  off: {
+    get label() {
+      return m.settings_automation_status_off();
+    },
+    tone: 'slate'
+  },
+  paused: {
+    get label() {
+      return m.settings_automation_status_paused();
+    },
+    tone: 'clay'
+  },
+  over_limit: {
+    get label() {
+      return m.settings_automation_status_over_limit();
+    },
+    tone: 'clay'
+  },
+  needs_attention: {
+    get label() {
+      return m.settings_automation_status_needs_attention();
+    },
+    tone: 'rust'
+  }
 };
 
 /**
@@ -509,7 +571,10 @@ export function runNotes(
 ): { reason: string | null; by: string | null } {
   const reason = typeof run?.reason === 'string' && run.reason ? run.reason : null;
   const rule = run?.triggered_by?.rule_name;
-  return { reason, by: typeof rule === 'string' && rule ? `Set off by "${rule}"` : null };
+  return {
+    reason,
+    by: typeof rule === 'string' && rule ? m.settings_automation_set_off_by({ rule }) : null
+  };
 }
 
 export { recordHref as recordRoute } from '#lib/v2/custom-objects.js';
@@ -642,7 +707,7 @@ export function tryBlocked({
   busy: boolean;
   chosen: unknown[];
 }): string | null {
-  if (dirty) return 'Save first: Try uses the saved rule.';
+  if (dirty) return m.settings_automation_try_save_first();
   return busy || chosen.length === 0 ? '' : null;
 }
 
@@ -708,11 +773,12 @@ export function switchObject(
 export function changeHint(field: Field | null, to: RuleValue | undefined) {
   if (!field || to === undefined || to === null || to === '') return null;
   let value = String(to);
-  if (field.type === 'boolean') value = to === true || to === 'true' ? 'Yes' : 'No';
+  if (field.type === 'boolean')
+    value = to === true || to === 'true' ? m.common_yes() : m.common_no();
   if (field.type === 'choice') {
     value = field.choices.find((c) => c.value === value)?.label ?? value;
   }
-  return `Runs once, when the ${field.label.toLowerCase()} moves into ${value}; later edits do not run it again.`;
+  return m.settings_automation_change_hint({ field: field.label.toLowerCase(), value });
 }
 
 /**
@@ -729,8 +795,11 @@ export function placeErrors(
     const row = /^(conditions|actions)\.(\d+)$/.exec(key);
     if (shown(key)) rows[key] = message;
     else if (row) {
+      const n = Number(row[2]) + 1;
       rest.push(
-        `${row[1] === 'conditions' ? 'Condition' : 'Action'} ${Number(row[2]) + 1}: ${message}`
+        row[1] === 'conditions'
+          ? m.settings_automation_condition_error({ n, message })
+          : m.settings_automation_action_error({ n, message })
       );
     } else rest.push(message);
   }
@@ -822,8 +891,9 @@ export function ruleStatus(
  * @param status Null for a rule not saved yet.
  */
 export function switchLabel(status: string | null | undefined) {
-  if (status === 'paused') return 'Save and take over';
-  if (status === 'off' || status === null || status === undefined) return 'Save and switch on';
+  if (status === 'paused') return m.settings_automation_save_take_over();
+  if (status === 'off' || status === null || status === undefined)
+    return m.settings_automation_save_switch_on();
   return null;
 }
 
@@ -844,10 +914,13 @@ export function hubValue(
 ): { value: string | null; warn: boolean } {
   if (!summary) return { value: null, warn: false };
   const rules = summary.active
-    ? `${summary.active} active ${summary.active === 1 ? 'rule' : 'rules'}`
-    : 'No active rules';
+    ? m.settings_automation_hub_active({ count: summary.active })
+    : m.settings_automation_hub_none();
   return {
-    value: summary.failing > 0 ? `${rules}, ${summary.failing} failing` : rules,
+    value:
+      summary.failing > 0
+        ? m.settings_automation_hub_failing({ rules, failing: summary.failing })
+        : rules,
     warn: Boolean(summary.attention)
   };
 }
@@ -871,20 +944,24 @@ export function notificationText(
   switch (n.verb) {
     case 'automation.message':
       if (!str(d.message) || !str(d.rule)) return null;
-      return { text: d.message, source: `From the rule "${d.rule}"` };
+      return { text: d.message, source: m.settings_automation_notify_from_rule({ rule: d.rule }) };
     case 'automation.failed':
       if (!str(d.rule) || !str(d.reason)) return null;
-      return { text: `The rule "${d.rule}" failed: ${d.reason}`, source: null };
+      return {
+        text: m.settings_automation_notify_failed({ rule: d.rule, reason: d.reason }),
+        source: null
+      };
     case 'automation.paused':
       if (!str(d.reason) || !Array.isArray(d.rules) || !d.rules.every(str)) return null;
-      return { text: `${d.reason} Paused: ${d.rules.join(', ')}.`, source: null };
+      return {
+        text: m.settings_automation_notify_paused({ reason: d.reason, rules: d.rules.join(', ') }),
+        source: null
+      };
     case 'automation.limit': {
       if (!str(d.window_start)) return null;
-      const from = runTime(d.window_start, timeZone).replace(/^(Today|Yesterday) /, (w) =>
-        w.toLowerCase()
-      );
+      const from = midSentence(runTime(d.window_start, timeZone));
       return {
-        text: `Automation reached its limit of 1,000 runs in the hour from ${from}. The rest of that hour's runs were skipped.`,
+        text: m.settings_automation_notify_limit({ from }),
         source: null
       };
     }
@@ -902,6 +979,17 @@ export function notificationText(
 }
 
 /**
+ * `runTime`'s "Today 10:00" read inside a sentence: the day word lowercased.
+ */
+function midSentence(when: string) {
+  for (const day of [m.time_today_at({ time: '' }), m.time_yesterday_at({ time: '' })]) {
+    const word = day.trim();
+    if (word && when.startsWith(`${word} `)) return word.toLowerCase() + when.slice(word.length);
+  }
+  return when;
+}
+
+/**
  * Who a notification row credits. The API's actor carries `user_details.email`
  * and no `name`.
  */
@@ -911,7 +999,9 @@ export function actorName(
     | null
     | undefined
 ): string {
-  return n?.actor?.name || n?.actor?.user_details?.email || 'Someone';
+  return n?.actor?.name || n?.actor?.user_details?.email || m.settings_automation_someone();
 }
 
-export const AUTOMATION_FALLBACK = 'An automation rule sent a notification.';
+export function automationFallback() {
+  return m.settings_automation_notify_fallback();
+}

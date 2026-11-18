@@ -3,6 +3,7 @@
   import AdminsOnly from '#lib/v2/components/automation/AdminsOnly.svelte';
   import AutomationCrumb from '#lib/v2/components/automation/AutomationCrumb.svelte';
   import RuleEditor from '#lib/v2/components/automation/RuleEditor.svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import { billingHref } from '#lib/v2/billing.js';
   import type { PageProps } from './$types';
 
@@ -10,7 +11,7 @@
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="New rule">
+  <PageHeader title={m.settings_automation_new_rule()}>
     {#snippet crumb()}<AutomationCrumb />{/snippet}
   </PageHeader>
   <div class="v2-scroll">

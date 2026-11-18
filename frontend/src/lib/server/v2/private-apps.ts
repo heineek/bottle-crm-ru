@@ -9,6 +9,7 @@
 import { error, type Cookies } from '@sveltejs/kit';
 import { apiStatus } from '#lib/api-errors.js';
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/enterprise-api-schema.js';
 
 type Event = { cookies: Cookies };
@@ -35,7 +36,7 @@ export const isUploadId = (id: unknown): id is string => typeof id === 'string' 
 export const isPrivateAppId = (id: unknown): id is string => typeof id === 'string' && ID.test(id);
 
 function checked(id: string, ok: (id: unknown) => boolean): string {
-  if (!ok(id)) error(404, 'Not found.');
+  if (!ok(id)) error(404, m.settings_private_apps_not_found());
   return encodeURIComponent(id);
 }
 

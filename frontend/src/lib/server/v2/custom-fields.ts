@@ -24,6 +24,7 @@
  */
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -116,12 +117,12 @@ function buildBody(allowed: typeof CREATE_FIELDS, values: FieldValues) {
       }))
       .filter((o) => o.label && o.value);
     if (!rows.length) {
-      throw new Error('A dropdown needs at least one option.');
+      throw new Error(m.settings_fields_error_no_options());
     }
     const seen = new Set();
     for (const row of rows) {
       if (seen.has(row.value)) {
-        throw new Error(`Two options would both be stored as "${row.value}". Rename one.`);
+        throw new Error(m.settings_fields_error_same_value({ value: row.value }));
       }
       seen.add(row.value);
     }
@@ -144,7 +145,7 @@ export async function updateCustomField(
   id: string,
   values: FieldValues
 ): Promise<Schemas['CustomFieldDefinition']> {
-  if (!id) throw new Error('Which field? No field id was given.');
+  if (!id) throw new Error(m.settings_fields_error_no_id());
   const body = buildBody(UPDATE_FIELDS, values);
   return await apiRequest(`/custom-fields/${id}/`, { method: 'PUT', body }, { cookies });
 }
@@ -161,6 +162,6 @@ export async function deactivateCustomField(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['CustomFieldDeleteResponse']> {
-  if (!id) throw new Error('Which field? No field id was given.');
+  if (!id) throw new Error(m.settings_fields_error_no_id());
   return await apiRequest(`/custom-fields/${id}/`, { method: 'DELETE' }, { cookies });
 }

@@ -22,6 +22,8 @@
   import EmptyState from '#lib/v2/components/EmptyState.svelte';
   import { count, relativeTime } from '#lib/v2/format.js';
   import { auditActor, auditDetail, auditWebhookId } from '#lib/v2/audit-log.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -47,24 +49,30 @@
     !data.forbidden &&
       Object.keys(data.filters ?? {}).some((key) => key !== 'include_token_refresh')
   );
+
+  let countParts = $derived(
+    messageParts(
+      (filtered ? m.settings_audit_count_match : m.settings_audit_count)({
+        count: data.count ?? 0,
+        shown: slot('shown')
+      })
+    )
+  );
 </script>
 
-<PageHeader title="Audit log">
+<PageHeader title={m.settings_audit_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
     {#if !data.forbidden}
-      <span class="v2-num">{count(data.count)}</span>
-      {data.count === 1 ? 'entry' : 'entries'}{filtered ? ' match' : ''}
+      {#each countParts as p, i (i)}{#if p.key}<span class="v2-num">{count(data.count)}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
   {/snippet}
 </PageHeader>
 
 {#if data.forbidden}
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Admins only"
-      text="The audit log records who signed in, from where, and what was refused, so only admins can read it."
-    />
+    <NextAction label={m.settings_audit_admins_only()} text={m.settings_audit_admins_only_text()} />
   </div>
 {:else}
   <div class="v2-scroll">
@@ -74,9 +82,9 @@
           <input type="hidden" name="actor" value={data.filters.actor} />
         {/if}
         <div class="v2-field">
-          <label for="al-type">Event</label>
+          <label for="al-type">{m.settings_audit_event()}</label>
           <select id="al-type" name="event_type" class="v2-input al-tap">
-            <option value="">All events</option>
+            <option value="">{m.settings_audit_all_events()}</option>
             {#each data.eventTypes as t (t.value)}
               <option value={t.value} selected={data.filters.event_type === t.value}>
                 {t.label}
@@ -85,7 +93,7 @@
           </select>
         </div>
         <div class="v2-field">
-          <label for="al-from">From</label>
+          <label for="al-from">{m.settings_audit_from()}</label>
           <input
             id="al-from"
             name="from"
@@ -95,7 +103,7 @@
           />
         </div>
         <div class="v2-field">
-          <label for="al-to">To</label>
+          <label for="al-to">{m.settings_audit_to()}</label>
           <input
             id="al-to"
             name="to"
@@ -111,36 +119,40 @@
             value="true"
             checked={data.filters.include_token_refresh === 'true'}
           />
-          Show token refreshes
+          {m.settings_audit_show_refreshes()}
         </label>
         <div class="al-buttons">
-          <button class="v2-btn v2-btn-primary al-tap">Apply</button>
+          <button class="v2-btn v2-btn-primary al-tap">{m.settings_audit_apply()}</button>
           {#if filtered}
-            <a class="v2-btn al-tap" href={resolve('settings/audit-log')}>Clear</a>
+            <a class="v2-btn al-tap" href={resolve('settings/audit-log')}
+              >{m.settings_audit_clear()}</a
+            >
           {/if}
         </div>
       </form>
 
       {#if data.filters.actor}
         <p class="v2-sub" style="font-size:12.5px;margin:0 0 12px">
-          Showing one person's entries.
-          <a href={resolve(`settings/audit-log?${pageQuery({ actor: null })}`)}>Show everyone</a>
+          {m.settings_audit_one_person()}
+          <a href={resolve(`settings/audit-log?${pageQuery({ actor: null })}`)}
+            >{m.settings_audit_show_everyone()}</a
+          >
         </p>
       {/if}
 
       {#if data.error}
         <div style="margin-bottom:16px">
-          <NextAction label="That filter did not work" text={data.error} tone="rust" />
+          <NextAction label={m.settings_audit_filter_failed()} text={data.error} tone="rust" />
         </div>
       {/if}
 
       {#if !data.entries.length}
         {#if !data.error}
           <EmptyState
-            title={filtered ? 'Nothing matches' : 'Nothing recorded yet'}
-            body={filtered
-              ? 'No entry matches these filters. Widen the dates or clear them.'
-              : 'Sign-ins, org switches, refused requests, webhook pauses and API token or calendar feed changes appear here as they happen.'}
+            title={filtered
+              ? m.settings_audit_empty_filtered_title()
+              : m.settings_audit_empty_title()}
+            body={filtered ? m.settings_audit_empty_filtered_body() : m.settings_audit_empty_body()}
           />
         {/if}
       {:else}
@@ -148,11 +160,11 @@
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Event</th>
-                <th>Result</th>
-                <th>Person</th>
-                <th>When</th>
-                <th data-m="hide">From</th>
+                <th>{m.settings_audit_event()}</th>
+                <th>{m.settings_audit_result()}</th>
+                <th>{m.settings_audit_person()}</th>
+                <th>{m.settings_audit_when()}</th>
+                <th data-m="hide">{m.settings_audit_from_ip()}</th>
               </tr>
             </thead>
             <tbody>
@@ -166,13 +178,17 @@
                       <div class="v2-table-secondary">
                         {detail}
                         {#if webhookId}
-                          <a href={resolve(`settings/webhooks/${webhookId}`)}>Open webhook</a>
+                          <a href={resolve(`settings/webhooks/${webhookId}`)}
+                            >{m.settings_audit_open_webhook()}</a
+                          >
                         {/if}
                       </div>
                     {/if}
                   </td>
                   <td data-m="tag">
-                    <Pill tone={e.success ? 'moss' : 'rust'}>{e.success ? 'OK' : 'Refused'}</Pill>
+                    <Pill tone={e.success ? 'moss' : 'rust'}
+                      >{e.success ? m.settings_audit_ok() : m.settings_audit_refused()}</Pill
+                    >
                   </td>
                   <td data-m="meta">
                     {#if e.actor}
@@ -198,7 +214,7 @@
               class="v2-btn v2-btn-sm al-tap"
               href={resolve(
                 `settings/audit-log?${pageQuery({ offset: Math.max(0, data.offset - data.pageSize) })}`
-              )}>Newer</a
+              )}>{m.settings_audit_newer()}</a
             >
           {/if}
           {#if data.offset + data.pageSize < data.count}
@@ -206,7 +222,7 @@
               class="v2-btn v2-btn-sm al-tap"
               href={resolve(
                 `settings/audit-log?${pageQuery({ offset: data.offset + data.pageSize })}`
-              )}>Older</a
+              )}>{m.settings_audit_older()}</a
             >
           {/if}
         </div>

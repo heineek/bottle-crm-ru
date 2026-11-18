@@ -29,6 +29,7 @@
  * `mobile/lib/data/models/escalation_policy.dart` carries the same rules.
  */
 import { ESCALATION_ACTION_LABEL, ESCALATION_PRIORITIES } from '#lib/v2/enums.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * "the Support team", but "the Support Team" when the name already says so.
@@ -43,7 +44,9 @@ export function teamPhrase(name: string) {
   const lower = trimmed.toLowerCase();
   const saysSo =
     lower === 'team' || lower === 'teams' || lower.endsWith(' team') || lower.endsWith(' teams');
-  return saysSo ? `the ${trimmed}` : `the ${trimmed} team`;
+  return saysSo
+    ? m.settings_escalation_team_phrase_named({ name: trimmed })
+    : m.settings_escalation_team_phrase({ name: trimmed });
 }
 
 /** The fields of a policy row (`getEscalationPolicies`) these read. */
@@ -79,7 +82,7 @@ export function escalationOutcome(
   policy: OutcomePolicy | null | undefined,
   kind: 'first_response' | 'resolution'
 ): { text: string; dead: boolean } {
-  if (!policy?.is_active) return { text: 'Nothing. The policy is turned off', dead: true };
+  if (!policy?.is_active) return { text: m.settings_escalation_outcome_off(), dead: true };
 
   const target = policy[`${kind}_target` as const];
   const team = policy.notify_team;
@@ -89,8 +92,8 @@ export function escalationOutcome(
     // no target reads as "somebody is told" and is the case where nobody is.
     return {
       text: team
-        ? `Nothing. No target is set, and ${teamPhrase(team.name)} is not notified on its own`
-        : 'Nothing. No target is set',
+        ? m.settings_escalation_outcome_no_target_team({ team: teamPhrase(team.name) })
+        : m.settings_escalation_outcome_no_target(),
       dead: true
     };
   }
@@ -98,8 +101,22 @@ export function escalationOutcome(
   const action = policy[`${kind}_action` as const];
   const label = ESCALATION_ACTION_LABEL[action] ?? action;
   const who =
-    team && actionNotifies(action) ? `${target.name} and ${teamPhrase(team.name)}` : target.name;
-  return { text: `${label} ${who}`, dead: false };
+    team && actionNotifies(action)
+      ? m.settings_escalation_target_and_team({ target: target.name, team: teamPhrase(team.name) })
+      : target.name;
+  return { text: actionSentence(action, who), dead: false };
+}
+
+/**
+ * "Notify Alice", "Reassign to Alice": one whole sentence per action.
+ */
+function actionSentence(action: string, who: string) {
+  if (action === 'notify') return m.settings_escalation_outcome_notify({ who });
+  if (action === 'reassign') return m.settings_escalation_outcome_reassign({ who });
+  if (action === 'notify_and_reassign') {
+    return m.settings_escalation_outcome_notify_and_reassign({ who });
+  }
+  return `${ESCALATION_ACTION_LABEL[action] ?? action} ${who}`;
 }
 
 /**
@@ -116,7 +133,9 @@ export function teamIgnoredNote(
   if (!policy || !team || !halfFires(policy, kind)) return null;
   if (actionNotifies(policy[`${kind}_action` as const])) return null;
   const phrase = teamPhrase(team.name);
-  return `${phrase[0].toUpperCase()}${phrase.slice(1)} is not notified here: this half only reassigns.`;
+  return m.settings_escalation_team_ignored({
+    team: `${phrase[0].toUpperCase()}${phrase.slice(1)}`
+  });
 }
 
 export const ESCALATION_HALVES: ('first_response' | 'resolution')[] = [
@@ -166,5 +185,8 @@ export function unconfiguredPriorities(policies: OutcomePolicy[] | null | undefi
 export function joinWithAnd(parts: string[]) {
   if (!parts.length) return '';
   if (parts.length === 1) return parts[0];
-  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+  return m.settings_escalation_join_and({
+    list: parts.slice(0, -1).join(', '),
+    last: parts[parts.length - 1]
+  });
 }

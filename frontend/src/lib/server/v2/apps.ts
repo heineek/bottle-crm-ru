@@ -10,6 +10,7 @@
 import { apiRequest } from '#lib/api-helpers.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -71,42 +72,42 @@ export async function listApps(
 }
 
 /** Preview item types in the order the confirmation lists them. */
-const TYPES = [
-  ['wording', 'Wording'],
-  ['object', 'Objects'],
-  ['field', 'Fields'],
-  ['pipeline', 'Pipelines'],
-  ['stage', 'Stages'],
-  ['tag', 'Tags'],
-  ['source', 'Lead sources'],
-  ['product', 'Products']
+const TYPES: [string, () => string][] = [
+  ['wording', () => m.settings_apps_type_wording()],
+  ['object', () => m.settings_apps_type_object()],
+  ['field', () => m.settings_apps_type_field()],
+  ['pipeline', () => m.settings_apps_type_pipeline()],
+  ['stage', () => m.settings_apps_type_stage()],
+  ['tag', () => m.settings_apps_type_tag()],
+  ['source', () => m.settings_apps_type_source()],
+  ['product', () => m.settings_apps_type_product()]
 ];
 
-const EFFECTS = {
-  add: 'Will add',
-  keep: 'Already here, kept as it is',
-  turn_off: 'Will turn off',
-  turn_on: 'Will turn back on',
-  restore_wording: 'Will go back to the default wording',
-  skipped_module: 'Skipped while its module is off',
-  add_by_hand: 'Not added: add this stage by hand',
-  conflict: 'Not added',
-  restore: 'Comes back'
-} as Record<string, string>;
+const EFFECTS: Record<string, () => string> = {
+  add: () => m.settings_apps_effect_add(),
+  keep: () => m.settings_apps_effect_keep(),
+  turn_off: () => m.settings_apps_effect_turn_off(),
+  turn_on: () => m.settings_apps_effect_turn_on(),
+  restore_wording: () => m.settings_apps_effect_restore_wording(),
+  skipped_module: () => m.settings_apps_effect_skipped_module(),
+  add_by_hand: () => m.settings_apps_effect_add_by_hand(),
+  conflict: () => m.settings_apps_effect_conflict(),
+  restore: () => m.settings_apps_effect_restore()
+};
 
-const TARGETS = {
-  lead: 'leads',
-  contact: 'contacts',
-  account: 'accounts',
-  deal: 'deals',
-  opportunity: 'deals',
-  ticket: 'tickets',
-  case: 'tickets',
-  task: 'tasks',
-  invoice: 'invoices',
-  estimate: 'estimates',
-  recurring_invoice: 'recurring invoices'
-} as Record<string, string>;
+const TARGETS: Record<string, () => string> = {
+  lead: () => m.settings_apps_target_lead(),
+  contact: () => m.settings_apps_target_contact(),
+  account: () => m.settings_apps_target_account(),
+  deal: () => m.settings_apps_target_deal(),
+  opportunity: () => m.settings_apps_target_deal(),
+  ticket: () => m.settings_apps_target_ticket(),
+  case: () => m.settings_apps_target_ticket(),
+  task: () => m.settings_apps_target_task(),
+  invoice: () => m.settings_apps_target_invoice(),
+  estimate: () => m.settings_apps_target_estimate(),
+  recurring_invoice: () => m.settings_apps_target_recurring_invoice()
+};
 
 type PreviewItem = { label: string; target: string; effect: string; effectLabel: string };
 
@@ -128,15 +129,17 @@ export function groupPreview(
       ...(byType.get(type) ?? []),
       {
         label: String(item?.label ?? ''),
-        target: target ? (TARGETS[target] ?? target) : '',
+        target: target ? (Object.hasOwn(TARGETS, target) ? TARGETS[target]() : target) : '',
         effect,
-        effectLabel: EFFECTS[effect] ?? effect.replaceAll('_', ' ')
+        effectLabel: Object.hasOwn(EFFECTS, effect)
+          ? EFFECTS[effect]()
+          : effect.replaceAll('_', ' ')
       }
     ]);
   }
   const known = TYPES.filter(([type]) => byType.has(type)).map(([type, label]) => ({
     type,
-    label,
+    label: label(),
     items: byType.get(type) ?? []
   }));
   const other = [...byType.keys()]
@@ -192,19 +195,29 @@ export async function removeApp(cookies: CookieReader, id: string) {
   return resp?.app ? toApp(resp.app) : null;
 }
 
-const VERB = {
-  install: 'install',
-  upgrade: 'update',
-  remove: 'remove'
-} as Record<string, string>;
-
 /**
  * A refused action as one sentence. A 409 carries the server's own reason
  * (nothing new to add, not installed).
  */
 export function appRefusal(err: unknown, action: string) {
-  const verb = VERB[action] ?? 'change';
-  if (apiStatus(err) === 403) return `Only an organization admin can ${verb} an app.`;
-  if (apiStatus(err) === 404) return 'That app is not in the catalogue.';
-  return readableError(err, `Could not ${verb} this app.`);
+  if (apiStatus(err) === 404) return m.settings_apps_refusal_missing();
+  const forbidden = apiStatus(err) === 403;
+  if (action === 'install') {
+    return forbidden
+      ? m.settings_apps_refusal_install_admin()
+      : readableError(err, m.settings_apps_refusal_install());
+  }
+  if (action === 'upgrade') {
+    return forbidden
+      ? m.settings_apps_refusal_update_admin()
+      : readableError(err, m.settings_apps_refusal_update());
+  }
+  if (action === 'remove') {
+    return forbidden
+      ? m.settings_apps_refusal_remove_admin()
+      : readableError(err, m.settings_apps_refusal_remove());
+  }
+  return forbidden
+    ? m.settings_apps_refusal_change_admin()
+    : readableError(err, m.settings_apps_refusal_change());
 }

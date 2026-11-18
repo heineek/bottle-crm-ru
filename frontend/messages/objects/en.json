@@ -1,0 +1,51 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "objects_note_empty": "A note cannot be empty.",
+  "objects_note_save_failed": "Could not save that note.",
+  "objects_note_delete_failed": "Could not delete that note.",
+  "objects_no_matches_filters": "Nothing matches these filters. Try fewer, or a shorter search.",
+  "objects_tags": "Tags",
+  "objects_matches": "Matches",
+  "objects_matches_failed": "Could not load matches.",
+  "objects_matches_dismiss": "Dismiss",
+  "objects_matches_none": "No matches yet.",
+  "objects_matches_dismissed": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural",
+        "local countShown = count: number"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{countShown} dismissed",
+        "countPlural=other": "{countShown} dismissed"
+      }
+    }
+  ],
+  "objects_matches_show": "Show",
+  "objects_matches_hide": "Hide",
+  "objects_matches_undo": "Undo",
+  "objects_timeline": "Timeline",
+  "objects_note_placeholder": "Add a note…",
+  "objects_view_list": "List",
+  "objects_view_board": "Board",
+  "objects_see_plans": "See plans",
+  "objects_notes_empty": "Write a comment or attach a file first.",
+  "objects_notes_save_failed": "Could not save that.",
+  "objects_board_missing_record": "Missing record.",
+  "objects_board_missing_column": "Missing column.",
+  "objects_board_bad_column": "Cards cannot be moved into that column.",
+  "objects_board_not_movable": "That record is not one you can move.",
+  "objects_board_move_failed": "Could not move the record.",
+  "objects_board_moved_back": "Could not move the record, so it went back.",
+  "objects_board_title": "{plural} board",
+  "objects_board_sub": "{shown} by {field}",
+  "objects_board_hint": "Drag a card, or use \"Move to\" on it, to change its {field}.",
+  "objects_board_read_only": "This board is read-only.",
+  "objects_board_truncated": "Showing the first {shown}.",
+  "objects_board_other_lane": "Values that are no longer choices. Move a card out to fix it.",
+  "objects_board_move_aria": "Move {name} to",
+  "objects_board_move_to": "Move to…",
+  "objects_board_empty_lane": "Nothing here."
+}

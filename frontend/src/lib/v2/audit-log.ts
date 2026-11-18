@@ -5,6 +5,7 @@
  * the server wrote), never the stored description, so every string built here
  * comes from those.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * Who the entry is about: a name, else an email. An entry with no person is a
@@ -12,8 +13,8 @@
  */
 export function auditActor(entry: { actor?: { name?: string; email?: string } | null }) {
   const a = entry?.actor;
-  if (!a) return 'No user';
-  return a.name || a.email || 'No user';
+  if (!a) return m.settings_audit_no_user();
+  return a.name || a.email || m.settings_audit_no_user();
 }
 
 /** One line on what happened, or '' when the event label says it all. */
@@ -29,7 +30,13 @@ export function auditDetail(entry: {
     // names each carry the start of their id.
     const same = d.merged_name === d.kept_name;
     const tag = (id: unknown) => (same && id ? ` (${String(id).slice(0, 8)})` : '');
-    return `Merged ${d.entity || 'record'} "${d.merged_name}"${tag(d.merged_id)} into "${d.kept_name}"${tag(d.kept_id)}.`;
+    return m.settings_audit_merged({
+      entity: String(d.entity || m.settings_audit_merged_record()),
+      merged: String(d.merged_name),
+      mergedTag: tag(d.merged_id),
+      kept: String(d.kept_name),
+      keptTag: tag(d.kept_id)
+    });
   }
   if (
     (entry?.event_type === 'API_TOKEN_CREATED' || entry?.event_type === 'API_TOKEN_REVOKED') &&
@@ -37,20 +44,32 @@ export function auditDetail(entry: {
   ) {
     // An empty scope list is a token with the owner's full access. The owner
     // is named only when someone else acted: an admin revoking their token.
-    const scopes =
-      Array.isArray(d.scopes) && d.scopes.length ? `scopes ${d.scopes.join(', ')}` : 'full access';
-    const owner = d.owner_id && d.owner_id !== entry?.actor?.id ? `, owned by ${d.owner_name}` : '';
-    return `Token "${d.token_name}" (${d.token_prefix}), ${scopes}${owner}.`;
+    const scopes = Array.isArray(d.scopes) ? d.scopes : [];
+    const scoped = scopes.length > 0;
+    const values = {
+      name: String(d.token_name ?? ''),
+      prefix: String(d.token_prefix),
+      scopes: scopes.join(', '),
+      owner: String(d.owner_name ?? '')
+    };
+    if (d.owner_id && d.owner_id !== entry?.actor?.id) {
+      return scoped
+        ? m.settings_audit_token_scoped_owned(values)
+        : m.settings_audit_token_full_owned(values);
+    }
+    return scoped ? m.settings_audit_token_scoped(values) : m.settings_audit_token_full(values);
   }
   if (entry?.event_type === 'WEBHOOK_REENABLED') {
-    return 'Turned back on, and now answers for the webhook.';
+    return m.settings_audit_webhook_reenabled();
   }
   if (entry?.event_type === 'WEBHOOK_CHANGED' && Array.isArray(d.changed)) {
-    return `Changed ${d.changed.join(', ')}, and now answers for the webhook.`;
+    return m.settings_audit_webhook_changed({ fields: d.changed.join(', ') });
   }
-  if (d.action && d.resource) return `${d.action} on ${d.resource}`;
+  if (d.action && d.resource) {
+    return m.settings_audit_action_on({ action: d.action, resource: d.resource });
+  }
   if (d.deleted_count !== undefined && d.deleted_count !== null) {
-    return `${d.deleted_count} sample leads removed`;
+    return m.settings_audit_sample_removed({ count: Number(d.deleted_count) });
   }
   return '';
 }

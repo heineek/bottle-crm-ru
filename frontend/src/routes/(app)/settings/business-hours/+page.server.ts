@@ -6,6 +6,7 @@ import {
   removeHoliday as removeHolidayWrite
 } from '#lib/server/v2/business-hours.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { components } from '#lib/api-schema.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -46,7 +47,7 @@ function readDays(form: FormData) {
 }
 
 /** The one 403 body all three admin-only writes share, turned into a sentence. */
-const FORBIDDEN = 'Only admins can update business hours.';
+const forbidden = () => m.settings_hours_error_forbidden();
 
 /**
  * All three actions below are admin-only, enforced server-side by
@@ -72,10 +73,10 @@ export const actions: Actions = {
       await updateBusinessHours(event, calendar.id, days, meta);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { updateHours: { error: FORBIDDEN } });
+        return fail(403, { updateHours: { error: forbidden() } });
       }
       return fail(400, {
-        updateHours: { error: readableError(err, 'Could not save business hours.') }
+        updateHours: { error: readableError(err, m.settings_hours_error_save()) }
       });
     }
     return { hoursUpdated: true };
@@ -95,9 +96,9 @@ export const actions: Actions = {
       existing = await addHolidayWrite(event, calendar.id, { date, name });
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { addHoliday: { error: FORBIDDEN } });
+        return fail(403, { addHoliday: { error: forbidden() } });
       }
-      return fail(400, { addHoliday: { error: readableError(err, 'Could not add the holiday.') } });
+      return fail(400, { addHoliday: { error: readableError(err, m.settings_hours_error_add()) } });
     }
     const storedName = existing?.name ?? '';
     if (storedName && storedName !== name) {
@@ -114,10 +115,10 @@ export const actions: Actions = {
       await removeHolidayWrite(event, calendar.id, holidayId);
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { removeHoliday: { error: FORBIDDEN } });
+        return fail(403, { removeHoliday: { error: forbidden() } });
       }
       return fail(400, {
-        removeHoliday: { error: readableError(err, 'Could not remove the holiday.') }
+        removeHoliday: { error: readableError(err, m.settings_hours_error_remove()) }
       });
     }
     return { holidayRemoved: true };

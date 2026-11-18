@@ -14,13 +14,14 @@ import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import type { components } from '#lib/enterprise-api-schema.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 
 const ABSENT_FOR_MS = 5 * 60 * 1000;
 const PLAN_KEY = /^[a-z][a-z0-9_]{0,31}$/;
 const SESSION_ID = /^[A-Za-z0-9_]{1,255}$/;
 const ACTIONS = ['choose', 'switch', 'keep'];
 const PLAN_CODES = ['plan_limit', 'plan_required'];
-const NOT_OFFERED = 'Billing is not available here.';
+const notOffered = () => m.settings_billing_not_available();
 
 type Event = { cookies: Cookies };
 
@@ -128,20 +129,20 @@ export async function getBilling({ cookies }: Event): Promise<Billing | null> {
  * other failure left to the error page rather than shown as "no billing".
  */
 export async function readBilling({ cookies }: Event): Promise<Billing> {
-  if (absent()) error(404, NOT_OFFERED);
+  if (absent()) error(404, notOffered());
   let body: Enterprise['Billing'];
   try {
     body = await apiRequest('/billing/', { expectedStatuses: [404] }, { cookies });
   } catch (err) {
     if (apiStatus(err) === 404) {
       absentUntil = Date.now() + ABSENT_FOR_MS;
-      error(404, NOT_OFFERED);
+      error(404, notOffered());
     }
     throw err;
   }
   absentUntil = 0;
   const answer = toBilling(body);
-  if (!answer) error(502, 'Billing could not be read. Try again.');
+  if (!answer) error(502, m.settings_billing_unreadable());
   return answer;
 }
 
@@ -187,9 +188,10 @@ const planBody = (plan: string): FormBody<Enterprise['BillingPlanChoiceRequest']
 /** A plan that is not a key is refused here, as the API would refuse it. */
 function requirePlanKey(plan: unknown): asserts plan is string {
   if (!isPlanKey(plan)) {
-    throw Object.assign(new Error('That plan is not available.'), {
+    const unavailable = m.settings_billing_plan_unavailable();
+    throw Object.assign(new Error(unavailable), {
       status: 400,
-      body: { detail: 'That plan is not available.' }
+      body: { detail: unavailable }
     });
   }
 }
@@ -243,8 +245,8 @@ export async function changePlan({ cookies }: Event, plan: unknown): Promise<str
  */
 export function billingRefusal(err: unknown, fallback: string): string {
   const status = apiStatus(err);
-  if (status === 403) return 'Only an organization admin can change the plan.';
-  if (status === 404) return NOT_OFFERED;
+  if (status === 403) return m.settings_billing_admin_only();
+  if (status === 404) return notOffered();
   if (status === undefined || !Number.isInteger(status) || status < 400 || status >= 500)
     return fallback;
   const detail = text(apiErrorBody(err)?.detail);

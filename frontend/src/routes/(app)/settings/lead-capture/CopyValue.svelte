@@ -1,6 +1,7 @@
 <script lang="ts">
   /** A value to paste somewhere else (a webhook URL, a key), with a copy button. */
   import { Copy, Check } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   let { label, value, id }: { label: string; value: string; id: string } = $props();
   let copied = $state(false);
@@ -21,8 +22,15 @@
   <span class="v2-label" {id}>{label}</span>
   <div class="cv-row">
     <code class="v2-num cv-value" aria-labelledby={id}>{value}</code>
-    <button class="v2-btn cv-btn" type="button" onclick={copy} aria-label="Copy {label}">
-      {#if copied}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+    <button
+      class="v2-btn cv-btn"
+      type="button"
+      onclick={copy}
+      aria-label={m.settings_lead_capture_copy_aria({ label })}
+    >
+      {#if copied}<Check size={13} />{m.settings_lead_capture_copied()}{:else}<Copy
+          size={13}
+        />{m.settings_lead_capture_copy()}{/if}
     </button>
   </div>
 </div>

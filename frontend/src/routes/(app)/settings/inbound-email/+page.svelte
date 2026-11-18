@@ -28,7 +28,14 @@
   import SettingsFormPanel from '#lib/v2/components/SettingsFormPanel.svelte';
   import ConfirmAction from '#lib/v2/components/ConfirmAction.svelte';
   import { count, relativeDays } from '#lib/v2/format.js';
-  import { MAILBOX_PROVIDER_LABEL, PRIORITY_TONE } from '#lib/v2/enums.js';
+  import {
+    MAILBOX_PROVIDER_LABEL,
+    PRIORITY_TONE,
+    CASE_PRIORITY_LABEL,
+    CASE_TYPE_LABEL
+  } from '#lib/v2/enums.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { missingOption, inactiveOptionLabel } from '#lib/v2/pickers.js';
   import { sourceLabel, sourceOptions } from '#lib/v2/lead-sources.js';
   import { isOn } from '#lib/v2/modules.js';
@@ -54,7 +61,7 @@
   // order. PRIORITY_CHOICE and CASE_TYPE mirror ticket-approvals' own local
   // copies: value and label are the same string for both, and no shared map
   // exists to derive them from.
-  const PROVIDERS = ['ses', 'mailgun', 'postmark', 'imap'];
+  const PROVIDERS = ['ses', 'mailgun', 'postmark', 'imap'] as const;
   const PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
   const CASE_TYPES = ['Question', 'Incident', 'Problem'];
 
@@ -63,6 +70,16 @@
   let delivering = $derived(deliveringCount(mailboxes));
   let silent = $derived(silentMailboxes(mailboxes));
   let policy = $derived(dropPolicy(data.daily_limit));
+
+  let subParts = $derived(
+    messageParts(m.settings_inbound_sub({ delivering: slot('delivering'), total: slot('total') }))
+  );
+  let recentParts = $derived(
+    messageParts(
+      m.settings_inbound_sub_recent({ count: totals.cases_last_30d ?? 0, shown: slot('shown') })
+    )
+  );
+  let routingNote = $derived(messageParts(m.settings_inbound_routing_note({ link: slot('link') })));
 
   // `null` when the panel is closed, `'new'` when adding, or the mailbox
   // object when editing that row. One panel, two modes, so two rows can
@@ -113,17 +130,24 @@
   );
 </script>
 
-<PageHeader title="Inbound email">
+<PageHeader title={m.settings_inbound_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(delivering)}</span> of
-    <span class="v2-num">{count(totals.count)}</span> addresses working{#if ticketsOn}
-      · <span class="v2-num">{count(totals.cases_last_30d)}</span> tickets in the last 30 days
+    {#each subParts as p, i (i)}{#if p.key === 'delivering'}<span class="v2-num"
+          >{count(delivering)}</span
+        >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+        >{:else}{p.text}{/if}{/each}{#if ticketsOn}
+      ·
+      {#each recentParts as p, i (i)}{#if p.key}<span class="v2-num"
+            >{count(totals.cases_last_30d)}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !editing}
-      <button class="v2-btn v2-btn-primary" onclick={openCreate}><Plus />Add address</button>
+      <button class="v2-btn v2-btn-primary" onclick={openCreate}
+        ><Plus />{m.settings_inbound_add()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -133,10 +157,12 @@
     {#if editing}
       {@const current = editing}
       <SettingsFormPanel
-        title={current === 'new' ? 'New address' : `Edit ${current.address}`}
+        title={current === 'new'
+          ? m.settings_inbound_new_title()
+          : m.settings_inbound_edit_title({ address: current.address })}
         action={current === 'new' ? '?/create' : '?/update'}
         error={current === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={current === 'new' ? 'Add address' : 'Save address'}
+        submitLabel={current === 'new' ? m.settings_inbound_add() : m.settings_inbound_save()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
@@ -147,25 +173,22 @@
 
           {#if offerLeads}
             <div class="v2-field">
-              <label for="m-creates">Each email becomes</label>
+              <label for="m-creates">{m.settings_inbound_creates_label()}</label>
               <select id="m-creates" class="v2-input" name="creates" bind:value={creates}>
                 {#if ticketsOn || (current !== 'new' && current.creates === 'tickets')}
-                  <option value="tickets">A ticket</option>
+                  <option value="tickets">{m.settings_inbound_creates_ticket()}</option>
                 {/if}
-                <option value="leads">A lead</option>
+                <option value="leads">{m.settings_inbound_creates_lead()}</option>
               </select>
               {#if creates === 'leads'}
-                <p class="v2-hint">
-                  Forward enquiries here, or point a portal's notification email at it. The enquirer
-                  becomes the lead, never the portal that sent it.
-                </p>
+                <p class="v2-hint">{m.settings_inbound_creates_lead_hint()}</p>
               {/if}
             </div>
           {/if}
 
           {#if current === 'new' && data.generated_domain}
             <div class="v2-field">
-              <span class="v2-label" id="m-mode-label">Address</span>
+              <span class="v2-label" id="m-mode-label">{m.settings_inbound_address_label()}</span>
               <div role="radiogroup" aria-labelledby="m-mode-label" class="v2-mbx-modes">
                 <label>
                   <input
@@ -174,11 +197,11 @@
                     value="generate"
                     bind:group={addressMode}
                   />
-                  Generate one at {data.generated_domain}
+                  {m.settings_inbound_mode_generate({ domain: data.generated_domain })}
                 </label>
                 <label>
                   <input type="radio" name="address_mode" value="own" bind:group={addressMode} />
-                  Use an address of our own
+                  {m.settings_inbound_mode_own()}
                 </label>
               </div>
             </div>
@@ -187,16 +210,15 @@
           {#if serverOwned}
             {#if current !== 'new'}
               <div class="v2-field">
-                <span class="v2-label">Address</span>
+                <span class="v2-label">{m.settings_inbound_address_label()}</span>
                 <p class="v2-hint" style="margin:0">
-                  {current.address}, made by this server. It cannot be changed; add a new one
-                  instead.
+                  {m.settings_inbound_server_owned({ address: current.address })}
                 </p>
               </div>
             {/if}
           {:else}
             <div class="v2-field">
-              <label for="m-address">Address</label>
+              <label for="m-address">{m.settings_inbound_address_label()}</label>
               <input
                 id="m-address"
                 class="v2-input"
@@ -207,15 +229,15 @@
               />
               {#if current !== 'new'}
                 <p class="v2-hint">
-                  Mail to the old address stops becoming {current.creates === 'leads'
-                    ? 'leads'
-                    : 'tickets'}.
+                  {current.creates === 'leads'
+                    ? m.settings_inbound_address_hint_leads()
+                    : m.settings_inbound_address_hint()}
                 </p>
               {/if}
             </div>
 
             <div class="v2-field">
-              <label for="m-provider">Provider</label>
+              <label for="m-provider">{m.settings_inbound_provider_label()}</label>
               <select id="m-provider" class="v2-input" name="provider" bind:value={provider}>
                 {#each PROVIDERS as p (p)}
                   <option value={p}>
@@ -223,10 +245,7 @@
                   </option>
                 {/each}
               </select>
-              <p class="v2-hint">
-                AWS SES, Postmark and Mailgun deliver. IMAP is stored and accepted, and mail sent to
-                an address using it becomes nothing until that integration exists.
-              </p>
+              <p class="v2-hint">{m.settings_inbound_provider_hint()}</p>
             </div>
 
             {#if SECRET_PROVIDERS.includes(provider)}
@@ -234,7 +253,9 @@
                 current === 'new' ? null : webhookSetupUrl(provider, current.id, data.api_base)}
               <div class="v2-field">
                 <label for="m-secret"
-                  >{provider === 'postmark' ? 'Basic-auth password' : 'Webhook signing key'}</label
+                  >{provider === 'postmark'
+                    ? m.settings_inbound_secret_password()
+                    : m.settings_inbound_secret_signing_key()}</label
                 >
                 <input
                   id="m-secret"
@@ -246,29 +267,31 @@
                   spellcheck="false"
                   maxlength="128"
                   placeholder={current !== 'new' && current.has_webhook_secret
-                    ? 'A secret is stored; type to replace it'
+                    ? m.settings_inbound_secret_placeholder()
                     : ''}
                 />
                 <p class="v2-hint">
                   {current !== 'new' && current.has_webhook_secret
-                    ? 'A secret is stored. It is never shown; leave blank to keep it.'
-                    : 'No secret is stored, so every post to this address is refused.'}
+                    ? m.settings_inbound_secret_stored()
+                    : m.settings_inbound_secret_missing()}
                   {provider === 'postmark'
-                    ? 'Postmark sends it as the basic-auth password in the webhook URL.'
-                    : "This is your Mailgun account's HTTP webhook signing key."}
+                    ? m.settings_inbound_secret_postmark_hint()
+                    : m.settings_inbound_secret_mailgun_hint()}
                 </p>
                 {#if setupUrl}
                   <p class="v2-hint">
-                    {provider === 'postmark' ? 'Inbound webhook URL' : 'Route action'}:
+                    {provider === 'postmark'
+                      ? m.settings_inbound_setup_url_postmark()
+                      : m.settings_inbound_setup_url_mailgun()}
                     <code style="word-break:break-all">{setupUrl}</code>
                   </p>
                 {:else if current === 'new'}
-                  <p class="v2-hint">The setup URL appears here once the address is saved.</p>
+                  <p class="v2-hint">{m.settings_inbound_setup_url_pending()}</p>
                 {/if}
               </div>
             {:else}
               <div class="v2-field">
-                <label for="m-topic">SNS Topic ARN</label>
+                <label for="m-topic">{m.settings_inbound_topic_label()}</label>
                 <input
                   id="m-topic"
                   class="v2-input"
@@ -284,11 +307,7 @@
                   name="topic_arn_was"
                   value={current === 'new' ? '' : (current.topic_arn ?? '')}
                 />
-                <p class="v2-hint">
-                  Mail is accepted only from this exact topic. Left blank, it is set by the first
-                  subscription AWS confirms from an AWS account this server allows. Clearing it
-                  stops mail until it is set again.
-                </p>
+                <p class="v2-hint">{m.settings_inbound_topic_hint()}</p>
               </div>
             {/if}
           {/if}
@@ -297,65 +316,65 @@
             <!-- Drawn either way and only hidden, so switching what the
                  address makes and back keeps both sets of defaults. -->
             <div class="v2-field" hidden={creates !== 'leads'}>
-              <label for="m-lead-source">Lead source</label>
+              <label for="m-lead-source">{m.settings_inbound_lead_source_label()}</label>
               <select
                 id="m-lead-source"
                 class="v2-input"
                 name="lead_source"
                 value={current === 'new' ? newLeadSource : current.lead_source}
               >
-                <option value="">Not specified</option>
+                <option value="">{m.settings_inbound_lead_source_none()}</option>
                 {#each sourceOptions(data.sources, current === 'new' ? '' : current.lead_source) as s (s.key)}
                   <option value={s.key}>{s.label}</option>
                 {/each}
               </select>
             </div>
             <div class="v2-field" hidden={creates !== 'leads'}>
-              <label for="m-lead-detail">Sub-source</label>
+              <label for="m-lead-detail">{m.settings_inbound_lead_detail_label()}</label>
               <input
                 id="m-lead-detail"
                 class="v2-input"
                 name="lead_source_detail"
                 maxlength="100"
-                placeholder="e.g. Zillow"
+                placeholder={m.settings_inbound_lead_detail_placeholder()}
                 value={current === 'new' ? '' : current.lead_source_detail}
               />
             </div>
           {/if}
 
           <div class="v2-field" hidden={creates === 'leads'}>
-            <label for="m-priority">Opens as priority</label>
+            <label for="m-priority">{m.settings_inbound_priority_label()}</label>
             <select id="m-priority" class="v2-input" name="default_priority">
               {#each PRIORITIES as p (p)}
                 <option
                   value={p}
                   selected={current === 'new' ? p === 'Normal' : current.default_priority === p}
                 >
-                  {p}
+                  {CASE_PRIORITY_LABEL[p] ?? p}
                 </option>
               {/each}
             </select>
           </div>
 
           <div class="v2-field" hidden={creates === 'leads'}>
-            <label for="m-type">Opens as type</label>
+            <label for="m-type">{m.settings_inbound_type_label()}</label>
             <select id="m-type" class="v2-input" name="default_case_type">
               <option value="" selected={current === 'new' || !current.default_case_type}>
-                None
+                {m.settings_inbound_type_none()}
               </option>
               {#each CASE_TYPES as t (t)}
                 <option value={t} selected={current !== 'new' && current.default_case_type === t}>
-                  {t}
+                  {CASE_TYPE_LABEL[t] ?? t}
                 </option>
               {/each}
             </select>
           </div>
 
           <div class="v2-field">
-            <label for="m-assignee">Default assignee</label>
+            <label for="m-assignee">{m.settings_inbound_assignee_label()}</label>
             <select id="m-assignee" class="v2-input" name="default_assignee_id">
               <option value="" selected={current === 'new' || !current.default_assignee}>
-                Unassigned
+                {m.settings_inbound_unassigned()}
               </option>
               {#if missingAssignee}
                 <option value={missingAssignee.id} selected>
@@ -373,24 +392,21 @@
             </select>
             {#if missingAssignee}
               <p class="v2-hint">
-                Deactivated users are not assigned. New tickets from this address go to routing
-                until you choose someone else.
+                {m.settings_inbound_assignee_inactive_hint()}
               </p>
             {:else if creates === 'leads'}
-              <p class="v2-hint">
-                Owns every lead this address makes. For leads that follow the agent, give each agent
-                an address of their own.
-              </p>
+              <p class="v2-hint">{m.settings_inbound_assignee_leads_hint()}</p>
             {/if}
           </div>
 
           {#if current === 'new'}
             <div class="v2-field">
-              <label for="m-active">Active</label>
+              <label for="m-active">{m.settings_inbound_active_label()}</label>
               <label style="display:flex;gap:8px;align-items:center;font-weight:400">
                 <input id="m-active" type="checkbox" name="is_active" value="true" checked />
-                Starts creating {creates === 'leads' ? 'leads' : 'tickets'} from mail to this address
-                as soon as it is saved.
+                {creates === 'leads'
+                  ? m.settings_inbound_active_hint_leads()
+                  : m.settings_inbound_active_hint()}
               </label>
             </div>
           {/if}
@@ -416,46 +432,49 @@
         <MailWarning size={17} style="color:var(--v2-clay);flex:none;margin-top:1px" />
         <div>
           <div style="font-weight:600;font-size:13px">
-            {silent.map((m) => m.address).join(', ')}
-            {silent.length === 1
-              ? 'is switched on and creates nothing'
-              : 'are switched on and create nothing'}
+            {(silent.length === 1 ? m.settings_inbound_silent_one : m.settings_inbound_silent_many)(
+              {
+                addresses: silent.map((box) => box.address).join(', ')
+              }
+            )}
           </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0;line-height:1.5">
-            Mail keeps arriving and nothing bounces, so anyone writing there gets no ticket and no
-            error, just silence. Each address says below what is stopping it.
+            {m.settings_inbound_silent_body()}
           </p>
         </div>
       </div>
     {/if}
 
-    <div class="v2-label" style="margin-bottom:10px">Addresses</div>
+    <div class="v2-label" style="margin-bottom:10px">{m.settings_inbound_addresses_heading()}</div>
     <div style="display:flex;flex-direction:column;gap:9px">
-      {#each mailboxes as m (m.id)}
-        {@const state = deliveryState(m)}
+      {#each mailboxes as box (box.id)}
+        {@const state = deliveryState(box)}
         {@const why = deliveryExplanation(
           state,
-          MAILBOX_PROVIDER_LABEL[m.provider],
-          m.creates,
-          m.provider
+          MAILBOX_PROVIDER_LABEL[box.provider],
+          box.creates,
+          box.provider
         )}
-        {@const dropped = dropSummary(m)}
-        {@const atLimit = limitNotice(m.limit_reached, data.daily_limit)}
+        {@const dropped = dropSummary(box)}
+        {@const atLimit = limitNotice(box.limit_reached, data.daily_limit)}
         <div class="v2-card v2-mbx" style="opacity:{state === 'live' ? 1 : 0.68}">
           <div style="flex:1;min-width:0">
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <b style="font-size:13.5px;overflow-wrap:anywhere">{m.address}</b>
-              <Pill tone={deliveryTone(state)}>{deliveryLabel(state, m.creates)}</Pill>
+              <b style="font-size:13.5px;overflow-wrap:anywhere">{box.address}</b>
+              <Pill tone={deliveryTone(state)}>{deliveryLabel(state, box.creates)}</Pill>
             </div>
             <div class="v2-sub" style="font-size:11.5px;margin-top:4px">
-              {m.is_generated ? 'Made by this server' : MAILBOX_PROVIDER_LABEL[m.provider]} ·
-              {#if m.creates === 'leads'}
-                last mail {relativeDays(m.last_received_at)}
-              {:else if m.cases_last_30d}
-                <span class="v2-num">{count(m.cases_last_30d)}</span> tickets in 30 days · last mail
-                {relativeDays(m.last_received_at)}
+              {box.is_generated
+                ? m.settings_inbound_made_by_server()
+                : MAILBOX_PROVIDER_LABEL[box.provider]} ·
+              {#if box.creates === 'leads'}
+                {m.settings_inbound_last_mail({ when: relativeDays(box.last_received_at) })}
+              {:else if box.cases_last_30d}
+                {#each messageParts(m.settings_inbound_recent( { count: box.cases_last_30d, shown: slot('shown'), when: relativeDays(box.last_received_at) } )) as p, i (i)}{#if p.key}<span
+                      class="v2-num">{count(box.cases_last_30d)}</span
+                    >{:else}{p.text}{/if}{/each}
               {:else}
-                no tickets in 30 days · last mail {relativeDays(m.last_received_at)}
+                {m.settings_inbound_recent_none({ when: relativeDays(box.last_received_at) })}
               {/if}
             </div>
             {#if dropped}
@@ -476,28 +495,36 @@
             <!-- What a ticket from here starts out as. These are the defaults
                  a routing rule then reads, so they are worth stating next to
                  the address rather than behind an edit dialog. -->
-            {#if m.creates === 'leads'}
+            {#if box.creates === 'leads'}
               <div class="v2-mbx-defaults">
-                <span class="v2-sub">Makes leads</span>
-                {#if m.lead_source}
-                  <Pill tone="slate">{sourceLabel(data.sources, m.lead_source)}</Pill>
+                <span class="v2-sub">{m.settings_inbound_makes_leads()}</span>
+                {#if box.lead_source}
+                  <Pill tone="slate">{sourceLabel(data.sources, box.lead_source)}</Pill>
                 {/if}
-                {#if m.lead_source_detail}
-                  <span class="v2-sub">{m.lead_source_detail}</span>
+                {#if box.lead_source_detail}
+                  <span class="v2-sub">{box.lead_source_detail}</span>
                 {/if}
                 <span class="v2-sub">
-                  {m.default_assignee ? `owned by ${m.default_assignee.name}` : 'owned by nobody'}
+                  {box.default_assignee
+                    ? m.settings_inbound_owned_by({ name: box.default_assignee.name ?? '' })
+                    : m.settings_inbound_owned_by_nobody()}
                 </span>
               </div>
             {:else}
               <div class="v2-mbx-defaults">
-                <span class="v2-sub">Opens as</span>
-                <Pill tone={PRIORITY_TONE[m.default_priority]}>{m.default_priority}</Pill>
-                {#if m.default_case_type}
-                  <Pill tone="slate">{m.default_case_type}</Pill>
+                <span class="v2-sub">{m.settings_inbound_opens_as()}</span>
+                <Pill tone={PRIORITY_TONE[box.default_priority]}
+                  >{CASE_PRIORITY_LABEL[box.default_priority] ?? box.default_priority}</Pill
+                >
+                {#if box.default_case_type}
+                  <Pill tone="slate"
+                    >{CASE_TYPE_LABEL[box.default_case_type] ?? box.default_case_type}</Pill
+                  >
                 {/if}
                 <span class="v2-sub">
-                  {m.default_assignee ? `assigned to ${m.default_assignee.name}` : 'then routed'}
+                  {box.default_assignee
+                    ? m.settings_inbound_assigned_to({ name: box.default_assignee.name ?? '' })
+                    : m.settings_inbound_then_routed()}
                 </span>
               </div>
             {/if}
@@ -505,34 +532,35 @@
 
           {#if data.can_edit}
             <div style="display:flex;gap:6px;align-items:center;flex:none">
-              <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEdit(m)}>
-                Edit
+              <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEdit(box)}>
+                {m.settings_inbound_edit()}
               </button>
-              {#if m.is_active}
+              {#if box.is_active}
                 <ConfirmAction
                   action="?/deactivate"
-                  label="Turn off"
-                  confirmLabel="Turn off"
-                  explain="Stops {m.creates === 'leads'
-                    ? 'making leads'
-                    : 'opening tickets'} from this address. It stays in the list, off, until turned back on."
-                  hidden={{ id: m.id }}
+                  label={m.settings_inbound_turn_off()}
+                  confirmLabel={m.settings_inbound_turn_off()}
+                  explain={box.creates === 'leads'
+                    ? m.settings_inbound_turn_off_explain_leads()
+                    : m.settings_inbound_turn_off_explain()}
+                  hidden={{ id: box.id }}
                 />
               {:else}
                 <form method="POST" action="?/activate" use:enhance>
-                  <input type="hidden" name="id" value={m.id} />
-                  <button class="v2-btn v2-btn-sm" type="submit">Turn on</button>
+                  <input type="hidden" name="id" value={box.id} />
+                  <button class="v2-btn v2-btn-sm" type="submit"
+                    >{m.settings_inbound_turn_on()}</button
+                  >
                 </form>
               {/if}
               <ConfirmAction
                 action="?/remove"
-                label="Delete"
-                confirmLabel="Delete"
-                explain="Deleted permanently. Mail to this address stops becoming {m.creates ===
-                'leads'
-                  ? 'leads'
-                  : 'tickets'}, and its topic pin goes with it."
-                hidden={{ id: m.id }}
+                label={m.settings_inbound_delete()}
+                confirmLabel={m.settings_inbound_delete()}
+                explain={box.creates === 'leads'
+                  ? m.settings_inbound_delete_explain_leads()
+                  : m.settings_inbound_delete_explain()}
+                hidden={{ id: box.id }}
               />
             </div>
           {/if}
@@ -552,26 +580,17 @@
       <div style="display:flex;gap:10px;align-items:flex-start">
         <KeyRound size={16} style="color:var(--v2-slate);flex:none;margin-top:2px" />
         <div>
-          <div style="font-weight:600;font-size:13px">How a delivery is proved genuine</div>
+          <div style="font-weight:600;font-size:13px">{m.settings_inbound_genuine_title()}</div>
           <p class="v2-sub" style="font-size:12.5px;margin:5px 0 0;line-height:1.5">
-            Two checks, and mail has to clear both: AWS signs each notification, and the address has
-            to be pinned to the exact SNS topic it was subscribed to. The signature alone proves
-            only that some AWS account sent it, so without the pin anyone who learned an address's
-            id could have AWS sign forged mail into this organisation. An admin can enter the pin as
-            the address's Topic ARN. Left blank, it is set by the first subscription AWS confirms
-            from an AWS account this server allows; a subscription from any other account is
-            refused. Only admins can see the ARN, because it carries the AWS account id.
+            {m.settings_inbound_genuine_body()}
           </p>
           {#if data.generated_domain}
             <p class="v2-sub" style="font-size:12.5px;margin:8px 0 0;line-height:1.5">
-              An address this server generated has no pin of its own: one webhook receives mail for
-              every generated address and checks it against the server's own topic.
+              {m.settings_inbound_generated_note()}
             </p>
           {/if}
           <p class="v2-sub" style="font-size:12.5px;margin:8px 0 0;line-height:1.5">
-            A Postmark or Mailgun address is proved by a secret an admin stores on it instead:
-            Postmark's basic-auth password or Mailgun's signing key. With none stored, every post is
-            refused. It is never readable back, here or anywhere.
+            {m.settings_inbound_secret_body()}
           </p>
           {#if policy}
             <p class="v2-sub" style="font-size:12.5px;margin:8px 0 0;line-height:1.5">{policy}</p>
@@ -581,9 +600,10 @@
     </div>
 
     <p class="v2-sub" style="font-size:11.5px;margin-top:14px">
-      Where a new ticket goes after it is created is decided by
-      <a href={resolve('settings/routing')} style="color:inherit">ticket routing</a>, not by these
-      defaults.
+      {#each routingNote as p, i (i)}{#if p.key === 'link'}<a
+            href={resolve('settings/routing')}
+            style="color:inherit">{m.settings_inbound_routing_link()}</a
+          >{:else}{p.text}{/if}{/each}
     </p>
   </div>
 </div>

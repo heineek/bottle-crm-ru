@@ -14,6 +14,8 @@
   import { refreshAll } from '$app/navigation';
   import { deserialize } from '$app/forms';
   import { acceptsDrops, cardControls, moveFields, moveTargets } from '#lib/v2/object-board.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageData, PageProps } from './$types';
 
   type Lane = PageData['lanes'][number];
@@ -32,6 +34,11 @@
     boardLanes = data.lanes.map((lane) => ({ ...lane, rows: [...lane.rows] }));
   });
   let total = $derived(data.lanes.reduce((n, lane) => n + lane.count, 0));
+  let subParts = $derived(
+    messageParts(
+      m.objects_board_sub({ shown: slot('shown'), field: data.fieldLabel.toLowerCase() })
+    )
+  );
 
   let moveError = $state('');
   let busy = $state(false);
@@ -105,10 +112,9 @@
         return true;
       }
       const refusal = result.type === 'failure' ? result.data?.error : undefined;
-      moveError =
-        (typeof refusal === 'string' && refusal) || 'Could not move the record, so it went back.';
+      moveError = (typeof refusal === 'string' && refusal) || m.objects_board_moved_back();
     } catch {
-      moveError = 'Could not move the record, so it went back.';
+      moveError = m.objects_board_moved_back();
     }
     await refreshAll();
     return false;
@@ -127,16 +133,18 @@
   }
 </script>
 
-<PageHeader title="{def.label_plural} board">
+<PageHeader title={m.objects_board_title({ plural: def.label_plural })}>
   {#snippet sub()}
-    <span class="v2-num">{count(total)}</span> by {data.fieldLabel.toLowerCase()}
+    {#each subParts as p, i (i)}{#if p.key}<span class="v2-num">{count(total)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     <a
       class="v2-btn v2-btn-quiet"
-      href="{resolve(asInternalPath(`/objects/${def.key}`))}{page.url.search}"><List />List</a
+      href="{resolve(asInternalPath(`/objects/${def.key}`))}{page.url.search}"
+      ><List />{m.objects_view_list()}</a
     >
-    <span class="v2-btn" aria-current="true"><Columns3 />Board</span>
+    <span class="v2-btn" aria-current="true"><Columns3 />{m.objects_view_board()}</span>
   {/snippet}
 </PageHeader>
 
@@ -160,9 +168,9 @@
 
 <p class="v2-sub v2-pad" style="font-size:11.5px;margin:10px 0 0;flex:none">
   {#if writable}
-    Drag a card, or use "Move to" on it, to change its {data.fieldLabel.toLowerCase()}.
+    {m.objects_board_hint({ field: data.fieldLabel.toLowerCase() })}
   {:else}
-    This board is read-only.
+    {m.objects_board_read_only()}
   {/if}
 </p>
 <div class="v2-board" style="padding-top:12px">
@@ -175,12 +183,14 @@
       </div>
       {#if lane.truncated}
         <p class="v2-sub" style="padding:0 2px 6px;font-size:11.5px">
-          Showing the first <span class="v2-num">{lane.rows.length}</span>.
+          {#each messageParts(m.objects_board_truncated( { shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                class="v2-num">{count(lane.rows.length)}</span
+              >{:else}{p.text}{/if}{/each}
         </p>
       {/if}
       {#if lane.kind === 'other'}
         <p class="v2-sub" style="padding:0 2px 6px;font-size:11.5px">
-          Values that are no longer choices. Move a card out to fix it.
+          {m.objects_board_other_lane()}
         </p>
       {/if}
       <div
@@ -221,11 +231,11 @@
             {#if controls.moveSelect}
               <select
                 class="v2-input ob-move"
-                aria-label="Move {card.name} to"
+                aria-label={m.objects_board_move_aria({ name: card.name })}
                 disabled={busy}
                 onchange={(e) => moveBySelect(card.id, e)}
               >
-                <option value="">Move to…</option>
+                <option value="">{m.objects_board_move_to()}</option>
                 {#each moveTargets(data.lanes, data.required, lane.id) as target (target.id)}
                   <option value={target.id}>{target.label}</option>
                 {/each}
@@ -233,7 +243,9 @@
             {/if}
           </div>
         {:else}
-          <p class="v2-sub" style="padding:10px 2px;font-size:12px">Nothing here.</p>
+          <p class="v2-sub" style="padding:10px 2px;font-size:12px">
+            {m.objects_board_empty_lane()}
+          </p>
         {/each}
       </div>
     </section>

@@ -30,6 +30,7 @@
  * over every form in the org, so "3 published" stays true past the tenth form.
  * Nothing here recounts the page.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { missingOption, missingOptions } from '#lib/v2/pickers.js';
 import { builtinFor } from '#lib/v2/webform-fields.js';
@@ -93,7 +94,7 @@ async function listProfiles(cookies: Cookies) {
     );
     return (resp.profiles ?? []).map((p) => ({
       id: p.id,
-      name: p.user_details?.email || 'Unknown'
+      name: p.user_details?.email || m.settings_webforms_unknown_person()
     }));
   } catch {
     return [];
@@ -154,7 +155,7 @@ async function listTags(cookies: Cookies) {
  * swallowing it would render an editor for a form that does not exist.
  */
 export async function getWebForm({ cookies }: { cookies: Cookies }, id: string) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   const formRead: Promise<Schemas['WebFormDetail']> = apiRequest(
     `/webforms/${id}/`,
     {},
@@ -260,7 +261,7 @@ function buildBody(values: Record<string, unknown>) {
 
   if (body.name !== undefined) {
     body.name = String(body.name).trim();
-    if (!body.name) throw new Error('A form needs a name.');
+    if (!body.name) throw new Error(m.settings_webforms_name_required());
   }
 
   if (Array.isArray(values.fields)) {
@@ -282,7 +283,7 @@ export async function createWebForm(
   values: Record<string, unknown>
 ): Promise<Schemas['WebFormDetail']> {
   const body = buildBody(values);
-  if (!body.name) throw new Error('A form needs a name.');
+  if (!body.name) throw new Error(m.settings_webforms_name_required());
   return await apiRequest('/webforms/', { method: 'POST', body }, { cookies });
 }
 
@@ -296,7 +297,7 @@ export async function updateWebForm(
   id: string,
   values: Record<string, unknown>
 ): Promise<Schemas['WebFormDetail']> {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   const body = buildBody(values);
   return await apiRequest(`/webforms/${id}/`, { method: 'PUT', body }, { cookies });
 }
@@ -307,7 +308,7 @@ export async function updateWebForm(
  * which is what "switch it off but keep the history" means.
  */
 export async function deleteWebForm({ cookies }: { cookies: Cookies }, id: string) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/`, { method: 'DELETE' }, { cookies });
 }
 
@@ -323,7 +324,7 @@ export async function publishWebForm(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['WebFormDoneResponse']> {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/publish/`, { method: 'POST' }, { cookies });
 }
 
@@ -331,7 +332,7 @@ export async function unpublishWebForm(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['WebFormDoneResponse']> {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/unpublish/`, { method: 'POST' }, { cookies });
 }
 
@@ -343,7 +344,7 @@ export async function unpublishWebForm(
  * what a person acts on, and that is what comes back.
  */
 export async function getSubmissions({ cookies }: { cookies: Cookies }, id: string, limit = 25) {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   const resp: Schemas['WebFormSubmissionListResponse'] = await apiRequest(
     `/webforms/${id}/submissions/?limit=${limit}`,
     {},
@@ -363,6 +364,6 @@ export async function getAnalytics(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['WebFormAnalyticsResponse']> {
-  if (!id) throw new Error('Which form? No form id was given.');
+  if (!id) throw new Error(m.settings_webforms_no_id());
   return await apiRequest(`/webforms/${id}/analytics/`, {}, { cookies });
 }

@@ -33,6 +33,7 @@
  */
 import { apiRequest } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -109,7 +110,7 @@ export async function createTag(
   values: { name?: string; [key: string]: unknown }
 ): Promise<Schemas['Tags']> {
   const name = (values.name ?? '').trim();
-  if (!name) throw new Error('A tag needs a name.');
+  if (!name) throw new Error(m.settings_tags_error_no_name());
 
   const resp: Schemas['TagCreateResponse'] = await apiRequest(
     '/tags/',
@@ -142,7 +143,7 @@ export async function archiveTag(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['TagArchiveResponse']> {
-  if (!id) throw new Error('A tag id is required to turn a tag off.');
+  if (!id) throw new Error(m.settings_tags_error_no_id_off());
   return await apiRequest(`/tags/${id}/`, { method: 'DELETE' }, { cookies });
 }
 
@@ -155,7 +156,7 @@ export async function restoreTag(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['TagRestoreResponse']> {
-  if (!id) throw new Error('A tag id is required to turn a tag back on.');
+  if (!id) throw new Error(m.settings_tags_error_no_id_on());
   return await apiRequest(`/tags/${id}/restore/`, { method: 'POST' }, { cookies });
 }
 
@@ -184,7 +185,7 @@ export async function mergeTags(
   id: string,
   into: string
 ): Promise<{ tag: Schemas['Tags'] | null; moved: number }> {
-  if (!id || !into) throw new Error('Two tags are required to merge.');
+  if (!id || !into) throw new Error(m.settings_tags_error_merge_pair());
   const resp: Schemas['TagMergeResponse'] = await apiRequest(
     `/tags/${id}/merge/`,
     { method: 'POST', body: { into } },

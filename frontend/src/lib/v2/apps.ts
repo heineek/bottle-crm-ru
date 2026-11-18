@@ -1,3 +1,5 @@
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * The line under an installed app that has an update. The server also flags
  * an update at the installed version, when a skipped module has since been
@@ -7,7 +9,7 @@ export function updateLine(app: { version?: unknown; installedVersion?: unknown 
   const version = app.version == null ? '' : String(app.version);
   const installed = app.installedVersion == null ? '' : String(app.installedVersion);
   if (version && version === installed) {
-    return 'An update adds the parts skipped while a module was off.';
+    return m.settings_apps_update_skipped();
   }
-  return version ? `Version ${version} adds more.` : 'An update adds more.';
+  return version ? m.settings_apps_update_version({ version }) : m.settings_apps_update_more();
 }

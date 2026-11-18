@@ -7,6 +7,7 @@ import {
   deleteWebForm
 } from '#lib/server/v2/web-forms.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -46,16 +47,17 @@ export const actions: Actions = {
     const form = await event.request.formData();
     const name = form.get('name')?.toString() ?? '';
     const target = form.get('target')?.toString() ?? '';
-    if (!target) return fail(400, { create: { error: 'Choose what each submission creates.' } });
+    if (!target)
+      return fail(400, { create: { error: m.settings_webforms_create_target_required() } });
     let created;
     try {
       created = await createWebForm(event, { name, target });
     } catch (err) {
       const { status, message } = actionError(
         err,
-        'Only an admin can create a web form. A form accepts submissions from anyone on the internet, so making one is an admin action.',
-        'That form no longer exists.',
-        'Could not create the form.'
+        m.settings_webforms_create_forbidden(),
+        m.settings_webforms_missing(),
+        m.settings_webforms_create_failed()
       );
       return fail(status, { create: { error: message } });
     }
@@ -74,9 +76,9 @@ export const actions: Actions = {
       // publishing" is the response, and `readableError` carries it through.
       const { status, message } = actionError(
         err,
-        'Only an admin can publish a web form.',
-        'That form no longer exists.',
-        'Could not publish the form.'
+        m.settings_webforms_publish_forbidden(),
+        m.settings_webforms_missing(),
+        m.settings_webforms_publish_failed()
       );
       return fail(status, { publish: { error: message } });
     }
@@ -91,9 +93,9 @@ export const actions: Actions = {
     } catch (err) {
       const { status, message } = actionError(
         err,
-        'Only an admin can unpublish a web form.',
-        'That form no longer exists.',
-        'Could not unpublish the form.'
+        m.settings_webforms_unpublish_forbidden(),
+        m.settings_webforms_missing(),
+        m.settings_webforms_unpublish_failed()
       );
       return fail(status, { unpublish: { error: message } });
     }
@@ -108,9 +110,9 @@ export const actions: Actions = {
     } catch (err) {
       const { status, message } = actionError(
         err,
-        'Only an admin can remove a web form.',
-        'That form no longer exists.',
-        'Could not remove the form.'
+        m.settings_webforms_delete_forbidden(),
+        m.settings_webforms_missing(),
+        m.settings_webforms_delete_failed()
       );
       return fail(status, { delete: { error: message } });
     }

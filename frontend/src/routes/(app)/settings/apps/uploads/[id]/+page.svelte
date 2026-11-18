@@ -19,11 +19,13 @@
     keepsKey,
     modeLine,
     noNewKeyLine,
-    NOT_REVIEWED,
+    notReviewed,
     objectsLine,
     previousScopes,
-    TRUST_LABEL
+    trustLabel
   } from '#lib/v2/private-apps.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -45,14 +47,23 @@
   let asksAccess = $derived(preview ? preview.access.scopes.length > 0 : false);
   let blocked = $derived(preview ? preview.blocked.length > 0 : false);
   let hadAccess = $derived(preview ? previousScopes(preview.access).length > 0 : false);
-  let verb = $derived(preview?.mode === 'upgrade' ? 'Update' : 'Install');
+  let verb = $derived(
+    preview?.mode === 'upgrade' ? m.settings_apps_update() : m.settings_apps_install()
+  );
+  let appliedParts = $derived(
+    applied
+      ? messageParts(
+          m.settings_private_apps_applied_version({ name: slot('name'), version: applied.version })
+        )
+      : []
+  );
   let noKeyLine = $derived(
     applied ? noNewKeyLine(applied.mode, applied.asksAccess, applied.hadAccess) : ''
   );
   let placesLine = $derived(preview ? objectsLine(preview.objects) : null);
 </script>
 
-<PageHeader title={applied ? appliedTitle(applied.mode) : 'Review an app'}>
+<PageHeader title={applied ? appliedTitle(applied.mode) : m.settings_private_apps_review_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
 </PageHeader>
 
@@ -60,19 +71,30 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px;max-width:720px">
     {#if applied}
       <div class="v2-card own-box" role="status">
-        <b class="own-wrap">{applied.name}</b> is at version {applied.version}.
+        {#each appliedParts as p, i (i)}{#if p.key}<b class="own-wrap">{applied.name}</b
+            >{:else}{p.text}{/if}{/each}
       </div>
       {#if applied.key}
-        <KeyReveal title="Key for {applied.name}" secret={applied.key} />
+        <KeyReveal
+          title={m.settings_private_apps_key_for({ name: applied.name })}
+          secret={applied.key}
+        />
       {:else if noKeyLine}
         <p class="v2-sub">{noKeyLine}</p>
       {/if}
-      <a class="v2-btn own-tap" href={resolve(asInternalPath(back))}>Back to Apps</a>
+      <a class="v2-btn own-tap" href={resolve(asInternalPath(back))}
+        >{m.settings_private_apps_back()}</a
+      >
     {:else if 'forbidden' in data && data.forbidden}
-      <NextAction label="Admins only" text="Only an organization admin can install apps." />
+      <NextAction
+        label={m.settings_apps_admins_only()}
+        text={m.settings_private_apps_forbidden()}
+      />
     {:else if 'stale' in data}
       <div class="v2-card own-box" role="status">{data.stale}</div>
-      <a class="v2-btn own-tap" href={resolve(asInternalPath(back))}>Back to Apps</a>
+      <a class="v2-btn own-tap" href={resolve(asInternalPath(back))}
+        >{m.settings_private_apps_back()}</a
+      >
     {:else if 'upload' in data && preview}
       <section class="v2-card own-box">
         <h2 class="own-h own-wrap">{data.upload.name}</h2>
@@ -84,30 +106,32 @@
         </p>
       </section>
 
-      <p class="own-warn" role="note">{NOT_REVIEWED}</p>
+      <p class="own-warn" role="note">{notReviewed()}</p>
 
-      <h3 class="own-h">What it adds</h3>
+      <h3 class="own-h">{m.settings_private_apps_adds_heading()}</h3>
       {#each data.groups as group (group.type)}
         <div class="v2-label" style="margin:12px 0 4px">{group.label}</div>
         <ul class="own-items">
           {#each group.items as item, n (n)}
             <li>
               <span class="own-wrap">{item.label}</span>
-              {#if item.target}<span class="v2-sub"> on {item.target}</span>{/if}
+              {#if item.target}<span class="v2-sub">
+                  {m.settings_apps_item_on({ target: item.target })}</span
+                >{/if}
               <span class="v2-sub own-effect">{item.effectLabel}</span>
             </li>
           {/each}
         </ul>
       {:else}
-        <p class="v2-sub own-line">Nothing new to add.</p>
+        <p class="v2-sub own-line">{m.settings_private_apps_nothing_new()}</p>
       {/each}
 
       {#if placesLine}
-        <h3 class="own-h">Custom objects</h3>
+        <h3 class="own-h">{m.settings_private_apps_objects_heading()}</h3>
         <p class="own-line">{placesLine}</p>
       {/if}
 
-      <h3 class="own-h">What it may access</h3>
+      <h3 class="own-h">{m.settings_private_apps_access_heading()}</h3>
       {#if asksAccess}
         <ul class="own-items">
           {#each accessSentences(preview.access.scopes, keepsKey(preview.mode, preview.access)) as line (line)}
@@ -118,24 +142,28 @@
           {#each preview.access.scopes as scope (scope)}
             <li>
               {scopeLabel(scope)}
-              {#if preview.access.added.includes(scope)}<span class="v2-sub"> (new)</span>{/if}
+              {#if preview.access.added.includes(scope)}<span class="v2-sub">
+                  {m.settings_private_apps_scope_new()}</span
+                >{/if}
             </li>
           {/each}
           {#each preview.access.removed as scope (scope)}
-            <li class="v2-sub">{scopeLabel(scope)} (removed)</li>
+            <li class="v2-sub">
+              {m.settings_private_apps_scope_removed({ scope: scopeLabel(scope) })}
+            </li>
           {/each}
         </ul>
       {:else}
         <p class="own-line">
-          It asks for no access. {preview.access.removed.length
-            ? 'Its key stops working.'
-            : 'No key is made.'}
+          {preview.access.removed.length
+            ? m.settings_private_apps_no_access_key_stops()
+            : m.settings_private_apps_no_access_no_key()}
         </p>
       {/if}
 
       {#if blocked}
         <div class="mod-errors own-blocked" role="alert">
-          <b>This cannot be installed yet.</b>
+          <b>{m.settings_private_apps_blocked()}</b>
           <ul>
             {#each preview.blocked as reason, n (n)}
               <li class="own-wrap">{reason}</li>
@@ -155,7 +183,7 @@
           <input type="hidden" name="asks_access" value="1" />
           <label class="own-trust">
             <input type="checkbox" name="trust" bind:checked={trusted} />
-            <span>{TRUST_LABEL}</span>
+            <span>{trustLabel()}</span>
           </label>
         {/if}
         <div class="own-buttons">
@@ -165,7 +193,7 @@
           >
             {verb}
           </button>
-          <a class="v2-btn own-tap" href={resolve(asInternalPath(back))}>Cancel</a>
+          <a class="v2-btn own-tap" href={resolve(asInternalPath(back))}>{m.common_cancel()}</a>
         </div>
       </form>
     {/if}

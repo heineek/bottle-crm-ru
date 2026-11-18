@@ -30,6 +30,7 @@
  *
  * `mobile/lib/data/models/mailbox.dart` carries the same rules.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 import type { Tone } from '#lib/v2/enums.js';
 
@@ -63,17 +64,17 @@ export function deliveryState(
   return 'live';
 }
 
-const LABEL: Record<string, string> = {
-  off: 'Creating nothing',
-  unsupported: 'Provider not wired up',
-  unconfirmed: 'Not connected yet',
-  live: 'Creating tickets'
+const LABEL: Record<string, () => string> = {
+  off: () => m.settings_inbound_state_off(),
+  unsupported: () => m.settings_inbound_state_unsupported(),
+  unconfirmed: () => m.settings_inbound_state_unconfirmed(),
+  live: () => m.settings_inbound_state_live()
 };
 
 /** @param creates the mailbox's `creates`: `tickets` or `leads` */
 export function deliveryLabel(state: string, creates: string = 'tickets') {
-  if (state === 'live' && creates === 'leads') return 'Creating leads';
-  return LABEL[state] ?? LABEL.off;
+  if (state === 'live' && creates === 'leads') return m.settings_inbound_state_live_leads();
+  return (LABEL[state] ?? LABEL.off)();
 }
 
 const TONE: Record<string, Tone> = {
@@ -104,17 +105,19 @@ export function deliveryExplanation(
 ) {
   if (state === 'off') {
     return creates === 'leads'
-      ? 'Mail still arrives here and no lead is made. Nothing bounces, so a portal or a person writing here gets no error and the enquiry is lost.'
-      : 'Mail still arrives here and no ticket is opened. Nothing bounces, so whoever wrote gets silence rather than an error.';
+      ? m.settings_inbound_explain_off_leads()
+      : m.settings_inbound_explain_off();
   }
   if (state === 'unsupported') {
-    return `${providerLabel} deliveries are not implemented. The webhook refuses them, so mail to this address becomes nothing whatever else is set here.`;
+    return m.settings_inbound_explain_unsupported({ provider: providerLabel });
   }
   if (state === 'unconfirmed') {
     if (SECRET_PROVIDERS.includes(provider)) {
-      return `Waiting for its ${provider === 'postmark' ? 'basic-auth password' : 'signing key'}. Every post is refused until an admin stores the webhook secret on this address.`;
+      return provider === 'postmark'
+        ? m.settings_inbound_explain_unconfirmed_password()
+        : m.settings_inbound_explain_unconfirmed_key();
     }
-    return 'Waiting for its SNS topic. Every message is refused until this address has a Topic ARN: an admin can enter it here, or it is set when AWS confirms a subscription from an AWS account this server allows.';
+    return m.settings_inbound_explain_unconfirmed();
   }
   return null;
 }
@@ -151,7 +154,9 @@ export function silentMailboxes<M extends DeliveryMailbox>(mailboxes: M[] | unde
  * rewrite a mailbox already set to it. It says so instead.
  */
 export function providerChoiceLabel(value: string, label: string) {
-  return SUPPORTED_PROVIDERS.includes(value) ? label : `${label} (not wired up yet)`;
+  return SUPPORTED_PROVIDERS.includes(value)
+    ? label
+    : m.settings_inbound_provider_not_wired({ provider: label });
 }
 
 /**

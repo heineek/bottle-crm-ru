@@ -24,6 +24,8 @@
   import WebhookFields from './WebhookFields.svelte';
   import SecretOnce from './SecretOnce.svelte';
   import { wordsOn } from '#lib/v2/modules.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
   import type { components } from '#lib/api-schema.js';
 
@@ -36,15 +38,17 @@
     const kinds = wordsOn(
       data.modules,
       [
-        ['leads', 'lead'],
-        ['deals', 'deal'],
-        ['tickets', 'ticket'],
-        [null, 'other record']
+        ['leads', m.settings_webhooks_kind_lead()],
+        ['deals', m.settings_webhooks_kind_deal()],
+        ['tickets', m.settings_webhooks_kind_ticket()],
+        [null, m.settings_webhooks_kind_other()]
       ],
-      'or'
+      m.settings_webhooks_kind_or()
     );
-    return kinds === 'other record' ? 'record' : kinds;
+    return kinds === m.settings_webhooks_kind_other() ? m.settings_webhooks_kind_record() : kinds;
   });
+
+  let sigBody = $derived(messageParts(m.settings_webhooks_sig_body({ header: slot('header') })));
 
   let creating = $state(false);
   let busy = $state(false);
@@ -65,30 +69,35 @@
    * which also pauses it.
    */
   function creatorLabel(e: WebhookEndpoint) {
-    return e.created_by ? e.created_by.name || e.created_by.email : 'a removed user';
+    return e.created_by
+      ? e.created_by.name || e.created_by.email
+      : m.settings_webhooks_creator_removed();
   }
 
   function endpointState(e: WebhookEndpoint) {
-    if (e.is_active) return { tone: 'moss' as const, label: 'Sending' };
+    if (e.is_active) return { tone: 'moss' as const, label: m.settings_webhooks_state_sending() };
     // The server turned it off: a 410 from the receiver, or its creator lost
     // the standing to own it. Either way an admin can turn it back on.
-    if (e.disabled_reason) return { tone: 'clay' as const, label: 'Paused' };
-    return { tone: 'slate' as const, label: 'Off' };
+    if (e.disabled_reason)
+      return { tone: 'clay' as const, label: m.settings_webhooks_state_paused() };
+    return { tone: 'slate' as const, label: m.settings_webhooks_state_off() };
   }
 </script>
 
-<PageHeader title="Webhooks">
+<PageHeader title={m.settings_webhooks_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
     {#if !data.forbidden}
-      <span class="v2-num">{count(data.endpoints.filter((e) => e.is_active).length)}</span>
-      sending of <span class="v2-num">{count(data.endpoints.length)}</span>
+      {#each messageParts(m.settings_webhooks_list_sub( { sending: slot('sending'), total: slot('total') } )) as p, i (i)}{#if p.key === 'sending'}<span
+            class="v2-num">{count(data.endpoints.filter((e) => e.is_active).length)}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(data.endpoints.length)}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
   {/snippet}
   {#snippet actions()}
     {#if !data.forbidden && !atLimit}
       <button class="v2-btn v2-btn-primary" onclick={() => (creating = !creating)}>
-        <Plus />New webhook
+        <Plus />{m.settings_webhooks_new()}
       </button>
     {/if}
   {/snippet}
@@ -96,24 +105,22 @@
 
 {#if data.forbidden}
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Admins only"
-      text="Webhooks send copies of this organization's records to other services, and a hook URL is often a secret of its own, so only admins can see or change them."
-    />
+    <NextAction label={m.common_admins_only()} text={m.settings_webhooks_forbidden_list()} />
   </div>
 {:else}
   <div class="v2-scroll">
     <div class="v2-pad" style="padding-top:16px;padding-bottom:32px">
       {#if form?.created?.secret}
-        <SecretOnce
-          title="Webhook added, copy its signing secret now"
-          secret={form.created.secret}
-        />
+        <SecretOnce title={m.settings_webhooks_created_title()} secret={form.created.secret} />
       {/if}
 
       {#if form?.create?.error && !creating}
         <div style="margin-bottom:16px">
-          <NextAction label="That did not work" text={form.create.error} tone="rust" />
+          <NextAction
+            label={m.settings_webhooks_error_label()}
+            text={form.create.error}
+            tone="rust"
+          />
         </div>
       {/if}
 
@@ -136,14 +143,16 @@
             </p>
           {/if}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-            <button class="v2-btn v2-btn-primary wh-tap" disabled={busy}>Add webhook</button>
+            <button class="v2-btn v2-btn-primary wh-tap" disabled={busy}
+              >{m.settings_webhooks_add()}</button
+            >
             <button
               type="button"
               class="v2-btn wh-tap"
               disabled={busy}
               onclick={() => (creating = false)}
             >
-              Cancel
+              {m.common_cancel()}
             </button>
           </div>
         </form>
@@ -151,18 +160,18 @@
 
       {#if atLimit}
         <p class="v2-sub" style="font-size:12px;margin:0 0 14px">
-          An organization can have at most {data.limit} webhooks. Remove one to add another.
+          {m.settings_webhooks_at_limit({ count: data.limit })}
         </p>
       {/if}
 
       {#if !data.endpoints.length}
         <EmptyState
-          title="No webhooks yet"
-          body={`A webhook posts to a URL whenever a ${changedKinds} changes. Point one at Zapier, n8n, Slack or your own code.`}
+          title={m.settings_webhooks_empty_title()}
+          body={m.settings_webhooks_empty_body({ kinds: changedKinds })}
         >
           {#snippet actions()}
             <button class="v2-btn v2-btn-primary" onclick={() => (creating = true)}>
-              <Plus />New webhook
+              <Plus />{m.settings_webhooks_new()}
             </button>
           {/snippet}
         </EmptyState>
@@ -171,10 +180,10 @@
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Endpoint</th>
-                <th>State</th>
-                <th class="v2-r">Events</th>
-                <th data-m="hide">Added</th>
+                <th>{m.settings_webhooks_col_endpoint()}</th>
+                <th>{m.settings_webhooks_col_state()}</th>
+                <th class="v2-r">{m.settings_webhooks_col_events()}</th>
+                <th data-m="hide">{m.settings_webhooks_col_added()}</th>
               </tr>
             </thead>
             <tbody>
@@ -188,13 +197,16 @@
                     >
                       <div class="v2-table-primary" style="word-break:break-all">{e.url}</div>
                       <div class="v2-table-secondary">
-                        {e.description || webhookFormatName(e.format)}
-                        · by {creatorLabel(e)}
+                        {m.settings_webhooks_row_meta({
+                          description: e.description || webhookFormatName(e.format),
+                          creator: creatorLabel(e)
+                        })}
                       </div>
                     </a>
                   </td>
                   <td data-m="tag"><Pill tone={s.tone}>{s.label}</Pill></td>
-                  <td class="v2-r v2-num" data-m="meta" data-l="events">{count(e.events.length)}</td
+                  <td class="v2-r v2-num" data-m="meta" data-l={m.settings_webhooks_col_events()}
+                    >{count(e.events.length)}</td
                   >
                   <td data-m="hide" class="v2-muted">{shortDate(e.created_at)}</td>
                 </tr>
@@ -210,15 +222,11 @@
         <ShieldAlert size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
         <div>
           <div style="font-weight:600;font-size:13px">
-            Check the signature before trusting a delivery
+            {m.settings_webhooks_sig_title()}
           </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0">
-            Every JSON delivery carries an <code>X-BottleCRM-Signature</code> header: an HMAC-SHA256 of
-            the timestamp and the raw body, keyed with the webhook's secret. A failed delivery is retried
-            five times over about eight and a half hours, and an endpoint that answers 410 Gone is paused.
-            So is every webhook whose creator stops being an admin, is deactivated or leaves; any admin
-            can turn it back on and then answers for it. The Webhooks page in the documentation has verification
-            code and Zapier and n8n recipes.
+            {#each sigBody as p, i (i)}{#if p.key}<code>X-BottleCRM-Signature</code
+                >{:else}{p.text}{/if}{/each}
           </p>
         </div>
       </div>

@@ -52,9 +52,15 @@
   import { enhance, type SubmitFunction } from '$app/forms';
   import { Plus, ShieldAlert, Copy, Check } from '@lucide/svelte';
   import { tokenStatus, staleness, scopeSummary, EXPIRY_CHOICES } from '#lib/v2/token-rules.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
+
+  let subParts = $derived(
+    messageParts(m.settings_tokens_sub({ live: slot('live'), total: slot('total') }))
+  );
 
   let creating = $state(false);
   let busy = $state(false);
@@ -92,45 +98,49 @@
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="API tokens">
+  <PageHeader title={m.settings_tokens_title()}>
     {#snippet crumb()}<SettingsCrumb />{/snippet}
   </PageHeader>
   <div class="v2-pad" style="padding-top:40px">
     <NextAction
-      label="Admins only"
-      text="Reviewing every token in the organization is limited to admins, because a token authenticates as its owner. Ask an admin if one needs issuing or revoking."
+      label={m.settings_tokens_admins_only()}
+      text={m.settings_tokens_admins_only_text()}
     />
   </div>
 {:else}
   {@const totals = data.totals}
-  <PageHeader title="API tokens">
+  <PageHeader title="m.settings_tokens_title()">
     {#snippet crumb()}<SettingsCrumb />{/snippet}
     {#snippet sub()}
-      <span class="v2-num">{count(totals.live)}</span> live of
-      <span class="v2-num">{count(totals.count)}</span> ever issued
+      {#each subParts as p, i (i)}{#if p.key === 'live'}<span class="v2-num"
+            >{count(totals.live)}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(totals.count)}</span
+          >{:else}{p.text}{/if}{/each}
     {/snippet}
     {#snippet actions()}
       <button class="v2-btn v2-btn-primary" onclick={() => (creating = !creating)}>
-        <Plus />New token
+        <Plus />{m.settings_tokens_new()}
       </button>
     {/snippet}
   </PageHeader>
 
   <div class="v2-pad" style="padding-top:16px;flex:none">
     <div class="v2-stats">
-      <StatCard label="Live tokens" value={count(totals.live)} tone="ink" />
+      <StatCard label={m.settings_tokens_stat_live()} value={count(totals.live)} tone="ink" />
       <StatCard
-        label="Owner deactivated"
+        label={m.settings_tokens_stat_orphaned()}
         value={count(totals.orphaned)}
         tone={totals.orphaned ? 'clay' : 'slate'}
-        detail={totals.orphaned ? 'Rejected at login, not revoked' : 'None'}
+        detail={totals.orphaned
+          ? m.settings_tokens_stat_orphaned_detail()
+          : m.settings_tokens_none()}
       />
       <StatCard
-        label="Unused 90+ days"
+        label={m.settings_tokens_stat_unused()}
         value={count(totals.unused_90d)}
         tone={totals.unused_90d ? 'clay' : 'slate'}
       />
-      <StatCard label="Issued in total" value={count(totals.count)} tone="slate" />
+      <StatCard label={m.settings_tokens_stat_total()} value={count(totals.count)} tone="slate" />
     </div>
   </div>
 
@@ -144,11 +154,10 @@
           style="padding:15px 16px;margin-bottom:18px;border-color:color-mix(in srgb, var(--v2-moss) 40%, var(--v2-line))"
         >
           <div style="font-weight:650;font-size:13px">
-            “{form.created.name}” created, copy it now
+            {m.settings_tokens_created_title({ name: form.created.name })}
           </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 10px">
-            This is the only time the full token is shown. Store it somewhere safe; it cannot be
-            retrieved again.
+            {m.settings_tokens_created_hint()}
           </p>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <code
@@ -158,7 +167,9 @@
               {form.created.token}
             </code>
             <button class="v2-btn v2-btn-sm" onclick={() => copyToken(form.created.token)}>
-              {#if copied}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+              {#if copied}<Check size={13} />{m.settings_tokens_copied()}{:else}<Copy
+                  size={13}
+                />{m.settings_tokens_copy()}{/if}
             </button>
           </div>
         </div>
@@ -169,12 +180,11 @@
           class="v2-sub"
           style="color:var(--v2-moss);font-size:12.5px;margin:0 0 16px;font-weight:550"
         >
-          Revoked {form.revokedOrphaned}
-          {form.revokedOrphaned === 1 ? 'token' : 'tokens'} on deactivated accounts.
+          {m.settings_tokens_revoked_orphaned({ count: form.revokedOrphaned })}
         </p>
       {:else if form?.error}
         <div style="margin-bottom:16px">
-          <NextAction label="That did not work" text={form.error} tone="rust" />
+          <NextAction label={m.settings_tokens_failed()} text={form.error} tone="rust" />
         </div>
       {/if}
 
@@ -188,7 +198,7 @@
         >
           <div style="flex:1;min-width:220px">
             <label class="v2-label" for="token-name" style="display:block;margin-bottom:4px">
-              What is this token for?
+              {m.settings_tokens_name_label()}
             </label>
             <input
               id="token-name"
@@ -197,21 +207,21 @@
               maxlength="255"
               class="v2-input"
               style="width:100%"
-              placeholder="e.g. Nightly export job"
+              placeholder={m.settings_tokens_name_placeholder()}
             />
           </div>
           <div>
             <label class="v2-label" for="token-access" style="display:block;margin-bottom:4px">
-              Access
+              {m.settings_tokens_access_label()}
             </label>
             <select id="token-access" name="access" class="v2-input" style="width:180px">
-              <option value="read" selected>Read only</option>
-              <option value="full">Everything the owner can</option>
+              <option value="read" selected>{m.settings_tokens_scope_read_only()}</option>
+              <option value="full">{m.settings_tokens_access_full()}</option>
             </select>
           </div>
           <div>
             <label class="v2-label" for="token-expiry" style="display:block;margin-bottom:4px">
-              Expires
+              {m.settings_tokens_expires_label()}
             </label>
             <select id="token-expiry" name="expiry" class="v2-input" style="width:150px">
               {#each EXPIRY_CHOICES as choice (choice.value)}
@@ -219,9 +229,10 @@
               {/each}
             </select>
           </div>
-          <button class="v2-btn v2-btn-primary" disabled={busy}>Create token</button>
+          <button class="v2-btn v2-btn-primary" disabled={busy}>{m.settings_tokens_create()}</button
+          >
           <button type="button" class="v2-btn" disabled={busy} onclick={() => (creating = false)}>
-            Cancel
+            {m.settings_tokens_cancel()}
           </button>
           {#if form?.create?.error}
             <p
@@ -237,8 +248,8 @@
       {#if totals.orphaned}
         <div style="margin-bottom:18px">
           <NextAction
-            label="Loose end"
-            text={`${totals.orphaned} live ${totals.orphaned === 1 ? 'token belongs' : 'tokens belong'} to a deactivated account. Deactivating already stops them at login, but they are not revoked. Reactivating the account would bring them back.`}
+            label={m.settings_tokens_loose_end()}
+            text={m.settings_tokens_orphaned_text({ count: totals.orphaned })}
           />
           <form
             method="POST"
@@ -247,7 +258,7 @@
             style="margin-top:10px"
           >
             <button class="v2-btn v2-btn-primary" disabled={busy}>
-              Revoke {totals.orphaned === 1 ? 'it' : 'them all'}
+              {m.settings_tokens_revoke_orphaned({ count: totals.orphaned })}
             </button>
           </form>
         </div>
@@ -257,12 +268,12 @@
         <table class="v2-table">
           <thead>
             <tr>
-              <th>Token</th>
-              <th>Owner</th>
-              <th data-m="hide">Can do</th>
-              <th data-m="hide">Last used</th>
-              <th data-m="hide">Expires</th>
-              <th class="v2-r">State</th>
+              <th>{m.settings_tokens_col_token()}</th>
+              <th>{m.settings_tokens_col_owner()}</th>
+              <th data-m="hide">{m.settings_tokens_col_can_do()}</th>
+              <th data-m="hide">{m.settings_tokens_col_last_used()}</th>
+              <th data-m="hide">{m.settings_tokens_col_expires()}</th>
+              <th class="v2-r">{m.settings_tokens_col_state()}</th>
             </tr>
           </thead>
           <tbody>
@@ -283,7 +294,7 @@
                   {owner.name}
                   <span class="v2-table-secondary" style="display:block">
                     {ROLE_LABEL[owner.role] ?? owner.role}{owner.is_active === false
-                      ? ' · deactivated'
+                      ? m.settings_tokens_deactivated()
                       : ''}
                   </span>
                 </td>
@@ -294,7 +305,7 @@
                   {#if t.last_used_at}
                     {relativeDays(t.last_used_at)}
                   {:else}
-                    <span class="v2-muted">never</span>
+                    <span class="v2-muted">{m.settings_tokens_never()}</span>
                   {/if}
                   {#if stale}
                     <span
@@ -309,7 +320,7 @@
                   {#if t.expires_at}
                     {shortDate(t.expires_at)}
                   {:else}
-                    <span class="v2-sub">never expires</span>
+                    <span class="v2-sub">{m.settings_tokens_never_expires()}</span>
                   {/if}
                 </td>
                 <td class="v2-r">
@@ -318,7 +329,9 @@
                     {#if t.is_live}
                       <form method="POST" action="?/revoke" use:enhance={working}>
                         <input type="hidden" name="id" value={t.id} />
-                        <button class="v2-btn v2-btn-sm" disabled={busy}>Revoke</button>
+                        <button class="v2-btn v2-btn-sm" disabled={busy}
+                          >{m.settings_tokens_revoke()}</button
+                        >
                       </form>
                     {/if}
                   </span>
@@ -334,12 +347,11 @@
       >
         <ShieldAlert size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
         <div>
-          <div style="font-weight:600;font-size:13px">A token is the whole account</div>
+          <div style="font-weight:600;font-size:13px">
+            {m.settings_tokens_whole_account_title()}
+          </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0">
-            A token authenticates as its owner and inherits their role and organisation. There is no
-            narrower permission to give it. Issue one per integration so a single revocation stops a
-            single thing, set an expiry, and revoke anything you cannot name a use for. The value is
-            shown once when the token is created and cannot be recovered afterwards.
+            {m.settings_tokens_whole_account_body()}
           </p>
         </div>
       </div>

@@ -40,8 +40,12 @@
     clearableByNobody,
     ruleMatchSentence,
     shadowedRuleIds,
-    shadowedBy
+    shadowedBy,
+    priorityLabel,
+    caseTypeLabel
   } from './matching.js';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import { Plus, TriangleAlert, ChevronRight } from '@lucide/svelte';
   import type { PageProps } from './$types';
   import type { ApprovalRuleRow } from '#lib/server/v2/ticket-approvals.js';
@@ -59,7 +63,7 @@
   // `Profile.role` value (see the module docstring), so it has no entry in
   // that map and would render as `undefined`. Labelled here instead.
   function approverRoleLabel(role: string) {
-    return role === 'MANAGER' ? 'Manager' : (ROLE_LABEL[role] ?? role);
+    return role === 'MANAGER' ? m.settings_approvals_role_manager() : (ROLE_LABEL[role] ?? role);
   }
 
   // `null` when the panel is closed, `'new'` when adding, or the rule object
@@ -95,17 +99,25 @@
   );
 
   let shadowed = $derived(shadowedRuleIds(rules));
+
+  let subParts = $derived(
+    messageParts(m.settings_approvals_sub({ active: slot('active'), pending: slot('pending') }))
+  );
 </script>
 
-<PageHeader title="Approval rules">
+<PageHeader title={m.settings_approvals_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(totals.active)}</span> active ·
-    <span class="v2-num">{count(totals.pending)}</span> approvals waiting on them right now
+    {#each subParts as p, i (i)}{#if p.key === 'active'}<span class="v2-num"
+          >{count(totals.active)}</span
+        >{:else if p.key === 'pending'}<span class="v2-num">{count(totals.pending)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !editing}
-      <button class="v2-btn v2-btn-primary" onclick={openCreate}><Plus />New rule</button>
+      <button class="v2-btn v2-btn-primary" onclick={openCreate}
+        ><Plus />{m.settings_approvals_new_rule()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
@@ -115,10 +127,14 @@
     {#if editing}
       {@const current = editing}
       <SettingsFormPanel
-        title={current === 'new' ? 'New rule' : `Edit ${current.name}`}
+        title={current === 'new'
+          ? m.settings_approvals_new_rule()
+          : m.settings_approvals_edit_title({ name: current.name })}
         action={current === 'new' ? '?/create' : '?/update'}
         error={current === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={current === 'new' ? 'Add rule' : 'Save rule'}
+        submitLabel={current === 'new'
+          ? m.settings_approvals_add_rule()
+          : m.settings_approvals_save_rule()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
@@ -128,7 +144,7 @@
           {/if}
 
           <div class="v2-field">
-            <label for="a-name">Name</label>
+            <label for="a-name">{m.settings_approvals_name_label()}</label>
             <input
               id="a-name"
               class="v2-input"
@@ -140,7 +156,7 @@
           </div>
 
           <div class="v2-field">
-            <label for="a-role">Approver role</label>
+            <label for="a-role">{m.settings_approvals_role_label()}</label>
             <select id="a-role" class="v2-input" name="approver_role">
               {#each ['ADMIN', 'MANAGER'] as role (role)}
                 <option
@@ -154,7 +170,7 @@
           </div>
 
           <div class="v2-field v2-sfp-wide">
-            <label for="a-approvers">Named approvers</label>
+            <label for="a-approvers">{m.settings_approvals_named_label()}</label>
             <select
               id="a-approvers"
               class="v2-input"
@@ -181,24 +197,21 @@
               {/each}
             </select>
             <p class="v2-hint">
-              Named approvers are in addition to the role above. Leave this empty and anyone with
-              that role can clear the approval.
+              {m.settings_approvals_named_hint()}
             </p>
             {#if missingApprovers.length && !data.options_failed}
               <p class="v2-hint">
-                {missingApprovers.length === 1
-                  ? 'One approver is'
-                  : `${missingApprovers.length} approvers are`}
-                no longer active. They stay named until you deselect them, and they cannot clear an approval
-                while their account is off.
+                {m.settings_approvals_inactive_approvers({ count: missingApprovers.length })}
               </p>
             {/if}
           </div>
 
           <div class="v2-field">
-            <label for="a-priority">Priority</label>
+            <label for="a-priority">{m.settings_approvals_priority_label()}</label>
             <select id="a-priority" class="v2-input" name="match_priority">
-              <option value="" selected={current === 'new' || !current.match_priority}>Any</option>
+              <option value="" selected={current === 'new' || !current.match_priority}
+                >{m.settings_approvals_any()}</option
+              >
               {#each MATCH_PRIORITIES as p (p)}
                 <option value={p} selected={current !== 'new' && current.match_priority === p}>
                   {p}
@@ -208,10 +221,10 @@
           </div>
 
           <div class="v2-field">
-            <label for="a-type">Ticket type</label>
+            <label for="a-type">{m.settings_approvals_type_label()}</label>
             <select id="a-type" class="v2-input" name="match_case_type">
               <option value="" selected={current === 'new' || !current.match_case_type}>
-                Any
+                {m.settings_approvals_any()}
               </option>
               {#each MATCH_CASE_TYPES as t (t)}
                 <option value={t} selected={current !== 'new' && current.match_case_type === t}>
@@ -222,9 +235,11 @@
           </div>
 
           <div class="v2-field">
-            <label for="a-team">Team</label>
+            <label for="a-team">{m.settings_approvals_team_label()}</label>
             <select id="a-team" class="v2-input" name="match_team_id">
-              <option value="" selected={current === 'new' || !current.match_team}>Any team</option>
+              <option value="" selected={current === 'new' || !current.match_team}
+                >{m.settings_approvals_any_team()}</option
+              >
               {#if missingTeam}
                 <option value={missingTeam.id} selected>{missingTeam.name}</option>
               {/if}
@@ -239,21 +254,21 @@
             </select>
             {#if data.options_failed}
               <p class="v2-hint" role="alert">
-                The people and teams list did not load. {current === 'new'
-                  ? 'Reload the page to pick a team or named approvers.'
-                  : 'Saving keeps the current team and approvers; reload the page to change them.'}
+                {current === 'new'
+                  ? m.settings_approvals_options_failed_new()
+                  : m.settings_approvals_options_failed_edit()}
               </p>
             {:else if !data.teams.length}
-              <p class="v2-hint">No teams in this org yet.</p>
+              <p class="v2-hint">{m.settings_approvals_no_teams()}</p>
             {/if}
           </div>
 
           {#if current === 'new'}
             <div class="v2-field">
-              <label for="a-active">Active</label>
+              <label for="a-active">{m.settings_approvals_active_label()}</label>
               <label style="display:flex;gap:8px;align-items:center;font-weight:400">
                 <input id="a-active" type="checkbox" name="is_active" value="true" checked />
-                Starts gating matching ticket closes as soon as it is saved.
+                {m.settings_approvals_active_hint()}
               </label>
             </div>
           {/if}
@@ -278,20 +293,17 @@
       <div class="v2-rule-flag" style="margin-bottom:12px">
         <TriangleAlert size={14} style="color:var(--v2-clay);flex:none" />
         <span>
-          That rule had approval history, so it was turned off instead of deleted. The approvals it
-          already gated have to keep pointing at it. It is still in the list below, marked Off, and
-          gates nothing.
+          {m.settings_approvals_turned_off_note()}
         </span>
       </div>
     {/if}
 
-    <div class="v2-label" style="margin-bottom:4px">Rules</div>
+    <div class="v2-label" style="margin-bottom:4px">{m.settings_approvals_rules_heading()}</div>
     <!-- The list reads as cumulative and is not. Worth one line above it,
          since every row below describes a gate and only one of them is ever
          the gate for a given ticket. -->
     <p class="v2-sub" style="font-size:11.5px;margin:0 0 10px">
-      A ticket is gated by one rule, the most specific that matches it. The others are fallbacks for
-      the tickets it misses.
+      {m.settings_approvals_rules_hint()}
     </p>
     <div style="display:flex;flex-direction:column;gap:9px">
       {#each rules as r (r.id)}
@@ -301,25 +313,25 @@
             <div style="flex:1;min-width:0">
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <b style="font-size:13.5px">{r.name}</b>
-                {#if !r.is_active}<Pill tone="slate">Off</Pill>{/if}
-                {#if clearableByNobody(r)}<Pill tone="rust">Nobody can clear</Pill>{/if}
-                {#if beatenBy}<Pill tone="rust">Never runs</Pill>{/if}
+                {#if !r.is_active}<Pill tone="slate">{m.settings_approvals_off()}</Pill>{/if}
+                {#if clearableByNobody(r)}<Pill tone="rust"
+                    >{m.settings_approvals_nobody_can_clear()}</Pill
+                  >{/if}
+                {#if beatenBy}<Pill tone="rust">{m.settings_approvals_never_runs()}</Pill>{/if}
               </div>
 
               <div class="v2-sub" style="font-size:12.5px;margin-top:5px;white-space:normal">
-                <b style="font-weight:600;color:var(--v2-ink)">Gates</b>
+                <b style="font-weight:600;color:var(--v2-ink)">{m.settings_approvals_gates()}</b>
                 {ruleMatchSentence(r)}
                 <b style="font-weight:600;color:var(--v2-ink)">→</b>
-                cleared by {approverSentence(r)}
+                {m.settings_approvals_cleared_by({ approvers: approverSentence(r) })}
               </div>
 
               {#if clearableByNobody(r)}
                 <div class="v2-rule-flag">
                   <TriangleAlert size={14} style="color:var(--v2-rust);flex:none" />
                   <span>
-                    This organisation has admins and members. There is no manager role. With no
-                    named approvers, the first ticket this gates cannot be closed by anyone. Name
-                    approvers, or set it to admin.
+                    {m.settings_approvals_nobody_flag()}
                   </span>
                 </div>
               {/if}
@@ -328,10 +340,9 @@
                 <div class="v2-rule-flag">
                   <TriangleAlert size={14} style="color:var(--v2-rust);flex:none" />
                   <span>
-                    <b style="font-weight:600;color:var(--v2-ink)">{beatenBy.name}</b> gates exactly the
-                    same tickets and was written later. One rule gates a close, the most specific match,
-                    and the newest wins between equals, so this one never runs. Turn it off, delete it,
-                    or narrow what it matches.
+                    {#each messageParts(m.settings_approvals_shadowed_flag( { rule: slot('rule') } )) as p, i (i)}{#if p.key}<b
+                          style="font-weight:600;color:var(--v2-ink)">{beatenBy.name}</b
+                        >{:else}{p.text}{/if}{/each}
                   </span>
                 </div>
               {/if}
@@ -344,7 +355,11 @@
                   class="v2-sub"
                   style="font-size:12px;display:inline-flex;align-items:center;gap:2px"
                 >
-                  <span class="v2-num">{count(r.pending_count)}</span> waiting
+                  <span
+                    >{#each messageParts(m.settings_approvals_waiting( { count: r.pending_count, shown: slot('shown') } )) as p, i (i)}{#if p.key}<span
+                          class="v2-num">{count(r.pending_count)}</span
+                        >{:else}{p.text}{/if}{/each}</span
+                  >
                   <ChevronRight size={13} />
                 </a>
               {/if}
@@ -353,20 +368,22 @@
             {#if data.can_edit}
               <div style="display:flex;gap:6px;align-items:center;flex:none">
                 <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEdit(r)}>
-                  Edit
+                  {m.settings_approvals_edit()}
                 </button>
                 {#if r.is_active}
                   <ConfirmAction
                     action="?/deactivate"
-                    label="Turn off"
-                    confirmLabel="Turn off"
-                    explain="Stops gating new ticket closes. It stays in the list, off, until turned back on."
+                    label={m.settings_approvals_turn_off()}
+                    confirmLabel={m.settings_approvals_turn_off()}
+                    explain={m.settings_approvals_turn_off_explain()}
                     hidden={{ id: r.id }}
                   />
                 {:else}
                   <form method="POST" action="?/activate" use:enhance>
                     <input type="hidden" name="id" value={r.id} />
-                    <button class="v2-btn v2-btn-sm" type="submit">Turn on</button>
+                    <button class="v2-btn v2-btn-sm" type="submit"
+                      >{m.settings_approvals_turn_on()}</button
+                    >
                   </form>
                 {/if}
                 <!-- Not "deleted permanently". The backend destroys a rule
@@ -379,11 +396,11 @@
                      actually happened afterwards. -->
                 <ConfirmAction
                   action="?/remove"
-                  label="Delete"
-                  confirmLabel="Delete"
+                  label={m.settings_approvals_delete()}
+                  confirmLabel={m.settings_approvals_delete()}
                   explain={r.pending_count > 0
-                    ? `${r.pending_count} approvals are waiting on this rule. A rule that has ever gated a close is turned off rather than deleted, because the record has to be kept.`
-                    : 'A rule that has never gated a close is deleted for good. One with any approval history is turned off instead, because the record has to be kept.'}
+                    ? m.settings_approvals_delete_explain_pending({ count: r.pending_count })
+                    : m.settings_approvals_delete_explain()}
                   hidden={{ id: r.id }}
                 />
               </div>

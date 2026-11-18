@@ -5,21 +5,32 @@
  * from `GET /api/leads/sources/` (`#lib/server/v2/lead-sources.js`); a source
  * is `{ id, key, label, is_active, order }` and a record stores its `key`.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * What an API without `/leads/sources/` accepts: the old fixed list, keys
  * exactly as that API validates them. `compaign` is its stored spelling;
  * the new API migrates it to `campaign`, and only the new API has the list.
  */
-export const LEGACY_LEAD_SOURCES = [
-  ['call', 'Call'],
-  ['email', 'Email'],
-  ['existing customer', 'Existing customer'],
-  ['partner', 'Partner'],
-  ['public relations', 'Public relations'],
-  ['compaign', 'Campaign'],
-  ['other', 'Other']
-].map(([key, label], order) => ({ id: null, key, label, is_active: true, order }));
+export const LEGACY_LEAD_SOURCES = (
+  [
+    ['call', () => m.app_enum_lead_source_call()],
+    ['email', () => m.settings_lead_sources_legacy_email()],
+    ['existing customer', () => m.app_enum_lead_source_existing_customer()],
+    ['partner', () => m.app_enum_lead_source_partner()],
+    ['public relations', () => m.app_enum_lead_source_public_relations()],
+    ['compaign', () => m.app_enum_lead_source_campaign()],
+    ['other', () => m.settings_lead_sources_legacy_other()]
+  ] as [string, () => string][]
+).map(([key, label], order) => ({
+  id: null,
+  key,
+  get label() {
+    return label();
+  },
+  is_active: true,
+  order
+}));
 
 export type LeadSource = {
   id: string | null;
@@ -55,7 +66,7 @@ export function sourceOptions(
     const stored = list.find((s) => s.key === current);
     options.unshift({
       key: current,
-      label: `${stored?.label ?? current} (retired)`,
+      label: m.settings_lead_sources_retired({ label: stored?.label ?? current }),
       retired: true
     });
   }
@@ -71,7 +82,7 @@ export function sourceFilterOptions(
 ): { id: string; name: string }[] {
   return (sources ?? []).map((s) => ({
     id: s.key,
-    name: s.is_active === false ? `${s.label} (retired)` : s.label
+    name: s.is_active === false ? m.settings_lead_sources_retired({ label: s.label }) : s.label
   }));
 }
 

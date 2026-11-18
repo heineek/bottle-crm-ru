@@ -20,14 +20,15 @@ import { listTickets } from '#lib/server/v2/tickets.js';
 import { listTasks } from '#lib/server/v2/tasks.js';
 import { attachmentHref } from '#lib/server/v2/files.js';
 import { isPhoto, OBJECT_KEY, UUID } from '#lib/v2/custom-objects.js';
+import { m } from '#lib/paraglide/messages.js';
 
 export const FIELD_KEY = /^[a-z][a-z0-9_]{0,63}$/;
 
 const PAGE_SIZE = 20;
 const ABSENT_FOR_MS = 5 * 60 * 1000;
-const NOT_AVAILABLE = 'Custom objects are not available here.';
-export const OBJECT_GONE = 'That object does not exist, or you do not have access to it.';
-const RECORD_GONE = 'That record does not exist, or you do not have access to it.';
+const notAvailable = () => m.settings_objects_not_available();
+export const objectGone = () => m.settings_objects_object_gone();
+const recordGone = () => m.settings_objects_record_gone();
 
 type Event = { cookies: Cookies };
 
@@ -47,17 +48,17 @@ type RecordPatch = Enterprise['PatchedRecordWriteRequest'];
 export type RelatedRecords = Enterprise['RelatedRecords'];
 
 export function checkKey(key: string): string {
-  if (typeof key !== 'string' || !OBJECT_KEY.test(key)) error(404, OBJECT_GONE);
+  if (typeof key !== 'string' || !OBJECT_KEY.test(key)) error(404, objectGone());
   return key;
 }
 
 export function checkFieldKey(key: string): string {
-  if (typeof key !== 'string' || !FIELD_KEY.test(key)) error(404, OBJECT_GONE);
+  if (typeof key !== 'string' || !FIELD_KEY.test(key)) error(404, objectGone());
   return key;
 }
 
 export function checkId(id: unknown): string {
-  if (typeof id !== 'string' || !UUID.test(id)) error(404, RECORD_GONE);
+  if (typeof id !== 'string' || !UUID.test(id)) error(404, recordGone());
   return id;
 }
 
@@ -117,7 +118,7 @@ export async function getCustomObjects({ cookies }: Event): Promise<ObjectList |
 export async function listObjectsForSettings({ cookies }: Event): Promise<ObjectList> {
   return await orNotFound(
     () => apiRequest('/objects/?include_archived=true', { expectedStatuses: [404] }, { cookies }),
-    NOT_AVAILABLE
+    notAvailable()
   );
 }
 
@@ -126,7 +127,7 @@ export async function getObject({ cookies }: Event, key: string): Promise<Object
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/`, { expectedStatuses: [404] }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -135,7 +136,7 @@ export async function listFields({ cookies }: Event, key: string): Promise<Objec
   checkKey(key);
   const response: { fields: ObjectField[] } = await orNotFound(
     () => apiRequest(`/objects/${key}/fields/`, { expectedStatuses: [404] }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
   return response?.fields ?? [];
 }
@@ -155,7 +156,7 @@ export async function updateObject(
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/`, { method: 'PATCH', body }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -168,7 +169,7 @@ export async function deleteObject({ cookies }: Event, key: string): Promise<Obj
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/`, { method: 'DELETE' }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -180,7 +181,7 @@ export async function createField(
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/fields/`, { method: 'POST', body }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -194,7 +195,7 @@ export async function updateField(
   checkFieldKey(fieldKey);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/fields/${fieldKey}/`, { method: 'PATCH', body }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -208,7 +209,7 @@ export async function turnOffField(
   checkFieldKey(fieldKey);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/fields/${fieldKey}/`, { method: 'DELETE' }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -231,7 +232,7 @@ export async function listRecords(
   const qs = params.toString().replaceAll('+', '%20');
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/?${qs}`, { expectedStatuses: [404] }, { cookies }),
-    OBJECT_GONE
+    objectGone()
   );
 }
 
@@ -263,7 +264,7 @@ export async function getRecord(
   checkId(id);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/${id}/`, { expectedStatuses: [404] }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -278,7 +279,7 @@ export async function recordPage(event: Event, key: string, id: string) {
     getObject(event, key),
     getRecord(event, key, id)
   ]);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   const attachments = (record.attachments ?? []).map((a) => ({
     ...a,
     href: attachmentHref(a.id)
@@ -299,7 +300,7 @@ export async function createRecord(
   checkKey(key);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/`, { method: 'POST', body }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -314,7 +315,7 @@ export async function updateRecord(
   checkId(id);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/${id}/`, { method: 'PATCH', body }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -323,7 +324,7 @@ export async function deleteRecord({ cookies }: Event, key: string, id: string):
   checkId(id);
   return await orNotFound(
     () => apiRequest(`/objects/${key}/records/${id}/`, { method: 'DELETE' }, { cookies }),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -391,7 +392,7 @@ export async function uploadAttachment(
         { method: 'POST', body },
         { cookies }
       ),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -411,7 +412,7 @@ export async function deleteAttachment(
         { method: 'DELETE' },
         { cookies }
       ),
-    RECORD_GONE
+    recordGone()
   );
 }
 
@@ -460,7 +461,7 @@ function checkLink({
   record: string;
   field: string;
 }) {
-  if (!validTarget(to)) error(404, RECORD_GONE);
+  if (!validTarget(to)) error(404, recordGone());
   checkId(id);
   checkId(record);
   checkFieldKey(field);
@@ -510,7 +511,7 @@ const SEARCH: Record<
         [row.first_name, row.last_name].filter(Boolean).join(' ').trim() ||
         row.company_name ||
         row.email ||
-        'Untitled'
+        m.settings_objects_untitled()
     })),
   contact: async (event, params) => byName(await listContacts(event, params)),
   account: async (event, params) => byName(await listAccounts(event, params)),
@@ -565,7 +566,7 @@ const asRecord = (value: unknown) =>
 export function recordWriteError(
   err: unknown,
   fields: { key: string; label: string }[],
-  nameLabel = 'Name'
+  nameLabel: string = m.settings_objects_name()
 ): string {
   const body = apiErrorBody(err);
   const label = (key: string) => fields.find((field) => field.key === key)?.label ?? key;
@@ -577,9 +578,10 @@ export function recordWriteError(
   for (const [key, message] of Object.entries(asRecord(body?.links))) {
     lines.push(`${label(key)}: ${first(message)}`);
   }
-  if (body?.assigned_to) lines.push(`Assignees: ${first(body.assigned_to)}`);
-  if (body?.tags) lines.push(`Tags: ${first(body.tags)}`);
+  if (body?.assigned_to)
+    lines.push(m.settings_objects_assignees_error({ message: first(body.assigned_to) }));
+  if (body?.tags) lines.push(m.settings_objects_tags_error({ message: first(body.tags) }));
   if (lines.length) return lines.join('\n');
   if (typeof body?.detail === 'string') return body.detail;
-  return readableError(err, 'Could not save this record.');
+  return readableError(err, m.settings_objects_error_save_record());
 }

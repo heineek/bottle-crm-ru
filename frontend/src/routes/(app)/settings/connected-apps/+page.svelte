@@ -12,7 +12,7 @@
   import { relativeDays, shortDate } from '#lib/v2/format.js';
   import {
     disconnectSentence,
-    KEY_NOTICE,
+    keyNotice,
     kindLabel,
     lastUsedLabel,
     MAX_APP_NAME,
@@ -23,6 +23,8 @@
   import { resolve } from '$app/paths';
   import { asInternalPath } from '#lib/utils/paths.js';
   import { Plus, Copy, Check } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -83,22 +85,22 @@
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="Connected apps">
+  <PageHeader title={m.settings_connected_apps_title()}>
     {#snippet crumb()}<SettingsCrumb />{/snippet}
   </PageHeader>
   <div class="v2-pad" style="padding-top:40px">
     <NextAction
-      label="Admins only"
-      text="Connecting apps is limited to admins, because an app can read and write the organization. Ask an admin to connect one."
+      label={m.settings_connected_apps_admins_only_label()}
+      text={m.settings_connected_apps_admins_only_text()}
     />
   </div>
 {:else}
-  <PageHeader title="Connected apps">
+  <PageHeader title={m.settings_connected_apps_title()}>
     {#snippet crumb()}<SettingsCrumb />{/snippet}
-    {#snippet sub()}Apps that read and write this organization, each with its own key.{/snippet}
+    {#snippet sub()}{m.settings_connected_apps_sub()}{/snippet}
     {#snippet actions()}
       <button class="v2-btn v2-btn-primary" onclick={() => (connecting = !connecting)}>
-        <Plus />Connect an app
+        <Plus />{m.settings_connected_apps_connect_an_app()}
       </button>
     {/snippet}
   </PageHeader>
@@ -113,11 +115,12 @@
           style="outline:none;padding:15px 16px;margin-bottom:18px;border-color:color-mix(in srgb, var(--v2-moss) 40%, var(--v2-line))"
         >
           <div style="font-weight:650;font-size:13px">
-            {form.revealed.how === 'replaced' ? 'New key for' : 'Connected'}
-            {form.revealed.name}
+            {form.revealed.how === 'replaced'
+              ? m.settings_connected_apps_revealed_replaced({ name: form.revealed.name })
+              : m.settings_connected_apps_revealed_connected({ name: form.revealed.name })}
           </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 10px">
-            {KEY_NOTICE}
+            {keyNotice()}
           </p>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <code
@@ -127,7 +130,9 @@
               {form.revealed.key}
             </code>
             <button class="v2-btn v2-btn-sm" onclick={() => copyKey(form.revealed.key)}>
-              {#if copied}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+              {#if copied}<Check size={13} />{m.settings_connected_apps_copied()}{:else}<Copy
+                  size={13}
+                />{m.settings_connected_apps_copy()}{/if}
             </button>
           </div>
         </div>
@@ -135,7 +140,11 @@
 
       {#if form?.error}
         <div style="margin-bottom:16px">
-          <NextAction label="That did not work" text={form.error} tone="rust" />
+          <NextAction
+            label={m.settings_connected_apps_failed_label()}
+            text={form.error}
+            tone="rust"
+          />
         </div>
       {/if}
 
@@ -148,7 +157,9 @@
           style="padding:14px 15px;margin-bottom:18px;display:flex;flex-direction:column;gap:14px"
         >
           <fieldset style="border:0;padding:0;margin:0">
-            <legend class="v2-label" style="margin-bottom:6px">App</legend>
+            <legend class="v2-label" style="margin-bottom:6px"
+              >{m.settings_connected_apps_app()}</legend
+            >
             <div style="display:flex;flex-wrap:wrap;gap:8px 16px">
               {#each data.catalogue as entry, i (entry.kind)}
                 <label style="display:inline-flex;gap:6px;align-items:center;min-height:32px">
@@ -169,7 +180,7 @@
           {#if needsName}
             <div>
               <label class="v2-label" for="app-name" style="display:block;margin-bottom:4px">
-                Name
+                {m.settings_connected_apps_name()}
               </label>
               <input
                 id="app-name"
@@ -178,13 +189,15 @@
                 maxlength={MAX_APP_NAME}
                 class="v2-input"
                 style="width:100%;max-width:360px"
-                placeholder="What should this app be called?"
+                placeholder={m.settings_connected_apps_name_placeholder()}
               />
             </div>
           {/if}
 
           <fieldset style="border:0;padding:0;margin:0">
-            <legend class="v2-label" style="margin-bottom:6px">Access</legend>
+            <legend class="v2-label" style="margin-bottom:6px"
+              >{m.settings_connected_apps_access()}</legend
+            >
             <div
               style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:4px 16px"
             >
@@ -204,14 +217,16 @@
           </fieldset>
 
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="v2-btn v2-btn-primary" disabled={busy}>Connect</button>
+            <button class="v2-btn v2-btn-primary" disabled={busy}
+              >{m.settings_connected_apps_connect()}</button
+            >
             <button
               type="button"
               class="v2-btn"
               disabled={busy}
               onclick={() => (connecting = false)}
             >
-              Cancel
+              {m.common_cancel()}
             </button>
           </div>
         </form>
@@ -220,12 +235,12 @@
       {#if !data.apps.length}
         {#if !connecting}
           <EmptyState
-            title="No apps connected"
-            body="Connect an app to let it read and write this organization with a key of its own."
+            title={m.settings_connected_apps_empty_title()}
+            body={m.settings_connected_apps_empty_body()}
           >
             {#snippet actions()}
               <button class="v2-btn v2-btn-primary" onclick={() => (connecting = true)}>
-                <Plus />Connect an app
+                <Plus />{m.settings_connected_apps_connect_an_app()}
               </button>
             {/snippet}
           </EmptyState>
@@ -238,9 +253,14 @@
                 <div style="min-width:0">
                   <div style="font-weight:650;font-size:14px;word-break:break-word">{app.name}</div>
                   <div class="v2-sub" style="font-size:12px">
-                    Connected {shortDate(app.connected_at)}{app.connected_by
-                      ? ` by ${app.connected_by.name}`
-                      : ''}
+                    {app.connected_by
+                      ? m.settings_connected_apps_connected_by({
+                          date: shortDate(app.connected_at),
+                          name: app.connected_by.name
+                        })
+                      : m.settings_connected_apps_connected_on({
+                          date: shortDate(app.connected_at)
+                        })}
                   </div>
                 </div>
                 {#if confirming?.id !== app.id}
@@ -250,7 +270,7 @@
                       disabled={busy}
                       onclick={() => (confirming = { id: app.id, action: 'replace' })}
                     >
-                      Replace key
+                      {m.settings_connected_apps_replace_key()}
                     </button>
                     {#if !app.installed_by_app}
                       <button
@@ -258,7 +278,7 @@
                         disabled={busy}
                         onclick={() => (confirming = { id: app.id, action: 'disconnect' })}
                       >
-                        Disconnect
+                        {m.settings_connected_apps_disconnect()}
                       </button>
                     {/if}
                   </div>
@@ -267,31 +287,32 @@
 
               {#if app.installed_by_app}
                 <p class="v2-sub" style="font-size:12px;margin:8px 0 0;overflow-wrap:anywhere">
-                  Installed by the {app.installed_by_app.name} app.
-                  <a href={resolve(asInternalPath('/settings/apps'))}>Manage it in Apps</a>
-                  to remove it.
+                  {#each messageParts(m.settings_connected_apps_installed_by( { app: app.installed_by_app.name, link: slot('link') } )) as p, i (i)}{#if p.key === 'link'}<a
+                        href={resolve(asInternalPath('/settings/apps'))}
+                        >{m.settings_connected_apps_installed_by_link()}</a
+                      >{:else}{p.text}{/if}{/each}
                 </p>
               {/if}
 
               <dl
                 style="display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:12.5px;margin:10px 0 0"
               >
-                <dt class="v2-muted">Last used</dt>
+                <dt class="v2-muted">{m.settings_connected_apps_last_used()}</dt>
                 <dd style="margin:0">
                   {lastUsedLabel(app.last_used_at, relativeDays)}
                 </dd>
-                <dt class="v2-muted">Subscriptions</dt>
+                <dt class="v2-muted">{m.settings_connected_apps_subscriptions()}</dt>
                 <dd style="margin:0">{app.subscriptions}</dd>
-                <dt class="v2-muted">Last failed delivery</dt>
+                <dt class="v2-muted">{m.settings_connected_apps_last_failed()}</dt>
                 <dd style="margin:0;word-break:break-word">
                   {#if app.last_failed_delivery}
                     {shortDate(app.last_failed_delivery.at)}, {app.last_failed_delivery.event}:
                     {app.last_failed_delivery.error}
                   {:else}
-                    None
+                    {m.settings_connected_apps_none()}
                   {/if}
                 </dd>
-                <dt class="v2-muted">Access</dt>
+                <dt class="v2-muted">{m.settings_connected_apps_access()}</dt>
                 <dd style="margin:0">
                   {#if app.scopes.length}
                     <ul
@@ -302,7 +323,7 @@
                       {/each}
                     </ul>
                   {:else}
-                    None
+                    {m.settings_connected_apps_none()}
                   {/if}
                 </dd>
               </dl>
@@ -322,7 +343,9 @@
                   </p>
                   <div style="display:flex;gap:10px;flex-wrap:wrap">
                     <button class="v2-btn v2-btn-primary" disabled={busy}>
-                      {confirming.action === 'replace' ? 'Replace key' : 'Disconnect'}
+                      {confirming.action === 'replace'
+                        ? m.settings_connected_apps_replace_key()
+                        : m.settings_connected_apps_disconnect()}
                     </button>
                     <button
                       type="button"
@@ -330,7 +353,7 @@
                       disabled={busy}
                       onclick={() => (confirming = null)}
                     >
-                      Cancel
+                      {m.common_cancel()}
                     </button>
                   </div>
                 </form>

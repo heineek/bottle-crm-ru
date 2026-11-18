@@ -28,6 +28,8 @@
   import { count, shortDate } from '#lib/v2/format.js';
   import { hubGroups } from '#lib/v2/settings-hub.js';
   import { ChevronRight, ShieldAlert } from '@lucide/svelte';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -38,12 +40,15 @@
   let warnings = $derived(groups.flatMap((g) => g.items).filter((i) => i.warn).length);
 </script>
 
-<PageHeader title="Settings">
+<PageHeader title={m.common_settings()}>
   {#snippet sub()}
-    {org.name} · <span class="v2-num">{count(org.member_count)}</span> members · since
-    {shortDate(org.created_at)}
+    {org.name} · {#each messageParts(m.settings_hub_sub_members( { count: org.member_count, shown: slot('shown'), date: shortDate(org.created_at) } )) as p, i (i)}{#if p.key === 'shown'}<span
+          class="v2-num">{count(org.member_count)}</span
+        >{:else}{p.text}{/if}{/each}
     {#if warnings}
-      · <span class="v2-num">{count(warnings)}</span> need a look
+      · {#each messageParts(m.settings_hub_sub_warnings( { shown: slot('shown') } )) as p, i (i)}{#if p.key === 'shown'}<span
+            class="v2-num">{count(warnings)}</span
+          >{:else}{p.text}{/if}{/each}
     {/if}
   {/snippet}
 </PageHeader>
@@ -79,10 +84,11 @@
       index anyone with the URL can load.
     -->
     <p class="v2-sub" style="font-size:11.5px;margin-top:18px;max-width:64ch">
-      The organisation API key is not shown here. Credentials are never rendered on a page you can
-      arrive at by browsing. See
-      <a href={resolve('settings/api-tokens')} style="color:inherit">API tokens</a> for how token values
-      are handled.
+      {m.settings_hub_api_key_note()}
+      {m.settings_hub_api_key_see_before()}
+      <a href={resolve('settings/api-tokens')} style="color:inherit"
+        >{m.settings_hub_tokens_title()}</a
+      >{m.settings_hub_api_key_see_after()}
     </p>
   </div>
 </div>

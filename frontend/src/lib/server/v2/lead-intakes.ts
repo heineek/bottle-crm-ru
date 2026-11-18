@@ -18,9 +18,10 @@ import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { viewerIsAdmin } from '#lib/server/v2/organization.js';
 import { UUID } from '#lib/v2/custom-objects.js';
 import { cleanMapping } from '#lib/v2/lead-intakes.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
-const INTAKE_GONE = 'That webhook does not exist.';
+const intakeGone = () => m.settings_lead_capture_gone();
 
 type Event = { cookies: Cookies };
 type Schemas = components['schemas'];
@@ -79,7 +80,7 @@ function toDelivery(raw: Schemas['LeadIntakeDelivery'] | null | undefined) {
 }
 
 function checkId(id: string) {
-  if (typeof id !== 'string' || !UUID.test(id)) error(404, INTAKE_GONE);
+  if (typeof id !== 'string' || !UUID.test(id)) error(404, intakeGone());
   return id;
 }
 
@@ -132,7 +133,7 @@ export async function getIntake(
     detailRead.catch((err) => {
       if (apiStatus(err) === 403) return null;
       rethrowModuleOff(err);
-      if (apiStatus(err) === 404) error(404, INTAKE_GONE);
+      if (apiStatus(err) === 404) error(404, intakeGone());
       throw err;
     }),
     deliveriesRead.then(
@@ -171,7 +172,7 @@ export function intakeBody(values: Record<string, unknown>) {
   }
   if (body.name !== undefined) {
     body.name = String(body.name).trim();
-    if (!body.name) throw new Error('A webhook needs a name.');
+    if (!body.name) throw new Error(m.settings_lead_capture_needs_name());
   }
   if (body.mapping !== undefined) body.mapping = cleanMapping(body.mapping);
   if (body.tags !== undefined) {
@@ -191,7 +192,7 @@ export function intakeBody(values: Record<string, unknown>) {
  */
 export async function createIntake({ cookies }: Event, values: Record<string, unknown>) {
   const body = intakeBody(values);
-  if (!body.name) throw new Error('A webhook needs a name.');
+  if (!body.name) throw new Error(m.settings_lead_capture_needs_name());
   const resp: Schemas['LeadIntakeKeyed'] = await apiRequest(
     '/leads/intakes/',
     { method: 'POST', body },

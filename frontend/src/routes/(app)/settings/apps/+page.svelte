@@ -23,22 +23,40 @@
   import { labelOf, type ModuleRow } from '#lib/v2/modules.js';
   import { asInternalPath } from '#lib/utils/paths.js';
   import type { App } from '#lib/server/v2/apps.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
 
   const GROUPS = [
-    { key: 'sell', label: 'Sell' },
-    { key: 'serve', label: 'Serve' },
-    { key: 'bill', label: 'Bill' }
+    {
+      key: 'sell',
+      get label() {
+        return m.settings_modules_group_sell();
+      }
+    },
+    {
+      key: 'serve',
+      get label() {
+        return m.settings_modules_group_serve();
+      }
+    },
+    {
+      key: 'bill',
+      get label() {
+        return m.settings_modules_group_bill();
+      }
+    }
   ];
 
   let rows: ModuleRow[] = $derived(data.modules ?? []);
 
   let groups = $derived(
-    GROUPS.map((g) => ({ ...g, rows: rows.filter((r) => r.group === g.key) })).filter(
-      (g) => g.rows.length
-    )
+    GROUPS.map((g) => ({
+      key: g.key,
+      label: g.label,
+      rows: rows.filter((r) => r.group === g.key)
+    })).filter((g) => g.rows.length)
   );
 
   let errors = $derived(Array.isArray(form?.errors) ? form.errors : []);
@@ -61,23 +79,36 @@
   const uploadPage = (id: string) => `/settings/apps/uploads/${encodeURIComponent(id)}`;
   let confirmingClear = $state(false);
 
-  const DONE = {
-    install: 'Installed',
-    upgrade: 'Updated',
-    remove: 'Removed'
-  } as Record<string, string>;
-  const VERB = {
-    install: 'Install',
-    upgrade: 'Update',
-    remove: 'Remove'
-  } as Record<string, string>;
+  function doneLine(action: string, name: string) {
+    if (action === 'install') return m.settings_apps_done_install({ name });
+    if (action === 'upgrade') return m.settings_apps_done_upgrade({ name });
+    return m.settings_apps_done_remove({ name });
+  }
+  function verb(action: string) {
+    if (action === 'install') return m.settings_apps_install();
+    if (action === 'upgrade') return m.settings_apps_update();
+    return m.settings_apps_remove();
+  }
+  function confirmTitle(action: string, name: string) {
+    if (action === 'install') return m.settings_apps_confirm_install({ name });
+    if (action === 'upgrade') return m.settings_apps_confirm_upgrade({ name });
+    return m.settings_apps_confirm_remove({ name });
+  }
+  function nothingTo(action: string) {
+    if (action === 'install') return m.settings_apps_nothing_install();
+    if (action === 'upgrade') return m.settings_apps_nothing_upgrade();
+    return m.settings_apps_nothing_remove();
+  }
 
   function statusLine(app: App) {
-    if (app.status === 'removed') return 'Removed. Installing it again brings its parts back.';
+    if (app.status === 'removed') return m.settings_apps_status_removed();
     if (app.status !== 'installed') return '';
-    const when = app.installedAt ? ` ${shortDate(app.installedAt)}` : '';
-    const who = app.installedBy ? ` by ${app.installedBy}` : '';
-    return `Installed${when}${who}.`;
+    const when = app.installedAt ? shortDate(app.installedAt) : '';
+    const who = app.installedBy ?? '';
+    if (when && who) return m.settings_apps_status_installed_when_who({ when, who });
+    if (when) return m.settings_apps_status_installed_when({ when });
+    if (who) return m.settings_apps_status_installed_who({ who });
+    return m.settings_apps_status_installed();
   }
 
   const ask = (id: string, action: string) =>
@@ -106,28 +137,23 @@
   }
 </script>
 
-<PageHeader title="Apps">
+<PageHeader title={m.settings_apps_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    Install an industry app to set BottleCRM up for one kind of business, and switch off the modules
-    this organization does not use. Neither ever deletes a record.
+    {m.settings_apps_sub()}
   {/snippet}
 </PageHeader>
 
 <div class="v2-scroll">
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     {#if data.forbidden}
-      <NextAction
-        label="Admins only"
-        text="Only an organization admin can install apps or switch modules on or off."
-      />
+      <NextAction label={m.settings_apps_admins_only()} text={m.settings_apps_forbidden()} />
     {:else}
       {#if data.done && doneApp}
         <div class="app-done" role="status">
-          {DONE[data.done.action]}
-          {doneApp.name}.
+          {doneLine(data.done.action, doneApp.name)}
           {#if data.done.action === 'remove'}
-            Every record stays, and installing it again brings its parts back.
+            {m.settings_apps_done_remove_note()}
           {/if}
         </div>
       {/if}
@@ -137,13 +163,11 @@
       {/if}
 
       {#if data.apps?.state !== 'absent'}
-        <h2 class="app-h">Industry apps</h2>
+        <h2 class="app-h">{m.settings_apps_industry_heading()}</h2>
         {#if data.apps?.state === 'failed'}
-          <div class="v2-card app-note">
-            Apps could not be loaded. Reload the page to try again.
-          </div>
+          <div class="v2-card app-note">{m.settings_apps_load_failed()}</div>
         {:else if apps.length === 0}
-          <div class="v2-card app-note">No industry apps are available right now.</div>
+          <div class="v2-card app-note">{m.settings_apps_none_available()}</div>
         {:else}
           <div class="v2-card" style="overflow:hidden;margin-bottom:22px">
             {#each apps as app (app.id)}
@@ -155,10 +179,14 @@
                       <b>{app.name}</b>
                       {#if app.status === 'installed'}
                         <Pill tone="moss"
-                          >Installed{app.installedVersion ? ` v${app.installedVersion}` : ''}</Pill
+                          >{app.installedVersion
+                            ? m.settings_apps_pill_installed_version({
+                                version: app.installedVersion
+                              })
+                            : m.settings_apps_pill_installed()}</Pill
                         >
                       {:else if app.status === 'removed'}
-                        <Pill tone="slate">Removed</Pill>
+                        <Pill tone="slate">{m.settings_apps_pill_removed()}</Pill>
                       {/if}
                     </div>
                     <span class="v2-sub" style="font-size:11.5px">{app.description}</span>
@@ -172,9 +200,11 @@
                     {/if}
                     {#if app.status === 'installed' && app.skippedModules.length}
                       <span class="v2-sub" style="font-size:11.5px">
-                        Skipped while switched off: {app.skippedModules
-                          .map((k: string) => labelOf(data.modules, k))
-                          .join(', ')}.
+                        {m.settings_apps_skipped_modules({
+                          list: app.skippedModules
+                            .map((k: string) => labelOf(data.modules, k))
+                            .join(', ')
+                        })}
                       </span>
                     {/if}
                   </div>
@@ -184,17 +214,20 @@
                         {#if app.updateAvailable}
                           <a
                             class="v2-btn v2-btn-sm app-tap"
-                            href={resolve(asInternalPath(ask(app.id, 'upgrade')))}>Update</a
+                            href={resolve(asInternalPath(ask(app.id, 'upgrade')))}
+                            >{m.settings_apps_update()}</a
                           >
                         {/if}
                         <a
                           class="v2-btn v2-btn-sm app-tap"
-                          href={resolve(asInternalPath(ask(app.id, 'remove')))}>Remove</a
+                          href={resolve(asInternalPath(ask(app.id, 'remove')))}
+                          >{m.settings_apps_remove()}</a
                         >
                       {:else}
                         <a
                           class="v2-btn v2-btn-sm app-tap"
-                          href={resolve(asInternalPath(ask(app.id, 'install')))}>Install</a
+                          href={resolve(asInternalPath(ask(app.id, 'install')))}
+                          >{m.settings_apps_install()}</a
                         >
                       {/if}
                     </div>
@@ -207,23 +240,14 @@
                       <p class="v2-error" role="alert" style="margin:0 0 10px">{open.error}</p>
                     {:else}
                       <div style="font-weight:600;font-size:13px;margin-bottom:6px">
-                        {VERB[open.action]}
-                        {app.name}?
+                        {confirmTitle(open.action, app.name)}
                       </div>
                       {#if open.action === 'remove'}
-                        <p class="v2-sub app-lede">
-                          Its fields are turned off and its lead sources and products made inactive.
-                          Pipelines, tags and every record stay. Installing it again brings it all
-                          back.
-                        </p>
+                        <p class="v2-sub app-lede">{m.settings_apps_lede_remove()}</p>
                       {:else if open.action === 'upgrade'}
-                        <p class="v2-sub app-lede">
-                          Only what is new is added. Nothing this organization already has changes.
-                        </p>
+                        <p class="v2-sub app-lede">{m.settings_apps_lede_upgrade()}</p>
                       {:else}
-                        <p class="v2-sub app-lede">
-                          This is everything it adds. Anything already here is kept as it is.
-                        </p>
+                        <p class="v2-sub app-lede">{m.settings_apps_lede_install()}</p>
                       {/if}
                       {#each open.preview?.groups ?? [] as group (group.type)}
                         <div class="v2-label" style="margin:12px 0 4px">{group.label}</div>
@@ -231,13 +255,15 @@
                           {#each group.items as item, n (n)}
                             <li class:app-hand={item.effect === 'add_by_hand'}>
                               <span>{item.label}</span>
-                              {#if item.target}<span class="v2-sub"> on {item.target}</span>{/if}
+                              {#if item.target}<span class="v2-sub">
+                                  {m.settings_apps_item_on({ target: item.target })}</span
+                                >{/if}
                               <span class="v2-sub app-effect">{item.effectLabel}</span>
                             </li>
                           {/each}
                         </ul>
                       {:else}
-                        <p class="v2-sub app-lede">Nothing to {VERB[open.action].toLowerCase()}.</p>
+                        <p class="v2-sub app-lede">{nothingTo(open.action)}</p>
                       {/each}
                     {/if}
 
@@ -260,11 +286,13 @@
                             checked={open.preview.sampleData.defaultOn}
                           />
                           <span>
-                            Add sample records{open.preview.sampleData.records
-                              ? ` (${open.preview.sampleData.records})`
-                              : ''}
+                            {open.preview.sampleData.records
+                              ? m.settings_apps_sample_add_records({
+                                  records: open.preview.sampleData.records
+                                })
+                              : m.settings_apps_sample_add()}
                             <span class="v2-sub" style="display:block;font-size:11.5px">
-                              Marked as samples, so "Clear sample data" below removes them.
+                              {m.settings_apps_sample_hint()}
                             </span>
                           </span>
                         </label>
@@ -272,11 +300,11 @@
                       <div class="app-buttons">
                         {#if !open.error}
                           <button class="v2-btn v2-btn-sm v2-btn-primary" disabled={busy}>
-                            {VERB[open.action]}
+                            {verb(open.action)}
                           </button>
                         {/if}
                         <a class="v2-btn v2-btn-sm" href={resolve(asInternalPath('/settings/apps'))}
-                          >Cancel</a
+                          >{m.common_cancel()}</a
                         >
                       </div>
                     </form>
@@ -289,16 +317,19 @@
       {/if}
 
       {#if form && 'revealed' in form && form.revealed}
-        <KeyReveal title="New key for {form.revealed.name}" secret={form.revealed.key} />
+        <KeyReveal
+          title={m.settings_private_apps_new_key({ name: form.revealed.name })}
+          secret={form.revealed.key}
+        />
       {/if}
       {#if form && 'removedPrivate' in form && form.removedPrivate}
         <div class="app-done" role="status">
-          Removed {form.removedPrivate}. Every record stays; install it again from the list below.
+          {m.settings_private_apps_removed({ name: form.removedPrivate })}
         </div>
       {/if}
 
       {#if privateOffered}
-        <h2 class="app-h">Your own apps</h2>
+        <h2 class="app-h">{m.settings_private_apps_heading()}</h2>
         {#if form && 'privateError' in form && form.privateError}
           <p class="v2-error" role="alert" style="margin:0 0 14px">{form.privateError}</p>
         {/if}
@@ -311,21 +342,27 @@
                     <div class="mod-title">
                       <b class="own-name">{app.name}</b>
                       <Pill tone={app.status === 'removed' ? 'slate' : 'moss'}>
-                        {app.status === 'removed' ? 'Removed' : 'Installed'} v{app.version}
+                        {app.status === 'removed'
+                          ? m.settings_private_apps_pill_removed({ version: app.version })
+                          : m.settings_private_apps_pill_installed({ version: app.version })}
                       </Pill>
                     </div>
                     {#if app.description}
                       <span class="v2-sub own-text">{app.description}</span>
                     {/if}
                     <span class="v2-sub own-text">
-                      Objects: {app.objects.length
-                        ? app.objects.map((o) => o.label).join(', ')
-                        : 'none'}.
-                      {app.connection ? 'Holds a key.' : 'Holds no key.'}
+                      {app.objects.length
+                        ? m.settings_private_apps_objects({
+                            list: app.objects.map((o) => o.label).join(', ')
+                          })
+                        : m.settings_private_apps_objects_none()}
+                      {app.connection
+                        ? m.settings_private_apps_holds_key()
+                        : m.settings_private_apps_holds_no_key()}
                     </span>
                     {#if app.newer_upload && app.status !== 'removed'}
                       <span class="v2-sub app-update">
-                        Version {app.newer_upload.version} is waiting.
+                        {m.settings_private_apps_waiting({ version: app.newer_upload.version })}
                       </span>
                     {/if}
                   </div>
@@ -334,7 +371,8 @@
                       {#if app.upload_id}
                         <a
                           class="v2-btn v2-btn-sm app-tap"
-                          href={resolve(asInternalPath(uploadPage(app.upload_id)))}>Install again</a
+                          href={resolve(asInternalPath(uploadPage(app.upload_id)))}
+                          >{m.settings_private_apps_install_again()}</a
                         >
                       {/if}
                     {:else}
@@ -346,21 +384,21 @@
                               ? uploadPage(app.newer_upload.id)
                               : '/settings/apps#upload-own'
                           )
-                        )}>Update</a
+                        )}>{m.settings_apps_update()}</a
                       >
                       {#if app.connection}
                         <ConfirmAction
                           action="?/replaceKey"
-                          label="Replace key"
-                          confirmLabel="Replace key"
+                          label={m.settings_private_apps_replace_key()}
+                          confirmLabel={m.settings_private_apps_replace_key()}
                           explain={replaceSentence(app.name)}
                           hidden={{ id: app.id }}
                         />
                       {/if}
                       <ConfirmAction
                         action="?/removePrivate"
-                        label="Remove"
-                        confirmLabel="Remove"
+                        label={m.settings_apps_remove()}
+                        confirmLabel={m.settings_apps_remove()}
                         explain={removeSentence(app.name, {
                           objects: app.objects.length > 0,
                           key: Boolean(app.connection)
@@ -374,10 +412,7 @@
             {/each}
           </div>
         {:else}
-          <div class="v2-card app-note">
-            No apps of your own yet. Upload the file for one below; you will see what it adds before
-            anything is installed.
-          </div>
+          <div class="v2-card app-note">{m.settings_private_apps_empty()}</div>
         {/if}
 
         <form
@@ -388,13 +423,11 @@
           use:enhance={submitting}
           class="v2-card own-upload"
         >
-          <div style="font-weight:600;font-size:13px">Upload an app</div>
-          <p class="v2-sub app-lede">
-            A .json file, or paste its text. A new version of an app you have installed updates it.
-          </p>
-          <label class="v2-label" for="own-file">File</label>
+          <div style="font-weight:600;font-size:13px">{m.settings_private_apps_upload_title()}</div>
+          <p class="v2-sub app-lede">{m.settings_private_apps_upload_lede()}</p>
+          <label class="v2-label" for="own-file">{m.settings_private_apps_upload_file()}</label>
           <input id="own-file" name="file" type="file" accept=".json,application/json" />
-          <label class="v2-label" for="own-text">Or paste the text</label>
+          <label class="v2-label" for="own-text">{m.settings_private_apps_upload_paste()}</label>
           <textarea id="own-text" name="manifest" rows="6" class="v2-input own-text-area"
           ></textarea>
           {#if form && 'uploadError' in form && form.uploadError}
@@ -411,16 +444,19 @@
           {/if}
           <div class="app-buttons">
             <button class="v2-btn v2-btn-sm v2-btn-primary app-tap" disabled={busy}>
-              Review the app
+              {m.settings_private_apps_review()}
             </button>
           </div>
         </form>
         <div style="margin-bottom:22px"></div>
       {/if}
 
-      <h2 class="app-h">Modules</h2>
+      <h2 class="app-h">{m.settings_modules_title()}</h2>
       {#if data.modulesFailed}
-        <EmptyState title="Modules could not be loaded." body="Reload the page to try again.">
+        <EmptyState
+          title={m.settings_modules_failed_title()}
+          body={m.settings_modules_failed_body()}
+        >
           {#snippet icon()}<Boxes size={21} />{/snippet}
         </EmptyState>
       {/if}
@@ -434,10 +470,10 @@
           {#if formsLink || mailboxLink}
             <p>
               {#if formsLink}<a href={resolve(asInternalPath('/settings/web-forms'))}
-                  >Open web forms</a
+                  >{m.settings_modules_open_web_forms()}</a
                 >{/if}
               {#if mailboxLink}<a href={resolve(asInternalPath('/settings/inbound-email'))}
-                  >Open inbound email</a
+                  >{m.settings_modules_open_inbound()}</a
                 >{/if}
             </p>
           {/if}
@@ -459,15 +495,15 @@
                   <div class="mod-title">
                     <b>{row.label}</b>
                     <Pill tone={row.available ? 'moss' : 'slate'}
-                      >{row.available ? 'On' : 'Off'}</Pill
+                      >{row.available ? m.settings_modules_on() : m.settings_modules_off()}</Pill
                     >
                   </div>
                   <span class="v2-sub" style="font-size:11.5px">{row.covers}</span>
                   {#if blocked && row.needs}
                     <span class="v2-sub" style="font-size:11.5px">
-                      Needs {labelOf(data.modules, row.needs)}.{row.enabled
-                        ? ` It comes back when ${labelOf(data.modules, row.needs)} is switched on.`
-                        : ''}
+                      {row.enabled
+                        ? m.settings_modules_needs_back({ label: labelOf(data.modules, row.needs) })
+                        : m.settings_modules_needs({ label: labelOf(data.modules, row.needs) })}
                     </span>
                   {/if}
                 </div>
@@ -475,8 +511,8 @@
                   {#if row.available}
                     <ConfirmAction
                       action="?/switch"
-                      label="Switch off"
-                      confirmLabel="Switch off"
+                      label={m.settings_modules_switch_off()}
+                      confirmLabel={m.settings_modules_switch_off()}
                       explain={row.stops}
                       hidden={{ key: row.key, on: 'false' }}
                     />
@@ -484,7 +520,9 @@
                     <form method="POST" action="?/switch" use:enhance>
                       <input type="hidden" name="key" value={row.key} />
                       <input type="hidden" name="on" value="true" />
-                      <button class="v2-btn v2-btn-sm" type="submit">Switch on</button>
+                      <button class="v2-btn v2-btn-sm" type="submit"
+                        >{m.settings_modules_switch_on()}</button
+                      >
                     </form>
                   {/if}
                   <div class="mod-order">
@@ -495,7 +533,9 @@
                         <button
                           class="v2-btn v2-btn-sm mod-icon"
                           type="submit"
-                          aria-label="Move {row.label} {direction}"
+                          aria-label={direction === 'up'
+                            ? m.settings_modules_move_up({ label: row.label })
+                            : m.settings_modules_move_down({ label: row.label })}
                           disabled={direction === 'up' ? i === 0 : i === g.rows.length - 1}
                         >
                           {#if direction === 'up'}<ArrowUp size={14} />{:else}<ArrowDown
@@ -515,7 +555,7 @@
         </div>
       {/each}
 
-      <h2 class="app-h">Sample data</h2>
+      <h2 class="app-h">{m.settings_apps_sample_heading()}</h2>
       <div class="v2-card danger">
         {#if form?.sampleError}
           <p class="v2-error" role="alert" style="margin:0;flex-basis:100%">{form.sampleError}</p>
@@ -528,12 +568,11 @@
             style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"
           >
             <span class="v2-sub" style="font-size:12px">
-              Permanently delete every sample record an app created for this organization? This
-              cannot be undone. Your real records are never touched, and any sample record you have
-              since attached real work to is kept.
+              {m.settings_org_clear_confirm()}
             </span>
             <button class="v2-btn danger-btn" type="submit" disabled={busy}>
-              <Trash2 size={14} /> Clear sample data
+              <Trash2 size={14} />
+              {m.settings_org_clear_button()}
             </button>
             <button
               class="v2-btn"
@@ -541,25 +580,25 @@
               disabled={busy}
               onclick={() => (confirmingClear = false)}
             >
-              Cancel
+              {m.common_cancel()}
             </button>
           </form>
         {:else if form?.cleared !== undefined}
           <span class="v2-sub" style="font-size:12.5px">
             {form.cleared
-              ? `Deleted ${form.cleared} sample ${form.cleared === 1 ? 'record' : 'records'}.`
-              : 'No sample data to clear.'}
+              ? m.settings_org_cleared({ count: form.cleared })
+              : m.settings_org_cleared_none()}
             {#if form.retained}
-              Kept {form.retained}
-              {form.retained === 1 ? 'record' : 'records'} you have since attached real work to.
+              {m.settings_org_cleared_kept({ count: form.retained })}
             {/if}
           </span>
         {:else}
           <button class="v2-btn danger-btn" type="button" onclick={() => (confirmingClear = true)}>
-            <Trash2 size={14} /> Clear sample data
+            <Trash2 size={14} />
+            {m.settings_org_clear_button()}
           </button>
           <span class="v2-sub" style="font-size:11.5px">
-            Removes only the records an app created as samples. Your real records are never touched.
+            {m.settings_org_clear_hint()}
           </span>
         {/if}
       </div>

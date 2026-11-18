@@ -36,9 +36,12 @@
     NUMBER_PREFIX_PATTERN
   } from '#lib/v2/document-numbers.js';
   import { todayIn } from '#lib/v2/dates.js';
-  import { COUNTRIES } from '#lib/constants/countries.js';
+  import { sortedCountries } from '#lib/constants/countries.js';
   import { ChevronRight, TriangleAlert } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
+  import { isLocale, locales } from '#lib/paraglide/runtime.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { components } from '#lib/api-schema.js';
   import {
     DOCS_LEAD_ALERTS,
@@ -63,7 +66,7 @@
   // The full list the backend COUNTRIES accepts, so every stored code has an
   // option. A code missing here would leave the select on its first entry and
   // the next save would silently clear the org's country.
-  const countryOptions = COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
+  const countryOptions = sortedCountries().map((c) => ({ value: c.code, label: c.name }));
 
   const org: Partial<components['schemas']['OrgSettings']> = untrack(() => data.org ?? {});
   // Always includes the org's current value, because the API builds the list
@@ -73,6 +76,13 @@
     (a, b) => a - b
   );
   const timezones = untrack(() => data.timezones ?? [{ name: 'UTC', label: 'UTC' }]);
+  // A stored language this build has no messages for still needs an option,
+  // or the select would submit another one in its place.
+  const languageOptions = untrack(() =>
+    isLocale(org.default_language) || !org.default_language
+      ? [...locales]
+      : [org.default_language, ...locales]
+  );
   // For the numbering example only; the server dates a number on save.
   const today = untrack(() => todayIn(org.timezone || 'UTC'));
 
@@ -92,6 +102,7 @@
       default_currency: org.default_currency || 'USD',
       default_country: org.default_country ?? '',
       timezone: org.timezone || 'UTC',
+      default_language: org.default_language ?? '',
       lead_reminder_minutes: String(org.lead_reminder_minutes ?? ''),
       // Booleans travel as strings so the select always submits an explicit value.
       csat_enabled: String(org.csat_enabled ?? true),
@@ -110,11 +121,11 @@
   let errors = $derived.by(() => {
     const e: Record<string, string> = {};
     if (form.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email))
-      e.email = 'That does not look like an email address.';
+      e.email = m.settings_org_edit_err_email();
     // The model stores this in a URLField, which wants a real URL. A light check
     // here saves a server round-trip; the serializer is the actual rule.
     if (form.website && !/^https?:\/\/.+\..+/.test(form.website))
-      e.website = 'Include the full address, starting with http:// or https://.';
+      e.website = m.settings_org_edit_err_website();
     if (!invoicesOn) return e;
     const prefixFields: ('invoice_number_prefix' | 'estimate_number_prefix')[] = [
       'invoice_number_prefix',
@@ -122,11 +133,11 @@
     ];
     for (const field of prefixFields) {
       if (!NUMBER_PREFIX_PATTERN.test(form[field].trim()))
-        e[field] = 'Use letters, numbers, hyphens and underscores only.';
+        e[field] = m.settings_org_edit_err_prefix();
     }
-    if (!wholeIn(form.number_padding, 1, 10)) e.number_padding = 'Use 1 to 10 digits.';
+    if (!wholeIn(form.number_padding, 1, 10)) e.number_padding = m.settings_org_edit_err_padding();
     if (form.number_date_part === 'NONE' && !wholeIn(form.invoice_number_start, 1, 999999999))
-      e.invoice_number_start = 'Use a whole number from 1 to 999,999,999.';
+      e.invoice_number_start = m.settings_org_edit_err_start();
     return e;
   });
 
@@ -159,21 +170,18 @@
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="Organization">
+  <PageHeader title={m.settings_hub_org_title()}>
     {#snippet crumb()}<SettingsCrumb />{/snippet}
   </PageHeader>
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Admins only"
-      text="Editing organization details is limited to admins. Ask an admin on your team if a company detail, currency, or survey setting needs changing."
-    />
+    <NextAction label={m.common_admins_only()} text={m.settings_org_edit_forbidden()} />
   </div>
 {:else}
-  <PageHeader title="Edit organization" center>
+  <PageHeader title={m.settings_org_edit_title()} center>
     {#snippet crumb()}
-      <a href={resolve('settings')}>Settings</a>
+      <a href={resolve('settings')}>{m.common_settings()}</a>
       <ChevronRight size={12} />
-      <a href={resolve('settings/organization')}>Organization</a>
+      <a href={resolve('settings/organization')}>{m.settings_hub_org_title()}</a>
     {/snippet}
   </PageHeader>
 
@@ -187,7 +195,7 @@
         >
           <TriangleAlert size={17} style="color:var(--v2-rust);flex:none" />
           <div class="v2-next-body">
-            <div style="font-weight:600">The server refused this change</div>
+            <div style="font-weight:600">{m.settings_org_edit_refused()}</div>
             <div class="v2-sub" style="margin-top:2px">{result.error}</div>
           </div>
         </div>
@@ -205,24 +213,23 @@
                  common case. -->
             <div style="font-weight:600">
               {Object.keys(errors).length === 1
-                ? 'One field to check'
-                : `${Object.keys(errors).length} fields to check`}
+                ? m.settings_org_edit_one_field()
+                : m.settings_org_edit_fields({ count: Object.keys(errors).length })}
             </div>
-            <div class="v2-sub" style="margin-top:2px">Nothing has been saved yet.</div>
+            <div class="v2-sub" style="margin-top:2px">{m.settings_org_edit_nothing_saved()}</div>
           </div>
         </div>
       {/if}
 
-      <div class="v2-label" style="margin-bottom:12px">What customers see</div>
+      <div class="v2-label" style="margin-bottom:12px">{m.settings_org_customers_see()}</div>
       {#if invoicesOn}
         <p class="v2-hint" style="margin-top:-4px;margin-bottom:14px">
-          Printed on every invoice and estimate. Changes apply from now on; documents already sent
-          keep what they were sent with.
+          {m.settings_org_edit_printed_hint()}
         </p>
       {/if}
 
       <div class="v2-field">
-        <label for="f-company">Legal name</label>
+        <label for="f-company">{m.settings_org_legal_name()}</label>
         <input
           id="f-company"
           name="company_name"
@@ -230,18 +237,18 @@
           maxlength="255"
           bind:value={form.company_name}
         />
-        <p class="v2-hint">The registered company name, as it should appear on a document.</p>
+        <p class="v2-hint">{m.settings_org_edit_legal_hint()}</p>
       </div>
 
       <div class="v2-field">
-        <label for="f-name">Trading name</label>
+        <label for="f-name">{m.settings_org_edit_trading_name()}</label>
         <input id="f-name" name="name" class="v2-input" maxlength="100" bind:value={form.name} />
-        <p class="v2-hint">What this organisation is called across the app.</p>
+        <p class="v2-hint">{m.settings_org_edit_trading_hint()}</p>
       </div>
 
       <div class="pair">
         <div class="v2-field">
-          <label for="f-tax">Tax ID</label>
+          <label for="f-tax">{m.settings_org_tax_id()}</label>
           <input
             id="f-tax"
             name="tax_id"
@@ -251,7 +258,7 @@
           />
         </div>
         <div class="v2-field">
-          <label for="f-phone">Phone</label>
+          <label for="f-phone">{m.common_phone()}</label>
           <input
             id="f-phone"
             name="phone"
@@ -264,7 +271,7 @@
 
       <div class="pair">
         <div class="v2-field">
-          <label for="f-email">Email</label>
+          <label for="f-email">{m.common_email()}</label>
           <input
             id="f-email"
             name="email"
@@ -277,7 +284,7 @@
           {#if show('email')}<p class="v2-error">{errors.email}</p>{/if}
         </div>
         <div class="v2-field">
-          <label for="f-website">Website</label>
+          <label for="f-website">{m.settings_org_website()}</label>
           <input
             id="f-website"
             name="website"
@@ -292,7 +299,7 @@
       </div>
 
       <div class="v2-field">
-        <label for="f-address">Address</label>
+        <label for="f-address">{m.settings_org_address()}</label>
         <input
           id="f-address"
           name="address_line"
@@ -304,11 +311,11 @@
 
       <div class="triple">
         <div class="v2-field">
-          <label for="f-city">City</label>
+          <label for="f-city">{m.settings_org_edit_city()}</label>
           <input id="f-city" name="city" class="v2-input" maxlength="100" bind:value={form.city} />
         </div>
         <div class="v2-field">
-          <label for="f-state">State</label>
+          <label for="f-state">{m.settings_org_edit_state()}</label>
           <input
             id="f-state"
             name="state"
@@ -318,7 +325,7 @@
           />
         </div>
         <div class="v2-field">
-          <label for="f-postcode">Postcode</label>
+          <label for="f-postcode">{m.settings_org_edit_postcode()}</label>
           <input
             id="f-postcode"
             name="postcode"
@@ -330,19 +337,19 @@
       </div>
 
       <div class="v2-field">
-        <label for="f-country">Country</label>
+        <label for="f-country">{m.settings_org_country()}</label>
         <select id="f-country" name="country" class="v2-input" bind:value={form.country}>
-          <option value="">Not recorded</option>
+          <option value="">{m.settings_org_edit_not_recorded()}</option>
           {#each countryOptions as c (c.value)}
             <option value={c.value}>{c.label}</option>
           {/each}
         </select>
       </div>
 
-      <div class="v2-label" style="margin:24px 0 12px">Defaults</div>
+      <div class="v2-label" style="margin:24px 0 12px">{m.settings_org_defaults()}</div>
       <div class="pair">
         <div class="v2-field">
-          <label for="f-currency">Currency</label>
+          <label for="f-currency">{m.settings_org_currency()}</label>
           <select
             id="f-currency"
             name="default_currency"
@@ -354,73 +361,87 @@
             {/each}
           </select>
           <p class="v2-hint">
-            {invoicesOn
-              ? 'Applied to new invoices and estimates. Existing ones keep theirs.'
-              : 'The default for new records that carry an amount. Existing ones keep theirs.'}
+            {invoicesOn ? m.settings_org_currency_hint_invoices() : m.settings_org_currency_hint()}
           </p>
         </div>
         <div class="v2-field">
-          <label for="f-defcountry">Country default</label>
+          <label for="f-defcountry">{m.settings_org_edit_country_default()}</label>
           <select
             id="f-defcountry"
             name="default_country"
             class="v2-input"
             bind:value={form.default_country}
           >
-            <option value="">Not set</option>
+            <option value="">{m.settings_org_edit_not_set()}</option>
             {#each countryOptions as c (c.value)}
               <option value={c.value}>{c.label}</option>
             {/each}
           </select>
-          <p class="v2-hint">Pre-filled on new addresses.</p>
+          <p class="v2-hint">{m.settings_org_edit_country_default_hint()}</p>
         </div>
       </div>
 
       <div class="v2-field">
-        <label for="f-timezone">Time zone</label>
+        <label for="f-timezone">{m.settings_org_timezone()}</label>
         <select id="f-timezone" name="timezone" class="v2-input" bind:value={form.timezone}>
           {#each timezones as zone (zone.name)}
             <option value={zone.name}>{zone.label}</option>
           {/each}
         </select>
         <p class="v2-hint">
-          When a day starts for this organisation. Changing it moves what counts as due today and
-          overdue, for everyone here.
+          {m.settings_org_edit_timezone_hint()}
         </p>
       </div>
 
+      <div class="v2-field">
+        <label for="f-default-language">{m.org_language_label()}</label>
+        <select
+          id="f-default-language"
+          name="default_language"
+          class="v2-input"
+          bind:value={form.default_language}
+        >
+          {#each languageOptions as code (code)}
+            <option value={code} lang={code}>
+              {isLocale(code) ? m.language_name({}, { locale: code }) : code}
+            </option>
+          {/each}
+        </select>
+        <p class="v2-hint">{m.org_language_hint()}</p>
+      </div>
       {#if leadsOn}
-        <div class="v2-label" style="margin:24px 0 12px">Leads</div>
+        <div class="v2-label" style="margin:24px 0 12px">{m.settings_org_leads_section()}</div>
         <div class="v2-field">
-          <label for="f-reminder">Remind the assignee when a lead waits more than</label>
+          <label for="f-reminder">{m.settings_org_reminder_label()}</label>
           <select
             id="f-reminder"
             name="lead_reminder_minutes"
             class="v2-input"
             bind:value={form.lead_reminder_minutes}
           >
-            <option value="">Off</option>
-            {#each reminderOptions as m (m)}
-              <option value={String(m)}>{reminderLabel(m)}</option>
+            <option value="">{m.settings_org_reminder_off()}</option>
+            {#each reminderOptions as mins (mins)}
+              <option value={String(mins)}>{reminderLabel(mins)}</option>
             {/each}
           </select>
           <p class="v2-hint">
-            Sent once per enquiry, to the people on the lead, or to the admins when nobody is. Leads
-            waiting more than a day are left alone.
-            <a href={DOCS_LEAD_ALERTS} target="_blank" rel="noopener noreferrer">Read more</a>
+            {m.settings_org_reminder_hint()}
+            <a href={DOCS_LEAD_ALERTS} target="_blank" rel="noopener noreferrer"
+              >{m.settings_org_read_more()}</a
+            >
           </p>
         </div>
       {/if}
 
       {#if invoicesOn}
-        <div class="v2-label" style="margin:24px 0 12px">Invoice numbers</div>
+        <div class="v2-label" style="margin:24px 0 12px">{m.settings_org_invoice_numbers()}</div>
         <p class="v2-hint" style="margin-top:-4px;margin-bottom:14px">
-          How new invoice and estimate numbers look. Numbers already issued keep theirs.
+          {m.settings_org_edit_numbers_hint()}
         </p>
 
         <div class="pair">
           <div class="v2-field">
-            <label for="f-inv-prefix">Invoice prefix</label>
+            <label for="f-inv-prefix">{m.settings_org_edit_invoice_prefix()}</label>
             <input
               id="f-inv-prefix"
               name="invoice_number_prefix"
@@ -438,7 +459,7 @@
             {/if}
           </div>
           <div class="v2-field">
-            <label for="f-est-prefix">Estimate prefix</label>
+            <label for="f-est-prefix">{m.settings_org_edit_estimate_prefix()}</label>
             <input
               id="f-est-prefix"
               name="estimate_number_prefix"
@@ -459,7 +480,7 @@
 
         <div class="pair">
           <div class="v2-field">
-            <label for="f-date-part">Date in the number</label>
+            <label for="f-date-part">{m.settings_org_edit_date_part()}</label>
             <select
               id="f-date-part"
               name="number_date_part"
@@ -472,7 +493,7 @@
             </select>
           </div>
           <div class="v2-field">
-            <label for="f-padding">Counter digits</label>
+            <label for="f-padding">{m.settings_org_edit_padding()}</label>
             <input
               id="f-padding"
               name="number_padding"
@@ -491,7 +512,7 @@
 
         {#if form.number_date_part === 'NONE'}
           <div class="v2-field">
-            <label for="f-start">Start invoices at</label>
+            <label for="f-start">{m.settings_org_edit_start()}</label>
             <input
               id="f-start"
               name="invoice_number_start"
@@ -508,8 +529,7 @@
               <p class="v2-error">{errors.invoice_number_start}</p>
             {:else}
               <p class="v2-hint">
-                To carry on a sequence from another system. If invoices here already go higher,
-                numbering carries on from the highest.
+                {m.settings_org_edit_start_hint()}
               </p>
             {/if}
           </div>
@@ -518,49 +538,48 @@
         {/if}
 
         <p class="v2-hint" style="margin-top:-4px">
-          New invoices look like
-          <b class="v2-num example">{exampleNumber(form, 'invoice', today)}</b>, estimates like
-          <b class="v2-num example">{exampleNumber(form, 'estimate', today)}</b>.
+          {#each messageParts(m.settings_org_edit_example( { invoice: slot('invoice'), estimate: slot('estimate') } )) as p, i (i)}{#if p.key === 'invoice'}<b
+                class="v2-num example">{exampleNumber(form, 'invoice', today)}</b
+              >{:else if p.key === 'estimate'}<b class="v2-num example"
+                >{exampleNumber(form, 'estimate', today)}</b
+              >{:else}{p.text}{/if}{/each}
         </p>
       {/if}
 
       {#if ticketsOn}
-        <div class="v2-label" style="margin:24px 0 12px">Behaviour</div>
+        <div class="v2-label" style="margin:24px 0 12px">{m.settings_org_behaviour()}</div>
 
         <div class="v2-field">
-          <label for="f-csat">Satisfaction surveys</label>
+          <label for="f-csat">{m.settings_org_csat()}</label>
           <select id="f-csat" name="csat_enabled" class="v2-input" bind:value={form.csat_enabled}>
-            <option value="true">Sending. A survey goes out after a ticket closes</option>
-            <option value="false">Off, no surveys, org-wide</option>
+            <option value="true">{m.settings_org_edit_csat_on()}</option>
+            <option value="false">{m.settings_org_edit_csat_off()}</option>
           </select>
           <p class="v2-hint">
-            Off stops every survey org-wide. There is no per-team exception and no notice on the
-            ticket.
+            {m.settings_org_edit_csat_hint()}
           </p>
         </div>
 
         <div class="v2-field">
-          <label for="f-cascade">Close child tickets with the parent</label>
+          <label for="f-cascade">{m.settings_org_cascade()}</label>
           <select
             id="f-cascade"
             name="auto_close_children_on_parent_close"
             class="v2-input"
             bind:value={form.auto_close_children_on_parent_close}
           >
-            <option value="true">Offer it on. The close prompt starts ticked</option>
-            <option value="false">Offer it off. The close prompt starts unticked</option>
+            <option value="true">{m.settings_org_edit_cascade_on()}</option>
+            <option value="false">{m.settings_org_edit_cascade_off()}</option>
           </select>
           <p class="v2-hint">
-            Only sets how the prompt starts, and only on the mobile app, which is where closing a
-            parent offers to close its open children. The person still confirms. Closing a parent on
-            the web leaves its children open, with no prompt.
+            {m.settings_org_edit_cascade_hint()}
           </p>
         </div>
       {/if}
 
       <div class="actions">
-        <button class="v2-btn v2-btn-primary" type="submit">Save changes</button>
-        <a class="v2-btn" href={resolve('settings/organization')}>Cancel</a>
+        <button class="v2-btn v2-btn-primary" type="submit">{m.settings_org_edit_save()}</button>
+        <a class="v2-btn" href={resolve('settings/organization')}>{m.common_cancel()}</a>
       </div>
     </form>
   </div>

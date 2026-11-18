@@ -9,6 +9,8 @@
   import { objectImportConfig } from '#lib/import/entities.js';
   import { objectDescriptor } from '#lib/v2/object-filters.js';
   import { count } from '#lib/v2/format.js';
+  import { messageParts as parts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import { Boxes, Columns3, Download, List, Plus, Upload } from '@lucide/svelte';
   import { canWriteObject } from '#lib/v2/custom-objects.js';
   import type { PageProps } from './$types';
@@ -27,6 +29,18 @@
   let filtered = $derived(
     data.q !== '' ||
       [...page.url.searchParams.keys()].some((k) => k !== 'page' && k !== 'q' && k !== 'limit')
+  );
+
+  let countParts = $derived(
+    parts(
+      m.app_objects_list_count({
+        count: slot('count'),
+        noun: data.page.count === 1 ? def.label.toLowerCase() : def.label_plural.toLowerCase()
+      })
+    )
+  );
+  let showingParts = $derived(
+    parts(m.app_objects_showing({ shown: slot('shown'), total: slot('total') }))
   );
 
   // The board takes the list's filters, so the switch carries them over.
@@ -48,17 +62,21 @@
 
 <PageHeader title={def.label_plural}>
   {#snippet sub()}
-    {#if def.description}{def.description}{:else}<span class="v2-num">{count(data.page.count)}</span
-      >
-      {data.page.count === 1 ? def.label.toLowerCase() : def.label_plural.toLowerCase()}{/if}
+    {#if def.description}{def.description}{:else}{#each countParts as p, i (i)}{#if p.key}<span
+            class="v2-num">{count(data.page.count)}</span
+          >{:else}{p.text}{/if}{/each}{/if}
   {/snippet}
   {#snippet actions()}
     {#if data.hasBoard}
-      <span class="v2-btn" aria-current="true"><List />List</span>
-      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(boardHref))}><Columns3 />Board</a>
+      <span class="v2-btn" aria-current="true"><List />{m.objects_view_list()}</span>
+      <a class="v2-btn v2-btn-quiet" href={resolve(asInternalPath(boardHref))}
+        ><Columns3 />{m.objects_view_board()}</a
+      >
     {/if}
     {#if canImport}
-      <button class="v2-btn" onclick={() => (importOpen = true)}><Upload />Import</button>
+      <button class="v2-btn" onclick={() => (importOpen = true)}
+        ><Upload />{m.common_import()}</button
+      >
     {/if}
     <a
       class="v2-btn"
@@ -69,7 +87,7 @@
     </a>
     {#if canCreate}
       <a class="v2-btn v2-btn-primary" href={resolve(asInternalPath(`/objects/${def.key}/new`))}
-        ><Plus />New {def.label}</a
+        ><Plus />{m.app_objects_new({ label: def.label })}</a
       >
     {/if}
   {/snippet}
@@ -105,24 +123,24 @@
       name="q"
       value={data.q}
       maxlength="100"
-      placeholder="Search by {def.name_label.toLowerCase()}"
-      aria-label="Search {def.label_plural}"
+      placeholder={m.app_objects_search_placeholder({ field: def.name_label.toLowerCase() })}
+      aria-label={m.app_objects_search_aria({ plural: def.label_plural })}
     />
-    <button class="v2-btn" type="submit">Search</button>
+    <button class="v2-btn" type="submit">{m.common_search()}</button>
   </form>
 
   {#if rows.length === 0}
     <EmptyState
-      title={filtered ? 'No matches' : `No ${def.label_plural.toLowerCase()} yet`}
-      body={filtered
-        ? 'Nothing matches these filters. Try fewer, or a shorter search.'
-        : `Records of this kind will be listed here.`}
+      title={filtered
+        ? m.app_objects_no_matches()
+        : m.app_objects_empty_title({ plural: def.label_plural.toLowerCase() })}
+      body={filtered ? m.objects_no_matches_filters() : m.app_objects_empty_body()}
     >
       {#snippet icon()}<Boxes size={21} />{/snippet}
       {#snippet actions()}
         {#if canCreate && !filtered}
           <a class="v2-btn v2-btn-primary" href={resolve(asInternalPath(`/objects/${def.key}/new`))}
-            >New {def.label}</a
+            >{m.app_objects_new({ label: def.label })}</a
           >
         {/if}
       {/snippet}
@@ -134,8 +152,8 @@
           <tr>
             <th>{def.name_label}</th>
             {#each data.columns as c (c.key)}<th>{c.label}</th>{/each}
-            <th>Assigned to</th>
-            <th>Tags</th>
+            <th>{m.common_assigned_to()}</th>
+            <th>{m.objects_tags()}</th>
           </tr>
         </thead>
         <tbody>
@@ -153,8 +171,10 @@
                 <td data-m="meta" data-l={data.columns[i].label}>{cell}</td>
               {/each}
               <td class="v2-muted" data-m="hide">{r.assignees.join(', ')}</td>
-              <td class="v2-muted" data-m="meta" data-l={r.tags.length ? 'Tags' : undefined}
-                >{r.tags.join(', ')}</td
+              <td
+                class="v2-muted"
+                data-m="meta"
+                data-l={r.tags.length ? m.objects_tags() : undefined}>{r.tags.join(', ')}</td
               >
             </tr>
           {/each}
@@ -162,18 +182,22 @@
       </table>
     </div>
     <p class="v2-sub v2-pad ol-foot">
-      Showing <span class="v2-num">{rows.length}</span> of
-      <span class="v2-num">{count(data.page.count)}</span>
+      {#each showingParts as p, i (i)}{#if p.key === 'shown'}<span class="v2-num"
+            >{rows.length}</span
+          >{:else if p.key === 'total'}<span class="v2-num">{count(data.page.count)}</span
+          >{:else}{p.text}{/if}{/each}
     </p>
     {#if data.pageNumber > 1 || hasNext}
-      <nav class="v2-pad ol-pager" aria-label="Pages">
+      <nav class="v2-pad ol-pager" aria-label={m.app_objects_pages_aria()}>
         {#if data.pageNumber > 1}
           <a class="v2-btn" href={resolve(asInternalPath(pageQuery(data.pageNumber - 1)))}
-            >Previous</a
+            >{m.common_previous()}</a
           >
         {/if}
         {#if hasNext}
-          <a class="v2-btn" href={resolve(asInternalPath(pageQuery(data.pageNumber + 1)))}>Next</a>
+          <a class="v2-btn" href={resolve(asInternalPath(pageQuery(data.pageNumber + 1)))}
+            >{m.common_next()}</a
+          >
         {/if}
       </nav>
     {/if}

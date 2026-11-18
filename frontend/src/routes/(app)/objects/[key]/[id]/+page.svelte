@@ -19,6 +19,7 @@
     uploadTooLarge
   } from '#lib/v2/custom-objects.js';
   import { Pencil } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { MatchRow } from '#lib/server/v2/real-estate.js';
   import type { PageProps } from './$types';
 
@@ -84,15 +85,15 @@
   {#snippet actions()}
     {#if record.can_edit}
       <a class="v2-btn" href={resolve(asInternalPath(`/objects/${def.key}/${record.id}/edit`))}
-        ><Pencil />Edit</a
+        ><Pencil />{m.common_edit()}</a
       >
     {/if}
     {#if record.can_delete}
       <ConfirmAction
         action="?/delete"
-        label="Delete"
-        confirmLabel="Delete for good"
-        explain="Deletes {record.name} and its files permanently. This cannot be undone."
+        label={m.common_delete()}
+        confirmLabel={m.app_objects_delete_for_good()}
+        explain={m.app_objects_delete_explain({ name: record.name })}
       />
     {/if}
   {/snippet}
@@ -114,14 +115,14 @@
       />
 
       {#if tags.length > 0}
-        <div class="v2-label" style="margin:22px 0 10px">Tags</div>
+        <div class="v2-label" style="margin:22px 0 10px">{m.objects_tags()}</div>
         <div class="tags">
           {#each tags as tag (tag.id)}<Pill>{tag.name}</Pill>{/each}
         </div>
       {/if}
 
       {#if data.linkFields.length > 0}
-        <div class="v2-label" style="margin:22px 0 10px">Links</div>
+        <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_links()}</div>
         <div class="v2-card cf">
           {#each data.linkFields as f (f.key)}
             {@const entry = record.links?.[f.key] ?? { records: [], hidden: 0 }}
@@ -138,10 +139,12 @@
                 {/each}
                 {#if entry.hidden > 0}
                   <span class="v2-muted">
-                    {entry.records.length > 0 ? 'and ' : ''}{entry.hidden} you can't open
+                    {entry.records.length > 0
+                      ? m.app_objects_hidden_more({ count: entry.hidden })
+                      : m.app_objects_hidden({ count: entry.hidden })}
                   </span>
                 {:else if entry.records.length === 0}
-                  <span class="v2-muted">None</span>
+                  <span class="v2-muted">{m.app_objects_none()}</span>
                 {/if}
               </span>
             </div>
@@ -150,35 +153,37 @@
       {/if}
 
       {#if data.matches}
-        {@const m = data.matches}
+        {@const mt = data.matches}
         <div class="v2-label" id="matches" style="margin:22px 0 10px">
-          {m.state === 'ok' ? m.heading : 'Matches'}
+          {mt.state === 'ok' ? mt.heading : m.objects_matches()}
         </div>
         {#if form?.matchError}
           <p class="v2-error" role="alert" style="margin:0 0 10px">{form.matchError}</p>
         {/if}
         <div class="v2-card cf">
-          {#if m.state === 'failed'}
-            <p class="v2-sub" style="margin:9px 0">Could not load matches.</p>
+          {#if mt.state === 'failed'}
+            <p class="v2-sub" style="margin:9px 0">{m.objects_matches_failed()}</p>
           {:else}
-            {#each m.rows as row (row.id)}
-              {@render matchRow(m.objectKey, row, '?/dismiss', 'Dismiss')}
+            {#each mt.rows as row (row.id)}
+              {@render matchRow(mt.objectKey, row, '?/dismiss', m.objects_matches_dismiss())}
             {:else}
-              <p class="v2-sub" style="margin:9px 0">No matches yet.</p>
+              <p class="v2-sub" style="margin:9px 0">{m.objects_matches_none()}</p>
             {/each}
-            {#if m.dismissedCount > 0}
+            {#if mt.dismissedCount > 0}
               <p class="v2-sub" style="margin:9px 0">
-                {m.dismissedCount} dismissed
-                {#if m.dismissed === null}
+                {m.objects_matches_dismissed({ count: mt.dismissedCount })}
+                {#if mt.dismissed === null}
                   ·
-                  <a href="?dismissed=1#matches" data-sveltekit-noscroll>Show</a>
+                  <a href="?dismissed=1#matches" data-sveltekit-noscroll
+                    >{m.objects_matches_show()}</a
+                  >
                 {:else}
                   ·
-                  <a href="?#matches" data-sveltekit-noscroll>Hide</a>
+                  <a href="?#matches" data-sveltekit-noscroll>{m.objects_matches_hide()}</a>
                 {/if}
               </p>
-              {#each m.dismissed ?? [] as row (row.id)}
-                {@render matchRow(m.objectKey, row, '?/undismiss', 'Undo')}
+              {#each mt.dismissed ?? [] as row (row.id)}
+                {@render matchRow(mt.objectKey, row, '?/undismiss', m.objects_matches_undo())}
               {/each}
             {/if}
           {/if}
@@ -187,7 +192,7 @@
 
       <RelatedRecords related={relatedView(data.related)} error={form?.related?.error} />
 
-      <div class="v2-label" style="margin:22px 0 10px">Photos</div>
+      <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_photos()}</div>
       {#if form?.fileError}
         <p class="v2-error" role="alert" style="margin:0 0 10px">{form.fileError}</p>
       {/if}
@@ -195,7 +200,10 @@
         <div class="photos">
           {#each data.photos as p (p.id)}
             <div class="photo v2-card">
-              <a href={resolve(asInternalPath(p.href ?? ''))} aria-label="Download {p.file_name}">
+              <a
+                href={resolve(asInternalPath(p.href ?? ''))}
+                aria-label={m.app_objects_download_aria({ name: p.file_name })}
+              >
                 <img src={p.href} alt={p.file_name} loading="lazy" />
               </a>
               <div class="photo-foot">
@@ -204,9 +212,9 @@
                   <ConfirmAction
                     action="?/deleteFile"
                     hidden={{ attachment: p.id }}
-                    label="Delete"
-                    confirmLabel="Delete"
-                    explain="Deletes this photo permanently."
+                    label={m.common_delete()}
+                    confirmLabel={m.common_delete()}
+                    explain={m.app_objects_delete_photo()}
                   />
                 {/if}
               </div>
@@ -214,31 +222,33 @@
           {/each}
         </div>
       {:else}
-        <div class="v2-card cf"><p class="v2-sub" style="margin:9px 0">No photos yet.</p></div>
+        <div class="v2-card cf">
+          <p class="v2-sub" style="margin:9px 0">{m.app_objects_no_photos()}</p>
+        </div>
       {/if}
 
-      <div class="v2-label" style="margin:22px 0 10px">Files</div>
+      <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_files()}</div>
       <div class="v2-card cf">
         {#each data.files as f (f.id)}
           <div class="cf-row file-row">
             <span class="cf-value">
               <a class="file-link" href={resolve(asInternalPath(f.href ?? ''))}>{f.file_name}</a>
               <span class="v2-sub" style="display:block;font-size:12px">
-                {f.created_by?.name ?? 'Unknown'} · {shortDate(f.created_at)}
+                {f.created_by?.name ?? m.app_objects_unknown()} · {shortDate(f.created_at)}
               </span>
             </span>
             {#if f.can_delete}
               <ConfirmAction
                 action="?/deleteFile"
                 hidden={{ attachment: f.id }}
-                label="Delete"
-                confirmLabel="Delete"
-                explain="Deletes this file permanently."
+                label={m.common_delete()}
+                confirmLabel={m.common_delete()}
+                explain={m.app_objects_delete_file()}
               />
             {/if}
           </div>
         {:else}
-          <p class="v2-sub" style="margin:9px 0">No files yet.</p>
+          <p class="v2-sub" style="margin:9px 0">{m.app_objects_no_files()}</p>
         {/each}
       </div>
 
@@ -263,10 +273,12 @@
               type="file"
               name="file"
               required
-              aria-label="Add a photo or file"
+              aria-label={m.app_objects_add_file_aria()}
               onchange={checkPicked}
             />
-            <button class="v2-btn" type="submit" disabled={uploading}>Upload</button>
+            <button class="v2-btn" type="submit" disabled={uploading}
+              >{m.app_objects_upload()}</button
+            >
           </form>
         {/key}
         {#if uploadNote || form?.uploadError}
@@ -276,11 +288,11 @@
         {/if}
       {/if}
 
-      <div class="v2-label" style="margin:22px 0 10px">Timeline</div>
+      <div class="v2-label" style="margin:22px 0 10px">{m.objects_timeline()}</div>
       {#if canWrite}
         <CommentComposer
           files={false}
-          placeholder="Add a note…"
+          placeholder={m.objects_note_placeholder()}
           maxlength={10000}
           error={form?.noteError}
         />
@@ -291,7 +303,7 @@
         canWriteNotes={canWrite}
       />
 
-      <div class="v2-label" style="margin:22px 0 10px">Assignees</div>
+      <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_assignees()}</div>
       <div class="v2-card cf">
         {#if assignees.length > 0}
           {#each assignees as person (person.id)}
@@ -301,16 +313,16 @@
             </div>
           {/each}
         {:else}
-          <p class="v2-sub" style="margin:9px 0">No one is assigned.</p>
+          <p class="v2-sub" style="margin:9px 0">{m.app_objects_no_assignees()}</p>
         {/if}
       </div>
 
-      <div class="v2-label" style="margin:22px 0 10px">Created by</div>
+      <div class="v2-label" style="margin:22px 0 10px">{m.app_objects_created_by()}</div>
       <div class="v2-card cf">
         <div class="cf-row person">
           {#if record.created_by}<Avatar name={record.created_by.name} size={24} />{/if}
           <span class="cf-value">
-            {record.created_by?.name ?? 'Unknown'}
+            {record.created_by?.name ?? m.app_objects_unknown()}
             <span class="v2-sub"> · {shortDate(record.created_at)}</span>
           </span>
         </div>

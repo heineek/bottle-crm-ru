@@ -23,6 +23,7 @@
  * every settings-hub load. The route's `load` fetches `getOrgPeopleAndTeams`
  * itself, in parallel with this.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { ESCALATION_PRIORITIES } from '#lib/v2/enums.js';
 import { viewerIsAdmin } from './organization.js';
@@ -112,6 +113,14 @@ const HOUR_FIELDS = ['first_response_hours', 'resolution_hours', 'next_response_
  *  because the business-hours walker gives up after 5 years of calendar days. */
 const MAX_SLA_HOURS = 8760;
 
+/** The hour field's name inside a sentence. */
+function hourFieldLabel(field: string) {
+  if (field === 'first_response_hours') return m.settings_escalation_field_first_response_hours();
+  if (field === 'resolution_hours') return m.settings_escalation_field_resolution_hours();
+  if (field === 'next_response_hours') return m.settings_escalation_field_next_response_hours();
+  return field.replace(/_/g, ' ');
+}
+
 /**
  * Number input → what the API wants, or an error the form can show.
  *
@@ -126,7 +135,7 @@ function normalizeHours(value: unknown, field: string) {
   const hours = Number(value);
   if (!Number.isInteger(hours) || hours < 1 || hours > MAX_SLA_HOURS) {
     throw new Error(
-      `${field.replace(/_/g, ' ')} must be a whole number of hours from 1 to ${MAX_SLA_HOURS}, or blank for the default.`
+      m.settings_escalation_error_hours({ field: hourFieldLabel(field), max: MAX_SLA_HOURS })
     );
   }
   return hours;
@@ -165,7 +174,7 @@ export async function createEscalationPolicy(
 ): Promise<Schemas['EscalationPolicy']> {
   const body = buildBody(CREATE_FIELDS, values);
   if (typeof body.priority !== 'string' || !ESCALATION_PRIORITIES.includes(body.priority)) {
-    throw new Error('Pick a priority for the policy.');
+    throw new Error(m.settings_escalation_error_priority());
   }
   return await apiRequest('/cases/escalation-policies/', { method: 'POST', body }, { cookies });
 }
@@ -175,7 +184,7 @@ export async function updateEscalationPolicy(
   id: string,
   values: { [key: string]: unknown }
 ): Promise<Schemas['EscalationPolicy']> {
-  if (!id) throw new Error('Which policy? No policy id was given.');
+  if (!id) throw new Error(m.settings_escalation_error_no_id());
   const body = buildBody(UPDATE_FIELDS, values);
   return await apiRequest(
     `/cases/escalation-policies/${id}/`,
@@ -193,6 +202,6 @@ export async function deleteEscalationPolicy(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<Schemas['EscalationPolicyDeleteResponse']> {
-  if (!id) throw new Error('Which policy? No policy id was given.');
+  if (!id) throw new Error(m.settings_escalation_error_no_id());
   return await apiRequest(`/cases/escalation-policies/${id}/`, { method: 'DELETE' }, { cookies });
 }

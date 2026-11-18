@@ -6,6 +6,8 @@
    * catalogue the API returns, grouped by module; the serializer is what
    * refuses a name outside it.
    */
+  import { m } from '#lib/paraglide/messages.js';
+
   let {
     catalogue,
     values = {},
@@ -24,16 +26,28 @@
 
   let chosen = $derived(new Set(values.events ?? []));
 
-  /** "ticket.comment_added" reads as "Comment added". */
+  const ACTION_LABEL: Record<string, () => string> = {
+    created: m.settings_webhooks_event_created,
+    updated: m.settings_webhooks_event_updated,
+    deleted: m.settings_webhooks_event_deleted,
+    won: m.settings_webhooks_event_won,
+    lost: m.settings_webhooks_event_lost,
+    paid: m.settings_webhooks_event_paid,
+    comment_added: m.settings_webhooks_event_comment_added
+  };
+
+  /** "ticket.comment_added" reads as "Comment added"; an action this list lacks is spelled out from its code. */
   const actionLabel = (name: string) => {
     const action = name.split('.')[1] ?? name;
+    const known = ACTION_LABEL[action];
+    if (known) return known();
     return (action.charAt(0).toUpperCase() + action.slice(1)).replaceAll('_', ' ');
   };
 </script>
 
 <div class="wh-fields">
   <div class="v2-field">
-    <label for="{idPrefix}-url">Endpoint URL</label>
+    <label for="{idPrefix}-url">{m.settings_webhooks_url_label()}</label>
     <input
       id="{idPrefix}-url"
       name="url"
@@ -47,40 +61,44 @@
       value={values.url ?? ''}
     />
     <span class="v2-sub" style="font-size:11.5px">
-      HTTPS on the standard port, reachable from the public internet.
+      {m.settings_webhooks_url_hint()}
     </span>
   </div>
 
   <div class="v2-field">
-    <label for="{idPrefix}-description">What is it for?</label>
+    <label for="{idPrefix}-description">{m.settings_webhooks_description_label()}</label>
     <input
       id="{idPrefix}-description"
       name="description"
       maxlength="255"
       class="v2-input"
-      placeholder="e.g. Zapier: new leads to the sales sheet"
+      placeholder={m.settings_webhooks_description_placeholder()}
       value={values.description ?? ''}
     />
   </div>
 
   <div class="v2-field">
-    <label for="{idPrefix}-format">Send as</label>
+    <label for="{idPrefix}-format">{m.settings_webhooks_format_label()}</label>
     <select id="{idPrefix}-format" name="format" class="v2-input">
       {#each WEBHOOK_FORMATS as f (f.value)}
         <option value={f.value} selected={(values.format ?? 'json') === f.value}>{f.label}</option>
       {/each}
       {#if unknownFormat}
-        <option value={unknownFormat} selected>{unknownFormat} (current)</option>
+        <option value={unknownFormat} selected
+          >{m.settings_webhooks_format_current({ format: unknownFormat })}</option
+        >
       {/if}
     </select>
     <p class="v2-hint">
-      Teams posts an Adaptive Card to a Workflows webhook.
-      <a href={DOCS_WEBHOOKS} target="_blank" rel="noopener noreferrer">Read more</a>
+      {m.settings_webhooks_format_teams_hint()}
+      <a href={DOCS_WEBHOOKS} target="_blank" rel="noopener noreferrer"
+        >{m.settings_webhooks_read_more()}</a
+      >
     </p>
   </div>
 
   <fieldset class="wh-events">
-    <legend class="v2-label">Events</legend>
+    <legend class="v2-label">{m.settings_webhooks_events_legend()}</legend>
     {#each catalogue as group (group.module)}
       <div class="wh-group">
         <div class="wh-group-label">{group.label}</div>

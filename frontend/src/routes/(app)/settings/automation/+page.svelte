@@ -24,6 +24,7 @@
     modulePausedNote
   } from '#lib/v2/automation.js';
   import { ArrowUp, ArrowDown, Plus } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
   import type { Tone } from '#lib/v2/enums.js';
   import type { components } from '#lib/api-schema.js';
   import type { PageProps } from './$types';
@@ -43,7 +44,7 @@
   }
 </script>
 
-<PageHeader title="Automation">
+<PageHeader title={m.settings_automation_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
     {#if !data.forbidden && data.summary}{data.summary}{/if}
@@ -51,7 +52,7 @@
   {#snippet actions()}
     {#if !data.forbidden}
       <a class="v2-btn v2-btn-primary" href={resolve(asInternalPath('/settings/automation/new'))}
-        ><Plus />New rule</a
+        ><Plus />{m.settings_automation_new_rule()}</a
       >
     {/if}
   {/snippet}
@@ -70,18 +71,18 @@
         <div style="margin-bottom:12px">
           {#if pausedByModule(r, data.modules)}
             <NextAction
-              label="Paused"
+              label={m.settings_automation_paused_label()}
               tone="rust"
               text={modulePausedNote(r)}
-              action="Open Modules"
+              action="m.settings_automation_open_modules()"
               href="/settings/apps"
             />
           {:else}
             <NextAction
-              label="Paused"
+              label={m.settings_automation_paused_label()}
               tone="rust"
-              text={`"${r.name}": ${r.status_text} Switch it on again to take it over.`}
-              action="Open rule"
+              text={m.settings_automation_paused_note({ name: r.name, status: r.status_text })}
+              action={m.settings_automation_open_rule()}
               href={`/settings/automation/${r.id}`}
             />
           {/if}
@@ -90,19 +91,19 @@
 
       {#if !rules.length}
         <EmptyState
-          title="No rules yet"
-          body="A rule does something when a record is created or changes: assign it, create a task, notify people, or set a field."
+          title={m.settings_automation_empty_title()}
+          body={m.settings_automation_empty_body()}
         />
       {:else}
         <div class="v2-table-wrap" style="margin-left:0;margin-right:0;overflow-x:auto">
           <table class="v2-table au-table">
             <thead>
               <tr>
-                <th>Rule</th>
-                <th>When</th>
-                <th>Last 7 days</th>
-                <th>State</th>
-                <th><span class="au-sr">Order</span></th>
+                <th>{m.settings_automation_col_rule()}</th>
+                <th>{m.settings_automation_col_when()}</th>
+                <th>{m.settings_automation_col_last_7_days()}</th>
+                <th>{m.settings_automation_col_state()}</th>
+                <th><span class="au-sr">{m.settings_automation_col_order()}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -143,7 +144,9 @@
                           <button
                             class="v2-btn v2-btn-sm au-icon"
                             type="submit"
-                            aria-label="Move {r.name} {direction}"
+                            aria-label={direction === 'up'
+                              ? m.settings_automation_move_up({ name: r.name })
+                              : m.settings_automation_move_down({ name: r.name })}
                             disabled={direction === 'up' ? i === 0 : i === rules.length - 1}
                           >
                             {#if direction === 'up'}<ArrowUp size={14} />{:else}<ArrowDown

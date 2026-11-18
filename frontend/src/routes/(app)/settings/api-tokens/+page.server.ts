@@ -3,6 +3,7 @@ import { listOrgTokens, createToken, revokeToken } from '#lib/server/v2/tokens.j
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { expiryFromChoice, scopesFromChoice } from '#lib/v2/token-rules.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -27,7 +28,7 @@ export const actions: Actions = {
     const name = form.get('name')?.toString().trim();
     const expires_at = expiryFromChoice(form.get('expiry')?.toString());
     const scopes = scopesFromChoice(form.get('access')?.toString());
-    if (!name) return fail(400, { create: { error: 'Give the token a name.' } });
+    if (!name) return fail(400, { create: { error: m.settings_tokens_error_name() } });
 
     try {
       const res = await createToken({ cookies }, { name, expires_at, scopes });
@@ -46,8 +47,8 @@ export const actions: Actions = {
         create: {
           error:
             apiStatus(err) === 403
-              ? 'You do not have permission to create tokens here.'
-              : readableError(err, 'Could not create that token.')
+              ? m.settings_tokens_error_create_forbidden()
+              : readableError(err, m.settings_tokens_error_create())
         }
       });
     }
@@ -57,15 +58,15 @@ export const actions: Actions = {
   revoke: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString();
-    if (!id) return fail(400, { error: 'Which token?' });
+    if (!id) return fail(400, { error: m.settings_tokens_error_which() });
     try {
       await revokeToken({ cookies }, id);
     } catch (err) {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
         error:
           apiStatus(err) === 403
-            ? 'Only an admin can revoke tokens.'
-            : readableError(err, 'Could not revoke that token.')
+            ? m.settings_tokens_error_revoke_forbidden()
+            : readableError(err, m.settings_tokens_error_revoke())
       });
     }
     return { revoked: id };
@@ -85,8 +86,8 @@ export const actions: Actions = {
       return fail(apiStatus(err) === 403 ? 403 : 400, {
         error:
           apiStatus(err) === 403
-            ? 'Only an admin can revoke tokens.'
-            : readableError(err, 'Could not load tokens to revoke.')
+            ? m.settings_tokens_error_revoke_forbidden()
+            : readableError(err, m.settings_tokens_error_load())
       });
     }
     if (!ids?.length) return { revokedOrphaned: 0 };

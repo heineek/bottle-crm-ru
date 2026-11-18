@@ -1,9 +1,9 @@
 /** Private apps on screen, browser-safe: the fixed copy and plain-word access. */
 import { scopeLabel } from '#lib/v2/connected-apps.js';
+import { m } from '#lib/paraglide/messages.js';
 
-export const NOT_REVIEWED =
-  'BottleCRM has not reviewed this app. Install it only if you trust whoever sent you the file.';
-export const TRUST_LABEL = 'I trust whoever wrote this app';
+export const notReviewed = () => m.settings_private_apps_not_reviewed();
+export const trustLabel = () => m.settings_private_apps_trust();
 
 /** The consent screen's access block, as the preview sends it. */
 export type Access = { scopes: string[]; added: string[]; removed: string[] };
@@ -20,20 +20,16 @@ export const keepsKey = (mode: string, access: Access): boolean =>
 
 /** The removal confirmation, naming only what the app has. */
 export function removeSentence(name: string, has: { objects: boolean; key: boolean }): string {
-  const out = [`Remove ${name}?`];
-  if (has.objects) {
-    out.push(
-      "Its objects are archived with every record kept, and they still count toward the plan's custom objects until you delete them."
-    );
-  }
-  if (has.key) out.push('Its key stops working and its subscriptions are deleted.');
+  const out = [m.settings_private_apps_remove_question({ name })];
+  if (has.objects) out.push(m.settings_private_apps_remove_objects());
+  if (has.key) out.push(m.settings_private_apps_remove_key());
   return out.join(' ');
 }
 
 const names = (scopes: string[], action: string) =>
   scopes
     .filter((s) => s.endsWith(`:${action}`))
-    .map((s) => scopeLabel(s).replace(/: [a-z]+$/, ''))
+    .map((s) => scopeLabel(s).replace(/: [^:]+$/, ''))
     .join(', ');
 
 /**
@@ -44,54 +40,56 @@ export function accessSentences(scopes: string[], keeps = false): string[] {
   if (!scopes.length) return [];
   const out: string[] = [];
   const reads = names(scopes, 'read');
-  const writes = names(scopes, 'write')
-    .split(', ')
-    .filter((n) => n && n !== 'Subscriptions');
-  if (reads) out.push(`It may read: ${reads}.`);
-  if (writes.length) out.push(`It may write: ${writes.join(', ')}.`);
+  // Subscriptions are said in their own sentence below, not as a write.
+  const writes = names(
+    scopes.filter((s) => !s.startsWith('hooks:')),
+    'write'
+  );
+  if (reads) out.push(m.settings_private_apps_may_read({ list: reads }));
+  if (writes) out.push(m.settings_private_apps_may_write({ list: writes }));
   if (scopes.some((s) => s.startsWith('objects:'))) {
-    out.push('Object access covers every custom object in this organization, not only its own.');
+    out.push(m.settings_private_apps_objects_scope());
   }
   if (scopes.includes('hooks:write')) {
-    out.push('It receives events about the records it may read.');
+    out.push(m.settings_private_apps_hooks_scope());
   }
-  out.push(
-    keeps
-      ? 'Its existing key keeps working, with the access listed here. The key can write records but never settings.'
-      : 'It gets its own key, shown once. The key can write records but never settings.'
-  );
+  out.push(keeps ? m.settings_private_apps_key_kept() : m.settings_private_apps_key_new());
   return out;
 }
 
 /** The custom objects line, or null when the app needs no new place. */
 export function objectsLine(objects: { needed: number; included: number; used: number }) {
   if (!objects.needed) return null;
-  const verb = objects.used === 1 ? 'is' : 'are';
-  return `Needs ${objects.needed}. The plan includes ${objects.included}, and ${objects.used} ${verb} used.`;
+  return m.settings_private_apps_objects_line({
+    needed: objects.needed,
+    included: objects.included,
+    count: objects.used
+  });
 }
 
 /** The consent screen's first line: install, update or install again. */
 export function modeLine(mode: string, version: number, installed: number | null): string {
   if (mode === 'upgrade') {
     return installed
-      ? `Update from version ${installed} to version ${version}`
-      : `Update to version ${version}`;
+      ? m.settings_private_apps_mode_update_from({ installed, version })
+      : m.settings_private_apps_mode_update({ version });
   }
-  if (mode === 'install_again') return `Install again, version ${version}`;
-  return `Install, version ${version}`;
+  if (mode === 'install_again') return m.settings_private_apps_mode_again({ version });
+  return m.settings_private_apps_mode_install({ version });
 }
 
 /** The page title once the app is applied. */
-export const appliedTitle = (mode: string) => (mode === 'upgrade' ? 'Updated' : 'Installed');
+export const appliedTitle = (mode: string) =>
+  mode === 'upgrade' ? m.settings_private_apps_updated() : m.settings_private_apps_installed();
 
 /**
  * What happened to the key when an apply returned none; empty when there is
  * nothing to say, as after an update of an app that never held access.
  */
 export function noNewKeyLine(mode: string, asksAccess: boolean, hadAccess: boolean): string {
-  if (mode !== 'upgrade') return 'It asked for no access, so no key was made.';
+  if (mode !== 'upgrade') return m.settings_private_apps_no_key();
   if (!hadAccess) return '';
   return asksAccess
-    ? 'Its existing key keeps working, with the access shown on the review screen.'
-    : 'It no longer has access, so its key has stopped working.';
+    ? m.settings_private_apps_key_kept_review()
+    : m.settings_private_apps_key_stopped();
 }

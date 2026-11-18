@@ -8,6 +8,7 @@ import {
 import { readableError } from '#lib/server/v2/form-errors.js';
 import { apiStatus } from '#lib/api-errors.js';
 import { moveKeys } from '#lib/v2/lead-sources.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -20,9 +21,8 @@ export const load: PageServerLoad = async (event) => {
  * posting anyway reads this.
  */
 function refusal(err: unknown, fallback: string): { status: number; error: string } {
-  if (apiStatus(err) === 403)
-    return { status: 403, error: 'Only an admin can change lead sources.' };
-  if (apiStatus(err) === 404) return { status: 404, error: 'That source no longer exists.' };
+  if (apiStatus(err) === 403) return { status: 403, error: m.settings_lead_sources_admin_only() };
+  if (apiStatus(err) === 404) return { status: 404, error: m.settings_lead_sources_gone_now() };
   return { status: 400, error: readableError(err, fallback) };
 }
 
@@ -36,11 +36,12 @@ export const actions: Actions = {
   async add(event) {
     const form = await event.request.formData();
     const label = form.get('label')?.toString().trim() ?? '';
-    if (!label) return fail(400, { add: { id: '', error: 'Give the source a name.', label } });
+    if (!label)
+      return fail(400, { add: { id: '', error: m.settings_lead_sources_give_name(), label } });
     try {
       await createLeadSource(event, label);
     } catch (err) {
-      const { status, error } = refusal(err, 'Could not add the source.');
+      const { status, error } = refusal(err, m.settings_lead_sources_add_failed());
       return fail(status, { add: { id: '', error, label } });
     }
     return { added: label };
@@ -50,11 +51,11 @@ export const actions: Actions = {
     const form = await event.request.formData();
     const id = form.get('id')?.toString() ?? '';
     const label = form.get('label')?.toString().trim() ?? '';
-    if (!label) return fail(400, { rename: { id, error: 'A source needs a name.' } });
+    if (!label) return fail(400, { rename: { id, error: m.settings_lead_sources_needs_name() } });
     try {
       await updateLeadSource(event, id, { label });
     } catch (err) {
-      return refused('rename', id, err, 'Could not rename the source.');
+      return refused('rename', id, err, m.settings_lead_sources_rename_failed());
     }
     return { renamed: id };
   },
@@ -65,12 +66,12 @@ export const actions: Actions = {
     const id = form.get('id')?.toString() ?? '';
     const active = form.get('is_active')?.toString();
     if (active !== 'true' && active !== 'false') {
-      return fail(400, { retire: { id, error: 'That source could not be changed.' } });
+      return fail(400, { retire: { id, error: m.settings_lead_sources_change_invalid() } });
     }
     try {
       await updateLeadSource(event, id, { is_active: active === 'true' });
     } catch (err) {
-      return refused('retire', id, err, 'Could not change the source.');
+      return refused('retire', id, err, m.settings_lead_sources_change_failed());
     }
     return { retired: id };
   },
@@ -85,13 +86,14 @@ export const actions: Actions = {
       const { sources } = await listSourcesForSettings(event);
       keys = moveKeys(sources, key, direction);
     } catch (err) {
-      return refused('move', key, err, 'Could not read the sources.');
+      return refused('move', key, err, m.settings_lead_sources_read_failed());
     }
-    if (!keys) return fail(400, { move: { id: key, error: 'That source cannot move that way.' } });
+    if (!keys)
+      return fail(400, { move: { id: key, error: m.settings_lead_sources_move_invalid() } });
     try {
       await orderLeadSources(event, keys);
     } catch (err) {
-      return refused('move', key, err, 'Could not reorder the sources.');
+      return refused('move', key, err, m.settings_lead_sources_reorder_failed());
     }
     return { moved: key };
   }

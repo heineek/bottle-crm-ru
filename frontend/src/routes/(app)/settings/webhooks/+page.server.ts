@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { listWebhooks, createWebhook, eventsFromForm } from '#lib/server/v2/webhooks.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -29,17 +30,17 @@ export const actions: Actions = {
       events: eventsFromForm(form)
     };
     if (!values.events.length) {
-      return fail(400, { create: { error: 'Choose at least one event.', values } });
+      return fail(400, { create: { error: m.settings_webhooks_events_required(), values } });
     }
     try {
       const created = await createWebhook(event, values);
       return { created: { id: created.id, url: created.url, secret: created.secret } };
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { create: { error: 'Only an admin can add webhooks.', values } });
+        return fail(403, { create: { error: m.settings_webhooks_add_forbidden(), values } });
       }
       return fail(400, {
-        create: { error: readableError(err, 'Could not add the webhook.'), values }
+        create: { error: readableError(err, m.settings_webhooks_add_failed()), values }
       });
     }
   }

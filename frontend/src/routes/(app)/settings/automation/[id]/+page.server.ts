@@ -9,15 +9,16 @@ import {
   tryRule,
   switchOff,
   deleteRule,
-  RULE_GONE
+  ruleGone
 } from '#lib/server/v2/automation.js';
 import { UUID } from '#lib/v2/custom-objects.js';
 import { checkId } from '#lib/server/v2/custom-objects.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
-const RECORD_GONE = 'That record does not exist, or you cannot open it.';
+const recordGone = () => m.settings_automation_record_gone();
 
 function sentence(err: unknown, fallback: string) {
   const detail = apiErrorBody(err)?.detail;
@@ -37,7 +38,7 @@ function statusOf(err: unknown) {
  */
 export const load: PageServerLoad = async (event) => {
   const { id } = event.params;
-  if (!UUID.test(id)) error(404, RULE_GONE);
+  if (!UUID.test(id)) error(404, ruleGone());
   const list = await listRules(event);
   if (list.forbidden) return { forbidden: true as const };
   const [catalogue, rule] = await Promise.all([getCatalogue(event), getRule(event, id)]);
@@ -48,7 +49,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   async save(event) {
     const { id } = event.params;
-    if (!UUID.test(id)) return fail(400, { save: { general: RULE_GONE, rows: {} } });
+    if (!UUID.test(id)) return fail(400, { save: { general: ruleGone(), rows: {} } });
     const form = await event.request.formData();
     try {
       const body = ruleFromForm(form, { create: false });
@@ -63,7 +64,7 @@ export const actions: Actions = {
   /** Plans the saved rule on one record; nothing is written. */
   async try(event) {
     const { id } = event.params;
-    if (!UUID.test(id)) return fail(404, { tryError: RULE_GONE });
+    if (!UUID.test(id)) return fail(404, { tryError: ruleGone() });
     const form = await event.request.formData();
     const recordId = form.get('record_id');
     const name = form.get('record_name');
@@ -71,26 +72,26 @@ export const actions: Actions = {
     try {
       record = checkId(recordId);
     } catch {
-      return fail(404, { tryError: RECORD_GONE });
+      return fail(404, { tryError: recordGone() });
     }
     try {
       const steps = await tryRule(event, id, record);
       const recordName = typeof name === 'string' ? name.trim().slice(0, 120) : '';
       return { tried: { recordName, steps } };
     } catch (err) {
-      if (apiStatus(err) === 404) return fail(404, { tryError: RECORD_GONE });
-      return fail(statusOf(err), { tryError: sentence(err, 'Could not try the rule.') });
+      if (apiStatus(err) === 404) return fail(404, { tryError: recordGone() });
+      return fail(statusOf(err), { tryError: sentence(err, m.settings_automation_try_failed()) });
     }
   },
 
   async switchOff(event) {
     const { id } = event.params;
-    if (!UUID.test(id)) return fail(400, { switchOff: { general: RULE_GONE } });
+    if (!UUID.test(id)) return fail(400, { switchOff: { general: ruleGone() } });
     try {
       await switchOff(event, id);
     } catch (err) {
       return fail(statusOf(err), {
-        switchOff: { general: sentence(err, 'Could not switch the rule off.') }
+        switchOff: { general: sentence(err, m.settings_automation_switch_off_failed()) }
       });
     }
     return { switchedOff: true };
@@ -98,12 +99,12 @@ export const actions: Actions = {
 
   async remove(event) {
     const { id } = event.params;
-    if (!UUID.test(id)) return fail(400, { remove: { general: RULE_GONE } });
+    if (!UUID.test(id)) return fail(400, { remove: { general: ruleGone() } });
     try {
       await deleteRule(event, id);
     } catch (err) {
       return fail(statusOf(err), {
-        remove: { general: sentence(err, 'Could not delete the rule.') }
+        remove: { general: sentence(err, m.settings_automation_delete_failed()) }
       });
     }
     redirect(303, '/settings/automation');

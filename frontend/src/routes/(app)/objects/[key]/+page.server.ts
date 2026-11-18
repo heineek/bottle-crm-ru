@@ -4,7 +4,7 @@ import {
   getObject,
   listRecords,
   mayMassImport,
-  OBJECT_GONE
+  objectGone
 } from '#lib/server/v2/custom-objects.js';
 import { forwardCsvImport } from '#lib/server/v2/csv-import.js';
 import { displayValue } from '#lib/server/v2/record-fields.js';
@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ cookies, params, url, locals }) => 
   const pageNumber = Number.isInteger(asked) && asked >= 1 ? asked : 1;
 
   const definition = await getObject({ cookies }, key);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   const columns = (definition.fields ?? [])
     .filter((f) => f.field_type !== 'link')
     .slice(0, LIST_COLUMNS);

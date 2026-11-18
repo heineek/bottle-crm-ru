@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import {
   checkKey,
   getObject,
-  OBJECT_GONE,
+  objectGone,
   type ObjectField
 } from '#lib/server/v2/custom-objects.js';
 import { getBoard, moveAction } from '#lib/server/v2/object-board.js';
@@ -39,7 +39,7 @@ function shownFields(definition: { board_field: string; fields: ObjectField[] })
 export const load: PageServerLoad = async ({ cookies, params, url, locals }) => {
   const key = checkKey(params.key);
   const definition = await getObject({ cookies }, key);
-  if (definition.is_active === false) error(404, OBJECT_GONE);
+  if (definition.is_active === false) error(404, objectGone());
   const boardField = definition.board_field;
   if (!boardField) redirect(303, `/objects/${key}`);
 

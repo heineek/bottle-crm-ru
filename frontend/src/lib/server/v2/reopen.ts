@@ -17,6 +17,7 @@
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
 import { REOPEN_TO_STATUSES } from '#lib/v2/enums.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
 
@@ -68,11 +69,11 @@ export async function updateReopenPolicy(
 ): Promise<Schemas['ReopenPolicy']> {
   const days = Number(values.reopen_window_days);
   if (!Number.isInteger(days) || days < 1 || days > 365) {
-    throw new Error('The reopen window must be a whole number of days between 1 and 365.');
+    throw new Error(m.settings_reopen_error_window());
   }
   const status = values.reopen_to_status;
   if (typeof status !== 'string' || !REOPEN_TO_STATUSES.includes(status)) {
-    throw new Error('A reopened ticket has to come back as New, Assigned or Pending.');
+    throw new Error(m.settings_reopen_error_status());
   }
 
   const body: FormBody<Schemas['PatchedReopenPolicyRequest']> = {};

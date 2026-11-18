@@ -12,6 +12,7 @@
  * `include_token_refresh=true` is sent (or `event_type=TOKEN_REFRESH`).
  */
 import { apiRequest } from '#lib/api-helpers.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Cookies } from '@sveltejs/kit';
 import type { components } from '#lib/api-schema.js';
@@ -72,7 +73,7 @@ export async function listAuditLog(
       return {
         forbidden: false,
         ...page,
-        error: (err instanceof Error && err.message) || 'That filter is not valid.',
+        error: (err instanceof Error && err.message) || m.settings_audit_error_filter(),
         entries: [],
         count: 0,
         eventTypes: []

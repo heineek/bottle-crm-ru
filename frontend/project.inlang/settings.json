@@ -11,6 +11,7 @@
     "pathPattern": [
       "./messages/{locale}.json",
       "./messages/app/{locale}.json",
+      "./messages/settings/{locale}.json",
       "./messages/invoices/{locale}.json",
       "./messages/documents/{locale}.json",
       "./messages/timesheet/{locale}.json",
@@ -26,7 +27,8 @@
       "./messages/accounts/{locale}.json",
       "./messages/pipeline/{locale}.json",
       "./messages/goals/{locale}.json",
-      "./messages/projects/{locale}.json"
+      "./messages/projects/{locale}.json",
+      "./messages/objects/{locale}.json"
     ]
   }
 }

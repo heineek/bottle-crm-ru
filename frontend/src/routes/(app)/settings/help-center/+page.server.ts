@@ -5,6 +5,7 @@ import {
   updateHelpCenterSettings
 } from '#lib/server/v2/help-center-settings.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -29,7 +30,7 @@ export const actions: Actions = {
       // the union of the two.
       const update: { error: string; values?: typeof values } =
         apiStatus(err) === 403
-          ? { error: 'Only an admin can change the help center.' }
+          ? { error: m.settings_helpcenter_error_admin_only() }
           : { error: saveErrorMessage(err, readableError), values };
       return fail(apiStatus(err) === 403 ? 403 : 400, { update });
     }

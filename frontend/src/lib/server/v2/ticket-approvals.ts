@@ -18,6 +18,7 @@
  * preselect the approver multi-select. The page reads `.email` off each entry
  * for the sentence it renders on the row.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest, type FormBody } from '#lib/api-helpers.js';
 import { viewerIsAdmin } from './organization.js';
 import type { Cookies } from '@sveltejs/kit';
@@ -107,7 +108,7 @@ export async function createApprovalRule(
   values: RuleValues
 ): Promise<Schemas['ApprovalRule']> {
   const body = buildBody(CREATE_FIELDS, values);
-  if (!body.name) throw new Error('A rule needs a name.');
+  if (!body.name) throw new Error(m.settings_approvals_error_no_name());
   body.trigger_event = TRIGGER_EVENT;
   return await apiRequest('/cases/approval-rules/', { method: 'POST', body }, { cookies });
 }
@@ -117,7 +118,7 @@ export async function updateApprovalRule(
   id: string,
   values: RuleValues
 ): Promise<Schemas['ApprovalRule']> {
-  if (!id) throw new Error('Which rule? No rule id was given.');
+  if (!id) throw new Error(m.settings_approvals_error_no_id());
   const body = buildBody(UPDATE_FIELDS, values);
   return await apiRequest(`/cases/approval-rules/${id}/`, { method: 'PUT', body }, { cookies });
 }
@@ -162,7 +163,7 @@ export async function deleteApprovalRule(
   { cookies }: { cookies: Cookies },
   id: string
 ): Promise<{ turned_off: boolean }> {
-  if (!id) throw new Error('Which rule? No rule id was given.');
+  if (!id) throw new Error(m.settings_approvals_error_no_id());
   const resp: Schemas['ApprovalRuleDeactivatedResponse'] | null = await apiRequest(
     `/cases/approval-rules/${id}/`,
     { method: 'DELETE' },

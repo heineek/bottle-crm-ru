@@ -25,6 +25,7 @@ import {
 } from '#lib/server/v2/private-apps.js';
 import { clearSampleData } from '#lib/server/packs.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { viewerIsAdmin } from '#lib/server/v2/organization.js';
 import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import type { ModuleRow } from '#lib/v2/modules.js';
@@ -87,12 +88,12 @@ async function writeModules(
   build: (rows: ModuleRow[]) => { off: string[]; order: string[] } | null
 ) {
   const answer = await getModules(event);
-  if (!answer) return fail(400, { errors: ['Modules could not be loaded.'], key });
+  if (!answer) return fail(400, { errors: [m.settings_modules_failed_title()], key });
   if (!answer.canEdit) {
-    return fail(403, { errors: ['Only an organization admin can switch modules on or off.'], key });
+    return fail(403, { errors: [m.settings_modules_forbidden()], key });
   }
   const body = build(answer.modules);
-  if (!body) return fail(400, { errors: ['That module could not be changed.'], key });
+  if (!body) return fail(400, { errors: [m.settings_modules_not_changed()], key });
   try {
     await putModules(event, body);
   } catch (err) {
@@ -104,7 +105,7 @@ async function writeModules(
 async function appAction(event: RequestEvent, action: 'install' | 'upgrade' | 'remove') {
   const form = await event.request.formData();
   const id = form.get('app')?.toString() ?? '';
-  if (!isAppId(id)) return fail(400, { appError: 'That app is not in the catalogue.', app: id });
+  if (!isAppId(id)) return fail(400, { appError: m.settings_apps_refusal_missing(), app: id });
   try {
     if (action === 'install') {
       // An unticked box submits nothing, so absent is an explicit no.
@@ -125,9 +126,7 @@ async function appAction(event: RequestEvent, action: 'install' | 'upgrade' | 'r
 const MAX_FILE_BYTES = 1_000_000;
 
 const privateRefusal = (err: unknown, fallback: string) =>
-  apiStatus(err) === 403
-    ? 'Only an administrator can manage your own apps.'
-    : readableError(err, fallback);
+  apiStatus(err) === 403 ? m.settings_private_apps_admin_only() : readableError(err, fallback);
 
 const privateStatus = (err: unknown) => {
   const status = apiStatus(err);
@@ -142,12 +141,12 @@ export const actions: Actions = {
     let text = form.get('manifest')?.toString() ?? '';
     if (file instanceof File && file.size > 0) {
       if (file.size > MAX_FILE_BYTES) {
-        return fail(400, { uploadError: 'That file is too large to be an app.' });
+        return fail(400, { uploadError: m.settings_private_apps_file_too_large() });
       }
       text = await file.text();
     }
     if (!text.trim()) {
-      return fail(400, { uploadError: 'Choose a .json file or paste the text of the file.' });
+      return fail(400, { uploadError: m.settings_private_apps_file_missing() });
     }
     let id: string;
     try {
@@ -158,7 +157,7 @@ export const actions: Actions = {
         return fail(400, { uploadErrors: errors });
       }
       return fail(privateStatus(err), {
-        uploadError: privateRefusal(err, 'Could not read that file.')
+        uploadError: privateRefusal(err, m.settings_private_apps_file_unreadable())
       });
     }
     redirect(303, `/settings/apps/uploads/${encodeURIComponent(id)}`);
@@ -166,13 +165,13 @@ export const actions: Actions = {
 
   async removePrivate({ cookies, request }) {
     const id = (await request.formData()).get('id');
-    if (!isPrivateAppId(id)) return fail(400, { privateError: 'Which app?' });
+    if (!isPrivateAppId(id)) return fail(400, { privateError: m.settings_private_apps_which() });
     try {
       const res = await removePrivateApp({ cookies }, id);
       return { removedPrivate: res.app.name };
     } catch (err) {
       return fail(privateStatus(err), {
-        privateError: privateRefusal(err, 'Could not remove that app.')
+        privateError: privateRefusal(err, m.settings_private_apps_remove_failed())
       });
     }
   },
@@ -180,13 +179,13 @@ export const actions: Actions = {
   /** The key in the reply is shown once by the page and kept nowhere else. */
   async replaceKey({ cookies, request }) {
     const id = (await request.formData()).get('id');
-    if (!isPrivateAppId(id)) return fail(400, { privateError: 'Which app?' });
+    if (!isPrivateAppId(id)) return fail(400, { privateError: m.settings_private_apps_which() });
     try {
       const res = await replacePrivateKey({ cookies }, id);
       return { revealed: { name: res.app.name, key: res.key } };
     } catch (err) {
       return fail(privateStatus(err), {
-        privateError: privateRefusal(err, 'Could not replace that key.')
+        privateError: privateRefusal(err, m.settings_private_apps_replace_key_failed())
       });
     }
   },
@@ -200,7 +199,7 @@ export const actions: Actions = {
     const key = form.get('key')?.toString() ?? '';
     const on = form.get('on')?.toString();
     if (on !== 'true' && on !== 'false') {
-      return fail(400, { errors: ['That module could not be changed.'], key });
+      return fail(400, { errors: [m.settings_modules_not_changed()], key });
     }
     return writeModules(event, key, (rows) => switchBody(rows, key, on === 'true'));
   },
@@ -220,9 +219,9 @@ export const actions: Actions = {
       return { cleared: deleted ?? 0, retained };
     } catch (err) {
       if (apiStatus(err) === 403) {
-        return fail(403, { sampleError: 'Only an administrator can clear sample data.' });
+        return fail(403, { sampleError: m.settings_org_clear_forbidden() });
       }
-      return fail(400, { sampleError: readableError(err, 'Could not clear sample data.') });
+      return fail(400, { sampleError: readableError(err, m.settings_org_clear_failed()) });
     }
   }
 };

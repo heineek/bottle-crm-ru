@@ -13,6 +13,7 @@
   import SettingsCrumb from '#lib/v2/components/SettingsCrumb.svelte';
   import { planButton } from '#lib/v2/billing.js';
   import type { Billing } from '#lib/server/v2/billing.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -46,9 +47,9 @@
   }}
 />
 
-<PageHeader title="Billing">
+<PageHeader title={m.settings_billing_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
-  {#snippet sub()}The plan this organization is on.{/snippet}
+  {#snippet sub()}{m.settings_billing_sub()}{/snippet}
 </PageHeader>
 
 <div class="v2-scroll">
@@ -58,21 +59,21 @@
     {/if}
 
     <section class="v2-card bl-current" aria-labelledby="bl-current">
-      <div class="v2-label" id="bl-current">Current plan</div>
+      <div class="v2-label" id="bl-current">{m.settings_billing_current_plan()}</div>
       <div class="bl-name">{answer.plan.name}</div>
       {#if answer.state}
         <p class="bl-state">{answer.state.sentence}</p>
       {:else if answer.plans === null}
         <p class="v2-sub bl-state">
-          Only an organization admin can see the billing details or change the plan.
+          {m.settings_billing_member_note()}
         </p>
       {/if}
       {#if answer.canManage}
         <form method="POST" action="?/manage" use:enhance={submitting} class="bl-manage">
           <button type="submit" class="v2-btn v2-btn-primary bl-tap" disabled={busy}>
-            Manage billing
+            {m.settings_billing_manage()}
           </button>
-          <span class="v2-hint">Change the card, see invoices or cancel.</span>
+          <span class="v2-hint">{m.settings_billing_manage_hint()}</span>
         </form>
       {/if}
       {#if form?.message}
@@ -84,14 +85,14 @@
     </section>
 
     {#if plans.length}
-      <h2 class="bl-h">Plans</h2>
+      <h2 class="bl-h">{m.settings_billing_plans()}</h2>
       <div class="bl-plans">
         {#each plans as plan (plan.key)}
           {@const button = planButton(plan)}
           <section class="v2-card bl-plan" aria-labelledby={`bl-plan-${plan.key}`}>
             <div class="bl-plan-head">
               <h3 id={`bl-plan-${plan.key}`}>{plan.name}</h3>
-              {#if plan.current}<Pill tone="moss">Current</Pill>{/if}
+              {#if plan.current}<Pill tone="moss">{m.settings_billing_current()}</Pill>{/if}
             </div>
             {#if plan.priceText}<div class="bl-price">{plan.priceText}</div>{/if}
             {#if plan.features.length}
@@ -109,7 +110,7 @@
                     {#if button.confirm}<p class="bl-confirm">{button.confirm}</p>{/if}
                     <div class="bl-confirm-row">
                       <button type="submit" class="v2-btn v2-btn-primary bl-tap" disabled={busy}>
-                        Confirm
+                        {m.common_confirm()}
                       </button>
                       <button
                         type="button"
@@ -117,7 +118,7 @@
                         disabled={busy}
                         onclick={() => (armed = null)}
                       >
-                        Cancel
+                        {m.common_cancel()}
                       </button>
                     </div>
                   </form>
@@ -151,8 +152,7 @@
         {/each}
       </div>
       <p class="v2-sub bl-foot">
-        Choosing a plan or managing billing takes you to the payment provider's page, which brings
-        you back here when you are done. Switching between plans happens on this page.
+        {m.settings_billing_foot()}
       </p>
     {/if}
   </div>

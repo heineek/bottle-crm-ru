@@ -24,6 +24,8 @@
   import { isOn, TARGET_MODULES } from '#lib/v2/modules.js';
   import { FIELD_TYPE_LABEL, TARGET_MODEL_LABEL } from '#lib/v2/enums.js';
   import { Plus, TriangleAlert, Filter } from '@lucide/svelte';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
   import type { components } from '#lib/api-schema.js';
 
@@ -86,32 +88,48 @@
   let gaps = $derived(
     data.fields.filter((f) => f.is_required && (f.records_missing_value ?? 0) > 0)
   );
+
+  let subParts = $derived(
+    messageParts(m.settings_fields_sub({ fields: slot('fields'), types: slot('types') }))
+  );
 </script>
 
-<PageHeader title="Custom fields">
+<PageHeader title={m.settings_fields_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(totals.active)}</span> fields across
-    <span class="v2-num">{count(totals.models_extended)}</span> record types
+    {#each subParts as p, i (i)}{#if p.key === 'fields'}<span class="v2-num"
+          >{count(totals.active)}</span
+        >{:else if p.key === 'types'}<span class="v2-num">{count(totals.models_extended)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit && !editing}
-      <button class="v2-btn v2-btn-primary" onclick={openCreate}><Plus />New field</button>
+      <button class="v2-btn v2-btn-primary" onclick={openCreate}
+        ><Plus />{m.settings_fields_new_button()}</button
+      >
     {/if}
   {/snippet}
 </PageHeader>
 
 <div class="v2-pad" style="padding-top:16px;flex:none">
   <div class="v2-stats">
-    <StatCard label="Active fields" value={count(totals.active)} tone="ink" />
-    <StatCard label="Record types extended" value={count(totals.models_extended)} tone="slate" />
+    <StatCard label={m.settings_fields_stat_active()} value={count(totals.active)} tone="ink" />
     <StatCard
-      label="Required with gaps"
+      label={m.settings_fields_stat_extended()}
+      value={count(totals.models_extended)}
+      tone="slate"
+    />
+    <StatCard
+      label={m.settings_fields_stat_gaps()}
       value={count(totals.required_with_gaps)}
       tone={totals.required_with_gaps > 0 ? 'clay' : 'slate'}
-      detail="Records that predate the rule"
+      detail={m.settings_fields_stat_gaps_detail()}
     />
-    <StatCard label="Turned off" value={count(totals.count - totals.active)} tone="slate" />
+    <StatCard
+      label={m.settings_fields_stat_off()}
+      value={count(totals.count - totals.active)}
+      tone="slate"
+    />
   </div>
 </div>
 
@@ -120,10 +138,14 @@
     {#if editing}
       {@const current = editing}
       <SettingsFormPanel
-        title={current === 'new' ? 'New custom field' : `Edit ${current.label}`}
+        title={current === 'new'
+          ? m.settings_fields_new_title()
+          : m.settings_fields_edit_title({ label: current.label })}
         action={current === 'new' ? '?/create' : '?/update'}
         error={current === 'new' ? form?.create?.error : form?.update?.error}
-        submitLabel={current === 'new' ? 'Add field' : 'Save field'}
+        submitLabel={current === 'new'
+          ? m.settings_fields_add_button()
+          : m.settings_fields_save_button()}
         oncancel={() => (editing = null)}
         ondone={() => (editing = null)}
       >
@@ -133,7 +155,7 @@
           {/if}
 
           <div class="v2-field">
-            <label for="f-label">Label</label>
+            <label for="f-label">{m.settings_fields_label_label()}</label>
             <input
               id="f-label"
               class="v2-input"
@@ -145,7 +167,7 @@
           </div>
 
           <div class="v2-field">
-            <label for="f-key">Key</label>
+            <label for="f-key">{m.settings_fields_key_label()}</label>
             {#if current === 'new'}
               <input
                 id="f-key"
@@ -157,20 +179,18 @@
                 placeholder="severity"
               />
               <p class="v2-hint">
-                Lowercase letters, numbers and underscores, starting with a letter. No hyphens.
-                Cannot be changed later.
+                {m.settings_fields_key_hint_new()}
               </p>
             {:else}
               <code class="v2-cf-key">{current.key}</code>
               <p class="v2-hint">
-                Fixed after creation. Every value already stored is filed under this key, and
-                changing it would leave them all behind.
+                {m.settings_fields_key_hint_fixed()}
               </p>
             {/if}
           </div>
 
           <div class="v2-field">
-            <label for="f-target">On record type</label>
+            <label for="f-target">{m.settings_fields_target_label()}</label>
             {#if current === 'new'}
               <select id="f-target" class="v2-input" name="target_model" required>
                 {#each targetOptions as [value, label] (value)}
@@ -181,12 +201,12 @@
               <div style="font-size:13px">
                 {TARGET_MODEL_LABEL[current.target_model] ?? current.target_model}
               </div>
-              <p class="v2-hint">Fixed after creation.</p>
+              <p class="v2-hint">{m.settings_fields_fixed()}</p>
             {/if}
           </div>
 
           <div class="v2-field">
-            <label for="f-type">Type</label>
+            <label for="f-type">{m.settings_fields_type_label()}</label>
             {#if current === 'new'}
               <select id="f-type" class="v2-input" name="field_type" bind:value={fieldType}>
                 {#each Object.entries(FIELD_TYPE_LABEL) as [value, label] (value)}
@@ -204,15 +224,14 @@
               <input type="hidden" name="field_type" value={fieldType} />
               <div style="font-size:13px">{FIELD_TYPE_LABEL[current.field_type]}</div>
               <p class="v2-hint">
-                Fixed after creation. Values already stored were written and checked against this
-                type.
+                {m.settings_fields_type_hint_fixed()}
               </p>
             {/if}
           </div>
 
           {#if fieldType === 'dropdown'}
             <div class="v2-field v2-sfp-wide">
-              <label for="f-choices">Choices</label>
+              <label for="f-choices">{m.settings_fields_choices_label()}</label>
               {#each optionRows as row, i (i)}
                 <div style="display:flex;gap:7px;align-items:center;margin-bottom:6px">
                   <input type="hidden" name="option_value" value={row.value} />
@@ -228,7 +247,7 @@
                     type="button"
                     onclick={() => (optionRows = optionRows.filter((_, j) => j !== i))}
                   >
-                    Remove
+                    {m.settings_fields_remove()}
                   </button>
                 </div>
               {/each}
@@ -238,17 +257,16 @@
                 style="align-self:flex-start"
                 onclick={() => (optionRows = [...optionRows, { value: '', label: '' }])}
               >
-                Add a choice
+                {m.settings_fields_add_choice()}
               </button>
               <p class="v2-hint">
-                Renaming a choice keeps the values already stored against it. Removing one leaves
-                the records that hold it showing a value the list no longer offers.
+                {m.settings_fields_choices_hint()}
               </p>
             </div>
           {/if}
 
           <div class="v2-field">
-            <label for="f-order">Order</label>
+            <label for="f-order">{m.settings_fields_order_label()}</label>
             <input
               id="f-order"
               class="v2-input"
@@ -260,7 +278,7 @@
           </div>
 
           <div class="v2-field">
-            <label for="f-required">Required</label>
+            <label for="f-required">{m.settings_fields_required_label()}</label>
             <label style="display:flex;gap:8px;align-items:center;font-weight:400">
               <input
                 id="f-required"
@@ -269,12 +287,12 @@
                 value="true"
                 checked={current !== 'new' && current.is_required}
               />
-              Binds new writes only. Records saved before this keep their gap.
+              {m.settings_fields_required_hint()}
             </label>
           </div>
 
           <div class="v2-field">
-            <label for="f-filterable">Filterable</label>
+            <label for="f-filterable">{m.settings_fields_filterable_label()}</label>
             <label style="display:flex;gap:8px;align-items:center;font-weight:400">
               <input
                 id="f-filterable"
@@ -283,7 +301,7 @@
                 value="true"
                 checked={current !== 'new' && current.is_filterable}
               />
-              Can be used to narrow a list, not just read on the record.
+              {m.settings_fields_filterable_hint()}
             </label>
           </div>
         {/snippet}
@@ -295,16 +313,20 @@
         <TriangleAlert size={16} style="color:var(--v2-clay);flex:none;margin-top:1px" />
         <div>
           <div style="font-weight:600;font-size:13px">
-            Required does not mean every record has one
+            {m.settings_fields_gaps_title()}
           </div>
           <p class="v2-sub" style="font-size:12px;margin:4px 0 0;line-height:1.5">
-            {gaps
-              .map(
-                (f) =>
-                  `${f.label} is missing on ${f.records_missing_value} ${(TARGET_MODEL_LABEL[f.target_model] ?? f.target_model).toLowerCase()}`
-              )
-              .join('; ')}. Marking a field required binds new writes only, nothing goes back and
-            fills in what was saved before.
+            {m.settings_fields_gaps_body({
+              gaps: gaps
+                .map((f) =>
+                  m.settings_fields_gap_item({
+                    label: f.label,
+                    count: f.records_missing_value ?? 0,
+                    records: (TARGET_MODEL_LABEL[f.target_model] ?? f.target_model).toLowerCase()
+                  })
+                )
+                .join('; ')
+            })}
           </p>
         </div>
       </div>
@@ -320,7 +342,9 @@
     <div class="v2-cf-groups">
       {#each groups as g (g.model)}
         <div>
-          <div class="v2-label" style="margin-bottom:10px">On {g.label.toLowerCase()}</div>
+          <div class="v2-label" style="margin-bottom:10px">
+            {m.settings_fields_group_heading({ records: g.label.toLowerCase() })}
+          </div>
           <div class="v2-card" style="overflow:hidden">
             {#each g.fields as f (f.id)}
               <div class="v2-setting" style="opacity:{f.is_active ? 1 : 0.6}">
@@ -335,7 +359,7 @@
                     {/if}
                     {#if f.is_required && (f.records_missing_value ?? 0) > 0}
                       · <span style="color:var(--v2-clay)">
-                        {count(f.records_missing_value)} without a value
+                        {m.settings_fields_without_value({ count: f.records_missing_value ?? 0 })}
                       </span>
                     {/if}
                   </span>
@@ -348,22 +372,22 @@
                   <Filter size={13} style="color:var(--v2-slate);flex:none" />
                 {/if}
                 {#if !f.is_active}
-                  <Pill tone="slate">Off</Pill>
+                  <Pill tone="slate">{m.settings_fields_off()}</Pill>
                 {:else if f.is_required}
-                  <Pill tone="clay">Required</Pill>
+                  <Pill tone="clay">{m.settings_fields_required_label()}</Pill>
                 {/if}
 
                 {#if data.can_edit}
                   <div style="display:flex;gap:6px;align-items:center;flex:none">
                     <button class="v2-btn v2-btn-sm" type="button" onclick={() => openEdit(f)}>
-                      Edit
+                      {m.settings_fields_edit()}
                     </button>
                     {#if f.is_active}
                       <ConfirmAction
                         action="?/deactivate"
-                        label="Turn off"
-                        confirmLabel="Turn off"
-                        explain="Stops being collected. Stored values stay."
+                        label={m.settings_fields_turn_off()}
+                        confirmLabel={m.settings_fields_turn_off()}
+                        explain={m.settings_fields_turn_off_explain()}
                         hidden={{ id: f.id }}
                       />
                     {:else}
@@ -376,7 +400,9 @@
                            action rather than a bare `update` submit. -->
                       <form method="POST" action="?/activate" use:enhance>
                         <input type="hidden" name="id" value={f.id} />
-                        <button class="v2-btn v2-btn-sm" type="submit">Turn on</button>
+                        <button class="v2-btn v2-btn-sm" type="submit"
+                          >{m.settings_fields_turn_on()}</button
+                        >
                       </form>
                     {/if}
                   </div>
@@ -389,9 +415,7 @@
     </div>
 
     <p class="v2-sub" style="font-size:11.5px;margin-top:16px;max-width:66ch">
-      A field marked with the filter icon can be used to narrow a list; the rest are readable only
-      on the record itself. Turning a field off stops it being collected and hides it, and leaves
-      the values already stored on each record untouched.
+      {m.settings_fields_footer()}
     </p>
   </div>
 </div>

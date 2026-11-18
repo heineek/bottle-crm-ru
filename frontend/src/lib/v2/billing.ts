@@ -4,6 +4,7 @@
  * not offered, so every check here starts from it.
  */
 import { isOrgAdmin } from '#lib/admin.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Billing, PlanOffer } from '#lib/server/v2/billing.js';
 
 export const BILLING_HREF = '/settings/billing';
@@ -44,10 +45,16 @@ export function planButton(
   plan: PlanOffer
 ): { action: 'choose' | 'switch' | 'keep'; label: string; confirm: string } | null {
   if (plan.action === 'keep') {
-    return plan.current ? { action: 'keep', label: `Keep ${plan.name}`, confirm: '' } : null;
+    return plan.current
+      ? { action: 'keep', label: m.settings_billing_keep_plan({ plan: plan.name }), confirm: '' }
+      : null;
   }
   if (plan.current || !plan.action) return null;
   return plan.action === 'choose'
-    ? { action: 'choose', label: `Choose ${plan.name}`, confirm: '' }
-    : { action: 'switch', label: `Switch to ${plan.name}`, confirm: plan.confirm };
+    ? { action: 'choose', label: m.settings_billing_choose_plan({ plan: plan.name }), confirm: '' }
+    : {
+        action: 'switch',
+        label: m.settings_billing_switch_plan({ plan: plan.name }),
+        confirm: plan.confirm
+      };
 }

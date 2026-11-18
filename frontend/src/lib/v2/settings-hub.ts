@@ -10,6 +10,7 @@ import { hubValue, showAutomationSetting } from '#lib/v2/automation.js';
 import { BILLING_HREF } from '#lib/v2/billing.js';
 import { CONNECTED_APPS_HREF } from '#lib/v2/connected-apps.js';
 import { showObjectsSetting } from '#lib/v2/custom-objects.js';
+import { m } from '#lib/paraglide/messages.js';
 import { isOn, productsOn, wordsOn, type ModuleRow } from '#lib/v2/modules.js';
 import type { Billing } from '#lib/server/v2/billing.js';
 import type { ObjectList } from '#lib/server/v2/custom-objects.js';
@@ -45,21 +46,25 @@ export function hubGroups(data: HubData): {
     const open: { open: unknown; close: unknown }[] = data.calendar.days.filter(
       (d: { open: unknown }) => d.open
     );
-    if (!open.length) return 'No open hours set';
+    if (!open.length) return m.settings_hub_hours_none();
     const first = open[0];
     const uniform = open.every((d) => d.open === first.open && d.close === first.close);
     return uniform
-      ? `${open.length} days, ${first.open}-${first.close}`
-      : `${open.length} days, hours vary`;
+      ? m.settings_hub_hours_uniform({
+          count: open.length,
+          open: String(first.open),
+          close: String(first.close)
+        })
+      : m.settings_hub_hours_vary({ count: open.length });
   })();
 
   const formMakes = wordsOn(
     data.modules,
     [
-      ['leads', 'a lead'],
-      ['tickets', 'a ticket']
+      ['leads', m.settings_hub_webforms_word_lead()],
+      ['tickets', m.settings_hub_webforms_word_ticket()]
     ],
-    'or'
+    m.settings_hub_word_or()
   );
 
   /** An approval rule set to MANAGER with no named approvers matches nobody. */
@@ -71,8 +76,8 @@ export function hubGroups(data: HubData): {
   const intakes = data.leadIntakes;
   const leadCaptureValue = intakes
     ? intakes.count
-      ? `${intakes.active} of ${intakes.count} webhooks on`
-      : 'No webhooks yet'
+      ? m.settings_hub_lead_capture_value({ active: intakes.active, count: intakes.count })
+      : m.settings_hub_lead_capture_none()
     : null;
 
   // Filed with the ticket rows, or with the lead rows while Tickets is off
@@ -80,14 +85,17 @@ export function hubGroups(data: HubData): {
   const leadAddresses = data.mailboxLeads === true && isOn(data.modules, 'leads');
   const inboundEmail = {
     href: '/settings/inbound-email',
-    title: 'Inbound email',
+    title: m.settings_hub_inbound_title(),
     body: !ticketsOn
-      ? 'The addresses that turn email into leads.'
+      ? m.settings_hub_inbound_body_leads()
       : leadAddresses
-        ? 'The addresses that turn email into tickets or leads.'
-        : 'The addresses that turn email into tickets.',
+        ? m.settings_hub_inbound_body_both()
+        : m.settings_hub_inbound_body(),
     value: data.mailboxTotals
-      ? `${data.mailboxTotals.active} of ${data.mailboxTotals.count} active`
+      ? m.settings_hub_inbound_value({
+          active: data.mailboxTotals.active,
+          count: data.mailboxTotals.count
+        })
       : null,
     // Off AND still receiving, not merely off. An address switched off and
     // left alone is a decision; one still getting mail and creating nothing
@@ -97,25 +105,27 @@ export function hubGroups(data: HubData): {
 
   return [
     {
-      label: 'People and access',
+      label: m.settings_hub_group_people(),
       items: [
         {
           href: '/team',
-          title: 'Team and access',
-          body: 'Who can sign in, and what their role lets them do.',
+          title: m.settings_hub_team_title(),
+          body: m.settings_hub_team_body(),
           // People counts are admin-only oversight; a member's fan-out gets no
           // totals (the endpoint 403s), so the row lists the destination with
           // no value rather than a misleading zero.
           value: data.peopleTotals
-            ? `${data.peopleTotals.count} people · ${data.peopleTotals.admins} admins`
+            ? `${m.settings_hub_people_count({ count: data.peopleTotals.count })} · ${m.settings_hub_admins_count({ count: data.peopleTotals.admins })}`
             : null,
           warn: data.peopleTotals ? data.peopleTotals.tokens_on_deactivated > 0 : false
         },
         {
           href: '/settings/api-tokens',
-          title: 'API tokens',
-          body: 'Personal access tokens for scripts, integrations and AI agents.',
-          value: data.tokenTotals ? `${data.tokenTotals.live} live` : null,
+          title: m.settings_hub_tokens_title(),
+          body: m.settings_hub_tokens_body(),
+          value: data.tokenTotals
+            ? m.settings_hub_tokens_live({ count: data.tokenTotals.live })
+            : null,
           warn: data.tokenTotals
             ? data.tokenTotals.orphaned > 0 || data.tokenTotals.unused_90d > 0
             : false
@@ -127,8 +137,8 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/settings/webhooks',
-                title: 'Webhooks',
-                body: 'Send record changes to Zapier, n8n, Slack or your own code.',
+                title: m.settings_hub_webhooks_title(),
+                body: m.settings_hub_webhooks_body(),
                 value: null,
                 warn: false
               },
@@ -138,8 +148,8 @@ export function hubGroups(data: HubData): {
                 ? [
                     {
                       href: CONNECTED_APPS_HREF,
-                      title: 'Connected apps',
-                      body: 'Apps that read and write this organization, each with its own key.',
+                      title: m.settings_hub_connected_apps_title(),
+                      body: m.settings_hub_connected_apps_body(),
                       value: null,
                       warn: false
                     }
@@ -148,8 +158,8 @@ export function hubGroups(data: HubData): {
               // Admin-only on the server for the same reason as webhooks.
               {
                 href: '/settings/audit-log',
-                title: 'Audit log',
-                body: 'Sign-ins, API tokens, calendar feeds, merges, refused requests and paused webhooks.',
+                title: m.settings_hub_audit_title(),
+                body: m.settings_hub_audit_body(),
                 value: null,
                 warn: false
               }
@@ -161,11 +171,11 @@ export function hubGroups(data: HubData): {
           // account to write into this org, which is an access question; what
           // it arrives as is the smaller half.
           href: '/settings/web-forms',
-          title: 'Web forms',
+          title: m.settings_hub_webforms_title(),
           body: formMakes
-            ? `Forms you embed on your own site. What people fill in becomes ${formMakes}.`
-            : 'Forms you embed on your own site.',
-          value: `${data.webFormTotals.published} published`,
+            ? m.settings_hub_webforms_body_makes({ target: formMakes })
+            : m.settings_hub_webforms_body(),
+          value: m.settings_hub_webforms_published({ count: data.webFormTotals.published }),
           // Forms are live and nothing has arrived in a month. Usually the
           // snippet was taken off the site it was pasted onto, which nothing
           // else would ever tell you. The destination names the individual
@@ -179,22 +189,22 @@ export function hubGroups(data: HubData): {
                 // with no account can reach. Readable by every member, so the value
                 // is always computable.
                 href: '/settings/help-center',
-                title: 'Help center',
-                body: 'Your published articles, public for customers and search engines.',
+                title: m.settings_hub_helpcenter_title(),
+                body: m.settings_hub_helpcenter_body(),
                 value:
                   data.helpCenter.help_center_enabled && data.helpCenter.help_center_slug
                     ? `/help-center/${data.helpCenter.help_center_slug}`
-                    : 'Off',
+                    : m.settings_hub_helpcenter_off(),
                 warn: false
               }
             ]
           : []),
         {
           href: '/settings/organization',
-          title: 'Organization',
+          title: m.settings_hub_org_title(),
           body: isOn(data.modules, 'invoices')
-            ? 'The company details printed on every invoice and estimate.'
-            : 'The company details, and the defaults new records start from.',
+            ? m.settings_hub_org_body_invoices()
+            : m.settings_hub_org_body(),
           value: org.company_name,
           warn: false
         },
@@ -202,14 +212,14 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/settings/apps',
-                title: 'Apps',
-                body: 'Industry apps to install, and the parts of BottleCRM this organization uses.',
+                title: m.settings_hub_apps_title(),
+                body: m.settings_hub_apps_body(),
                 value:
                   switchedOff === null
                     ? null
                     : switchedOff
-                      ? `${switchedOff} ${switchedOff === 1 ? 'module' : 'modules'} off`
-                      : 'All modules on',
+                      ? m.settings_hub_modules_off({ count: switchedOff })
+                      : m.settings_hub_modules_all_on(),
                 warn: false
               }
             ]
@@ -219,10 +229,10 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: BILLING_HREF,
-                title: 'Billing',
+                title: m.settings_hub_billing_title(),
                 body: isOrgAdmin(data)
-                  ? "This organization's plan, and how it is paid for."
-                  : "This organization's plan.",
+                  ? m.settings_hub_billing_body_admin()
+                  : m.settings_hub_billing_body(),
                 value: data.billing.plan.name,
                 warn: Boolean(data.billing.notice)
               }
@@ -233,12 +243,12 @@ export function hubGroups(data: HubData): {
     ...(isOn(data.modules, 'leads')
       ? [
           {
-            label: 'How leads arrive',
+            label: m.settings_hub_group_lead_capture(),
             items: [
               {
                 href: '/settings/lead-capture',
-                title: 'Lead capture',
-                body: 'Webhooks, web forms and lead addresses: every way a lead gets in.',
+                title: m.settings_hub_lead_capture_title(),
+                body: m.settings_hub_lead_capture_body(),
                 value: leadCaptureValue,
                 warn: false
               },
@@ -250,50 +260,57 @@ export function hubGroups(data: HubData): {
     ...(ticketsOn
       ? [
           {
-            label: 'How tickets are handled',
+            label: m.settings_hub_group_tickets(),
             items: [
               {
                 href: '/settings/routing',
-                title: 'Ticket routing',
-                body: 'Who a new ticket lands on, in the order the rules are tried.',
-                value: data.routingTotals ? `${data.routingTotals.active} rules` : null,
+                title: m.settings_hub_routing_title(),
+                body: m.settings_hub_routing_body(),
+                value: data.routingTotals
+                  ? m.settings_hub_routing_rules({ count: data.routingTotals.active })
+                  : null,
                 warn: (data.routingTotals?.unrouted_last_30d ?? 0) > 0
               },
               {
                 href: '/settings/escalation',
-                title: 'Escalation',
-                body: 'What happens when a ticket misses its response target.',
+                title: m.settings_hub_escalation_title(),
+                body: m.settings_hub_escalation_body(),
                 value: data.escalationTotals
-                  ? `${data.escalationTotals.active} of ${data.escalationTotals.count} priorities`
+                  ? m.settings_hub_escalation_value({
+                      active: data.escalationTotals.active,
+                      count: data.escalationTotals.count
+                    })
                   : null,
                 warn: (data.escalationTotals?.breaches_unhandled_30d ?? 0) > 0
               },
               {
                 href: '/settings/business-hours',
-                title: 'Business hours',
-                body: 'The clock every response target is measured against.',
+                title: m.settings_hub_hours_title(),
+                body: m.settings_hub_hours_body(),
                 value: data.calendar ? `${data.calendar.name} · ${hoursSummary}` : null,
                 warn: false
               },
               {
                 href: '/settings/ticket-approvals',
-                title: 'Approval rules',
-                body: 'What gates a ticket close, and who can clear it.',
-                value: data.approvalTotals ? `${data.approvalTotals.active} active` : null,
+                title: m.settings_hub_approvals_title(),
+                body: m.settings_hub_approvals_body(),
+                value: data.approvalTotals
+                  ? m.settings_hub_active_count({ count: data.approvalTotals.active })
+                  : null,
                 warn: stuckApprovalRules > 0
               },
               {
                 href: '/settings/reopen',
-                title: 'Reopen policy',
-                body: 'Whether a customer reply brings a closed ticket back.',
+                title: m.settings_hub_reopen_title(),
+                body: m.settings_hub_reopen_body(),
                 // Admin-only, like people and tokens above: a member's fan-out gets
                 // null (the endpoint 403s), so the row lists the destination without
                 // a value rather than guessing at the policy.
                 value: !data.reopen
                   ? null
                   : data.reopen.is_enabled
-                    ? `Within ${data.reopen.reopen_window_days} days`
-                    : 'Off. Closed stays closed',
+                    ? m.settings_hub_reopen_within({ count: data.reopen.reopen_window_days })
+                    : m.settings_hub_reopen_off(),
                 // Replies arriving outside the window are normal for any window, so
                 // that number belongs on the page, not on a warning here. Off is the
                 // state worth flagging: it makes every reply to a closed ticket
@@ -306,29 +323,37 @@ export function hubGroups(data: HubData): {
         ]
       : []),
     {
-      label: 'Shared words and fields',
+      label: m.settings_hub_group_words(),
       items: [
         ...(ticketsOn
           ? [
               {
                 href: '/settings/macros',
-                title: 'Macros',
-                body: 'Canned replies, and the placeholders they substitute.',
-                value: data.macroTotals ? `${data.macroTotals.org} shared` : null,
+                title: m.settings_hub_macros_title(),
+                body: m.settings_hub_macros_body(),
+                value: data.macroTotals
+                  ? m.settings_hub_macros_shared({ count: data.macroTotals.org })
+                  : null,
                 warn: (data.macroTotals?.with_unknown_placeholders ?? 0) > 0
               }
             ]
           : []),
         {
           href: '/settings/tags',
-          title: 'Tags',
-          body: `Labels shared across ${wordsOn(data.modules, [
-            [null, 'accounts'],
-            ['leads', 'leads'],
-            ['deals', 'deals'],
-            ['tickets', 'tickets']
-          ])}.`,
-          value: `${data.tagTotals.active} in use`,
+          title: m.common_tags(),
+          body: m.settings_hub_tags_body({
+            list: wordsOn(
+              data.modules,
+              [
+                [null, m.settings_hub_tags_word_accounts()],
+                ['leads', m.settings_hub_tags_word_leads()],
+                ['deals', m.settings_hub_tags_word_deals()],
+                ['tickets', m.settings_hub_tags_word_tickets()]
+              ],
+              m.settings_hub_word_and()
+            )
+          }),
+          value: m.settings_hub_tags_in_use({ count: data.tagTotals.active }),
           // Unused tags are housekeeping, not a fault, the tags page lists
           // them without needing the hub to raise an alarm about tidiness.
           warn: false
@@ -337,8 +362,8 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/settings/lead-pipelines',
-                title: 'Lead pipelines',
-                body: 'The stages leads move through on the board.',
+                title: m.settings_hub_lead_pipelines_title(),
+                body: m.settings_hub_lead_pipelines_body(),
                 value: null,
                 warn: false
               }
@@ -351,9 +376,11 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/settings/lead-sources',
-                title: 'Lead sources',
-                body: 'Where leads come from: the list every source picker offers.',
-                value: data.leadSources ? `${data.leadSources.active} in use` : null,
+                title: m.settings_hub_lead_sources_title(),
+                body: m.settings_hub_lead_sources_body(),
+                value: data.leadSources
+                  ? m.settings_hub_lead_sources_value({ count: data.leadSources.active })
+                  : null,
                 warn: false
               }
             ]
@@ -362,8 +389,8 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/settings/deal-pipelines',
-                title: 'Deal pipelines',
-                body: 'The stages deals move through, and when a deal starts rotting in one.',
+                title: m.settings_hub_deal_pipelines_title(),
+                body: m.settings_hub_deal_pipelines_body(),
                 value: null,
                 warn: false
               }
@@ -371,18 +398,23 @@ export function hubGroups(data: HubData): {
           : []),
         {
           href: '/settings/custom-fields',
-          title: 'Custom fields',
-          body: 'Fields this organisation added to records.',
-          value: `${data.fieldTotals.active} across ${data.fieldTotals.models_extended} record types`,
+          title: m.settings_hub_fields_title(),
+          body: m.settings_hub_fields_body(),
+          value: m.settings_hub_fields_value({
+            active: data.fieldTotals.active,
+            models: data.fieldTotals.models_extended
+          }),
           warn: data.fieldTotals.required_with_gaps > 0
         },
         ...(showObjectsSetting(data.customObjects, isOrgAdmin(data))
           ? [
               {
                 href: '/settings/objects',
-                title: 'Objects',
-                body: 'Record types this organisation defined.',
-                value: `${data.customObjects?.objects.length ?? 0} active`,
+                title: m.settings_hub_objects_title(),
+                body: m.settings_hub_objects_body(),
+                value: m.settings_hub_active_count({
+                  count: data.customObjects?.objects.length ?? 0
+                }),
                 warn: false
               }
             ]
@@ -391,8 +423,8 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/settings/automation',
-                title: 'Automation',
-                body: 'Rules that act when records are created or change',
+                title: m.settings_hub_automation_title(),
+                body: m.settings_hub_automation_body(),
                 ...hubValue(data.automation)
               }
             ]
@@ -401,9 +433,9 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/invoices/templates',
-                title: 'Invoice templates',
-                body: 'How an invoice looks when a customer receives it.',
-                value: 'Under Invoices',
+                title: m.settings_hub_invoice_templates_title(),
+                body: m.settings_hub_invoice_templates_body(),
+                value: m.settings_hub_invoice_templates_value(),
                 warn: false
               }
             ]
@@ -412,8 +444,8 @@ export function hubGroups(data: HubData): {
           ? [
               {
                 href: '/invoices/products',
-                title: 'Products',
-                body: 'The products and prices invoices and estimates use.',
+                title: m.settings_hub_products_title(),
+                body: m.settings_hub_products_body(),
                 value: null,
                 warn: false
               }

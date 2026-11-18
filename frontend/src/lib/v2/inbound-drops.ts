@@ -3,14 +3,17 @@
  * page uses. `mobile/lib/data/models/mailbox.dart` says the same.
  */
 import { count } from '#lib/v2/format.js';
+import { m } from '#lib/paraglide/messages.js';
+
+type Phrase = (input: { count: number; shown: string }) => string;
 
 /** The reasons the backend sends, in the order a row names them. */
-const REASONS = [
-  ['spam', 'spam', 'spam'],
-  ['virus', 'with a virus', 'with a virus'],
-  ['spoofed', 'failed the sender check', 'failed the sender check'],
-  ['automatic', 'automatic reply', 'automatic replies'],
-  ['other', 'other', 'other']
+const REASONS: [string, Phrase][] = [
+  ['spam', (i) => m.settings_inbound_drop_spam(i)],
+  ['virus', (i) => m.settings_inbound_drop_virus(i)],
+  ['spoofed', (i) => m.settings_inbound_drop_spoofed(i)],
+  ['automatic', (i) => m.settings_inbound_drop_automatic(i)],
+  ['other', (i) => m.settings_inbound_drop_other(i)]
 ];
 
 function positive(n: unknown) {
@@ -30,17 +33,14 @@ export function dropSummary(mailbox: {
   const total = positive(mailbox?.dropped_last_30d);
   if (!total) return null;
   const parts = [];
-  for (const [key, one, many] of REASONS) {
+  for (const [key, phrase] of REASONS) {
     const n = positive(mailbox?.drops_last_30d?.[key]);
-    if (n) parts.push(`${count(n)} ${n === 1 ? one : many}`);
+    if (n) parts.push(phrase({ count: n, shown: count(n) }));
   }
-  const head = `${count(total)} dropped in 30 days`;
-  return parts.length ? `${head}: ${parts.join(', ')}` : head;
-}
-
-function limitPhrase(dailyLimit: number | null | undefined) {
-  const n = positive(dailyLimit);
-  return n ? `its limit of ${count(n)} ${n === 1 ? 'email' : 'emails'}` : 'its daily limit';
+  const shown = count(total);
+  return parts.length
+    ? m.settings_inbound_drops_with_parts({ shown, parts: parts.join(', ') })
+    : m.settings_inbound_drops({ shown });
 }
 
 /** The warning for an address that has taken its daily limit, or null. */
@@ -49,7 +49,10 @@ export function limitNotice(
   dailyLimit: number | null | undefined
 ): string | null {
   if (limitReached !== true) return null;
-  return `Took ${limitPhrase(dailyLimit)} today. More mail is refused until the count falls.`;
+  const n = positive(dailyLimit);
+  return n
+    ? m.settings_inbound_limit_notice({ count: n, shown: count(n) })
+    : m.settings_inbound_limit_notice_daily();
 }
 
 /**
@@ -61,9 +64,5 @@ export function dropPolicy(dailyLimit: number | null | undefined): string | null
   const n = positive(dailyLimit);
   if (!n) return null;
   // The 20 is `cases.inbound.limits.SENDER_HOURLY_LIMIT`, which the API does not send.
-  return (
-    "Spam, viruses and mail that fails its sender's domain check are dropped. " +
-    `Each address takes up to ${count(n)} ${n === 1 ? 'email' : 'emails'} a day, ` +
-    'and a ticket address up to 20 an hour from one sender.'
-  );
+  return m.settings_inbound_drop_policy({ count: n, shown: count(n) });
 }

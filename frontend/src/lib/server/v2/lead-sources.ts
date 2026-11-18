@@ -17,10 +17,11 @@ import { rethrowModuleOff } from '#lib/server/v2/modules.js';
 import { viewerIsAdmin } from '#lib/server/v2/organization.js';
 import { LEGACY_LEAD_SOURCES, type LeadSource } from '#lib/v2/lead-sources.js';
 import { UUID } from '#lib/v2/custom-objects.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { components } from '#lib/api-schema.js';
 
-const NOT_AVAILABLE = 'Lead sources are not available here.';
-const SOURCE_GONE = 'That source does not exist.';
+const notAvailable = () => m.settings_lead_sources_not_available();
+const sourceGone = () => m.settings_lead_sources_gone();
 
 type Event = { cookies: Cookies };
 type Schemas = components['schemas'];
@@ -77,7 +78,7 @@ export async function listSourcesForSettings({
     return { sources: shape(resp), canEdit: viewerIsAdmin(cookies) };
   } catch (err) {
     rethrowModuleOff(err);
-    if (apiStatus(err) === 404) error(404, NOT_AVAILABLE);
+    if (apiStatus(err) === 404) error(404, notAvailable());
     throw err;
   }
 }
@@ -103,7 +104,7 @@ export async function leadSourcesSummary({
 }
 
 function checkId(id: string) {
-  if (typeof id !== 'string' || !UUID.test(id)) error(404, SOURCE_GONE);
+  if (typeof id !== 'string' || !UUID.test(id)) error(404, sourceGone());
   return id;
 }
 
@@ -113,7 +114,7 @@ export async function createLeadSource(
   label: string
 ): Promise<Schemas['LeadSource']> {
   const clean = String(label ?? '').trim();
-  if (!clean) throw new Error('A source needs a name.');
+  if (!clean) throw new Error(m.settings_lead_sources_needs_name());
   return await apiRequest(
     '/leads/sources/',
     { method: 'POST', body: { label: clean } },
@@ -134,7 +135,7 @@ export async function updateLeadSource(
   const body: { label?: string; is_active?: boolean } = {};
   if (values.label !== undefined) {
     body.label = String(values.label).trim();
-    if (!body.label) throw new Error('A source needs a name.');
+    if (!body.label) throw new Error(m.settings_lead_sources_needs_name());
   }
   if (values.is_active !== undefined) body.is_active = values.is_active === true;
   return await apiRequest(`/leads/sources/${id}/`, { method: 'PATCH', body }, { cookies });

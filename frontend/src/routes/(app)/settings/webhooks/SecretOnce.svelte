@@ -5,6 +5,7 @@
    * ever carry `secret_hint`.
    */
   import { Copy, Check } from '@lucide/svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   let { title, secret }: { title: string; secret: string } = $props();
   let copied = $state(false);
@@ -27,8 +28,7 @@
 >
   <div style="font-weight:650;font-size:13px">{title}</div>
   <p class="v2-sub" style="font-size:12px;margin:4px 0 10px">
-    This is the only time the signing secret is shown. Store it where your receiver can read it; use
-    Rotate to replace it if it is lost.
+    {m.settings_webhooks_secret_once_body()}
   </p>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <code
@@ -38,7 +38,9 @@
       {secret}
     </code>
     <button class="v2-btn" type="button" style="min-height:44px" onclick={copy}>
-      {#if copied}<Check size={13} />Copied{:else}<Copy size={13} />Copy{/if}
+      {#if copied}<Check size={13} />{m.settings_webhooks_copied()}{:else}<Copy
+          size={13}
+        />{m.settings_webhooks_copy()}{/if}
     </button>
   </div>
 </div>

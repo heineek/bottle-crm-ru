@@ -10,11 +10,8 @@ import {
 } from '#lib/server/v2/billing.js';
 import { BILLING_HREF } from '#lib/v2/billing.js';
 import { apiStatus } from '#lib/api-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
-
-const NO_PAYMENT_PAGE = 'The payment page could not be opened. Try again.';
-const NO_PORTAL = 'The billing portal could not be opened. Try again.';
-const NO_CHANGE = 'The plan could not be changed. Try again.';
 
 /**
  * Settings › Billing, rendered from the server's answer. The way back from the
@@ -70,13 +67,17 @@ async function change(event: RequestEvent) {
   try {
     return { message: (await changePlan(event, plan)) || null, plan: shown };
   } catch (err) {
-    return fail(statusOf(err), { error: billingRefusal(err, NO_CHANGE), plan: shown });
+    return fail(statusOf(err), {
+      error: billingRefusal(err, m.settings_billing_no_change()),
+      plan: shown
+    });
   }
 }
 
 export const actions: Actions = {
-  choose: (event) => leaveFor(event, (plan) => openCheckout(event, plan), NO_PAYMENT_PAGE),
-  manage: (event) => leaveFor(event, () => openPortal(event), NO_PORTAL),
+  choose: (event) =>
+    leaveFor(event, (plan) => openCheckout(event, plan), m.settings_billing_no_payment_page()),
+  manage: (event) => leaveFor(event, () => openPortal(event), m.settings_billing_no_portal()),
   switch: change,
   keep: change
 };

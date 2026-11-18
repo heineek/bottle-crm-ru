@@ -4,18 +4,25 @@
  * custom object gets a column without a client release. Client-safe.
  */
 
+import { m } from '#lib/paraglide/messages.js';
+
 /**
  * The words used for a usage key when the API sends no `usage_labels` (a
  * server from before the release window): the phone's, so both apps agree.
  */
-const FALLBACK_WORDS: Record<string, string> = {
-  opportunities: 'deals',
-  cases: 'tickets',
-  api_settings: 'API keys'
+const FALLBACK_WORDS: Record<string, () => string> = {
+  accounts: () => m.settings_tags_col_accounts(),
+  contacts: () => m.settings_tags_col_contacts(),
+  leads: () => m.settings_tags_col_leads(),
+  opportunities: () => m.settings_tags_col_deals(),
+  cases: () => m.settings_tags_col_tickets(),
+  tasks: () => m.settings_tags_col_tasks(),
+  api_settings: () => m.settings_tags_col_api_keys()
 };
 
 function fallbackLabel(key: string): string {
-  const word = FALLBACK_WORDS[key] ?? key.replaceAll('_', ' ');
+  if (Object.hasOwn(FALLBACK_WORDS, key)) return FALLBACK_WORDS[key]();
+  const word = key.replaceAll('_', ' ');
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 

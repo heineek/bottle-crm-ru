@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { getLocale, overwriteGetLocale } from '#lib/paraglide/runtime.js';
 import {
   SUPPORTED_PROVIDERS,
   deliveryState,

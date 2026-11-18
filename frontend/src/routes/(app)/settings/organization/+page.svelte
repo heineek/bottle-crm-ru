@@ -31,6 +31,9 @@
   import { count, shortDate } from '#lib/v2/format.js';
   import { exampleNumber, NUMBER_DATE_PARTS } from '#lib/v2/document-numbers.js';
   import { todayIn } from '#lib/v2/dates.js';
+  import { isLocale } from '#lib/paraglide/runtime.js';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import { FileText, ShieldAlert, Pencil } from '@lucide/svelte';
   import { isOn } from '#lib/v2/modules.js';
   import { reminderLabel } from '#lib/v2/lead-alerts.js';
@@ -53,16 +56,17 @@
   );
 </script>
 
-<PageHeader title="Organization">
+<PageHeader title={m.settings_hub_org_title()}>
   {#snippet crumb()}<SettingsCrumb />{/snippet}
   {#snippet sub()}
-    <span class="v2-num">{count(org.member_count)}</span> members · created
-    {shortDate(org.created_at)}
+    {#each messageParts(m.settings_org_sub( { count: org.member_count, shown: slot('shown'), date: shortDate(org.created_at) } )) as p, i (i)}{#if p.key === 'shown'}<span
+          class="v2-num">{count(org.member_count)}</span
+        >{:else}{p.text}{/if}{/each}
   {/snippet}
   {#snippet actions()}
     {#if data.can_edit}
       <a class="v2-btn v2-btn-primary" href={resolve('settings/organization/edit')}>
-        <Pencil size={13} />Edit details
+        <Pencil size={13} />{m.settings_org_edit_details()}
       </a>
     {/if}
   {/snippet}
@@ -72,25 +76,25 @@
   <div class="v2-pad" style="padding-top:18px;padding-bottom:32px">
     <div class="v2-split">
       <div>
-        <div class="v2-label" style="margin-bottom:10px">What customers see</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_org_customers_see()}</div>
         <div class="v2-card" style="padding:16px 18px;margin-bottom:12px">
           <dl class="v2-kv">
-            <dt>Legal name</dt>
+            <dt>{m.settings_org_legal_name()}</dt>
             <dd>{org.company_name || '—'}</dd>
-            <dt>Trading as</dt>
+            <dt>{m.settings_org_trading_as()}</dt>
             <dd>{org.name}</dd>
-            <dt>Address</dt>
+            <dt>{m.settings_org_address()}</dt>
             <dd>{address || '—'}</dd>
-            <dt>Tax ID</dt>
+            <dt>{m.settings_org_tax_id()}</dt>
             <dd class="v2-num" style="font-size:12px">{org.tax_id || '—'}</dd>
-            <dt>Email</dt>
+            <dt>{m.common_email()}</dt>
             <dd>{org.email || '—'}</dd>
-            <dt>Phone</dt>
+            <dt>{m.common_phone()}</dt>
             <dd class="v2-num" style="font-size:12px">{org.phone || '—'}</dd>
-            <dt>Website</dt>
+            <dt>{m.settings_org_website()}</dt>
             <dd>{org.website || '—'}</dd>
-            <dt>Logo</dt>
-            <dd>{org.logo_url ? 'Set' : 'Not set'}</dd>
+            <dt>{m.settings_org_logo()}</dt>
+            <dd>{org.logo_url ? m.settings_org_logo_set() : m.settings_org_logo_not_set()}</dd>
           </dl>
         </div>
 
@@ -99,10 +103,10 @@
             <div style="display:flex;gap:10px;align-items:flex-start">
               <FileText size={16} style="color:var(--v2-slate);flex:none;margin-top:2px" />
               <p class="v2-sub" style="font-size:12.5px;margin:0;line-height:1.5">
-                These fields are printed on every invoice and estimate. Changing one changes
-                documents from that moment on; PDFs already sent keep what they were sent with. How
-                they are laid out is set in
-                <a href={resolve('invoices/templates')} style="color:inherit">invoice templates</a>.
+                {m.settings_org_printed_note()}
+                <a href={resolve('invoices/templates')} style="color:inherit"
+                  >{m.settings_org_printed_note_link()}</a
+                >.
               </p>
             </div>
           </div>
@@ -110,45 +114,54 @@
       </div>
 
       <div>
-        <div class="v2-label" style="margin-bottom:10px">Defaults</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.settings_org_defaults()}</div>
         <div class="v2-card" style="overflow:hidden;margin-bottom:20px">
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Currency</b>
+              <b>{m.settings_org_currency()}</b>
               <span class="v2-sub" style="font-size:11.5px">
                 {invoicesOn
-                  ? 'Applied to new invoices and estimates. Existing ones keep theirs.'
-                  : 'The default for new records that carry an amount. Existing ones keep theirs.'}
+                  ? m.settings_org_currency_hint_invoices()
+                  : m.settings_org_currency_hint()}
               </span>
             </div>
             <span class="v2-num" style="font-size:13px">{org.default_currency || '—'}</span>
           </div>
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Country</b>
-              <span class="v2-sub" style="font-size:11.5px">Default for new addresses.</span>
+              <b>{m.settings_org_country()}</b>
+              <span class="v2-sub" style="font-size:11.5px">{m.settings_org_country_hint()}</span>
             </div>
             <span style="font-size:13px">{org.default_country || '—'}</span>
           </div>
           <div class="v2-setting">
             <div class="v2-setting-body">
-              <b>Time zone</b>
-              <span class="v2-sub" style="font-size:11.5px">
-                When a day starts here, so "due today" and "overdue" mean what your team expects.
-              </span>
+              <b>{m.settings_org_timezone()}</b>
+              <span class="v2-sub" style="font-size:11.5px">{m.settings_org_timezone_hint()}</span>
             </div>
             <span style="font-size:13px">{(org.timezone || 'UTC').replace(/_/g, ' ')}</span>
+          </div>
+          <div class="v2-setting">
+            <div class="v2-setting-body">
+              <b>{m.org_language_label()}</b>
+              <span class="v2-sub" style="font-size:11.5px">{m.org_language_hint()}</span>
+            </div>
+            <span style="font-size:13px">
+              {isLocale(org.default_language)
+                ? m.language_name({}, { locale: org.default_language })
+                : org.default_language || '—'}
+            </span>
           </div>
         </div>
 
         {#if invoicesOn}
-          <div class="v2-label" style="margin-bottom:10px">Invoice numbers</div>
+          <div class="v2-label" style="margin-bottom:10px">{m.settings_org_invoice_numbers()}</div>
           <div class="v2-card" style="overflow:hidden;margin-bottom:20px">
             <div class="v2-setting">
               <div class="v2-setting-body">
-                <b>New invoices</b>
+                <b>{m.settings_org_new_invoices()}</b>
                 <span class="v2-sub" style="font-size:11.5px">
-                  {numbering}. Numbers already issued keep theirs.
+                  {m.settings_org_numbering_hint({ numbering })}
                 </span>
               </div>
               <span class="v2-num" style="font-size:13px"
@@ -157,8 +170,10 @@
             </div>
             <div class="v2-setting">
               <div class="v2-setting-body">
-                <b>New estimates</b>
-                <span class="v2-sub" style="font-size:11.5px">Same format, own prefix.</span>
+                <b>{m.settings_org_new_estimates()}</b>
+                <span class="v2-sub" style="font-size:11.5px"
+                  >{m.settings_org_estimates_hint()}</span
+                >
               </div>
               <span class="v2-num" style="font-size:13px"
                 >{exampleNumber(org, 'estimate', today)}</span
@@ -168,14 +183,13 @@
         {/if}
 
         {#if leadsOn}
-          <div class="v2-label" style="margin-bottom:10px">Leads</div>
+          <div class="v2-label" style="margin-bottom:10px">{m.settings_org_leads_section()}</div>
           <div class="v2-card" style="overflow:hidden;margin-bottom:20px">
             <div class="v2-setting">
               <div class="v2-setting-body">
-                <b>Waiting reminder</b>
+                <b>{m.settings_org_reminder_title()}</b>
                 <span class="v2-sub" style="font-size:11.5px">
-                  Reminds the assignee, or the admins when nobody is on it, once when a lead waits
-                  longer than this for a reply.
+                  {m.settings_org_reminder_body()}
                 </span>
               </div>
               <Pill tone={org.lead_reminder_minutes ? 'moss' : 'slate'}>
@@ -186,25 +200,24 @@
         {/if}
 
         {#if ticketsOn}
-          <div class="v2-label" style="margin-bottom:10px">Behaviour</div>
+          <div class="v2-label" style="margin-bottom:10px">{m.settings_org_behaviour()}</div>
           <div class="v2-card" style="overflow:hidden">
             <div class="v2-setting">
               <div class="v2-setting-body">
-                <b>Satisfaction surveys</b>
+                <b>{m.settings_org_csat()}</b>
                 <!-- Org-level kill switch: the post-close signal short-circuits
                      before any email is sent. Off is silent, everywhere. -->
                 <span class="v2-sub" style="font-size:11.5px">
-                  Off stops every survey org-wide, with no per-team exception and no notice on the
-                  ticket.
+                  {m.settings_org_csat_hint()}
                 </span>
               </div>
               <Pill tone={org.csat_enabled ? 'moss' : 'slate'}>
-                {org.csat_enabled ? 'Sending' : 'Off'}
+                {org.csat_enabled ? m.settings_org_csat_sending() : m.settings_org_csat_off()}
               </Pill>
             </div>
             <div class="v2-setting">
               <div class="v2-setting-body">
-                <b>Close child tickets with the parent</b>
+                <b>{m.settings_org_cascade()}</b>
                 <!-- Only the DEFAULT state of the prompt; the person closing the
                      ticket still confirms. This used to claim the prompt without
                      saying where it is, and there is no such prompt on the web:
@@ -212,13 +225,13 @@
                      closing a parent here leaves its children open. The phone is
                      the client that asks, and the one this setting reaches. -->
                 <span class="v2-sub" style="font-size:11.5px">
-                  Sets how the close prompt starts on the mobile app, which offers to close a
-                  parent's open children with it. On the web there is no such prompt yet: closing a
-                  parent leaves its children open.
+                  {m.settings_org_cascade_hint()}
                 </span>
               </div>
               <Pill tone={org.auto_close_children_on_parent_close ? 'clay' : 'slate'}>
-                {org.auto_close_children_on_parent_close ? 'Offered on' : 'Offered off'}
+                {org.auto_close_children_on_parent_close
+                  ? m.settings_org_cascade_on()
+                  : m.settings_org_cascade_off()}
               </Pill>
             </div>
           </div>
@@ -228,12 +241,12 @@
           <div style="display:flex;gap:10px;align-items:flex-start">
             <ShieldAlert size={16} style="color:var(--v2-slate);flex:none;margin-top:2px" />
             <div>
-              <div style="font-weight:600;font-size:13px">The organisation API key is not here</div>
+              <div style="font-weight:600;font-size:13px">{m.settings_org_api_key_title()}</div>
               <p class="v2-sub" style="font-size:12.5px;margin:5px 0 0;line-height:1.5">
-                It authenticates as the whole organisation, so it is never rendered on a page you
-                can reach by browsing. For per-person programmatic access, use
-                <a href={resolve('settings/api-tokens')} style="color:inherit">API tokens</a>, which
-                can be revoked one at a time.
+                {m.settings_org_api_key_body()}
+                <a href={resolve('settings/api-tokens')} style="color:inherit"
+                  >{m.settings_org_api_key_link()}</a
+                >{m.settings_org_api_key_after()}
               </p>
             </div>
           </div>

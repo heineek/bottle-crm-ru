@@ -24,6 +24,14 @@
  *
  * `mobile/lib/data/models/approval_rule.dart` carries the same rules.
  */
+import { m } from '#lib/paraglide/messages.js';
+import { CASE_PRIORITY_LABEL, CASE_TYPE_LABEL } from '#lib/v2/enums.js';
+
+/** A `PRIORITY_CHOICE` value in the reader's language. */
+export const priorityLabel = (priority: string) => CASE_PRIORITY_LABEL[priority] ?? priority;
+
+/** A `CASE_TYPE` value in the reader's language. */
+export const caseTypeLabel = (type: string) => CASE_TYPE_LABEL[type] ?? type;
 
 /**
  * The `approver_role` values that any profile can actually hold.
@@ -58,11 +66,13 @@ function namedApprovers(rule: MatchingRule | null | undefined) {
 
 /** Everyone who can clear this rule, as the sentence a person would say. */
 export function approverSentence(rule: MatchingRule | null | undefined) {
-  const named = namedApprovers(rule);
+  const named = namedApprovers(rule).join(m.settings_approvals_or_separator());
   if (roleClears(rule)) {
-    return named.length ? `any admin, or ${named.join(' or ')}` : 'any admin';
+    return named
+      ? m.settings_approvals_any_admin_or({ names: named })
+      : m.settings_approvals_any_admin();
   }
-  return named.length ? named.join(' or ') : 'nobody';
+  return named || m.settings_approvals_nobody();
 }
 
 /**
@@ -78,11 +88,13 @@ export function clearableByNobody(rule: MatchingRule | null | undefined) {
 /** What the rule matches, as the sentence a person would say. */
 export function ruleMatchSentence(rule: MatchingRule | null | undefined) {
   const parts = [
-    rule?.match_priority ? `${rule.match_priority} priority` : null,
-    rule?.match_case_type ? rule.match_case_type.toLowerCase() : null,
-    rule?.match_team ? `${rule.match_team.name} team` : null
+    rule?.match_priority
+      ? m.settings_approvals_match_priority({ priority: priorityLabel(rule.match_priority) })
+      : null,
+    rule?.match_case_type ? caseTypeLabel(rule.match_case_type).toLowerCase() : null,
+    rule?.match_team ? m.settings_approvals_match_team({ team: rule.match_team.name }) : null
   ].filter(Boolean);
-  return parts.length ? parts.join(' · ') : 'Every ticket';
+  return parts.length ? parts.join(' · ') : m.settings_approvals_every_ticket();
 }
 
 /**

@@ -15,6 +15,7 @@
  * serializer check and a database CheckConstraint), so a caller who skips this
  * page is rejected by the API, not accepted by it.
  */
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * The Lead columns a web form may collect, mirrored 1:1 from
@@ -38,21 +39,96 @@
  * the same list, in `mobile/lib/models/web_form.dart`.
  */
 export const WEBFORM_LEAD_FIELDS = [
-  { value: 'salutation', label: 'Salutation' },
-  { value: 'first_name', label: 'First name' },
-  { value: 'last_name', label: 'Last name' },
-  { value: 'email', label: 'Email' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'company_name', label: 'Company name' },
-  { value: 'job_title', label: 'Job title' },
-  { value: 'website', label: 'Website' },
-  { value: 'title', label: 'Subject' },
-  { value: 'description', label: 'Message' },
-  { value: 'city', label: 'City' },
-  { value: 'state', label: 'State' },
-  { value: 'country', label: 'Country' },
-  { value: 'postcode', label: 'Postal code' },
-  { value: 'industry', label: 'Industry' }
+  {
+    value: 'salutation',
+    get label() {
+      return m.settings_webforms_field_salutation();
+    }
+  },
+  {
+    value: 'first_name',
+    get label() {
+      return m.settings_webforms_field_first_name();
+    }
+  },
+  {
+    value: 'last_name',
+    get label() {
+      return m.settings_webforms_field_last_name();
+    }
+  },
+  {
+    value: 'email',
+    get label() {
+      return m.settings_webforms_field_email();
+    }
+  },
+  {
+    value: 'phone',
+    get label() {
+      return m.settings_webforms_field_phone();
+    }
+  },
+  {
+    value: 'company_name',
+    get label() {
+      return m.settings_webforms_field_company_name();
+    }
+  },
+  {
+    value: 'job_title',
+    get label() {
+      return m.settings_webforms_field_job_title();
+    }
+  },
+  {
+    value: 'website',
+    get label() {
+      return m.settings_webforms_field_website();
+    }
+  },
+  {
+    value: 'title',
+    get label() {
+      return m.settings_webforms_field_subject();
+    }
+  },
+  {
+    value: 'description',
+    get label() {
+      return m.settings_webforms_field_message();
+    }
+  },
+  {
+    value: 'city',
+    get label() {
+      return m.settings_webforms_field_city();
+    }
+  },
+  {
+    value: 'state',
+    get label() {
+      return m.settings_webforms_field_state();
+    }
+  },
+  {
+    value: 'country',
+    get label() {
+      return m.settings_webforms_field_country();
+    }
+  },
+  {
+    value: 'postcode',
+    get label() {
+      return m.settings_webforms_field_postcode();
+    }
+  },
+  {
+    value: 'industry',
+    get label() {
+      return m.settings_webforms_field_industry();
+    }
+  }
 ];
 
 /**
@@ -64,19 +140,64 @@ export const WEBFORM_LEAD_FIELDS = [
  * settings, never the visitor's.
  */
 export const WEBFORM_TICKET_FIELDS = [
-  { value: 'email', label: 'Email' },
-  { value: 'first_name', label: 'First name' },
-  { value: 'last_name', label: 'Last name' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'company_name', label: 'Company name' },
-  { value: 'name', label: 'Subject' },
-  { value: 'description', label: 'Message' }
+  {
+    value: 'email',
+    get label() {
+      return m.settings_webforms_field_email();
+    }
+  },
+  {
+    value: 'first_name',
+    get label() {
+      return m.settings_webforms_field_first_name();
+    }
+  },
+  {
+    value: 'last_name',
+    get label() {
+      return m.settings_webforms_field_last_name();
+    }
+  },
+  {
+    value: 'phone',
+    get label() {
+      return m.settings_webforms_field_phone();
+    }
+  },
+  {
+    value: 'company_name',
+    get label() {
+      return m.settings_webforms_field_company_name();
+    }
+  },
+  {
+    value: 'name',
+    get label() {
+      return m.settings_webforms_field_subject();
+    }
+  },
+  {
+    value: 'description',
+    get label() {
+      return m.settings_webforms_field_message();
+    }
+  }
 ];
 
 /** What an accepted submission creates, mirroring `WebForm.TARGET_CHOICES`. */
 export const WEBFORM_TARGETS = [
-  { value: 'lead', label: 'Lead' },
-  { value: 'ticket', label: 'Ticket' }
+  {
+    value: 'lead',
+    get label() {
+      return m.settings_webforms_target_lead();
+    }
+  },
+  {
+    value: 'ticket',
+    get label() {
+      return m.settings_webforms_target_ticket();
+    }
+  }
 ];
 
 /**

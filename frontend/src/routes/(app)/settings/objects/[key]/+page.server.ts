@@ -14,6 +14,7 @@ import { readableError } from '#lib/server/v2/form-errors.js';
 import { readFieldForm, readObjectForm } from '#lib/server/v2/object-settings.js';
 import { setBoardField } from '#lib/server/v2/object-board.js';
 import { viewerIsAdmin } from '#lib/server/v2/organization.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiErrorBody, apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -63,8 +64,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'update',
-        'Only an admin can change custom objects.',
-        'Could not save the object.',
+        m.settings_objects_error_change_admin(),
+        m.settings_objects_error_save(),
         () => updateObject(event, key, body),
         body
       )) ?? { updated: true }
@@ -77,8 +78,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'board',
-        'Only an admin can choose the board.',
-        'Could not save the board.',
+        m.settings_objects_board_admin_only(),
+        m.settings_objects_board_save_failed(),
         () => setBoardField(event, key, field)
       )) ?? { boardSaved: true }
     );
@@ -89,8 +90,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'archive',
-        'Only an admin can archive custom objects.',
-        'Could not archive the object.',
+        m.settings_objects_error_archive_admin(),
+        m.settings_objects_error_archive(),
         () => deleteObject(event, key)
       )) ?? { archived: true }
     );
@@ -101,8 +102,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'restore',
-        'Only an admin can restore custom objects.',
-        'Could not restore the object.',
+        m.settings_objects_error_restore_admin(),
+        m.settings_objects_error_restore(),
         () => updateObject(event, key, { is_active: true })
       )) ?? { restored: true }
     );
@@ -112,8 +113,8 @@ export const actions: Actions = {
     const key = checkKey(event.params.key);
     const failed = await attempt(
       'destroy',
-      'Only an admin can delete custom objects.',
-      'Could not delete the object.',
+      m.settings_objects_error_delete_admin(),
+      m.settings_objects_error_delete(),
       () => deleteObject(event, key)
     );
     if (failed) return failed;
@@ -126,8 +127,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'createField',
-        'Only an admin can add fields.',
-        'Could not add the field.',
+        m.settings_objects_error_add_field_admin(),
+        m.settings_objects_error_add_field(),
         () => createField(event, key, body),
         body
       )) ?? { fieldCreated: true }
@@ -142,8 +143,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'updateField',
-        'Only an admin can change fields.',
-        'Could not save the field.',
+        m.settings_objects_error_change_field_admin(),
+        m.settings_objects_error_save_field(),
         () => updateField(event, key, fieldKey, body),
         body
       )) ?? { fieldUpdated: true }
@@ -156,8 +157,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'fieldOff',
-        'Only an admin can turn fields off.',
-        'Could not turn the field off.',
+        m.settings_objects_error_field_off_admin(),
+        m.settings_objects_error_field_off(),
         () => turnOffField(event, key, fieldKey)
       )) ?? { fieldOff: true }
     );
@@ -169,8 +170,8 @@ export const actions: Actions = {
     return (
       (await attempt(
         'fieldOn',
-        'Only an admin can turn fields on.',
-        'Could not turn the field on.',
+        m.settings_objects_error_field_on_admin(),
+        m.settings_objects_error_field_on(),
         () => updateField(event, key, fieldKey, { is_active: true })
       )) ?? { fieldOn: true }
     );

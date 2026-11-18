@@ -20,6 +20,8 @@
   import { enhance, type SubmitFunction } from '$app/forms';
   import WebhookFields from '../WebhookFields.svelte';
   import SecretOnce from '../SecretOnce.svelte';
+  import { messageParts, slot } from '#lib/utils/message-parts.js';
+  import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -52,18 +54,15 @@
 </script>
 
 {#if data.forbidden}
-  <PageHeader title="Webhook">
+  <PageHeader title={m.settings_webhooks_title_one()}>
     {#snippet crumb()}<SettingsCrumb />{/snippet}
   </PageHeader>
   <div class="v2-pad" style="padding-top:40px">
-    <NextAction
-      label="Admins only"
-      text="Webhooks send copies of this organization's records to other services, so only admins can see or change them."
-    />
+    <NextAction label={m.common_admins_only()} text={m.settings_webhooks_forbidden_detail()} />
   </div>
 {:else}
   {@const e = data.endpoint}
-  <PageHeader title={e.description || 'Webhook'}>
+  <PageHeader title={e.description || m.settings_webhooks_title_one()}>
     {#snippet crumb()}<SettingsCrumb />{/snippet}
     {#snippet sub()}
       <span style="word-break:break-all">{e.url}</span>
@@ -73,38 +72,43 @@
   <div class="v2-scroll">
     <div class="v2-pad" style="padding-top:16px;padding-bottom:32px">
       {#if form?.rotated && 'secret' in form.rotated && form.rotated.secret}
-        <SecretOnce title="Secret rotated, copy the new one now" secret={form.rotated.secret} />
+        <SecretOnce title="m.settings_webhooks_rotated_title()" secret={form.rotated.secret} />
       {/if}
       {#if actionError}
         <div style="margin-bottom:16px">
-          <NextAction label="That did not work" text={actionError} tone="rust" />
+          <NextAction label={m.settings_webhooks_error_label()} text={actionError} tone="rust" />
         </div>
       {/if}
       {#if form?.tested}
-        <p class="v2-sub wh-note">Test queued. Refresh the log below in a few seconds.</p>
+        <p class="v2-sub wh-note">{m.settings_webhooks_test_queued()}</p>
       {:else if form?.updated}
-        <p class="v2-sub wh-note">Saved.</p>
+        <p class="v2-sub wh-note">{m.settings_webhooks_saved()}</p>
       {:else if form?.redelivered}
-        <p class="v2-sub wh-note">Queued to send again.</p>
+        <p class="v2-sub wh-note">{m.settings_webhooks_redelivered()}</p>
       {/if}
 
       <div class="v2-card" style="padding:14px 15px;margin-bottom:18px">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <Pill tone={e.is_active ? 'moss' : e.disabled_reason ? 'clay' : 'slate'}>
-            {e.is_active ? 'Sending' : e.disabled_reason ? 'Paused' : 'Off'}
+            {e.is_active
+              ? m.settings_webhooks_state_sending()
+              : e.disabled_reason
+                ? m.settings_webhooks_state_paused()
+                : m.settings_webhooks_state_off()}
           </Pill>
           <span class="v2-sub" style="font-size:12px">
-            {webhookFormatName(e.format)} · secret
-            <span class="v2-num">{e.secret_hint}</span>
+            {#each messageParts(m.settings_webhooks_format_secret( { format: webhookFormatName(e.format), hint: slot('hint') } )) as p, i (i)}{#if p.key === 'hint'}<span
+                  class="v2-num">{e.secret_hint}</span
+                >{:else}{p.text}{/if}{/each}
           </span>
         </div>
         <p class="v2-sub" style="font-size:12px;margin:8px 0 0;overflow-wrap:anywhere">
-          Answers for it:
+          {m.settings_webhooks_answers_for()}
           {#if e.created_by}
             {e.created_by.name || e.created_by.email}
             {#if e.created_by.name}<span class="v2-muted">({e.created_by.email})</span>{/if}
           {:else}
-            a removed user
+            {m.settings_webhooks_creator_removed()}
           {/if}
         </p>
         {#if e.disabled_reason}
@@ -113,32 +117,37 @@
           </p>
         {/if}
         <p class="v2-sub" style="font-size:12px;margin:8px 0 0">
-          Turning it on, changing its URL, events or format, or rotating its secret makes you the
-          admin who answers for it.
+          {m.settings_webhooks_answers_note()}
         </p>
         <div class="wh-actions">
           {#if e.is_active}
             <form method="POST" action="?/test" use:enhance={working}>
-              <button class="v2-btn v2-btn-primary wh-tap" disabled={busy}>Send test</button>
+              <button class="v2-btn v2-btn-primary wh-tap" disabled={busy}
+                >{m.settings_webhooks_send_test()}</button
+              >
             </form>
           {/if}
           <form method="POST" action="?/toggle" use:enhance={working}>
             <input type="hidden" name="is_active" value={e.is_active ? 'false' : 'true'} />
             <button class="v2-btn wh-tap" disabled={busy}>
-              {e.is_active ? 'Turn off' : e.disabled_reason ? 'Re-enable' : 'Turn on'}
+              {e.is_active
+                ? m.settings_webhooks_turn_off()
+                : e.disabled_reason
+                  ? m.settings_webhooks_re_enable()
+                  : m.settings_webhooks_turn_on()}
             </button>
           </form>
           <ConfirmAction
             action="?/rotate"
-            label="Rotate secret"
-            confirmLabel="Rotate now"
-            explain="The current secret stops verifying at once. Update your receiver straight after."
+            label={m.settings_webhooks_rotate_secret()}
+            confirmLabel={m.settings_webhooks_rotate_now()}
+            explain={m.settings_webhooks_rotate_explain()}
           />
           <ConfirmAction
             action="?/remove"
-            label="Delete"
-            confirmLabel="Delete permanently"
-            explain="Removes the webhook and its delivery log."
+            label={m.common_delete()}
+            confirmLabel={m.settings_webhooks_delete_confirm()}
+            explain={m.settings_webhooks_delete_explain()}
           />
         </div>
       </div>
@@ -150,39 +159,39 @@
         class="v2-card"
         style="padding:14px 15px;margin-bottom:22px"
       >
-        <div class="v2-label" style="margin-bottom:10px">Settings</div>
+        <div class="v2-label" style="margin-bottom:10px">{m.common_settings()}</div>
         <WebhookFields catalogue={data.catalogue} values={e} idPrefix="edit" />
         <button class="v2-btn v2-btn-primary wh-tap" style="margin-top:14px" disabled={busy}>
-          Save
+          {m.common_save()}
         </button>
       </form>
 
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div class="v2-label">Deliveries</div>
+        <div class="v2-label">{m.settings_webhooks_deliveries()}</div>
         <span class="v2-sub v2-num" style="font-size:12px">{count(data.deliveryCount)}</span>
         <a
           class="v2-btn v2-btn-sm wh-tap"
           style="margin-left:auto"
           href={resolve(`settings/webhooks/${e.id}?offset=${data.offset}`)}
         >
-          Refresh
+          {m.settings_webhooks_refresh()}
         </a>
       </div>
 
       {#if !data.deliveries.length}
         <p class="v2-sub" style="font-size:12.5px">
-          Nothing sent yet. Send a test, or change a record this webhook listens for.
+          {m.settings_webhooks_deliveries_empty()}
         </p>
       {:else}
         <div class="v2-table-wrap">
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Event</th>
-                <th>Status</th>
-                <th class="v2-r" data-m="hide">Tries</th>
-                <th data-m="hide">When</th>
-                <th class="v2-r">Actions</th>
+                <th>{m.settings_webhooks_col_event()}</th>
+                <th>{m.common_status()}</th>
+                <th class="v2-r" data-m="hide">{m.settings_webhooks_col_tries()}</th>
+                <th data-m="hide">{m.settings_webhooks_col_when()}</th>
+                <th class="v2-r">{m.common_actions()}</th>
               </tr>
             </thead>
             <tbody>
@@ -201,10 +210,10 @@
                         'slate'}
                     >
                       {d.status === 'succeeded'
-                        ? 'Delivered'
+                        ? m.settings_webhooks_delivery_delivered()
                         : d.status === 'failed'
-                          ? 'Failed'
-                          : 'Pending'}
+                          ? m.settings_webhooks_delivery_failed()
+                          : m.settings_webhooks_delivery_pending()}
                     </Pill>
                   </td>
                   <td class="v2-r v2-num" data-m="hide">{d.attempts}</td>
@@ -213,7 +222,9 @@
                     {#if d.status !== 'pending' && e.is_active}
                       <form method="POST" action="?/redeliver" use:enhance={working}>
                         <input type="hidden" name="delivery_id" value={d.id} />
-                        <button class="v2-btn v2-btn-sm wh-tap" disabled={busy}>Redeliver</button>
+                        <button class="v2-btn v2-btn-sm wh-tap" disabled={busy}
+                          >{m.settings_webhooks_redeliver()}</button
+                        >
                       </form>
                     {/if}
                   </td>
@@ -230,14 +241,14 @@
                 `settings/webhooks/${e.id}?offset=${Math.max(0, data.offset - data.pageSize)}`
               )}
             >
-              Newer
+              {m.settings_webhooks_newer()}
             </a>
           {/if}
           {#if data.offset + data.pageSize < data.deliveryCount}
             <a
               class="v2-btn v2-btn-sm wh-tap"
               href={resolve(`settings/webhooks/${e.id}?offset=${data.offset + data.pageSize}`)}
-              >Older</a
+              >{m.settings_webhooks_older()}</a
             >
           {/if}
         </div>

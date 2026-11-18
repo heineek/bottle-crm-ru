@@ -5,6 +5,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead
 } from '#lib/server/v2/notifications.js';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ cookies }) => {
@@ -20,12 +21,14 @@ export const actions: Actions = {
   read: async ({ cookies, request }) => {
     const form = await request.formData();
     const id = form.get('id')?.toString() ?? '';
-    if (!id) return fail(400, { error: 'Missing notification id.' });
+    if (!id) return fail(400, { error: m.app_notifications_missing_id() });
 
     try {
       await markNotificationRead({ cookies }, id);
     } catch (err) {
-      return fail(apiStatus(err) === 404 ? 404 : 500, { error: 'Could not mark that read.' });
+      return fail(apiStatus(err) === 404 ? 404 : 500, {
+        error: m.app_notifications_read_failed()
+      });
     }
     return { ok: true };
   },
@@ -35,7 +38,7 @@ export const actions: Actions = {
     try {
       await markAllNotificationsRead({ cookies });
     } catch {
-      return fail(500, { error: 'Could not mark everything read.' });
+      return fail(500, { error: m.app_notifications_read_all_failed() });
     }
     return { ok: true };
   }

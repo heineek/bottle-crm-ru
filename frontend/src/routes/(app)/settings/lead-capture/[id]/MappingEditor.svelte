@@ -7,6 +7,7 @@
   import { untrack } from 'svelte';
   import { Plus, Trash2 } from '@lucide/svelte';
   import { cleanMapping } from '#lib/v2/lead-intakes.js';
+  import { m } from '#lib/paraglide/messages.js';
 
   let {
     rows,
@@ -40,7 +41,8 @@
     {#each list as row, n (row.id)}
       <div class="me-row">
         <div class="me-cell">
-          <label class="v2-label" for="me-from-{row.id}">Field in the post</label>
+          <label class="v2-label" for="me-from-{row.id}">{m.settings_lead_capture_map_from()}</label
+          >
           <input
             id="me-from-{row.id}"
             class="v2-input v2-num"
@@ -54,9 +56,9 @@
           />
         </div>
         <div class="me-cell">
-          <label class="v2-label" for="me-to-{row.id}">Fills</label>
+          <label class="v2-label" for="me-to-{row.id}">{m.settings_lead_capture_map_to()}</label>
           <select id="me-to-{row.id}" class="v2-input" bind:value={row.to} {disabled}>
-            <option value="">Choose a lead field</option>
+            <option value="">{m.settings_lead_capture_map_choose()}</option>
             {#each targets as t (t.value)}
               <option value={t.value}>{t.label}</option>
             {/each}
@@ -65,7 +67,7 @@
         <button
           type="button"
           class="v2-btn v2-btn-sm me-remove"
-          aria-label="Remove row {n + 1}"
+          aria-label={m.settings_lead_capture_map_remove({ n: n + 1 })}
           {disabled}
           onclick={() => remove(row.id)}
         >
@@ -76,18 +78,18 @@
   </div>
 {:else}
   <p class="v2-sub" style="font-size:12.5px;margin:0 0 10px">
-    No fields mapped yet. A field no row uses goes into the lead's enquiry text.
+    {m.settings_lead_capture_map_empty()}
   </p>
 {/if}
 
 {#if incomplete}
   <p class="v2-hint" style="color:var(--v2-clay)">
-    {incomplete === 1 ? 'One row is' : `${incomplete} rows are`} half filled in and will not be saved.
+    {m.settings_lead_capture_map_incomplete({ count: incomplete })}
   </p>
 {/if}
 
 <button type="button" class="v2-btn v2-btn-sm me-add" {disabled} onclick={add}>
-  <Plus size={13} />Add a field
+  <Plus size={13} />{m.settings_lead_capture_map_add()}
 </button>
 
 <style>

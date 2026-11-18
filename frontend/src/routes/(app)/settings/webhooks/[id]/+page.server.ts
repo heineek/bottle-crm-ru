@@ -9,6 +9,7 @@ import {
   eventsFromForm
 } from '#lib/server/v2/webhooks.js';
 import { readableError } from '#lib/server/v2/form-errors.js';
+import { m } from '#lib/paraglide/messages.js';
 import { apiStatus } from '#lib/api-errors.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -26,7 +27,7 @@ export const load: PageServerLoad = async (event) => {
       ...(await getWebhook(event, event.params.id, offset))
     };
   } catch (err) {
-    if (apiStatus(err) === 404) error(404, 'That webhook does not exist.');
+    if (apiStatus(err) === 404) error(404, m.settings_webhooks_not_found());
     if (apiStatus(err) === 403) return { forbidden: true as const };
     throw err;
   }
@@ -35,7 +36,7 @@ export const load: PageServerLoad = async (event) => {
 /** Turn an API refusal into the sentence the page shows, under `key`. */
 function refused(key: string, err: unknown, fallback: string) {
   if (apiStatus(err) === 403) {
-    return fail(403, { [key]: { error: 'Only an admin can change webhooks.' } });
+    return fail(403, { [key]: { error: m.settings_webhooks_change_forbidden() } });
   }
   return fail(400, { [key]: { error: readableError(err, fallback) } });
 }
@@ -50,12 +51,12 @@ export const actions: Actions = {
       events: eventsFromForm(form)
     };
     if (!values.events.length) {
-      return fail(400, { update: { error: 'Choose at least one event.' } });
+      return fail(400, { update: { error: m.settings_webhooks_events_required() } });
     }
     try {
       await updateWebhook(event, event.params.id, values);
     } catch (err) {
-      return refused('update', err, 'Could not save the webhook.');
+      return refused('update', err, m.settings_webhooks_save_failed());
     }
     return { updated: true };
   },
@@ -68,7 +69,7 @@ export const actions: Actions = {
     try {
       await updateWebhook(event, event.params.id, { is_active: isActive });
     } catch (err) {
-      return refused('toggle', err, 'Could not change the webhook.');
+      return refused('toggle', err, m.settings_webhooks_toggle_failed());
     }
     return { toggled: true };
   },
@@ -77,7 +78,7 @@ export const actions: Actions = {
     try {
       await testWebhook(event, event.params.id);
     } catch (err) {
-      return refused('test', err, 'Could not send a test.');
+      return refused('test', err, m.settings_webhooks_test_failed());
     }
     return { tested: true };
   },
@@ -87,7 +88,7 @@ export const actions: Actions = {
       const res = await rotateWebhookSecret(event, event.params.id);
       return { rotated: { secret: res.secret } };
     } catch (err) {
-      return refused('rotate', err, 'Could not rotate the secret.');
+      return refused('rotate', err, m.settings_webhooks_rotate_failed());
     }
   },
 
@@ -97,7 +98,7 @@ export const actions: Actions = {
     try {
       await redeliverWebhook(event, deliveryId);
     } catch (err) {
-      return refused('redeliver', err, 'Could not redeliver.');
+      return refused('redeliver', err, m.settings_webhooks_redeliver_failed());
     }
     return { redelivered: true };
   },
@@ -106,7 +107,7 @@ export const actions: Actions = {
     try {
       await deleteWebhook(event, event.params.id);
     } catch (err) {
-      return refused('remove', err, 'Could not delete the webhook.');
+      return refused('remove', err, m.settings_webhooks_delete_failed());
     }
     redirect(303, '/settings/webhooks');
   }

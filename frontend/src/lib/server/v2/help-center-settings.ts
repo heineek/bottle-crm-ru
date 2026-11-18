@@ -6,6 +6,7 @@
  * caller's role (admins and superusers). `PATCH` is admin-only there; `can_edit`
  * decides what this page offers, never what it is allowed to do.
  */
+import { m } from '#lib/paraglide/messages.js';
 import { apiRequest } from '#lib/api-helpers.js';
 import { apiErrorBody } from '#lib/api-errors.js';
 import type { Cookies } from '@sveltejs/kit';
@@ -61,5 +62,5 @@ export function saveErrorMessage(
 ) {
   const slugErrors = apiErrorBody(err)?.help_center_slug;
   if (Array.isArray(slugErrors) && slugErrors.length) return String(slugErrors[0]);
-  return readableError(err, 'Could not save the help center.');
+  return readableError(err, m.settings_helpcenter_error_save());
 }

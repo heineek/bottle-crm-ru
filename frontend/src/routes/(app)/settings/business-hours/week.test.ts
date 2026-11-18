@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dayHours, weeklyHours, isAlwaysOn } from './week.js';
+import { dayHours, weeklyHours, isAlwaysOn, dayLabel, weekdayName } from './week.js';
 
 const day = (open: string | null, close: string | null) => ({ open, close });
 
@@ -73,5 +73,18 @@ describe('isAlwaysOn', () => {
     const week = WORKING_WEEK.map(() => day(null, null));
     week[0] = day('17:00', '09:00');
     expect(isAlwaysOn(week)).toBe(true);
+  });
+});
+
+describe('dayLabel', () => {
+  it('keeps the API name in English and shows an unknown name as it came', () => {
+    expect(dayLabel('Monday')).toBe('Monday');
+    expect(dayLabel('Someday')).toBe('Someday');
+  });
+});
+
+describe('weekdayName', () => {
+  it('names the weekday the API way, whatever the locale', () => {
+    expect(weekdayName(new Date(2026, 10, 9))).toBe('Monday');
   });
 });

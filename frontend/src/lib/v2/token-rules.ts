@@ -18,6 +18,7 @@
  */
 
 import { daysSince } from '#lib/v2/format.js';
+import { m } from '#lib/paraglide/messages.js';
 
 /**
  * A token row of either list: the org oversight one carries `owner`, and the
@@ -63,7 +64,9 @@ export function staleness(
   if (!token?.is_live) return null;
   const days = daysSince(lastActivityAt(token), now);
   if (days === null || days <= 90) return null;
-  return token.last_used_at ? `unused for ${days} days` : `never used, issued ${days} days ago`;
+  return token.last_used_at
+    ? m.settings_tokens_unused_days({ count: days })
+    : m.settings_tokens_never_used_days({ count: days });
 }
 
 /**
@@ -74,9 +77,9 @@ export function tokenStatus(token: TokenRow | null | undefined): {
   label: string;
   tone: 'ink' | 'slate' | 'clay' | 'rust' | 'moss';
 } {
-  if (token?.revoked_at) return { label: 'Revoked', tone: 'slate' };
-  if (!token?.is_live) return { label: 'Expired', tone: 'slate' };
-  return { label: 'Live', tone: 'moss' };
+  if (token?.revoked_at) return { label: m.settings_tokens_status_revoked(), tone: 'slate' };
+  if (!token?.is_live) return { label: m.settings_tokens_status_expired(), tone: 'slate' };
+  return { label: m.settings_tokens_status_live(), tone: 'moss' };
 }
 
 /**
@@ -86,21 +89,27 @@ export function tokenStatus(token: TokenRow | null | undefined): {
  * why), which is what every token issued before enforcement carries, so those
  * rows say what they really are rather than being drawn as limited.
  *
- * `ownerLabel` exists because the self-service list has no `owner` block on
- * its rows (the endpoint is already scoped to you), and "Everything its owner
- * can" is a strange thing to read on a page about your own tokens.
+ * `own` marks the self-service list, whose rows have no `owner` block (the
+ * endpoint is already scoped to you), and where "Everything its owner can" is
+ * a strange thing to read about your own tokens. `ownerLabel` names the owner
+ * outright; `'you'` reads as `own`.
  */
 export function scopeSummary(
   token: TokenRow | null | undefined,
-  options: { ownerLabel?: string } = {}
+  options: { own?: boolean; ownerLabel?: string } = {}
 ): string {
   const scopes = token?.scopes ?? [];
   if (scopes.length === 0) {
-    if (options.ownerLabel) return `Everything ${options.ownerLabel} can`;
+    if (options.own || options.ownerLabel === 'you')
+      return m.settings_tokens_scope_everything_you();
+    if (options.ownerLabel)
+      return m.settings_tokens_scope_everything_named({ owner: options.ownerLabel });
     const first = (token?.owner?.name ?? '').split(' ')[0];
-    return first ? `Everything ${first} can` : 'Everything its owner can';
+    return first
+      ? m.settings_tokens_scope_everything_named({ owner: first })
+      : m.settings_tokens_scope_everything_owner();
   }
-  if (scopes.every((s) => s.endsWith(':read'))) return 'Read only';
+  if (scopes.every((s) => s.endsWith(':read'))) return m.settings_tokens_scope_read_only();
   return scopes.join(', ');
 }
 
@@ -112,10 +121,34 @@ export function scopeSummary(
  * choice is a deliberate one.
  */
 export const EXPIRY_CHOICES = [
-  { value: '90', label: 'In 90 days', days: 90 },
-  { value: '30', label: 'In 30 days', days: 30 },
-  { value: '365', label: 'In 1 year', days: 365 },
-  { value: 'never', label: 'Never', days: null }
+  {
+    value: '90',
+    get label() {
+      return m.settings_tokens_expiry_90();
+    },
+    days: 90
+  },
+  {
+    value: '30',
+    get label() {
+      return m.settings_tokens_expiry_30();
+    },
+    days: 30
+  },
+  {
+    value: '365',
+    get label() {
+      return m.settings_tokens_expiry_365();
+    },
+    days: 365
+  },
+  {
+    value: 'never',
+    get label() {
+      return m.settings_tokens_expiry_never();
+    },
+    days: null
+  }
 ];
 
 /**

@@ -4,6 +4,7 @@
    * replace) and gone on the next load: reads only carry `key_hint`.
    */
   import CopyValue from './CopyValue.svelte';
+  import { m } from '#lib/paraglide/messages.js';
 
   let {
     title,
@@ -19,16 +20,15 @@
 >
   <div style="font-weight:650;font-size:13px">{title}</div>
   <p class="v2-sub" style="font-size:12px;margin:4px 0 12px;line-height:1.5">
-    This is the only time the key is shown. Paste it into the tool that sends your leads; if it is
-    lost, replace it.
+    {m.settings_lead_capture_key_once()}
     {#if replaced}
-      The old key keeps working for 7 days, so there is time to update the sender.
+      {m.settings_lead_capture_key_old_works()}
     {/if}
   </p>
   <div style="display:flex;flex-direction:column;gap:12px">
     {#if url}
-      <CopyValue label="Webhook URL" value={url} id="once-url" />
+      <CopyValue label={m.settings_lead_capture_webhook_url()} value={url} id="once-url" />
     {/if}
-    <CopyValue label="Key" value={secret} id="once-key" />
+    <CopyValue label={m.settings_lead_capture_key()} value={secret} id="once-key" />
   </div>
 </div>
